@@ -2,13 +2,15 @@
 import os
 import logging
 
+from framework.sessions import session
+
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
 
 from website.addons.dropbox.client import get_node_client
 from website.addons.dropbox.utils import (
     clean_path, list_dropbox_files, metadata_to_hgrid,
-    build_dropbox_urls, clean_path
+    build_dropbox_urls, clean_path, list_dropbox_files, ensure_leading_slash,
 )
 
 logger = logging.getLogger(__name__)
@@ -27,8 +29,17 @@ def dropbox_hgrid_data_contents(**kwargs):
         'view': node.can_view(auth)
     }
     client = get_node_client(node)
+
+    # TODO: store cursor
+    prefix = ensure_leading_slash(path.lower())
+    cursor = session.data.get('dropbox_cursor', None)
+    result = client.delta(cursor=cursor, path_prefix=prefix)
+    # Store the cursor
+    session.data['dropbox_cursor'] = result['cursor']
+    entries = result['entries']
+    metadata = [meta for fpath, meta in entries if fpath != prefix]
     contents = [metadata_to_hgrid(file_dict, node, permissions) for
-            file_dict in client.metadata(path)['contents']]
+            file_dict in metadata]
     return contents
 
 
