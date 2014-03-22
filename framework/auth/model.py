@@ -43,6 +43,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
+    # Node fields that trigger an update to Solr on save
+    SOLR_UPDATE_FIELDS = {
+        'fullname',
+    }
+
     _id = fields.StringField(primary=True)
 
     # NOTE: In the OSF, username is an email
@@ -296,6 +301,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # Revoke token
             del self.email_verifications[token]
             self.save()
+            # Note: We must manually update Solr here because the fullname
+            # field has not changed
+            self.update_solr()
             return True
         else:
             return False
@@ -389,7 +397,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
         if self.is_active():
-            self.update_solr()
+            if self.SOLR_UPDATE_FIELDS.intersection(rv):
+                self.update_solr()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)

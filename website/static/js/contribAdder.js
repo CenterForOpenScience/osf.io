@@ -80,7 +80,10 @@ this.ContribAdder = (function($, global, undefined) {
             if (self.query()) {
                 $.getJSON(
                     '/api/v1/user/search/',
-                    {query: self.query()},
+                    {
+                        query: self.query(),
+                        excludeNode: nodeId,
+                    },
                     function(result) {
                         self.results(result['users']);
                     }
