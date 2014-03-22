@@ -28,3 +28,4 @@ class DropboxFileFactory(ModularOdmFactory):
     FACTORY_FOR = DropboxFile
 
     node = SubFactory(ProjectFactory)
+    path = 'foo.txt'
