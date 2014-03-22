@@ -17,7 +17,9 @@ from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
-from website.addons.dropbox.utils import render_dropbox_file, get_file_name
+from website.addons.dropbox.utils import (
+    render_dropbox_file, get_file_name, metadata_to_hgrid
+)
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -35,14 +37,20 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
-def dropbox_upload(**kwargs):
+def dropbox_upload(node_addon, auth, **kwargs):
     # Route may or may not have a path
-    path = kwargs.get('path', '/')
-    client = get_node_addon_client(kwargs.get('node_addon'))
+    path = kwargs.get('path', node_addon.folder)
+    client = get_node_addon_client(node_addon)
     file_obj = request.files.get('file', None)
+    node = node_addon.owner
     if path and file_obj and client:
         path = os.path.join(path, file_obj.filename)
-        return client.put_file(path, file_obj)  # TODO Cast to Hgrid
+        metadata = client.put_file(path, file_obj)  # TODO Cast to Hgrid
+        permissions = {
+            'edit': node.can_edit(auth),
+            'view': node.can_view(auth)
+        }
+        return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
 
 

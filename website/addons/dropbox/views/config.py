@@ -26,6 +26,7 @@ def dropbox_config_get(**kwargs):
     return {
         'result': {
             'folders': folders,
+            'folder': node_settings.folder,
             'ownerName': node_settings.user_settings.account_info['display_name'],
             'urls': {
                 'config': node.api_url_for('dropbox_config_put')
