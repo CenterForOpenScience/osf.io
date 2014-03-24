@@ -3,6 +3,7 @@
 import logging
 
 from framework import request
+from framework.auth import get_current_user
 from website.project.decorators import (must_have_addon,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
@@ -15,9 +16,13 @@ from website.addons.dropbox.client import get_client
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
+
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
 def dropbox_config_get(**kwargs):
+    user = get_current_user()
+    user_settings = user.get_addon('dropbox')
+    user_has_auth = user_settings is not None and user_settings.has_auth
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
     urls = {
@@ -38,13 +43,9 @@ def dropbox_config_get(**kwargs):
             'ownerName': node_settings.user_settings.account_info['display_name'],
             'urls': urls,
             'nodeHasAuth': node_settings.has_auth,
-            'userHasAuth': node_settings.user_settings.has_auth
+            'userHasAuth': user_has_auth
         }
     else:
-        if node_settings.user_settings:
-            user_has_auth = node_settings.user_settings.has_auth
-        else:
-            user_has_auth = False
         result = {
             'nodeHasAuth': node_settings.has_auth,
             'userHasAuth': user_has_auth,
@@ -77,6 +78,5 @@ def dropbox_config_put(node_addon, **kwargs):
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
-    debug('DEAUTHORIZING----')
-    debug(node_addon.has_auth)
+    node = node_addon.owner
     return {}
