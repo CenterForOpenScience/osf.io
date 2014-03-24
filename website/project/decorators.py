@@ -135,7 +135,7 @@ def _must_be_contributor_factory(include_public):
 
             key = request.args.get('key', '').strip('/')
             #if not login user check if the key is valid or the other privilege
-            if not session:
+            if not kwargs['auth'].user:
                 kwargs['auth'].private_key = key
                 if not node.is_public or not include_public:
                     if key not in node.private_links:
