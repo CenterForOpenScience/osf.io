@@ -4,6 +4,7 @@
 
 
 <div id="dropboxScope">
+    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <div data-bind='if: nodeHasAuth'>
         <div class="well well-sm">
             Authorized by {{ ownerName }}</a>
@@ -25,13 +26,13 @@
         </div><!-- end row -->
     </div>
 
-    <div data-bind="if: userHasAuth && !nodeHasAuth">
+    <div data-bind="if: userHasAuth() && !nodeHasAuth()">
         <a data-bind="click: importAuth" href="#" class="btn btn-primary">
             Authorize: Import Access Token from Profile
         </a>
     </div>
 
-    <div data-bind="if: !userHasAuth && !nodeHasAuth">
+    <div data-bind="if: !userHasAuth() && !nodeHasAuth()">
         <a data-bind="attr: {href: urls.auth}" class="btn btn-primary">
             Authorize: Create Access Token
         </a>

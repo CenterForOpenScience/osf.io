@@ -3,14 +3,20 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
 
     var ViewModel = function(data) {
         var self = this;
-        self.ownerName = data.ownerName;
-        self.nodeHasAuth = data.nodeHasAuth;
-        self.userHasAuth = data.userHasAuth;
-        self.selected = ko.observable(data.folder);
-        self.folders = ko.observableArray(data.folders);
-        self.urls = data.urls;
+
+        self.updateFromData = function(data) {
+            self.ownerName = data.ownerName;
+            self.nodeHasAuth = ko.observable(data.nodeHasAuth);
+            self.userHasAuth = ko.observable(data.userHasAuth);
+            self.selected = ko.observable(data.folder);
+            self.folders = ko.observableArray(data.folders);
+            self.urls = data.urls;
+        };
+
+        self.updateFromData(data);
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
+
 
         function onSubmitSuccess(response) {
             self.message(response.message);
@@ -53,22 +59,35 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
                 message: 'Are you sure you want to remove this Dropbox authorization?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        sendDeauth();
+                        return sendDeauth();
                     }
                 }
             });
         };
 
+        function onImportSuccess(response) {
+            // TODO(sloria): This doesn't work yet because the view doesn't update
+            // so just reload for now.
+
+            // var msg = response.message || 'Successfully imported access token from profile.';
+            // // Update view model based on response
+            // self.message(msg);
+            // self.messageClass('text-success');
+            // self.updateFromData(response.result);
+            window.location.reload();
+        }
+
+        function onImportError() {
+            self.message('Error occurred while importing access token.');
+            self.messageClass('text-danger');
+        }
+
         /**
          * Send PUT request to import access token from user profile.
          */
         self.importAuth = function() {
-            return $.osf.putJSON(self.urls.importAuth, {},
-                function() {
-                    window.location.reload();
-                });
+            return $.osf.putJSON(self.urls.importAuth, {}, onImportSuccess, onImportError);
         };
-
     };
 
     // Public API
