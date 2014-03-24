@@ -1,6 +1,6 @@
 ## Template for the "Dropbox" section in the "Configure Add-ons" panel
 
-<h4 class="addon-title">Dropbox</h4>
+<h4 class="addon-title">${addon_full_name}</h4>
 
 <div id='dropboxAddonScope' class='addon-settings'>
     % if has_auth:

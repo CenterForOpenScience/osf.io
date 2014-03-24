@@ -30,8 +30,11 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
                 onSubmitSuccess, onSubmitError);
         };
 
+        /**
+         * Send DELETE request to deauthorize this node.
+         */
         function sendDeauth() {
-            $.ajax({
+            return $.ajax({
                 url: self.urls.deauthorize,
                 type: 'DELETE',
                 success: function() {
@@ -55,6 +58,17 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
                 }
             });
         };
+
+        /**
+         * Send PUT request to import access token from user profile.
+         */
+        self.importAuth = function() {
+            return $.osf.putJSON(self.urls.importAuth, {},
+                function() {
+                    window.location.reload();
+                });
+        };
+
     };
 
     // Public API

@@ -1,6 +1,7 @@
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
 import logging
+import httplib as http
 
 from framework import request
 from framework.auth import get_current_user
@@ -8,7 +9,7 @@ from website.project.decorators import (must_have_addon,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
-from website.util import api_url_for
+from framework.exceptions import HTTPError
 
 from website.addons.dropbox.client import get_client
 
@@ -28,8 +29,9 @@ def dropbox_config_get(**kwargs):
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
-        'auth': api_url_for('dropbox_oauth_start', pid=kwargs['pid'],
-            nid=kwargs.get('nid'))
+        'auth': node.api_url_for('dropbox_oauth_start'),
+        'importAuth': node.api_url_for('dropbox_import_user_auth')
+
     }
     if node_settings.has_auth:
         client = get_client(node_settings.user_settings.owner)
@@ -70,13 +72,27 @@ def dropbox_config_put(node_addon, **kwargs):
         },
         'message': 'Successfully updated settings.',
         'status': 200
-    }
+    }, 200
 
 
+# TODO(sloria): Test me
+@must_have_permission('write')
+@must_have_addon('dropbox', 'node')
+def dropbox_import_user_auth(auth, node_addon, **kwargs):
+    """Import dropbox credentials from the currently logged-in user to a node.
+    """
+    user = auth.user
+    user_addon = user.get_addon('dropbox')
+    if user_addon is None or node_addon is None:
+        raise HTTPError(http.BAD_REQUEST)
+    node_addon.user_settings = user_addon
+    node_addon.save()
+    return {'result': node_addon.to_json(user), 'status': 200}, 200
+
+# TODO(sloria): Test me
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
-    node = node_addon.owner
-    return {}
+    return None

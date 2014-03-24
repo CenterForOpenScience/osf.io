@@ -9,7 +9,7 @@ from website.routes import OsfWebRenderer, notemplate
 auth_routes = {
     'rules': [
 
-        # OAuth: User
+        ##### OAuth #####
         Rule(
             '/settings/dropbox/oauth/',
             'get',
@@ -47,6 +47,8 @@ auth_routes = {
 
 web_routes = {
     'rules': [
+
+        ##### View file #####
         Rule(
             [
                 '/project/<pid>/dropbox/files/<path:path>',
@@ -56,6 +58,8 @@ web_routes = {
             views.crud.dropbox_view_file,
             OsfWebRenderer('../addons/dropbox/templates/dropbox_view_file.mako'),
         ),
+
+        ##### Download file #####
         Rule(
             [
                 '/project/<pid>/dropbox/files/<path:path>/download/',
@@ -94,6 +98,14 @@ api_routes = {
             '/project/<pid>/node/<nid>/dropbox/config/'],
             'delete',
             views.config.dropbox_deauthorize,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/dropbox/config/import-auth/',
+            '/project/<pid>/node/<nid>/dropbox/config/import-auth/'],
+            'put',
+            views.config.dropbox_import_user_auth,
             json_renderer
         ),
 
