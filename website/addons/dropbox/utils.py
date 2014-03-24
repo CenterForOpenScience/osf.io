@@ -18,6 +18,8 @@ def get_file_name(path):
 
 def clean_path(path):
     """Ensure a path is formatted correctly for url_for."""
+    if path is None:
+        return ''
     return path.strip('/')
 
 
