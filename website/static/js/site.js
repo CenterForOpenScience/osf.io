@@ -147,12 +147,16 @@
         return ui;
     };
 
+    ko.filters.moment = function(value, format) {
+        return moment(value).format(format);
+    };
+
     $.osf.handleJSONError = function (response) {
         bootbox.alert({
             title: response.responseJSON.message_short,
             message: response.responseJSON.message_long
         });
-    }
+    };
 
     var LOCAL_DATEFORMAT = 'l h:mm A';
     var UTC_DATEFORMAT = 'l H:mm UTC';
