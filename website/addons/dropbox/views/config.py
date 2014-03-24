@@ -29,7 +29,7 @@ def dropbox_config_get(**kwargs):
     if node_settings.has_auth:
         client = get_client(node_settings.user_settings.owner)
         metadata = client.metadata('/', list=True)
-        folders = [each['path'] for each in metadata['contents'] if each['is_dir']]
+        folders = ['/'] + [each['path'] for each in metadata['contents'] if each['is_dir']]
         result = {
             'folders': folders,
             'folder': node_settings.folder if node_settings.folder else '/',
@@ -76,4 +76,6 @@ def dropbox_config_put(**kwargs):
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
+    debug('DEAUTHORIZING----')
+    debug(node_addon.has_auth)
     return {}
