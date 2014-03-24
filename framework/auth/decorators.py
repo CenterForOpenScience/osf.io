@@ -7,12 +7,11 @@ from . import get_current_user, get_api_key, get_current_node
 class Auth(object):
 
     def __init__(self, user=None, api_key=None, api_node=None,
-                 private_key=None, private_keys=[]):
+                 private_key=None):
         self.user = user
         self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
-        self.private_keys = private_keys
 
     @property
     def logged_in(self):
@@ -24,13 +23,11 @@ class Auth(object):
         api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
         api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
         private_key = request_args.get('key')
-        private_keys = request_args.get('private_keys') or kwargs.get('private_keys') or []
         return cls(
             user=user,
             api_key=api_key,
             api_node=api_node,
             private_key=private_key,
-            private_keys=private_keys,
         )
 
 #### Auth-related decorators ##################################################
