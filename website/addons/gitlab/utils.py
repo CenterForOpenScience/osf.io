@@ -163,23 +163,32 @@ def join_truthy(*args):
 def build_urls(node, item, path, branch=None, sha=None):
 
     quote_path = urllib.quote_plus(path)
-    params = refs_to_params(branch, sha)
-    branch_params = refs_to_params(branch)
-
-    files_url = join_truthy(node.url, 'gitlab', 'files', quote_path)
-    files_api_url = join_truthy(node.api_url, 'gitlab', 'files', quote_path)
-    hgrid_url = join_truthy(node.api_url, 'gitlab', 'grid', quote_path)
 
     if item['type'] == 'tree':
         return {
-            'upload': node.api_url_for('gitlab_upload_file', branch=branch, sha=sha),
-            'fetch': node.api_url_for('gitlab_list_files', branch=branch, sha=sha),
+            'upload': node.api_url_for(
+                'gitlab_upload_file',
+                path=quote_path, branch=branch, sha=sha
+            ),
+            'fetch': node.api_url_for(
+                'gitlab_list_files',
+                path=quote_path, branch=branch, sha=sha
+            ),
         }
     elif item['type'] == 'blob':
         return {
-            'view': node.url_for('gitlab_view_file', branch=branch, sha=sha),
-            'download': node.url_for('gitlab_download_file', branch=branch, sha=sha),
-            'delete': node.api_url_for('gitlab_delete_file', branch=branch),
+            'view': node.web_url_for(
+                'gitlab_view_file',
+                path=quote_path, branch=branch, sha=sha
+            ),
+            'download': node.web_url_for(
+                'gitlab_download_file',
+                path=quote_path, branch=branch, sha=sha
+            ),
+            'delete': node.api_url_for(
+                'gitlab_delete_file',
+                path=quote_path, branch=branch
+            ),
         }
     raise ValueError('Item must have type "tree" or "blob"')
 

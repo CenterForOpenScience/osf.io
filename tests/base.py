@@ -149,17 +149,20 @@ class URLLookup(object):
                 url = lookup('web', 'view_project', pid=self.project._primary_key)
     """
 
-    def __init__(self, app):
+    def __init__(self, app, node=None):
         self.app = app
+        self.node = node
 
     def web_url_for(self, view_name, *args, **kwargs):
+        method = self.node.web_url_for if self.node else web_url_for
         with self.app.test_request_context():  # Need a request context to use url_for
-            url = web_url_for(view_name, *args, **kwargs)
+            url = method(view_name, *args, **kwargs)
         return url
 
     def api_url_for(self, view_name, *args, **kwargs):
+        method = self.node.api_url_for if self.node else api_url_for
         with self.app.test_request_context():
-            url = api_url_for(view_name, *args, **kwargs)
+            url = method(view_name, *args, **kwargs)
         return url
 
     def __call__(self, type_, view_name, *args, **kwargs):

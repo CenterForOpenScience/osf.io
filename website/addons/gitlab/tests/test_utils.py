@@ -2,6 +2,7 @@ import unittest
 from nose.tools import *
 
 import os
+import urllib
 
 from website.addons.gitlab.tests import GitlabTestCase
 
@@ -65,6 +66,10 @@ class TestTypeToKind(unittest.TestCase):
 
 class TestBuildUrls(GitlabTestCase):
 
+    def setUp(self):
+        super(TestBuildUrls, self).setUp()
+        self.app.app.test_request_context().push()
+
     def test_tree(self):
 
         item = {
@@ -79,21 +84,25 @@ class TestBuildUrls(GitlabTestCase):
             self.project, item, path, branch, sha
         )
 
+        quote_path = urllib.quote_plus(path)
+
         assert_equal(
             set(output.keys()),
             {'upload', 'fetch'}
         )
         assert_equal(
             output['upload'],
-            os.path.join(
-                self.project.api_url, 'gitlab', 'files', path
-            ) + '/?branch=master'
+            self.node_lookup(
+                'api', 'gitlab_upload_file',
+                path=quote_path, branch=branch
+            )
         )
         assert_equal(
             output['fetch'],
-            os.path.join(
-                self.project.api_url, 'gitlab', 'grid', path
-            ) + '/?branch=master&sha=12345'
+            self.node_lookup(
+                'api', 'gitlab_list_files',
+                path=quote_path, branch=branch, sha=sha
+            )
         )
 
     def test_blob(self):
@@ -110,37 +119,46 @@ class TestBuildUrls(GitlabTestCase):
             self.project, item, path, branch, sha
         )
 
+        quote_path = urllib.quote_plus(path)
+
         assert_equal(
             set(output.keys()),
             {'view', 'download', 'delete'}
         )
         assert_equal(
             output['view'],
-            os.path.join(
-                self.project.url, 'gitlab', 'files', path
-            ) + '?branch=master&sha=12345'
+            self.node_lookup(
+                'web', 'gitlab_view_file',
+                path=quote_path, branch=branch, sha=sha
+            )
         )
         assert_equal(
             output['download'],
-            os.path.join(
-                self.project.url, 'gitlab', 'files', path, 'download'
-            ) + '?branch=master&sha=12345'
+            self.node_lookup(
+                'web', 'gitlab_download_file',
+                path=quote_path, branch=branch, sha=sha
+            )
         )
         assert_equal(
             output['delete'],
-            os.path.join(
-                self.project.api_url, 'gitlab', 'files', path
-            ) + '?branch=master'
+            self.node_lookup(
+                'api', 'gitlab_delete_file',
+                path=quote_path, branch=branch, sha=sha
+            )
         )
 
     def test_bad_type(self):
         with assert_raises(ValueError):
             utils.build_urls(
-                self.project, item={}, path=''
+                self.project, item={'type': 'bad'}, path=''
             )
 
 
 class TestGridSerializers(GitlabTestCase):
+
+    def setUp(self):
+        super(TestGridSerializers, self).setUp()
+        self.app.app.test_request_context().push()
 
     def test_item_to_hgrid(self):
 

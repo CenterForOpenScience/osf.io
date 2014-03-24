@@ -2,7 +2,7 @@
 
 from framework.auth.decorators import Auth
 from website.addons.base import AddonError
-from tests.base import DbTestCase
+from tests.base import DbTestCase, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory
 
 class AddonTestCase(DbTestCase):
@@ -72,3 +72,6 @@ class AddonTestCase(DbTestCase):
         self.node_settings.user_settings = self.user_settings
         self.set_node_settings(self.node_settings)
         self.node_settings.save()
+
+        self.lookup = URLLookup(self.app.app)
+        self.node_lookup = URLLookup(self.app.app, self.project)
