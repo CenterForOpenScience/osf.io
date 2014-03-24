@@ -42,7 +42,6 @@ auth_routes = {
             json_renderer,
         ),
     ],
-    # TODO(sloria): Remove this prefix for oauth routes? Not sure.
     'prefix': '/api/v1'
 }
 

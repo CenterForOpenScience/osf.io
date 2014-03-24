@@ -8,10 +8,10 @@
     <div data-bind='if: nodeHasAuth'>
         <div class="well well-sm">
             Authorized by {{ ownerName }}</a>
-            % if user_has_auth:
+            <span data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>
-            % endif
+            </span>
         </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
@@ -25,6 +25,7 @@
             </div><!-- end col -->
         </div><!-- end row -->
     </div>
+
     <div data-bind="if: userHasAuth && !nodeHasAuth">
         <a href="#" class="btn btn-primary">
             Authorize: Import Access Token from Profile
