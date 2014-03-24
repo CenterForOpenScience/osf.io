@@ -12,7 +12,7 @@ from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
 from website.addons.base.views import check_file_guid
 
-from framework import request, redirect
+from framework import request, redirect, make_response
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
@@ -54,14 +54,27 @@ def dropbox_upload(node_addon, auth, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
+def make_file_response(fileobject, metadata):
+    """Builds a response from a file-like object and metadata returned by
+    a Dropbox client.
+    """
+    resp = make_response(fileobject.read())
+    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
+        metadata['path']
+    )
+    resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
+    return resp
+
 #TODO Force download start? maybe?
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_download(path, node_addon, **kwargs):
+    if not path:
+        raise HTTPError(http.BAD_REQUEST)
     client = get_node_addon_client(node_addon)
-    if path:
-        return redirect(client.media(path)['url'])
-    raise HTTPError(http.BAD_REQUEST)
+    revision = request.args.get('rev')
+    fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
+    return make_file_response(fileobject, metadata)
 
 
 def dropbox_create_folder(**kwargs):
