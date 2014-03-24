@@ -1,5 +1,6 @@
 ## Template for the "Dropbox" section in the "Configure Add-ons" panel
-<%inherit file="project/addon/user_settings.mako"/>
+
+<h4 class="addon-title">Dropbox</h4>
 
 <div id='dropboxAddonScope' class='addon-settings'>
     % if has_auth:
@@ -40,6 +41,3 @@
     })
 </script>
 
-## TODO(sloria): remove these from parent template?
-<%def name="submit_btn()"></%def>
-<%def name="on_submit()"></%def>
