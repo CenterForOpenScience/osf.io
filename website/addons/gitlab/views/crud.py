@@ -24,7 +24,7 @@ from website.dates import FILE_MODIFIED
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
-    create_node, gitlab_slugify,
+    create_user, create_node, gitlab_slugify,
     kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
 )
 from website.addons.gitlab import settings as gitlab_settings
@@ -106,9 +106,10 @@ def gitlab_upload_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
-    # Lazily configure Gitlab project if not already created
-    create_node(node_settings)
+    # Lazily configure Gitlab
     user_settings = auth.user.get_addon('gitlab')
+    create_user(user_settings)
+    create_node(node_settings)
 
     path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_settings, kwargs)
@@ -125,7 +126,7 @@ def gitlab_upload_file(**kwargs):
 
     filename = os.path.join(path, upload.filename)
     slug = gitlab_slugify(filename)
-
+    
     response = create_or_update(
         node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
         slug, branch, content, auth

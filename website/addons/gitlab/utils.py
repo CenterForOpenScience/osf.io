@@ -109,6 +109,9 @@ def create_node(node_settings, initialize=True):
         node_settings.project_id = response['id']
         if initialize:
             initialize_repo(node_settings)
+            # Hack: GitLab doesn't seem to allow uploads until after a
+            # request of some kind is made.
+            client.listrepositorytree(node_settings.project_id)
         node_settings.save()
 
 
@@ -156,19 +159,16 @@ def refs_to_params(branch=None, sha=None):
     return ''
 
 
-def join_truthy(*args):
-    return os.path.join(*[arg for arg in args if arg])
-
-
 def build_urls(node, item, path, branch=None, sha=None):
 
-    quote_path = urllib.quote_plus(path)
+    quote_path = urllib.quote_plus(path.encode('utf-8'))
+    quote_path = None if not quote_path else quote_path
 
     if item['type'] == 'tree':
         return {
             'upload': node.api_url_for(
                 'gitlab_upload_file',
-                path=quote_path, branch=branch, sha=sha
+                path=None, branch=branch
             ),
             'fetch': node.api_url_for(
                 'gitlab_list_files',
