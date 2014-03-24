@@ -1,30 +1,59 @@
-this.DropboxConfigManager = (function(ko, $) {
+this.DropboxConfigManager = (function(ko, $, bootbox) {
     'use strict';
-
 
     var ViewModel = function(data) {
         var self = this;
+        self.ownerName = data.ownerName;
+        self.nodeHasAuth = data.nodeHasAuth;
+        self.userHasAuth = data.userHasAuth;
         self.selected = ko.observable(data.folder);
         self.folders = ko.observableArray(data.folders);
-        self.ownerName = data.ownerName;
         self.urls = data.urls;
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
+        function onSubmitSuccess(response) {
+            self.message(response.message);
+            self.messageClass('text-success');
+            setTimeout(function() {
+                self.message('');
+            }, 2000);
+        }
+
+        function onSubmitError(xhr, textStatus, error) {
+            self.message('Could not change settings. Please try again later.');
+            self.messageClass('text-danger');
+        }
+
         self.submitSettings = function() {
             $.osf.putJSON(self.urls.config, ko.toJS(self),
-                function(response) {
-                    self.message(response.message);
-                    self.messageClass('text-success');
-                    setTimeout(function() {
-                        self.message('');
-                    }, 2000)
+                onSubmitSuccess, onSubmitError);
+        };
+
+        function sendDeauth() {
+            $.ajax({
+                url: self.urls.deauthorize,
+                type: 'DELETE',
+                success: function() {
+                    window.location.reload();
                 },
-                function(xhr, error, textStatus) {
-                    self.message('Could not change settings. Please try again later.');
+                error: function(xhr, textStatus, error) {
+                    self.message('Could not deauthorize because of an error. Please try again later.');
                     self.messageClass('text-danger');
                 }
-                );
+            });
+        }
+
+        self.deauthorize = function() {
+            bootbox.confirm({
+                title: 'Deauthorize Dropbox?',
+                message: 'Are you sure you want to remove this Dropbox authorization?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        sendDeauth();
+                    }
+                }
+            });
         };
     };
 
@@ -51,4 +80,4 @@ this.DropboxConfigManager = (function(ko, $) {
 
     return DropboxConfigManager;
 
-})(ko, jQuery);
+})(ko, jQuery, bootbox);

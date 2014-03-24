@@ -32,7 +32,15 @@ auth_routes = {
             json_renderer,
         ),
 
-
+        Rule(
+            [
+                '/project/<pid>/dropbox/oauth/',
+                '/project/<pid>/node/<nid>/dropbox/oauth/',
+            ],
+            'get',
+            views.auth.dropbox_oauth_start,
+            json_renderer,
+        ),
     ],
     # TODO(sloria): Remove this prefix for oauth routes? Not sure.
     'prefix': '/api/v1'
@@ -79,6 +87,14 @@ api_routes = {
             '/project/<pid>/node/<nid>/dropbox/config/'],
             'put',
             views.config.dropbox_config_put,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/dropbox/config/',
+            '/project/<pid>/node/<nid>/dropbox/config/'],
+            'delete',
+            views.config.dropbox_deauthorize,
             json_renderer
         ),
 

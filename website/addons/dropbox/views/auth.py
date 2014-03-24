@@ -35,25 +35,12 @@ def get_auth_flow():
     )
 
 
-@must_be_logged_in
-def dropbox_oauth_start(**kwargs):
-    user = get_current_user()
-    if not user:
-        raise HTTPError(http.FORBIDDEN)
-    # If user has already authorized dropbox, flash error message
-    if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
-        flash('You have already authorized Github for this account', 'warning')
-        return redirect(web_url_for('profile_settings'))
-    return redirect(get_auth_flow().start())
+def finish_auth():
+    """View helper for finishing the Dropbox Oauth2 flow. Returns the
+    access_token, dropbox_id, and url_state.
 
-
-def dropbox_oauth_finish(**kwargs):
-    user = get_current_user()
-    node = Node.load(kwargs.get('nid'))
-    if not user:
-        raise HTTPError(http.FORBIDDEN)
-
-    # Handle various errors that may be raised by the dropbox client
+    Handles various errors that may be raised by the Dropbox client.
+    """
     try:
         access_token, dropbox_id, url_state = get_auth_flow().finish(request.args)
     except DropboxOAuth2Flow.BadRequestException:
@@ -68,9 +55,31 @@ def dropbox_oauth_finish(**kwargs):
         return redirect(web_url_for('profile_settings'))
     except DropboxOAuth2Flow.ProviderException:
         raise HTTPError(http.FORBIDDEN)
+    return access_token, dropbox_id, url_state
 
+
+@must_be_logged_in
+def dropbox_oauth_start(**kwargs):
+    user = get_current_user()
+    nid = kwargs.get('pid') or kwargs.get('nid')
+    if nid:
+        session.data['dropbox_auth_nid'] = nid
+    if not user:
+        raise HTTPError(http.FORBIDDEN)
+    # If user has already authorized dropbox, flash error message
+    if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
+        flash('You have already authorized Github for this account', 'warning')
+        return redirect(web_url_for('profile_settings'))
+    return redirect(get_auth_flow().start())
+
+
+def dropbox_oauth_finish(**kwargs):
+    user = get_current_user()
+    node = Node.load(session.data.get('dropbox_auth_nid'))
+    if not user:
+        raise HTTPError(http.FORBIDDEN)
+    access_token, dropbox_id, url_state = finish_auth()
     user_settings = user.get_addon('dropbox') or model.DropboxUserSettings()
-
     user_settings.owner = user
     user_settings.access_token = access_token
     user_settings.dropbox_id = dropbox_id
@@ -84,11 +93,10 @@ def dropbox_oauth_finish(**kwargs):
 
 
 @must_have_addon('dropbox', 'user')
-def dropbox_oauth_delete_user(**kwargs):
-    user_settings = kwargs['user_addon']
-    client = get_client_from_user_settings(user_settings)
+def dropbox_oauth_delete_user(user_addon, **kwargs):
+    client = get_client_from_user_settings(user_addon)
     client.disable_access_token()
-    user_settings.clear_auth()
-    user_settings.save()
+    user_addon.clear_auth()
+    user_addon.save()
     flash('Removed Dropbox token', 'info')
     return {}

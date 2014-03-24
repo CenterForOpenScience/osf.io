@@ -6,9 +6,6 @@
         <button data-bind='click: deleteKey' class="btn btn-danger">
             Delete Access Token
         </button>
-        <div class="help-block">
-            Authorized by Dropbox user
-        </div>
     %else:
         <a href="${api_url_for('dropbox_oauth_start__user')}" class="btn btn-primary">Create Access Token</a>
     % endif

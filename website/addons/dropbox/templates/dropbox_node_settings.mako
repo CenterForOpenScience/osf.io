@@ -4,25 +4,37 @@
 
 
 <div id="dropboxScope">
-    <div class="well well-sm">
-        Authorized by {{ ownerName }}</a>
-        % if user_has_auth:
-            <a id="dropboxRemoveToken" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
-        % endif
+    <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+    <div data-bind='if: nodeHasAuth'>
+        <div class="well well-sm">
+            Authorized by {{ ownerName }}</a>
+            % if user_has_auth:
+                <a data-bind="click: deauthorize"
+                    class="text-danger pull-right">Deauthorize</a>
+            % endif
+        </div><!-- end well -->
+        <div class="row">
+            <div class="col-md-12">
+                <form class="form" data-bind="submit: submitSettings">
+                    <div class="form-group">
+                        <select class="form-control" data-bind="options: folders, value: selected"></select>
+                    </div>
+                    <input type='submit' value="Choose folder" class="btn btn-success" />
+                    <p data-bind="text: message, attr: {class: messageClass}"></p>
+                </form>
+            </div><!-- end col -->
+        </div><!-- end row -->
     </div>
-    <div class="row">
-        <div class="col-md-12">
-            <form class="form" data-bind="submit: submitSettings">
-                <div class="form-group">
-                    <select class="form-control" data-bind="options: folders, value: selected"></select>
-                </div>
-                <input type='submit' value="Choose folder" class="btn btn-success" />
+    <div data-bind="if: userHasAuth && !nodeHasAuth">
+        <a href="#" class="btn btn-primary">
+            Authorize: Import Access Token from Profile
+        </a>
+    </div>
 
-                <p data-bind="attr: {class: messageClass}">
-                    {{message}}
-                </p>
-            </form>
-        </div>
+    <div data-bind="if: !userHasAuth && !nodeHasAuth">
+        <a data-bind="attr: {href: urls.auth}" class="btn btn-primary">
+            Authorize: Create Access Token
+        </a>
     </div>
 </div><!-- end #dropboxScope -->
 
