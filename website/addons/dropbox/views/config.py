@@ -11,7 +11,7 @@ from website.project.decorators import (must_have_addon,
 )
 from framework.exceptions import HTTPError
 
-from website.addons.dropbox.client import get_client
+from website.addons.dropbox.client import get_client, get_node_addon_client
 
 
 logger = logging.getLogger(__name__)
@@ -20,12 +20,30 @@ debug = logger.debug
 
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
-def dropbox_config_get(**kwargs):
+def dropbox_config_get(node_addon, **kwargs):
     user = get_current_user()
-    user_settings = user.get_addon('dropbox')
+    return {
+        'result': serialize_settings(node_addon, user),
+        'status': 200
+    }, 200
+
+
+def get_folders(client):
+    # TODO(sloria): Handle errors
+    metadata = client.metadata('/', list=True)
+    # List each folder, including the root
+    folders = ['/'] + [each['path'] for each in metadata['contents'] if each['is_dir']]
+    return folders
+
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a 
+    DropboxNodeSettings record. Provides the return value for the 
+    dropbox config endpoints.
+    """
+    node = node_settings.owner
+    user_settings = current_user.get_addon('dropbox')
     user_has_auth = user_settings is not None and user_settings.has_auth
-    node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
@@ -33,30 +51,20 @@ def dropbox_config_get(**kwargs):
         'importAuth': node.api_url_for('dropbox_import_user_auth')
 
     }
+    result = {
+        'nodeHasAuth': node_settings.has_auth,
+        'userHasAuth': user_has_auth,
+        'urls': urls
+    }
     if node_settings.has_auth:
-        client = get_client(node_settings.user_settings.owner)
-        # TODO: handle error
-        metadata = client.metadata('/', list=True)
-        # List each folder, including the root
-        folders = ['/'] + [each['path'] for each in metadata['contents'] if each['is_dir']]
-        result = {
-            'folders': folders,
+        # Show available folders
+        cl = client or get_node_addon_client(node_settings)
+        result.update({
+            'folders': get_folders(cl),
             'folder': node_settings.folder if node_settings.folder else '/',
-            'ownerName': node_settings.user_settings.account_info['display_name'],
-            'urls': urls,
-            'nodeHasAuth': node_settings.has_auth,
-            'userHasAuth': user_has_auth
-        }
-    else:
-        result = {
-            'nodeHasAuth': node_settings.has_auth,
-            'userHasAuth': user_has_auth,
-            'urls': urls
-        }
-    return {
-        'result': result,
-        'status': 200
-    }, 200
+            'ownerName': node_settings.user_settings.account_info['display_name']
+        })
+    return result
 
 
 @must_have_permission('write')
@@ -68,7 +76,7 @@ def dropbox_config_put(node_addon, **kwargs):
     node_addon.save()
     return {
         'result': {
-            'folder': folder
+            'folder': folder,
         },
         'message': 'Successfully updated settings.',
         'status': 200
@@ -87,7 +95,11 @@ def dropbox_import_user_auth(auth, node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     node_addon.user_settings = user_addon
     node_addon.save()
-    return {'result': node_addon.to_json(user), 'status': 200}, 200
+    return {
+        'result': serialize_settings(node_addon, user),
+        'message': 'Successfully imported access token from profile.',
+        'status': 200
+    }, 200
 
 # TODO(sloria): Test me
 @must_have_permission('write')
