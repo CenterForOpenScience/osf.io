@@ -11,7 +11,8 @@ USER_SETTINGS_MODEL = model.BadgesUserSettings
 
 ROUTES = [routes.widget_route, routes.api_urls, routes.guid_urls]
 
-BADGES_LOCATION = os.path.join(BASE_PATH, 'badges')
+BADGES_LOCATION = '/static/img/badges'
+BADGES_ABS_LOCATION = os.path.join(BASE_PATH, 'static/img/badges')
 
 SHORT_NAME = 'badges'
 FULL_NAME = 'Badges'
