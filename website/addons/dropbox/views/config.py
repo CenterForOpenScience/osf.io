@@ -28,7 +28,9 @@ def dropbox_config_get(**kwargs):
     }
     if node_settings.has_auth:
         client = get_client(node_settings.user_settings.owner)
+        # TODO: handle error
         metadata = client.metadata('/', list=True)
+        # List each folder, including the root
         folders = ['/'] + [each['path'] for each in metadata['contents'] if each['is_dir']]
         result = {
             'folders': folders,
@@ -57,11 +59,10 @@ def dropbox_config_get(**kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
-def dropbox_config_put(**kwargs):
-    node_settings = kwargs['node_addon']
+def dropbox_config_put(node_addon, **kwargs):
     folder = request.json.get('selected')
-    node_settings.folder = folder
-    node_settings.save()
+    node_addon.folder = folder
+    node_addon.save()
     return {
         'result': {
             'folder': folder

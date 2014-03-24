@@ -74,7 +74,7 @@ class TestConfigViews(DropboxAddonTestCase):
             res = self.app.get(url)
             assert_equal(res.status_code, 200)
             result = res.json['result']
-            expected_folders = [each['path']
+            expected_folders = ['/'] + [each['path']
                 for each in mock_responses['metadata_list']['contents']
                 if each['is_dir']]
             assert_equal(result['folders'], expected_folders)
