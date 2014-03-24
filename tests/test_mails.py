@@ -18,11 +18,11 @@ def test_html_mail():
     assert_equal(rendered.strip(), 'Hello <p>World</p>')
 
 
-@mock.patch('website.mails.framework_send_email.delay')
-def test_send_mail(send_email_delay):
+@mock.patch('website.mails.framework_send_email')
+def test_send_mail(framework_send_email):
     mails.send_mail('foo@bar.com', mails.TEST, 'plain', name='World')
-    assert_true(send_email_delay.called)
-    assert_true(send_email_delay.called_with(
+    assert_true(framework_send_email.called)
+    assert_true(framework_send_email.called_with(
         to_addr='foo@bar.com',
         from_addr=settings.FROM_EMAIL,
         mimetype='plain',
