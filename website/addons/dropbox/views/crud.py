@@ -90,7 +90,9 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     if redirect_url:
         return redirect(redirect_url)
     rendered = render_dropbox_file(file_obj, client=client)
+    revisions = client.revisions(path)
     response = {
+        'revisions': revisions,
         'file_name': get_file_name(path),
         'render_url': node.api_url_for('dropbox_render_file', path=path.strip('/')),
         'download_url': file_obj.download_url,

@@ -17,10 +17,13 @@
             <div class="col-md-12">
                 <form class="form" data-bind="submit: submitSettings">
                     <div class="form-group">
-                        <select class="form-control" data-bind="options: folders, value: selected"></select>
+                        <label for="folder-select">Select folder</label>
+                        <select name="folder-select" class="form-control" data-bind="options: folders, value: selected"></select>
                     </div>
-                    <input type='submit' value="Choose folder" class="btn btn-success" />
-                    <p data-bind="text: message, attr: {class: messageClass}"></p>
+                    <input type='submit' value="Submit" class="btn btn-success" />
+                    <div class="help-block">
+                        <p data-bind="text: message, attr: {class: messageClass}"></p>
+                    </div>
                 </form>
             </div><!-- end col -->
         </div><!-- end row -->

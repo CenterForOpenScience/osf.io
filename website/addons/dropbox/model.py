@@ -19,10 +19,10 @@ class DropboxFile(GuidFile):
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
+
     #: Stored metadata from the dropbox API
     #: See https://www.dropbox.com/developers/core/docs#metadata
-    metadata =fields.DictionaryField(required=False)
-
+    metadata = fields.DictionaryField(required=False)
 
     @property
     def url(self):

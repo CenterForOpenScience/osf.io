@@ -11,7 +11,7 @@ from website.project.decorators import (must_have_addon,
 )
 from framework.exceptions import HTTPError
 
-from website.addons.dropbox.client import get_client, get_node_addon_client
+from website.addons.dropbox.client import get_node_addon_client
 
 
 logger = logging.getLogger(__name__)
