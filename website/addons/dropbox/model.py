@@ -14,6 +14,7 @@ from website.addons.dropbox.client import get_client, get_node_addon_client
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
+
 class DropboxFile(GuidFile):
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
@@ -135,15 +136,29 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return self.user_settings and self.user_settings.has_auth
+        return bool(self.user_settings and self.user_settings.has_auth)
 
-    def delete(self, save=True):
-        super(DropboxNodeSettings, self).delete(save=False)
-        if save:
-            self.save()
+    def deauthorize(self, auth):
+        node = self.owner
+        folder = self.folder
+        self.user_settings = None
+        self.folder = None
+        self.owner.add_log(
+            action='dropbox_node_deauthorized',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'folder': folder
+            },
+            auth=auth,
+        )
 
-    # TODO
     def to_json(self, user):
+        """Return a dictionary representation of the settings.
+
+        Provides the mako context for the dropbox_node_settings.mako
+        template.
+        """
         ret = super(DropboxNodeSettings, self).to_json(user)
         if not self.user_settings:
             self.folder = '/'

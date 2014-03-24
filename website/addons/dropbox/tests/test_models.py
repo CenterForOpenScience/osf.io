@@ -4,6 +4,7 @@ import mock
 from nose.tools import *  # PEP8 asserts
 from slugify import slugify
 
+from framework.auth.decorators import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
@@ -90,6 +91,7 @@ class TestUserSettingsModel(DbTestCase):
         result = user_settings.to_json()
         assert_equal(result['has_auth'], user_settings.has_auth)
 
+
 class TestDropboxNodeSettingsModel(DbTestCase):
 
     def setUp(self):
@@ -97,6 +99,11 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         self.user.add_addon('dropbox')
         self.user.save()
         self.user_settings = self.user.get_addon('dropbox')
+        self.project = ProjectFactory()
+        self.node_settings = DropboxNodeSettingsFactory(
+            user_settings=self.user_settings,
+            owner=self.project
+        )
 
     def test_fields(self):
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
@@ -115,9 +122,7 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_true(settings.has_auth)
 
     def test_to_json(self):
-        settings = DropboxNodeSettingsFactory(
-            user_settings=self.user_settings
-        )
+        settings = self.node_settings
         user = UserFactory()
         result = settings.to_json(user)
         assert_equal(result['addon_short_name'], 'dropbox')
@@ -126,9 +131,23 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_equal(result['is_owner'], settings.user_settings.owner == user)
         assert_equal(result['owner_info'], settings.user_settings.account_info)
 
+    def test_deauthorize(self):
+        assert_true(self.node_settings.user_settings)
+        assert_true(self.node_settings.folder)
+        self.node_settings.deauthorize(auth=Auth(self.user))
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.folder, None)
+
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dropbox_node_deauthorized')
+        params = last_log.params
+        assert_in('node', params)
+        assert_in('project', params)
+        assert_in('folder', params)
+
 
 class TestDropboxGuidFile(DbTestCase):
-
 
     def test_web_url(self):
         project = ProjectFactory()
