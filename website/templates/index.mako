@@ -20,7 +20,7 @@
         </div>
     </div>
     <div id="hpContainerTwo">
-        <div class="header">
+        <div class="header center">
             <p class="headOne">What can the OSF do for you?</p>
             <p class="subHeadOne">Provide features to increase the efficiency and effectiveness of your research</p>
         </div>
@@ -94,14 +94,17 @@
             </script>
         </div>
     </div>
+    <div class="spacer dashes">
+
+    </div>
     <div id="hpContainerThree">
-        <div class="header">
+        <div class="header center">
             <p class="headOne">Free and easy to use</p>
             <p class="subHeadOne">Follow these simple steps to get started. We'll be <a class="hpLink" href="mailto:contact@osf.io">here to help</a> the whole way.</p>
             <div class="col-md-12 padded">
-                <p class="subHeadThree steps"><a class="hpLink" href="https://osf.io/account/">Sign up.</a></p>
-                <p class="subHeadThree steps"><a class="hpLink" href="https://osf.io/getting-started/">Learn how to build a project.</a></p>
-                <p class="subHeadThree steps"><a class="hpLink" href="https://osf.io/explore/activity/">Get inspired.</a></p>
+                <p class="subHeadThree  steps"><a class="hpLink" href="https://osf.io/account/">Sign up.</a></p>
+                <p class="subHeadThree  steps"><a class="hpLink" href="https://osf.io/getting-started/">Learn how to build a project.</a></p>
+                <p class="subHeadThree  steps"><a class="hpLink" href="https://osf.io/explore/activity/">Get inspired.</a></p>
             </div>
             <p class="stepsText">Want more than an answer to a quick question? Feel free to <a class="hpLink" href="mailto:contact@osf.io">email us</a> to schedule a help session or tutorial for you and your collaborators.<br>OSF is backed by the non-profit <a class="hpLink" href="http://centerforopenscience.org/">Center for Open Science</a>.</p>
         </div>
