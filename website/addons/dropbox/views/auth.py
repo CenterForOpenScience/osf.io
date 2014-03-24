@@ -61,6 +61,8 @@ def finish_auth():
 @must_be_logged_in
 def dropbox_oauth_start(**kwargs):
     user = get_current_user()
+    # Store the node ID on the session in order to get the correct redirect URL
+    # upon finishing the flow
     nid = kwargs.get('pid') or kwargs.get('nid')
     if nid:
         session.data['dropbox_auth_nid'] = nid
@@ -75,9 +77,9 @@ def dropbox_oauth_start(**kwargs):
 
 def dropbox_oauth_finish(**kwargs):
     user = get_current_user()
-    node = Node.load(session.data.get('dropbox_auth_nid'))
     if not user:
         raise HTTPError(http.FORBIDDEN)
+    node = Node.load(session.data.get('dropbox_auth_nid'))
     access_token, dropbox_id, url_state = finish_auth()
     user_settings = user.get_addon('dropbox') or model.DropboxUserSettings()
     user_settings.owner = user
@@ -88,6 +90,7 @@ def dropbox_oauth_finish(**kwargs):
 
     flash('Successfully authorized Dropbox', 'success')
     if node:
+        del session.data['dropbox_auth_nid']
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
 
