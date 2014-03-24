@@ -18,7 +18,7 @@ from framework.exceptions import HTTPError
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
-    render_dropbox_file, get_file_name, metadata_to_hgrid
+    render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path
 )
 
 logger = logging.getLogger(__name__)
@@ -78,6 +78,15 @@ def dropbox_get_versions(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
+def dropbox_get_revisions(path, node_addon, auth, **kwargs):
+    client = get_node_addon_client(node_addon)
+    return {
+        'result': client.revisions(path),
+        'status': 200
+    }, 200
+
+@must_be_contributor_or_public
+@must_have_addon('dropbox', 'node')
 def dropbox_view_file(path, node_addon, auth, **kwargs):
     if not path:
         raise HTTPError(http.NOT_FOUND)
@@ -90,11 +99,11 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     if redirect_url:
         return redirect(redirect_url)
     rendered = render_dropbox_file(file_obj, client=client)
-    revisions = client.revisions(path)
+    cleaned_path = clean_path(path)
     response = {
-        'revisions': revisions,
+        'revisionsUrl': node.api_url_for('dropbox_get_revisions', path=cleaned_path),
         'file_name': get_file_name(path),
-        'render_url': node.api_url_for('dropbox_render_file', path=path.strip('/')),
+        'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
         'download_url': file_obj.download_url,
         'rendered': rendered,
     }
