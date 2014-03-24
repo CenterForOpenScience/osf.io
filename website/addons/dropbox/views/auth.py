@@ -70,7 +70,7 @@ def dropbox_oauth_start(**kwargs):
         raise HTTPError(http.FORBIDDEN)
     # If user has already authorized dropbox, flash error message
     if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
-        flash('You have already authorized Github for this account', 'warning')
+        flash('You have already authorized Dropbox for this account', 'warning')
         return redirect(web_url_for('profile_settings'))
     return redirect(get_auth_flow().start())
 
@@ -81,7 +81,10 @@ def dropbox_oauth_finish(**kwargs):
         raise HTTPError(http.FORBIDDEN)
     node = Node.load(session.data.get('dropbox_auth_nid'))
     access_token, dropbox_id, url_state = finish_auth()
-    user_settings = user.get_addon('dropbox') or model.DropboxUserSettings()
+    # Make sure user has dropbox enabled
+    user.add_addon('dropbox')
+    user.save()
+    user_settings = user.get_addon('dropbox')
     user_settings.owner = user
     user_settings.access_token = access_token
     user_settings.dropbox_id = dropbox_id
