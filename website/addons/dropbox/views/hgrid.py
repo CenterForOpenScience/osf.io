@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import logging
 
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
@@ -8,7 +7,7 @@ from website.util import rubeus
 from website.addons.dropbox.client import get_node_client
 from website.addons.dropbox.utils import (
     clean_path, list_dropbox_files, metadata_to_hgrid,
-    build_dropbox_urls, clean_path
+    build_dropbox_urls
 )
 
 logger = logging.getLogger(__name__)
@@ -17,11 +16,11 @@ debug = logger.debug
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
-def dropbox_hgrid_data_contents(**kwargs):
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
+def dropbox_hgrid_data_contents(node_addon, **kwargs):
+    """Return the Rubeus/HGrid-formatted  response for a folder's contents."""
+    node = node_addon.owner
     auth = kwargs['auth']
-    path = kwargs.get('path', node_settings.folder)
+    path = kwargs.get('path', node_addon.folder)
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
@@ -33,6 +32,10 @@ def dropbox_hgrid_data_contents(**kwargs):
 
 
 def dropbox_addon_folder(node_settings, auth, **kwargs):
+    """Return the Rubeus/HGrid-formatted response for the root folder only."""
+    # Quit if node settings does not have authentication
+    if not node_settings.has_auth:
+        return None
     node = node_settings.owner
     path = clean_path(node_settings.folder)
     return [
