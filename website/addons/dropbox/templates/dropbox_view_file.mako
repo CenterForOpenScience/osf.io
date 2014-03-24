@@ -3,7 +3,7 @@
 
 
 <%def name="file_versions()">
-    <table class="table" id="fileVersionHistory">
+    <table class="table" id="fileVersionScope">
 
         <thead>
             <tr>
@@ -21,32 +21,13 @@
 
     </table>
 
-<script>
-
-    $(function() {
-        var url = '${revisionsUrl}';
-        var Revision = function(data) {
-            this.rev = data.rev;
-            this.modified = new FormattableDate(data.rev.modified);
-        }
-        var RevisionViewModel = function(url) {
-            var self = this;
-            self.revisions = ko.observableArray([]);
-            $.ajax({
-                url: url,
-                type: 'GET', dataType: 'json',
-
-            })
-            .done(function(response) {
-                self.revisions(ko.utils.arrayMap(response.result, function(rev) {
-                    return new Revision(rev);
-                }));
-            });
-        }
-        var $elem = $('#fileVersionHistory');
-        ko.applyBindings(new RevisionViewModel(url), $elem[0]);
-    })
-</script>
+    <script src="/addons/static/dropbox/revisions.js"></script>
+    <script>
+        $(function() {
+            var url = '${revisionsUrl}';
+            var revisionTable = new RevisionTable('#fileVersionScope', url);
+        });
+    </script>
 
 </%def>
 
