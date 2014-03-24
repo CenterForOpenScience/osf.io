@@ -1,3 +1,4 @@
+import urllib
 import calendar
 from datetime import datetime
 
@@ -24,7 +25,7 @@ def build_badge(issuer, badge):
     return new._id
 
 
-def build_assertion(issuer, badge, node, verify_method='hosted'):
+def build_assertion(issuer, badge, node, evidence, verify_method='hosted'):
     assertion = BadgeAssertion()
     assertion.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))  # Todo make an int field?
     assertion.badge_id = badge._id
@@ -39,6 +40,8 @@ def build_assertion(issuer, badge, node, verify_method='hosted'):
         'type': 'hosted',
         'url': '{}{}/'.format(DOMAIN, assertion._id)  # is so meta even this acronym
     }
+    if evidence:
+        assertion.evidence = evidence
     assertion.save()
     return assertion._id
 
@@ -50,7 +53,3 @@ def build_issuer(name, url, extra={}):
     }
     issuer.update(extra)
     return issuer
-
-
-def build_identity():
-    pass

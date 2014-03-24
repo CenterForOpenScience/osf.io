@@ -22,6 +22,10 @@ api_urls = {
             '/project/<pid>/badges/award/',
             '/project/<pid>/node/<nid>/badges/award/',
         ], 'post', views.award_badge, json_renderer),
+        Rule([
+            '/project/<pid>/badges/revoke/',
+            '/project/<pid>/node/<nid>/badges/revoke/',
+        ], 'post', views.revoke_badge, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -49,5 +53,8 @@ guid_urls = {
         Rule([
             '/badge/organization/<uid>/json/',
         ], 'get', views.get_organization_json, json_renderer),
+        Rule([
+            '/badge/organization/<uid>/revoked/json/',
+        ], 'get', views.get_revoked_json, json_renderer),
     ]
 }

@@ -1,23 +1,30 @@
 <div class="addon-widget" name="${short_name}">
+<script src="/addons/static/badges/awardBadge.js"></script>
+<script src="/addons/static/badges/png-baker.js"></script>
+
 %if complete:
 
     <h3 class="addon-widget-header">
         % if can_issue and configured:
-            <button class="pull-right btn btn-success btn-popover">
+            <button class="pull-right btn btn-success" id="awardBadge">
                 <i class="icon-plus"></i>
                 Award
             </button>
         % endif
           <span>${full_name}</span>
     </h3>
-
 <div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
     <ul class="two-col" id="badgeList">
         %for assertion in assertions:
         <li>
-          <a class="pull-left" href="/${assertion['uid']}/">
-            <img src="${assertion['image']}" width="64px" height="64px">
+          <a class="pull-left" href="/${assertion['uid']}/" style="margin-right: 5px;">
+            <img src="${assertion['image']}" width="64px" height="64px" class="open-badge" badge-url="/${assertion['uid']}/json/" >
           </a>
+          %if assertion['issuer_id'] == uid:
+            <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion['uid']}" type="button">
+              <i class="icon-minus"></i>
+            </button>
+          %endif
             <h5>${assertion['name']}</h5>
             ${assertion['criteria']}
         </li>
@@ -28,15 +35,16 @@
 
 $(document).ready(function(){
 
-    $('.btn-popover').editable({
+    $('#awardBadge').editable({
       name:  'title',
       title: 'Award Badge',
       display: false,
       highlight: false,
       placement: 'right',
-      type: 'select',
+      showbuttons: 'bottom',
+      type: 'AwardBadge',
       value: '${badges[0]['id']}',
-      source: [
+      badges: [
         %for badge in badges:
           {value: '${badge['id']}', text: '${badge['name']}'},
         %endfor
@@ -49,14 +57,55 @@ $(document).ready(function(){
       url: nodeApiUrl + 'badges/award/',
       params: function(params){
         // Send JSON data
-        return JSON.stringify({badgeid: params.value});
+        return JSON.stringify(params.value);
       },
       success: function(data){
         document.location.reload(true);
       },
       pk: 'newBadge'
     });
+
+    $('.revoke-badge').editable({
+      type: 'text',
+      pk: 'revoke',
+      title: 'Revoke this badge?',
+      placeholder: 'Reason',
+      display: false,
+      validate: function(value) {
+        if($.trim(value) == '') return 'A reason is required';
+      },
+      ajaxOptions: {
+        'type': 'POST',
+        "dataType": "json",
+        "contentType": "application/json"
+      },
+      url: nodeApiUrl + 'badges/revoke/',
+      params: function(params){
+        // Send JSON data
+        var uid = $(this).attr('badge-uid')
+        return JSON.stringify({reason: params.value, id: uid});
+      },
+      success: function(data){
+        document.location.reload(true);
+      },
+    });
+
+    $('.open-badge').each(function() {
+      $(this).load(function() {
+        var badge = this
+        $.ajax({
+          method: 'get',
+          url: $(this).attr('badge-url'),
+          success: function(rv) {
+            bakeBadge(badge, rv)
+            $(badge).unbind('load');
+          }
+        })
+      });
+    });
+
 });
+
 </script>
 
 <style>
@@ -75,7 +124,15 @@ $(document).ready(function(){
     border:2px #CCC solid;
     border-radius:5px;
     vertical-align:top;
-  }
+}
+
+.btn-success.editable:hover {
+    background-color: #419641;
+}
+
+.btn-danger.editable:hover {
+    background-color: #d2322d;
+}
 </style>
 %else:
         <div mod-meta='{

@@ -4,7 +4,7 @@ import httplib as http
 from framework.exceptions import HTTPError
 from framework.flask import request
 
-from website.models import User
+from website.models import User, Node
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -32,6 +32,7 @@ def badges_widget(*args, **kwargs):
         badger = auth.user.get_addon('badges')
         if badger:
             ret.update(badger.to_json(auth.user))
+            ret['uid'] = auth.user._id
 
     ret.update(badges.config.to_json())
     return ret
@@ -42,6 +43,7 @@ def badges_widget(*args, **kwargs):
 def award_badge(*args, **kwargs):
     auth = kwargs.get('auth', None)
     badgeid = request.json.get('badgeid', None)
+    evidence = request.json.get('evidence', None)
     badge_bag = kwargs['node_addon']
     if not auth:
         raise HTTPError(http.BAD_REQUEST)
@@ -49,16 +51,20 @@ def award_badge(*args, **kwargs):
     if not awarder or not awarder.can_issue:
         raise HTTPError(http.FORBIDDEN)
     badge = Badge.load(badgeid)
-    return badge_bag.add_badge(build_assertion(awarder, badge, badge_bag.owner))
+    return badge_bag.add_badge(build_assertion(awarder, badge, badge_bag.owner, evidence))
 
 
 def get_assertion(*args, **kwargs):
     _id = kwargs.get('aid', None)
     if _id:
         assertion = BadgeAssertion.load(_id)
-        data = assertion.to_json()
-        data['batter'] = json.dumps(assertion.to_openbadge())
-        return data
+        if not assertion.revoked:
+            data = assertion.to_json()
+            data['batter'] = assertion.to_openbadge()
+            data['project_name'] = Node.load(data['recipient']['identity']).title
+            data['contributors'] = Node.load(data['recipient']['identity']).contributors
+            return data
+        return {'revoked': True}, 410
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -66,7 +72,9 @@ def get_assertion_json(*args, **kwargs):
     _id = kwargs.get('aid', None)
     if _id:
         assertion = BadgeAssertion.load(_id)
-        return assertion.to_openbadge()
+        if not assertion.revoked:
+            return assertion.to_openbadge()
+        return {'revoked': True}, 410
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -102,12 +110,33 @@ def get_badge_json(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def get_revoked(*args, **kwargs):
+@must_be_logged_in
+@must_be_valid_project
+@must_have_addon('badges', 'user')
+@must_have_addon('badges', 'node')
+def revoke_badge(*args, **kwargs):
+    uid = kwargs['auth'].user._id
+    _id = request.json.get('id', None)
+    reason = request.json.get('reason', None)
+    if _id and reason:
+        assertion = BadgeAssertion.load(_id)
+        if assertion:
+            badge = Badge.load(assertion.badge_id)
+            if badge and badge.creator == uid:
+                assertion.revoked = True
+                User.load(uid).get_addon('badges').revocation_list[_id] = reason
+                assertion.save()
+                User.load(uid).get_addon('badges').save()
+                return 200
+    raise HTTPError(http.BAD_REQUEST)
+
+
+def get_revoked_json(*args, **kwargs):
     uid = kwargs.get('uid', None)
     if uid:
-        user = '' #TODO load user
+        user = User.load(uid)  # TODO load user
         badger = user.get_addon('badges')
-        return json.dumps(badger.revocation_list)
+        return badger.revocation_list
     raise HTTPError(http.BAD_REQUEST)
 
 

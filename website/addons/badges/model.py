@@ -1,6 +1,7 @@
 """
 
 """
+import json
 from datetime import datetime
 
 from framework import fields
@@ -34,6 +35,7 @@ class Badge(GuidStoredObject):
             'image': self.image,
             'criteria': self.criteria,
             'issuer': '{0}badge/organization/{1}/'.format(DOMAIN, self.creator),
+            'issuer_id': self.creator,
             'issuer_name': self.creator_name,
             'url': '{0}{1}/'.format(DOMAIN, self._id),
         }
@@ -88,7 +90,7 @@ class BadgeAssertion(GuidStoredObject):
     expires = fields.StringField()
 
     #Custom fields
-    revoked = fields.BooleanField()
+    revoked = fields.BooleanField(default=False)
 
     def to_json(self):
         #Mozilla Required Fields
@@ -155,8 +157,9 @@ class BadgesNodeSettings(AddonNodeSettingsBase):
         ret = []
         for assertion in self.assertions:
             temp = BadgeAssertion.load(assertion).to_json()
-            temp.update(Badge.load(temp['badge']).to_json())
-            ret.append(temp)
+            if not BadgeAssertion.load(assertion).revoked:
+                temp.update(Badge.load(temp['badge']).to_json())
+                ret.append(temp)
         return ret
 
 
@@ -193,7 +196,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
         if self.url:
             ret['url'] = self.url
         if self.revocation_list:
-            ret['revocationList'] = self.revocation_list()
+            ret['revocationList'] = self.revocation_list
         return ret
 
     @property

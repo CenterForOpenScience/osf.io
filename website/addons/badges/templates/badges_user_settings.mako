@@ -12,6 +12,7 @@ You have not created any Badges.
           </a>
           <div class="media-body">
             <h4 class="media-heading">${badge['name']}<small> ${badge['description']} </small></h4>
+
             ${badge['criteria']}
           </div>
         </li>
@@ -33,7 +34,7 @@ You have not created any Badges.
   <input type="url" name="image" class="form-control" placeholder="Image of Organization (Optional)"> <br />
 %endif
 
-
+<script type="text/javascript" src="/static/vendor/dropzone/dropzone.js"></script>
 <script type="text/javascript">
 //TODO Make bootbox into a form? [with submit]
 //TODO Image uploading
@@ -41,9 +42,9 @@ You have not created any Badges.
         $('#newBadge').click(function(){
             bootbox.dialog({
               message: '<form id="badgeForm">' +
-              '<input type="text" class="form-control" name="badgeName" placeholder="Badge Name"><br>' +
-              '<input type="text" class="form-control" name="description" placeholder="Description"><br>' +
-              '<input type="url" class="form-control" name="imageurl" placeholder="Image URL" dragable="true"><br>' +
+              '<input type="text" class="form-control" name="badgeName" placeholder="Badge Name"><br />' +
+              '<input type="text" class="form-control" name="description" placeholder="Description"><br />' +
+              '<input type="url" class="form-control" name="imageurl" placeholder="Image URL"><br />' +
               '<textarea class="form-control" name="criteria" placeholder="Criteria" />' +
               '</form>',
               title: 'Create a New Badge',
