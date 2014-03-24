@@ -178,15 +178,16 @@ def node_registrations(**kwargs):
     return _view_project(node_to_use, auth, primary=True)
 
 
+
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
-
     node_to_use = node or project
     return _view_project(node_to_use, auth, primary=True)
+
 
 
 @must_be_valid_project
@@ -195,6 +196,9 @@ def node_setting(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+
+    if not node.can_edit(auth):
+        raise HTTPError(http.FORBIDDEN)
 
     rv = _view_project(node, auth, primary=True)
 
@@ -304,7 +308,10 @@ def project_reorder_components(**kwargs):
 def project_statistics(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
+
 
 
 ###############################################################################
@@ -443,6 +450,17 @@ def view_project(**kwargs):
     return rv
 
 
+@must_be_valid_project # returns project
+@must_be_contributor
+def remove_private_link(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    link = request.json['private_link']
+    try:
+        node_to_use.remove_private_link(link)
+    except ValueError:
+        raise HTTPError(http.NOT_FOUND)
+
+
 # TODO: Split into separate functions
 def _render_addon(node):
 
@@ -465,6 +483,7 @@ def _render_addon(node):
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
+
     project.view.mako.
 
     """
@@ -521,6 +540,8 @@ def _view_project(node, auth, primary=False):
             'fork_count': len(node.fork_list),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
+            'private_links': node.private_links,
+            'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
@@ -538,7 +559,8 @@ def _view_project(node, auth, primary=False):
             'api_url': parent.api_url if parent else '',
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
-            'is_contributor': parent.is_contributor(user) if parent else ''
+            'is_contributor': parent.is_contributor(user) if parent else '',
+            'can_view': (auth.private_key in parent.private_links) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -711,6 +733,22 @@ def get_registrations(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     registrations = node_to_use.node__registrations
     return _render_nodes(registrations)
+
+
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def project_generate_private_link_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_ids = request.json.get('node_ids', [])
+    link = node_to_use.add_private_link()
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        node.add_private_link(link)
+
+    return {'status': 'success'}, 201
 
 
 def _serialize_node_search(node):

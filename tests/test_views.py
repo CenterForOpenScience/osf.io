@@ -8,10 +8,16 @@ import datetime as dt
 import mock
 import httplib as http
 
+
+
 from nose.tools import *  # PEP8 asserts
+from tests.test_features import requires_solr
 from webtest_plus import TestApp
 from webtest.app import AppError
+from werkzeug.wrappers import Response
+
 from framework import auth
+from framework.exceptions import HTTPError
 from framework.auth.model import User
 
 import website.app
@@ -28,9 +34,9 @@ from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
+from website.project.decorators import choose_key, check_can_access
 
-
-from tests.base import DbTestCase, fake, capture_signals
+from tests.base import DbTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -42,6 +48,107 @@ app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
+lookup = URLLookup(app)
+
+class TestViewingProjectWithPrivateLink(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+        self.user = AuthUserFactory()  # Is NOT a contributor
+        self.project = ProjectFactory(is_public=False)
+        self.key = self.project.add_private_link()
+        self.project.save()
+
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_has_private_link_key(self):
+        res = self.app.get(self.project_url,{'key': self.key})
+        assert_equal(res.status_code, 200)
+
+    def test_not_logged_in_no_key(self):
+        res = self.app.get(self.project_url, {'key': None})
+        assert_is_redirect(res)
+        res = res.follow()
+        assert_equal(res.request.path, lookup('web', 'auth_login'))
+
+    def test_logged_in_no_private_key(self):
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+
+    def test_logged_in_has_key(self):
+        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_has_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        assert_is_redirect(res)
+        redirected = res.follow()
+        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.status_code, 200)
+
+    def test_logged_in_with_no_key_ring(self):
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        key2 = self.project.add_private_link()
+        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
+        assert_equal(res.request.GET['key'], key2)
+        assert_equal(res.status_code, 200)
+
+    @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
+    def test_prepare_private_key(self):
+        res = self.app.get(self.project_url, {'key': self.key})
+
+        res = res.click('Registrations')
+
+        assert_is_redirect(res)
+        res = res.follow()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.GET['key'], self.key)
+
+    def test_choose_key(self):
+        # User is not logged in, goes to route with a private key
+        res = choose_key(
+            key=self.key,
+            key_ring=set(),
+            api_node='doesntmatter',
+            node=self.project,
+            auth=Auth(None)
+        )
+        assert_is(res, None)
+
+    def test_choose_key_form_key_ring(self):
+        with app.test_request_context():
+            res = choose_key('nope', key_ring=set([self.key]), node=self.project,
+                auth=Auth(None))
+        assert_true(isinstance(res, Response))
+
+    def test_check_can_access_valid(self):
+        contributor = AuthUserFactory()
+        self.project.add_contributor(contributor, auth=Auth(self.project.creator))
+        self.project.save()
+        assert_true(check_can_access(self.project, contributor))
+
+    def test_check_user_access_invalid(self):
+        noncontrib = AuthUserFactory()
+        with assert_raises(HTTPError):
+            check_can_access(self.project, noncontrib)
+
+    def test_check_user_access_if_user_is_None(self):
+        assert_false(check_can_access(self.project, None))
 
 class TestProjectViews(DbTestCase):
 
@@ -1424,9 +1531,10 @@ class TestFileViews(DbTestCase):
 
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        with app.test_request_context():
+            res = self.app.get(url, auth=self.user.auth).maybe_follow()
+            expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.status_code, http.OK)
-        expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
         assert_in('tree_css', res.json)
@@ -1798,6 +1906,7 @@ class TestTagViews(DbTestCase):
         assert_equal(res.status_code, 200)
 
 
+@requires_solr
 class TestSearchViews(DbTestCase):
 
     def setUp(self):

@@ -84,14 +84,34 @@ NodeActions.useAsTemplate = function() {
         success: function(data) {
             window.location = data['url']
         },
-        fail: function() {
+        error: function(response) {
             $.osf.unblock();
-            bootbox.alert('Templating failed');
+            $.osf.handleJSONError(response);
         }
     });
 };
 
 $(function(){
+
+    $(".remove-private-link").on("click",function(){
+        var me = $(this);
+        var data_to_send={
+            'private_link': me.attr("data-link")
+        };
+        bootbox.confirm('Are you sure to remove this private link?', function(result) {
+            if (result) {
+                $.ajax({
+                    type: "delete",
+                    url: nodeApiUrl + "private_link/",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data_to_send)
+                }).done(function(response) {
+                    window.location.reload();
+                });
+            }
+         });
+    });
 
     $('#newComponent form').on('submit', function(e) {
 
@@ -175,8 +195,9 @@ NodeActions.reorderChildren = function(idList, elm) {
         data: JSON.stringify({'new_list': idList}),
         contentType: 'application/json',
         dataType: 'json',
-        fail: function() {
+        error: function(response) {
             $(elm).sortable('cancel');
+            $.osf.handleJSONError(response);
         }
     });
 };

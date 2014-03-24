@@ -26,6 +26,13 @@ Available variables:
 def server():
     run("python main.py")
 
+def format_context(context):
+    lines = []
+    for name, obj in context.items():
+        line = "{name}: {obj!r}".format(**locals())
+        lines.append(line)
+    return '\n'.join(lines)
+
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
@@ -131,6 +138,13 @@ def test():
     """
     test_osf()
 
+
+@task
+def test_all():
+    test_osf()
+    test_addons()
+
+
 # TODO: user bower once hgrid is released
 @task
 def get_hgrid():
@@ -151,7 +165,7 @@ def get_hgrid():
 
 
 @task
-def addon_requirements():
+def addon_requirements(mfr=1):
     """Install all addon requirements."""
     addon_root = 'website/addons'
     for directory in os.listdir(addon_root):
@@ -163,7 +177,8 @@ def addon_requirements():
                 run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, directory), pty=True)
             except IOError:
                 pass
-    mfr_requirements()
+    if mfr:
+        mfr_requirements()
     print('Finished')
 
 
