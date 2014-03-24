@@ -334,6 +334,10 @@ this.ContribAdder = (function($, global, undefined) {
         self.$element.on('hidden.bs.modal', function() {
             self.viewModel.clear();
         });
+        // Load recently added contributors every time the modal is activated.
+        self.$element.on('shown.bs.modal', function() {
+            self.viewModel.recentlyAdded();
+        });
     };
 
     return ContribAdder;

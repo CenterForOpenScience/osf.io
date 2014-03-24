@@ -26,23 +26,6 @@ def disable_addon(**kwargs):
     return {'deleted': deleted}
 
 
-@decorators.must_be_contributor_or_public
-def get_addon_config(**kwargs):
-
-    user = kwargs['auth'].user
-    node = kwargs['node'] or kwargs['project']
-
-    addon_name = kwargs.get('addon')
-    if addon_name is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    addon = node.get_addon(addon_name)
-    if addon is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    return addon.to_json(user)
-
-
 @must_be_logged_in
 def get_addon_user_config(**kwargs):
 

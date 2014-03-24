@@ -57,6 +57,7 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+    private_keys = fields.StringField(list=True)
 
     # Per-project unclaimed user data:
     # Format: {
@@ -301,6 +302,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # Revoke token
             del self.email_verifications[token]
             self.save()
+            # Note: We must manually update Solr here because the fullname
+            # field has not changed
+            self.update_solr()
             return True
         else:
             return False
