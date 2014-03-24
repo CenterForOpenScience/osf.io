@@ -152,26 +152,3 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             },
             auth=auth,
         )
-
-    def to_json(self, user):
-        """Return a dictionary representation of the settings.
-
-        Provides the mako context for the dropbox_node_settings.mako
-        template.
-        """
-        ret = super(DropboxNodeSettings, self).to_json(user)
-        if not self.user_settings:
-            self.folder = '/'
-            self.user_settings = user.get_addon('dropbox')
-            self.save()
-        ret.update({
-            'folder': self.folder or '',
-            'node_has_auth': self.has_auth,
-            'is_owner': False,
-            'user_has_auth': self.user_settings.owner == user,
-            #  TODO
-            # 'owner_url': '',
-            'owner_info': self.user_settings.account_info,
-        })
-
-        return ret
