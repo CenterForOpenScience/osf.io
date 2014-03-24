@@ -1,5 +1,6 @@
 <div class="addon-widget" name="${short_name}">
 <script src="/addons/static/badges/awardBadge.js"></script>
+<script src="/addons/static/badges/bake-badges.js"></script>
 <script src="/addons/static/badges/png-baker.js"></script>
 
 %if complete:
@@ -13,28 +14,30 @@
         % endif
           <span>${full_name}</span>
     </h3>
-<div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
-    <ul class="two-col" id="badgeList">
-        %for assertion in assertions:
-        <li>
-          <a class="pull-left" href="/${assertion['uid']}/" style="margin-right: 5px;">
-            <img src="${assertion['image']}" width="64px" height="64px" class="open-badge" badge-url="/${assertion['uid']}/json/" >
-          </a>
-          %if assertion['issuer_id'] == uid:
-            <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion['uid']}" type="button">
-              <i class="icon-minus"></i>
-            </button>
-          %endif
-            <h5>${assertion['name']}</h5>
-            ${assertion['criteria']}
-        </li>
-        %endfor
-    </ul>
-</div>
+%if len(assertions) > 0:
+  <div style="max-height:200px; overflow-y: auto; overflow-x: hidden;">
+      <ul class="two-col" id="badgeList">
+          %for assertion in assertions:
+          <li>
+            <a class="pull-left" href="/${assertion['uid']}/" style="margin-right: 5px;">
+              <img src="${assertion['image']}" width="64px" height="64px" class="open-badge" badge-url="/${assertion['uid']}/json/" >
+            </a>
+            %if assertion['issuer_id'] == uid:
+              <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion['uid']}" type="button">
+                <i class="icon-minus"></i>
+              </button>
+            %endif
+              <h5>${assertion['name']}</h5>
+              ${assertion['criteria']}
+          </li>
+          %endfor
+      </ul>
+  </div>
+%endif
 <script>
 
 $(document).ready(function(){
-
+% if can_issue and configured:
     $('#awardBadge').editable({
       name:  'title',
       title: 'Award Badge',
@@ -89,21 +92,7 @@ $(document).ready(function(){
         document.location.reload(true);
       },
     });
-
-    $('.open-badge').each(function() {
-      $(this).load(function() {
-        var badge = this
-        $.ajax({
-          method: 'get',
-          url: $(this).attr('badge-url'),
-          success: function(rv) {
-            bakeBadge(badge, rv)
-            $(badge).unbind('load');
-          }
-        })
-      });
-    });
-
+%endif
 });
 
 </script>

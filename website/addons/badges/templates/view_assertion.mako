@@ -2,10 +2,12 @@
 <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
 <script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js"></script>
 <script src="/addons/static/badges/png-baker.js"></script>
+<script src="/addons/static/badges/bake-badges.js"></script>
+
 <br />
 <div class="media well">
   <a class="pull-left" href="json/">
-    <img class="media-object" src="${image}" width="150px" height="150px" id="image">
+    <img class="media-object open-badge" badge-url="json/" src="${image}" width="150px" height="150px" id="image">
   </a>
   <div class="media-body">
     <h4 class="media-heading"> <a href="${url}">${name}</a>
@@ -29,27 +31,3 @@
 
   </ul>
 </div>
-
-<script type="text/javascript">
-$('#image').load(function() {
-  self = $(this);
-  $.ajax({
-    method: 'GET',
-    url: 'json/',
-    success: function(rv) {
-      var c = document.createElement("canvas");
-      c.width = 250;
-      c.height= 250;
-      var ctx = c.getContext("2d");
-      var img = document.getElementById("image");
-      ctx.drawImage(img, 0, 0, 250, 250);
-      var baker = new PNGBaker(c.toDataURL());
-      baker.textChunks['openbadges'] = JSON.stringify(rv);
-      var baked = URL.createObjectURL(baker.toBlob());
-      img.src = baked;
-      self.unbind('load')
-    }
-  });
-
-});
-</script>

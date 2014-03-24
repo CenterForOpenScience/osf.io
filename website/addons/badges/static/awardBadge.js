@@ -154,16 +154,3 @@
 
 }(window.jQuery));
 });
-
-var canvas = document.createElement("canvas");
-
-var bakeBadge = function(img, metadata) {
-  canvas.width = 250;
-  canvas.height= 250;
-  var ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0, 250, 250);
-  var baker = new PNGBaker(canvas.toDataURL());
-  baker.textChunks['openbadges'] = JSON.stringify(metadata);
-  var baked = URL.createObjectURL(baker.toBlob());
-  img.src = baked;
-};
