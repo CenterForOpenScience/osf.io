@@ -1,4 +1,4 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
 
 <script type="text/javascript" src="/addons/static/figshare/figshare-node-cfg.js"></script>

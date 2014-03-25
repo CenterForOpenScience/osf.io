@@ -8,6 +8,8 @@
 ${next.body()}
 
 
+
+<%include file="modal_generate_private_link.mako"/>
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
@@ -44,6 +46,7 @@ ${next.body()}
     $(function() {
 
         $logScope = $('#logScope');
+        $linkScope= $("#linkScope");
         // Get project data from the server and initiate KO modules
         $.getJSON(nodeApiUrl, function(data){
                // Initialize nodeControl and logFeed on success
@@ -61,13 +64,27 @@ ${next.body()}
                 if (data.user.can_edit) {
                     $script.ready('contribAdder', function() {
                         var contribAdder = new ContribAdder(
-                            '#addContributorsScope',
+                            '#addContributors',
                             data.node.title,
                             data.parent_node.id,
                             data.parent_node.title
                         );
                     });
                 }
+
+                if ($linkScope.length >0){
+                    var $privateLink = $('#private-link');
+                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
+                                                            data.parent_node.id,
+                                                            data.parent_node.title);
+                    ko.applyBindings(privateLinkVM, $privateLink[0]);
+                    // Clear user search modal when dismissed; catches dismiss by escape key
+                    // or cancel button.
+                    $privateLink.on('hidden', function() {
+                        privateLinkVM.clear();
+                    });
+                }
+
             }
         );
 
