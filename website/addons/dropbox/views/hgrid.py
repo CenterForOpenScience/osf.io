@@ -6,8 +6,7 @@ from website.util import rubeus
 
 from website.addons.dropbox.client import get_node_client
 from website.addons.dropbox.utils import (
-    clean_path, list_dropbox_files, metadata_to_hgrid,
-    build_dropbox_urls
+    clean_path, metadata_to_hgrid, build_dropbox_urls
 )
 
 logger = logging.getLogger(__name__)
