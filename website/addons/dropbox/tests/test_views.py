@@ -9,6 +9,7 @@ from webtest_plus import TestApp
 from webtest import Upload
 
 from website.util import api_url_for
+from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup
 from tests.factories import AuthUserFactory
 
@@ -142,6 +143,25 @@ class TestCRUDViews(DropboxAddonTestCase):
 
     def test_build_dropbox_urls(self):
         assert 0, 'finish me'
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
+    def test_dropbox_upload_saves_a_log(self, mock_put_file):
+        mock_put_file.return_value = mock_responses['put_file']
+        payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
+        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key, path='foo')
+        res = self.app.post(url, payload, auth=self.user.auth)
+        self.project.reload()
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dropbox_' + NodeLog.FILE_ADDED)
+        params = last_log.params
+        assert_in('project', params)
+        assert_in('node', params)
+        path = os.path.join('foo', 'rootfile.rst')
+        assert_equal(params['path'], path)
+        view_url = lookup('web', 'dropbox_view_file', path=path, pid=self.project._primary_key)
+        assert_equal(params['urls']['view'], view_url)
+        download_url = lookup('web', 'dropbox_download', path=path, pid=self.project._primary_key)
+        assert_equal(params['urls']['download'], download_url)
 
     def test_dropbox_view_file(self):
         url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,

@@ -10,6 +10,54 @@ logger = logging.getLogger(__name__)
 debug = logger.debug
 
 
+# TODO: Generalize this for other addons?
+class DropboxNodeLogger(object):
+    """Helper class for adding correctly-formatted Dropbox logs to nodes.
+
+    :param Node node: The node to add logs to
+    :param Auth auth: Authorization of the person who did the action.
+    :param DropboxFile file_obj: File object for file-related logs.
+    """
+    def __init__(self, node, auth, file_obj=None):
+        self.node = node
+        self.auth = auth
+        self.file_obj = file_obj
+
+    def log(self, action, extra=None, save=False):
+        """Log an event. Wraps the Node#add_log method, automatically adding
+        relevant parameters.
+
+        :param str action: Log action. Should be a class constant from NodeLog.
+        :param dict extra: Extra parameters to add to the ``params`` dict of the
+            new NodeLog.
+        """
+        params = {
+            'project': self.node.parent_id,
+            'node': self.node._primary_key,
+        }
+        # If logging a file-related action, add the file's view and download URLs
+        if self.file_obj:
+            cleaned_path = clean_path(self.file_obj.path)
+            params.update({
+                'urls': {
+                    'view': self.node.web_url_for('dropbox_view_file', path=cleaned_path),
+                    'download': self.node.web_url_for(
+                        'dropbox_download', path=cleaned_path)
+                },
+                'path': cleaned_path
+            })
+        if extra:
+            params.update(extra)
+        # Prefix the action with dropbox_
+        self.node.add_log(
+            action="dropbox_{0}".format(action),
+            params=params,
+            auth=self.auth
+        )
+        if save:
+            self.node.save()
+
+
 def get_file_name(path):
     """Given a path, get just the base filename.
     Handles "/foo/bar/baz.txt/" -> "baz.txt"

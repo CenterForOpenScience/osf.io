@@ -80,7 +80,20 @@ mock_responses = {
             }
         ],
         "revision": 29007
-    }
+    },
+    'metadata_single': {u'bytes': 74,
+                     u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
+                     u'icon': u'page_white',
+                     u'is_dir': False,
+                     u'mime_type': u'text/csv',
+                     u'modified': u'Fri, 21 Mar 2014 05:46:36 +0000',
+                     u'path': '/datasets/foo.txt',
+                     u'rev': u'a2149fb64',
+                     u'revision': 10,
+                     u'root': u'app_folder',
+                     u'size': u'74 bytes',
+                     u'thumb_exists': False
+                    }
 }
 
 
@@ -94,19 +107,8 @@ class MockDropbox(object):
         if list:
             return mock_responses['metadata_list']
         else:
-            return {u'bytes': 74,
-                     u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
-                     u'icon': u'page_white',
-                     u'is_dir': False,
-                     u'mime_type': u'text/csv',
-                     u'modified': u'Fri, 21 Mar 2014 05:46:36 +0000',
-                     u'path': path,
-                     u'rev': u'a2149fb64',
-                     u'revision': 10,
-                     u'root': u'app_folder',
-                     u'size': u'74 bytes',
-                     u'thumb_exists': False
-                    }
+            ret = mock_responses['metadata_single']
+            ret['path'] = path
 
     def get_file_and_metadata(*args, **kwargs):
         pass

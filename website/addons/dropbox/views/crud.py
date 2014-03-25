@@ -5,6 +5,7 @@ import os
 
 from modularodm import Q
 
+from website.project.model import NodeLog
 from website.project.utils import serialize_node, get_cache_content
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
@@ -24,10 +25,12 @@ from website.addons.dropbox.utils import (
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
+
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
 def dropbox_delete_file(path, auth, node_addon, **kwargs):
+    node = node_addon.owner
     if path and auth:
         client = get_node_addon_client(node_addon)
         return client.file_delete(path)
@@ -38,6 +41,7 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
 def dropbox_upload(node_addon, auth, **kwargs):
+    node = node_addon.owner
     # Route may or may not have a path
     path = kwargs.get('path', node_addon.folder)
     client = get_node_addon_client(node_addon)
@@ -50,6 +54,21 @@ def dropbox_upload(node_addon, auth, **kwargs):
             'edit': node.can_edit(auth),
             'view': node.can_view(auth)
         }
+        cleaned_path = clean_path(path)
+        node.add_log(
+            action="dropbox_{0}".format(NodeLog.FILE_ADDED),
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'path': path,
+                'urls': {
+                    'view': node.web_url_for('dropbox_view_file', path=cleaned_path),
+                    'download': node.web_url_for('dropbox_download', path=cleaned_path)
+                }
+            },
+            auth=auth
+        )
+        node.save()
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
 
