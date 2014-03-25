@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 modules = [
     'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx',
-    'tabular.renderers',
+    'tabular.renderers', 'rst'
 ]
 for module in modules:
     try:
