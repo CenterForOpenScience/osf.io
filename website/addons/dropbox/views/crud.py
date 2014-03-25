@@ -6,7 +6,7 @@ import os
 from modularodm import Q
 
 from website.project.model import NodeLog
-from website.project.utils import serialize_node, get_cache_content
+from website.project.utils import serialize_node
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
@@ -19,7 +19,8 @@ from framework.exceptions import HTTPError
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
-    render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path
+    render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path,
+    DropboxNodeLogger
 )
 
 logger = logging.getLogger(__name__)
@@ -33,7 +34,11 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
     node = node_addon.owner
     if path and auth:
         client = get_node_addon_client(node_addon)
-        return client.file_delete(path)
+        client.file_delete(path)
+        # log the event
+        logger = DropboxNodeLogger(node=node, auth=auth, path=path)
+        logger.log(NodeLog.FILE_REMOVED, save=True)
+        return None
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -54,21 +59,9 @@ def dropbox_upload(node_addon, auth, **kwargs):
             'edit': node.can_edit(auth),
             'view': node.can_view(auth)
         }
-        cleaned_path = clean_path(path)
-        node.add_log(
-            action="dropbox_{0}".format(NodeLog.FILE_ADDED),
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-                'path': path,
-                'urls': {
-                    'view': node.web_url_for('dropbox_view_file', path=cleaned_path),
-                    'download': node.web_url_for('dropbox_download', path=cleaned_path)
-                }
-            },
-            auth=auth
-        )
-        node.save()
+        # Log the event
+        logger = DropboxNodeLogger(node=node, auth=auth, file_obj=file_obj)
+        logger.log(NodeLog.FILE_ADDED, save=True)
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
 
