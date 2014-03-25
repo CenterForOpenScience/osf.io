@@ -10,7 +10,6 @@ ehthumbs.db
 Thumbs.db
 *.swp
 *~
-*.jshintrc
 
 # R
 #######################
