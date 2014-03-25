@@ -7,7 +7,9 @@ this.RevisionTable = (function(ko, $) {
 
     function Revision(data) {
         this.rev = data.rev;
-        this.modified = new FormattableDate(data.rev.modified);
+        this.modified = new FormattableDate(data.modified);
+        this.download = data.download;
+        this.view = data.view;
     }
     function RevisionViewModel(url) {
         var self = this;
