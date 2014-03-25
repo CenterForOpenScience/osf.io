@@ -10,7 +10,7 @@ import tempfile
 from mfr.renderer.exceptions import MFRError
 from mfr.renderer.tabular.exceptions import StataVersionError, BlankOrCorruptTableError
 logger = logging.getLogger(__name__)
-
+from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
 
 config = {}
 FileRenderer.STATIC_PATH = '/static/mfr'
@@ -22,17 +22,16 @@ def ensure_path(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
-sup = "Contact support@osf.io for further assistance."
 
-MESSAGES = {
-    StataVersionError: 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(sup),
-    BlankOrCorruptTableError: 'Is this a valid instance of this file type?<p>{0}</p>'.format(sup),
+CUSTOM_ERROR_MESSAGES = {
+    StataVersionError: STATA_VERSION_ERROR,
+    BlankOrCorruptTableError: BLANK_OR_CORRUPT_TABLE_ERROR,
 }
 
 # Unable to render. Download the file to view it.
 def render_mfr_error(err):
-    pre = "Unable to render. <a href='{download_path}'>Download</a> file to view it." # move to LANGUAGE
-    msg = MESSAGES.get(type(err), err.message)
+    pre = ERROR_PREFIX
+    msg = CUSTOM_ERROR_MESSAGES.get(type(err), err.message)
     return """
            <div class="osf-mfr-error">
            <p>{pre}</p>
