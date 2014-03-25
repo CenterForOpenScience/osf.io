@@ -22,7 +22,7 @@
                     </div>
                     <input type='submit' value="Submit" class="btn btn-success" />
                     <div class="help-block">
-                        <p data-bind="text: message, attr: {class: messageClass}"></p>
+                        <p data-bind="html: message, attr: {class: messageClass}"></p>
                     </div>
                 </form>
             </div><!-- end col -->

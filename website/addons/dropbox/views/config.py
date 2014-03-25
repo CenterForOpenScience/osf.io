@@ -48,8 +48,8 @@ def serialize_settings(node_settings, current_user, client=None):
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
         'auth': node.api_url_for('dropbox_oauth_start'),
-        'importAuth': node.api_url_for('dropbox_import_user_auth')
-
+        'importAuth': node.api_url_for('dropbox_import_user_auth'),
+        'files': node.web_url_for('collect_file_trees__page'),
     }
     result = {
         'nodeHasAuth': node_settings.has_auth,

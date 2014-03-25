@@ -17,13 +17,13 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
-
         function onSubmitSuccess(response) {
-            self.message(response.message);
+            self.message('Successfully updated settings. Go to the <a href="' +
+                self.urls.files + '">Files page</a> to view your files.');
             self.messageClass('text-success');
             setTimeout(function() {
                 self.message('');
-            }, 2000);
+            }, 5000);
         }
 
         function onSubmitError(xhr, textStatus, error) {
