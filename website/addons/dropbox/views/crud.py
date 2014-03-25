@@ -53,14 +53,14 @@ def dropbox_upload(node_addon, auth, **kwargs):
     file_obj = request.files.get('file', None)
     node = node_addon.owner
     if path and file_obj and client:
-        path = os.path.join(path, file_obj.filename)
-        metadata = client.put_file(path, file_obj)  # TODO Cast to Hgrid
+        filepath = os.path.join(path, file_obj.filename)
+        metadata = client.put_file(filepath, file_obj)  # TODO Cast to Hgrid
         permissions = {
             'edit': node.can_edit(auth),
             'view': node.can_view(auth)
         }
         # Log the event
-        logger = DropboxNodeLogger(node=node, auth=auth, file_obj=file_obj)
+        logger = DropboxNodeLogger(node=node, auth=auth, path=filepath)
         logger.log(NodeLog.FILE_ADDED, save=True)
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
