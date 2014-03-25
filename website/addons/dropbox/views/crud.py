@@ -36,8 +36,8 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
         client = get_node_addon_client(node_addon)
         client.file_delete(path)
         # log the event
-        logger = DropboxNodeLogger(node=node, auth=auth, path=path)
-        logger.log(NodeLog.FILE_REMOVED, save=True)
+        nodelogger = DropboxNodeLogger(node=node, auth=auth, path=path)
+        nodelogger.log(NodeLog.FILE_REMOVED, save=True)
         return None
     raise HTTPError(http.BAD_REQUEST)
 
@@ -60,8 +60,8 @@ def dropbox_upload(node_addon, auth, **kwargs):
             'view': node.can_view(auth)
         }
         # Log the event
-        logger = DropboxNodeLogger(node=node, auth=auth, path=filepath)
-        logger.log(NodeLog.FILE_ADDED, save=True)
+        nodelogger = DropboxNodeLogger(node=node, auth=auth, path=filepath)
+        nodelogger.log(NodeLog.FILE_ADDED, save=True)
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
 

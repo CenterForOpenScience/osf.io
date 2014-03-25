@@ -11,3 +11,9 @@ removed file <span class="overflow">{{ params.path }}</span> from
 Dropbox in {{ nodeCategory }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
+
+
+<script type="text/html" id="dropbox_folder_selected">
+linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>

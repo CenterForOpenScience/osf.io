@@ -87,8 +87,15 @@ class TestConfigViews(DropboxAddonTestCase):
             auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.node_settings.reload()
-        assert_equal(self.node_settings.folder, 'My test folder')
+        self.project.reload()
 
+        # Folder was set
+        assert_equal(self.node_settings.folder, 'My test folder')
+        # A log event was created
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dropbox_folder_selected')
+        params = last_log.params
+        assert_equal(params['folder'], 'My test folder')
 
 class TestCRUDViews(DropboxAddonTestCase):
 
