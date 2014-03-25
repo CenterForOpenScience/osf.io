@@ -47,7 +47,7 @@ class ExcelRenderer(TabularRenderer):
         sheets = workbook.sheet_names()
         sheet = workbook.sheet_by_name(sheets[0])
         if sheet.ncols > MAX_COLS or sheet.nrows > MAX_ROWS:
-            raise TooBigTableError
+            raise TooBigTableError("Too many rows or columns")
 
 
         retdic = {}

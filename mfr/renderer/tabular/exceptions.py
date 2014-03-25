@@ -1,6 +1,5 @@
 from ..exceptions import MFRError
 
-
 class TooBigTableError(MFRError):
     pass
 
