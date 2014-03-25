@@ -40,20 +40,20 @@ class DropboxFile(GuidFile):
         return self.node.web_url_for('dropbox_download', path=self.path)
 
     # TODO(sloria): TEST ME
-    def update_metadata(self, client=None):
+    def update_metadata(self, client=None, rev=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
         debug(cl)
-        self.metadata = cl.metadata(self.path, list=False)
+        self.metadata = cl.metadata(self.path, list=False, rev=rev)
 
-    def get_metadata(self, client=None, force=False):
+    def get_metadata(self, client=None, force=False, rev=None):
         """Gets the file metadata from the Dropbox API (cached)."""
         if force or (not self.metadata):
-            self.update_metadata(client=client)
+            self.update_metadata(client=client, rev=rev)
             self.save()
         return self.metadata
 
-    def get_cache_filename(self, client=None):
-        metadata = self.get_metadata(client=client)
+    def get_cache_filename(self, client=None, rev=None):
+        metadata = self.get_metadata(client=client, rev=rev)
         return "{slug}_{rev}.html".format(slug=slugify(self.path), rev=metadata['rev'])
 
     @classmethod

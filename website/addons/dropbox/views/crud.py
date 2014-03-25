@@ -92,11 +92,21 @@ def dropbox_get_versions(**kwargs):
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
+    node = node_addon.owner
     client = get_node_addon_client(node_addon)
+    # Get metadata for each revision of the file
+    revisions = client.revisions(path)
+    # Add download links
+    for revision in revisions:
+        revision['download'] = node.web_url_for('dropbox_download',
+            path=path, rev=revision['rev'])
+        revision['view'] = node.web_url_for('dropbox_view_file',
+            path=path, rev=revision['rev'])
     return {
-        'result': client.revisions(path),
+        'result': revisions,
         'status': 200
     }, 200
+
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
@@ -111,7 +121,8 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
-    rendered = render_dropbox_file(file_obj, client=client)
+    rev = request.args.get('rev')
+    rendered = render_dropbox_file(file_obj, client=client, rev=rev)
     cleaned_path = clean_path(path)
     response = {
         'revisionsUrl': node.api_url_for('dropbox_get_revisions', path=cleaned_path),

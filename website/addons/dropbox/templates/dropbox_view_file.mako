@@ -7,15 +7,23 @@
 
         <thead>
             <tr>
-                <th>ID</th>
+                <th>Revision</th>
                 <th>Date</th>
+                <th>Download</th>
             </tr>
         </thead>
 
         <tbody data-bind="foreach: revisions">
             <tr>
-                <td data-bind="text: rev"></td>
-                <td data-bind="text: modified.local, tooltip: {title: modified.utc}"></td>
+                <td>
+                    <a data-bind="attr: {href: view}, text: rev"></a>
+                </td>
+                <td data-bind="text: modified.local"></td>
+                <td>
+                    <a data-bind="attr: {href: download}">
+                        <i class="icon-download-alt"></i>
+                    </a>
+                </td>
             </tr>
         </tbody>
 
