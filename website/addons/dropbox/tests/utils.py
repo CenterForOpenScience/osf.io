@@ -81,19 +81,45 @@ mock_responses = {
         ],
         "revision": 29007
     },
-    'metadata_single': {u'bytes': 74,
-                     u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
-                     u'icon': u'page_white',
-                     u'is_dir': False,
-                     u'mime_type': u'text/csv',
-                     u'modified': u'Fri, 21 Mar 2014 05:46:36 +0000',
-                     u'path': '/datasets/foo.txt',
-                     u'rev': u'a2149fb64',
-                     u'revision': 10,
-                     u'root': u'app_folder',
-                     u'size': u'74 bytes',
-                     u'thumb_exists': False
-                    }
+    'metadata_single': {
+        u'bytes': 74,
+        u'client_mtime': u'Mon, 13 Jan 2014 20:24:15 +0000',
+        u'icon': u'page_white',
+        u'is_dir': False,
+        u'mime_type': u'text/csv',
+        u'modified': u'Fri, 21 Mar 2014 05:46:36 +0000',
+        u'path': '/datasets/foo.txt',
+        u'rev': u'a2149fb64',
+        u'revision': 10,
+        u'root': u'app_folder',
+        u'size': u'74 bytes',
+        u'thumb_exists': False
+    },
+    'revisions':  [{u'bytes': 0,
+        u'client_mtime': u'Wed, 31 Dec 1969 23:59:59 +0000',
+        u'icon': u'page_white_picture',
+        u'is_deleted': True,
+        u'is_dir': False,
+        u'mime_type': u'image/png',
+        u'modified': u'Tue, 25 Mar 2014 03:39:13 +0000',
+        u'path': u'/svs-v-barks.png',
+        u'rev': u'3fed741002c12fc',
+        u'revision': 67032897,
+        u'root': u'dropbox',
+        u'size': u'0 bytes',
+        u'thumb_exists': True},
+        {u'bytes': 151164,
+        u'client_mtime': u'Sat, 13 Apr 2013 21:56:36 +0000',
+        u'icon': u'page_white_picture',
+        u'is_dir': False,
+        u'mime_type': u'image/png',
+        u'modified': u'Tue, 25 Mar 2014 01:45:51 +0000',
+        u'path': u'/svs-v-barks.png',
+        u'rev': u'3fed61a002c12fc',
+        u'revision': 67032602,
+        u'root': u'dropbox',
+        u'size': u'147.6 KB',
+        u'thumb_exists': True}]
 }
 
 
@@ -116,6 +142,12 @@ class MockDropbox(object):
 
     def file_delete(self, path):
         return mock_responses['metadata_single']
+
+    def revisions(self, path):
+        ret = mock_responses['revisions']
+        for each in ret:
+            each['path'] = path
+        return ret
 
 
 @contextmanager

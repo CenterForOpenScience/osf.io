@@ -87,7 +87,6 @@ def dropbox_download(path, node_addon, **kwargs):
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
     return make_file_response(fileobject, metadata)
 
-# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
@@ -106,7 +105,7 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
         'status': 200
     }, 200
 
-
+# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_view_file(path, node_addon, auth, **kwargs):

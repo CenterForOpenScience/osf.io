@@ -152,11 +152,13 @@ class TestCRUDViews(DropboxAddonTestCase):
         res = self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
         last_log = self.project.logs[-1]
+
         assert_equal(last_log.action, 'dropbox_' + NodeLog.FILE_ADDED)
         params = last_log.params
         assert_in('project', params)
         assert_in('node', params)
         path = os.path.join('foo', 'rootfile.rst')
+
         assert_equal(params['path'], path)
         view_url = lookup('web', 'dropbox_view_file', path=path, pid=self.project._primary_key)
         assert_equal(params['urls']['view'], view_url)
@@ -176,6 +178,25 @@ class TestCRUDViews(DropboxAddonTestCase):
             assert_in('project', params)
             assert_in('node', params)
             assert_equal(params['path'], path)
+
+    def test_get_revisions(self):
+        with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
+            path = 'foo.rst'
+            url = lookup('api', 'dropbox_get_revisions', path=path,
+                pid=self.project._primary_key)
+            res = self.app.get(url, auth=self.user.auth)
+            json_data = res.json
+            result = json_data['result']
+            assert_equal(len(result), len(mock_responses['revisions']))
+            for each in result:
+                download_link = each['download']
+                assert_equal(download_link, lookup('web', 'dropbox_download',
+                    pid=self.project._primary_key,
+                    path=path, rev=each['rev']))
+                view_link = each['view']
+                assert_equal(view_link, lookup('web', 'dropbox_view_file',
+                    pid=self.project._primary_key,
+                    path=path, rev=each['rev']))
 
     def test_dropbox_view_file(self):
         url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
