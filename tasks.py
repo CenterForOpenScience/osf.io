@@ -4,23 +4,13 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-import sys
-import code
-
 from invoke import task, run
+
+import konch
 
 from website import settings
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
-SHELL_BANNER = """
-{version}
-
-Welcome to the OSF Python Shell. Happy hacking!
-
-Available variables:
-
-{context}
-"""
 
 @task
 def server():
@@ -29,7 +19,6 @@ def server():
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
-    import konch
     config = konch.use_file('.konchrc')
     konch.start(**config)
 
@@ -131,6 +120,13 @@ def test():
     """
     test_osf()
 
+
+@task
+def test_all():
+    test_osf()
+    test_addons()
+
+
 # TODO: user bower once hgrid is released
 @task
 def get_hgrid():
@@ -151,7 +147,7 @@ def get_hgrid():
 
 
 @task
-def addon_requirements():
+def addon_requirements(mfr=1):
     """Install all addon requirements."""
     addon_root = 'website/addons'
     for directory in os.listdir(addon_root):
@@ -163,7 +159,8 @@ def addon_requirements():
                 run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, directory), pty=True)
             except IOError:
                 pass
-    mfr_requirements()
+    if mfr:
+        mfr_requirements()
     print('Finished')
 
 

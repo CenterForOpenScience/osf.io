@@ -13,6 +13,7 @@ from website import settings
 from website.project.views.node import _view_project
 
 
+
 @must_be_contributor_or_public
 def collect_file_trees(**kwargs):
     """Collect file trees for all add-ons implementing HGrid views, then
@@ -20,12 +21,11 @@ def collect_file_trees(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    data = request.args.to_dict()
-    serialized = _view_project(node, auth, **data)
+
+    serialized = _view_project(node, auth)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
-
 
 @must_be_contributor_or_public
 def grid_data(**kwargs):

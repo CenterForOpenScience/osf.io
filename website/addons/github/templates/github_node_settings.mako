@@ -1,4 +1,4 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
 <script type="text/javascript" src="/addons/static/github/github-node-cfg.js"></script>
 

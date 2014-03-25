@@ -218,6 +218,18 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    def to_json(self, user):
+        ret = super(AddonNodeSettingsBase, self).to_json(user)
+        ret.update({
+            'user': {
+                'permissions': self.owner.get_permissions(user)
+            },
+            'node': {
+                'is_registration': self.owner.is_registration,
+            }
+        })
+        return ret
+
     def render_config_error(self, data):
         """
 

@@ -1,4 +1,4 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
 <script src="/addons/static/s3/s3-node-settings.js"></script>
 
