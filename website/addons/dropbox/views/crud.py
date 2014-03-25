@@ -66,6 +66,7 @@ def dropbox_upload(node_addon, auth, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 # TODO(sloria): Test me
+# TODO(sloria): Put in utils?
 def make_file_response(fileobject, metadata):
     """Builds a response from a file-like object and metadata returned by
     a Dropbox client.

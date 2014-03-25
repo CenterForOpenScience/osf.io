@@ -35,6 +35,7 @@ class DropboxNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
+            'folder': self.node.get_addon('dropbox').folder
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
@@ -46,7 +47,7 @@ class DropboxNodeLogger(object):
                     'download': self.node.web_url_for(
                         'dropbox_download', path=cleaned_path)
                 },
-                'path': cleaned_path
+                'path': cleaned_path,
             })
         if extra:
             params.update(extra)
