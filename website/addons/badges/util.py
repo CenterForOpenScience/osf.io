@@ -71,7 +71,7 @@ def deal_with_image(imageurl, uid):
     if not os.path.exists(BADGES_ABS_LOCATION):
         os.makedirs(BADGES_ABS_LOCATION)
 
-    urllib.urlretrieve(imageurl, location)
-    Image.open(location).save(location)
+    ret, _ = urllib.urlretrieve(imageurl)
+    Image.open(ret).save(location)
 
     return os.path.join(BADGES_LOCATION, uid + '.png')

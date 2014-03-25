@@ -91,6 +91,7 @@ class BadgeAssertion(GuidStoredObject):
 
     #Custom fields
     revoked = fields.BooleanField(default=False)
+    reason = fields.StringField()
 
     def to_json(self):
         #Mozilla Required Fields

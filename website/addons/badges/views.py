@@ -11,6 +11,7 @@ from website.project.decorators import (
     must_be_valid_project,
     must_have_permission
 )
+from website.project.views.node import _view_project
 
 from framework.auth.decorators import must_be_logged_in
 
@@ -35,6 +36,29 @@ def badges_widget(*args, **kwargs):
             ret['uid'] = auth.user._id
 
     ret.update(badges.config.to_json())
+    return ret
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('badges', 'node')
+def badges_page(*args, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    badges = node.get_addon('badges')
+    auth = kwargs['auth']
+
+    ret = {
+        'complete': True,
+        'assertions': badges.get_assertions(),
+    }
+    if auth.user:
+        badger = auth.user.get_addon('badges')
+        if badger:
+            ret.update(badger.to_json(auth.user))
+            ret['uid'] = auth.user._id
+    #ret.update(badges.config.to_json())
+    ret.update(_view_project(node, kwargs['auth']))
+
     return ret
 
 
@@ -124,6 +148,7 @@ def revoke_badge(*args, **kwargs):
             badge = Badge.load(assertion.badge_id)
             if badge and badge.creator == uid:
                 assertion.revoked = True
+                assertion.reason = reason
                 User.load(uid).get_addon('badges').revocation_list[_id] = reason
                 assertion.save()
                 User.load(uid).get_addon('badges').save()
@@ -179,3 +204,5 @@ def get_organization_json(*args, **kwargs):
             if badger:
                 return badger.to_openbadge()
     raise HTTPError(http.BAD_REQUEST)
+
+

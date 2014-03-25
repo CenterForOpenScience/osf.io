@@ -62,7 +62,11 @@ You have not created any Badges.
                         contentType: 'application/json',
                         data: JSON.stringify(data),
                         success: function(response) {
-                          $("#badgeList").append(jsonToList(data, response.badgeid));
+                          %if len(badges) > 0:
+                            $("#badgeList").append(jsonToList(data, response.badgeid));
+                          %else:
+                            document.location.reload(true);
+                          %endif
                         },
                         error: function(xhr) {
                           alert('Failed: ' + xhr.statusText);
@@ -75,13 +79,13 @@ You have not created any Badges.
                 }
                   }
                 },
-                upload: {
-                  label: "Upload Image",
-                  className: "btn-primary",
-                  callback: function() {
-                    //Maybe another time
-                  }
-                },
+                // upload: {
+                //   label: "Upload Image",
+                //   className: "btn-primary",
+                //   callback: function() {
+                //     //Maybe another time
+                //   }
+                // },
                 cancel: {
                   label: "Cancel",
                   className: "btn-default"

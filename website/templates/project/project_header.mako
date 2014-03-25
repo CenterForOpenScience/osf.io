@@ -78,6 +78,11 @@
                         </a>
 
                     </div><!-- end btn-grp -->
+                    <div class="btn-group">
+                        <button class="btn btn-success" id="awardBadge">
+                            <i class="icon-plus"></i> Award
+                        </button>
+                    </div><!-- end btn-grp -->
                 </div><!-- end btn-toolbar -->
 
             </div><!-- end col-md-->
@@ -152,4 +157,3 @@
         </nav>
     </header>
 </div><!-- end projectScope -->
-

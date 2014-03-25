@@ -14,6 +14,15 @@ widget_route = {
     'prefix': '/api/v1',
 }
 
+page_route = {
+    'rules': [
+        Rule([
+            '/project/<pid>/badges/',
+            '/project/<pid>/node/<nid>/badges/',
+        ], 'get', views.badges_page, OsfWebRenderer('../addons/badges/templates/badges_page.mako')),
+    ],
+}
+
 api_urls = {
     'rules': [
         Rule('/badges/new/', 'post', views.create_badge, json_renderer),
