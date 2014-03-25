@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import uuid
 import urllib
 import urlparse
@@ -14,6 +15,24 @@ from website.profile.utils import reduce_permissions
 import settings as gitlab_settings
 from api import client
 from exceptions import GitlabError
+
+
+def wait_until_initialized(node_settings, max_tries=5, delay=0.5):
+
+    if max_tries <= 0:
+        return False
+
+    if node_settings.project_id is None:
+        return False
+
+    files = client.listrepositorytree(node_settings.project_id)
+    if files is False:
+        time.sleep(delay)
+        return wait_until_initialized(
+            node_settings,
+            max_tries=max_tries-1,
+            delay=delay
+        )
 
 
 def initialize_repo(node_settings):
@@ -109,8 +128,7 @@ def create_node(node_settings, initialize=True):
         node_settings.project_id = response['id']
         if initialize:
             initialize_repo(node_settings)
-            # Hack: GitLab doesn't seem to allow uploads until after a
-            # request of some kind is made.
+            # Hack: Wait until Gitlab repo is responsive
             client.listrepositorytree(node_settings.project_id)
         node_settings.save()
 
