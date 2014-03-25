@@ -126,10 +126,6 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         user = UserFactory()
         result = settings.to_json(user)
         assert_equal(result['addon_short_name'], 'dropbox')
-        assert_equal(result['folder'], settings.folder)
-        assert_equal(result['node_has_auth'], settings.has_auth)
-        assert_equal(result['is_owner'], settings.user_settings.owner == user)
-        assert_equal(result['owner_info'], settings.user_settings.account_info)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
@@ -168,7 +164,7 @@ class TestDropboxGuidFile(DbTestCase):
         file_obj.update_metadata(client=mock_client)
         file_obj.save()
 
-        result = file_obj.get_cache_filename()
+        result = file_obj.get_cache_filename(client=mock_client)
         assert_equal(result, "{0}_{1}.html".format(slugify(file_obj.path),
             file_obj.metadata['rev']))
 

@@ -66,13 +66,13 @@ class TestAuthViews(DbTestCase):
 class TestConfigViews(DropboxAddonTestCase):
 
     def test_dropbox_config_get(self):
-        with patch_client('website.addons.dropbox.views.config.get_client'):
+        with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
             self.user_settings.account_info['display_name'] = 'Foo bar'
             self.user_settings.save()
 
             url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
 
-            res = self.app.get(url)
+            res = self.app.get(url, auth=self.user.auth)
             assert_equal(res.status_code, 200)
             result = res.json['result']
             expected_folders = ['/'] + [each['path']
