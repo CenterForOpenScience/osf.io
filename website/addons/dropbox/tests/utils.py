@@ -105,10 +105,11 @@ class MockDropbox(object):
     def metadata(self, path, list=True, file_limit=25000, hash=None, rev=None,
             include_deleted=False):
         if list:
-            return mock_responses['metadata_list']
+            ret = mock_responses['metadata_list']
         else:
             ret = mock_responses['metadata_single']
             ret['path'] = path
+        return ret
 
     def get_file_and_metadata(*args, **kwargs):
         pass
