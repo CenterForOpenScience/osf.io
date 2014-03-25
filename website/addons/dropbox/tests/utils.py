@@ -114,6 +114,9 @@ class MockDropbox(object):
     def get_file_and_metadata(*args, **kwargs):
         pass
 
+    def file_delete(self, path):
+        return mock_responses['metadata_single']
+
 
 @contextmanager
 def patch_client(target):

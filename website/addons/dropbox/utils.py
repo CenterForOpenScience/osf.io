@@ -18,10 +18,11 @@ class DropboxNodeLogger(object):
     :param Auth auth: Authorization of the person who did the action.
     :param DropboxFile file_obj: File object for file-related logs.
     """
-    def __init__(self, node, auth, file_obj=None):
+    def __init__(self, node, auth, file_obj=None, path=None):
         self.node = node
         self.auth = auth
         self.file_obj = file_obj
+        self.path = path
 
     def log(self, action, extra=None, save=False):
         """Log an event. Wraps the Node#add_log method, automatically adding
@@ -36,8 +37,9 @@ class DropboxNodeLogger(object):
             'node': self.node._primary_key,
         }
         # If logging a file-related action, add the file's view and download URLs
-        if self.file_obj:
-            cleaned_path = clean_path(self.file_obj.path)
+        if self.file_obj or self.path:
+            path = self.file_obj.path if self.file_obj else self.path
+            cleaned_path = clean_path(path)
             params.update({
                 'urls': {
                     'view': self.node.web_url_for('dropbox_view_file', path=cleaned_path),

@@ -163,6 +163,20 @@ class TestCRUDViews(DropboxAddonTestCase):
         download_url = lookup('web', 'dropbox_download', path=path, pid=self.project._primary_key)
         assert_equal(params['urls']['download'], download_url)
 
+    def test_dropbox_delete_file_adds_log(self):
+        with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
+            path = 'foo'
+            url = lookup('api', 'dropbox_delete_file', pid=self.project._primary_key,
+                path=path)
+            res = self.app.delete(url, auth=self.user.auth)
+            self.project.reload()
+            last_log = self.project.logs[-1]
+            assert_equal(last_log.action, 'dropbox_' + NodeLog.FILE_REMOVED)
+            params = last_log.params
+            assert_in('project', params)
+            assert_in('node', params)
+            assert_equal(params['path'], path)
+
     def test_dropbox_view_file(self):
         url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
             path='foo')
