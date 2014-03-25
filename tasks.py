@@ -4,39 +4,21 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-import sys
-import code
-
 from invoke import task, run
+
+import konch
 
 from website import settings
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
-SHELL_BANNER = """
-{version}
-
-Welcome to the OSF Python Shell. Happy hacking!
-
-Available variables:
-
-{context}
-"""
 
 @task
 def server():
     run("python main.py")
 
-def format_context(context):
-    lines = []
-    for name, obj in context.items():
-        line = "{name}: {obj!r}".format(**locals())
-        lines.append(line)
-    return '\n'.join(lines)
-
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
-    import konch
     config = konch.use_file('.konchrc')
     konch.start(**config)
 
