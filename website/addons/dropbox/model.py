@@ -10,7 +10,7 @@ from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_client, get_node_addon_client
-from website.addons.dropbox.utils import clean_path
+from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -142,6 +142,12 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def set_folder(self, folder, auth):
+        self.folder = folder
+        # Add log to node
+        nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
+        nodelogger.log(action="folder_selected", save=True)
 
     def deauthorize(self, auth):
         node = self.owner

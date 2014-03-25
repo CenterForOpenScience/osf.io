@@ -12,7 +12,6 @@ from website.project.decorators import (must_have_addon,
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.client import get_node_addon_client
-from website.addons.dropbox.utils import DropboxNodeLogger
 
 
 logger = logging.getLogger(__name__)
@@ -73,10 +72,8 @@ def serialize_settings(node_settings, current_user, client=None):
 @must_have_addon('dropbox', 'node')
 def dropbox_config_put(node_addon, auth, **kwargs):
     folder = request.json.get('selected')
-    node_addon.folder = folder
+    node_addon.set_folder(folder, auth=auth)
     node_addon.save()
-    nodelogger = DropboxNodeLogger(node=node_addon.owner, auth=auth)
-    nodelogger.log(action='folder_selected', save=True)
     return {
         'result': {
             'folder': folder,

@@ -142,6 +142,15 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_in('project', params)
         assert_in('folder', params)
 
+    def test_set_folder(self):
+        folder_name = 'queen/freddie'
+        self.node_settings.set_folder(folder_name, auth=Auth(self.user))
+        self.node_settings.save()
+        # Folder was set
+        assert_equal(self.node_settings.folder, folder_name)
+        # Log was saved
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dropbox_folder_selected')
 
 class TestDropboxGuidFile(DbTestCase):
 
