@@ -171,7 +171,8 @@ def serialize_wiki_toc(project, auth):
             'category': child.category,
             'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
             'url': get_wiki_url(child, page=HOME),
-            'is_pointer': not child.primary
+            'is_pointer': not child.primary,
+            'link': auth.private_key
         }
         for child in project.nodes
         if not child.is_deleted
@@ -202,7 +203,9 @@ def project_wiki_page(*args, **kwargs):
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
+
     toc = serialize_wiki_toc(node_to_use, auth=auth)
+
     rv = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'pageName': wid,

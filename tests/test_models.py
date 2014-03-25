@@ -1154,6 +1154,17 @@ class TestProject(DbTestCase):
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
+
+    def test_add_private_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+
+    def test_remove_private_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+        self.project.remove_private_link(link)
+        assert_not_in(link, self.project.private_links)
+
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
             email=fake.email(), auth=Auth(self.project.creator))
@@ -1255,6 +1266,7 @@ class TestProject(DbTestCase):
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
+        link = self.project.add_private_link()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1266,6 +1278,8 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
+        other_guy_auth.private_key = link
+        assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
@@ -1647,6 +1661,7 @@ class TestForkNode(DbTestCase):
 
         # Test modified fields
         assert_true(fork.is_fork)
+        assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
         assert_in(fork._id, original.fork_list)
         assert_in(fork._id, original.node__forked)
@@ -1786,6 +1801,11 @@ class TestForkNode(DbTestCase):
         fork = self.project.fork_node(self.consolidate_auth)
         assert_false(fork.is_public)
 
+    def test_not_fork_private_link(self):
+        link = self.project.add_private_link()
+        fork = self.project.fork_node(self.consolidate_auth)
+        assert_not_in(link, fork.private_links)
+
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
@@ -1827,6 +1847,8 @@ class TestRegisterNode(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+        self.project.add_private_link()
+        self.project.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):
@@ -1840,6 +1862,8 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
+        assert_equal(len(registration1.private_links), 0)
+
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1856,7 +1880,6 @@ class TestRegisterNode(DbTestCase):
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
-
 
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
@@ -1883,6 +1906,12 @@ class TestRegisterNode(DbTestCase):
         fork = self.project.fork_node(self.consolidate_auth)
         registration = RegistrationFactory(project=fork)
         assert_equal(registration.forked_from, self.project)
+
+    def test_private_links(self):
+        assert_not_equal(
+            self.registration.private_links,
+            self.project.private_links
+        )
 
     def test_creator(self):
         user2 = UserFactory()

@@ -241,8 +241,11 @@ def create_result(highlights, results):
             container['wiki_link'] = main_wiki_link
             # and our nested information
             container['nest'] = nest
-            container['is_registration'] = result[id + '_registeredproject']
-            if id+'_tags' in result.keys():
+            container['is_registration'] = result.get(
+                id + '_registeredproject',
+                False
+            )
+            if id + '_tags' in result.keys():
                 # again using sets to create a list without duplicates
                 container['tags'] = result[id+'_tags'] + list(
                     set(component_tags) - set(result[id+'_tags']))
