@@ -159,13 +159,13 @@ def requirements(all=False, addons=False):
 
 
 @task
-def test_module(module=None):
+def test_module(module=None, verbosity=2):
     """
     Helper for running tests.
     """
     test_cmd = 'nosetests'
     # Allow selecting specific submodule
-    args = " -s %s" % module
+    args = " --verbosity={0} -s {1}".format(verbosity, module)
     # Use pty so the process buffers "correctly"
     run(test_cmd + args, pty=True)
 
