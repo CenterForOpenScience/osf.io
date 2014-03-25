@@ -6,7 +6,7 @@ from mfr.renderer import FileRenderer
 logger = logging.getLogger(__name__)
 
 modules = [
-    'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx',
+    'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx', 'audio',
     'tabular.renderers',
 ]
 for module in modules:
