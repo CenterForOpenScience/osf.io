@@ -4,23 +4,92 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-from invoke import task, run
+import sys
+import code
 
-import konch
+from invoke import task, run
 
 from website import settings
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
 
+
 @task
 def server():
     run("python main.py")
 
+
+SHELL_BANNER = """
+{version}
+
+Welcome to the OSF Python Shell. Happy hacking!
+
+Available variables:
+
+{context}
+"""
+
+
+def make_shell_context():
+    from framework import Q
+    from framework.auth.model import User
+    from framework import db
+    from website.app import init_app
+    from website.project.model import Node
+    from website import models  # all models
+    import requests
+    app = init_app()
+    context = {'app': app,
+                'db': db,
+                'User': User,
+                'Node': Node,
+                'Q': Q,
+                'models': models,
+                'run_tests': test,
+                'rget': requests.get,
+                'rpost': requests.post,
+                'rdelete': requests.delete,
+                'rput': requests.put
+    }
+    try:  # Add a fake factory for generating fake names, emails, etc.
+        from faker import Factory
+        fake = Factory.create()
+        context['fake'] = fake
+    except ImportError:
+        pass
+    return context
+
+
+def format_context(context):
+    lines = []
+    for name, obj in context.items():
+        line = "{name}: {obj!r}".format(**locals())
+        lines.append(line)
+    return '\n'.join(lines)
+
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
-    config = konch.use_file('.konchrc')
-    konch.start(**config)
+    context = make_shell_context()
+    banner = SHELL_BANNER.format(version=sys.version,
+        context=format_context(context)
+    )
+    try:
+        try:
+            # 0.10.x
+            from IPython.Shell import IPShellEmbed
+            ipshell = IPShellEmbed(banner=banner)
+            ipshell(global_ns={}, local_ns=context)
+        except ImportError:
+            # 0.12+
+            from IPython import embed
+            embed(banner1=banner, user_ns=context)
+        return
+    except ImportError:
+        pass
+    # fallback to basic python shell
+    code.interact(banner, local=context)
+    return
 
 @task
 def mongo(daemon=False):
