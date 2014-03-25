@@ -17,3 +17,9 @@ Dropbox in {{ nodeCategory }}
 linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeCategory }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
+
+
+<script type="text/html" id="dropbox_node_deauthorized">
+deauthorized the Dropbox addon on {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
