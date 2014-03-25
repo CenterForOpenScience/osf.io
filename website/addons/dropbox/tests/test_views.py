@@ -10,7 +10,7 @@ from webtest import Upload
 
 from website.util import api_url_for
 from website.project.model import NodeLog
-from tests.base import DbTestCase, URLLookup
+from tests.base import DbTestCase, URLLookup, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.dropbox.tests.utils import (
@@ -20,11 +20,6 @@ from website.addons.dropbox.tests.utils import (
 
 lookup = URLLookup(app)
 mock_client = MockDropbox()
-
-
-
-def assert_is_redirect(response, msg='Response is a redirect'):
-    assert_true(300 <= response.status_code < 400, msg)
 
 
 class TestAuthViews(DbTestCase):
