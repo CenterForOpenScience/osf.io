@@ -9,63 +9,21 @@ import logging
 import urlparse
 import httplib as http
 from nameparser import HumanName
-from mako.template import Template
 
 from framework import Q
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 from framework.flask import request
-from framework.auth import register
 from framework.auth.decorators import Auth
-from framework.email.tasks import send_email
 
 from website import settings, security
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
+from website.mails import send_email, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 logger = logging.getLogger(__name__)
 
-
-CREATE_FAILED_SUBJECT = 'Open Science Framework Error: No files attached'
-CREATE_FAILED_TEMPLATE = Template('''
-Hello, ${fullname},
-
-You recently tried to create a project on the Open Science Framework via email, but your message did not contain any file attachments. Please try again, making sure to attach the files you'd like to upload to your message.
-
-Sincerely yours,
-
-The OSF Robot
-''')
-
-CREATED_PROJECT_SUBJECT = 'Project created on Open Science Framework'
-MESSAGE_TEMPLATE = Template('''
-Hello, ${fullname},
-
-Congratulations! You have successfully added your SPSP 2014 ${poster_or_talk} to the Open Science Framework (OSF).
-
-% if user_created:
-Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ]. Please verify your profile information at [ ${profile_url} ].
-
-% endif
-Your SPSP 2014 poster has been added to the Open Science Framework. You now have a permanent, citable URL, that you can share and more details about your research: [ ${node_url} ].
-
-Get more from the OSF by enhancing your page with the following:
-
-* Collaborators/contributors to the poster
-* Charts, graphs, and data that didn't make it onto the poster
-* Links to related publications or reference lists
-* Connecting your GitHub account via add-on integration
-
-To learn more about the OSF, visit [ http://osf.io/getting-started ], Center for Open Science (COS) job opportunities [ http://cos.io/jobs ], and ways to get involved in replication projects [ http://cos.io/spsp/ ]!
-
-Follow the COS at @OSFramework on Twitter [ https://twitter.com/OSFramework ]
-Like us on Facebook [ https://www.facebook.com/OpenScienceFramework ]
-
-Sincerely yours,
-
-The OSF Robot
-''')
 
 def request_to_data():
     return {
@@ -80,13 +38,10 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
 
     # Fail if no attachments
     if not attachments:
-        message = CREATE_FAILED_TEMPLATE.render(fullname=fullname)
         send_email(
-            from_addr=settings.FROM_EMAIL,
-            to_addr=address,
-            subject=CREATE_FAILED_SUBJECT,
-            message=message,
-            mimetype='plain',
+            address,
+            CONFERENCE_FAILED,
+            fullname=fullname
         )
         return
 
@@ -102,7 +57,7 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     set_password_url = None
     if user is None:
         password = str(uuid.uuid4())
-        user = register(address, password, fullname)
+        user = User.create_confirmed(address, password, fullname)
         user.verification_key = security.random_string(20)
         set_password_url = urlparse.urljoin(
             settings.DOMAIN, 'resetpassword/{0}/'.format(
@@ -183,8 +138,10 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     )
     mail_record.save()
 
-    # Render message
-    message = MESSAGE_TEMPLATE.render(
+    # Send confirmation email
+    send_email(
+        address,
+        CONFERENCE_SUBMITTED,
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
@@ -193,15 +150,6 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
         poster_or_talk=poster_or_talk,
         is_spam=False,#is_spam,
-    )
-
-    # Send confirmation email
-    send_email(
-        from_addr=settings.FROM_EMAIL,
-        to_addr=address,
-        subject=CREATED_PROJECT_SUBJECT,
-        message=message,
-        mimetype='plain',
     )
 
 def get_mailgun_subject():
@@ -269,7 +217,7 @@ def check_mailgun_spam():
         spf_header not in SPF_PASS_VALUES
     )
 
-def spsp_poster_hook():
+def poster_hook(tag):
 
     # Fail if not from Mailgun
     check_mailgun_headers()
@@ -283,12 +231,12 @@ def spsp_poster_hook():
         subject=get_mailgun_subject(),
         message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
-        tags=['spsp2014'],
-        system_tags=['spsp2014'],
+        tags=[tag],
+        system_tags=[tag],
         is_spam=check_mailgun_spam(),
     )
 
-def _render_spsp_node(node, idx):
+def _render_conference_node(node, idx):
 
     # Hack: Avoid circular import
     from website.addons.osffiles.model import NodeFile
@@ -313,16 +261,16 @@ def _render_spsp_node(node, idx):
         'downloadUrl': download_url,
     }
 
-def spsp_results():
+def conference_results(tag):
 
     nodes = Node.find(
-        Q('tags', 'eq', 'spsp2014') &
+        Q('tags', 'eq', tag) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
 
     data = [
-        _render_spsp_node(each, idx)
+        _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
 
