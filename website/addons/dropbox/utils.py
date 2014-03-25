@@ -26,8 +26,15 @@ def clean_path(path):
 
 # TODO(sloria): TEST ME
 def render_dropbox_file(file_obj, client=None, rev=None):
+    """Render a DropboxFile with the MFR.
+
+    :param DropboxFile file_obj: The file's GUID record.
+    :param DropboxClient client:
+    :param str rev: Revision ID.
+    :return: The HTML for the rendered file.
+    """
     # Filename for the cached MFR HTML file
-    cache_name = file_obj.get_cache_filename(client=client)
+    cache_name = file_obj.get_cache_filename(client=client, rev=rev)
     node_settings = file_obj.node.get_addon('dropbox')
     rendered = get_cache_content(node_settings, cache_name)
     if rendered is None:  # not in MFR cache

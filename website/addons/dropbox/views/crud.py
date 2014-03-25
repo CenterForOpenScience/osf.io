@@ -53,19 +53,18 @@ def dropbox_upload(node_addon, auth, **kwargs):
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
 
-
+# TODO(sloria): Test me
 def make_file_response(fileobject, metadata):
     """Builds a response from a file-like object and metadata returned by
     a Dropbox client.
     """
     resp = make_response(fileobject.read())
-    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
-        metadata['path']
-    )
+    disposition = 'attachment; filename={0}'.format(metadata['path'])
+    resp.headers['Content-Disposition'] = disposition
     resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
     return resp
 
-#TODO Force download start? maybe?
+
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_download(path, node_addon, **kwargs):
@@ -76,19 +75,7 @@ def dropbox_download(path, node_addon, **kwargs):
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
     return make_file_response(fileobject, metadata)
 
-
-def dropbox_create_folder(**kwargs):
-    pass
-
-
-def dropbox_move_file(**kwargs):
-    pass
-
-
-def dropbox_get_versions(**kwargs):
-    pass
-
-
+# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
@@ -136,11 +123,12 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
 
 ##### MFR Rendering #####
 
+# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_render_file(path, node_addon, auth, **kwargs):
-    # TODO(sloria)
-    file_obj = DropboxFile.find_one(Q('path', 'eq', path))
+    node = node_addon.owner
+    file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     client = get_node_addon_client(node_addon)
-    filename = file_obj.get_cache_filename(client=client)
-    return get_cache_content(node_addon, filename)
+    rev = request.args.get('rev')
+    return render_dropbox_file(file_obj, client=client, rev=rev)

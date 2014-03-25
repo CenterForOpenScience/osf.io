@@ -59,6 +59,7 @@ web_routes = {
             OsfWebRenderer('../addons/dropbox/templates/dropbox_view_file.mako'),
         ),
 
+        ##### Revisions #####
         Rule(
             [
                 '/project/<pid>/dropbox/files/<path:path>/revisions/',

@@ -10,6 +10,7 @@ from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_client, get_node_addon_client
+from website.addons.dropbox.utils import clean_path
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -42,7 +43,6 @@ class DropboxFile(GuidFile):
     # TODO(sloria): TEST ME
     def update_metadata(self, client=None, rev=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
-        debug(cl)
         self.metadata = cl.metadata(self.path, list=False, rev=rev)
 
     def get_metadata(self, client=None, force=False, rev=None):
@@ -53,23 +53,28 @@ class DropboxFile(GuidFile):
         return self.metadata
 
     def get_cache_filename(self, client=None, rev=None):
-        metadata = self.get_metadata(client=client, rev=rev)
-        return "{slug}_{rev}.html".format(slug=slugify(self.path), rev=metadata['rev'])
+        if not rev:
+            metadata = self.get_metadata(client=client, rev=rev, force=True)
+            revision = metadata['rev']
+        else:
+            revision = rev
+        return "{slug}_{rev}.html".format(slug=slugify(self.path), rev=revision)
 
     @classmethod
     def get_or_create(cls, node, path):
         """Get or create a new file record.
         Return a tuple of the form ``obj, created``
         """
+        cleaned_path = clean_path(path)
         try:
             new = cls.find_one(
                 Q('node', 'eq', node) &
-                Q('path', 'eq', path)
+                Q('path', 'eq', cleaned_path)
             )
             created = False
         except ModularOdmException:
             # Create new
-            new = cls(node=node, path=path)
+            new = cls(node=node, path=cleaned_path)
             new.save()
             created = True
         return new, created
