@@ -2,6 +2,8 @@
 import os
 import logging
 
+from framework import make_response
+
 from website.project.utils import get_cache_content
 from website.util import rubeus
 from website.addons.dropbox.client import get_node_addon_client
@@ -73,6 +75,17 @@ def clean_path(path):
     if path is None:
         return ''
     return path.strip('/')
+
+
+def make_file_response(fileobject, metadata):
+    """Builds a response from a file-like object and metadata returned by
+    a Dropbox client.
+    """
+    resp = make_response(fileobject.read())
+    disposition = 'attachment; filename={0}'.format(metadata['path'])
+    resp.headers['Content-Disposition'] = disposition
+    resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
+    return resp
 
 
 # TODO(sloria): TEST ME

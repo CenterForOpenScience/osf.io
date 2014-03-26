@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for website.addons.dropbox.utils."""
+import io
+
 from nose.tools import *  # PEP8 asserts
+from werkzeug.wrappers import Response
 
 from framework.auth.decorators import Auth
 from website.project.model import NodeLog
@@ -59,6 +62,31 @@ def test_serialize_folder():
     result = serialize_folder(metadata)
     assert_equal(result['path'], metadata['path'])
     assert_equal(result['name'], 'Dropbox' + metadata['path'])
+
+
+def test_make_file_response():
+    mockfile = io.BytesIO(b'bohemianrhapsody')
+    metadata = {
+        u'bytes': 123,
+        u'icon': u'file',
+        u'is_dir': False,
+        u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+        u'path': u'song.mp3',
+        u'rev': u'3fed51f002c12fc',
+        u'revision': 67032351,
+        u'root': u'dropbox',
+        u'size': u'0 bytes',
+        u'thumb_exists': False,
+        u'mime_type': u'audio/mpeg',
+    }
+    with app.test_request_context():
+        resp = utils.make_file_response(mockfile, metadata)
+    # It's a response
+    assert_true(isinstance(resp, Response))
+    # Headers are correct
+    disposition = 'attachment; filename=song.mp3'
+    assert_equal(resp.headers['Content-Disposition'], disposition)
+    assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
 
 
 class TestBuildDropboxUrls(DbTestCase):

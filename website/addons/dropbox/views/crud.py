@@ -13,14 +13,14 @@ from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
 from website.addons.base.views import check_file_guid
 
-from framework import request, redirect, make_response
+from framework import request, redirect
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
     render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path,
-    DropboxNodeLogger
+    DropboxNodeLogger, make_file_response
 )
 
 logger = logging.getLogger(__name__)
@@ -64,18 +64,6 @@ def dropbox_upload(node_addon, auth, **kwargs):
         nodelogger.log(NodeLog.FILE_ADDED, save=True)
         return metadata_to_hgrid(metadata, node=node, permissions=permissions)
     raise HTTPError(http.BAD_REQUEST)
-
-# TODO(sloria): Test me
-# TODO(sloria): Put in utils?
-def make_file_response(fileobject, metadata):
-    """Builds a response from a file-like object and metadata returned by
-    a Dropbox client.
-    """
-    resp = make_response(fileobject.read())
-    disposition = 'attachment; filename={0}'.format(metadata['path'])
-    resp.headers['Content-Disposition'] = disposition
-    resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
-    return resp
 
 
 @must_be_contributor_or_public
