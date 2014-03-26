@@ -930,6 +930,14 @@ div#logScope a.moreLogs{
     margin:20px 20px;
 }
 
+.private-link-label{
+    width:60%;
+}
+
+.link-break{
+    margin-bottom:10px;
+}
+
 /* Contributor page */
 
 .contributor-self {

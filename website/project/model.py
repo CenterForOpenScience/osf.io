@@ -471,7 +471,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_links = fields.StringField(list=True, backref='key')
+    private_links = fields.ForeignField('privatelink',list=True, backref='key')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -1594,17 +1594,17 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
-    def add_private_link(self, link='', save=True):
-        link = link or str(uuid.uuid4()).replace("-", "")
-        self.private_links.append(link)
-        if save:
-            self.save()
-        return link
-
-    def remove_private_link(self, link, save=True):
-        self.private_links.remove(link)
-        if save:
-            self.save()
+    # def add_private_link(self, link='', save=True):
+    #     link = link or str(uuid.uuid4()).replace("-", "")
+    #     self.private_links.append(link)
+    #     if save:
+    #         self.save()
+    #     return link
+    #
+    # def remove_private_link(self, link, save=True):
+    #     self.private_links.remove(link)
+    #     if save:
+    #         self.save()
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
@@ -2283,8 +2283,26 @@ class PrivateLink(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    is_deleted = fields.BooleanField(default=False)
+    key = fields.StringField(required=True)
     label = fields.StringField()
-    user = fields.ForeignField('user', backref='created')
-    node = fields.ForeignField('Node', backref='keyed')
 
+    creator = fields.ForeignField('user', backref='created')
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "key": self.key,
+            "label": self.label,
+            "creator": self.creator.fullname,
+        }
+
+
+    def set_label(self, label, auth):
+        """Set the label.
+
+        :param str label: The new label
+        :param auth: All the auth informtion including user, API key.
+
+        """
+        self.description = label

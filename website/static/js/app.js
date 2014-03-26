@@ -41,6 +41,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.title = title;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
+    self.label = ko.observable();
     self.pageTitle = 'Generate New Private Link';
     self.errorMsg = ko.observable('');
 
@@ -72,12 +73,14 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     };
 
     self.submit = function() {
+        console.log(self.label())
         $.ajax(
             nodeApiUrl + 'private_link/',
             {
                 type: 'post',
                 data: JSON.stringify({
-                    node_ids: self.nodesToChange()
+                    node_ids: self.nodesToChange(),
+                    label: self.label()
                 }),
                 contentType: 'application/json',
                 dataType: 'json',

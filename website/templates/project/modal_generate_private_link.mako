@@ -10,8 +10,9 @@
                 <div >
 
                     <div>
-                        Generating Private Link to Component
-                        <span data-bind="text:title"></span>.
+                        Would you like to add a label for this private link?
+                        <div class="link-break"></div>
+                        <input type="text" class="form-control private-link-label" placeholder="New Label" data-bind="value:label"/>
                     </div>
 
                     <hr />

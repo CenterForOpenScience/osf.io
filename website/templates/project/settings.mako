@@ -172,10 +172,10 @@
                 <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
                 % for link in node['private_links']:
                     <li class="list-group-item" >
-                        <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
-                        <a class="link-name" >${node['absolute_url']}?key=${link}</a>
+                        <a>${link}</a>
+                        <a class="remove-private-link btn btn-danger btn-mini" data-link="${link['id']}">-</a>
+                        <a class="link-name" >${node['absolute_url']}?key=${link['key']}</a>
                         <button class="copy-button" data-clipboard-text="${link}" title="Click to copy me.">Copy to Clipboard</button>
-
                     </li>
                 % endfor
             </div>
