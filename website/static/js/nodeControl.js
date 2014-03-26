@@ -9,7 +9,7 @@ this.NodeControl = (function(ko, $, global) {
     // Modal language
     var MESSAGES = {
         makePublicWarning: 'Once a project is made public, there is no way to guarantee that ' +
-                            'access to the data it contains can be complete prevented. Users ' +
+                            'access to the data it contains can be completely prevented. Users ' +
                             'should assume that once a project is made public, it will always ' +
                             'be public. Are you absolutely sure you would like to continue?',
 

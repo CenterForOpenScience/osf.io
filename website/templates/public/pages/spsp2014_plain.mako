@@ -4,20 +4,10 @@
 
     <title>SPSP Presentations 2014</title>
 
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-    % for url in css_all:
-        <link rel="stylesheet" href="${url}">
-    % endfor
+    <%namespace name="globals" file="base.mako" />
+    ${globals.includes_top()}}
 
-    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
-    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
-    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
-    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
-    % for url in js_all + js_bottom:
+    % for url in js_bottom:
         <script src="${url}"></script>
     % endfor
 
@@ -34,7 +24,7 @@
 
     </div>
 
-    <script type="text/javascript" src="/static/js/spsp.js"></script>
+    <script type="text/javascript" src="/static/js/conference.js"></script>
     <script type="text/javascript">
         var data = ${data}
         new Meeting.Meeting(data);

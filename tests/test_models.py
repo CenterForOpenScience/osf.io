@@ -116,17 +116,39 @@ class TestUser(DbTestCase):
         u.save()
         assert_true(u.date_registered)
 
+    def test_create(self):
+        name, email = fake.name(), fake.email()
+        user = User.create(
+            username=email, password='foobar', fullname=name
+        )
+        user.save()
+        assert_true(user.check_password('foobar'))
+        assert_true(user._id)
+        assert_equal(user.given_name, parse_name(name)['given_name'])
+
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
-        u = User.create_unconfirmed(username=email, password='foobar',
-            fullname=name)
-        u.save()
-        assert_false(u.is_registered)
-        assert_true(u.check_password('foobar'))
-        assert_true(u._id)
-        assert_equal(len(u.email_verifications.keys()), 1)
-        assert_equal(len(u.emails), 0, 'primary email has not been added to emails list')
-        assert_equal(u.given_name, parse_name(name)['given_name'])
+        user = User.create_unconfirmed(
+            username=email, password='foobar', fullname=name
+        )
+        user.save()
+        assert_false(user.is_registered)
+        assert_equal(len(user.email_verifications.keys()), 1)
+        assert_equal(
+            len(user.emails),
+            0,
+            'primary email has not been added to emails list'
+        )
+
+    def test_create_confirmed(self):
+        name, email = fake.name(), fake.email()
+        user = User.create_confirmed(
+            username=email, password='foobar', fullname=name
+        )
+        user.save()
+        assert_true(user.is_registered)
+        assert_true(user.is_claimed)
+        assert_equal(user.date_registered, user.date_confirmed)
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
