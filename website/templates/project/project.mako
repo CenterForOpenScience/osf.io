@@ -59,7 +59,6 @@
                 <span>${node['display_absolute_url']}</span>
                 <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
                 <div class="citation-list">
-                <div style="padding-top: 10px;"><b>Human Readable Formats</b></div>
                 <form id="citationFormHuman" action="#">
                         <select name="styles">
                             <option value="apa.csl">APA</option>
@@ -69,12 +68,12 @@
                             <option value="modern-language-association-with-url.csl">MLA</option>
                             <option value="turabian-fullnote-bibliography.csl">Turabian</option>
                             <option value="vancouver-author-date.csl">Vancouver</option>
-
                         </select>
-                        <input type="submit" value="Submit">
                     </form>
+                    <p></p>
+                <dl class="rendered-citation"></dl>
 
-                <div style="padding-top: 5px;"><b>Machine Readable Formats</b></div>
+                <div><b>Download As:</b></div>
                 <form id="citationFormMachine" action="#">
                         <select name="styles">
                             <option value="xml2bib">BibTeX</option>
@@ -86,7 +85,7 @@
                         <input type="submit" value="Download">
                     </form>
                 <p></p>
-                <dl class="rendered-citation"></dl>
+
                 </div>
             </div>
 
