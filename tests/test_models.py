@@ -147,6 +147,7 @@ class TestUser(DbTestCase):
         )
         user.save()
         assert_true(user.is_registered)
+        assert_equal(user.date_registered, user.date_confirmed)
 
     def test_cant_create_user_without_full_name(self):
         u = User(username=fake.email())
