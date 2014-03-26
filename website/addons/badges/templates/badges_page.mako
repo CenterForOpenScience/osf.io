@@ -40,47 +40,41 @@
 </ul>
 %endif
 
-<script type="text/javascript">
-$(document).ready(function(){
-
 % if can_issue and configured and len(badges) > 0:
+  <script type="text/javascript">
+  $(document).ready(function(){
+      $('.revoke-badge').editable({
+        type: 'text',
+        pk: 'revoke',
+        placement: 'left',
+        title: 'Revoke this badge?',
+        placeholder: 'Reason',
+        display: false,
+        validate: function(value) {
+          if($.trim(value) == '') return 'A reason is required';
+        },
+        ajaxOptions: {
+          'type': 'POST',
+          "dataType": "json",
+          "contentType": "application/json"
+        },
+        url: nodeApiUrl + 'badges/revoke/',
+        params: function(params){
+          // Send JSON data
+          var uid = $(this).attr('badge-uid')
+          return JSON.stringify({reason: params.value, id: uid});
+        },
+        success: function(data){
+          document.location.reload(true);
+        },
+      });
 
+  });
+  </script>
 
-    $('.revoke-badge').editable({
-      type: 'text',
-      pk: 'revoke',
-      placement: 'left',
-      title: 'Revoke this badge?',
-      placeholder: 'Reason',
-      display: false,
-      validate: function(value) {
-        if($.trim(value) == '') return 'A reason is required';
-      },
-      ajaxOptions: {
-        'type': 'POST',
-        "dataType": "json",
-        "contentType": "application/json"
-      },
-      url: nodeApiUrl + 'badges/revoke/',
-      params: function(params){
-        // Send JSON data
-        var uid = $(this).attr('badge-uid')
-        return JSON.stringify({reason: params.value, id: uid});
-      },
-      success: function(data){
-        document.location.reload(true);
-      },
-    });
+  <style type="text/css">
+    .btn-danger.editable:hover {
+        background-color: #d2322d;
+    }
+  </style>
 %endif
-});
-</script>
-
-<style type="text/css">
-
-
-.btn-danger.editable:hover {
-    background-color: #d2322d;
-}
-
-
-</style>

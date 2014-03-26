@@ -27,7 +27,7 @@ ${next.body()}
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
-    %if badges and badges['can_issue']:
+    %if 'badges' in addons_enabled and badges and badges['can_issue']:
         $script(['/addons/static/badges/awardBadge.js'], 'awarder');
     %endif
     // TODO: Put these in the contextVars object below

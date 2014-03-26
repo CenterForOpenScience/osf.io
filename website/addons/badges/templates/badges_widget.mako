@@ -12,7 +12,9 @@
           %for assertion in reversed(assertions[-6:]):
             <img src="${assertion['image']}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/${assertion['uid']}/json/" data-content="${assertion['description']}" data-toggle="popover" data-title="${assertion['name']}">
           %endfor
-          <!-- TODO add ...-->
+          %if len(assertions) > 6:
+            <a href="badges/" class="ellipse">...</a>
+          %endif
   </div>
 %endif
 <script>
@@ -25,6 +27,19 @@ $(document).ready(function(){
 });
 
 </script>
+<style>
+.ellipse {
+  font-size: 64px;
+  vertical-align: bottom;
+  color: #777;
+}
+
+.ellipse:hover, .ellipse:focus {
+  text-decoration: initial;
+  color: #777;
+}
+
+</style>
 
 %else:
         <div mod-meta='{
