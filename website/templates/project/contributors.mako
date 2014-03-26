@@ -38,8 +38,47 @@
                 </table>
                 ${buttonGroup()}
         </div>
+
+
+
     </div><!-- end col-md -->
 </div><!-- end row -->
+
+<div class="row">
+    <div class="col-md-12">
+    <h2>Private Links</h2>
+        <div id="linkScope" >
+                <table id="privateLinkTable" class="table">
+                    <thead>
+                        <tr>
+                        <th class="col-sm-6">Private Link</th>
+                        <th class="col-sm-5">Label
+
+                        </th>
+                        <th class="col-sm-4">Created Date</th>
+                        <th class="col-sm-3">Created By</th>
+                        <th class="col-sm-1"></th>
+                        </tr>
+                    </thead>
+                    <tr >
+                        <td colspan="3">
+                            <a href="#private-link" data-toggle="modal">
+                                Click to generate a private link
+                            </a>
+                        </td>
+                    </tr>
+                    <tbody data-bind="sortable: {template: 'contribTpl',
+                        data: contributors, as: 'contributor',
+                        isEnabled: userIsAdmin,
+                        afterRender: setupEditable,
+                        options: {containment: '#manageContributors'}}">
+                    </tbody>
+                </table>
+
+        </div>
+    </div><!-- end col-md -->
+</div><!-- end row -->
+
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
