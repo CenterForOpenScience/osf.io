@@ -19,6 +19,15 @@ from util import build_badge, build_assertion
 from model import Badge, BadgeAssertion
 
 
+@must_be_logged_in
+def get_user_badges(*args, **kwargs):
+    auth = kwargs['auth']
+    if auth.user._id == kwargs['uid']:
+        return auth.user.get_addon('badges').get_badges_json_simple()
+    else:
+        raise HTTPError(http.BAD_REQUEST)
+
+
 @must_be_contributor_or_public
 @must_have_addon('badges', 'node')
 def badges_widget(*args, **kwargs):
@@ -56,7 +65,6 @@ def badges_page(*args, **kwargs):
         if badger:
             ret.update(badger.to_json(auth.user))
             ret['uid'] = auth.user._id
-    #ret.update(badges.config.to_json())
     ret.update(_view_project(node, kwargs['auth']))
 
     return ret

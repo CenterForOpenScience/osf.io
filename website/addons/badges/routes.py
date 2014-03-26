@@ -35,6 +35,7 @@ api_urls = {
             '/project/<pid>/badges/revoke/',
             '/project/<pid>/node/<nid>/badges/revoke/',
         ], 'post', views.revoke_badge, json_renderer),
+        Rule('/profile/<uid>/badges/json', 'get', views.get_user_badges, json_renderer)
     ],
     'prefix': '/api/v1',
 }

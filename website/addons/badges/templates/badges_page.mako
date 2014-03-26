@@ -4,8 +4,8 @@
 <script src="/addons/static/badges/awardBadge.js"></script>
 
 %if len(assertions) > 0:
-<ul class="two-col" id="badgeList" style="max-height:600px; overflow-y: auto; overflow-x: hidden;">
-    %for assertion in assertions:
+<ul class="two-col" id="badgeList">
+    %for assertion in reversed(assertions):
         <div class="row well well-sm" style="margin-right: 20px;">
             <div class="col-md-2">
 
@@ -25,11 +25,13 @@
                     <i class="icon-minus"></i>
                   </button>
                 %endif
+                 <h5>Awarded on
                 %if assertion.get('evidence'):
-                    <a href="${assertion['evidence']}"><h href>Awarded on ${assertion['issued_on']}</h5></a>
+                   <a href="${assertion['evidence']}">${assertion['issued_on']}</a>
                 %else:
-                    <h5 href>Awarded on ${assertion['issued_on']}</h5>
+                    ${assertion['issued_on']}
                 %endif
+                <br />by <a href="${assertion['issuer']}">${assertion['issuer_name']}</a></h5>
                 ##TODO
                 <!-- <button class="btn btn-primary" data-toggle="buttons" >Do not display</button> -->
             </div>
@@ -42,35 +44,7 @@
 $(document).ready(function(){
 
 % if can_issue and configured and len(badges) > 0:
-    $('#awardBadge').editable({
-      name:  'title',
-      title: 'Award Badge',
-      display: false,
-      highlight: false,
-      placement: 'bottom',
-      showbuttons: 'bottom',
-      type: 'AwardBadge',
-      value: '${badges[0]['id']}',
-      badges: [
-        %for badge in badges:
-          {value: '${badge['id']}', text: '${badge['name']}'},
-        %endfor
-      ],
-      ajaxOptions: {
-        'type': 'POST',
-        "dataType": "json",
-        "contentType": "application/json"
-      },
-      url: nodeApiUrl + 'badges/award/',
-      params: function(params){
-        // Send JSON data
-        return JSON.stringify(params.value);
-      },
-      success: function(data){
-        document.location.reload(true);
-      },
-      pk: 'newBadge'
-    });
+
 
     $('.revoke-badge').editable({
       type: 'text',
@@ -102,12 +76,11 @@ $(document).ready(function(){
 </script>
 
 <style type="text/css">
-.btn-success.editable:hover {
-    background-color: #419641;
-}
+
 
 .btn-danger.editable:hover {
     background-color: #d2322d;
 }
+
 
 </style>

@@ -573,6 +573,7 @@ def _view_project(node, auth, primary=False):
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
         },
+        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -582,6 +583,17 @@ def _view_project(node, auth, primary=False):
 
     }
     return data
+
+
+def _get_badge(user):
+    if user:
+        badger = user.get_addon('badges')
+        if badger:
+            return {
+                'can_issue': badger.can_issue and badger.configured,
+                'badges': badger.get_badges_json()
+            }
+    return {}
 
 
 def _get_children(node, auth, indent=0):

@@ -27,7 +27,9 @@ ${next.body()}
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
-
+    %if badges and badges['can_issue']:
+        $script(['/addons/static/badges/awardBadge.js'], 'awarder');
+    %endif
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';

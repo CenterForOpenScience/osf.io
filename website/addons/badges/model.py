@@ -204,6 +204,12 @@ class BadgesUserSettings(AddonUserSettingsBase):
     def configured(self):
         return not (self.name is None  or self.url is None)
 
+    def get_badges_json(self):
+        return [Badge.load(_id).to_json() for _id in self.badges]
+
+    def get_badges_json_simple(self):
+        return [{'value': Badge.load(_id).to_json()['id'], 'text': Badge.load(_id).to_json()['name']} for _id in self.badges]
+
     def add_badge(self, id, save=True):
         self.badges.append(id)
         if save:
