@@ -4,37 +4,78 @@ $script.ready(['hgrid'], function() {
     var ViewModel = function(data) {
         var self = this;
 
-        self.updateFromData = function(data) {
-            self.ownerName = data.ownerName;
-            self.nodeHasAuth = ko.observable(data.nodeHasAuth);
-            self.userHasAuth = ko.observable(data.userHasAuth);
-            self.selected = ko.observable(data.folder);
-            self.folders = ko.observableArray(data.folders);
-            self.urls = data.urls;
-        };
-
-        self.updateFromData(data);
+        self.nodeHasAuth = ko.observable(data.nodeHasAuth);
+        self.userHasAuth = ko.observable(data.userHasAuth);
+        self.selected = ko.observable(data.folder);
+        self.folders = ko.observableArray(data.folders);
+        self.ownerName = ko.observable(data.ownerName);
+        self.urls = data.urls;
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
         self.showPicker = ko.observable(false);
 
-        function onSubmitSuccess(response) {
-            self.message('Successfully updated settings. Go to the <a href="' +
-                self.urls.files + '">Files page</a> to view your files.');
-            self.messageClass('text-success');
-            setTimeout(function() {
-                self.message('');
-            }, 5000);
+
+        /**
+         * Update the view model from data returned from the server.
+         */
+        self.updateFromData = function(data) {
+            self.ownerName(data.ownerName);
+            self.nodeHasAuth(data.nodeHasAuth);
+            self.userHasAuth(data.userHasAuth);
+            self.selected(data.folder);
+            self.folders(data.folders);
+        };
+
+        /**
+         * Whether or not to show the Import Access Token Button
+         */
+        self.showImport = ko.computed(function() {
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            return userHasAuth && !nodeHasAuth;
+        });
+
+        /** Whether or not to show the full settings pane. */
+        self.showSettings = ko.computed(function() {
+            return self.nodeHasAuth();
+        });
+
+        /** Whether or not to show the Create Access Token button */
+        self.showTokenCreateButton = ko.computed(function() {
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            return !userHasAuth && !nodeHasAuth;
+        });
+
+        function onSubmitSuccess() {
+            self.changeMessage('Successfully updated settings. Go to the <a href="' +
+                self.urls.files + '">Files page</a> to view your files.',
+                'text-success', 5000);
         }
 
-        function onSubmitError(xhr, textStatus, error) {
-            self.message('Could not change settings. Please try again later.');
-            self.messageClass('text-danger');
+        function onSubmitError() {
+            self.changeMessage('Could not change settings. Please try again later.', 'text-danger');
         }
 
+        /**
+         * Send a PUT request to change the linked Dropbox folder.
+         */
         self.submitSettings = function() {
             $.osf.putJSON(self.urls.config, ko.toJS(self),
                 onSubmitSuccess, onSubmitError);
+        };
+
+        self.changeMessage = function(text, css, timeout) {
+            self.message(text);
+            var cssClass = css || 'text-info';
+            self.messageClass(cssClass);
+            if (timeout) {
+                // Reset message after timeout period
+                setTimeout(function() {
+                    self.message('');
+                    self.messageClass('text-info');
+                }, timeout);
+            }
         };
 
         /**
@@ -45,11 +86,12 @@ $script.ready(['hgrid'], function() {
                 url: self.urls.deauthorize,
                 type: 'DELETE',
                 success: function() {
-                    window.location.reload();
+                    self.nodeHasAuth(false);
+                    self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
-                error: function(xhr, textStatus, error) {
-                    self.message('Could not deauthorize because of an error. Please try again later.');
-                    self.messageClass('text-danger');
+                error: function() {
+                    self.changeMessage('Could not deauthorize because of an error. Please try again later.',
+                        'text-danger');
                 }
             });
         }
@@ -67,15 +109,10 @@ $script.ready(['hgrid'], function() {
         };
 
         function onImportSuccess(response) {
-            // TODO(sloria): This doesn't work yet because the view doesn't update
-            // so just reload for now.
-
-            // var msg = response.message || 'Successfully imported access token from profile.';
-            // // Update view model based on response
-            // self.message(msg);
-            // self.messageClass('text-success');
-            // self.updateFromData(response.result);
-            window.location.reload();
+            var msg = response.message || 'Successfully imported access token from profile.';
+            // Update view model based on response
+            self.changeMessage(msg, 'text-success', 3000);
+            self.updateFromData(response.result);
         }
 
         function onImportError() {
@@ -106,8 +143,11 @@ $script.ready(['hgrid'], function() {
             callback: onChooseFolder
         };
 
+        /**
+         * Renders the folder select row
+         */
         function folderView(row) {
-            var btn = {text: '<i class="icon-share"></i>',
+            var btn = {text: '<i class="icon-ok"></i>',
                 action: 'chooseFolder',
                 cssClass: 'btn btn-success btn-mini'};
             return ['<span class="rubeus-buttons">',
@@ -126,8 +166,9 @@ $script.ready(['hgrid'], function() {
             nameCol.showExpander = function(item) {
                 return item.path !== '/';
             };
-            // TODO(sloria): Make an Hgrid binding handler?
             $('#myGrid').hgrid({
+                // Fetch data from hgrid data endpoint,
+                // filtering only folders and inlcuding the root folder
                 data: nodeApiUrl + 'dropbox/hgrid/?foldersOnly=1&includeRoot=1',
                 columns: [nameCol,
                     // Custom button column
@@ -169,12 +210,14 @@ $script.ready(['hgrid'], function() {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                var viewModel = new ViewModel(response.result);
-                ko.applyBindings(viewModel, self.$elem[0]);
+                self.viewModel = new ViewModel(response.result);
+                $.osf.applyBindings(self.viewModel, selector);
             },
-            error: function(xhr, error, textError) {
-                // TODO(sloria)
-                console.log('an error occurred getting dropbox info');
+            error: function() {
+                bootbox.alert({
+                    title: 'Dropbox Error',
+                    message: 'An error occurred while connecting with Dropbox. Please try again later.'
+                });
             }
         });
     }

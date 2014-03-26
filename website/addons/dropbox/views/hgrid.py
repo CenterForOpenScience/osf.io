@@ -32,7 +32,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
                     file_dict in client.metadata(path)['contents']]
     if request.args.get('includeRoot'):
-        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/'}
+        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/ (Full Dropbox)'}
         contents.insert(0, root)
     return contents
 
