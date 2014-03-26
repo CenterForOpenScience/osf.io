@@ -92,6 +92,7 @@ def serialize_settings(node_settings, current_user, client=None):
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
 def dropbox_config_put(node_addon, auth, **kwargs):
+    """View for changing a node's linked dropbox folder."""
     folder = request.json.get('selected')
     path = folder['path']
     node_addon.set_folder(path, auth=auth)

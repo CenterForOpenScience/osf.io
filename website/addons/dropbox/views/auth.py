@@ -16,7 +16,7 @@ from website.project.model import Node
 from website.project.decorators import must_have_addon
 from website.util import api_url_for, web_url_for
 
-from website.addons.dropbox import settings, model
+from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
 
 

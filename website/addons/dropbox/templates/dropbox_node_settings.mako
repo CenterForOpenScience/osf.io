@@ -15,13 +15,12 @@
         </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Shared Folder:
-                    </strong></p>
-                    <h4>
+                <p><strong>Shared Folder:</strong></p>
+                    <h4 class="selected-folder">
                         <i class="icon-folder-close-alt"></i>
-                        <span class='selected-folder'>
+                        <a data-bind="attr: {href: urls.files}"class='selected-folder-name'>
                             {{selectedFolderName}}
-                        </span>
+                        </a>
                     </h4>
                 <button data-bind="click: togglePicker, css: {active: showPicker}" class="btn btn-default">Change</button>
 
