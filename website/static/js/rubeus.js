@@ -4,7 +4,7 @@
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-$script.ready('dropzone-patch', 'hgrid', function(){
+$script.ready(['dropzone-patch', 'hgrid'], function(){
 
     /////////////////////////
     // HGrid configuration //

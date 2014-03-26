@@ -12,6 +12,7 @@ from website.addons.dropbox.tests.factories import DropboxFileFactory
 from website.addons.dropbox.tests.utils import DropboxAddonTestCase, mock_responses
 from website.app import init_app
 from website.addons.dropbox import utils
+from website.addons.dropbox.views.config import serialize_folder
 
 app = init_app(set_backends=False, routes=True)
 
@@ -40,6 +41,13 @@ def test_clean_path():
     assert_equal(utils.clean_path('/'), '')
     assert_equal(utils.clean_path('/foo/bar/baz/'), 'foo/bar/baz')
     assert_equal(utils.clean_path(None), '')
+
+
+def test_serialize_folder():
+    metadata = {
+
+    }
+    assert 0, 'finish me'
 
 
 class TestBuildDropboxUrls(DbTestCase):
