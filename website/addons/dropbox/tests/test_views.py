@@ -61,6 +61,32 @@ class TestAuthViews(DbTestCase):
 
 class TestConfigViews(DropboxAddonTestCase):
 
+    def test_serialize_settings_helper_returns_correct_urls(self):
+        with self.app.app.test_request_context():
+            result = serialize_settings(self.node_settings, self.user, client=mock_client)
+            urls = result['urls']
+
+            assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
+            assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
+            assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
+            assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
+            assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+
+    def test_serialize_settings_helper_returns_correct_auth_info(self):
+        # Need request context because url_for is used by serialize_settings
+        with self.app.app.test_request_context():
+            result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_equal(result['userHasAuth'], self.user_settings.has_auth)
+
+    def test_serialize_settings_helper_returns_correct_folder_info(self):
+        # Need request context because url_for is used by serialize_settings
+        with self.app.app.test_request_context():
+            result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        folder = result['folder']
+        assert_equal(folder['name'], 'Dropbox' + self.node_settings.folder)
+        assert_equal(folder['path'], self.node_settings.folder)
+
     def test_dropbox_config_get(self):
         with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
             self.user_settings.account_info['display_name'] = 'Foo bar'
