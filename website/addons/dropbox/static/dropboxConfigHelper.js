@@ -1,4 +1,4 @@
-this.DropboxConfigManager = (function(ko, $, bootbox) {
+$script.ready(['hgrid'], function() {
     'use strict';
 
     var ViewModel = function(data) {
@@ -16,6 +16,7 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
         self.updateFromData(data);
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
+        self.showPicker = ko.observable(false);
 
         function onSubmitSuccess(response) {
             self.message('Successfully updated settings. Go to the <a href="' +
@@ -88,6 +89,73 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
         self.importAuth = function() {
             return $.osf.putJSON(self.urls.importAuth, {}, onImportSuccess, onImportError);
         };
+
+        function onChooseFolder(evt, row) {
+            self.selected(row.path);
+            self.submitSettings();
+        }
+
+        // Upon clicking the name of folder, toggle its collapsed state
+        function onClickName(evt, row, grid) {
+            grid.toggleCollapse(row);
+        }
+
+        // Custom HGrid action
+        HGrid.Actions.chooseFolder = {
+            on: 'click',
+            callback: onChooseFolder
+        };
+
+        function folderView(row) {
+            var btn = {text: '<i class="icon-share"></i>',
+                action: 'chooseFolder',
+                cssClass: 'btn btn-success btn-mini'};
+            return ['<span class="rubeus-buttons">',
+                    HGrid.Fmt.button(btn),
+                    '</span>'].join('');
+        }
+
+        /**
+         * Activates the folder picker
+         */
+        self.activatePicker = function() {
+            // Overrider some name column settings
+            var nameCol = $.extend({}, HGrid.Col.Name);
+            nameCol.name = 'Folders';
+            // Hide +/- icon for root folder
+            nameCol.showExpander = function(item) {
+                return item.path !== '/';
+            };
+            // TODO(sloria): Make an Hgrid binding handler?
+            $('#myGrid').hgrid({
+                data: nodeApiUrl + 'dropbox/hgrid/?foldersOnly=1&includeRoot=1',
+                columns: [nameCol,
+                    // Custom button column
+                    {name: 'Select', folderView: folderView, width: 10}],
+                fetchUrl: function(item) {
+                    return item.urls.fetch + '?foldersOnly=1';
+                },
+                uploads: false,
+                width: '100%',
+                height: 300,
+                listeners: [
+                    {
+                        on: 'click',
+                        selector: '.' + HGrid.Html.nameClass,
+                        callback: onClickName
+                    }
+                ]
+            });
+        };
+
+        /**
+         * Toggles the visibility of the folder picker.
+         */
+        self.togglePicker = function() {
+            // Toggle visibility of folder picker
+            self.showPicker(!self.showPicker());
+            self.activatePicker();
+        };
     };
 
     // Public API
@@ -111,6 +179,8 @@ this.DropboxConfigManager = (function(ko, $, bootbox) {
         });
     }
 
-    return DropboxConfigManager;
+    // Export
+    window.DropboxConfigManager = DropboxConfigManager;
+    $script.done('dropboxConfigManager');
+});
 
-})(ko, jQuery, bootbox);

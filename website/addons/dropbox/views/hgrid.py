@@ -19,7 +19,7 @@ debug = logger.debug
 def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted  response for a folder's contents."""
     node = node_addon.owner
-    path = kwargs.get('path', node_addon.folder if node_addon.folder else '')
+    path = kwargs.get('path',  '')
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
@@ -31,6 +31,9 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     else:
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
                     file_dict in client.metadata(path)['contents']]
+    if request.args.get('includeRoot'):
+        root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/'}
+        contents.insert(0, root)
     return contents
 
 

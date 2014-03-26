@@ -133,5 +133,6 @@ def metadata_to_hgrid(item, node, permissions):
         'ext': os.path.splitext(filename)[1],
         rubeus.KIND: rubeus.FOLDER if item['is_dir'] else rubeus.FILE,
         'urls': build_dropbox_urls(item, node),
+        'path': item['path'],
     }
     return serialized

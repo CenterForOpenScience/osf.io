@@ -7,7 +7,7 @@
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <div data-bind='if: nodeHasAuth'>
         <div class="well well-sm">
-            Authorized by {{ ownerName }}</a>
+            Authorized by <span data-bind="text: ownerName"></span></a>
             <span data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>
@@ -15,16 +15,21 @@
         </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
-                <form class="form" data-bind="submit: submitSettings">
-                    <div class="form-group">
-                        <label for="folder-select">Select folder</label>
-                        <select name="folder-select" class="form-control" data-bind="options: folders, value: selected"></select>
-                    </div>
-                    <input type='submit' value="Submit" class="btn btn-success" />
-                    <div class="help-block">
-                        <p data-bind="html: message, attr: {class: messageClass}"></p>
-                    </div>
-                </form>
+                <p><strong>Shared Folder:
+                    </strong><pre data-bind="text: selected"></pre>
+                </p>
+                <button data-bind="click: togglePicker, css: {active: showPicker}" class="btn btn-default">Select Folder</button>
+
+                <div data-bind="if: showPicker">
+                    <p class="help-block">Click the
+                        <button class="btn btn-primary btn-mini" disabled><i class="icon-share"></i></button> icon next to a folder to link it with this project.</p>
+                    <div id="myGrid" class="filebrowser hgrid"></div>
+                </div>
+
+
+                <div class="help-block">
+                    <p data-bind="html: message, attr: {class: messageClass}"></p>
+                </div>
             </div><!-- end col -->
         </div><!-- end row -->
     </div>
@@ -42,10 +47,10 @@
     </div>
 </div><!-- end #dropboxScope -->
 
-<script src="/addons/static/dropbox/dropboxConfigHelper.js"></script>
 
 <script>
-    $(function() {
+    $script(['/addons/static/dropbox/dropboxConfigHelper.js']);
+    $script.ready('dropboxConfigManager', function() {
         var url = '${node["api_url"] + "dropbox/config/"}';
         var dropbox = new DropboxConfigManager('#dropboxScope', url);
     });
