@@ -3,7 +3,7 @@ from nose.tools import *
 from website.util import sanitize
 
 
-class testSanatization(unittest.TestCase):
+class TestSanitize(unittest.TestCase):
     def setUp(self):
         self.dirty_text = [
             '<script> evil code </script>',
