@@ -1,10 +1,10 @@
-import json
 import httplib as http
 
 from framework.exceptions import HTTPError
 from framework.flask import request
 
 from website.models import User, Node
+from website.util.sanitize import deep_clean
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -22,10 +22,10 @@ from model import Badge, BadgeAssertion
 @must_be_logged_in
 def get_user_badges(*args, **kwargs):
     auth = kwargs['auth']
-    if auth.user._id == kwargs['uid']:
+    if auth and auth.user._id == kwargs['uid']:
         return auth.user.get_addon('badges').get_badges_json_simple()
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.FORBIDDEN)
 
 
 @must_be_contributor_or_public
@@ -72,6 +72,7 @@ def badges_page(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('badges', 'node')
+@must_have_addon('badges', 'user')
 def award_badge(*args, **kwargs):
     auth = kwargs.get('auth', None)
     badgeid = request.json.get('badgeid', None)
@@ -83,6 +84,8 @@ def award_badge(*args, **kwargs):
     if not awarder or not awarder.can_issue:
         raise HTTPError(http.FORBIDDEN)
     badge = Badge.load(badgeid)
+    if not badge or not awarder.can_award:
+        raise HTTPError(http.BAD_REQUEST)
     return badge_bag.add_badge(build_assertion(awarder, badge, badge_bag.owner, evidence))
 
 
@@ -116,6 +119,8 @@ def create_badge(*args, **kwargs):
     auth = kwargs.get('auth', None)
     badge_data = request.json
     if not auth or not badge_data:
+        raise HTTPError(http.BAD_REQUEST)
+    if not badge_data.get('badgeName', None) or not badge_data.get('description', None) or not badge_data.get('imageurl', None) or not badge_data.get('criteria', None):
         raise HTTPError(http.BAD_REQUEST)
     awarder = auth.user.get_addon('badges')
     if not awarder or not awarder.can_issue:
@@ -182,7 +187,9 @@ def create_organization(*args, **kwargs):
     settings = auth.user.get_addon('badges')
     if not settings or not settings.can_issue:
         raise HTTPError(http.FORBIDDEN)
-
+    if not request.json.get('name') or request.json.get('email'):
+        raise HTTPError(http.BAD_REQUEST)
+    deep_clean(request.json)
     settings.name = request.json['name']
     settings.email = request.json['email']
     settings.description = request.json.get('description', '')
@@ -212,5 +219,4 @@ def get_organization_json(*args, **kwargs):
             if badger:
                 return badger.to_openbadge()
     raise HTTPError(http.BAD_REQUEST)
-
 

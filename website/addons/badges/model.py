@@ -202,7 +202,11 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def configured(self):
-        return not (self.name is None  or self.url is None)
+        return not (self.name is None or self.email is None)
+
+    @property
+    def can_award(self):
+        return self.can_issue and self.configured and self.badges
 
     def get_badges_json(self):
         return [Badge.load(_id).to_json() for _id in self.badges]

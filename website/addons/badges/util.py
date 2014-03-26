@@ -5,18 +5,14 @@ from PIL import Image
 from datetime import datetime
 
 from website.settings import DOMAIN
+from website.util.sanitize import deep_clean
 
 from model import Badge, BadgeAssertion
 
 
-def is_valid_badge(badge):
-    pass
-
-
 #TODO Clean with bleach
 def build_badge(issuer, badge):
-    #Avoid circular import
-
+    deep_clean(badge)
     new = Badge()
     new.creator = issuer.owner._id
     new.creator_name = issuer.name
@@ -54,15 +50,8 @@ def build_assertion(issuer, badge, node, evidence, verify_method='hosted'):
     return assertion._id
 
 
-def build_issuer(name, url, extra={}):
-    issuer = {
-        'name': name,
-        'url': url,
-    }
-    issuer.update(extra)
-    return issuer
-
-
+#TODO: Possible security errors
+#TODO: Send to task queue may lock up thread
 def deal_with_image(imageurl, uid):
     from . import BADGES_LOCATION, BADGES_ABS_LOCATION
 
