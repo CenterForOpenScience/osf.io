@@ -16,6 +16,16 @@
     $(function() {
         var language = $.osf.Language.Addons.dropbox;
         var deleteAuthURL = '${api_url_for("dropbox_oauth_delete_user")}';
+        function sendDeauth() {
+            return $.ajax({
+                url: deleteAuthURL,
+                type: 'DELETE'
+            })
+            .done(function() {
+                // TODO(sloria): Remove page reload when entire view is controlled by Knockout
+                window.location.reload();
+            });
+        }
         var DropboxViewModel = {
             'deleteKey': function() {
                 bootbox.confirm({
@@ -23,23 +33,13 @@
                     message: language.confirmDeauth,
                     callback: function(confirmed) {
                         if (confirmed) {
-                            return $.ajax({
-                                url: deleteAuthURL,
-                                type: 'DELETE'
-                            })
-                            .done(function() {
-                                // TODO(sloria): Just reloading the page here to
-                                // be consistent with the other addons, but it
-                                // isn't necessary. Pending discussion about
-                                // settings page interface.
-                                window.location.reload();
-                            });
+                            sendDeauth();
                         };
                     }
                 });
             }
         }
-        ko.applyBindings(DropboxViewModel, $('#dropboxAddonScope')[0]);
+        $.osf.applyBindings(DropboxViewModel, '#dropboxAddonScope');
     })
 </script>
 

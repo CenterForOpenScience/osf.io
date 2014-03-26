@@ -29,7 +29,7 @@ def dropbox_config_get(node_addon, **kwargs):
 
 
 def serialize_folder(metadata):
-    """Serializes metadata to a simple dict with the display name and path
+    """Serializes metadata to a dict with the display name and path
     of the folder.
     """
     # if path is root
