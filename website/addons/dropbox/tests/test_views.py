@@ -16,6 +16,7 @@ from tests.factories import AuthUserFactory
 from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
+from website.addons.dropbox.views.config import serialize_folder
 
 
 lookup = URLLookup(app)
@@ -70,7 +71,10 @@ class TestConfigViews(DropboxAddonTestCase):
             res = self.app.get(url, auth=self.user.auth)
             assert_equal(res.status_code, 200)
             result = res.json['result']
-            expected_folders = ['/'] + [each['path']
+            # The expected folders are the simplified
+            #  serialized versions of the folder metadata, including the root
+            expected_folders = [{'path': '', 'name': '/ (Full Dropbox)'}] + \
+                [serialize_folder(each)
                 for each in mock_responses['metadata_list']['contents']
                 if each['is_dir']]
             assert_equal(result['folders'], expected_folders)
@@ -83,7 +87,8 @@ class TestConfigViews(DropboxAddonTestCase):
     def test_dropbox_config_put(self):
         url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
         # Can set folder through API call
-        res = self.app.put_json(url, {'selected': 'My test folder'},
+        res = self.app.put_json(url, {'selected': {'path': 'My test folder',
+            'name': 'Dropbox/My test folder'}},
             auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.node_settings.reload()
