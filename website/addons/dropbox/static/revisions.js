@@ -29,6 +29,7 @@ this.RevisionTable = (function(ko, $) {
         $.osf.applyBindings(new RevisionViewModel(url), selector);
     }
 
+    $script.done('revisionsTable');
     return RevisionTable;
 
 })(ko, jQuery);

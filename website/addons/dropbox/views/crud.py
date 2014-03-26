@@ -36,7 +36,6 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
         client = get_node_addon_client(node_addon)
         client.file_delete(path)
         # log the event
-        # TODO: Delete GUID file if it exists?
         nodelogger = DropboxNodeLogger(node=node, auth=auth, path=path)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
         return None

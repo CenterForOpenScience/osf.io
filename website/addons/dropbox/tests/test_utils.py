@@ -45,9 +45,20 @@ def test_clean_path():
 
 def test_serialize_folder():
     metadata = {
-
+        u'bytes': 0,
+        u'icon': u'folder',
+        u'is_dir': True,
+        u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+        u'path': u'/datasets/New Folder',
+        u'rev': u'3fed51f002c12fc',
+        u'revision': 67032351,
+        u'root': u'dropbox',
+        u'size': u'0 bytes',
+        u'thumb_exists': False
     }
-    assert 0, 'finish me'
+    result = serialize_folder(metadata)
+    assert_equal(result['path'], metadata['path'])
+    assert_equal(result['name'], 'Dropbox' + metadata['path'])
 
 
 class TestBuildDropboxUrls(DbTestCase):
