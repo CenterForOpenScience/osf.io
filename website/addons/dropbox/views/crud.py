@@ -46,6 +46,9 @@ def dropbox_delete_file(path, auth, node_addon, **kwargs):
 @must_not_be_registration
 @must_have_addon('dropbox', 'node')
 def dropbox_upload(node_addon, auth, **kwargs):
+    """View for uploading a file from the filebrowser interface. Must return
+    the Rubeus/HGrid representation of the newly added file.
+    """
     node = node_addon.owner
     # Route may or may not have a path
     path = kwargs.get('path', node_addon.folder)
@@ -54,7 +57,7 @@ def dropbox_upload(node_addon, auth, **kwargs):
     node = node_addon.owner
     if path and file_obj and client:
         filepath = os.path.join(path, file_obj.filename)
-        metadata = client.put_file(filepath, file_obj)  # TODO Cast to Hgrid
+        metadata = client.put_file(filepath, file_obj)
         permissions = {
             'edit': node.can_edit(auth),
             'view': node.can_view(auth)
@@ -79,6 +82,7 @@ def dropbox_download(path, node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
+    """API view that gets a list of revisions for a file."""
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Get metadata for each revision of the file
@@ -94,10 +98,10 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
         'status': 200
     }, 200
 
-# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_view_file(path, node_addon, auth, **kwargs):
+    """Web view for the file detail page."""
     if not path:
         raise HTTPError(http.NOT_FOUND)
     node = node_addon.owner
@@ -123,10 +127,12 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
 
 ##### MFR Rendering #####
 
-# TODO(sloria): Test me
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_render_file(path, node_addon, auth, **kwargs):
+    """View polled by the FileRenderer. Return the rendered HTML for the
+    requested file.
+    """
     node = node_addon.owner
     file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     client = get_node_addon_client(node_addon)

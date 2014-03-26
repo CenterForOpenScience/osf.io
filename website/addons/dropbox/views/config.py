@@ -42,7 +42,6 @@ def serialize_folder(metadata):
     }
 
 def get_folders(client):
-    # TODO(sloria): Handle errors
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {

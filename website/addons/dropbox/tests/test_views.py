@@ -102,6 +102,7 @@ class TestConfigViews(DropboxAddonTestCase):
         params = last_log.params
         assert_equal(params['folder'], 'My test folder')
 
+
 class TestCRUDViews(DropboxAddonTestCase):
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
@@ -217,5 +218,5 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_dropbox_view_file(self):
         url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
             path='foo')
-        res = self.app.get(url, auth=self.user.auth)
-        assert 0, 'finish me'
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
