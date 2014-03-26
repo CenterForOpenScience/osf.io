@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 
+from framework import request
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
 
@@ -15,18 +16,21 @@ debug = logger.debug
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
-def dropbox_hgrid_data_contents(node_addon, **kwargs):
+def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted  response for a folder's contents."""
     node = node_addon.owner
-    auth = kwargs['auth']
-    path = kwargs.get('path', node_addon.folder)
+    path = kwargs.get('path', node_addon.folder if node_addon.folder else '')
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
     }
     client = get_node_client(node)
-    contents = [metadata_to_hgrid(file_dict, node, permissions) for
-            file_dict in client.metadata(path)['contents']]
+    if request.args.get('foldersOnly'):
+        contents = [metadata_to_hgrid(file_dict, node, permissions) for
+                    file_dict in client.metadata(path)['contents'] if file_dict['is_dir']]
+    else:
+        contents = [metadata_to_hgrid(file_dict, node, permissions) for
+                    file_dict in client.metadata(path)['contents']]
     return contents
 
 
