@@ -39,13 +39,6 @@
                 ${buttonGroup()}
         </div>
 
-
-
-    </div><!-- end col-md -->
-</div><!-- end row -->
-
-<div class="row">
-    <div class="col-md-12">
     <h2>Private Links</h2>
         <div id="linkScope" >
                 <table id="privateLinkTable" class="table">
@@ -67,11 +60,23 @@
                             </a>
                         </td>
                     </tr>
-                    <tbody data-bind="sortable: {template: 'contribTpl',
-                        data: contributors, as: 'contributor',
-                        isEnabled: userIsAdmin,
-                        afterRender: setupEditable,
-                        options: {containment: '#manageContributors'}}">
+                    <tbody >
+                        % for link in node['private_links']:
+                            <tr>
+                            <th class="col-sm-6">
+                                <button class="copy-button" data-clipboard-text="${link}" title="Click to copy me.">
+                                    Copy to Clipboard
+                                </button>
+                                <a class="link-name" >${node['absolute_url']}?key=${link['key']}</a>
+                            </th>
+                            <th class="col-sm-5">${link['label']}</th>
+                            <th class="col-sm-4">${link['date_created']}</th>
+                            <th class="col-sm-3">${link['creator']}</th>
+                            <th class="col-sm-1">
+                                <a class="remove-private-link btn btn-danger btn-mini" data-link="${link['id']}">-</a>
+                            </th>
+                            </tr>
+                        % endfor
                     </tbody>
                 </table>
 
