@@ -3,7 +3,7 @@
  * is opened only after options.method and options.url have been resolved.
  */
 /*jshint ignore:start */
-(function($, Dropzone) {
+$script.ready('dropzone', function() {
 
         __hasProp = {}.hasOwnProperty,
         __extends = function(child, parent) {
@@ -211,5 +211,6 @@
                 }
             });
     };
-})(jQuery, Dropzone);
+    $script.done('dropzone-patch');
+});
 /*jshint ignore:end */

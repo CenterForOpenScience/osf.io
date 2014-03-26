@@ -4,7 +4,7 @@
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-this.Rubeus = (function($, HGrid, bootbox, window) {
+$script.ready('dropzone-patch', 'hgrid', function(){
 
     /////////////////////////
     // HGrid configuration //
@@ -514,6 +514,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                     Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
     };
 
-    return Rubeus;
+    window.Rubeus = Rubeus;
+    $script.done('rubeus');
+});
 
-})(jQuery, HGrid, bootbox, window);

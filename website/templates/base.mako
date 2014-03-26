@@ -32,9 +32,18 @@
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
+
     <script>
+        // Enable knockout punches
         ko.punches.enableAll();
+        // Filebrowser dependencies
+        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
+        $script(['/static/js/rubeus.js']); // exports 'rubeus'
     </script>
+
+
     ${self.javascript()}
 
 </head>
