@@ -1,4 +1,6 @@
 /**
+ * An OSF-flavored wrapper around HGrid.
+ *
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
@@ -8,13 +10,17 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     // HGrid configuration //
     /////////////////////////
 
+    Rubeus.Html = $.extend({}, HGrid.Html);
     // Custom folder icon indicating private component
-    HGrid.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    HGrid.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
 
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
-    HGrid.Col.Name.folderView = function(item) {
+    Rubeus.Col = {};
+    // Copy default name column from HGrid
+    Rubeus.Col.Name = $.extend({}, HGrid.Col.Name);
+    Rubeus.Col.Name.folderView = function(item) {
         var icon, opening, cssClass;
         if (item.iconUrl) {
             // use item's icon based on filetype
@@ -22,10 +28,10 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             cssClass = '';
         } else {
             if (!item.permissions.view) {
-                icon = HGrid.Html.folderIconPrivate;
+                icon = Rubeus.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
             } else if (item.isPointer) {
-                icon = HGrid.Html.folderIconPointer;
+                icon = Rubeus.Html.folderIconPointer;
                 cssClass = 'hg-folder-pointer';
             } else {
                 icon = HGrid.Html.folderIcon;
@@ -41,12 +47,12 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return html;
     };
 
-    HGrid.Col.Name.showExpander = function(row) {
+    Rubeus.Col.Name.showExpander = function(row) {
         var isTopLevel = row.parentID === HGrid.ROOT_ID;
         return row.kind === HGrid.FOLDER && row.permissions.view && !isTopLevel;
     };
 
-    HGrid.Col.Name.itemView = function(item) {
+    Rubeus.Col.Name.itemView = function(item) {
         var tooltipMarkup = genTooltipMarkup('View file');
         icon = Rubeus.getIcon(item);
         return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
@@ -68,7 +74,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                                 'data-toggle="tooltip" ';
     }
 
-    HGrid.Col.ActionButtons.itemView = function(item) {
+    Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
+    Rubeus.Col.ActionButtons.itemView = function(item) {
 	var buttonDefs = [];
 	if(item.permissions){
 	    if(item.permissions.download !== false){
@@ -95,9 +102,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return name.slice(name.indexOf(':') + 1).trim();
     }
 
-    HGrid.Col.ActionButtons.name = 'Actions';
-    HGrid.Col.ActionButtons.width = 70;
-    HGrid.Col.ActionButtons.folderView = function(row) {
+    Rubeus.Col.ActionButtons.name = 'Actions';
+    Rubeus.Col.ActionButtons.width = 70;
+    Rubeus.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         var tooltipMarkup = genTooltipMarkup('Upload');
         if (this.options.uploads && row.urls.upload &&
@@ -254,8 +261,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     baseOptions = {
         /*jshint unused: false */
         columns: [
-            HGrid.Col.Name,
-            HGrid.Col.ActionButtons,
+            Rubeus.Col.Name,
+            Rubeus.Col.ActionButtons,
             DownloadCount
         ],
         width: '100%',
