@@ -1,6 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
-
+<script src="/static/vendor/zeroclipboard/ZeroClipboard.min.js"></script>
+<script src="/static/vendor/zeroclipboard/main.js"></script>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -173,6 +174,7 @@
                     <li class="list-group-item" >
                         <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
                         <a class="link-name" >${node['absolute_url']}?key=${link}</a>
+                        <button class="copy-button" data-clipboard-text="${link}" title="Click to copy me.">Copy to Clipboard</button>
 
                     </li>
                 % endfor

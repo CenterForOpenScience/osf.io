@@ -471,7 +471,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_links = fields.StringField(list=True)
+    private_links = fields.StringField(list=True, backref='key')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -2277,3 +2277,14 @@ class MailRecord(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     data = fields.DictionaryField()
     records = fields.AbstractForeignField(list=True, backref='created')
+
+
+class PrivateLink(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    is_deleted = fields.BooleanField(default=False)
+    label = fields.StringField()
+    user = fields.ForeignField('user', backref='created')
+    node = fields.ForeignField('Node', backref='keyed')
+
