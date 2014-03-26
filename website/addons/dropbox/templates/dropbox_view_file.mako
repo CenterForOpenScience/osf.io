@@ -29,9 +29,8 @@
 
     </table>
 
-    <script src="/addons/static/dropbox/revisions.js"></script>
     <script>
-        $(function() {
+        $script(["/addons/static/dropbox/revisions.js"], function() {
             var url = '${revisionsUrl}';
             var revisionTable = new RevisionTable('#fileVersionScope', url);
         });

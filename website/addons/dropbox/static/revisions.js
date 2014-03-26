@@ -26,8 +26,7 @@ this.RevisionTable = (function(ko, $) {
     }
 
     function RevisionTable(selector, url) {
-        var $elem = $(selector);
-        ko.applyBindings(new RevisionViewModel(url), $elem[0]);
+        $.osf.applyBindings(new RevisionViewModel(url), selector);
     }
 
     return RevisionTable;
