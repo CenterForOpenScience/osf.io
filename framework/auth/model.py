@@ -150,6 +150,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def create_confirmed(cls, username, password, fullname):
         user = cls.create(username, password, fullname)
         user.is_registered = True
+        user.date_confirmed = user.date_registered
         return user
 
     def update_guessed_names(self):

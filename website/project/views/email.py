@@ -39,8 +39,8 @@ CONFERENCE_NAMES = {
 }
 
 
-def add_poster_by_email(tag, recipient, address, fullname, subject, message,
-                        attachments, tags=None, system_tags=None,
+def add_poster_by_email(conf_id, recipient, address, fullname, subject,
+                        message, attachments, tags=None, system_tags=None,
                         is_spam=False):
 
     # Fail if no attachments
@@ -149,7 +149,7 @@ def add_poster_by_email(tag, recipient, address, fullname, subject, message,
     send_mail(
         address,
         CONFERENCE_SUBMITTED,
-        conf_full_name=CONFERENCE_NAMES[tag],
+        conf_full_name=CONFERENCE_NAMES[conf_id],
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
@@ -233,7 +233,7 @@ def poster_hook(tag):
 
     # Add poster
     add_poster_by_email(
-        tag=tag,
+        conf_id=tag,
         recipient=request.form['recipient'],
         address=address,
         fullname=name,
