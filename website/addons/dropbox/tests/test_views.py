@@ -128,8 +128,17 @@ class TestCRUDViews(DropboxAddonTestCase):
         expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
         assert_equal(first_argument, expected_path)
 
-    def test_delete_file(self):
-        assert 0, 'finish me'
+    @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
+    def test_delete_file(self, mock_file_delete):
+        path = 'foo'
+        res = self.app.delete(
+            url=lookup('api', 'dropbox_delete_file',
+                       pid=self.project._primary_key, path=path),
+            auth=self.user.auth,
+        )
+
+        mock_file_delete.assert_called_once
+        assert_equal(path, mock_file_delete.call_args[0][0])
 
     def test_download_file(self):
         assert 0, 'finish me'
