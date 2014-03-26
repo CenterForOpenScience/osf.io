@@ -7,7 +7,7 @@
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <div data-bind='if: showSettings'>
         <div class="well well-sm">
-            Authorized by <span data-bind="text: ownerName"></span></a>
+            Authorized by {{ownerName}}</a>
             <span data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>
@@ -16,13 +16,18 @@
         <div class="row">
             <div class="col-md-12">
                 <p><strong>Shared Folder:
-                    </strong><pre data-bind="text: selected"></pre>
-                </p>
-                <button data-bind="click: togglePicker, css: {active: showPicker}" class="btn btn-default">Select Folder</button>
+                    </strong></p>
+                    <h4>
+                        <i class="icon-folder-close-alt"></i>
+                        <span class='selected-folder'>
+                            {{selectedFolderName}}
+                        </span>
+                    </h4>
+                <button data-bind="click: togglePicker, css: {active: showPicker}" class="btn btn-default">Change</button>
 
                 <div data-bind="if: showPicker">
                     <p class="help-block">Click the
-                        <button class="btn btn-success btn-mini" disabled><i class="icon-share"></i></button> icon next to a folder to link it with this project.</p>
+                        <button class="btn btn-success btn-mini" disabled><i class="icon-ok"></i></button> icon next to a folder to link it with this project.</p>
                     <div id="myGrid" class="filebrowser hgrid"></div>
                 </div>
 

@@ -13,7 +13,6 @@ from framework.exceptions import HTTPError
 
 from website.addons.dropbox.client import get_node_addon_client
 
-
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
@@ -28,11 +27,30 @@ def dropbox_config_get(node_addon, **kwargs):
     }, 200
 
 
+def serialize_folder(metadata):
+    """Serializes metadata to a simple dict with the display name and path
+    of the folder.
+    """
+    # if path is root
+    if metadata['path'] == '' or metadata['path'] == '/':
+        name = '/ (Full Dropbox)'
+    else:
+        name = 'Dropbox' + metadata['path']
+    return {
+        'name': name,
+        'path': metadata['path']
+    }
+
 def get_folders(client):
     # TODO(sloria): Handle errors
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
-    folders = ['/'] + [each['path'] for each in metadata['contents'] if each['is_dir']]
+    root = {
+        'name': '/ (Full Dropbox)',
+        'path': ''
+    }
+    folders = [root] + [serialize_folder(each)
+                        for each in metadata['contents'] if each['is_dir']]
     return folders
 
 
@@ -61,7 +79,10 @@ def serialize_settings(node_settings, current_user, client=None):
         cl = client or get_node_addon_client(node_settings)
         result.update({
             'folders': get_folders(cl),
-            'folder': node_settings.folder if node_settings.folder else '/',
+            'folder':  {
+                'name': 'Dropbox' + node_settings.folder,
+                'path': node_settings.folder
+            },
             'ownerName': node_settings.user_settings.account_info['display_name']
         })
     return result
@@ -72,11 +93,16 @@ def serialize_settings(node_settings, current_user, client=None):
 @must_have_addon('dropbox', 'node')
 def dropbox_config_put(node_addon, auth, **kwargs):
     folder = request.json.get('selected')
-    node_addon.set_folder(folder, auth=auth)
+    path = folder['path']
+    node_addon.set_folder(path, auth=auth)
     node_addon.save()
     return {
         'result': {
-            'folder': folder,
+            # TODO(sloria): Duplicated in serialize_settings. Rethink
+            'folder': {
+                'name': 'Dropbox' + path,
+                'path': path
+            },
         },
         'message': 'Successfully updated settings.',
         'status': 200

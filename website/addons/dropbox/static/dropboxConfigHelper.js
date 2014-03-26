@@ -47,6 +47,10 @@ $script.ready(['hgrid'], function() {
             return !userHasAuth && !nodeHasAuth;
         });
 
+        self.selectedFolderName = ko.computed(function() {
+            return self.selected().name;
+        });
+
         function onSubmitSuccess() {
             self.changeMessage('Successfully updated settings. Go to the <a href="' +
                 self.urls.files + '">Files page</a> to view your files.',
@@ -128,7 +132,7 @@ $script.ready(['hgrid'], function() {
         };
 
         function onChooseFolder(evt, row) {
-            self.selected(row.path);
+            self.selected({name: 'Dropbox' + row.path, path: row.path});
             self.submitSettings();
         }
 
