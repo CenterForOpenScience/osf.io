@@ -102,6 +102,23 @@ class TestConfigViews(DropboxAddonTestCase):
         params = last_log.params
         assert_equal(params['folder'], 'My test folder')
 
+    def test_dropbox_deauthorize(self):
+        url = lookup('api', 'dropbox_deauthorize', pid=self.project._primary_key)
+        saved_folder = self.node_settings.folder
+        self.app.delete(url, auth=self.user.auth)
+        self.project.reload()
+        self.node_settings.reload()
+
+        assert_false(self.node_settings.has_auth)
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.folder, None)
+
+        # A log event was saved
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dropbox_node_deauthorized')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['folder'], saved_folder)
 
 class TestCRUDViews(DropboxAddonTestCase):
 

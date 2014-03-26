@@ -16,6 +16,18 @@ debug = logger.debug
 class DropboxNodeLogger(object):
     """Helper class for adding correctly-formatted Dropbox logs to nodes.
 
+    Usage: ::
+
+        from website.project.model import NodeLog
+
+        file_obj = DropboxFile(path='foo/bar.txt')
+        file_obj.save()
+        node = ...
+        auth = ...
+        nodelogger = DropboxNodeLogger(node, auth, file_obj)
+        nodelogger.log(NodeLog.FILE_REMOVED, save=True)
+
+
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
     :param DropboxFile file_obj: File object for file-related logs.
@@ -28,7 +40,7 @@ class DropboxNodeLogger(object):
 
     def log(self, action, extra=None, save=False):
         """Log an event. Wraps the Node#add_log method, automatically adding
-        relevant parameters.
+        relevant parameters and prefixing log events with `"dropbox_"`.
 
         :param str action: Log action. Should be a class constant from NodeLog.
         :param dict extra: Extra parameters to add to the ``params`` dict of the
@@ -88,7 +100,6 @@ def make_file_response(fileobject, metadata):
     return resp
 
 
-# TODO(sloria): TEST ME
 def render_dropbox_file(file_obj, client=None, rev=None):
     """Render a DropboxFile with the MFR.
 
