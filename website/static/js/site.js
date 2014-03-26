@@ -147,8 +147,18 @@
         return ui;
     };
 
-    ko.filters.moment = function(value, format) {
-        return moment(value).format(format);
+    /**
+     * A thin wrapper around ko.applyBindings that ensures that a view model
+     * is bound to the expected element. Takes a ViewModel and a selector (String).
+     */
+    $.osf.applyBindings = function(viewModel, selector) {
+        var $elem = $(selector);
+        if ($elem.length > 1) {
+            throw "Can't bind ViewModel to multiple elements.";
+        }
+        // Ensure that the bound element is shown
+        $elem.show();
+        ko.applyBindings(viewModel, $elem[0]);
     };
 
     $.osf.handleJSONError = function (response) {
