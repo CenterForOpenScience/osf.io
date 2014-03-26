@@ -16,7 +16,7 @@ from tests.factories import AuthUserFactory
 from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
-from website.addons.dropbox.views.config import serialize_folder
+from website.addons.dropbox.views.config import serialize_folder, serialize_settings
 
 
 lookup = URLLookup(app)
@@ -119,6 +119,18 @@ class TestConfigViews(DropboxAddonTestCase):
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(log_params['folder'], saved_folder)
+
+    def test_dropbox_import_user_auth(self):
+        # Node does not have user settings
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
+            url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
+            res = self.app.put(url, auth=self.user.auth)
+            expected_result = serialize_settings(self.node_settings,
+                self.user, client=mock_client)
+            assert_equal(res['result'], expected_result)
+
 
 class TestCRUDViews(DropboxAddonTestCase):
 

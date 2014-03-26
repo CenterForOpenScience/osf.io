@@ -41,7 +41,11 @@ def serialize_folder(metadata):
         'path': metadata['path']
     }
 
+
 def get_folders(client):
+    """Gets a list of folders in a user's Dropbox, including the root.
+    Each folder is represented as a dict with its display name and path.
+    """
     metadata = client.metadata('/', list=True)
     # List each folder, including the root
     root = {
@@ -99,7 +103,6 @@ def dropbox_config_put(node_addon, auth, **kwargs):
     node_addon.save()
     return {
         'result': {
-            # TODO(sloria): Duplicated in serialize_settings. Rethink
             'folder': {
                 'name': 'Dropbox' + path,
                 'path': path
@@ -110,7 +113,6 @@ def dropbox_config_put(node_addon, auth, **kwargs):
     }, 200
 
 
-# TODO(sloria): Test me
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
 def dropbox_import_user_auth(auth, node_addon, **kwargs):
@@ -128,7 +130,6 @@ def dropbox_import_user_auth(auth, node_addon, **kwargs):
         'status': 200
     }, 200
 
-# TODO(sloria): Test me
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
 def dropbox_deauthorize(auth, node_addon, **kwargs):
