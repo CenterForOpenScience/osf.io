@@ -16,6 +16,8 @@ ACCESS_LEVELS = {
     'read': 'reporter',
 }
 
+DEFAULT_BRANCH = 'master'
+
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
     'add': 'Added {0}'.format(MESSAGE_BASE),

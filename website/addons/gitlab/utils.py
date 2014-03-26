@@ -3,8 +3,6 @@ import re
 import time
 import uuid
 import urllib
-import urlparse
-import subprocess
 import httplib as http
 from slugify import get_slugify
 
@@ -15,62 +13,6 @@ from website.profile.utils import reduce_permissions
 import settings as gitlab_settings
 from api import client
 from exceptions import GitlabError
-
-
-def wait_until_initialized(node_settings, max_tries=5, delay=0.5):
-
-    if max_tries <= 0:
-        return False
-
-    if node_settings.project_id is None:
-        return False
-
-    files = client.listrepositorytree(node_settings.project_id)
-    if files is False:
-        time.sleep(delay)
-        return wait_until_initialized(
-            node_settings,
-            max_tries=max_tries-1,
-            delay=delay
-        )
-
-
-def initialize_repo(node_settings):
-    """
-
-    """
-    node = node_settings.owner
-    creator_osf_id = node_settings.creator_osf_id
-
-    parsed = urlparse.urlparse(gitlab_settings.HOST)
-    hostname = parsed.hostname
-
-    url = 'http://{root}:{pword}@{host}/{user}/{repo}.git'.format(
-        root=gitlab_settings.ROOT_NAME,
-        pword=gitlab_settings.ROOT_PASS,
-        host=hostname,
-        user=creator_osf_id,
-        repo=node._id,
-    )
-
-    # Clone empty repo to temp
-    subprocess.check_call(
-        ['git', 'clone', url],
-        cwd=gitlab_settings.TMP_DIR
-    )
-    clone_dir = os.path.join(gitlab_settings.TMP_DIR, node._id)
-
-    # Add empty commit
-    subprocess.check_call(
-        ['git', 'commit', '--allow-empty', '-m', 'initialize'],
-        cwd=clone_dir
-    )
-
-    # Push to Gitlab
-    subprocess.check_call(
-        ['git', 'push', 'origin', 'master'],
-        cwd=clone_dir
-    )
 
 
 def translate_permissions(permissions):
@@ -108,7 +50,7 @@ def create_user(user_settings):
         raise GitlabError('Could not create user')
 
 
-def create_node(node_settings, initialize=True):
+def create_node(node_settings):
     """
 
     """
@@ -126,10 +68,6 @@ def create_node(node_settings, initialize=True):
     if response:
         node_settings.creator_osf_id = node.creator._id
         node_settings.project_id = response['id']
-        if initialize:
-            initialize_repo(node_settings)
-            # Hack: Wait until Gitlab repo is responsive
-            client.listrepositorytree(node_settings.project_id)
         node_settings.save()
 
 
@@ -142,12 +80,12 @@ def setup_user(user):
     return user_settings
 
 
-def setup_node(node, initialize=True):
+def setup_node(node):
     """
 
     """
     node_settings = node.get_or_add_addon('gitlab')
-    create_node(node_settings, initialize=initialize)
+    create_node(node_settings)
     return node_settings
 
 

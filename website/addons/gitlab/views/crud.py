@@ -18,6 +18,7 @@ from website.util.permissions import WRITE
 from website.models import NodeLog
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.addons.base import AddonError
 from website.addons.base.views import check_file_guid
 from website.dates import FILE_MODIFIED
 
@@ -48,13 +49,16 @@ def ref_or_default(node_settings, data):
     """
     ref = data.get('sha') or data.get('branch')
     if ref:
-        return ref
-    if node_settings.project_id:
+        ret = ref
+    elif node_settings.project_id:
         project = client.getproject(node_settings.project_id)
-        return project['default_branch']
-    return None
+        ret = project['default_branch']
+    else:
+        raise AddonError('Could not get git ref')
+    return ret or gitlab_settings.DEFAULT_BRANCH
 
 
+# TODO: Test me @jmcarp
 def create_or_update(node_settings, user_settings, method_name, action,
                      filename, branch, content, auth):
     """
