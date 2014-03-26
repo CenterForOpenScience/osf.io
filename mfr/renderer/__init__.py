@@ -59,13 +59,13 @@ class FileRenderer(object):
             </div>'''
 
         _, file_name = os.path.split(file_pointer.name)
-        try:
-            rendered = self._render(file_pointer, **kwargs)
+        # try:
+        rendered = self._render(file_pointer, **kwargs)
         # except RenderError as error:
         #     rendered = error.to_html()
-        except Exception as error:
-            logging.error(error)
-            rendered = 'Unable to render; download file to view it'
+        # except Exception as error:
+        #     logging.error(error)
+        # rendered = 'Unable to render; download file to view it'
         return rendered
 
     def _detect(self, file_pointer):

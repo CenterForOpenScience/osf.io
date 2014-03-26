@@ -1,5 +1,6 @@
 import logging
 import importlib
+from .renderer.exceptions import NoRendererError
 from mfr.renderer import FileRenderer
 
 
@@ -7,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 modules = [
     'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx',
-    'tabular.renderers',
+    'tabular.renderers', 'rst'
+    'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx', 'audio',
+    'tabular.renderers', 'rst',
 ]
 for module in modules:
     try:
@@ -29,5 +32,5 @@ def detect(file_pointer):
 def render(file_pointer, *args, **kwargs):
     renderer = detect(file_pointer)
     if renderer is None:
-        return None
+        raise NoRendererError("No renderer currently available for this file type.")
     return renderer.render(file_pointer, *args, **kwargs)

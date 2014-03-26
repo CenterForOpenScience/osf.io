@@ -9,7 +9,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    <script type="text/javascript" src="/static/js/spsp.js"></script>
+    <script type="text/javascript" src="/static/js/conference.js"></script>
     <script type="text/javascript">
         var data = ${data}
         new Meeting.Meeting(data);

@@ -131,12 +131,25 @@ def make_url_map(app):
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
         Rule(
-            '/view/spsp2014/', 'get', project_views.email.spsp_results,
-            OsfWebRenderer('public/pages/spsp2014.mako')
+            '/view/spsp2014/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/spsp2014.mako'),
+            view_kwargs={'tag': 'spsp2014'}, endpoint_suffix='__spsp2014'
         ),
         Rule(
-            '/view/spsp2014/plain/', 'get', project_views.email.spsp_results,
-            OsfWebRenderer('public/pages/spsp2014_plain.mako'), endpoint_suffix='__plain',
+            '/view/spsp2014/plain/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/spsp2014_plain.mako'),
+            view_kwargs={'tag': 'spsp2014'}, endpoint_suffix='__spsp2014__plain',
+        ),
+
+        Rule(
+            '/view/asb2014/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/asb2014.mako'),
+            view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014'
+        ),
+        Rule(
+            '/view/asb2014/plain/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/asb2014_plain.mako'),
+            view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014__plain',
         ),
 
     ])
@@ -496,9 +509,9 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
-            '/email/spsp2014/',
+            '/email/<tag>/',
             'post',
-            project_views.email.spsp_poster_hook,
+            project_views.email.poster_hook,
             json_renderer,
         ),
 
