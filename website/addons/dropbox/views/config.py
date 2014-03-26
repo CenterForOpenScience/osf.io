@@ -20,6 +20,7 @@ debug = logger.debug
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
 def dropbox_config_get(node_addon, **kwargs):
+    """API that returns the serialized node settings."""
     user = get_current_user()
     return {
         'result': serialize_settings(node_addon, user),

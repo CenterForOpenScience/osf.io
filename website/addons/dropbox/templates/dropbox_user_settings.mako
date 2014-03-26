@@ -22,17 +22,19 @@
                     title: 'Delete Dropbox Token?',
                     message: language.confirmDeauth,
                     callback: function(confirmed) {
-                        return $.ajax({
-                            url: deleteAuthURL,
-                            type: 'DELETE'
-                        })
-                        .done(function() {
-                            // TODO(sloria): Just reloading the page here to
-                            // be consistent with the other addons, but it
-                            // isn't necessary. Pending discussion about
-                            // settings page interface.
-                            window.location.reload();
-                        });
+                        if (confirmed) {
+                            return $.ajax({
+                                url: deleteAuthURL,
+                                type: 'DELETE'
+                            })
+                            .done(function() {
+                                // TODO(sloria): Just reloading the page here to
+                                // be consistent with the other addons, but it
+                                // isn't necessary. Pending discussion about
+                                // settings page interface.
+                                window.location.reload();
+                            });
+                        };
                     }
                 });
             }
