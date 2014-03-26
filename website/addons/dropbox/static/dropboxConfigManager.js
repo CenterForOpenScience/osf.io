@@ -48,7 +48,11 @@ $script.ready(['hgrid'], function() {
         });
 
         self.selectedFolderName = ko.computed(function() {
-            return self.selected().name;
+            if (self.userHasAuth()) {
+                return self.selected().name;
+            } else{
+                return '';
+            }
         });
 
         function onSubmitSuccess() {
