@@ -20,7 +20,7 @@ from website import settings, security
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
-from website.mails import send_email, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
+from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +32,20 @@ def request_to_data():
         'args': request.args.to_dict(),
     }
 
-def add_poster_by_email(recipient, address, fullname, subject, message,
+
+CONFERENCE_NAMES = {
+    'spsp2014': 'SPSP 2014',
+    'asb2014': 'ASB 2014',
+}
+
+
+def add_poster_by_email(tag, recipient, address, fullname, subject, message,
                         attachments, tags=None, system_tags=None,
                         is_spam=False):
 
     # Fail if no attachments
     if not attachments:
-        send_email(
+        send_mail(
             address,
             CONFERENCE_FAILED,
             fullname=fullname
@@ -139,9 +146,10 @@ def add_poster_by_email(recipient, address, fullname, subject, message,
     mail_record.save()
 
     # Send confirmation email
-    send_email(
+    send_mail(
         address,
         CONFERENCE_SUBMITTED,
+        conf_full_name=CONFERENCE_NAMES[tag],
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
@@ -225,6 +233,7 @@ def poster_hook(tag):
 
     # Add poster
     add_poster_by_email(
+        tag=tag,
         recipient=request.form['recipient'],
         address=address,
         fullname=name,
