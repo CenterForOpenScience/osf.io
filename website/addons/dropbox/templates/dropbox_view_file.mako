@@ -31,7 +31,7 @@
 
     <script>
         $script(["/addons/static/dropbox/revisions.js"], function() {
-            var url = '${revisionsUrl}';
+            var url = '${revisions_url}';
             var revisionTable = new RevisionTable('#fileVersionScope', url);
         });
     </script>

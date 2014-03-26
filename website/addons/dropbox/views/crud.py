@@ -116,7 +116,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     rendered = render_dropbox_file(file_obj, client=client, rev=rev)
     cleaned_path = clean_path(path)
     response = {
-        'revisionsUrl': node.api_url_for('dropbox_get_revisions', path=cleaned_path),
+        'revisions_url': node.api_url_for('dropbox_get_revisions', path=cleaned_path),
         'file_name': get_file_name(path),
         'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
         'download_url': file_obj.download_url,
