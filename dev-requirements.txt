@@ -6,4 +6,3 @@ webtest-plus
 invoke
 mock
 fake-factory
-konch
