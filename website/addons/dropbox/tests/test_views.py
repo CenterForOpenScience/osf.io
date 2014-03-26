@@ -127,10 +127,14 @@ class TestConfigViews(DropboxAddonTestCase):
         with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
             url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
             res = self.app.put(url, auth=self.user.auth)
-            expected_result = serialize_settings(self.node_settings,
-                self.user, client=mock_client)
-            assert_equal(res['result'], expected_result)
-
+            self.project.reload()
+            self.node_settings.reload()
+            # Need request context because serialize_settings uses url_for
+            with self.app.app.test_request_context():
+                expected_result = serialize_settings(self.node_settings,
+                    self.user, client=mock_client)
+            result = res.json['result']
+            assert_equal(result, expected_result)
 
 class TestCRUDViews(DropboxAddonTestCase):
 

@@ -17,7 +17,7 @@ debug = logger.debug
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
-    """Return the Rubeus/HGrid-formatted  response for a folder's contents."""
+    """Return the Rubeus/HGrid-formatted response for a folder's contents."""
     node = node_addon.owner
     path = kwargs.get('path',  '')
     permissions = {
