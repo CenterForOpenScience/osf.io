@@ -55,14 +55,14 @@
 
         <div class="citations">
 
-            <span class="citation-label">Citation:</span>
+            ##            <span class="citation-label">Citation:</span>
             ##                <span>${node['display_absolute_url']}</span>
             ##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
                             <div class="citation-list">
-                <span>
+                <span>Citation:
                 <form id="citationForm" action="#">
                     <select id="humanStyles">
-                        <option value="OSFURL">OSF ID</option>
+                        <option value="OSFURL">Permanent OSF ID</option>
                         <option value="apa.csl">APA</option>
                         <option value="chicago-author-date.csl">Chicago: Author-Date</option>
                         <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
@@ -73,7 +73,7 @@
                     </select>
 
                     <select id="machineStyles">
-                        <option value="" disabled selected>Download</option>
+                        <option value="" disabled selected stye ='display:none;'>Download</option>
                         <option value="xml2bib">BibTeX</option>
                         <option value="xml2end">EndNote</option>
                         <option value="xml2isi">ISI</option>
@@ -82,8 +82,8 @@
                     </select>
                 </form>
                     </span>
-            <br />
-            <dl class="rendered-citation">
+##            <br />
+            <dl class="rendered-citation" style="padding-top: 10px;">
                 ${node['display_absolute_url']}
             </dl>
             <p></p>
