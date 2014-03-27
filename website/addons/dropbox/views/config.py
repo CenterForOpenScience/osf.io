@@ -80,10 +80,8 @@ def serialize_settings(node_settings, current_user, client=None):
     }
     if node_settings.has_auth:
         # Show available folders
-        cl = client or get_node_addon_client(node_settings)
         path = node_settings.folder or '/'
         result.update({
-            'folders': get_folders(cl),
             'folder':  {
                 'name': 'Dropbox' + path,
                 'path': path

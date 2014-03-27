@@ -6,8 +6,8 @@ $script.ready(['hgrid'], function() {
 
         self.nodeHasAuth = ko.observable(data.nodeHasAuth);
         self.userHasAuth = ko.observable(data.userHasAuth);
-        self.selected = ko.observable(data.folder);
-        self.folders = ko.observableArray(data.folders);
+        self.folder = ko.observable(data.folder);
+        self.selected = ko.observable();
         self.ownerName = ko.observable(data.ownerName);
         self.urls = data.urls;
         self.message = ko.observable('');
@@ -23,7 +23,7 @@ $script.ready(['hgrid'], function() {
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
             self.selected(data.folder);
-            self.folders(data.folders);
+            self.folder(data.folder);
         };
 
         /**
@@ -47,18 +47,30 @@ $script.ready(['hgrid'], function() {
             return !userHasAuth && !nodeHasAuth;
         });
 
-        self.selectedFolderName = ko.computed(function() {
+        self.folderName = ko.computed(function() {
             if (self.userHasAuth()) {
+                return self.folder().name;
+            } else {
+                return '';
+            }
+        });
+
+        self.selectedFolderName = ko.computed(function() {
+            if (self.userHasAuth() && self.selected()) {
                 return self.selected().name;
             } else{
                 return '';
             }
         });
 
-        function onSubmitSuccess() {
-            self.changeMessage('Successfully updated settings. Go to the <a href="' +
+        function onSubmitSuccess(response) {
+            self.changeMessage('Successfully linked "' + self.selected().name +
+                '". Go to the <a href="' +
                 self.urls.files + '">Files page</a> to view your files.',
                 'text-success', 5000);
+            // Update folder in ViewModel
+            self.folder(response.result.folder);
+            self.selected(null);
         }
 
         function onSubmitError() {
@@ -71,6 +83,10 @@ $script.ready(['hgrid'], function() {
         self.submitSettings = function() {
             $.osf.putJSON(self.urls.config, ko.toJS(self),
                 onSubmitSuccess, onSubmitError);
+        };
+
+        self.cancelSelection = function() {
+            self.selected(null);
         };
 
         self.changeMessage = function(text, css, timeout) {
@@ -136,8 +152,9 @@ $script.ready(['hgrid'], function() {
         };
 
         function onChooseFolder(evt, row) {
+            evt.preventDefault();
             self.selected({name: 'Dropbox' + row.path, path: row.path});
-            self.submitSettings();
+            return false; // Prevent event propagation
         }
 
         // Upon clicking the name of folder, toggle its collapsed state
