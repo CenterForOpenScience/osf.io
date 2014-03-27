@@ -15,7 +15,7 @@ from website.project.views.node import _view_project
 
 from framework.auth.decorators import must_be_logged_in
 
-from util import build_badge, build_assertion
+from util import build_badge
 from model import Badge, BadgeAssertion
 
 
@@ -32,7 +32,6 @@ def get_user_badges(*args, **kwargs):
 @must_have_addon('badges', 'node')
 def badges_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    badges = kwargs['node_addon']
     auth = kwargs['auth']
     ret = {
         'complete': True,
@@ -77,7 +76,7 @@ def award_badge(*args, **kwargs):
     auth = kwargs.get('auth', None)
     badgeid = request.json.get('badgeid', None)
     evidence = request.json.get('evidence', None)
-    badge_bag = kwargs['node_addon']
+    node = kwargs['node'] or kwargs['project']
     if not auth:
         raise HTTPError(http.BAD_REQUEST)
     awarder = auth.user.get_addon('badges')
@@ -86,7 +85,8 @@ def award_badge(*args, **kwargs):
     badge = Badge.load(badgeid)
     if not badge or not awarder.can_award:
         raise HTTPError(http.BAD_REQUEST)
-    return badge_bag.add_badge(build_assertion(awarder, badge, badge_bag.owner, evidence))
+
+    return BadgeAssertion(badge, node, evidence)
 
 
 def get_assertion(*args, **kwargs):

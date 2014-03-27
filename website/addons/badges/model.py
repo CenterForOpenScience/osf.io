@@ -1,6 +1,7 @@
 """
 
 """
+import calendar
 from datetime import datetime
 
 from framework import fields
@@ -63,6 +64,10 @@ class Badge(GuidStoredObject):
         return ret
 
     @property
+    def assertions(self):
+        return getattr(self, 'badgeassertion__assertion', [])
+
+    @property
     def deep_url(self):
         return '/badge/{}/'.format(self._id)
 
@@ -71,6 +76,7 @@ class Badge(GuidStoredObject):
         return '/badge/{}/'.format(self._id)
 
 
+#TODO verification hosted and signed
 class BadgeAssertion(StoredObject):
 
     _id = fields.StringField()
@@ -87,9 +93,16 @@ class BadgeAssertion(StoredObject):
     issued_on = fields.IntegerField()  # TODO Format
 
     #Optional
-    image = fields.StringField()
     evidence = fields.StringField()
     expires = fields.StringField()
+
+    def __init__(self, badge, node, evidence=None, save=True):
+        self.badge = badge
+        self.node = node
+        self.evidence = evidence
+        self.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
+        if save:
+            self.save()
 
     def to_json(self):
         ret = {
@@ -143,7 +156,7 @@ class BadgesNodeSettings(AddonNodeSettingsBase):
 
 class BadgesUserSettings(AddonUserSettingsBase):
 
-    user = fields.ForeignField('user', backref='organizations')
+    user = fields.ForeignField('user', backref='organization')
 
     revocation_list = fields.DictionaryField()  # {'id':'12345', 'reason':'is a loser'}
 
@@ -155,32 +168,30 @@ class BadgesUserSettings(AddonUserSettingsBase):
         return ret
 
     def to_openbadge(self):
-        if not self.configured:
-            return {}
         ret = {
-            'name': self.name,
-            'email': self.email,
+            'name': self.user.fullname,
+            'email': self.user.email,  # TODO ?
         }
-        if self.description:
-            ret['description'] = self.description,
-        if self.image:
-            ret['image'] = self.image,
-        if self.url:
-            ret['url'] = self.url
-        if self.revocation_list:
-            ret['revocationList'] = self.revocation_list
+        # if self.description:
+        #     ret['description'] = self.description,
+        # if self.image:
+        #     ret['image'] = self.image,
+        # if self.url:
+        #     ret['url'] = self.url
+        # if self.revocation_list:
+        #     ret['revocationList'] = self.revocation_list
         return ret
 
     @property
-    def configured(self):
-        return not (self.name is None or self.email is None)
+    def can_award(self):
+        return bool(self.badge__creator)
 
     @property
-    def can_award(self):
-        return self.can_issue and self.configured and self.badges
+    def badges(self):
+        return getattr(self, 'badge__creator', [])
 
     def get_badges_json(self):
-        return [Badge.load(_id).to_json() for _id in self.badges]
+        return [badge.to_json() for badge in self.badges]
 
     def get_badges_json_simple(self):
-        return [{'value': Badge.load(_id).to_json()['id'], 'text': Badge.load(_id).to_json()['name']} for _id in self.badges]
+        return [{'value': badge['id'], 'text': badge['name']} for badge in self.badges]
