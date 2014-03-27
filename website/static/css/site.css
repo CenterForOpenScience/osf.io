@@ -922,7 +922,7 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
-.link-name{
+.key-name{
     margin-left: 10px;
 }
 
@@ -936,6 +936,22 @@ div#logScope a.moreLogs{
 
 .link-break{
     margin-bottom:10px;
+}
+
+.link-name{
+    width:55%;
+}
+
+.link-label{
+    width:15%;
+}
+
+.link-date{
+    width:20%;
+}
+
+.link-creator{
+    width:20%;
 }
 
 /* Contributor page */

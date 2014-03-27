@@ -7,7 +7,15 @@ client.on( "load", function(client) {
 
   client.on( "complete", function(client, args) {
     // `this` is the element that was clicked
+      this.blur();
   } );
+
+  client.on("mousedown", function(client,args){
+      $(this).addClass("active");
+  })
+  client.on("mouseup",function(client,args){
+      $(this).removeClass("active");
+  })
 } );
 
 });
