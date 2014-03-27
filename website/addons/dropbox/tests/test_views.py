@@ -89,6 +89,10 @@ class TestConfigViews(DropboxAddonTestCase):
             assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
             assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
             assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+            # Includes endpoint for fetching folders only
+            # NOTE: Querystring params are in camelCase
+            assert_equal(urls['folders'],
+                self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=1, includeRoot=1))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         # Need request context because url_for is used by serialize_settings

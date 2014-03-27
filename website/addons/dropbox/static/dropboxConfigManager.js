@@ -213,12 +213,12 @@ $script.ready(['hgrid'], function() {
             $(self.folderPicker).hgrid({
                 // Fetch data from hgrid data endpoint,
                 // filtering only folders and inlcuding the root folder
-                data: nodeApiUrl + 'dropbox/hgrid/?foldersOnly=1&includeRoot=1',
+                data: self.urls.folders,
                 columns: [nameCol,
                     // Custom button column
                     {name: 'Select', folderView: folderView, width: 10}],
                 fetchUrl: function(item) {
-                    return item.urls.fetch + '?foldersOnly=1';
+                    return item.urls.folders;
                 },
                 uploads: false,
                 width: '100%',

@@ -73,6 +73,9 @@ def serialize_settings(node_settings, current_user, client=None):
         'auth': node.api_url_for('dropbox_oauth_start'),
         'importAuth': node.api_url_for('dropbox_import_user_auth'),
         'files': node.web_url_for('collect_file_trees__page'),
+        # Endpoint for fetching only folders (including root)
+        'folders': node.api_url_for('dropbox_hgrid_data_contents',
+            foldersOnly=1, includeRoot=1)
     }
     result = {
         'nodeHasAuth': node_settings.has_auth,

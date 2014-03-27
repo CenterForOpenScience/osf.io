@@ -168,14 +168,14 @@
         });
     };
 
-    var LOCAL_DATEFORMAT = 'l h:mm A';
-    var UTC_DATEFORMAT = 'l H:mm UTC';
 
     /**
      * A date object with two formats: local time or UTC time.
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
+    var LOCAL_DATEFORMAT = 'l h:mm A';
+    var UTC_DATEFORMAT = 'l H:mm UTC';
     global.FormattableDate = function(date) {
         this.date = date;
         this.local = moment(date).format(LOCAL_DATEFORMAT);

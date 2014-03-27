@@ -1,5 +1,5 @@
 <h4>
-    ${addon_full_name}
+    Dropbox
 </h4>
 
 <style>
