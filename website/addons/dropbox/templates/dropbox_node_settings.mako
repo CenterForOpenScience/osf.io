@@ -18,7 +18,11 @@
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <div data-bind='if: showSettings'>
         <div class="well well-sm">
-            <span class="authorized-by">Authorized by {{ownerName}}</span>
+            <span class="authorized-by">
+                Authorized by <a data-bind="attr: {href: urls.owner}">
+                    {{ownerName}}
+                </a>
+            </span>
             <span data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>

@@ -12,6 +12,7 @@ from website.project.decorators import (must_have_addon,
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.client import get_node_addon_client
+from website.util import web_url_for
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -79,6 +80,9 @@ def serialize_settings(node_settings, current_user, client=None):
         'urls': urls
     }
     if node_settings.has_auth:
+        # Add owner's profile URL
+        result['urls']['owner'] = web_url_for('profile_view_id',
+            uid=user_settings.owner._primary_key)
         # Show available folders
         path = node_settings.folder or '/'
         result.update({
