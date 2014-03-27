@@ -16,7 +16,9 @@
 
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
-    <div data-bind='if: showSettings'>
+
+    <!-- Settings Pane -->
+    <div class="dropbox-settings" data-bind='if: showSettings'>
         <div class="well well-sm">
             <span class="authorized-by">
                 Authorized by <a data-bind="attr: {href: urls.owner}">
@@ -43,10 +45,6 @@
 
                 <!-- Folder picker -->
                 <div data-bind="if: showPicker">
-<!--                     <p class="help-block">Click the
-                        <button class="btn btn-success btn-mini" disabled>
-                        <i class="icon-ok"></i></button>
-                        icon next to a folder to link it with this project.</p> -->
                     <div id="myGrid"
                          class="filebrowser hgrid dropbox-folder-picker"></div>
                 </div>
@@ -72,20 +70,23 @@
 
             </div><!-- end col -->
         </div><!-- end row -->
-    </div>
+    </div><!-- end .dropbox-settings -->
 
+     <!-- Import Access Token Button -->
     <div data-bind="if: showImport">
         <a data-bind="click: importAuth" href="#" class="btn btn-primary">
             Authorize: Import Access Token from Profile
         </a>
     </div>
 
+    <!-- Oauth Start Button -->
     <div data-bind="if: showTokenCreateButton">
         <a data-bind="attr: {href: urls.auth}" class="btn btn-primary">
             Authorize: Create Access Token
         </a>
     </div>
 
+    <!-- Flashed Messages -->
     <div class="help-block">
         <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
