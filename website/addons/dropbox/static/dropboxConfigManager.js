@@ -5,19 +5,28 @@
 $script.ready(['hgrid'], function() {
     'use strict';
 
-    var ViewModel = function(data) {
+    /**
+     * Knockout view model for the Dropbox node settings pane.
+     */
+    var ViewModel = function(data, folderPicker) {
         var self = this;
 
+        // Auth information
         self.nodeHasAuth = ko.observable(data.nodeHasAuth);
         self.userHasAuth = ko.observable(data.userHasAuth);
+        // Currently linked folder
         self.folder = ko.observable(data.folder);
-        self.selected = ko.observable();
         self.ownerName = ko.observable(data.ownerName);
         self.urls = data.urls;
+        // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
+        // Whether or not folder picker is displayed
         self.showPicker = ko.observable(false);
-
+        // CSS selector for the folder picker div
+        self.folderPicker = folderPicker;
+        // Currently selected folder
+        self.selected = ko.observable();
 
         /**
          * Update the view model from data returned from the server.
@@ -93,6 +102,7 @@ $script.ready(['hgrid'], function() {
             self.selected(null);
         };
 
+        /** Change the flashed message. */
         self.changeMessage = function(text, css, timeout) {
             self.message(text);
             var cssClass = css || 'text-info';
@@ -125,6 +135,9 @@ $script.ready(['hgrid'], function() {
             });
         }
 
+        /** Pop up a confirmation to deauthorize Dropbox from this node.
+         *  Send DELETE request if confirmed.
+         */
         self.deauthorize = function() {
             bootbox.confirm({
                 title: 'Deauthorize Dropbox?',
@@ -156,6 +169,7 @@ $script.ready(['hgrid'], function() {
             return $.osf.putJSON(self.urls.importAuth, {}, onImportSuccess, onImportError);
         };
 
+        /** Callback for chooseFolder action. */
         function onChooseFolder(evt, row) {
             evt.preventDefault();
             self.selected({name: 'Dropbox' + row.path, path: row.path});
@@ -189,14 +203,14 @@ $script.ready(['hgrid'], function() {
          * Activates the HGrid folder picker.
          */
         self.activatePicker = function() {
-            // Overrider some name column settings
+            // Override some name column settings
             var nameCol = $.extend({}, HGrid.Col.Name);
             nameCol.name = 'Folders';
             // Hide +/- icon for root folder
             nameCol.showExpander = function(item) {
                 return item.path !== '/';
             };
-            $('#myGrid').hgrid({
+            $(self.folderPicker).hgrid({
                 // Fetch data from hgrid data endpoint,
                 // filtering only folders and inlcuding the root folder
                 data: nodeApiUrl + 'dropbox/hgrid/?foldersOnly=1&includeRoot=1',
@@ -235,20 +249,22 @@ $script.ready(['hgrid'], function() {
     };
 
     // Public API
-    function DropboxConfigManager(selector, url) {
+
+    function DropboxConfigManager(selector, url, folderPicker) {
         var self = this;
         self.url = url;
-        self.selector = selector;
-        self.$elem = $(selector);
+        self.folderPicker = folderPicker;
         $.ajax({
             url: self.url,
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                self.viewModel = new ViewModel(response.result);
+                self.viewModel = new ViewModel(response.result, folderPicker);
                 $.osf.applyBindings(self.viewModel, selector);
             },
-            error: function() {
+            error: function(xhr, textStatus, error) {
+                console.log(textStatus);
+                console.log(error);
                 bootbox.alert({
                     title: 'Dropbox Error',
                     message: 'An error occurred while connecting with Dropbox. Please try again later.'
