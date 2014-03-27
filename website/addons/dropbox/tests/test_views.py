@@ -61,6 +61,24 @@ class TestAuthViews(DbTestCase):
 
 class TestConfigViews(DropboxAddonTestCase):
 
+    def test_dropbox_user_config_get_has_auth_info(self):
+        url = lookup('api', 'dropbox_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSON result
+        result = res.json['result']
+        assert_equal(result['userHasAuth'], self.user_settings.has_auth)
+
+    def test_dropbox_user_config_get_returns_correct_urls(self):
+        url = lookup('api', 'dropbox_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # The JSONified URLs result
+        urls = res.json['result']['urls']
+        assert_equal(urls['delete'], lookup('api', 'dropbox_oauth_delete_user'))
+        assert_equal(urls['create'], lookup('api', 'dropbox_oauth_start__user'))
+
+
     def test_serialize_settings_helper_returns_correct_urls(self):
         with self.app.app.test_request_context():
             result = serialize_settings(self.node_settings, self.user, client=mock_client)

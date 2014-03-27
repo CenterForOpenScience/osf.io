@@ -76,6 +76,9 @@ def dropbox_oauth_start(**kwargs):
 
 
 def dropbox_oauth_finish(**kwargs):
+    """View called when the Oauth flow is completed. Adds a new DropboxUserSettings
+    record to the user and saves the user's access token and account info.
+    """
     user = get_current_user()
     if not user:
         raise HTTPError(http.FORBIDDEN)
@@ -105,9 +108,28 @@ def dropbox_oauth_finish(**kwargs):
 
 @must_have_addon('dropbox', 'user')
 def dropbox_oauth_delete_user(user_addon, **kwargs):
+    """View for deauthorizing Dropbox."""
     client = get_client_from_user_settings(user_addon)
     client.disable_access_token()
     user_addon.clear_auth()
     user_addon.save()
-    flash('Removed Dropbox token', 'info')
-    return {}
+    return None
+
+
+@must_be_logged_in
+@must_have_addon('dropbox', 'user')
+def dropbox_user_config_get(user_addon, auth, **kwargs):
+    """View for getting a JSON representation of the logged-in user's
+    Dropbox user settings.
+    """
+    urls = {
+        'create': api_url_for('dropbox_oauth_start__user'),
+        'delete': api_url_for('dropbox_oauth_delete_user')
+    }
+    return {
+        'result': {
+            'userHasAuth': user_addon.has_auth,
+            'urls': urls
+        },
+        'status': 200
+    }, 200

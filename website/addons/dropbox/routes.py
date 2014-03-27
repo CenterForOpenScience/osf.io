@@ -9,13 +9,20 @@ from website.routes import OsfWebRenderer, notemplate
 auth_routes = {
     'rules': [
 
+        Rule(
+            '/settings/dropbox/',
+            'get',
+            views.auth.dropbox_user_config_get,
+            json_renderer,
+        ),
+
         ##### OAuth #####
         Rule(
             '/settings/dropbox/oauth/',
             'get',
-            views.auth.dropbox_oauth_start,
+            views.auth.dropbox_oauth_start,  # Use same view func as node oauth start
             json_renderer,
-            endpoint_suffix='__user'
+            endpoint_suffix='__user'         # but add a suffix for url_for
         ),
 
         Rule(
