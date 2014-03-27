@@ -1,45 +1,34 @@
 ## Template for the "Dropbox" section in the "Configure Add-ons" panel
 
-<h4 class="addon-title">${addon_full_name}</h4>
+<h4 class="addon-title">Dropbox</h4>
 
-<div id='dropboxAddonScope' class='addon-settings'>
-    % if has_auth:
+<div id='dropboxAddonScope' class='addon-settings scripted'>
+
+    <!-- Delete Access Token Button -->
+    <div data-bind="if: showDelete">
         <button data-bind='click: deleteKey' class="btn btn-danger">
             Delete Access Token
         </button>
-    %else:
-        <a href="${api_url_for('dropbox_oauth_start__user')}" class="btn btn-primary">Create Access Token</a>
-    % endif
+    </div>
+
+    <!-- Create Access Token Button -->
+    <div data-bind="if: showCreate">
+        <a data-bind="attr: {href: urls.create}" class="btn btn-primary">Create Access Token</a>
+    </div>
+
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr: {class: messageClass}"></p>
+    </div>
 </div>
 
+
 <script>
-    $(function() {
-        var language = $.osf.Language.Addons.dropbox;
-        var deleteAuthURL = '${api_url_for("dropbox_oauth_delete_user")}';
-        function sendDeauth() {
-            return $.ajax({
-                url: deleteAuthURL,
-                type: 'DELETE'
-            })
-            .done(function() {
-                // TODO(sloria): Remove page reload when entire view is controlled by Knockout
-                window.location.reload();
-            });
-        }
-        var DropboxViewModel = {
-            'deleteKey': function() {
-                bootbox.confirm({
-                    title: 'Delete Dropbox Token?',
-                    message: language.confirmDeauth,
-                    callback: function(confirmed) {
-                        if (confirmed) {
-                            sendDeauth();
-                        };
-                    }
-                });
-            }
-        }
-        $.osf.applyBindings(DropboxViewModel, '#dropboxAddonScope');
-    })
+    $script(['/addons/static/dropbox/dropboxUserConfig.js'], function() {
+        // Endpoint for dropbox user settings
+        var url = '/api/v1/settings/dropbox/';
+        // Start up the Dropbox Config manager
+        var dropbox = new DropboxUserConfig('#dropboxAddonScope', url);
+    });
 </script>
 

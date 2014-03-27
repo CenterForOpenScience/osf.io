@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes  knockout view-model
+ * Module that controls the Dropbox node settings. Includes Knockout view-model
  * for syncing data, and and HGrid for selecting a folder.
  */
 $script.ready(['hgrid'], function() {
