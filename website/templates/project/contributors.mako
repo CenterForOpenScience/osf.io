@@ -1,8 +1,5 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Contributors</%def>
-<script src="/static/vendor/zeroclipboard/ZeroClipboard.min.js"></script>
-<script src="/static/vendor/zeroclipboard/main.js"></script>
-
 
 <div class="row">
     <div class="col-md-12">
@@ -49,7 +46,6 @@
                             <tr>
                             <th class="col-sm-2 link-name">Private Link</th>
                             <th class="col-sm-4 link-label">Label
-
                             </th>
                             <th class="col-sm-3 link-date">Created Date</th>
                             <th class="col-sm-2 link-creator">Created By</th>
@@ -66,18 +62,20 @@
                         <tbody >
                             % for link in node['private_links']:
                                 <tr>
-                                <th class="col-sm-4 link-name">
+                                <td class="col-sm-4 link-name">
                                     <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
                                         <span class="icon-copy" ></span>
                                     </button>
                                     <a class="key-name" >${node['absolute_url']}?key=${link['key']}</a>
-                                </th>
-                                <th class="col-sm-2 link-label">${link['label'] if link['label'] else "None"}</th>
-                                <th class="col-sm-3 link-date">${link['date_created']}</th>
-                                <th class="col-sm-2 link-creator">${link['creator']}</th>
-                                <th class="col-sm-1">
+                                </td>
+                                <td class="col-sm-2 link-label">${link['label'] if link['label'] else "None"}</td>
+                                <td class="col-sm-3 link-date">
+                                    <span class="link-create-date">${link['date_created']}</span>
+                                </td>
+                                <td class="col-sm-2 link-creator">${link['creator']}</td>
+                                <td class="col-sm-1">
                                     <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-link="${link['id']}">-</a>
-                                </th>
+                                </td>
                                 </tr>
                             % endfor
                         </tbody>
@@ -151,11 +149,23 @@
     ${parent.javascript_bottom()}
     <% import json %>
     <script src="/static/js/contribManager.js"></script>
+    <script src="/static/vendor/zeroclipboard/ZeroClipboard.min.js"></script>
+    <script src="/static/vendor/zeroclipboard/main.js"></script>
     <script type="text/javascript">
         (function() {
             var contributors = ${json.dumps(contributors)};
             var user = ${json.dumps(user)};
             var manager = new ContribManager('#manageContributors', contributors, user);
+
+            $('tbody .link-create-date').each(function(idx, elem) {
+                var e = $(elem);
+                var dt = new FormattableDate(e.text());
+                e.text(dt.local);
+                e.tooltip({
+                    title: dt.utc,
+                    container: "body"
+                });
+            })
         })();
     </script>
 </%def>

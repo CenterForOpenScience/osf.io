@@ -74,7 +74,7 @@ ${next.body()}
 
                 if ($linkScope.length >0){
                     var $privateLink = $('#private-link');
-                    privateLinkVM = new PrivateLinkViewModel(data.node.title,
+                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
                                                             data.parent_node.id,
                                                             data.parent_node.title);
                     ko.applyBindings(privateLinkVM, $privateLink[0]);
