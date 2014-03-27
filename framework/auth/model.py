@@ -59,6 +59,9 @@ class User(GuidStoredObject, AddonModelMixin):
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_keys = fields.StringField(list=True)
 
+    #Badging Fields
+    is_organization = fields.BooleanField(default=False)
+
     # Per-project unclaimed user data:
     # Format: {
     #   <project_id>: {

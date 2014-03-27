@@ -32,7 +32,7 @@ def get_user_badges(*args, **kwargs):
 @must_have_addon('badges', 'node')
 def badges_widget(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    badges = node.get_addon('badges')
+    badges = kwargs['node_addon']
     auth = kwargs['auth']
     ret = {
         'complete': True,
@@ -127,7 +127,6 @@ def create_badge(*args, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     id = build_badge(awarder, badge_data)
-    awarder.add_badge(id)
     return {'badgeid': id}, 200
 
 

@@ -4,7 +4,6 @@ import calendar
 from PIL import Image
 from datetime import datetime
 
-from website.settings import DOMAIN
 from website.util.sanitize import deep_clean
 
 from model import Badge, BadgeAssertion
@@ -14,8 +13,7 @@ from model import Badge, BadgeAssertion
 def build_badge(issuer, badge):
     deep_clean(badge)
     new = Badge()
-    new.creator = issuer.owner._id
-    new.creator_name = issuer.name
+    new.creator = issuer.owner
     new.name = badge['badgeName']
     new.description = badge['description']
     new.image = badge['imageurl']
@@ -31,19 +29,10 @@ def build_badge(issuer, badge):
 
 def build_assertion(issuer, badge, node, evidence, verify_method='hosted'):
     assertion = BadgeAssertion()
-    assertion.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))  # Todo make an int field?
-    assertion.badge_id = badge._id
-    assertion.recipient = {
-        'type': 'osfProject',
-        'identity': node._id,  # Change to node url
-        'hashed': False,
-    }
-    assertion._ensure_guid()
+    assertion.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
+    assertion.badge = badge
+
     #TODO Signed and hosted
-    assertion.verify = {
-        'type': 'hosted',
-        'url': '{}{}/'.format(DOMAIN, assertion._id)  # is so meta even this acronym
-    }
     if evidence:
         assertion.evidence = evidence
     assertion.save()

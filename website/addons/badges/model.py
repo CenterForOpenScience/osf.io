@@ -1,13 +1,12 @@
 """
 
 """
-import json
 from datetime import datetime
 
 from framework import fields
-from framework import GuidStoredObject
+from framework import GuidStoredObject, StoredObject
 
-from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.settings import DOMAIN
 
 
@@ -16,9 +15,10 @@ class Badge(GuidStoredObject):
     redirect_mode = 'proxy'
 
     _id = fields.StringField(primary=True)
-    creator = fields.StringField()
-    creator_name = fields.StringField()
 
+    creator = fields.ForeignField('badgesusersettings', backref='creator')
+
+    #Open Badge protocol
     name = fields.StringField()
     description = fields.StringField()
     image = fields.StringField()
@@ -71,30 +71,27 @@ class Badge(GuidStoredObject):
         return '/badge/{}/'.format(self._id)
 
 
-class BadgeAssertion(GuidStoredObject):
+class BadgeAssertion(StoredObject):
 
-    redirect_mode = 'proxy'
+    _id = fields.StringField()
 
-    #Automatic
-    _id = fields.StringField(primary=True)
+    #Backrefs
+    badge = fields.ForeignField('badge', backref='assertion')
+    node = fields.ForeignField('node', backref='awarded')
+
+    #Custom fields
+    revoked = fields.BooleanField(default=False)
+    reason = fields.StringField()
 
     #Required
-    recipient = fields.DictionaryField()
-    badge_id = fields.StringField()  # URL to badge json
-    verify = fields.DictionaryField()
-    issued_on = fields.StringField()  # TODO Format
+    issued_on = fields.IntegerField()  # TODO Format
 
     #Optional
     image = fields.StringField()
     evidence = fields.StringField()
     expires = fields.StringField()
 
-    #Custom fields
-    revoked = fields.BooleanField(default=False)
-    reason = fields.StringField()
-
     def to_json(self):
-        #Mozilla Required Fields
         ret = {
             'uid': self._id,
             'recipient': self.recipient,
@@ -139,41 +136,15 @@ class BadgeAssertion(GuidStoredObject):
         return '/badge/assertions/{}/'.format(self._id)
 
 
+#TODO Better way around this, No longer needed?
 class BadgesNodeSettings(AddonNodeSettingsBase):
-
-    assertions = fields.StringField(list=True)
-
-    def to_json(self, user):
-        ret = super(BadgesNodeSettings, self).to_json(user)
-        ret['assertions'] = self.assertions
-        return ret
-
-    def add_badge(self, assertion, save=True):
-        self.assertions.append(assertion)
-        if save:
-            self.save()
-        return True
-
-    def get_assertions(self):
-        ret = []
-        for assertion in self.assertions:
-            temp = BadgeAssertion.load(assertion).to_json()
-            if not BadgeAssertion.load(assertion).revoked:
-                temp.update(Badge.load(temp['badge']).to_json())
-                ret.append(temp)
-        return ret
+    pass
 
 
 class BadgesUserSettings(AddonUserSettingsBase):
 
-    can_issue = fields.BooleanField()
-    badges = fields.StringField(list=True)
+    user = fields.ForeignField('user', backref='organizations')
 
-    name = fields.StringField()
-    url = fields.StringField()
-    image = fields.StringField()
-    description = fields.StringField()
-    email = fields.StringField()  # TODO Lock to Email only
     revocation_list = fields.DictionaryField()  # {'id':'12345', 'reason':'is a loser'}
 
     def to_json(self, user):
@@ -213,8 +184,3 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     def get_badges_json_simple(self):
         return [{'value': Badge.load(_id).to_json()['id'], 'text': Badge.load(_id).to_json()['name']} for _id in self.badges]
-
-    def add_badge(self, id, save=True):
-        self.badges.append(id)
-        if save:
-            self.save()

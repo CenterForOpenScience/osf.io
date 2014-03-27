@@ -5,9 +5,9 @@ from website.settings import BASE_PATH
 from . import model
 from . import routes
 
-MODELS = [model.BadgesNodeSettings, model.BadgesUserSettings, model.Badge, model.BadgeAssertion]
-NODE_SETTINGS_MODEL = model.BadgesNodeSettings
+MODELS = [model.BadgesUserSettings, model.BadgesNodeSettings, model.Badge, model.BadgeAssertion]
 USER_SETTINGS_MODEL = model.BadgesUserSettings
+NODE_SETTINGS_MODEL = model.BadgesNodeSettings
 
 ROUTES = [routes.widget_route, routes.page_route, routes.api_urls, routes.guid_urls]
 
