@@ -527,6 +527,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
+    @property
+    def private_link_keys(self):
+        return [x.key for x in self.private_links]
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -555,11 +559,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             key_ring = set(auth.user.private_keys)
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_links)
+                or not key_ring.isdisjoint(self.private_link_keys)
         else:
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_links
+                or auth.private_key in self.private_link_keys
 
 
     def add_permission(self, user, permission, save=False):
@@ -1594,18 +1598,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         return node_file
-
-    # def add_private_link(self, link='', save=True):
-    #     link = link or str(uuid.uuid4()).replace("-", "")
-    #     self.private_links.append(link)
-    #     if save:
-    #         self.save()
-    #     return link
-    #
-    # def remove_private_link(self, link, save=True):
-    #     self.private_links.remove(link)
-    #     if save:
-    #         self.save()
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None

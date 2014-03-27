@@ -92,12 +92,12 @@ def choose_key(key, key_ring, node, auth, api_node=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
-    if key in node.private_links:
+    if key in node.private_link_keys:
         auth.private_key = key
         return
 
     auth.private_key = key_ring.intersection(
-        node.private_links
+        node.private_link_keys
     ).pop()
     #do a redirect to reappend the key to url only if the user
     # isn't a contributor
@@ -138,7 +138,7 @@ def _must_be_contributor_factory(include_public):
             if not kwargs['auth'].user:
                 kwargs['auth'].private_key = key
                 if not node.is_public or not include_public:
-                    if key not in node.private_links:
+                    if key not in node.private_link_keys:
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
                             url = '/login/?next={0}'.format(request.path)
@@ -155,7 +155,7 @@ def _must_be_contributor_factory(include_public):
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
                 if not node.is_public or not include_public:
-                    if key_ring.isdisjoint(node.private_links):
+                    if key_ring.isdisjoint(node.private_link_keys):
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
                             redirect_url = '/login/?next={0}'.format(request.path)

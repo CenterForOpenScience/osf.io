@@ -41,49 +41,51 @@
                 </table>
                 ${buttonGroup()}
         </div>
-
-    <h2>Private Links</h2>
-        <div id="linkScope" >
-                <table id="privateLinkTable" class="table">
-                    <thead>
-                        <tr>
-                        <th class="col-sm-2 link-name">Private Link</th>
-                        <th class="col-sm-4 link-label">Label
-
-                        </th>
-                        <th class="col-sm-3 link-date">Created Date</th>
-                        <th class="col-sm-2 link-creator">Created By</th>
-                        <th class="col-sm-1"></th>
-                        </tr>
-                    </thead>
-                    <tr >
-                        <td colspan="3">
-                            <a href="#private-link" data-toggle="modal">
-                                Click to generate a private link
-                            </a>
-                        </td>
-                    </tr>
-                    <tbody >
-                        % for link in node['private_links']:
+    % if 'write' in user['permissions']:
+        <h2>Private Links</h2>
+            <div id="linkScope" >
+                    <table id="privateLinkTable" class="table">
+                        <thead>
                             <tr>
-                            <th class="col-sm-4 link-name">
-                                <button class="btn btn-default btn-mini copy-button" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
-                                    <span class="icon-copy"></span>
-                                </button>
-                                <a class="key-name" >${node['absolute_url']}?key=${link['key']}</a>
-                            </th>
-                            <th class="col-sm-2 link-label">${link['label']}</th>
-                            <th class="col-sm-3 link-date">${link['date_created']}</th>
-                            <th class="col-sm-2 link-creator">${link['creator']}</th>
-                            <th class="col-sm-1">
-                                <a class="remove-private-link btn btn-danger btn-mini" data-link="${link['id']}">-</a>
-                            </th>
-                            </tr>
-                        % endfor
-                    </tbody>
-                </table>
+                            <th class="col-sm-2 link-name">Private Link</th>
+                            <th class="col-sm-4 link-label">Label
 
-        </div>
+                            </th>
+                            <th class="col-sm-3 link-date">Created Date</th>
+                            <th class="col-sm-2 link-creator">Created By</th>
+                            <th class="col-sm-1"></th>
+                            </tr>
+                        </thead>
+                        <tr >
+                            <td colspan="3">
+                                <a href="#private-link" data-toggle="modal">
+                                    Click to generate a private link
+                                </a>
+                            </td>
+                        </tr>
+                        <tbody >
+                            % for link in node['private_links']:
+                                <tr>
+                                <th class="col-sm-4 link-name">
+                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="click to copy" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
+                                        <span class="icon-copy" ></span>
+                                    </button>
+                                    <a class="key-name" >${node['absolute_url']}?key=${link['key']}</a>
+                                </th>
+                                <th class="col-sm-2 link-label">${link['label'] if link['label'] else "None"}</th>
+                                <th class="col-sm-3 link-date">${link['date_created']}</th>
+                                <th class="col-sm-2 link-creator">${link['creator']}</th>
+                                <th class="col-sm-1">
+                                    <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-link="${link['id']}">-</a>
+                                </th>
+                                </tr>
+                            % endfor
+                        </tbody>
+                    </table>
+
+            </div>
+    % endif
+
     </div><!-- end col-md -->
 </div><!-- end row -->
 
