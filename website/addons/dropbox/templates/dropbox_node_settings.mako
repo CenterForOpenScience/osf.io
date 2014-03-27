@@ -63,7 +63,7 @@
                             <button class="btn btn-default"
                                     data-bind="click: cancelSelection">Cancel</button>
                             <input type="submit"
-                                    class="btn btn-info"
+                                    class="btn btn-primary"
                                     value="Submit">
 
                         </div>

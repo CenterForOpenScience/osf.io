@@ -26,7 +26,7 @@ $script.ready(['hgrid'], function() {
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-            self.selected(data.folder);
+            console.log(data);
             self.folder(data.folder);
         };
 
@@ -52,7 +52,7 @@ $script.ready(['hgrid'], function() {
         });
 
         self.folderName = ko.computed(function() {
-            if (self.nodeHasAuth()) {
+            if (self.nodeHasAuth() && self.folder()) {
                 return self.folder().name;
             } else {
                 return '';
