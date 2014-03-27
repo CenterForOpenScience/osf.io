@@ -1,4 +1,4 @@
-    <%inherit file="project/addon/settings.mako" />
+    <%inherit file="project/addon/node_settings.mako" />
 
 <!-- Authorization -->
 <div>
@@ -35,11 +35,18 @@
             <input name = "${action}_message"   class = "${action}_message" value = "${ log_messages.get(action+'_message', DEFAULT_MESSAGE) }" ${'type="text"' if action in log_actions else 'hidden'} >
 
         </label>
+
+
+
         </br>
     % endfor
+
+
+
     <hr>
 
           </div>
+
         </br>
 
     % else:
@@ -55,6 +62,10 @@
 </div>
 
 <br />
+
+
+
+
 
 <script type="text/javascript">
 
@@ -77,7 +88,7 @@
         });
 
 
-        
+
 
 
 

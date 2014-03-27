@@ -5,12 +5,18 @@ import os
 import json
 import ctypes
 from framework import request, redirect
-from framework.sessions import session# get_session, set_session
+from framework.sessions import session#, get_session, set_session, create_session
 from framework.exceptions import HTTPError
 from website import models
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
+from framework.status import push_status_message
 from framework.auth import get_current_user
+from website import settings
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonError
+from framework.status import push_status_message
+from website.addons.twitter import AddonTwitterNodeSettings
 
 CONSUMER_KEY = 'rohTTQSPWzgIXWw0g5dw'
 CONSUMER_SECRET = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
@@ -28,15 +34,19 @@ def oauth_start(*args, **kwargs):
     pid = kwargs.get('pid')
     callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
+
+
+
     try:
         redirect_url = auth.get_authorization_url()
     except tweepy.TweepError as e:
         print 'Error! Failed to get request token.'
-#Store request token data in session variable
-
-    session.data['request_token_key'] = auth.request_token.key
-    session.data['request_token_secret'] = auth.request_token.secret
-    session.save()
+#Store request  token data in session variable
+    node = models.Node.load(kwargs['pid'])
+    twitter = node.get_addon('twitter')
+    twitter.request_token_key = auth.request_token.key
+    twitter.request_token_secret = auth.request_token.secret
+    twitter.save()
 
     return redirect(redirect_url)
 
@@ -50,34 +60,36 @@ def username(*args, **kwargs):
         """
 
 #Rebuild OAuthHandler
+
     pid = kwargs.get('pid')
+    node = models.Node.load(kwargs['pid'])
+    twitter = node.get_addon('twitter')
     callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
 
 #Use request token and verifier to get access token
-    auth.set_request_token(session.data.get('request_token_key'), session.data.get('request_token_secret'))
+    auth.set_request_token(twitter.request_token_key, twitter.request_token_secret)
+
     verifier = request.args.get('oauth_verifier')
     session.data['verifier'] = request.args.get('oauth_verifier')
 
     try:
-        auth.get_access_token(verifier)
+      auth.get_access_token(verifier = verifier)
     except tweepy.TweepError as e:
         print 'Error!  Please try again'
-
-
 #Build access token
     auth.set_access_token(auth.access_token.key, auth.access_token.secret)
-    session.data['access_token_key'] = auth.access_token.key
-    session.data['access_token_secret'] = auth.access_token.secret
-    session.save()
+
+    #save to node settings model here, instead of session
+   # session.data['access_token_key'] = auth.access_token.key
+    #session.data['access_token_secret'] = auth.access_token.secret
+    #session.save()
 
 #Build tweepy object
     api = tweepy.API(auth)
 
 #Build twitter add-on object, which is attached to the node
-    node = models.Node.load(kwargs['pid'])
 
-    twitter = node.get_addon('twitter')
     twitter.oauth_key = auth.access_token.key
     twitter.oauth_secret = auth.access_token.secret
     twitter.user_name = api.me().screen_name
@@ -98,22 +110,42 @@ def twitter_widget(*args, **kwargs):
 
         :return: None
         """
-#Build OAuthHandler
+    #Build OAuthHandler
 
 
     node = kwargs.get('node') or kwargs.get('project')
+    twitter = kwargs.get('node_addon')
     config = node.get_addon('twitter')
 
     pid = kwargs.get('pid')
-    callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
-    auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
 
-#Rebuild access token and tweepy object
-    auth.set_access_token(config.oauth_key, config.oauth_secret)
-    api = tweepy.API(auth)
+    if config.oauth_key:
+        callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
+        auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
 
-#Storing variables
-    twitter = kwargs['node_addon']
+        #Rebuild access token and tweepy object
+
+        auth.set_access_token(config.oauth_key, config.oauth_secret)
+        try:
+            api = tweepy.API(auth)
+            screen_name = api.me().screen_name
+
+        #if user is not authorized, clear out node settings
+        #TODO: decide which node settings will persist
+        except tweepy.TweepError as e:
+            push_status_message('Twitter authentication failed.', kind='warning')
+            screen_name = None
+            twitter.log_messages = {}
+            twitter.log_actions ={}
+            twitter.oauth_key = None
+            twitter.oauth_secret = None
+            twitter.user_name = None
+            twitter.save()
+    else:
+        screen_name = None
+
+    #Storing variables
+   # twitter = kwargs['node_addon']
     if twitter:
 
         if (config.displayed_tweets == None):
@@ -121,7 +153,7 @@ def twitter_widget(*args, **kwargs):
 
         rv = {
             'complete': True,
-            'user_name': api.me().screen_name,
+            'user_name': screen_name,
             'displayed_tweets': config.displayed_tweets,
 
         }
@@ -130,6 +162,8 @@ def twitter_widget(*args, **kwargs):
     raise HTTPError(http.NOT_FOUND)
 
 
+
+#TODO: will node settings persist?
 @must_be_contributor_or_public
 @must_have_addon('twitter', 'node')
 def twitter_oauth_delete_node(*args, **kwargs):
@@ -140,15 +174,24 @@ def twitter_oauth_delete_node(*args, **kwargs):
         :return: None
         """
 
-
 #Get add-on object
+
+
+
+
      twitter = kwargs['node_addon']
 
 #Zero out all relevant fields
      twitter.oauth_key = None
      twitter.oauth_secret = None
      twitter.user_name = None
+     #reset actions and messages
+     twitter.log_messages = {}
+     twitter.log_actions = []
+
      twitter.save()
+
+
 
      return {}
 
@@ -173,13 +216,26 @@ def twitter_set_config(*args, **kwargs):
 #building list of logs that the user wants to tweet a message for, and the messages the user has built
 
     twitter_logs = [k for k,v in request.json.iteritems() if v == 'on']
+
    # twitter_log_messages = {k:v for k,v in request.json.iteritems() if 'message' in k and v != 'None' and v != default_message}
-    twitter_log_messages = {k:v for k,v in request.json.iteritems() if 'message' in k }
+    twitter_log_messages = {}
+    for k,v in request.json.iteritems():
+        if 'message' in k:
+            if len(v) <= 140:
+              twitter_log_messages[k]=v
+            else:
+              action_name = k
+              twitter_log_messages[action_name] = twitter.log_messages.get(action_name)
+              action_name = action_name.replace("_message", "")
+              action_name = action_name.replace("_", " ")
+              action_name = action_name.title()
+              push_status_message("The custom message for event '"+action_name+"' is "+str(len(v) - 140)+" characters over the 140 character limit, and could not be saved.  Please use a message within the 140 character limit.")
+
+
 
 #Update twitter object
-    displayed_tweets  = request.json.get('displayed_tweets', '')
+    twitter.displayed_tweets  = request.json.get('displayed_tweets', '')
     twitter.log_messages= twitter_log_messages
-    twitter.displayed_tweets = displayed_tweets
     twitter.log_actions = twitter_logs
     twitter.save()
 
@@ -210,8 +266,9 @@ def twitter_update_status(*args, **kwargs):
 
 #Store status and tweet
     status = json.loads(request.data).get('status')
-    print len(status)
 
+    if (len(status) > 140):
+        push_status_message("Your tweet is"+str(len(status) - 140)+" characters too long.  Please shorten it and resend.")
     api.update_status(status)
 
     return redirect(os.path.join(node.url, 'settings'))

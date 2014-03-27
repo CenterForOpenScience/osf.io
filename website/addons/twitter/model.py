@@ -14,13 +14,16 @@ import ctypes
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import AddonError
+from framework.status import push_status_message
+
 
 #from . import settings as twitter_settings
 #from .api import Twitter
 
 class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 
-
+    request_token_key = fields.StringField()
+    request_token_secret = fields.StringField()
     oauth_key = fields.StringField()
     oauth_secret = fields.StringField()
     user_name = fields.StringField()
@@ -52,7 +55,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
                         'wiki_updated_message': 'Updated the wiki with: ',
                         'contributor_added_message': ' Added a project contributor!',
                         'tag_added_message': 'Added tag $tag_name to our project',
-                        'edit_title_message': 'Changed project title from $old_title to $new_title ',
+                        'edit_title_message': 'Changed project title from $old_title to $new_title',
                         'edit_description_message': 'Changed project description to $new_desc',
                         'project_registered_message': 'Just registered a new project!',
                         'file_added_message':' Just added $file_name to our project',
@@ -80,6 +83,8 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
     def to_json(self, *args, **kwargs):
         rv = super(AddonTwitterNodeSettings, self).to_json(*args, **kwargs)
         rv.update({
+            'request_token_key': self.request_token_key or '',
+            'request_token_secret': self.request_token_secret or '',
             'twitter_oauth_key': self.oauth_key or '',
             'twitter_oauth_secret': self.oauth_secret or '',
             'authorized_user': self.user_name or '',
@@ -95,21 +100,27 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
     #
 
     def parse_message(self, log):
-        ph = '4'
-        message = self.log_messages.get(log.action+'_message')
+
+        #message = self.log_messages.get(log.action+'_message')
+
         if (log.action == 'edit_title'):
+           message = self.log_messages.get('edit_title_message')
            message = message.replace('$new_title', log.params['title_new'])
            message = message.replace('$old_title', log.params['title_original'])
-        if (log.action == 'edit_description'):
+        elif (log.action == 'edit_description'):
+           message = self.log_messages.get('edit_description_message')
            message = message.replace('$new_desc', log.params['description_new'])
-        if (log.action == 'file_created'):
+        elif (log.action == 'file_created'):
+           message = self.log_messages.get('file_added_message')
            message = message.replace('$filename', log.params['path'])
-        if (log.action == 'tag_added'):
+        elif (log.action == 'tag_added'):
+           message = self.log_messages.get('tag_added_message')
            message = message.replace('$tag_name', log.params['tag'])
+        else:
+           message = self.log_messages.get('file_created_message')
 
-        print message
-
-        self.tweet(message)
+        if len(message) > 140:
+            return '$error$'
         return message
 
 
@@ -117,7 +128,14 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
         config = node.get_addon('twitter')
 
         if log.action in self.log_actions:
-            self.parse_message(log)
+          message = self.parse_message(log)
+          if (message == ''):
+                push_status_message('Tweet is empty.  Please try again.')
+          if (message == '$error$'):
+                push_status_message('Tweet is too long.  Please try again with a shorter message.')
+          else:
+                self.tweet(message)
+
         return{}
 
 
@@ -145,7 +163,17 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 #Recreate access token and call update_status() with the correct message
         auth.set_access_token(self.oauth_key, self.oauth_secret)
         api = tweepy.API(auth)
-        api.update_status(message)
+
+        if (len(message) > 140):
+            length = str(len(message) - 140)
+            push_status_message("Tweet is "+length+" characters over the 140 character limit, and could not be sent.  Please try again")
+        else:
+            try:
+              api.update_status(message)
+            except:
+              push_status_message("Your tweet could not be sent.  Please try again.")
+
+        return
 
 #class AddonTwitterUserSettings(AddonUserSettingsBase):
 #
