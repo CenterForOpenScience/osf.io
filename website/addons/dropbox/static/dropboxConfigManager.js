@@ -186,7 +186,7 @@ $script.ready(['hgrid'], function() {
         }
 
         /**
-         * Activates the folder picker
+         * Activates the HGrid folder picker.
          */
         self.activatePicker = function() {
             // Overrider some name column settings
@@ -224,8 +224,13 @@ $script.ready(['hgrid'], function() {
          */
         self.togglePicker = function() {
             // Toggle visibility of folder picker
-            self.showPicker(!self.showPicker());
-            self.activatePicker();
+            var show = !self.showPicker();
+            self.showPicker(show);
+            if (show) {
+                self.activatePicker();
+            } else {
+                self.selected(null);
+            }
         };
     };
 
