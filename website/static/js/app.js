@@ -34,6 +34,7 @@ var LinksViewModel = function(elm) {
 
 };
 
+    NODE_OFFSET = 25;
 var PrivateLinkViewModel = function(title, parentId, parentTitle) {
 
     var self = this;

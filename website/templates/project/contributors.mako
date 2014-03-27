@@ -67,7 +67,7 @@
                             % for link in node['private_links']:
                                 <tr>
                                 <th class="col-sm-4 link-name">
-                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="click to copy" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
+                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
                                         <span class="icon-copy" ></span>
                                     </button>
                                     <a class="key-name" >${node['absolute_url']}?key=${link['key']}</a>
