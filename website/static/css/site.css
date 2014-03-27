@@ -198,7 +198,7 @@ a.disabled {
 }
 
 .citation-list {
-    display: none;
+    /*display: none;*/
 }
 
 .citation-text {

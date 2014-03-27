@@ -13,14 +13,14 @@
         % if addons:
 
             <!-- Show widgets in left column if present -->
-            % for addon in addons_enabled:
-                % if addons[addon]['has_widget']:
+        % for addon in addons_enabled:
+            % if addons[addon]['has_widget']:
 <div class="addon-widget-container" mod-meta='{
 "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
 "uri": "${node['api_url']}${addon}/widget/"
 }'></div>
-                % endif
-            % endfor
+            % endif
+        % endfor
 
         % else:
 
@@ -53,41 +53,43 @@
 
     <div class="col-md-6">
 
- <div class="citations">
+        <div class="citations">
 
-                <span class="citation-label">Citation:</span>
-                <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <div class="citation-list">
-                <form id="citationFormHuman" action="#">
-                        <select name="styles">
-                            <option value="apa.csl">APA</option>
-                            <option value="chicago-author-date.csl">Chicago: Author-Date</option>
-                            <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
-                            <option value="harvard1.csl">Harvard</option>
-                            <option value="modern-language-association-with-url.csl">MLA</option>
-                            <option value="turabian-fullnote-bibliography.csl">Turabian</option>
-                            <option value="vancouver-author-date.csl">Vancouver</option>
-                        </select>
-                    </form>
-                    <p></p>
-                <dl class="rendered-citation"></dl>
+            <span class="citation-label">Citation:</span>
+            ##                <span>${node['display_absolute_url']}</span>
+            ##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                            <div class="citation-list">
+                <span>
+                <form id="citationForm" action="#">
+                    <select id="humanStyles">
+                        <option value="OSFURL">OSF ID</option>
+                        <option value="apa.csl">APA</option>
+                        <option value="chicago-author-date.csl">Chicago: Author-Date</option>
+                        <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
+                        <option value="harvard1.csl">Harvard</option>
+                        <option value="modern-language-association-with-url.csl">MLA</option>
+                        <option value="turabian-fullnote-bibliography.csl">Turabian</option>
+                        <option value="vancouver-author-date.csl">Vancouver</option>
+                    </select>
 
-                <div><b>Download As:</b></div>
-                <form id="citationFormMachine" action="#">
-                        <select name="styles">
-                            <option value="xml2bib">BibTeX</option>
-                            <option value="xml2end">EndNote</option>
-                            <option value="xml2isi">ISI</option>
-                            <option value="xml2ris">RIS</option>
-                            <option value="xml2wordbib">Word 2007 Bibliograpy</option>
-                        </select>
-                        <input type="submit" value="Download">
-                    </form>
-                <p></p>
+                    <select id="machineStyles">
+                        <option value="" disabled selected>Download</option>
+                        <option value="xml2bib">BibTeX</option>
+                        <option value="xml2end">EndNote</option>
+                        <option value="xml2isi">ISI</option>
+                        <option value="xml2ris">RIS</option>
+                        <option value="xml2wordbib">Word 2007 Bibliograpy</option>
+                    </select>
+                </form>
+                    </span>
+            <br />
+            <dl class="rendered-citation">
+                ${node['display_absolute_url']}
+            </dl>
+            <p></p>
 
-                </div>
-            </div>
+        </div>
+        </div>
 
 
         <hr />
@@ -216,7 +218,7 @@
 
 // Remove delete UI if not contributor
         % if 'write' not in user['permissions']:
-        $('a[title="Removing tag"]').remove();
+            $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });

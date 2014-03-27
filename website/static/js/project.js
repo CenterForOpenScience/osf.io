@@ -310,10 +310,10 @@ $(document).ready(function() {
         window.location = "/search/?q=" + $(e.target).text().toString().trim();
     })
 
-    $('.citation-toggle').on('click', function(evt) {
-        $(this).closest('.citations').find('.citation-list').slideToggle();
-        return false;
-    });
+//    $('.citation-toggle').on('click', function(evt) {
+//        $(this).closest('.citations').find('.citation-list').slideToggle();
+//        return false;
+//    });
 
 });
 
