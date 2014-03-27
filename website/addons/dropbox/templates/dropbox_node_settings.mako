@@ -6,6 +6,12 @@
     .dropbox-confirm-selection {
         padding-top: 10px;
     }
+    .dropbox-confirm-dlg {
+        display: inline-block;
+    }
+    .dropbox-folder-picker {
+        margin-top: 10px;
+    }
 </style>
 
 <div id="dropboxScope" class="scripted">
@@ -33,19 +39,22 @@
 
                 <!-- Folder picker -->
                 <div data-bind="if: showPicker">
-                    <p class="help-block">Click the
+<!--                     <p class="help-block">Click the
                         <button class="btn btn-success btn-mini" disabled>
                         <i class="icon-ok"></i></button>
-                        icon next to a folder to link it with this project.</p>
-                    <div id="myGrid" class="filebrowser hgrid"></div>
+                        icon next to a folder to link it with this project.</p> -->
+                    <div id="myGrid"
+                         class="filebrowser hgrid dropbox-folder-picker"></div>
                 </div>
 
                 <!-- Queued selection -->
                 <div class="dropbox-confirm-selection"
                     data-bind="if: selected">
                     <form data-bind="submit: submitSettings">
-                        <h4 style="display: inline-block">
-                        Share {{ selectedFolderName }}?</h4>
+
+                        <h4 class="dropbox-confirm-dlg">
+                            Share &ldquo;{{ selectedFolderName }}&rdquo;?
+                        </h4>
                         <div class="pull-right">
                             <button class="btn btn-default"
                                     data-bind="click: cancelSelection">Cancel</button>

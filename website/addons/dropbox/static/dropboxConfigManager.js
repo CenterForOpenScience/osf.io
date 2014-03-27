@@ -1,3 +1,7 @@
+/**
+ * Module that controls the Dropbox node settings. Includes  knockout view-model
+ * for syncing data, and and HGrid for selecting a folder.
+ */
 $script.ready(['hgrid'], function() {
     'use strict';
 
@@ -48,7 +52,7 @@ $script.ready(['hgrid'], function() {
         });
 
         self.folderName = ko.computed(function() {
-            if (self.userHasAuth()) {
+            if (self.nodeHasAuth()) {
                 return self.folder().name;
             } else {
                 return '';
@@ -111,6 +115,7 @@ $script.ready(['hgrid'], function() {
                 type: 'DELETE',
                 success: function() {
                     self.nodeHasAuth(false);
+                    self.selected(null);
                     self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
                 error: function() {
