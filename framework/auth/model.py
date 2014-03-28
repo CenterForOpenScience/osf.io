@@ -111,7 +111,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return '<User {0!r}>'.format(self.username)
 
     @property
-    def private_links_key(self):
+    def private_link_keys(self):
         return [x.key for x in self.private_links]
 
     @classmethod

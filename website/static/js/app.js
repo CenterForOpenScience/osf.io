@@ -74,7 +74,6 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     };
 
     self.submit = function() {
-        console.log(self.label())
         $.ajax(
             nodeApiUrl + 'private_link/',
             {
