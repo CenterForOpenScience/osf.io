@@ -40,7 +40,7 @@ guid_urls = {
     'rules': [
         Rule([
             '/badge/<bid>/',
-        ], 'get', views.render.view_badge, json_renderer),
+        ], 'get', views.render.view_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
         Rule([
             '/badge/<bid>/json/',
         ], 'get', views.openbadge.get_badge_json, json_renderer),

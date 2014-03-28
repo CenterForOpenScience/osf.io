@@ -84,11 +84,23 @@ class Badge(GuidStoredObject):
         tpl = '<ul>{}</ul>'
         stpl = '<li>{}</li>'
         lines = self.criteria.split('\n')
-        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))
+        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))  # Please dont kill me steve
 
     @property
     def assertions(self):
         return self.badgeassertion__assertion
+
+    @property
+    def awarded(self):
+        return len(self.assertions)
+
+    @property
+    def unique_awards(self):
+        li = []
+        for x in self.assertions:
+            if not x.node._id in li:
+                li.append(x.node._id)
+        return len(li)
 
     @property
     def deep_url(self):
