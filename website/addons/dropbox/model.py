@@ -190,6 +190,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def after_register(self, node, registration, user, save=True):
         """After registering a node, copy the user settings and save the
         chosen folder.
+
+        :return: A tuple of the form (cloned_settings, message)
         """
         clone, message = super(DropboxNodeSettings, self).after_register(
             node, registration, user, save=False
@@ -198,6 +200,28 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if self.has_auth and self.folder is not None:
             clone.user_settings = self.user_settings
             clone.registration_data['folder'] = self.folder
+        if save:
+            clone.save()
+        return clone, message
+
+    def after_fork(self, node, fork, user, save=True):
+        """After forking, copy user settings if the user is the one who authorized
+        the addon.
+
+        :return: A tuple of the form (cloned_settings, message)
+        """
+        clone, _ = super(DropboxNodeSettings, self).after_fork(
+            node=node, fork=fork, user=user, save=False
+        )
+
+        if self.user_settings and self.user_settings.owner == user:
+            clone.user_settings = self.user_settings
+            message = 'Dropbox authorization copied to fork.'
+        else:
+            message = ('Dropbox authorization not copied to fork. You may '
+                        'authorize this fork on the <a href="{url}">Settings</a>'
+                        'page.').format(
+                        url=fork.web_url_for('node_setting'))
         if save:
             clone.save()
         return clone, message

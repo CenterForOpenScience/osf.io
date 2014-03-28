@@ -171,19 +171,44 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 
-    def test_after_register(self):
+
+class TestNodeSettingsCallbacks(DbTestCase):
+
+    def setUp(self):
         # Create node settings with auth
-        user_settings = DropboxUserSettingsFactory(access_token='123abc')
-        node_settings = DropboxNodeSettingsFactory(user_settings=user_settings,
+        self.user_settings = DropboxUserSettingsFactory(access_token='123abc')
+        self.node_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings,
             folder='')
+
+        self.project = self.node_settings.owner
+
+    def test_after_register(self):
         registration = ProjectFactory(is_registration=True)
 
-        clone, message = node_settings.after_register(
+        clone, message = self.node_settings.after_register(
             node=self.project, registration=registration, user=self.project.creator,
             save=True
         )
-        assert_equal(clone.user_settings, node_settings.user_settings)
-        assert_equal(clone.registration_data['folder'], node_settings.folder)
+        assert_equal(clone.user_settings, self.node_settings.user_settings)
+        assert_equal(clone.registration_data['folder'], self.node_settings.folder)
+
+    def test_after_fork_by_authorized_dropbox_user(self):
+        fork = ProjectFactory()
+        clone, message = self.node_settings.after_fork(
+            node=self.project, fork=fork, user=self.user_settings.owner
+        )
+        assert_equal(clone.user_settings, self.user_settings)
+
+    def test_after_fork_by_unauthorized_dropbox_user(self):
+        fork = ProjectFactory()
+        user = UserFactory()
+        with app.test_request_context():
+            clone, message = self.node_settings.after_fork(
+                node=self.project, fork=fork, user=user,
+                save=True
+            )
+            # need request context for url_for
+            assert_is(clone.user_settings, None)
 
 
 class TestDropboxGuidFile(DbTestCase):
