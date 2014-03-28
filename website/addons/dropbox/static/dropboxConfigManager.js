@@ -1,13 +1,13 @@
 /**
  * Module that controls the Dropbox node settings. Includes Knockout view-model
- * for syncing data, and and HGrid for selecting a folder.
+ * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 // Load folderPicker dependency
 $script.ready(['folderPicker'], function() {
     'use strict';
 
     /**
-     * Knockout view model for the Dropbox node settings pane.
+     * Knockout view model for the Dropbox node settings widget.
      */
     var ViewModel = function(data, folderPicker) {
         var self = this;
@@ -61,19 +61,11 @@ $script.ready(['folderPicker'], function() {
         });
 
         self.folderName = ko.computed(function() {
-            if (self.nodeHasAuth() && self.folder()) {
-                return self.folder().name;
-            } else {
-                return '';
-            }
+            return (self.nodeHasAuth() && self.folder()) ? self.folder().name : '';
         });
 
         self.selectedFolderName = ko.computed(function() {
-            if (self.userHasAuth() && self.selected()) {
-                return self.selected().name;
-            } else{
-                return '';
-            }
+            return (self.userHasAuth() && self.selected()) ? self.selected().name : '';
         });
 
         function onSubmitSuccess(response) {
@@ -150,6 +142,7 @@ $script.ready(['folderPicker'], function() {
             });
         };
 
+        // Callback for when PUT request to import user access token
         function onImportSuccess(response) {
             var msg = response.message || 'Successfully imported access token from profile.';
             // Update view model based on response
