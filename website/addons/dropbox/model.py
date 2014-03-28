@@ -7,6 +7,7 @@ from modularodm.exceptions import ModularOdmException
 from slugify import slugify
 
 from framework import fields
+from framework.auth.decorators import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from website.addons.dropbox.client import get_client, get_node_addon_client
@@ -148,6 +149,23 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         # Add log to node
         nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
+
+    def set_user_auth(self, user_settings):
+        """Import a user's Dropbox authentication and create a NodeLog.
+
+        :param DropboxUserSettings user_settings: The user settings to link.
+        """
+        node = self.owner
+        self.user_settings = user_settings
+        node.add_log(
+            action='dropbox_node_authorized',
+            auth=Auth(user_settings.owner),
+            params={
+                'addon': 'dropbox',
+                'project': node.parent_id,
+                'node': node._primary_key,
+            }
+        )
 
     def deauthorize(self, auth):
         node = self.owner

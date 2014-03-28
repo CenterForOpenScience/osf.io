@@ -152,6 +152,24 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dropbox_folder_selected')
 
+
+    def test_set_user_auth(self):
+        node_settings = DropboxNodeSettingsFactory()
+        user_settings = DropboxUserSettingsFactory()
+
+        node_settings.set_user_auth(user_settings)
+        node_settings.save()
+
+        assert_true(node_settings.has_auth)
+        assert_equal(node_settings.user_settings, user_settings)
+        # A log was saved
+        last_log = node_settings.owner.logs[-1]
+        assert_equal(last_log.action, 'dropbox_node_authorized')
+        log_params = last_log.params
+        assert_equal(log_params['addon'], 'dropbox')
+        assert_equal(log_params['node'], node_settings.owner._primary_key)
+        assert_equal(last_log.user, user_settings.owner)
+
 class TestDropboxGuidFile(DbTestCase):
 
     def test_web_url(self):

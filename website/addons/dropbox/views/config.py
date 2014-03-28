@@ -5,8 +5,8 @@ import httplib as http
 
 from framework import request
 from framework.auth import get_current_user
-from website.project.decorators import (
-    must_have_addon, must_have_permission, must_not_be_registration,
+from website.project.decorators import (must_have_addon,
+    must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
 from framework.exceptions import HTTPError
@@ -128,7 +128,7 @@ def dropbox_import_user_auth(auth, node_addon, **kwargs):
     user_addon = user.get_addon('dropbox')
     if user_addon is None or node_addon is None:
         raise HTTPError(http.BAD_REQUEST)
-    node_addon.user_settings = user_addon
+    node_addon.set_user_auth(user_addon)
     node_addon.save()
     return {
         'result': serialize_settings(node_addon, user),

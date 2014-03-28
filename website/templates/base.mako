@@ -136,6 +136,7 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+
 <%def name="includes_top()">
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->

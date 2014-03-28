@@ -8,6 +8,7 @@ from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
 
+from framework.auth.decorators import Auth
 from website.util import api_url_for
 from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup, assert_is_redirect
@@ -168,21 +169,35 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(log_params['folder'], saved_folder)
 
-    def test_dropbox_import_user_auth(self):
+    def test_dropbox_import_user_auth_returns_serialized_settings(self):
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
-        with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
-            url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
-            res = self.app.put(url, auth=self.user.auth)
-            self.project.reload()
-            self.node_settings.reload()
-            # Need request context because serialize_settings uses url_for
-            with self.app.app.test_request_context():
-                expected_result = serialize_settings(self.node_settings,
-                    self.user, client=mock_client)
-            result = res.json['result']
-            assert_equal(result, expected_result)
+        url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
+        res = self.app.put(url, auth=self.user.auth)
+        self.project.reload()
+        self.node_settings.reload()
+        # Need request context because serialize_settings uses url_for
+        with self.app.app.test_request_context():
+            expected_result = serialize_settings(self.node_settings,
+                self.user, client=mock_client)
+        result = res.json['result']
+        assert_equal(result, expected_result)
+
+    def test_dropbox_import_user_auth_adds_a_log(self):
+        # Node does not have user settings
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
+        res = self.app.put(url, auth=self.user.auth)
+        self.project.reload()
+        self.node_settings.reload()
+        last_log = self.project.logs[-1]
+
+        assert_equal(last_log.action, 'dropbox_node_authorized')
+        log_params = log_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(last_log.auth, Auth(self.user))
 
 class TestCRUDViews(DropboxAddonTestCase):
 
