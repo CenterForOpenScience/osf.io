@@ -111,27 +111,25 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(folder['path'], self.node_settings.folder)
 
     def test_dropbox_config_get(self):
-        with patch_client('website.addons.dropbox.views.config.get_node_addon_client'):
-            self.user_settings.account_info['display_name'] = 'Foo bar'
-            self.user_settings.save()
+        self.user_settings.account_info['display_name'] = 'Foo bar'
+        self.user_settings.save()
 
-            url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
+        url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
 
-            res = self.app.get(url, auth=self.user.auth)
-            assert_equal(res.status_code, 200)
-            result = res.json['result']
-            # The expected folders are the simplified
-            #  serialized versions of the folder metadata, including the root
-            expected_folders = [{'path': '', 'name': '/ (Full Dropbox)'}] + \
-                [serialize_folder(each)
-                for each in mock_responses['metadata_list']['contents']
-                if each['is_dir']]
-            assert_equal(result['folders'], expected_folders)
-            assert_equal(result['ownerName'],
-                self.node_settings.user_settings.account_info['display_name'])
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        result = res.json['result']
+        # The expected folders are the simplified
+        #  serialized versions of the folder metadata, including the root
+        expected_folders = [{'path': '', 'name': '/ (Full Dropbox)'}] + \
+            [serialize_folder(each)
+            for each in mock_responses['metadata_list']['contents']
+            if each['is_dir']]
+        assert_equal(result['ownerName'],
+            self.node_settings.user_settings.account_info['display_name'])
 
-            assert_equal(result['urls']['config'],
-                lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
+        assert_equal(result['urls']['config'],
+            lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
 
     def test_dropbox_config_put(self):
         url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
@@ -189,15 +187,15 @@ class TestConfigViews(DropboxAddonTestCase):
         self.node_settings.user_settings = None
         self.node_settings.save()
         url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
-        res = self.app.put(url, auth=self.user.auth)
+        self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
         last_log = self.project.logs[-1]
 
         assert_equal(last_log.action, 'dropbox_node_authorized')
-        log_params = log_log.params
+        log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(last_log.auth, Auth(self.user))
+        assert_equal(last_log.user, self.user)
 
 class TestCRUDViews(DropboxAddonTestCase):
 
