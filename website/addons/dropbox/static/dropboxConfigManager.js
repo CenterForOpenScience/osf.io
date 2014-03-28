@@ -166,7 +166,16 @@ $script.ready(['folderPicker'], function() {
          * Send PUT request to import access token from user profile.
          */
         self.importAuth = function() {
-            return $.osf.putJSON(self.urls.importAuth, {}, onImportSuccess, onImportError);
+            bootbox.confirm({
+                title: 'Import Dropbox Access Token?',
+                message: 'Are you sure you want to authorize this project with your Dropbox access token?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        return $.osf.putJSON(self.urls.importAuth, {},
+                            onImportSuccess, onImportError);
+                    }
+                }
+            });
         };
 
         /** Callback for chooseFolder action.
