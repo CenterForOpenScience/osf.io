@@ -5,13 +5,12 @@ import httplib as http
 
 from framework import request
 from framework.auth import get_current_user
-from website.project.decorators import (must_have_addon,
-    must_have_permission, must_not_be_registration,
+from website.project.decorators import (
+    must_have_addon, must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
 from framework.exceptions import HTTPError
 
-from website.addons.dropbox.client import get_node_addon_client
 from website.util import web_url_for
 
 logger = logging.getLogger(__name__)

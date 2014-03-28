@@ -2,7 +2,9 @@
  * Module that controls the Dropbox node settings. Includes Knockout view-model
  * for syncing data, and and HGrid for selecting a folder.
  */
-$script.ready(['hgrid'], function() {
+// Load folderPicker dependency
+$script(['/addons/static/dropbox/folderPicker.js']);
+$script.ready(['folderPicker'], function() {
     'use strict';
 
     /**
@@ -35,7 +37,6 @@ $script.ready(['hgrid'], function() {
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-            console.log(data);
             self.folder(data.folder);
         };
 
@@ -169,67 +170,34 @@ $script.ready(['hgrid'], function() {
             return $.osf.putJSON(self.urls.importAuth, {}, onImportSuccess, onImportError);
         };
 
-        /** Callback for chooseFolder action. */
-        function onChooseFolder(evt, row) {
+        /** Callback for chooseFolder action.
+        *   Just changes the ViewModel's self.selected observable to the selected
+        *   folder.
+        */
+        function onPickFolder(evt, row) {
             evt.preventDefault();
             self.selected({name: 'Dropbox' + row.path, path: row.path});
             return false; // Prevent event propagation
         }
 
-        // Upon clicking the name of folder, toggle its collapsed state
-        function onClickName(evt, row, grid) {
-            grid.toggleCollapse(row);
-        }
-
-        // Custom HGrid action
-        HGrid.Actions.chooseFolder = {
-            on: 'click',
-            callback: onChooseFolder
+        // Hide +/- icon for root folder
+        FolderPicker.Col.Name.showExpander = function(item) {
+            return item.path !== '/';
         };
-
-        /**
-         * Renders the folder select row
-         */
-        function folderView(row) {
-            var btn = {text: '<i class="icon-ok"></i>',
-                action: 'chooseFolder',
-                cssClass: 'btn btn-success btn-mini'};
-            return ['<span class="rubeus-buttons">',
-                    HGrid.Fmt.button(btn),
-                    '</span>'].join('');
-        }
 
         /**
          * Activates the HGrid folder picker.
          */
         self.activatePicker = function() {
-            // Override some name column settings
-            var nameCol = $.extend({}, HGrid.Col.Name);
-            nameCol.name = 'Folders';
-            // Hide +/- icon for root folder
-            nameCol.showExpander = function(item) {
-                return item.path !== '/';
-            };
-            $(self.folderPicker).hgrid({
-                // Fetch data from hgrid data endpoint,
-                // filtering only folders and inlcuding the root folder
-                data: self.urls.folders,
-                columns: [nameCol,
-                    // Custom button column
-                    {name: 'Select', folderView: folderView, width: 10}],
-                fetchUrl: function(item) {
-                    return item.urls.folders;
-                },
-                uploads: false,
-                width: '100%',
-                height: 300,
-                listeners: [
-                    {
-                        on: 'click',
-                        selector: '.' + HGrid.Html.nameClass,
-                        callback: onClickName
-                    }
-                ]
+            $(self.folderPicker).folderpicker({
+                onPickFolder: onPickFolder,
+                // Fetch Dropbox folders with AJAX
+                data: self.urls.folders, // URL for fetching folders
+                // Lazy-load each folder's contents
+                // Each row stores its url for fetching the folders it contains
+                fetchUrl: function(row) {
+                    return row.urls.folders;
+                }
             });
         };
 
