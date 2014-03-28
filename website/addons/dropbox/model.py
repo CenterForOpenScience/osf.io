@@ -140,6 +140,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     folder = fields.StringField(default='')
 
+    #: Information saved at the time of registration
+    registration_data = fields.DictionaryField()
+
     @property
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
@@ -181,3 +184,20 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             },
             auth=auth,
         )
+
+    ##### Callback overrides #####
+
+    def after_register(self, node, registration, user, save=True):
+        """After registering a node, copy the user settings and save the
+        chosen folder.
+        """
+        clone, message = super(DropboxNodeSettings, self).after_register(
+            node, registration, user, save=False
+        )
+        # Copy user_settings and add registration data
+        if self.has_auth and self.folder is not None:
+            clone.user_settings = self.user_settings
+            clone.registration_data['folder'] = self.folder
+        if save:
+            clone.save()
+        return clone, message

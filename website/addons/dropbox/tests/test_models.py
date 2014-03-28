@@ -111,6 +111,7 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
         assert_equal(node_settings.folder, '')  # Defaults to dropbox root
+        assert_true(hasattr(node_settings, 'registration_data'))
 
     def test_has_auth(self):
         settings = DropboxNodeSettings(user_settings=self.user_settings)
@@ -169,6 +170,21 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_equal(log_params['addon'], 'dropbox')
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
+
+    def test_after_register(self):
+        # Create node settings with auth
+        user_settings = DropboxUserSettingsFactory(access_token='123abc')
+        node_settings = DropboxNodeSettingsFactory(user_settings=user_settings,
+            folder='')
+        registration = ProjectFactory(is_registration=True)
+
+        clone, message = node_settings.after_register(
+            node=self.project, registration=registration, user=self.project.creator,
+            save=True
+        )
+        assert_equal(clone.user_settings, node_settings.user_settings)
+        assert_equal(clone.registration_data['folder'], node_settings.folder)
+
 
 class TestDropboxGuidFile(DbTestCase):
 
