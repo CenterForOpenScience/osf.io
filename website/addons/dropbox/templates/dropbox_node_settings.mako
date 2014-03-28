@@ -94,7 +94,7 @@
 
 
 <script>
-    $script(['/addons/static/dropbox/dropboxConfigManager.js']);
+    $script(['/static/addons/dropbox/dropboxConfigManager.js']);
     $script.ready('dropboxConfigManager', function() {
         var url = '${node["api_url"] + "dropbox/config/"}';
         var dropbox = new DropboxConfigManager('#dropboxScope', url, '#myGrid');

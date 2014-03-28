@@ -95,7 +95,7 @@ class AddonConfig(object):
         """
         if filename.startswith('/'):
             return filename
-        return '/addons/static/{addon}/{filename}'.format(
+        return '/static/addons/{addon}/{filename}'.format(
             addon=self.short_name,
             filename=filename,
         )

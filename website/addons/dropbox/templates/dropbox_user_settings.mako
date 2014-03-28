@@ -24,7 +24,7 @@
 
 
 <script>
-    $script(['/addons/static/dropbox/dropboxUserConfig.js'], function() {
+    $script(['/static/addons/dropbox/dropboxUserConfig.js'], function() {
         // Endpoint for dropbox user settings
         var url = '/api/v1/settings/dropbox/';
         // Start up the Dropbox Config manager
