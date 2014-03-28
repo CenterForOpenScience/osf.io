@@ -187,6 +187,36 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     ##### Callback overrides #####
 
+    def before_register_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        registration.
+        """
+        category, title = node.project_or_component, node.title
+        if self.user_settings and self.user_settings.has_auth:
+            return ('Registering {category} "{title}" will copy Dropbox add-on authorization '
+                    'to the registered {category}.').format(**locals())
+
+    # backwards compatibility
+    before_register = before_register_message
+
+    def before_fork_message(self, node, user):
+        """Return warning text to display if user auth will be copied to a
+        fork.
+        """
+        category = node.project_or_component
+        if self.user_settings and self.user_settings.owner == user:
+            return ('Because you have authorized the Dropbox add-on for this '
+                '{category}, forking it will also transfer your authorization to '
+                'the forked {category}.').format(category=category)
+
+        else:
+            return ('Because the Dropbox add-on has been authorized by a different '
+                    'user, forking it will not transfer authorization to the forked '
+                    '{category}.').format(category=category)
+
+    # backwards compatibility
+    before_fork = before_fork_message
+
     def after_register(self, node, registration, user, save=True):
         """After registering a node, copy the user settings and save the
         chosen folder.

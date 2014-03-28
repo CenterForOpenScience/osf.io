@@ -181,6 +181,7 @@ class TestNodeSettingsCallbacks(DbTestCase):
             folder='')
 
         self.project = self.node_settings.owner
+        self.user = self.user_settings.owner
 
     def test_after_register(self):
         registration = ProjectFactory(is_registration=True)
@@ -210,6 +211,15 @@ class TestNodeSettingsCallbacks(DbTestCase):
             # need request context for url_for
             assert_is(clone.user_settings, None)
 
+    def test_before_register(self):
+        node = ProjectFactory()
+        message = self.node_settings.before_register(node, self.user)
+        assert_true(message)
+
+    def test_before_fork(self):
+        node = ProjectFactory()
+        message = self.node_settings.before_fork(node, self.user)
+        assert_true(message)
 
 class TestDropboxGuidFile(DbTestCase):
 
