@@ -4,38 +4,34 @@ from framework.routing import Rule, json_renderer
 from . import views
 
 
-widget_route = {
-    'rules': [
-        Rule([
-            '/project/<pid>/badges/widget/',
-            '/project/<pid>/node/<nid>/badges/widget/',
-        ], 'get', views.badges_widget, json_renderer),
-    ],
-    'prefix': '/api/v1',
-}
-
-page_route = {
+render_routes = {
     'rules': [
         Rule([
             '/project/<pid>/badges/',
             '/project/<pid>/node/<nid>/badges/',
-        ], 'get', views.badges_page, OsfWebRenderer('../addons/badges/templates/badges_page.mako')),
+        ], 'get', views.render.badges_page, OsfWebRenderer('../addons/badges/templates/badges_page.mako')),
     ],
 }
 
 api_urls = {
     'rules': [
-        Rule('/badges/new/', 'post', views.create_badge, json_renderer),
-        Rule('/settings/badges/', 'post', views.create_organization, json_renderer),
+        Rule('/badges/new/', 'post', views.crud.create_badge, json_renderer),
+        Rule('/settings/badges/', 'post', views.crud.create_organization, json_renderer),
         Rule([
             '/project/<pid>/badges/award/',
             '/project/<pid>/node/<nid>/badges/award/',
-        ], 'post', views.award_badge, json_renderer),
+        ], 'post', views.crud.award_badge, json_renderer),
         Rule([
             '/project/<pid>/badges/revoke/',
             '/project/<pid>/node/<nid>/badges/revoke/',
-        ], 'post', views.revoke_badge, json_renderer),
-        Rule('/profile/<uid>/badges/json', 'get', views.get_user_badges, json_renderer)
+        ], 'post', views.crud.revoke_badge, json_renderer),
+        Rule([
+            '/profile/<uid>/badges/json/',
+        ], 'get', views.render.organization_badges_listing, json_renderer),
+        Rule([
+            '/project/<pid>/badges/widget/',
+            '/project/<pid>/node/<nid>/badges/widget/',
+        ], 'get', views.render.badges_widget, json_renderer),
     ],
     'prefix': '/api/v1',
 }
@@ -44,27 +40,15 @@ guid_urls = {
     'rules': [
         Rule([
             '/badge/<bid>/',
-        ], 'get', views.get_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
+        ], 'get', views.render.view_badge, json_renderer),
         Rule([
             '/badge/<bid>/json/',
-        ], 'get', views.get_badge_json, json_renderer),
+        ], 'get', views.openbadge.get_badge_json, json_renderer),
         Rule([
-            '/badge/assertions/<aid>/',
-        ], 'get', views.get_assertion, OsfWebRenderer('../addons/badges/templates/view_assertion.mako')),
-        Rule([
-            '/badge/assertions/<aid>/',
-        ], 'get', views.get_assertion, json_renderer),
-        Rule([
-            '/badge/assertions/<aid>/json/',
-        ], 'get', views.get_assertion_json, json_renderer),
-        Rule([
-            '/badge/organization/<uid>/',
-        ], 'get', views.get_organization, json_renderer),
+            '/badge/assertion/json/<aid>/',
+        ], 'get', views.openbadge.get_assertion_json, json_renderer),
         Rule([
             '/badge/organization/<uid>/json/',
-        ], 'get', views.get_organization_json, json_renderer),
-        Rule([
-            '/badge/organization/<uid>/revoked/json/',
-        ], 'get', views.get_revoked_json, json_renderer),
+        ], 'get', views.openbadge.get_organization_json, json_renderer),
     ]
 }

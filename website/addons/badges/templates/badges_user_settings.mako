@@ -1,5 +1,4 @@
 <%inherit file="project/addon/user_settings.mako" />
-%if configured:
 %if len(badges) < 1:
 You have not created any Badges.
 %endif
@@ -7,7 +6,7 @@ You have not created any Badges.
     <ul class="media-list" id="badgeList">
         %for badge in badges:
         <li class="media">
-          <a class="pull-left" href="${badge['url']}">
+          <a class="pull-left">
             <img class="media-object" src="${badge['image']}" width="64px" height="64px">
           </a>
           <div class="media-body">
@@ -25,14 +24,6 @@ You have not created any Badges.
   <button class="btn btn-success" id="newBadge" type="button">
     New Badge
   </button>
-
-%else:
-  <input type="text" name="name" class="form-control" placeholder="Organization name" required> <br />
-  <input type="email" name="email" class="form-control" placeholder="Contact Email" required> <br />
-  <textarea class="form-control" name="description" placeholder="Organization description (Optional)"></textarea> <br />
-  <input type="url" name="url" class="form-control" placeholder="Link to Organization (Optional)"> <br />
-  <input type="url" name="image" class="form-control" placeholder="Image of Organization (Optional)"> <br />
-%endif
 
 <script type="text/javascript" src="/static/vendor/dropzone/dropzone.js"></script>
 <script type="text/javascript">
@@ -118,12 +109,6 @@ You have not created any Badges.
 </script>
 
 <%def name="submit_btn()">
-  %if not configured:
-    ${parent.submit_btn()}
-  %endif
 </%def>
 <%def name="on_submit()">
-  %if not configured:
-    ${parent.on_submit()}
-  %endif
 </%def>

@@ -9,29 +9,29 @@
         <div class="row well well-sm" style="margin-right: 20px;">
             <div class="col-md-2">
 
-                <a class="pull-left" href="/${assertion['uid']}/json/">
-                    <img class="open-badge" badge-url="/${assertion['uid']}/json/" src="${assertion['image']}" width="150px" height="150px" id="image">
+                <a class="pull-left">
+                    <img class="open-badge" badge-url="/${assertion._id}/json/" src="${assertion.badge.image}" width="150px" height="150px" id="image">
                 </a>
             </div>
 
             <div class="col-md-8">
-                <h4> <a href="${assertion['url']}">${assertion['name']}</a><small> ${assertion['description']}</small></h4>
-                    <p>${assertion['criteria']}</p>
+                <h4> <a href="/${assertion.badge._id}/">${assertion.badge.name}</a><small> ${assertion.badge.description}</small></h4>
+                    <p>${assertion.badge.criteria_list}</p>
             </div>
 
             <div class="col-md-2" style="text-align:center">
-                %if assertion['issuer_id'] == uid:
-                  <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion['uid']}" type="button">
+                %if assertion.badge.creator._id == uid:
+                  <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion.uid}" type="button">
                     <i class="icon-minus"></i>
                   </button>
                 %endif
                  <h5>Awarded on
-                %if assertion.get('evidence'):
-                   <a href="${assertion['evidence']}">${assertion['issued_on']}</a>
+                %if assertion.evidence:
+                   <a href="${assertion.evidence}">${assertion.issued_date}</a>
                 %else:
-                    ${assertion['issued_on']}
+                    ${assertion.issued_date}
                 %endif
-                <br />by <a href="${assertion['issuer']}">${assertion['issuer_name']}</a></h5>
+                <br />by <a href="${assertion.badge.creator.owner.profile_url}">${assertion.badge.creator.owner.fullname}</a></h5>
                 ##TODO
                 <!-- <button class="btn btn-primary" data-toggle="buttons" >Do not display</button> -->
             </div>

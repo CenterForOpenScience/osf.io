@@ -1,14 +1,13 @@
-"""
-
-"""
 import calendar
+from bson import ObjectId
 from datetime import datetime
 
 from framework import fields
 from framework import GuidStoredObject, StoredObject
 
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.settings import DOMAIN
+
+from website.addons.badges.util import deal_with_image
 
 
 class Badge(GuidStoredObject):
@@ -28,6 +27,19 @@ class Badge(GuidStoredObject):
     alignment = fields.DictionaryField(list=True)
     tags = fields.StringField(list=True)
 
+    @classmethod
+    def create(cls, user_settings, badge_data, save=True):
+        badge = cls()
+        badge.creator = user_settings
+        badge.name = badge_data['badgeName']
+        badge.description = badge_data['description']
+        badge.criteria = badge_data['criteria']
+        badge._ensure_guid()
+        badge.image = deal_with_image(badge_data['imageurl'], badge._id)
+        if save:
+            badge.save()
+        return badge
+
     def to_json(self):
         ret = {
             'id': self._id,
@@ -35,10 +47,6 @@ class Badge(GuidStoredObject):
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
-            'issuer': '{0}badge/organization/{1}/'.format(DOMAIN, self.creator),
-            'issuer_id': self.creator,
-            'issuer_name': self.creator_name,
-            'url': '{0}{1}/'.format(DOMAIN, self._id),
         }
         if self.alignment:
             ret['alignment'] = self.alignment
@@ -64,8 +72,23 @@ class Badge(GuidStoredObject):
         return ret
 
     @property
+    def description_short(self):
+        words = self.description.split(' ')
+        if len(words) < 9:
+            return ' '.join(words)
+        return '{}...'.format(' '.join(words[:9]))
+
+    #TODO Auto link urls
+    @property
+    def criteria_list(self):
+        tpl = '<ul>{}</ul>'
+        stpl = '<li>{}</li>'
+        lines = self.criteria.split('\n')
+        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))
+
+    @property
     def assertions(self):
-        return getattr(self, 'badgeassertion__assertion', [])
+        return self.badgeassertion__assertion
 
     @property
     def deep_url(self):
@@ -79,7 +102,7 @@ class Badge(GuidStoredObject):
 #TODO verification hosted and signed
 class BadgeAssertion(StoredObject):
 
-    _id = fields.StringField()
+    _id = fields.StringField(default=lambda: str(ObjectId()))
 
     #Backrefs
     badge = fields.ForeignField('badge', backref='assertion')
@@ -90,33 +113,33 @@ class BadgeAssertion(StoredObject):
     reason = fields.StringField()
 
     #Required
-    issued_on = fields.IntegerField()  # TODO Format
+    issued_on = fields.IntegerField()
 
     #Optional
     evidence = fields.StringField()
     expires = fields.StringField()
 
-    def __init__(self, badge, node, evidence=None, save=True):
-        self.badge = badge
-        self.node = node
-        self.evidence = evidence
-        self.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
+    @classmethod
+    def create(cls, badge, node, evidence=None, save=True):
+        b = cls()
+        b.badge = badge
+        b.node = node
+        b.evidence = evidence
+        b.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
         if save:
-            self.save()
+            b.save()
+        return b
 
     def to_json(self):
         ret = {
             'uid': self._id,
-            'recipient': self.recipient,
-            'badge': self.badge_id,
-            'verify': self.verify,
-            'issued_on': datetime.fromtimestamp(self.issued_on).strftime('%Y/%m/%d')
+            'recipient': self.node._id,
+            'badge': self.badge._id,
+            #'verify': self.verify,  #TODO
+            'issued_on': self.issued_date
         }
-        ret.update(Badge.load(self.badge_id).to_json())
 
         #Optional Fields
-        if self.image:
-            ret['image'] = self.image
         if self.evidence:
             ret['evidence'] = self.evidence
         if self.expires:
@@ -128,12 +151,10 @@ class BadgeAssertion(StoredObject):
         ret = {
             'uid': self._id,
             'recipient': self.recipient,
-            'badge': '{}{}/json/'.format(DOMAIN, self.badge_id),
+            'badge': '{}{}/json/'.format(DOMAIN, self.badge._id),
             'verify': self.verify,
             'issuedOn': self.issued_on
         }
-        if self.image:
-            ret['image'] = self.image
         if self.evidence:
             ret['evidence'] = self.evidence
         if self.expires:
@@ -141,57 +162,20 @@ class BadgeAssertion(StoredObject):
         return ret
 
     @property
-    def deep_url(self):
-        return '/badge/assertions/{}/'.format(self._id)
+    def issued_date(self):
+        return datetime.fromtimestamp(self.issued_on).strftime('%Y/%m/%d')
 
     @property
-    def url(self):
-        return '/badge/assertions/{}/'.format(self._id)
-
-
-#TODO Better way around this, No longer needed?
-class BadgesNodeSettings(AddonNodeSettingsBase):
-    pass
-
-
-class BadgesUserSettings(AddonUserSettingsBase):
-
-    user = fields.ForeignField('user', backref='organization')
-
-    revocation_list = fields.DictionaryField()  # {'id':'12345', 'reason':'is a loser'}
-
-    def to_json(self, user):
-        ret = super(BadgesUserSettings, self).to_json(user)
-        ret['can_issue'] = self.can_issue
-        ret['badges'] = [Badge.load(_id).to_json() for _id in self.badges]
-        ret['configured'] = self.configured
-        return ret
-
-    def to_openbadge(self):
-        ret = {
-            'name': self.user.fullname,
-            'email': self.user.email,  # TODO ?
+    def verify(self, vtype='hosted'):
+        return {
+            'type': 'hosted',
+            'url': 'TODO'
         }
-        # if self.description:
-        #     ret['description'] = self.description,
-        # if self.image:
-        #     ret['image'] = self.image,
-        # if self.url:
-        #     ret['url'] = self.url
-        # if self.revocation_list:
-        #     ret['revocationList'] = self.revocation_list
-        return ret
 
     @property
-    def can_award(self):
-        return bool(self.badge__creator)
-
-    @property
-    def badges(self):
-        return getattr(self, 'badge__creator', [])
-
-    def get_badges_json(self):
-        return [badge.to_json() for badge in self.badges]
-
-    def get_badges_json_simple(self):
-        return [{'value': badge['id'], 'text': badge['name']} for badge in self.badges]
+    def recipient(self):
+        return {
+            'idenity': self.node._id,
+            'type': 'osfnode',  # TODO Could be an email?
+            'hashed': False
+        }

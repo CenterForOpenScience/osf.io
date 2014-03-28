@@ -8,6 +8,7 @@
   display: inline-block;
   margin-right: 10px;
   margin-bottom: 10px;
+  cursor: pointer;
 }
 
 .btn-success.editable:hover {
@@ -16,4 +17,15 @@
 
 .btn-danger.editable:hover {
     background-color: #d2322d;
+}
+
+.ellipse {
+  font-size: 64px;
+  vertical-align: bottom;
+  color: #777;
+}
+
+.ellipse:hover, .ellipse:focus {
+  text-decoration: initial;
+  color: #777;
 }

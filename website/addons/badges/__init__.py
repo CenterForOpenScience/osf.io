@@ -9,7 +9,7 @@ MODELS = [model.BadgesUserSettings, model.BadgesNodeSettings, model.Badge, model
 USER_SETTINGS_MODEL = model.BadgesUserSettings
 NODE_SETTINGS_MODEL = model.BadgesNodeSettings
 
-ROUTES = [routes.widget_route, routes.page_route, routes.api_urls, routes.guid_urls]
+ROUTES = [routes.render_routes, routes.api_urls, routes.guid_urls]
 
 BADGES_LOCATION = '/static/img/badges'
 BADGES_ABS_LOCATION = os.path.join(BASE_PATH, 'static/img/badges')

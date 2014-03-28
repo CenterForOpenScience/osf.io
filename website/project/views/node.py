@@ -590,7 +590,7 @@ def _get_badge(user):
         badger = user.get_addon('badges')
         if badger:
             return {
-                'can_issue': badger.can_issue and badger.configured,
+                'can_issue': badger.can_award,
                 'badges': badger.get_badges_json()
             }
     return {}
