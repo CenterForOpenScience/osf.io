@@ -146,11 +146,14 @@ def _must_be_contributor_factory(include_public):
             #for login user
             else:
                 #key first time show up record it in the key ring
-                ## todo there may be a session without a user
-                if key not in kwargs['auth'].user.private_keys:
-                    kwargs['auth'].user.private_keys.append(key)
-                    kwargs['auth'].user.save()
-                key_ring = get_key_ring(kwargs['auth'].user.private_keys)
+                if key not in kwargs['auth'].user.private_links_key:
+                    for node_link in node.private_links:
+                        if node_link.key == key:
+                            user.private_links.append(node_link)
+                            kwargs['auth'].user.save()
+                            break
+
+                key_ring = get_key_ring(kwargs['auth'].user.private_links_key)
 
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege

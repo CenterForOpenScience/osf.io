@@ -743,7 +743,7 @@ def project_generate_private_link_post(*args, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    node_ids = request.json.get('node_ids', [])
+    node_ids = request.json.get('nod\e_ids', [])
     label = request.json.get('label','')
 
     link = new_private_link(

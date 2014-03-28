@@ -14,7 +14,7 @@ from framework.exceptions import HTTPError
 import framework.auth as auth
 from tests.base import DbTestCase
 from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
-    ProjectFactory, AuthUserFactory
+    ProjectFactory, AuthUserFactory, PrivateLinkFactory
 )
 
 from framework import Q
@@ -125,7 +125,8 @@ class TestPrivateLink(DbTestCase):
 
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
-        self.key = self.project.add_private_link()
+        self.link = PrivateLinkFactory()
+        self.project.private_links.append(self.link)
         self.project.save()
 
     @mock.patch('website.project.decorators.get_api_key')
@@ -134,7 +135,7 @@ class TestPrivateLink(DbTestCase):
         mock_get_api_key.return_value = 'foobar123'
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'key': self.key})
+            {'key': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')

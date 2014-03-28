@@ -555,8 +555,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_keys:
-            key_ring = set(auth.user.private_keys)
+        if auth.user and auth.user.private_links:
+            key_ring = set(auth.user.private_links_key)
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
                 or not key_ring.isdisjoint(self.private_link_keys)
@@ -2303,7 +2303,6 @@ class PrivateLink(StoredObject):
             "label": self.label,
             "creator": self.creator.fullname,
         }
-
 
     def set_label(self, label, auth):
         """Set the label.
