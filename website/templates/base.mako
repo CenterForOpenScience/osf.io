@@ -172,6 +172,7 @@
         $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 
 </%def>

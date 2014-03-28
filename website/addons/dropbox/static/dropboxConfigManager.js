@@ -3,7 +3,6 @@
  * for syncing data, and and HGrid for selecting a folder.
  */
 // Load folderPicker dependency
-$script(['/addons/static/dropbox/folderPicker.js']);
 $script.ready(['folderPicker'], function() {
     'use strict';
 

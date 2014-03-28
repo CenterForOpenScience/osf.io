@@ -60,7 +60,7 @@ $script.ready(['hgrid'], function() {
         self.selector = selector;
         // Custom HGrid action to select a folder that uses the passed in
         // "onChooseFolder" callback
-        if (!opts.onChooseFolder) {
+        if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
         HGrid.Actions.chooseFolder = {
