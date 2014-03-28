@@ -20,6 +20,14 @@ linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ no
 
 
 <script type="text/html" id="dropbox_node_deauthorized">
-deauthorized the Dropbox addon on {{ nodeCategory }}
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+deauthorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_authorized">
+authorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link oeverflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
