@@ -152,8 +152,11 @@ def build_dropbox_urls(item, node):
             'delete': node.api_url_for('dropbox_delete_file', path=path)
         }
 
-# TODO(sloria): test me
+
 def metadata_to_hgrid(item, node, permissions):
+    """Serializes a dictionary of metadata (returned from the DropboxClient)
+    to the format expected by Rubeus/HGrid.
+    """
     filename = get_file_name(item['path'])
     serialized = {
         'addon': 'dropbox',

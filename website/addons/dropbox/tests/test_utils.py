@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for website.addons.dropbox.utils."""
 import io
+import os
 
 from nose.tools import *  # PEP8 asserts
 from werkzeug.wrappers import Response
@@ -87,6 +88,35 @@ def test_make_file_response():
     disposition = 'attachment; filename=song.mp3'
     assert_equal(resp.headers['Content-Disposition'], disposition)
     assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
+
+
+class TestMetadataSerialization(DbTestCase):
+
+    def test_metadata_to_hgrid(self):
+        metadata = {
+            u'bytes': 123,
+            u'icon': u'file',
+            u'is_dir': False,
+            u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
+            u'path': u'/foo/bar/baz.mp3',
+            u'rev': u'3fed51f002c12fc',
+            u'revision': 67032351,
+            u'root': u'dropbox',
+            u'size': u'0 bytes',
+            u'thumb_exists': False,
+            u'mime_type': u'audio/mpeg',
+        }
+        node = ProjectFactory()
+        permissions = {'view': True, 'edit': False}
+        with app.test_request_context():
+            result = utils.metadata_to_hgrid(metadata, node, permissions)
+            assert_equal(result['addon'], 'dropbox')
+            assert_equal(result['permissions'], permissions)
+            filename = utils.get_file_name(metadata['path'])
+            assert_equal(result['name'], filename)
+            assert_equal(result['urls'], utils.build_dropbox_urls(metadata, node))
+            assert_equal(result['path'], metadata['path'])
+            assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
 class TestBuildDropboxUrls(DbTestCase):

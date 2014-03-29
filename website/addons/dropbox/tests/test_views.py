@@ -118,12 +118,6 @@ class TestConfigViews(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         result = res.json['result']
-        # The expected folders are the simplified
-        #  serialized versions of the folder metadata, including the root
-        expected_folders = [{'path': '', 'name': '/ (Full Dropbox)'}] + \
-            [serialize_folder(each)
-            for each in mock_responses['metadata_list']['contents']
-            if each['is_dir']]
         assert_equal(result['ownerName'],
             self.node_settings.user_settings.account_info['display_name'])
 
