@@ -265,4 +265,3 @@ class TestDropboxGuidFile(DbTestCase):
         file_obj.update_metadata(client=client)
         file_obj.save()
         assert_equal(file_obj.metadata, client.metadata(file_obj.path, list=False))
-

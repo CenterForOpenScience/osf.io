@@ -23,6 +23,8 @@
         <div class="row">
             <div class="col-md-12">
                 <p><strong>Shared Folder:</strong></p>
+
+                    <!-- The linked folder -->
                     <h4 class="selected-folder">
                         <i class="icon-folder-close-alt"></i>
                         <a data-bind="attr: {href: urls.files}"class='selected-folder-name'>
@@ -53,7 +55,6 @@
                             <input type="submit"
                                     class="btn btn-primary"
                                     value="Submit">
-
                         </div>
                     </form>
                 </div>
