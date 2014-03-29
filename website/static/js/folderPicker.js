@@ -63,7 +63,11 @@
         listeners: [
             {selector: '.' + HGrid.Html.nameClass, on: 'click',
             callback: onClickName}
-        ]
+        ],
+        progBar: null,
+        init: function() {
+            $(this.options.progBar).hide();
+        }
     };
 
     function FolderPicker(selector, opts) {

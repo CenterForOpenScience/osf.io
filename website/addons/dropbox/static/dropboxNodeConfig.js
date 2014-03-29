@@ -207,7 +207,10 @@
         /**
          * Activates the HGrid folder picker.
          */
+        var progBar = '#dropboxProgBar';
         self.activatePicker = function() {
+            var $progBar = $(progBar);
+            $progBar.show();
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
                 // Fetch Dropbox folders with AJAX
@@ -216,7 +219,17 @@
                 // Each row stores its url for fetching the folders it contains
                 fetchUrl: function(row) {
                     return row.urls.folders;
-                }
+                },
+                ajaxOptions: {
+                    error: function(xhr, textStatus, error) {
+                        $progBar.hide();
+                        console.error('Could not fetch Dropbox folders.');
+                        console.error(textStatus);
+                        console.error(error);
+                        self.changeMessage('Could not get folders. Please try again later.', 'text-warning');
+                    }
+                },
+                progBar: progBar
             });
         };
 
