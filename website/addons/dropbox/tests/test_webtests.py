@@ -27,7 +27,7 @@ class TestDropboxIntegration(DbTestCase):
         settings.save()
         assert_true(self.user.get_addon('dropbox').has_auth)
         # Tries to start oauth again
-        url = lookup('api', 'dropbox_oauth_start__user')
+        url = lookup('api', 'dropbox_oauth_start_user')
         res = self.app.get(url).follow()
 
         # Is redirected back to settings page

@@ -128,7 +128,7 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
     Dropbox user settings.
     """
     urls = {
-        'create': api_url_for('dropbox_oauth_start__user'),
+        'create': api_url_for('dropbox_oauth_start_user'),
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
     return {

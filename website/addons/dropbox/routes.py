@@ -22,7 +22,7 @@ auth_routes = {
             'get',
             views.auth.dropbox_oauth_start,  # Use same view func as node oauth start
             json_renderer,
-            endpoint_suffix='__user'         # but add a suffix for url_for
+            endpoint_suffix='_user'          # but add a suffix for url_for
         ),
 
         Rule(

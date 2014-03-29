@@ -32,7 +32,7 @@ class TestAuthViews(DbTestCase):
         self.app.authenticate(*self.user.auth)
 
     def test_dropbox_oauth_start(self):
-        url = lookup('api', 'dropbox_oauth_start__user')
+        url = lookup('api', 'dropbox_oauth_start_user')
         res = self.app.get(url)
         assert_is_redirect(res)
 
@@ -76,7 +76,7 @@ class TestConfigViews(DropboxAddonTestCase):
         # The JSONified URLs result
         urls = res.json['result']['urls']
         assert_equal(urls['delete'], lookup('api', 'dropbox_oauth_delete_user'))
-        assert_equal(urls['create'], lookup('api', 'dropbox_oauth_start__user'))
+        assert_equal(urls['create'], lookup('api', 'dropbox_oauth_start_user'))
 
 
     def test_serialize_settings_helper_returns_correct_urls(self):
