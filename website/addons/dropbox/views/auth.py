@@ -100,7 +100,7 @@ def dropbox_oauth_finish(**kwargs):
         # Automatically use newly-created auth
         if node.has_addon('dropbox'):
             node_addon = node.get_addon('dropbox')
-            node_addon.user_settings = user_settings
+            node_addon.set_user_auth(user_settings)
             node_addon.save()
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('profile_settings'))
