@@ -18,6 +18,9 @@ debug = logger.debug
 
 
 class DropboxFile(GuidFile):
+    """A Dropbox file model with a GUID. Created lazily upon viewing a
+    file's detail page.
+    """
 
     #: Full path to the file, e.g. 'My Pictures/foo.png'
     path = fields.StringField(required=True, index=True)
@@ -41,7 +44,6 @@ class DropboxFile(GuidFile):
     def download_url(self):
         return self.node.web_url_for('dropbox_download', path=self.path)
 
-    # TODO(sloria): TEST ME
     def update_metadata(self, client=None, rev=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
         self.metadata = cl.metadata(self.path, list=False, rev=rev)
@@ -63,8 +65,7 @@ class DropboxFile(GuidFile):
 
     @classmethod
     def get_or_create(cls, node, path):
-        """Get or create a new file record.
-        Return a tuple of the form ``obj, created``
+        """Get or create a new file record. Return a tuple of the form (obj, created)
         """
         cleaned_path = clean_path(path)
         try:
@@ -145,6 +146,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
+        """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
     def set_folder(self, folder, auth):
@@ -171,6 +173,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         )
 
     def deauthorize(self, auth):
+        """Remove user authorization from this node and log the event."""
         node = self.owner
         folder = self.folder
         self.user_settings = None

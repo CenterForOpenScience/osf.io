@@ -258,3 +258,11 @@ class TestDropboxGuidFile(DbTestCase):
             dl_url = file_obj.download_url
             expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path)
         assert_equal(dl_url, expected)
+
+    def test_update_metadata(self):
+        client = MockDropbox()
+        file_obj = DropboxFileFactory(metadata=None)
+        file_obj.update_metadata(client=client)
+        file_obj.save()
+        assert_equal(file_obj.metadata, client.metadata(file_obj.path, list=False))
+
