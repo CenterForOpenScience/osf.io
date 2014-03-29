@@ -8,9 +8,9 @@ from tests.factories import UserFactory
 
 from website.addons.base import AddonError
 from website.addons.dropbox.model import DropboxUserSettings
-from website.addons.dropbox import core
+from website.addons.dropbox.client import get_client
 
-class TestCore(DbTestCase):
+class TestClient(DbTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -26,10 +26,10 @@ class TestCore(DbTestCase):
         assert_true(isinstance(result, DropboxUserSettings))
 
     def test_get_client_returns_a_dropbox_client(self):
-        client = core.get_client(self.user)
+        client = get_client(self.user)
         assert_true(isinstance(client, DropboxClient))
 
     def test_get_client_raises_addon_error_if_user_doesnt_have_addon_enabled(self):
         user_no_dropbox = UserFactory()
         with assert_raises(AddonError):
-            core.get_client(user_no_dropbox)
+            get_client(user_no_dropbox)
