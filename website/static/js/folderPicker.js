@@ -12,12 +12,16 @@
  *         }
  *     });
  */
-(function (global, factory) {
+;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'hgrid'], factory);
+    } else if (typeof $script === 'function') {
+        $script.ready('hgrid', function() {
+            global.FolderPicker = factory(jQuery, HGrid);
+            $script.done('folderPicker');
+        });
     } else {
         global.FolderPicker = factory(jQuery, global.HGrid);
-        if (typeof $script === 'function') { $script.done('folderPicker'); }
     }
 }(this, function($, HGrid){
     'use strict';

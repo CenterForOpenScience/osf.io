@@ -2,8 +2,19 @@
  * Module that controls the Dropbox node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
-// Load folderPicker dependency
-$script.ready(['folderPicker'], function() {
+
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['knockout', 'jquery', 'js/folderPicker', 'osfutils'], factory);
+    } else if (typeof $script === 'function') {
+        $script.ready('folderPicker', function() {
+            global.DropboxConfigManager  = factory(ko, jQuery, FolderPicker);
+            $script.done('dropboxConfigManager');
+        });
+    } else {
+        global.DropboxConfigManager  = factory(ko, jQuery, FolderPicker);
+    }
+}(this, function(ko, $, FolderPicker) {
     'use strict';
 
     /**
@@ -242,8 +253,8 @@ $script.ready(['folderPicker'], function() {
         });
     }
 
-    // Export
-    window.DropboxConfigManager = DropboxConfigManager;
-    $script.done('dropboxConfigManager');
-});
+    return DropboxConfigManager;
+}));
+
+
 
