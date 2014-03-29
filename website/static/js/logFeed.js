@@ -8,13 +8,13 @@
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        // TODO: Use require to load dependencies (jquery, knockout, etc.)
-        define(['knockout'], factory);
+        define(['jquery', 'knockout', 'knockout-punches'], factory);
     } else {
-        global.LogFeed = factory(global.ko);
+        global.LogFeed = factory($, global.ko);
     }
-}(this, function(ko) {
+}(this, function($, ko) {
     'use strict';
+    ko.punches.enableAll();  // Enable knockout punches
     /**
      * Log model.
      */

@@ -6,13 +6,12 @@
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'dropzone', 'hgrid', 'bootstrap'], factory);
+        define(['jquery', 'js/dropzone-patch', 'hgrid', 'bootstrap'], factory);
     } else {
         global.Rubeus = factory(jQuery, global.Dropzone, global.HGrid);
         if (typeof $script === 'function') { $script.done('rubeus'); }
     }
 }(this, function($, Dropzone, HGrid){
-
     /////////////////////////
     // HGrid configuration //
     /////////////////////////
