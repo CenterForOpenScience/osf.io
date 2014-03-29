@@ -1,12 +1,15 @@
 /////////////////////
 // Project JS      //
 /////////////////////
-(function($){
-
-
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'js/logFeed', 'osfutils'], factory);
+    } else {
+        factory(jQuery, global.LogFeed);
+    }
+}(this, function($, LogFeed) {
 
 window.NodeActions = {};  // Namespace for NodeActions
-
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -139,26 +142,6 @@ $(function(){
               e.preventDefault();
 
           }
-//          else{
-//              $.ajax({
-//                   url: $(e.target).attr("action"),
-//                   type:"POST",
-//                   timeout:60000,
-//                   data:$(e.target).serialize()
-//              }).success(function(){
-//                  location.reload();
-//              }).fail(function(jqXHR, textStatus, errorThrown){
-//                    if(textStatus==="timeout") {
-//                        $("#alert").text("Add component timed out"); //Handle the timeout
-//                    }else{
-//                        $("#alert").text('Add component failed');
-//                    }
-//                    $("#add-component-submit")
-//                      .removeAttr("disabled","disabled")
-//                      .text("OK");
-//              });
-//          }
-
      });
 });
 
@@ -258,9 +241,7 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    $script(['/static/js/logFeed.js'], function() {
-                        var log = new LogFeed($logs, response.logs);
-                    });
+                    var log = new LogFeed($logs, response.logs);
                     $logs.addClass('served');
                 }
             );
@@ -308,7 +289,7 @@ $(document).ready(function() {
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
         window.location = "/search/?q=" + $(e.target).text().toString().trim();
-    })
+    });
 
     $('.citation-toggle').on('click', function(evt) {
         $(this).closest('.citations').find('.citation-list').slideToggle();
@@ -317,4 +298,4 @@ $(document).ready(function() {
 
 });
 
-}).call(this, jQuery);
+}));
