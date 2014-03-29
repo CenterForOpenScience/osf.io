@@ -1,14 +1,14 @@
 /**
  * Renders a log feed.
  *
- * Example useage:
+ * Example usage:
  *     require(['js/logFeed'], function(LogFeed) {
  *         var logFeed = new LogFeed('#logFeed', {data: '/api/v1/watched/logs/'})
  *     });
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout', 'knockout-punches'], factory);
+        define(['jquery', 'knockout', 'knockout-punches', 'osfutils'], factory);
     } else {
         global.LogFeed = factory($, global.ko);
     }

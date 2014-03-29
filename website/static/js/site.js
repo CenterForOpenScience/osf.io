@@ -3,7 +3,8 @@
 ////////////////////////////
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout', 'jquery-ui',
+        define(['jquery', 'knockout',
+                'jquery-ui',
                 'vendor/jquery-blockui/jquery.blockui',
                 'vendor/knockout-sortable/knockout-sortable'], factory);
     } else {

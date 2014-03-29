@@ -4,7 +4,7 @@
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout', 'bootstrap', 'editable'], factory);
+        define(['jquery', 'knockout', 'bootstrap', 'editable', 'osfutils'], factory);
     } else {
         global.NodeControl = factory(jQuery, global.ko);
     }
