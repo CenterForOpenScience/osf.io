@@ -10,7 +10,6 @@ from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
 
-from framework.exceptions import HTTPError
 from website.util import api_url_for
 from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup, assert_is_redirect
@@ -39,11 +38,9 @@ class TestAuthViews(DbTestCase):
         res = self.app.get(url)
         assert_is_redirect(res)
 
-    @mock.patch('website.addons.dropbox.model.DropboxUserSettings.update_account_info')
     @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    def test_dropbox_oauth_finish(self, mock_finish, mock_account_info):
+    def test_dropbox_oauth_finish(self, mock_finish):
         mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
-        mock_account_info.return_value = {'display_name': 'Foo Bar'}
         with app.test_request_context():
             url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
@@ -113,7 +110,6 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(folder['path'], self.node_settings.folder)
 
     def test_dropbox_config_get(self):
-        self.user_settings.account_info['display_name'] = 'Foo bar'
         self.user_settings.save()
 
         url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
@@ -121,8 +117,7 @@ class TestConfigViews(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         result = res.json['result']
-        assert_equal(result['ownerName'],
-            self.node_settings.user_settings.account_info['display_name'])
+        assert_equal(result['ownerName'], self.user_settings.owner.fullname)
 
         assert_equal(result['urls']['config'],
             lookup('api', 'dropbox_config_put', pid=self.project._primary_key))

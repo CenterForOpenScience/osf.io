@@ -96,7 +96,6 @@ def dropbox_oauth_finish(**kwargs):
     user_settings.owner = user
     user_settings.access_token = result.access_token
     user_settings.dropbox_id = result.dropbox_id
-    user_settings.update_account_info()
     user_settings.save()
 
     flash('Successfully authorized Dropbox', 'success')

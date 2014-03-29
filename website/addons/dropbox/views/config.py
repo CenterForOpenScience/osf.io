@@ -92,8 +92,7 @@ def serialize_settings(node_settings, current_user, client=None):
                 'name': 'Dropbox' + path,
                 'path': path
             },
-            'ownerName': node_settings.user_settings.account_info.get(
-                'display_name', 'Dropbox User')
+            'ownerName': user_settings.owner.fullname
         })
     return result
 

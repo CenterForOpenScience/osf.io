@@ -30,33 +30,12 @@ class TestUserSettingsModel(DbTestCase):
         user_settings = DropboxUserSettings(
             access_token='12345',
             dropbox_id='abc',
-            account_info={
-                'display_name': self.user.fullname,
-                'email': self.user.username
-            },
             owner=self.user)
         user_settings.save()
         retrieved = DropboxUserSettings.load(user_settings._primary_key)
         assert_true(retrieved.access_token)
         assert_true(retrieved.dropbox_id)
         assert_true(retrieved.owner)
-        assert_true(retrieved.account_info)
-        assert_equal(retrieved.account_info['display_name'], self.user.fullname)
-
-    def test_get_account_info(self):
-        mock_client = mock.Mock()
-        name, email = fake.name(), fake.email()
-        mock_client.account_info.return_value = {
-            'display_name': name,
-            'email': email,
-            'uid': '12345abc'
-        }
-        settings = DropboxUserSettingsFactory()
-        settings.get_account_info(client=mock_client)
-        settings.save()
-        acct_info = settings.account_info
-        assert_equal(acct_info['display_name'], name)
-        assert_equal(acct_info['email'], email)
 
     def test_has_auth(self):
         user_settings = DropboxUserSettingsFactory(access_token=None)
