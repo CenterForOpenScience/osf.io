@@ -1,7 +1,15 @@
 ////////////////////////////
 // Site-wide JS utilities //
 ////////////////////////////
-(function($, global) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'jquery-ui',
+                'vendor/jquery-blockui/jquery.blockui',
+                'vendor/knockout-sortable/knockout-sortable'], factory);
+    } else {
+        factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
     'use strict';
 
     // Namespace to put utility functions on
@@ -176,7 +184,7 @@
      */
     var LOCAL_DATEFORMAT = 'l h:mm A';
     var UTC_DATEFORMAT = 'l H:mm UTC';
-    global.FormattableDate = function(date) {
+    window.FormattableDate = function(date) {
         this.date = date;
         this.local = moment(date).format(LOCAL_DATEFORMAT);
         this.utc = moment.utc(date).format(UTC_DATEFORMAT);
@@ -220,7 +228,6 @@
     //         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
     //    }
 
-
         // Build tooltips on user activity widgets
         $('.ua-meter').tooltip();
         $('[rel=tooltip]').tooltip({
@@ -228,4 +235,4 @@
         });
     });
 
-}).call(this, jQuery, window);
+}));
