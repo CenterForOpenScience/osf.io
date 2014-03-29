@@ -4,11 +4,13 @@ import os
 import unittest
 from nose.tools import *  # PEP8 asserts
 import mock
+import httplib
 
 from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
 
+from framework.exceptions import HTTPError
 from website.util import api_url_for
 from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup, assert_is_redirect
@@ -191,6 +193,49 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(last_log.user, self.user)
 
+class TestFilebrowserViews(DropboxAddonTestCase):
+
+    @unittest.skip('finish this')
+    def test_dropbox_hgrid_data_contents(self):
+        assert 0, 'finish me'
+
+    @unittest.skip('finish this')
+    def test_dropbox_hgrid_data_contents_folders_only(self):
+        assert 0, 'finish me'
+
+    @unittest.skip('finish this')
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
+        assert 0, 'finish me'
+
+    @unittest.skip('finish this')
+    def test_dropbox_addon_folder(self):
+        assert 0, 'finish me'
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):
+        # Example metadata for a deleted folder
+        mock_metadata.return_value = {
+            u'bytes': 0,
+            u'contents': [],
+            u'hash': u'e3c62eb85bc50dfa1107b4ca8047812b',
+            u'icon': u'folder_gray',
+            u'is_deleted': True,
+            u'is_dir': True,
+            u'modified': u'Sat, 29 Mar 2014 20:11:49 +0000',
+            u'path': u'/tests',
+            u'rev': u'3fed844002c12fc',
+            u'revision': 67033156,
+            u'root': u'dropbox',
+            u'size': u'0 bytes',
+            u'thumb_exists': False
+        }
+        with self.app.app.test_request_context():
+            url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.NOT_FOUND)
+
+
 class TestCRUDViews(DropboxAddonTestCase):
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
@@ -240,14 +285,6 @@ class TestCRUDViews(DropboxAddonTestCase):
 
     @unittest.skip('Finish this')
     def test_render_file(self):
-        assert 0, 'finish me'
-
-    @unittest.skip('Finish this')
-    def test_dropbox_hgrid_addon_folder(self):
-        assert 0, 'finish me'
-
-    @unittest.skip('Finish this')
-    def test_dropbox_hgrid_data_contents(self):
         assert 0, 'finish me'
 
     @unittest.skip('Finish this')
