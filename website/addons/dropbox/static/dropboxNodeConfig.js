@@ -74,11 +74,16 @@
         /** Computed functions for the linked and selected folders' display text.*/
 
         self.folderName = ko.computed(function() {
-            return (self.nodeHasAuth() && self.folder()) ? self.folder().name : '';
+            // Invoke the observables to ensure dependency tracking
+            var nodeHasAuth = self.nodeHasAuth();
+            var folder = self.folder();
+            return (nodeHasAuth && folder) ? folder.name : '';
         });
 
         self.selectedFolderName = ko.computed(function() {
-            return (self.userHasAuth() && self.selected()) ? self.selected().name : '';
+            var userHasAuth = self.userHasAuth();
+            var selected = self.selected();
+            return (userHasAuth && selected) ? selected.name : '';
         });
 
         function onSubmitSuccess(response) {
