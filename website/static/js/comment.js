@@ -1,4 +1,13 @@
-this.Comment = (function(window, $, ko) {
+/**
+ * Controller for the Add Contributor modal.
+ */
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout'], factory);
+    } else {
+        global.Comment = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
 
     'use strict';
 
@@ -431,7 +440,7 @@ this.Comment = (function(window, $, ko) {
             function(response) {
                 self.discussion(response.discussion);
             }
-        )
+        );
     };
 
     CommentListModel.prototype.initListeners = function() {
@@ -456,6 +465,5 @@ this.Comment = (function(window, $, ko) {
 
     return {
         init: init
-    }
-
-})(window, $, ko);
+    };
+}));

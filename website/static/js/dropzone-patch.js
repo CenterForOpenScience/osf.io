@@ -3,8 +3,15 @@
  * is opened only after options.method and options.url have been resolved.
  */
 /*jshint ignore:start */
-$script.ready('dropzone', function() {
 
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // TODO: Use require to load dependencies (jquery, knockout, etc.)
+        define(['dropzone'], factory);
+    } else {
+        factory(global.Dropzone);
+    }
+}(this, function(Dropzone) {
         __hasProp = {}.hasOwnProperty,
         __extends = function(child, parent) {
             for (var key in parent) {
@@ -211,6 +218,7 @@ $script.ready('dropzone', function() {
                 }
             });
     };
-    $script.done('dropzone-patch');
-});
+
+    return Dropzone;
+}));
 /*jshint ignore:end */

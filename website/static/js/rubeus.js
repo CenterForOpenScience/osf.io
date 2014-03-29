@@ -4,7 +4,13 @@
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-$script.ready(['dropzone-patch', 'hgrid'], function(){
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'dropzone', 'hgrid', 'bootstrap'], factory);
+    } else {
+        global.LogFeed = factory(global.Dropzone, global.HGrid);
+    }
+}(this, function($, Dropzone, HGrid){
 
     /////////////////////////
     // HGrid configuration //
@@ -76,24 +82,24 @@ $script.ready(['dropzone-patch', 'hgrid'], function(){
 
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
-	var buttonDefs = [];
-	if(item.permissions){
-	    if(item.permissions.download !== false){
-        	buttonDefs.push({
-        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
-        	    action: 'download',
-        	    cssClass: 'btn btn-primary btn-mini'
-        	});
-	    }
+    var buttonDefs = [];
+    if(item.permissions){
+        if(item.permissions.download !== false){
+            buttonDefs.push({
+                text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+                action: 'download',
+                cssClass: 'btn btn-primary btn-mini'
+            });
+        }
         if (item.permissions.edit) {
-    		buttonDefs.push({
-    		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
-    		    action: 'delete',
-    		    cssClass: 'btn btn-link btn-mini btn-delete'
-    		});
-	    }
-	}
-	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+            buttonDefs.push({
+                text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+                action: 'delete',
+                cssClass: 'btn btn-link btn-mini btn-delete'
+            });
+        }
+    }
+    return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
@@ -514,7 +520,6 @@ $script.ready(['dropzone-patch', 'hgrid'], function(){
                     Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
     };
 
-    window.Rubeus = Rubeus;
-    $script.done('rubeus');
-});
+    return Rubeus;
+}));
 
