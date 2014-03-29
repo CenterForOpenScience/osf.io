@@ -102,7 +102,7 @@ def dropbox_oauth_finish(**kwargs):
             node_addon = node.get_addon('dropbox')
             node_addon.set_user_auth(user_settings)
             node_addon.save()
-        return redirect(os.path.join(node.url, 'settings'))
+        return redirect(node.web_url_for('node_setting'))
     return redirect(web_url_for('profile_settings'))
 
 
