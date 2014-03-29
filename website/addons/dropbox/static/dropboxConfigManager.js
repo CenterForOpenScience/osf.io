@@ -26,7 +26,7 @@
         // Auth information
         self.nodeHasAuth = ko.observable(data.nodeHasAuth);
         self.userHasAuth = ko.observable(data.userHasAuth);
-        // Currently linked folder
+        // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.folder = ko.observable(data.folder);
         self.ownerName = ko.observable(data.ownerName);
         self.urls = data.urls;
@@ -37,7 +37,7 @@
         self.showPicker = ko.observable(false);
         // CSS selector for the folder picker div
         self.folderPicker = folderPicker;
-        // Currently selected folder
+        // Currently selected folder, an Object of the form {name: ..., path: ...}
         self.selected = ko.observable();
 
         /**
@@ -70,6 +70,8 @@
             var nodeHasAuth = self.nodeHasAuth();
             return !userHasAuth && !nodeHasAuth;
         });
+
+        /** Computed functions for the linked and selected folders' display text.*/
 
         self.folderName = ko.computed(function() {
             return (self.nodeHasAuth() && self.folder()) ? self.folder().name : '';
