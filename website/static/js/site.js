@@ -199,13 +199,7 @@
 
     // TODO: move me to appropriate page-specific module
     $(document).ready(function(){
-        //block the create new project button when the form is submitted
-        // TODO: make this a reuseable function.
-        $('#projectForm').on('submit',function(){
-            $('button[type="submit"]', this)
-                .attr('disabled', 'disabled')
-                .text('Creating');
-        });
+
 
     //    TODO: Make this work with file GUIDs [jmc]
     //    // Highlight active tabs and nav labels
