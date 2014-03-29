@@ -219,7 +219,6 @@
             });
     };
 
-
     return Dropzone;
 }));
 /*jshint ignore:end */

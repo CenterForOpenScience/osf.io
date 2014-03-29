@@ -3,13 +3,14 @@
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout'], factory);
+        define(['jquery', 'knockout',
+                'knockout-punches', 'osfutils'], factory);
     } else {
         global.Comment = factory(jQuery, global.ko);
     }
 }(this, function($, ko) {
-
     'use strict';
+    ko.punches.enableAll();
 
     // Maximum length for comments, in characters
     var MAXLENGTH = 500;
