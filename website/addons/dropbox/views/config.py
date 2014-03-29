@@ -24,8 +24,7 @@ def dropbox_config_get(node_addon, **kwargs):
     user = get_current_user()
     return {
         'result': serialize_settings(node_addon, user),
-        'status': 200
-    }, 200
+    }, http.OK
 
 
 def serialize_folder(metadata):
@@ -114,8 +113,7 @@ def dropbox_config_put(node_addon, auth, **kwargs):
             },
         },
         'message': 'Successfully updated settings.',
-        'status': 200
-    }, 200
+    }, http.OK
 
 
 @must_have_permission('write')
@@ -132,8 +130,7 @@ def dropbox_import_user_auth(auth, node_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
-        'status': 200
-    }, 200
+    }, http.OK
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')

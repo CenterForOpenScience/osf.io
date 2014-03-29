@@ -135,5 +135,4 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
             'userHasAuth': user_addon.has_auth,
             'urls': urls
         },
-        'status': 200
-    }, 200
+    }, http.OK
