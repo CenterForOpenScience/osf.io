@@ -7,9 +7,13 @@
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['dropzone'], factory);
+    } else if (typeof $script === 'function' ) {
+        $script.ready(['dropzone'], function() {
+            factory(global.Dropzone);
+            $script.done('dropzone-patch');
+        });
     } else {
         factory(global.Dropzone);
-        if (typeof $script === 'function') {$script.done('dropzone-patch')};
     }
 }(this, function(Dropzone) {
         __hasProp = {}.hasOwnProperty,

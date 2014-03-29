@@ -8,7 +8,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap'], factory);
     } else if (typeof $script === 'function' ){
-        $script.ready(['hgrid', 'dropzone', 'dropzone-patch'], function() {
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid'], function() {
             global.Rubeus = factory(jQuery, global.HGrid);
             $script.done('rubeus');
         });
@@ -523,7 +523,6 @@
                     HGrid.Html.fileIcon :
                     Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
     };
-
 
     return Rubeus;
 }));
