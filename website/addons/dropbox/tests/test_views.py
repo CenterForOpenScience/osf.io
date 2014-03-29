@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Dropbox addon."""
 import os
+import unittest
 from nose.tools import *  # PEP8 asserts
 import mock
 
@@ -16,7 +17,7 @@ from tests.factories import AuthUserFactory
 from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
-from website.addons.dropbox.views.config import serialize_folder, serialize_settings
+from website.addons.dropbox.views.config import serialize_settings
 
 
 lookup = URLLookup(app)
@@ -59,6 +60,7 @@ class TestAuthViews(DbTestCase):
         settings.reload()
         assert_false(settings.has_auth)
 
+
 class TestConfigViews(DropboxAddonTestCase):
 
     def test_dropbox_user_config_get_has_auth_info(self):
@@ -77,7 +79,6 @@ class TestConfigViews(DropboxAddonTestCase):
         urls = res.json['result']['urls']
         assert_equal(urls['delete'], lookup('api', 'dropbox_oauth_delete_user'))
         assert_equal(urls['create'], lookup('api', 'dropbox_oauth_start_user'))
-
 
     def test_serialize_settings_helper_returns_correct_urls(self):
         with self.app.app.test_request_context():
@@ -233,18 +234,23 @@ class TestCRUDViews(DropboxAddonTestCase):
         mock_file_delete.assert_called_once
         assert_equal(path, mock_file_delete.call_args[0][0])
 
+    @unittest.skip('Finish this')
     def test_download_file(self):
         assert 0, 'finish me'
 
+    @unittest.skip('Finish this')
     def test_render_file(self):
         assert 0, 'finish me'
 
+    @unittest.skip('Finish this')
     def test_dropbox_hgrid_addon_folder(self):
         assert 0, 'finish me'
 
+    @unittest.skip('Finish this')
     def test_dropbox_hgrid_data_contents(self):
         assert 0, 'finish me'
 
+    @unittest.skip('Finish this')
     def test_build_dropbox_urls(self):
         assert 0, 'finish me'
 

@@ -19,6 +19,7 @@ app = website.app.init_app(
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage, db=db)
 
+
 class DropboxAddonTestCase(AddonTestCase):
     ADDON_SHORT_NAME = 'dropbox'
 
@@ -31,8 +32,6 @@ class DropboxAddonTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.folder = 'foo'
-
-
 
 mock_responses = {
     'put_file': {

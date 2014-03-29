@@ -8,7 +8,6 @@ from framework.auth.decorators import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
-from website.addons.dropbox.core import init_storage
 from tests.base import DbTestCase, fake, URLLookup
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.utils import MockDropbox
@@ -20,7 +19,6 @@ from website.app import init_app
 
 app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
-init_storage()
 
 
 class TestUserSettingsModel(DbTestCase):
@@ -77,7 +75,6 @@ class TestUserSettingsModel(DbTestCase):
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
 
-
     def test_delete(self):
         user_settings = DropboxUserSettingsFactory()
         assert_true(user_settings.has_auth)
@@ -90,7 +87,6 @@ class TestUserSettingsModel(DbTestCase):
         user_settings = DropboxUserSettingsFactory()
         result = user_settings.to_json()
         assert_equal(result['has_auth'], user_settings.has_auth)
-
 
 
 class TestDropboxNodeSettingsModel(DbTestCase):
@@ -159,7 +155,6 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dropbox_folder_selected')
 
-
     def test_set_user_auth(self):
         node_settings = DropboxNodeSettingsFactory()
         user_settings = DropboxUserSettingsFactory()
@@ -226,6 +221,7 @@ class TestNodeSettingsCallbacks(DbTestCase):
         node = ProjectFactory()
         message = self.node_settings.before_fork(node, self.user)
         assert_true(message)
+
 
 class TestDropboxGuidFile(DbTestCase):
 
