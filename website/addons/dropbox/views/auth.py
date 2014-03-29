@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """OAuth views for the Dropbox addon."""
 import httplib as http
-import os
 import logging
+from collections import namedtuple
 
 from dropbox.client import DropboxOAuth2Flow
+from werkzeug.wrappers import BaseResponse
 
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
@@ -34,6 +35,7 @@ def get_auth_flow():
         csrf_token_session_key=settings.DROPBOX_AUTH_CSRF_TOKEN
     )
 
+AuthResult = namedtuple('AuthResult', ['access_token', 'dropbox_id', 'url_state'])
 
 def finish_auth():
     """View helper for finishing the Dropbox Oauth2 flow. Returns the
@@ -47,15 +49,15 @@ def finish_auth():
         raise HTTPError(http.BAD_REQUEST)
     except DropboxOAuth2Flow.BadStateException:
         # Start auth flow again
-        redirect(api_url_for('dropbox_oauth_start'))
+        return redirect(api_url_for('dropbox_oauth_start'))
     except DropboxOAuth2Flow.CsrfException:
         raise HTTPError(http.FORBIDDEN)
-    except DropboxOAuth2Flow.NotApprovedException:
-        flash('Could not approve token.')
+    except DropboxOAuth2Flow.NotApprovedException:  # User canceled flow
+        flash('Did not approve token.', 'info')
         return redirect(web_url_for('profile_settings'))
     except DropboxOAuth2Flow.ProviderException:
         raise HTTPError(http.FORBIDDEN)
-    return access_token, dropbox_id, url_state
+    return AuthResult(access_token, dropbox_id, url_state)
 
 
 @must_be_logged_in
@@ -83,14 +85,17 @@ def dropbox_oauth_finish(**kwargs):
     if not user:
         raise HTTPError(http.FORBIDDEN)
     node = Node.load(session.data.get('dropbox_auth_nid'))
-    access_token, dropbox_id, url_state = finish_auth()
+    result = finish_auth()
+    # If result is a redirect response, follow the redirect
+    if isinstance(result, BaseResponse):
+        return result
     # Make sure user has dropbox enabled
     user.add_addon('dropbox')
     user.save()
     user_settings = user.get_addon('dropbox')
     user_settings.owner = user
-    user_settings.access_token = access_token
-    user_settings.dropbox_id = dropbox_id
+    user_settings.access_token = result.access_token
+    user_settings.dropbox_id = result.dropbox_id
     user_settings.update_account_info()
     user_settings.save()
 
