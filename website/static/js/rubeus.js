@@ -8,7 +8,8 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'dropzone', 'hgrid', 'bootstrap'], factory);
     } else {
-        global.LogFeed = factory(global.Dropzone, global.HGrid);
+        global.Rubeus = factory(jQuery, global.Dropzone, global.HGrid);
+        if (typeof $script === 'function') { $script.done('rubeus'); }
     }
 }(this, function($, Dropzone, HGrid){
 
@@ -519,6 +520,7 @@
                     HGrid.Html.fileIcon :
                     Rubeus.ExtensionSkeleton.replace('{{ext}}', ext);
     };
+
 
     return Rubeus;
 }));

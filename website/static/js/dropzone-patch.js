@@ -6,10 +6,10 @@
 
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        // TODO: Use require to load dependencies (jquery, knockout, etc.)
         define(['dropzone'], factory);
     } else {
         factory(global.Dropzone);
+        if (typeof $script === 'function') {$script.done('dropzone-patch')};
     }
 }(this, function(Dropzone) {
         __hasProp = {}.hasOwnProperty,
@@ -218,6 +218,7 @@
                 }
             });
     };
+
 
     return Dropzone;
 }));

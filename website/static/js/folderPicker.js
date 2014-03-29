@@ -12,7 +12,14 @@
  *         }
  *     });
  */
-$script.ready(['hgrid'], function() {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'hgrid'], factory);
+    } else {
+        global.FolderPicker = factory(jQuery, global.HGrid);
+        if (typeof $script === 'function') { $script.done('folderPicker'); }
+    }
+}(this, function($, HGrid){
     'use strict';
 
     // Extend the default HGrid name column
@@ -81,6 +88,5 @@ $script.ready(['hgrid'], function() {
         });
     };
     // Export
-    window.FolderPicker = FolderPicker;
-    $script.done('folderPicker');
-});
+    return FolderPicker;
+}));
