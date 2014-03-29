@@ -1,18 +1,8 @@
+<link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
+
 <h4>
     Dropbox
 </h4>
-
-<style>
-    .dropbox-confirm-selection {
-        padding-top: 10px;
-    }
-    .dropbox-confirm-dlg {
-        display: inline-block;
-    }
-    .dropbox-folder-picker {
-        margin-top: 10px;
-    }
-</style>
 
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
