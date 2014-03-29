@@ -2,9 +2,17 @@
  * Simple knockout model and view model for rendering the revision table on the
  * file detail page.
  */
-this.RevisionTable = (function(ko, $) {
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['knockout', 'jquery', 'osfutils'], factory);
+    } else if (typeof $script === 'function') {
+        global.RevisionTable = factory(ko, jQuery);
+        $script.done('revisionsTable');
+    } else {
+        global.RevisionTable  = factory(ko, jQuery);
+    }
+}(this, function(ko, $) {
     'use strict';
-
     function Revision(data) {
         this.rev = data.rev;
         this.modified = new FormattableDate(data.modified);
@@ -17,19 +25,18 @@ this.RevisionTable = (function(ko, $) {
         $.ajax({
             url: url,
             type: 'GET', dataType: 'json',
-        })
-        .done(function(response) {
-            self.revisions(ko.utils.arrayMap(response.result, function(rev) {
-                return new Revision(rev);
-            }));
+            // On success, update the revisions observable
+            success: function(response) {
+                self.revisions(ko.utils.arrayMap(response.result, function(rev) {
+                    return new Revision(rev);
+                }));
+            }
         });
     }
-
+    // Public API
     function RevisionTable(selector, url) {
         $.osf.applyBindings(new RevisionViewModel(url), selector);
     }
 
-    $script.done('revisionsTable');
     return RevisionTable;
-
-})(ko, jQuery);
+}));

@@ -1,7 +1,16 @@
 /**
  * View model that controls the Dropbox configuration on the user settings page.
  */
-(function($, global, undefined) {
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['knockout', 'jquery', 'osfutils', 'language'], factory);
+    } else if (typeof $script === 'function') {
+        global.DropboxUserConfig  = factory(ko, jQuery);
+        $script.done('dropboxUserConfig');
+    } else {
+        global.DropboxUserConfig  = factory(ko, jQuery);
+    }
+}(this, function(ko, $) {
     'use strict';
 
     var language = $.osf.Language.Addons.dropbox;
@@ -72,23 +81,16 @@
 
     function DropboxUserConfig(selector, url) {
         var self = this;
-        console.log('instantiation');
         self.selector = selector;
         self.url = url;
         $.ajax({
-            url: self.url, type: 'GET', dataType: 'json'
-        })
-        .done(function(response) {
-            console.log(response);
-            console.log('Binding VM');
-            // On success, instantiate and bind the ViewModel
-            self.viewModel = new ViewModel(response.result);
-            $.osf.applyBindings(self.viewModel, '#dropboxAddonScope');
+            url: self.url, type: 'GET', dataType: 'json',
+            success: function(response) {
+                // On success, instantiate and bind the ViewModel
+                self.viewModel = new ViewModel(response.result);
+                $.osf.applyBindings(self.viewModel, '#dropboxAddonScope');
+            }
         });
     }
-
-    // Export
-    global.DropboxUserConfig = DropboxUserConfig;
-    $script.done('dropboxUserConfig');
-
-})(jQuery, window);
+    return DropboxUserConfig;
+}));

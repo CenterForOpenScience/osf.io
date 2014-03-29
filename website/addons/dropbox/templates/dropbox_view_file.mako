@@ -3,7 +3,7 @@
 
 
 <%def name="file_versions()">
-    <table class="table" id="fileVersionScope">
+    <table class="table dropbox-revision-table" id="revisionScope">
 
         <thead>
             <tr>
@@ -14,7 +14,7 @@
         </thead>
 
         <tbody data-bind="foreach: revisions">
-            <tr>
+            <tr class="dropbox-revision">
                 <td>
                     <a data-bind="attr: {href: view}, text: rev"></a>
                 </td>
@@ -32,7 +32,7 @@
     <script>
         $script(["/static/addons/dropbox/revisions.js"], function() {
             var url = '${revisions_url}';
-            var revisionTable = new RevisionTable('#fileVersionScope', url);
+            var revisionTable = new RevisionTable('#revisionScope', url);
         });
     </script>
 
