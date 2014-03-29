@@ -7,9 +7,13 @@
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap'], factory);
-    } else {
+    } else if (typeof $script === 'function' ){
+        $script.ready(['hgrid', 'dropzone', 'dropzone-patch'], function() {
+            global.Rubeus = factory(jQuery, global.HGrid);
+            $script.done('rubeus');
+        });
+    }else {
         global.Rubeus = factory(jQuery, global.HGrid);
-        if (typeof $script === 'function') { $script.done('rubeus'); }
     }
 }(this, function($, HGrid){
     /////////////////////////

@@ -11,6 +11,7 @@
         define(['jquery', 'knockout', 'knockout-punches', 'osfutils'], factory);
     } else {
         global.LogFeed = factory($, global.ko);
+        if (typeof $script === 'function') { $script.done('logFeed')};
     }
 }(this, function($, ko) {
     'use strict';
