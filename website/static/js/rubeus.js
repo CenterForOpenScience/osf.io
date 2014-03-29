@@ -133,7 +133,7 @@
     };
 
     /**
-     * Get the status message from the addon, if any.
+     * Get the status message from the addon if defined, otherwise use the default message.
      */
      function getStatusCfg(addon, whichStatus, extra) {
         if (addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {

@@ -24,7 +24,7 @@ CATEGORIES = ['storage']
 INCLUDE_JS = {
     'widget': [],
     'page': [],
-    'files': []
+    'files': ['dropboxRubeusCfg.js']
 }
 
 INCLUDE_CSS = {

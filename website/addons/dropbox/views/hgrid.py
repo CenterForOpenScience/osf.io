@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
+import httplib as http
 
-from framework import request
+from framework.exceptions import HTTPError
+
+from framework.flask import request
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
 
@@ -17,7 +20,11 @@ debug = logger.debug
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
-    """Return the Rubeus/HGrid-formatted response for a folder's contents."""
+    """Return the Rubeus/HGrid-formatted response for a folder's contents.
+
+    Takes optional query parameters `foldersOnly` (only return folders) and
+    `includeRoot` (include the root folder).
+    """
     node = node_addon.owner
     path = kwargs.get('path',  '')
     permissions = {
@@ -25,12 +32,16 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         'view': node.can_view(auth)
     }
     client = get_node_client(node)
+    metadata = client.metadata(path)
+    if metadata['is_deleted']:
+        raise HTTPError(http.BAD_REQUEST)
+    contents = metadata['contents']
     if request.args.get('foldersOnly'):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
-                    file_dict in client.metadata(path)['contents'] if file_dict['is_dir']]
+                    file_dict in contents if file_dict['is_dir']]
     else:
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
-                    file_dict in client.metadata(path)['contents']]
+                    file_dict in contents]
     if request.args.get('includeRoot'):
         root = {'kind': rubeus.FOLDER, 'path': '/', 'name': '/ (Full Dropbox)'}
         contents.insert(0, root)
@@ -44,18 +55,17 @@ def dropbox_addon_folder(node_settings, auth, **kwargs):
         return None
     node = node_settings.owner
     path = clean_path(node_settings.folder)
-    return [
-        rubeus.build_addon_root(
-            node_settings=node_settings,
-            name=node_settings.folder,
-            permissions=auth,
-            nodeUrl=node.url,
-            nodeApiUrl=node.api_url,
-            urls={
-                'upload': node.api_url_for('dropbox_upload',
-                    path=path),
-                'fetch': node.api_url_for('dropbox_hgrid_data_contents',
-                    path=path)
-            }
-        )
-    ]
+    root = rubeus.build_addon_root(
+        node_settings=node_settings,
+        name=node_settings.folder,
+        permissions=auth,
+        nodeUrl=node.url,
+        nodeApiUrl=node.api_url,
+        urls={
+            'upload': node.api_url_for('dropbox_upload',
+                path=path),
+            'fetch': node.api_url_for('dropbox_hgrid_data_contents',
+                path=path)
+        }
+    )
+    return [root]
