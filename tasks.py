@@ -191,7 +191,8 @@ def test():
 
 @task
 def test_all():
-    test_module('.')
+    test_module('tests')
+    test_module('website/addons')
 
 
 # TODO: user bower once hgrid is released
