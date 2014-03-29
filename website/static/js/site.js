@@ -226,13 +226,6 @@
     //         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
     //    }
 
-        // Initiate tag input
-        $('#tagitfy').tagit({
-            availableTags: ["analysis", "methods", "introduction", "hypotheses"], // this param is of course optional. it's for autocomplete.
-            // configure the name of the input field (will be submitted with form), default: item[tags]
-            fieldName: 'tags',
-            singleField: true
-        });
 
         // Build tooltips on user activity widgets
         $('.ua-meter').tooltip();
