@@ -66,16 +66,6 @@ web_routes = {
             OsfWebRenderer('../addons/dropbox/templates/dropbox_view_file.mako'),
         ),
 
-        ##### Revisions #####
-        Rule(
-            [
-                '/project/<pid>/dropbox/files/<path:path>/revisions/',
-                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/revisions/',
-            ],
-            'get',
-            views.crud.dropbox_get_revisions,
-            json_renderer
-        ),
 
         ##### Download file #####
         Rule(
@@ -161,6 +151,17 @@ api_routes = {
             ],
             'get',
             views.crud.dropbox_render_file,
+            json_renderer
+        ),
+
+        ##### Revisions #####
+        Rule(
+            [
+                '/project/<pid>/dropbox/files/<path:path>/revisions/',
+                '/project/<pid>/node/<nid>/dropbox/files/<path:path>/revisions/',
+            ],
+            'get',
+            views.crud.dropbox_get_revisions,
             json_renderer
         ),
 
