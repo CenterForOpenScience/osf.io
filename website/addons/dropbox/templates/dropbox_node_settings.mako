@@ -85,10 +85,10 @@
 
 
 <script>
-    $script(['/static/addons/dropbox/dropboxConfigManager.js']);
-    $script.ready('dropboxConfigManager', function() {
+    $script(['/static/addons/dropbox/dropboxNodeConfig.js']);
+    $script.ready('dropboxNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
-        var dropbox = new DropboxConfigManager('#dropboxScope', url, '#myGrid');
+        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myGrid');
     });
 </script>

@@ -8,11 +8,11 @@
         define(['knockout', 'jquery', 'js/folderPicker', 'osfutils'], factory);
     } else if (typeof $script === 'function') {
         $script.ready('folderPicker', function() {
-            global.DropboxConfigManager  = factory(ko, jQuery, FolderPicker);
-            $script.done('dropboxConfigManager');
+            global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker);
+            $script.done('dropboxNodeConfig');
         });
     } else {
-        global.DropboxConfigManager  = factory(ko, jQuery, FolderPicker);
+        global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker);
     }
 }(this, function(ko, $, FolderPicker) {
     'use strict';
@@ -232,7 +232,7 @@
 
     // Public API
 
-    function DropboxConfigManager(selector, url, folderPicker) {
+    function DropboxNodeConfig(selector, url, folderPicker) {
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
@@ -255,7 +255,7 @@
         });
     }
 
-    return DropboxConfigManager;
+    return DropboxNodeConfig;
 }));
 
 
