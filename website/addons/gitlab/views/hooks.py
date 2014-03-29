@@ -1,8 +1,10 @@
-import httplib as http
-import logging
+# TODO: Finish me @jmcarp
+# TODO: Test me @jmcarp
 
-from dateutil.parser import parse as dateparse
+import logging
+import httplib as http
 from flask import request
+from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
 
@@ -11,27 +13,24 @@ from website.project.decorators import must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from .util import MESSAGES
+from website.addons.gitlab import settings as gitlab_settings
 
-
-# All GitHub hooks come from 192.30.252.0/22
-HOOKS_IP = '192.30.252.'
 
 logger = logging.getLogger(__name__)
 
-def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
+def _add_hook_log(node_settings, action, path, date, committer, url=False,
+                  sha=None, save=False):
 
-    github_data = {
-        'user': github.user,
-        'repo': github.repo,
+    node = node_settings.owner
+
+    gitlab_data = {
+        'user': node_settings.user,
+        'repo': node_settings.repo,
     }
     if url:
-        github_data['url'] = '{0}github/file/{1}/'.format(
-            node.api_url,
-            path
+        gitlab_data['url'] = node.web_url_for(
+            'gitlab_view_file', path=path, sha=sha
         )
-        if sha:
-            github_data['url'] += '?ref=' + sha
 
     node.add_log(
         action=action,
@@ -39,7 +38,7 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
             'project': node.parent_id,
             'node': node._id,
             'path': path,
-            'github': github_data,
+            'gitlab': gitlab_data,
         },
         auth=None,
         foreign_user=committer,
@@ -50,21 +49,21 @@ def _add_hook_log(node, github, action, path, date, committer, url=None, sha=Non
 
 @must_be_valid_project
 @must_not_be_registration
-@must_have_addon('github', 'node')
-def github_hook_callback(**kwargs):
+@must_have_addon('gitlab', 'node')
+def gitlab_hook_callback(**kwargs):
     """Add logs for commits from outside OSF.
 
     """
     if request.json is None:
         return {}
 
-    # Request must come from GitHub hooks IP
+    # Request must come from gitlab hooks IP
     if not request.json.get('test'):
-        if HOOKS_IP not in request.remote_addr:
+        if gitlab_settings.HOST not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']
-    github = kwargs['node_addon']
+    node_settings = kwargs['node_addon']
 
     payload = request.json
 
@@ -73,27 +72,27 @@ def github_hook_callback(**kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in gitlab_settings.MESSAGES.values():
             continue
 
         _id = commit['id']
-        date = dateparse(commit['timestamp'])
+        date = parse_date(commit['timestamp'])
         committer = commit['committer']['name']
 
         # Add logs
         for path in commit.get('added', []):
             _add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_ADDED,
+                node_settings, 'gitlab_' + models.NodeLog.FILE_ADDED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('modified', []):
             _add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_UPDATED,
+                node_settings, 'gitlab_' + models.NodeLog.FILE_UPDATED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('removed', []):
             _add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_REMOVED,
+                node_settings, 'gitlab_' + models.NodeLog.FILE_REMOVED,
                 path, date, committer,
             )
 

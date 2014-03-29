@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from framework import session, create_session
-from framework import goback
-import framework.bcrypt as bcrypt
+from framework.sessions import session, create_session, goback
 from modularodm.query.querydialect import DefaultQueryDialect as Q
-from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
-                                        PasswordIncorrectError)
+from framework.auth.exceptions import (
+    DuplicateEmailError, LoginNotAllowedError,
+    PasswordIncorrectError
+)
 
 from model import User
 
@@ -46,9 +46,6 @@ def get_api_key():
     api_key = session.data.get('auth_api_key')
     return ApiKey.load(api_key)
 
-
-# check_password(actual_pw_hash, given_password) -> Boolean
-check_password = bcrypt.check_password_hash
 
 # TODO: This should be a class method of User
 def get_user(id=None, username=None, password=None, verification_key=None):

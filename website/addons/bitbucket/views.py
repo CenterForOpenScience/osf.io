@@ -10,7 +10,8 @@ import httplib as http
 from mako.template import Template
 from hurry.filesize import size, alternative
 
-from framework import request, redirect, make_response
+from flask import request, redirect, make_response
+
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError

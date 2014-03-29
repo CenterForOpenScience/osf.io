@@ -1,3 +1,4 @@
+import mock
 import unittest
 from nose.tools import *
 
@@ -7,8 +8,12 @@ import urlparse
 
 from framework.exceptions import HTTPError
 
+from website.addons.base import AddonError
+
+from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab import utils
+from website.addons.gitlab.api import GitlabError
 
 
 def normalize_query_string(url):
@@ -222,3 +227,71 @@ class TestGridSerializers(GitlabTestCase):
                 self.project, item, os.path.join(path, item['name'])
             )
         )
+
+
+class TestSetupUser(GitlabTestCase):
+
+    def setUp(self):
+        super(TestSetupUser, self).setUp()
+        self.user_settings.user_id = None
+
+    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    def test_setup_user(self, mock_create_user):
+        mock_create_user.return_value = {
+            'id': 1,
+            'username': 'freddie'
+        }
+        utils.setup_user(self.user)
+        mock_create_user.assert_called_with(
+            name=self.user.fullname,
+            username=self.user._id,
+            password=None,
+            email=self.user.username,
+            encrypted_password=self.user.password,
+            skip_confirmation=True,
+            projects_limit=gitlab_settings.PROJECTS_LIMIT,
+        )
+        assert_equal(self.user_settings.user_id, 1)
+        assert_equal(self.user_settings.username, 'freddie')
+
+    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    def test_setup_user_gitlab_error(self, mock_create_user):
+        mock_create_user.side_effect = GitlabError('Failed')
+        with assert_raises(AddonError):
+            utils.setup_user(self.user)
+
+    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    def test_setup_user_already_exists(self, mock_create_user):
+        self.user_settings.user_id = 1
+        utils.setup_user(self.user)
+        assert_false(mock_create_user.called)
+
+class TestSetupNode(GitlabTestCase):
+
+    def setUp(self):
+        super(TestSetupNode, self).setUp()
+        self.node_settings.project_id = None
+
+    @mock.patch('website.addons.gitlab.model.AddonGitlabNodeSettings.add_hook')
+    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    def test_setup_node(self, mock_create_project, mock_add_hook):
+        mock_create_project.return_value = {
+            'id': 1,
+        }
+        utils.setup_node(self.project)
+        mock_create_project.assert_called_with(
+            self.user_settings.user_id, self.project._id
+        )
+        mock_add_hook.assert_called_with(save=True)
+
+    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    def test_setup_node_gitlab_error(self, mock_create_node):
+        mock_create_node.side_effect = GitlabError('Failed')
+        with assert_raises(AddonError):
+            utils.setup_node(self.project)
+
+    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    def test_setup_node_already_exists(self, mock_create_project):
+        self.node_settings.project_id = 1
+        utils.setup_node(self.project)
+        assert_false(mock_create_project.called)

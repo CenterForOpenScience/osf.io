@@ -2,7 +2,8 @@
 
 """
 
-from framework import request
+from flask import request
+
 from website.project import decorators
 from website.project.views.node import _view_project
 

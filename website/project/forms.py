@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from framework import Form, SelectField, TextField, TextAreaField, validators
+from wtforms import Form, TextField, TextAreaField, validators
 from framework.forms import (
     BootstrapTextArea,
     BootstrapTextInput,

@@ -1,9 +1,11 @@
 import re
 import time
 from urllib2 import HTTPError
+from flask import request
 import logging
 
-from framework import must_be_logged_in, request, status
+from framework.auth.decorators import must_be_logged_in
+from framework import status
 from website.search.solr_search import search_solr
 from website import settings
 from website.filters import gravatar

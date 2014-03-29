@@ -1,6 +1,6 @@
 import httplib as http
+from flask import request
 
-from framework import request
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 

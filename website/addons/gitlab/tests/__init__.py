@@ -20,9 +20,3 @@ class GitlabTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.project_id = 1
-
-    def setUp(self):
-
-        self.patch_create_user = mock.patch('website.addons.gitlab.model.create_user')
-        self.mock_create_user = self.patch_create_user.start()
-        super(GitlabTestCase, self).setUp()

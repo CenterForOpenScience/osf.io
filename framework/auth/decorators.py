@@ -1,5 +1,5 @@
 import functools
-from framework.flask import request, redirect
+from flask import request, redirect
 from . import get_current_user, get_api_key, get_current_node
 
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-import datetime
-import json
+from flask import request, redirect
+
 import framework
-from framework import Q, request, redirect
+from framework.mongo import Q
 from framework.exceptions import HTTPError
 from framework.forms import utils
 from framework.routing import proxy_url

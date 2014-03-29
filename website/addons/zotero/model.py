@@ -5,7 +5,7 @@
 from bs4 import BeautifulSoup
 import requests
 
-from framework import fields
+from framework.mongo import fields
 
 from website.addons.base import AddonNodeSettingsBase
 

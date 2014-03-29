@@ -2,7 +2,7 @@
 
 """
 
-from framework import StoredObject
+from framework.mongo import StoredObject
 
 from website import settings
 from website.addons.base import AddonError
@@ -54,7 +54,7 @@ class AddonModelMixin(StoredObject):
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name):
+    def add_addon(self, addon_name, auth=None):
         """Add an add-on to the owner.
 
         :param str addon_name: Name of add-on
@@ -81,7 +81,7 @@ class AddonModelMixin(StoredObject):
 
         return addon
 
-    def get_or_add_addon(self, addon_name):
+    def get_or_add_addon(self, addon_name, auth=None):
         """Get addon from owner; if it doesn't exist, create one.
 
         :param str addon_name: Name of addon
@@ -91,7 +91,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name)
         if addon:
             return addon
-        return self.add_addon(addon_name)
+        return self.add_addon(addon_name, auth=auth)
 
     def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the owner.

@@ -8,9 +8,10 @@ import time
 from cStringIO import StringIO
 import httplib as http
 import logging
+from flask import request, redirect, send_file
 
 
-from framework import request, redirect, send_file, Q
+from framework.mongo import Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters

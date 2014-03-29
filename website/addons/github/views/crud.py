@@ -3,9 +3,10 @@ import urllib
 import logging
 import datetime
 import httplib as http
+from werkzeug.utils import secure_filename
+from flask import request, redirect, make_response
 
-from framework import request, redirect, make_response, Q
-from framework.flask import secure_filename
+from framework.mongo import Q
 from framework.exceptions import HTTPError
 
 from website import models

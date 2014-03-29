@@ -6,9 +6,9 @@ import datetime
 import markdown
 from markdown.extensions import wikilinks
 
+from framework.mongo import fields
 from framework.forms.utils import sanitize
-from framework import fields
-from framework import GuidStoredObject
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase

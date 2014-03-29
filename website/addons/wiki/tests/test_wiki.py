@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # PEP8 asserts
 
-import framework
+from flask import url_for
+
 from framework.auth.decorators import Auth
+
 from website.app import init_app
 from webtest_plus import TestApp
 from tests.base import DbTestCase
@@ -24,7 +26,7 @@ class TestWikiViews(DbTestCase):
     def test_get_wiki_url_for_project(self):
         with app.test_request_context():
             node = ProjectFactory()
-            expected = framework.url_for(
+            expected = url_for(
                 'OsfWebRenderer__project_wiki_page',
                 pid=node._primary_key,
                 wid='home')

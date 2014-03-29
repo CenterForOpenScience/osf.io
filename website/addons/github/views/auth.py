@@ -2,8 +2,8 @@ import os
 import logging
 import httplib as http
 from github3 import GitHubError
+from flask import request, redirect
 
-from framework import request, redirect
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.status import push_status_message

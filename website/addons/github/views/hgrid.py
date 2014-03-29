@@ -2,9 +2,9 @@
 import os
 import logging
 import httplib as http
+from flask import request
 from mako.template import Template
 
-from framework import request
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public

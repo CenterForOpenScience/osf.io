@@ -2,7 +2,7 @@
 '''Custom exceptions for the framework.'''
 import copy
 import httplib as http
-from framework.flask import request
+from flask import request
 
 class FrameworkError(Exception):
     """Base class from which framework-related errors inherit."""

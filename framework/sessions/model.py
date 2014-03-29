@@ -1,4 +1,4 @@
-from framework import StoredObject, fields
+from framework.mongo import StoredObject, fields
 from bson import ObjectId
 
 class Session(StoredObject):

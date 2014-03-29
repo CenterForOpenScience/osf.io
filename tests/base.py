@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import mock
 import unittest
 import logging
 import functools
@@ -8,7 +9,7 @@ import blinker
 from pymongo import MongoClient
 from faker import Factory
 
-from framework import storage, set_up_storage
+from framework.mongo import storage, set_up_storage
 from framework.auth.model import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
@@ -66,6 +67,51 @@ class DbTestCase(unittest.TestCase):
     def tearDownClass(klass):
         '''Drop the database when all tests finish.'''
         klass._client.drop_database(klass.db)
+
+
+class OsfTestCase(DbTestCase):
+
+    PATCH_GITLAB = True
+
+    def setUp(self):
+        super(OsfTestCase, self).setUp()
+        if self.PATCH_GITLAB:
+            self.start_gitlab_patches()
+
+    def start_gitlab_patches(self):
+
+        edit_user_patch = mock.patch(
+            'website.addons.gitlab.model.client.edituser'
+        )
+        edit_user_mock = edit_user_patch.start()
+        edit_user_mock.return_value = {}
+
+        create_patch = mock.patch(
+            'website.addons.gitlab.utils.client.createuser'
+        )
+        create_mock = create_patch.start()
+        create_mock.return_value = {
+            'id': 1,
+            'username': 'Roger',
+        }
+
+        add_member_patch = mock.patch(
+            'website.addons.gitlab.model.client.addprojectmember'
+        )
+        add_member_mock = add_member_patch.start()
+        add_member_mock.return_value = True
+
+        edit_member_patch = mock.patch(
+            'website.addons.gitlab.model.client.editprojectmember'
+        )
+        edit_member_mock = edit_member_patch.start()
+        edit_member_mock.return_value = True
+
+        copy_patch = mock.patch(
+            'website.addons.gitlab.model.client.createcopy'
+        )
+        copy_mock = copy_patch.start()
+        copy_mock.return_value = {'id': 1}
 
 
 class AppTestCase(unittest.TestCase):

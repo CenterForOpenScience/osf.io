@@ -8,15 +8,16 @@ import datetime as dt
 import pytz
 import bson
 
-from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields, Q, analytics
+from framework.mongo import fields, Q
+from framework.analytics import piwik, get_total_activity_count
 from framework.guid.model import GuidStoredObject
 from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
-from website import settings, filters, security
 from framework.exceptions import PermissionsError
+
+from website import settings, filters, security
 
 
 name_formatters = {
@@ -254,12 +255,15 @@ class User(GuidStoredObject, AddonModelMixin):
                     .format(**locals())
 
     def set_password(self, raw_password):
-        '''Set the password for this user to the hash of ``raw_password``.'''
+        """Set the password for this user to the hash of ``raw_password``."""
         self.password = generate_password_hash(raw_password)
+        # Trigger callbacks
+        for addon in self.get_addons():
+            addon.after_set_password(self)
         return None
 
     def check_password(self, raw_password):
-        '''Return a boolean of whether ``raw_password`` was correct.'''
+        """Return a boolean of whether ``raw_password`` was correct."""
         if not self.password or not raw_password:
             return False
         return check_password_hash(self.password, raw_password)
@@ -387,7 +391,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+        return get_total_activity_count(self._primary_key)
 
     @property
     def is_merged(self):

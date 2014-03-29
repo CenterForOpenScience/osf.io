@@ -13,6 +13,7 @@ import logging
 from HTMLParser import HTMLParser
 
 import pytz
+from bson import ObjectId
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
@@ -20,7 +21,6 @@ import blinker
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
-from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User
 from framework.auth.decorators import Auth
@@ -29,13 +29,12 @@ from framework.analytics import (
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
+from framework.mongo import StoredObject, fields, Q
+from framework import utils
 from framework.search.solr import update_solr, delete_solr_doc
-from framework import GuidStoredObject, Q
+from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
-
-from framework import session
 from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -2088,7 +2087,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             # After add callback
             for addon in self.get_addons():
-                message = addon.after_add_contributor(self, contributor)
+                message = addon.after_add_contributor(self, contrib_to_add)
                 if message:
                     status.push_status_message(message)
 

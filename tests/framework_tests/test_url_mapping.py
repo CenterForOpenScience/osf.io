@@ -2,9 +2,8 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from flask import Flask
+from flask import Flask, url_for
 
-import framework
 from framework.routing import Rule, json_renderer, process_rules
 
 
@@ -42,20 +41,20 @@ class RuleTestCase(unittest.TestCase):
         r = Rule(["/project/"], "get", view_func_or_data=dummy_view, renderer=json_renderer)
         process_rules(self.app, [r])
         with self.app.test_request_context():
-            assert_equal(framework.url_for("JSONRenderer__dummy_view"), "/project/")
+            assert_equal(url_for("JSONRenderer__dummy_view"), "/project/")
 
     def test_url_for_with_argument(self):
         r = Rule(['/project/<pid>/'], "get", view_func_or_data=dummy_view2, renderer=json_renderer)
         process_rules(self.app, [r])
         with self.app.test_request_context():
-            assert_equal(framework.url_for("JSONRenderer__dummy_view2", pid=123), "/project/123/")
+            assert_equal(url_for("JSONRenderer__dummy_view2", pid=123), "/project/123/")
 
     def test_url_for_with_prefix(self):
         api_rule = Rule(["/project/"], "get", view_func_or_data=dummy_view3,
                 renderer=json_renderer)
         process_rules(self.app, [api_rule], prefix="/api/v1")
         with self.app.test_request_context():
-            assert_equal(framework.url_for("JSONRenderer__dummy_view3"), "/api/v1/project/")
+            assert_equal(url_for("JSONRenderer__dummy_view3"), "/api/v1/project/")
 
 
 def dummy_view():

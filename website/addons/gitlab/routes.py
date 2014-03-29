@@ -53,6 +53,17 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/gitlab/hook/',
+                '/project/<pid>/node/<nid>/gitlab/hook/',
+            ],
+            'post',
+            views.hooks.gitlab_hook_callback,
+            json_renderer,
+        ),
+
+
     ],
     'prefix': '/api/v1'
 }

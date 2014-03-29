@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 from wtforms import ValidationError
 from framework.forms import (
-    Form,
     NoHtmlCharacters,
-    PasswordField,
-    TextField,
-    HiddenField,
     validators,
     BootstrapTextInput,
     BootstrapPasswordInput,
     stripped,
     lowerstripped
 )
+from wtforms import Form, PasswordField, TextField, HiddenField
 
 from framework import auth
 

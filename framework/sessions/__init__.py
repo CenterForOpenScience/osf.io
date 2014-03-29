@@ -3,13 +3,13 @@ import httplib as http
 import urllib
 import urlparse
 import logging
-from framework.exceptions import HTTPError
 import bson.objectid
 import itsdangerous
+from flask import request, redirect
 from werkzeug.local import LocalProxy
 
 from website import settings
-from framework.flask import app, request, redirect
+from framework.flask import app
 from .model import Session
 
 logger = logging.getLogger(__name__)

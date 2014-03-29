@@ -1,6 +1,6 @@
 import httplib as http
+from flask import request
 
-from framework import request
 from website.project.decorators import (
     must_be_valid_project, must_have_permission
 )

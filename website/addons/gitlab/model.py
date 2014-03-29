@@ -4,17 +4,22 @@
 
 import os
 import logging
+import urlparse
 
-from framework import fields
+from framework.mongo import fields
+
 from website.addons.base import (
     AddonUserSettingsBase, AddonNodeSettingsBase,
     GuidFile
 )
 from website.util.permissions import READ
+from website.addons.base import AddonError
 
-from .api import client
-from .exceptions import GitlabError
-from .utils import create_user, setup_user, translate_permissions
+from website.addons.gitlab.api import client, GitlabError
+from website.addons.gitlab.utils import (
+    setup_user, translate_permissions
+)
+from website.addons.gitlab import settings as gitlab_settings
 
 
 logger = logging.getLogger(__name__)
@@ -27,16 +32,25 @@ class AddonGitlabUserSettings(AddonUserSettingsBase):
     ########
 
     # Account credentials
-    user_id = fields.StringField()
+    user_id = fields.IntegerField()
     username = fields.StringField()
-    password = fields.StringField()
 
     #############
     # Callbacks #
     #############
 
-    def after_add_addon(self, user):
-        create_user(self)
+    def after_set_password(self, user):
+        """Update GitLab password when OSF password changes.
+
+        """
+        try:
+            client.edituser(self.user_id, encrypted_password=user.password)
+        except GitlabError:
+            logger.error(
+                'Could not set GitLab password for user {0}'.format(
+                    user._id
+                )
+            )
 
 
 class AddonGitlabNodeSettings(AddonNodeSettingsBase):
@@ -46,7 +60,44 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
     ########
 
     creator_osf_id = fields.StringField()
-    project_id = fields.StringField()
+    project_id = fields.IntegerField()
+    hook_id = fields.IntegerField()
+
+    @property
+    def hook_url(self):
+        """Absolute URL for hook callback."""
+        relative_url = self.owner.api_url_for(
+            'gitlab_hook_callback'
+        )
+        return urlparse.urljoin(
+            gitlab_settings.HOOK_DOMAIN,
+            relative_url
+        )
+
+    def add_hook(self, save=True):
+        if self.hook_id is not None:
+            raise AddonError('Hook already exists')
+        try:
+            status = client.addprojecthook(
+                self.project_id,
+                self.hook_url
+            )
+            self.hook_id = status['id']
+            if save:
+                self.save()
+        except GitlabError:
+            raise AddonError('Could not add hook')
+
+    def remove_hook(self, save=True):
+        if self.hook_id is None:
+            raise AddonError('No hook to delete')
+        try:
+            client.deleteprojecthook(self.project_id, self.hook_id)
+            self.hook_id = None
+            if save:
+                self.save()
+        except GitlabError:
+            raise AddonError('Could not delete hook')
 
     #############
     # Callbacks #
@@ -58,6 +109,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """
         user_settings = setup_user(added)
         permissions = node.get_permissions(added)
+        print 'PERMISSIONS', permissions
         access_level = translate_permissions(permissions)
         client.addprojectmember(
             self.project_id, user_settings.user_id,
@@ -68,6 +120,8 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """Update GitLab permissions.
 
         """
+        if self.project_id is None:
+            return
         user_settings = setup_user(user)
         access_level = translate_permissions(permissions)
         client.editprojectmember(
@@ -79,6 +133,8 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """Remove user from GitLab project.
 
         """
+        if self.project_id is None:
+            return
         user_settings = removed.get_addon('gitlab')
         client.deleteprojectmember(self.project_id, user_settings.user_id)
 
@@ -95,11 +151,15 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_or_add_addon('gitlab')
 
         # Copy project
-        copy = client.createcopy(
-            self.project_id, user_settings.user_id, fork._id
-        )
-        if copy['id'] is None:
-            raise GitlabError('Could not copy project')
+        try:
+            copy = client.createcopy(
+                self.project_id, user_settings.user_id, fork._id
+            )
+            if copy['id'] is None:
+                raise AddonError('Could not copy project')
+        except GitlabError:
+            raise AddonError('Could not copy project')
+
         clone.project_id = copy['id']
 
         # Optionally save changes
@@ -121,11 +181,15 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_or_add_addon('gitlab')
 
         # Copy project
-        copy = client.createcopy(
-            self.project_id, user_settings.user_id, registration._id
-        )
-        if copy['id'] is None:
-            raise GitlabError('Could not copy project')
+        try:
+            copy = client.createcopy(
+                self.project_id, user_settings.user_id, registration._id
+            )
+            if copy['id'] is None:
+                raise AddonError('Could not copy project')
+        except GitlabError:
+            raise AddonError('Could not copy project')
+
         clone.project_id = copy['id']
 
         # Grant all contributors read-only permissions

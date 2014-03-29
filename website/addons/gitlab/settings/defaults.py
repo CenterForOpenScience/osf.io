@@ -1,5 +1,5 @@
 import os
-from website.settings import BASE_PATH
+from website.settings import BASE_PATH, DOMAIN
 
 
 HOST = None
@@ -17,6 +17,8 @@ ACCESS_LEVELS = {
 }
 
 DEFAULT_BRANCH = 'master'
+
+HOOK_DOMAIN = DOMAIN
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {

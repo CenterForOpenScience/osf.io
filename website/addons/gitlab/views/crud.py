@@ -3,10 +3,10 @@ import base64
 import urllib
 import httplib as http
 from dateutil.parser import parse as parse_date
+from flask import request, redirect, make_response
 
-from framework import Q
+from framework.mongo import Q
 from framework.auth import get_user
-from framework.flask import request, redirect, make_response
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (
@@ -25,7 +25,7 @@ from website.dates import FILE_MODIFIED
 from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
-    create_user, create_node, gitlab_slugify,
+    setup_user, setup_node, gitlab_slugify,
     kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
 )
 from website.addons.gitlab import settings as gitlab_settings
@@ -111,9 +111,10 @@ def gitlab_upload_file(**kwargs):
     node_settings = kwargs['node_addon']
 
     # Lazily configure Gitlab
+    setup_user(auth.user)
+    setup_node(node)
+
     user_settings = auth.user.get_addon('gitlab')
-    create_user(user_settings)
-    create_node(node_settings)
 
     path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_settings, kwargs)

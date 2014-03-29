@@ -4,9 +4,9 @@ import httplib as http
 import framework
 from framework import status
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
 
 from website import settings, language, util

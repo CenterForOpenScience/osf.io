@@ -5,9 +5,10 @@ import logging
 import httplib as http
 import difflib
 
+from flask import request, url_for
 from bs4 import BeautifulSoup
 
-from framework import request, status, url_for
+from framework import status
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
