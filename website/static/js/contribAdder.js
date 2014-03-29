@@ -3,11 +3,11 @@
  */
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'editable'], factory);
+        define(['jquery', 'knockout', 'bootstrap', 'editable'], factory);
     } else {
-        global.ContribAdder = factory(jQuery);
+        global.ContribAdder = factory(jQuery, global.ko);
     }
-}(this, function($) {
+}(this, function($, ko) {
 
     NODE_OFFSET = 25;
 
