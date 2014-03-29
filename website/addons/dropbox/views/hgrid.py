@@ -33,8 +33,9 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     }
     client = get_node_client(node)
     metadata = client.metadata(path)
-    if metadata['is_deleted']:
-        raise HTTPError(http.BAD_REQUEST)
+    # Raise error if folder was deleted
+    if metadata.get('is_deleted'):
+        raise HTTPError(http.NOT_FOUND)
     contents = metadata['contents']
     if request.args.get('foldersOnly'):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for
