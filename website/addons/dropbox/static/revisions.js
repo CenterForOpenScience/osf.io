@@ -20,6 +20,8 @@
     function RevisionViewModel(url) {
         var self = this;
         self.revisions = ko.observableArray([]);
+        // Get current revision from URL param
+        self.currentRevision = $.osf.urlParams().rev;
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
             // On success, update the revisions observable
