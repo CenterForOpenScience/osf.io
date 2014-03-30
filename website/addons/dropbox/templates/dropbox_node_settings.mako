@@ -73,7 +73,7 @@
 
     <!-- Oauth Start Button -->
     <div data-bind="if: showTokenCreateButton">
-        <a data-bind="attr: {href: urls.auth}" class="btn btn-primary">
+        <a data-bind="attr: {href: urls().auth}" class="btn btn-primary">
             Authorize: Create Access Token
         </a>
     </div>
