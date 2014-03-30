@@ -27,7 +27,8 @@ debug = logger.debug
 
 
 def get_auth_flow():
-    scheme = 'http' if website_settings.DEV_MODE else 'https'
+    # Dropbox only accepts https redirect uris unless using localhost
+    scheme = 'http' if website_settings.DEBUG_MODE else 'https'
     redirect_uri = api_url_for('dropbox_oauth_finish', _external=True, _scheme=scheme)
     return DropboxOAuth2Flow(
         consumer_key=settings.DROPBOX_KEY,
