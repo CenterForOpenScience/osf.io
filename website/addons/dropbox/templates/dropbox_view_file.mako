@@ -35,7 +35,4 @@
             var revisionTable = new RevisionTable('#revisionScope', url);
         });
     </script>
-
 </%def>
-
-

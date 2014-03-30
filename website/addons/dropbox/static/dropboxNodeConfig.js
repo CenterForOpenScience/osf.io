@@ -36,7 +36,7 @@
         // CSS selector for the folder picker div
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
-        self.selected = ko.observable();
+        self.selected = ko.observable(null);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
         self.loaded = ko.observable(false);
