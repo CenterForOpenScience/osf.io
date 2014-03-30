@@ -2,8 +2,13 @@
  * Controls the actions in the project header (make public/private, watch button,
  * forking, etc.)
  */
-
-this.NodeControl = (function(ko, $, global) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'bootstrap', 'editable', 'osfutils'], factory);
+    } else {
+        global.NodeControl = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
     'use strict';
 
     // Modal language
@@ -18,9 +23,10 @@ this.NodeControl = (function(ko, $, global) {
                             'Would you like to continue?'
     };
 
+    // TODO(sloria): Fix this external dependency on nodeApiUrl
     var URLS = {
-        makePublic: global.nodeApiUrl + 'permissions/public/',
-        makePrivate: global.nodeApiUrl + 'permissions/private/'
+        makePublic: window.nodeApiUrl + 'permissions/public/',
+        makePrivate: window.nodeApiUrl + 'permissions/private/'
     };
     var PUBLIC = 'public';
     var PRIVATE = 'private';
@@ -68,7 +74,7 @@ this.NodeControl = (function(ko, $, global) {
             return self.watchedCount().toString();
         });
         self.watchButtonAction = ko.computed(function() {
-            return self.userIsWatching() ? "Unwatch" : "Watch"
+            return self.userIsWatching() ? "Unwatch" : "Watch";
         });
 
         // Editable Title and Description
@@ -163,4 +169,4 @@ this.NodeControl = (function(ko, $, global) {
 
     return NodeControl;
 
-})(ko, jQuery, window);
+}));

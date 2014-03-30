@@ -1,4 +1,13 @@
-this.ContribManager = (function(window, $, ko, bootbox) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'jquery-ui',
+                'vendor/jquery-blockui/jquery.blockui',
+                'vendor/knockout-sortable/knockout-sortable',
+                'osfutils'], factory);
+    } else {
+        global.ContribManager = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
 
     var contribsEqual = function(a, b) {
         return a.id === b.id && a.permission === b.permission &&
@@ -318,4 +327,4 @@ this.ContribManager = (function(window, $, ko, bootbox) {
 
     return ContribManager;
 
-})(window, $, ko, bootbox);
+}));

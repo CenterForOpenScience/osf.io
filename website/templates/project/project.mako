@@ -200,6 +200,9 @@ ${parent.javascript_bottom()}
             });
         % endif
 
+
+    });
+    $script.ready(['rubeus'], function() {
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
                 data: nodeApiUrl + 'files/grid/',
@@ -210,9 +213,7 @@ ${parent.javascript_bottom()}
                 progBar: '#filetreeProgressBar',
                 searchInput: '#fileSearch'
         });
-
-    });
-
+    })
 </script>
 
 </%def>
