@@ -15,29 +15,36 @@
 
     var language = $.osf.Language.Addons.dropbox;
 
-    function ViewModel(data) {
-        self.userHasAuth = ko.observable(data.userHasAuth);
-        self.urls = data.urls;
+    function ViewModel(url) {
+        self.userHasAuth = ko.observable(false);
+        self.urls = ko.observable({});
+        // Whether the initial data has been loaded.
+        self.loaded = ko.observable(false);
+        // Update above observables with data from server
+        $.ajax({
+            url: url, type: 'GET', dataType: 'json',
+            success: function(response) {
+                var data = response.result;
+                self.userHasAuth(data.userHasAuth);
+                self.urls(data.urls);
+                self.loaded(true);
+            },
+            error: function(xhr, textStatus, error){
+                console.error(textStatus); console.error(error);
+                self.changeMessage('Could not retrieve settings. Please refresh the page or ' +
+                    'contact <a href="mailto: contact@cos.io">contact@cos.io</a> if the ' +
+                    'problem persists.', 'text-warning');
+            }
+        });
+
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
-        /** Whether to show the Delete Access Token Button */
-        self.showDelete = ko.computed(function() {
-            // Only show if user already authorized Dropbox
-            return self.userHasAuth();
-        });
-
-        /** Whether to show the Create Access Token Button */
-        self.showCreate = ko.computed(function() {
-            // Only show if user has NOT authorized Dropbox
-            return !self.userHasAuth();
-        });
-
         /** Send DELETE request to deauthorize Dropbox */
         function sendDeauth() {
             return $.ajax({
-                url: self.urls.delete,
+                url: self.urls().delete,
                 type: 'DELETE',
                 success: function() {
                     // User no longer has auth; update viewmodel
@@ -83,14 +90,9 @@
         var self = this;
         self.selector = selector;
         self.url = url;
-        $.ajax({
-            url: self.url, type: 'GET', dataType: 'json',
-            success: function(response) {
-                // On success, instantiate and bind the ViewModel
-                self.viewModel = new ViewModel(response.result);
-                $.osf.applyBindings(self.viewModel, '#dropboxAddonScope');
-            }
-        });
+        // On success, instantiate and bind the ViewModel
+        self.viewModel = new ViewModel(url);
+        $.osf.applyBindings(self.viewModel, '#dropboxAddonScope');
     }
     return DropboxUserConfig;
 }));

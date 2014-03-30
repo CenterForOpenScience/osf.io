@@ -5,15 +5,15 @@
 <div id='dropboxAddonScope' class='addon-settings scripted'>
 
     <!-- Delete Access Token Button -->
-    <div data-bind="if: showDelete">
+    <div data-bind="if: userHasAuth() && loaded()">
         <button data-bind='click: deleteKey' class="btn btn-danger">
             Delete Access Token
         </button>
     </div>
 
     <!-- Create Access Token Button -->
-    <div data-bind="if: showCreate">
-        <a data-bind="attr: {href: urls.create}" class="btn btn-primary">Create Access Token</a>
+    <div data-bind="if: !userHasAuth() && loaded()">
+        <a data-bind="attr: {href: urls().create}" class="btn btn-primary">Create Access Token</a>
     </div>
 
     <!-- Flashed Messages -->
