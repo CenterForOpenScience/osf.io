@@ -192,9 +192,6 @@
     ${tpl}
 </%def>
 
-<!-- Include metadata templates -->
-<%include file="metadata/metadata_templates_1.html" />
-
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>

@@ -168,7 +168,10 @@
 
     /**
      * A thin wrapper around ko.applyBindings that ensures that a view model
-     * is bound to the expected element. Takes a ViewModel and a selector (String).
+     * is bound to the expected element. Also shows the element if it was
+     * previously hidden.
+     *
+     * Takes a ViewModel and a selector (String).
      */
     $.osf.applyBindings = function(viewModel, selector) {
         var $elem = $(selector);
