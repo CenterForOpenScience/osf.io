@@ -11,7 +11,7 @@
     <div class="dropbox-settings" data-bind='if: showSettings'>
         <div class="well well-sm">
             <span class="authorized-by">
-                Authorized by <a data-bind="attr: {href: urls.owner}">
+                Authorized by <a data-bind="attr: {href: urls().owner}">
                     {{ownerName}}
                 </a>
             </span>
@@ -27,7 +27,7 @@
                     <!-- The linked folder -->
                     <h4 class="selected-folder">
                         <i class="icon-folder-close-alt"></i>
-                        <a data-bind="attr: {href: urls.files}"class='selected-folder-name'>
+                        <a data-bind="attr: {href: urls().files}"class='selected-folder-name'>
                             {{folderName}}
                         </a>
                     </h4>
