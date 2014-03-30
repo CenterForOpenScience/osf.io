@@ -198,11 +198,14 @@
      */
     var LOCAL_DATEFORMAT = 'l h:mm A';
     var UTC_DATEFORMAT = 'l H:mm UTC';
-    window.FormattableDate = function(date) {
+    $.osf.FormattableDate = function(date) {
         this.date = date;
         this.local = moment(date).format(LOCAL_DATEFORMAT);
         this.utc = moment.utc(date).format(UTC_DATEFORMAT);
     };
+
+    // Backwards compatibility
+    window.FormattableDate = $.osf.FormattableDate;
 
     $.widget('custom.catcomplete', $.ui.autocomplete, {
         _renderMenu: function( ul, items ) {

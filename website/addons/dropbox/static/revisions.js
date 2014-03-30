@@ -13,7 +13,7 @@
 
     function Revision(data) {
         this.rev = data.rev;
-        this.modified = new FormattableDate(data.modified);
+        this.modified = new $.osf.FormattableDate(data.modified);
         this.download = data.download;
         this.view = data.view;
     }
@@ -34,7 +34,8 @@
     }
     // Public API
     function RevisionTable(selector, url) {
-        $.osf.applyBindings(new RevisionViewModel(url), selector);
+        this.viewModel = new RevisionViewModel(url);
+        $.osf.applyBindings(this.viewModel, selector);
     }
 
     return RevisionTable;
