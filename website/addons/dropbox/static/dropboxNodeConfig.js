@@ -2,7 +2,6 @@
  * Module that controls the Dropbox node settings. Includes Knockout view-model
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
-
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'js/folderPicker', 'osfutils'], factory);
@@ -20,16 +19,15 @@
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
-    var ViewModel = function(data, folderPicker) {
+    var ViewModel = function(url, folderPicker) {
         var self = this;
-
         // Auth information
-        self.nodeHasAuth = ko.observable(data.nodeHasAuth);
-        self.userHasAuth = ko.observable(data.userHasAuth);
+        self.nodeHasAuth = ko.observable(false);
+        self.userHasAuth = ko.observable(false);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
-        self.folder = ko.observable(data.folder);
-        self.ownerName = ko.observable(data.ownerName);
-        self.urls = data.urls;
+        self.folder = ko.observable({});
+        self.ownerName = ko.observable('');
+        self.urls = ko.observable();
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
@@ -39,6 +37,9 @@
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
         self.selected = ko.observable();
+        // Whether the initial data has been fetched form the server. Used for
+        // error handling.
+        self.loaded = ko.observable(false);
 
         /**
          * Update the view model from data returned from the server.
@@ -48,7 +49,30 @@
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
             self.folder(data.folder);
+            self.urls(data.urls);
         };
+
+        self.fetchFromServer = function() {
+            $.ajax({
+                url: url, type: 'GET', dataType: 'json',
+                success: function(response) {
+                    self.updateFromData(response.result);
+                    self.loaded(true);
+                },
+                error: function(xhr, textStatus, error) {
+                    console.error(textStatus); console.error(error);
+                    self.changeMessage('Could not retrieve Dropbox settings at ' +
+                        'this time. Please refresh ' +
+                        'the page. If the problem persists, email ' +
+                        '<a href="mailto:contact@cos.io">contact@cos.io</a>.',
+                        'text-warning');
+                }
+            });
+        };
+
+        // Initial fetch from server
+        self.fetchFromServer();
+
 
         /**
          * Whether or not to show the Import Access Token Button
@@ -56,7 +80,8 @@
         self.showImport = ko.computed(function() {
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            return userHasAuth && !nodeHasAuth;
+            var loaded = self.loaded();
+            return userHasAuth && !nodeHasAuth && loaded;
         });
 
         /** Whether or not to show the full settings pane. */
@@ -68,7 +93,8 @@
         self.showTokenCreateButton = ko.computed(function() {
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            return !userHasAuth && !nodeHasAuth;
+            var loaded = self.loaded();
+            return !userHasAuth && !nodeHasAuth && loaded;
         });
 
         /** Computed functions for the linked and selected folders' display text.*/
@@ -89,7 +115,7 @@
         function onSubmitSuccess(response) {
             self.changeMessage('Successfully linked "' + self.selected().name +
                 '". Go to the <a href="' +
-                self.urls.files + '">Files page</a> to view your files.',
+                self.urls().files + '">Files page</a> to view your files.',
                 'text-success', 5000);
             // Update folder in ViewModel
             self.folder(response.result.folder);
@@ -104,7 +130,7 @@
          * Send a PUT request to change the linked Dropbox folder.
          */
         self.submitSettings = function() {
-            $.osf.putJSON(self.urls.config, ko.toJS(self),
+            $.osf.putJSON(self.urls().config, ko.toJS(self),
                 onSubmitSuccess, onSubmitError);
         };
 
@@ -131,11 +157,13 @@
          */
         function sendDeauth() {
             return $.ajax({
-                url: self.urls.deauthorize,
+                url: self.urls().deauthorize,
                 type: 'DELETE',
                 success: function() {
+                    // Update observables
                     self.nodeHasAuth(false);
                     self.selected(null);
+                    self.showPicker(false);
                     self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
                 error: function() {
@@ -182,7 +210,7 @@
                 message: 'Are you sure you want to authorize this project with your Dropbox access token?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        return $.osf.putJSON(self.urls.importAuth, {},
+                        return $.osf.putJSON(self.urls().importAuth, {},
                             onImportSuccess, onImportError);
                     }
                 }
@@ -207,16 +235,30 @@
         /**
          * Activates the HGrid folder picker.
          */
+        var progBar = '#dropboxProgBar';
         self.activatePicker = function() {
+            // Show progress bar
+            var $progBar = $(progBar);
+            $progBar.show();
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
                 // Fetch Dropbox folders with AJAX
-                data: self.urls.folders, // URL for fetching folders
+                data: self.urls().folders, // URL for fetching folders
                 // Lazy-load each folder's contents
                 // Each row stores its url for fetching the folders it contains
                 fetchUrl: function(row) {
                     return row.urls.folders;
-                }
+                },
+                ajaxOptions: {
+                    error: function(xhr, textStatus, error) {
+                        $progBar.hide();
+                        console.error('Could not fetch Dropbox folders.');
+                        console.error(textStatus);
+                        console.error(error);
+                        self.changeMessage('Could not get folders. Please try again later.', 'text-warning');
+                    }
+                },
+                progBar: progBar
             });
         };
 
@@ -236,32 +278,13 @@
     };
 
     // Public API
-
     function DropboxNodeConfig(selector, url, folderPicker) {
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
-        $.ajax({
-            url: self.url,
-            type: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                self.viewModel = new ViewModel(response.result, folderPicker);
-                $.osf.applyBindings(self.viewModel, selector);
-            },
-            error: function(xhr, textStatus, error) {
-                console.log(textStatus);
-                console.log(error);
-                bootbox.alert({
-                    title: 'Dropbox Error',
-                    message: 'An error occurred while connecting with Dropbox. Please try again later.'
-                });
-            }
-        });
+        self.viewModel = new ViewModel(url, folderPicker);
+        $.osf.applyBindings(self.viewModel, selector);
     }
 
     return DropboxNodeConfig;
 }));
-
-
-

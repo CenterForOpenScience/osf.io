@@ -36,6 +36,7 @@
                         class="btn btn-default">Change</button>
 
                 <!-- Folder picker -->
+                <img style="display: none" id='dropboxProgBar' src="/static/addons/dropbox/loading-bars.svg" alt="Loading folders..."/>
                 <div data-bind="if: showPicker">
                     <div id="myGrid"
                          class="filebrowser hgrid dropbox-folder-picker"></div>
