@@ -42,7 +42,11 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
-               <p class="text-center" style="padding-top:10px;">  A project cannot be deleted if it has any components within it. To delete a parent project, first you must delete all child components by visiting their settings page. </p>
+                <p class="text-center" style="padding-top:10px;">
+                    A project cannot be deleted if it has any components within it.
+                    To delete a parent project, first you must delete all child components
+                    by visiting their settings pages.
+                </p>
                 <div class="panel-body">
 
                     <!-- Delete node -->
