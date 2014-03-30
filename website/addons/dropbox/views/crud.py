@@ -65,7 +65,9 @@ def dropbox_upload(node_addon, auth, **kwargs):
         # Log the event
         nodelogger = DropboxNodeLogger(node=node, auth=auth, path=filepath)
         nodelogger.log(NodeLog.FILE_ADDED, save=True)
-        return metadata_to_hgrid(metadata, node=node, permissions=permissions)
+        # Return the HGrid-formatted JSON response
+        return metadata_to_hgrid(metadata,
+            node=node, permissions=permissions), http.CREATED
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -95,8 +97,7 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
             path=path, rev=revision['rev'])
     return {
         'result': revisions,
-        'status': 200
-    }, 200
+    }, http.OK
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
@@ -123,7 +124,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
         'rendered': rendered,
     }
     response.update(serialize_node(node, auth, primary=True))
-    return response
+    return response, http.OK
 
 ##### MFR Rendering #####
 
