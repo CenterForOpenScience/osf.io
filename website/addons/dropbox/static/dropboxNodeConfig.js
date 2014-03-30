@@ -37,6 +37,10 @@
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
         self.selected = ko.observable();
+        // Whether the initial data has been fetched form the server. Used for
+        // error handling.
+        self.loaded = ko.observable(false);
+
         /**
          * Update the view model from data returned from the server.
          */
@@ -53,6 +57,15 @@
                 url: url, type: 'GET', dataType: 'json',
                 success: function(response) {
                     self.updateFromData(response.result);
+                    self.loaded(true);
+                },
+                error: function(xhr, textStatus, error) {
+                    console.error(textStatus); console.error(error);
+                    self.changeMessage('Could not retrieve Dropbox settings at ' +
+                        'this time. Please refresh ' +
+                        'the page. If the problem persists, email ' +
+                        '<a href="mailto:contact@cos.io">contact@cos.io</a>.',
+                        'text-warning');
                 }
             });
         };
@@ -67,7 +80,8 @@
         self.showImport = ko.computed(function() {
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            return userHasAuth && !nodeHasAuth;
+            var loaded = self.loaded();
+            return userHasAuth && !nodeHasAuth && loaded;
         });
 
         /** Whether or not to show the full settings pane. */
@@ -79,7 +93,8 @@
         self.showTokenCreateButton = ko.computed(function() {
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            return !userHasAuth && !nodeHasAuth;
+            var loaded = self.loaded();
+            return !userHasAuth && !nodeHasAuth && loaded;
         });
 
         /** Computed functions for the linked and selected folders' display text.*/
