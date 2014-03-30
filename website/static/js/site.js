@@ -3,14 +3,14 @@
 ////////////////////////////
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'knockout',
+        define(['jquery', 'knockout', 'moment',
                 'jquery-ui',
                 'vendor/jquery-blockui/jquery.blockui',
                 'vendor/knockout-sortable/knockout-sortable'], factory);
     } else {
-        factory(jQuery, global.ko);
+        factory(jQuery, global.ko, global.moment);
     }
-}(this, function($, ko) {
+}(this, function($, ko, moment) {
     'use strict';
 
     // Namespace to put utility functions on
