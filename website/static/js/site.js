@@ -199,7 +199,12 @@
     var LOCAL_DATEFORMAT = 'l h:mm A';
     var UTC_DATEFORMAT = 'l H:mm UTC';
     $.osf.FormattableDate = function(date) {
-        this.date = date;
+        if (typeof date === 'string') {
+            // The date as a Date object
+            this.date = new Date(date);
+        } else {
+            this.date = date;
+        }
         this.local = moment(date).format(LOCAL_DATEFORMAT);
         this.utc = moment.utc(date).format(UTC_DATEFORMAT);
     };
