@@ -329,7 +329,8 @@ class TestCRUDViews(DropboxAddonTestCase):
             res = self.app.get(url, auth=self.user.auth)
             json_data = res.json
             result = json_data['result']
-            assert_equal(len(result), len(mock_responses['revisions']))
+            expected = [rev for rev in mock_responses['revisions'] if not rev.get('is_deleted')]
+            assert_equal(len(result), len(expected))
             for each in result:
                 download_link = each['download']
                 assert_equal(download_link, lookup('web', 'dropbox_download',
@@ -339,6 +340,19 @@ class TestCRUDViews(DropboxAddonTestCase):
                 assert_equal(view_link, lookup('web', 'dropbox_view_file',
                     pid=self.project._primary_key,
                     path=path, rev=each['rev']))
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.revisions')
+    def test_get_revisions_does_not_return_deleted_revisions(self, mock_revisions):
+        mock_revisions.return_value = [
+            {'path': 'foo.txt', 'rev': '123'},
+            {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
+        ]
+        url = lookup('api', 'dropbox_get_revisions', path='foo.txt',
+            pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        res_data = res.json['result']
+        # Deleted revision was excluded
+        assert_equal(len(res_data), 1)
 
     def test_dropbox_view_file(self):
         url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
