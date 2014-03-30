@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 
-<h4>
+<h4 class="addon-title">
     Dropbox
 </h4>
 
@@ -11,7 +11,7 @@
     <div class="dropbox-settings" data-bind='if: showSettings'>
         <div class="well well-sm">
             <span class="authorized-by">
-                Authorized by <a data-bind="attr: {href: urls().owner}">
+                Authorized by <a data-bind="attr.href: urls().owner">
                     {{ownerName}}
                 </a>
             </span>
@@ -27,7 +27,7 @@
                     <!-- The linked folder -->
                     <h4 class="selected-folder">
                         <i class="icon-folder-close-alt"></i>
-                        <a data-bind="attr: {href: urls().files}"class='selected-folder-name'>
+                        <a data-bind="attr.href: urls().files"class='selected-folder-name'>
                             {{folderName}}
                         </a>
                     </h4>
@@ -73,14 +73,14 @@
 
     <!-- Oauth Start Button -->
     <div data-bind="if: showTokenCreateButton">
-        <a data-bind="attr: {href: urls().auth}" class="btn btn-primary">
+        <a data-bind="attr.href: urls().auth" class="btn btn-primary">
             Authorize: Create Access Token
         </a>
     </div>
 
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr: {class: messageClass}"></p>
+        <p data-bind="html: message, attr.class: messageClass"></p>
     </div>
 </div><!-- end #dropboxScope -->
 

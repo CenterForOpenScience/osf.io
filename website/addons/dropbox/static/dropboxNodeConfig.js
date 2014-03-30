@@ -27,7 +27,7 @@
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.folder = ko.observable({});
         self.ownerName = ko.observable('');
-        self.urls = ko.observable();
+        self.urls = ko.observable({});
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
