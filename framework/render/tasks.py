@@ -7,9 +7,11 @@ from website import settings
 from mfr.renderer import FileRenderer
 import mfr
 import tempfile
+from mfr.renderer.exceptions import MFRError
+from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
+
 
 logger = logging.getLogger(__name__)
-
 
 config = {}
 FileRenderer.STATIC_PATH = '/static/mfr'
@@ -22,6 +24,26 @@ def ensure_path(path):
         if exception.errno != errno.EEXIST:
             raise
 
+CUSTOM_ERROR_MESSAGES = {}
+
+# Catch ImportError in case tabular or its dependencies are not installed
+try:
+    from mfr.renderer.tabular.exceptions import StataVersionError, BlankOrCorruptTableError
+    CUSTOM_ERROR_MESSAGES[StataVersionError] = STATA_VERSION_ERROR
+    CUSTOM_ERROR_MESSAGES[BlankOrCorruptTableError] = BLANK_OR_CORRUPT_TABLE_ERROR
+except ImportError:
+    logger.warn('Unable to import tabular module')
+
+# Unable to render. Download the file to view it.
+def render_mfr_error(err):
+    pre = ERROR_PREFIX
+    msg = CUSTOM_ERROR_MESSAGES.get(type(err), err.message)
+    return """
+           <div class="osf-mfr-error">
+           <p>{pre}</p>
+           <p>{msg}</p>
+           </div>
+        """.format(**locals())
 
 @celery.task(time_limit=settings.MFR_TIMEOUT)
 def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
@@ -54,9 +76,10 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     cache_file_path = os.path.join(cache_dir, cache_file_name)
 
     # Render file
-    rendered = mfr.render(file_pointer, url=download_path)
-    if rendered is None:
-        rendered = 'Unable to render; download file to view it'.format(download_path)
+    try:
+        rendered = mfr.render(file_pointer, url=download_path)
+    except MFRError as err:
+        rendered = render_mfr_error(err).format(download_path=download_path)
 
     # Close read pointer
     file_pointer.close()

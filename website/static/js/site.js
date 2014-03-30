@@ -1,7 +1,16 @@
 ////////////////////////////
 // Site-wide JS utilities //
 ////////////////////////////
-(function($, global) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout',
+                'jquery-ui',
+                'vendor/jquery-blockui/jquery.blockui',
+                'vendor/knockout-sortable/knockout-sortable'], factory);
+    } else {
+        factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
     'use strict';
 
     // Namespace to put utility functions on
@@ -18,11 +27,12 @@
      * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done) {
+    $.osf.postJSON = function(url, data, done, error) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
             success: done,
+            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -39,11 +49,12 @@
      * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done) {
+    $.osf.putJSON = function(url, data, done, error) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
             success: done,
+            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -145,22 +156,36 @@
         return ui;
     };
 
+    /**
+     * A thin wrapper around ko.applyBindings that ensures that a view model
+     * is bound to the expected element. Takes a ViewModel and a selector (String).
+     */
+    $.osf.applyBindings = function(viewModel, selector) {
+        var $elem = $(selector);
+        if ($elem.length > 1) {
+            throw "Can't bind ViewModel to multiple elements.";
+        }
+        // Ensure that the bound element is shown
+        $elem.show();
+        ko.applyBindings(viewModel, $elem[0]);
+    };
+
     $.osf.handleJSONError = function (response) {
         bootbox.alert({
             title: response.responseJSON.message_short,
             message: response.responseJSON.message_long
         });
-    }
+    };
 
-    var LOCAL_DATEFORMAT = 'l h:mm A';
-    var UTC_DATEFORMAT = 'l H:mm UTC';
 
     /**
      * A date object with two formats: local time or UTC time.
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
-    global.FormattableDate = function(date) {
+    var LOCAL_DATEFORMAT = 'l h:mm A';
+    var UTC_DATEFORMAT = 'l H:mm UTC';
+    window.FormattableDate = function(date) {
         this.date = date;
         this.local = moment(date).format(LOCAL_DATEFORMAT);
         this.utc = moment.utc(date).format(UTC_DATEFORMAT);
@@ -183,13 +208,7 @@
 
     // TODO: move me to appropriate page-specific module
     $(document).ready(function(){
-        //block the create new project button when the form is submitted
-        // TODO: make this a reuseable function.
-        $('#projectForm').on('submit',function(){
-            $('button[type="submit"]', this)
-                .attr('disabled', 'disabled')
-                .text('Creating');
-        });
+
 
     //    TODO: Make this work with file GUIDs [jmc]
     //    // Highlight active tabs and nav labels
@@ -210,31 +229,11 @@
     //         $('.tabs a[href="' + location.pathname + '"]').parent().addClass('active');
     //    }
 
-        // Initiate tag input
-        $('#tagitfy').tagit({
-            availableTags: ["analysis", "methods", "introduction", "hypotheses"], // this param is of course optional. it's for autocomplete.
-            // configure the name of the input field (will be submitted with form), default: item[tags]
-            fieldName: 'tags',
-            singleField: true
-        });
-
         // Build tooltips on user activity widgets
         $('.ua-meter').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });
-
-        //  Initiate tag cloud (on search page)
-        $.fn.tagcloud.defaults = {
-          size: {start: 14, end: 18, unit: 'pt'},
-          color: {start: '#cde', end: '#f52'}
-        };
-
-        $(function () {
-          $('#tagCloud a').tagcloud();
-        });
-
-
     });
 
-}).call(this, jQuery, window);
+}));
