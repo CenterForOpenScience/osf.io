@@ -73,7 +73,6 @@
         ],
         // Optional selector for progress/loading bars
         progBar: null,
-        formId: null,
         init: function() {
             $(this.options.progBar).hide();
         }
