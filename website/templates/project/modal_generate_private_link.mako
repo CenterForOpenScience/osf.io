@@ -11,8 +11,9 @@
 
                     <div>
                         Would you like to add a label for this private link?
-                        <div class="link-break"></div>
-                        <input type="text" class="form-control private-link-label" placeholder="New Label" data-bind="value:label"/>
+                        <div class="form-group">
+                            <input type="text" class="form-control private-link-label" placeholder="New Label" data-bind="value:label"/>
+                        </div>
                     </div>
 
                     <hr />

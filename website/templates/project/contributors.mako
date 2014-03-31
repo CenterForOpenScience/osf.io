@@ -159,7 +159,7 @@
 
             $('tbody .link-create-date').each(function(idx, elem) {
                 var e = $(elem);
-                var dt = new FormattableDate(e.text());
+                var dt = new $.osf.FormattableDate(e.text());
                 e.text(dt.local);
                 e.tooltip({
                     title: dt.utc,
