@@ -241,7 +241,7 @@ class TestCRUDViews(DropboxAddonTestCase):
         url = lookup('api', 'dropbox_upload', pid=self.project._primary_key,
             path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, httplib.CREATED)
         mock_put_file.assert_called_once
         first_argument = mock_put_file.call_args[0][0]
         second_arg = mock_put_file.call_args[0][1]
@@ -256,7 +256,7 @@ class TestCRUDViews(DropboxAddonTestCase):
                 pid=self.project._primary_key,
                 path='')
         res = self.app.post(url, payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, httplib.CREATED)
         mock_put_file.assert_called_once
         first_argument = mock_put_file.call_args[0][0]
         node_settings = self.project.get_addon('dropbox')
