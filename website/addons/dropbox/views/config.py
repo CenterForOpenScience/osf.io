@@ -80,7 +80,8 @@ def serialize_settings(node_settings, current_user, client=None):
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents',
             foldersOnly=1, includeRoot=1),
-        'share': share_url
+        'share': share_url,
+        'emails': node.api_url_for('dropbox_get_share_emails')
     }
     result = {
         'nodeHasAuth': node_settings.has_auth,
@@ -145,3 +146,18 @@ def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
     return None
+
+@must_have_permission('write')
+@must_have_addon('dropbox', 'user')
+@must_have_addon('dropbox', 'node')
+def dropbox_get_share_emails(auth, user_addon, node_addon, **kwargs):
+    if not node_addon.user_settings:
+        raise HTTPError(http.BAD_REQUEST)
+    # Current user must be the user who authorized the addon
+    if node_addon.user_settings.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    result = {
+        'emails': [contrib.username for contrib in node_addon.owner.contributors],
+        'url': utils.get_share_folder_uri(node_addon.folder)
+    }
+    return {'result': result}, http.OK

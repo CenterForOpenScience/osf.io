@@ -10,7 +10,7 @@ import datetime
 from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
-
+from framework.auth.decorators import Auth
 from website.util import api_url_for
 from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup, assert_is_redirect
@@ -189,6 +189,38 @@ class TestConfigViews(DropboxAddonTestCase):
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(last_log.user, self.user)
+
+    def test_dropbox_get_share_emails(self):
+        # project has some contributors
+        contrib = AuthUserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        result = res.json['result']
+        assert_equal(result['emails'], [u.username for u in self.project.contributors])
+        assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
+
+    def test_dropbox_get_share_emails_returns_error_if_not_authorizer(self):
+        contrib = AuthUserFactory()
+        contrib.add_addon('dropbox')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    def test_dropbox_get_share_emails_requires_user_addon(self):
+        # Node doesn't have auth
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.BAD_REQUEST)
+
 
 class TestFilebrowserViews(DropboxAddonTestCase):
 
