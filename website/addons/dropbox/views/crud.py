@@ -65,7 +65,9 @@ def dropbox_upload(node_addon, auth, **kwargs):
         # Log the event
         nodelogger = DropboxNodeLogger(node=node, auth=auth, path=filepath)
         nodelogger.log(NodeLog.FILE_ADDED, save=True)
-        return metadata_to_hgrid(metadata, node=node, permissions=permissions)
+        # Return the HGrid-formatted JSON response
+        return metadata_to_hgrid(metadata,
+            node=node, permissions=permissions), http.CREATED
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -79,6 +81,7 @@ def dropbox_download(path, node_addon, **kwargs):
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
     return make_file_response(fileobject, metadata)
 
+
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
@@ -86,7 +89,8 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Get metadata for each revision of the file
-    revisions = client.revisions(path)
+    # Don't show deleted revisions
+    revisions = [rev for rev in client.revisions(path) if not rev.get('is_deleted')]
     # Add download links
     for revision in revisions:
         revision['download'] = node.web_url_for('dropbox_download',
@@ -95,8 +99,9 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
             path=path, rev=revision['rev'])
     return {
         'result': revisions,
-        'status': 200
-    }, 200
+        'registered': node.registered_date.isoformat() if node.registered_date else None,
+    }, http.OK
+
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
@@ -116,14 +121,15 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     rendered = render_dropbox_file(file_obj, client=client, rev=rev)
     cleaned_path = clean_path(path)
     response = {
-        'revisions_url': node.api_url_for('dropbox_get_revisions', path=cleaned_path),
+        'revisions_url': node.api_url_for('dropbox_get_revisions',
+            path=cleaned_path, rev=rev),  # Append current revision as a query param
         'file_name': get_file_name(path),
         'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
         'download_url': file_obj.download_url,
         'rendered': rendered,
     }
     response.update(serialize_node(node, auth, primary=True))
-    return response
+    return response, http.OK
 
 ##### MFR Rendering #####
 

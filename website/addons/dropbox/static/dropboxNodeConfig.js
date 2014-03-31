@@ -27,7 +27,7 @@
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.folder = ko.observable({});
         self.ownerName = ko.observable('');
-        self.urls = ko.observable();
+        self.urls = ko.observable({});
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
@@ -36,7 +36,7 @@
         // CSS selector for the folder picker div
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
-        self.selected = ko.observable();
+        self.selected = ko.observable(null);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
         self.loaded = ko.observable(false);

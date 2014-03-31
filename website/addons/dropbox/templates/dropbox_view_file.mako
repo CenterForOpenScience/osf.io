@@ -1,10 +1,9 @@
 <%inherit file="project/addon/view_file.mako" />
-<%def name="title()">${file_name}</%def>
 
 
 <%def name="file_versions()">
-    <table class="table dropbox-revision-table" id="revisionScope">
-
+<div class="scripted" id="revisionScope">
+    <table class="table dropbox-revision-table ">
         <thead>
             <tr>
                 <th>Revision</th>
@@ -13,14 +12,18 @@
             </tr>
         </thead>
 
-        <tbody data-bind="foreach: revisions">
-            <tr class="dropbox-revision">
+        <!-- Highlight current revision in grey, or yellow if modified post-registration -->
+        <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
+            <tr data-bind="css: {
+                    warning: $root.registered() && revision.modified.date > $root.registered(),
+                    active: revision.rev === $root.currentRevision
+                }">
                 <td>
-                    <a data-bind="attr: {href: view}, text: rev"></a>
+                    <a data-bind="attr: {href: revision.view}">{{ revision.rev }}</a>
                 </td>
-                <td data-bind="text: modified.local"></td>
+                <td>{{ revision.modified.local }}</td>
                 <td>
-                    <a data-bind="attr: {href: download}">
+                    <a data-bind="attr: {href: revision.download}">
                         <i class="icon-download-alt"></i>
                     </a>
                 </td>
@@ -28,14 +31,17 @@
         </tbody>
 
     </table>
+    <div class="help-block">
+        <p data-bind="if: registered">Revisions marked in
+            <span class="text-warning">yellow</span> were made after this
+            project was registered.</p>
+    </div>
+</div>
 
-    <script>
-        $script(["/static/addons/dropbox/revisions.js"], function() {
-            var url = '${revisions_url}';
-            var revisionTable = new RevisionTable('#revisionScope', url);
-        });
-    </script>
-
+<script>
+    $script(["/static/addons/dropbox/revisions.js"], function() {
+        var url = '${revisions_url}';
+        var revisionTable = new RevisionTable('#revisionScope', url);
+    });
+</script>
 </%def>
-
-
