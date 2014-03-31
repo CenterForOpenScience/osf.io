@@ -38,7 +38,15 @@
      * Returns the folder select button for a single row.
      */
     function folderSelectView(row) {
-        return '<input name="' + INPUT_NAME + '" type="radio" value="' + row.id + '"/>';
+        // Build the parts of the radio button
+        var open = '<input type="radio" ';
+        var name = 'name="' + INPUT_NAME + '" ';
+        var checked = row._fpChecked ? ' checked ' : ' ';
+        // Store the HGrid id as the value
+        var value = 'value="' + row.id + '" ';
+        var close = '/>';
+        // Join all the parts
+        return [open, name, checked, value, close].join('');
     }
 
     // Custom selection button column.
@@ -86,7 +94,9 @@
         $(selector).on('change', 'input[name="' + INPUT_NAME + '"]', function(evt) {
             var id = $(this).val();
             var row = self.grid.getByID(id);
-            self.options.onPickFolder(evt, row);
+            // Store checked state so that radio button doesn't deselect when expanding a folder
+            row._fpChecked = true;
+            self.options.onPickFolder.call(self, evt, row);
         });
     }
 
