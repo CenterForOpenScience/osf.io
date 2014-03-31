@@ -21,7 +21,7 @@ class TestAddonConfig(unittest.TestCase):
         url = self.addon_config._static_url('foo')
         assert_equal(
             url,
-            '/addons/static/test/foo'
+            '/static/addons/test/foo'
         )
 
     def test_deleted_defaults_to_false(self):

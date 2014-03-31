@@ -12,6 +12,7 @@ from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
+
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User
@@ -26,10 +27,12 @@ from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
 )
+from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
+from website.util import web_url_for, api_url_for
 
-from tests.base import DbTestCase, Guid, fake
+from tests.base import DbTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -37,6 +40,8 @@ from tests.factories import (
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory
 )
 
+app = init_app(set_backends=False, routes=True)
+lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -686,6 +691,24 @@ class TestNode(DbTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
+
+    def test_web_url_for(self):
+        with app.test_request_context():
+            result = self.parent.web_url_for('view_project')
+            assert_equal(result, web_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.web_url_for('view_project')
+            assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
+
+    def test_api_url_for(self):
+        with app.test_request_context():
+            result = self.parent.api_url_for('view_project')
+            assert_equal(result, api_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.api_url_for('view_project')
+            assert_equal(result2, api_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
 
     def test_node_factory(self):
         node = NodeFactory()

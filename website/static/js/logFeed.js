@@ -1,13 +1,21 @@
 /**
  * Renders a log feed.
  *
- * Example useage:
- *     $script(['/static/js/logFeed.js'], function() {
+ * Example usage:
+ *     require(['js/logFeed'], function(LogFeed) {
  *         var logFeed = new LogFeed('#logFeed', {data: '/api/v1/watched/logs/'})
  *     });
  */
-this.LogFeed = (function(ko, $, global, moment) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'knockout-punches', 'osfutils'], factory);
+    } else {
+        global.LogFeed = factory($, global.ko);
+        if (typeof $script === 'function') { $script.done('logFeed')};
+    }
+}(this, function($, ko) {
     'use strict';
+    ko.punches.enableAll();  // Enable knockout punches
     /**
      * Log model.
      */
@@ -26,7 +34,7 @@ this.LogFeed = (function(ko, $, global, moment) {
         self.apiKey = params.apiKey;
         self.params = params.params; // Extra log params
         self.wikiUrl = ko.computed(function() {
-            return self.nodeUrl + "wiki/" + self.params.page;
+            return self.nodeUrl + 'wiki/' + self.params.page;
         });
 
         /**
@@ -179,4 +187,4 @@ this.LogFeed = (function(ko, $, global, moment) {
 
     return LogFeed;
 
-})(ko, jQuery, window, moment);
+}));

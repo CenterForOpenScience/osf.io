@@ -1084,3 +1084,5 @@ a {
 .ui-autocomplete-category { font-weight: bold }
 
 .tagsinput .tag span { cursor:pointer; }
+
+.scripted {display: none;}
