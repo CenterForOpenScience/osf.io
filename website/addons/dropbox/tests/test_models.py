@@ -201,6 +201,21 @@ class TestNodeSettingsCallbacks(DbTestCase):
         message = self.node_settings.before_fork(node, self.user)
         assert_true(message)
 
+    def test_before_remove_contributor_message(self):
+        message = self.node_settings.before_remove_contributor(
+            self.project, self.user)
+        assert_true(message)
+        assert_in(self.user.fullname, message)
+        assert_in(self.project.project_or_component, message)
+
+    def test_after_remove_authorized_dropbox_user(self):
+        with app.test_request_context():
+            message = self.node_settings.after_remove_contributor(
+                self.project, self.user_settings.owner)
+        self.node_settings.save()
+        assert_is_none(self.node_settings.user_settings)
+        assert_true(message)
+
 
 class TestDropboxGuidFile(DbTestCase):
 
