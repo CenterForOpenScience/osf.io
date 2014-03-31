@@ -1131,7 +1131,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise PermissionsError()
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Components list not empty")
+            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
         log_date = date or datetime.datetime.utcnow()
 

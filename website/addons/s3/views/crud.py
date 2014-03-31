@@ -134,7 +134,6 @@ def s3_view(**kwargs):
         'current': key.version_id,
     }
     rv.update(_view_project(node, auth, primary=True))
-
     return rv
 
 

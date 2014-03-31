@@ -48,6 +48,7 @@ class AddonModelMixin(StoredObject):
         addons = getattr(self, backref_key)
         if addons:
             if deleted or not addons[0].deleted:
+                assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
                 return addons[0]
         return None
 

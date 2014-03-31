@@ -7,7 +7,7 @@ from flask import request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth
-from framework.sessions import add_key_to_url, session
+from framework.sessions import add_key_to_url
 from website.models import Node
 
 logger = logging.getLogger(__name__)

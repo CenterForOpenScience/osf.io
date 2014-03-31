@@ -9,7 +9,6 @@
     <meta name="description" content="${self.description()}">
 
     ${includes_top()}
-
     ${self.stylesheets()}
     ${self.javascript()}
 
@@ -137,6 +136,7 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+
 <%def name="includes_top()">
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
@@ -166,7 +166,14 @@
     % endfor
 
     <script>
+        // Enable knockout punches
         ko.punches.enableAll();
+        // Filebrowser dependencies
+        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
+        $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 
 </%def>

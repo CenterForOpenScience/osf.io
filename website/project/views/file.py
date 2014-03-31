@@ -5,6 +5,7 @@ import os
 import codecs
 from flask import request
 from werkzeug.utils import secure_filename
+import logging
 
 from framework.render.tasks import build_rendered_html
 
@@ -13,6 +14,8 @@ from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project
 
+logger = logging.getLogger(__name__)
+debug = logger.debug
 
 
 @must_be_contributor_or_public

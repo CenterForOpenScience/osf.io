@@ -1,7 +1,14 @@
 /**
  * Controls the "Add Links" modal.
  */
-this.PointerManager = (function(ko, $) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // TODO: Use require to load dependencies (jquery, knockout, etc.)
+        define(['knockout'], factory);
+    } else {
+        global.PointerManager = factory(global.ko);
+    }
+}(this, function(ko) {
     'use strict';
 
     var AddPointerViewModel = function(nodeTitle) {
@@ -137,4 +144,4 @@ this.PointerManager = (function(ko, $) {
 
     return PointerManager;
 
-})(ko, jQuery);
+}));
