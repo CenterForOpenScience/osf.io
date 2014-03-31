@@ -99,7 +99,9 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
             path=path, rev=revision['rev'])
     return {
         'result': revisions,
+        'registered': node.registered_date.isoformat() if node.registered_date else None,
     }, http.OK
+
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
