@@ -10,8 +10,9 @@ from website.project.decorators import (must_have_addon,
     must_be_valid_project
 )
 from framework.exceptions import HTTPError
-
 from website.util import web_url_for
+
+from website.addons.dropbox import utils
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -65,6 +66,11 @@ def serialize_settings(node_settings, current_user, client=None):
     node = node_settings.owner
     user_settings = current_user.get_addon('dropbox')
     user_has_auth = user_settings is not None and user_settings.has_auth
+    if node_settings.folder:
+        # The link to share a the folder with other Dropbox users
+        share_url = utils.get_share_folder_uri(node_settings.folder)
+    else:
+        share_url = None
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
@@ -73,7 +79,8 @@ def serialize_settings(node_settings, current_user, client=None):
         'files': node.web_url_for('collect_file_trees__page'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents',
-            foldersOnly=1, includeRoot=1)
+            foldersOnly=1, includeRoot=1),
+        'share': share_url
     }
     result = {
         'nodeHasAuth': node_settings.has_auth,

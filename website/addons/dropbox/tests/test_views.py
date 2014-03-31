@@ -20,7 +20,7 @@ from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
 from website.addons.dropbox.views.config import serialize_settings
-
+from website.addons.dropbox import utils
 
 lookup = URLLookup(app)
 mock_client = MockDropbox()
@@ -90,6 +90,7 @@ class TestConfigViews(DropboxAddonTestCase):
             assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
             assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
             assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+            assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
             # Includes endpoint for fetching folders only
             # NOTE: Querystring params are in camelCase
             assert_equal(urls['folders'],
