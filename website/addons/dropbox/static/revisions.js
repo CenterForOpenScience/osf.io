@@ -22,10 +22,15 @@
         self.revisions = ko.observableArray([]);
         // Get current revision from URL param
         self.currentRevision = $.osf.urlParams().rev;
+        // Date when this project was registered, or null if not a registration
+        self.registered = ko.observable(null);
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
             // On success, update the revisions observable
             success: function(response) {
+                if (response.registered) {
+                    self.registered(new Date(response.registered));
+                }
                 self.revisions(ko.utils.arrayMap(response.result, function(rev) {
                     return new Revision(rev);
                 }));

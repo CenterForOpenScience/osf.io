@@ -2,8 +2,8 @@
 
 
 <%def name="file_versions()">
-    <table class="table dropbox-revision-table scripted" id="revisionScope">
-
+<div class="scripted" id="revisionScope">
+    <table class="table dropbox-revision-table ">
         <thead>
             <tr>
                 <th>Revision</th>
@@ -12,10 +12,12 @@
             </tr>
         </thead>
 
+        <!-- Highlight current revision in grey, or yellow if modified post-registration -->
         <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
-            <!-- Highlight current revision -->
-            <tr data-bind="css: {active: revision.rev === $root.currentRevision}"
-                class="dropbox-revision">
+            <tr data-bind="css: {
+                    warning: $root.registered() && revision.modified.date > $root.registered(),
+                    active: revision.rev === $root.currentRevision
+                }">
                 <td>
                     <a data-bind="attr: {href: revision.view}">{{ revision.rev }}</a>
                 </td>
@@ -29,11 +31,17 @@
         </tbody>
 
     </table>
+    <div class="help-block">
+        <p data-bind="if: registered">Revisions marked in
+            <span class="text-warning">yellow</span> were made after this
+            project was registered.</p>
+    </div>
+</div>
 
-    <script>
-        $script(["/static/addons/dropbox/revisions.js"], function() {
-            var url = '${revisions_url}';
-            var revisionTable = new RevisionTable('#revisionScope', url);
-        });
-    </script>
+<script>
+    $script(["/static/addons/dropbox/revisions.js"], function() {
+        var url = '${revisions_url}';
+        var revisionTable = new RevisionTable('#revisionScope', url);
+    });
+</script>
 </%def>
