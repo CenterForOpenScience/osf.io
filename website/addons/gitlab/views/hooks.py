@@ -1,48 +1,56 @@
-# TODO: Finish me @jmcarp
-# TODO: Test me @jmcarp
-
 import logging
 import httplib as http
 from flask import request
 from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
+from framework.auth.decorators import Auth
 
-from website import models
+from website.models import User
 from website.project.decorators import must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.utils import resolve_gitlab_author
 
 
 logger = logging.getLogger(__name__)
 
-def _add_hook_log(node_settings, action, path, date, committer, url=False,
-                  sha=None, save=False):
+def add_hook_log(node_settings, commit, save=False):
+    """Log a commit through GitLab hooks. Use the associated OSF user if one
+    can be inferred through the commit email, else use the plaintext name
+    from the hook payload.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings instance
+    :param dict commit: Commit payload
+    :param bool save: Save changes
+
+    """
+    # Skip if pushed by OSF
+    if commit['message'] and commit['message'] in gitlab_settings.MESSAGES.values():
+        return
 
     node = node_settings.owner
 
-    gitlab_data = {
-        'user': node_settings.user,
-        'repo': node_settings.repo,
-    }
-    if url:
-        gitlab_data['url'] = node.web_url_for(
-            'gitlab_view_file', path=path, sha=sha
-        )
+    sha = commit['id']
+    date = parse_date(commit['timestamp'])
+
+    user = resolve_gitlab_author(commit['author'])
+    auth = Auth(user=user) if isinstance(user, User) else None
 
     node.add_log(
-        action=action,
+        action='gitlab_commit_added',
         params={
             'project': node.parent_id,
             'node': node._id,
-            'path': path,
-            'gitlab': gitlab_data,
+            'gitlab': {
+                'sha': sha,
+            }
         },
-        auth=None,
-        foreign_user=committer,
+        foreign_user=user if not isinstance(user,  User) else None,
         log_date=date,
+        auth=auth,
         save=save,
     )
 
@@ -54,10 +62,7 @@ def gitlab_hook_callback(**kwargs):
     """Add logs for commits from outside OSF.
 
     """
-    if request.json is None:
-        return {}
-
-    # Request must come from gitlab hooks IP
+    # Request must come from GitLab hooks IP, unless testing
     if not request.json.get('test'):
         if gitlab_settings.HOST not in request.remote_addr:
             raise HTTPError(http.BAD_REQUEST)
@@ -65,35 +70,9 @@ def gitlab_hook_callback(**kwargs):
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
-    payload = request.json
+    # Log commits
+    for commit in request.json.get('commits', []):
+        add_hook_log(node_settings, commit, save=False)
 
-    for commit in payload.get('commits', []):
-
-        # TODO: Look up OSF user by commit
-
-        # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in gitlab_settings.MESSAGES.values():
-            continue
-
-        _id = commit['id']
-        date = parse_date(commit['timestamp'])
-        committer = commit['committer']['name']
-
-        # Add logs
-        for path in commit.get('added', []):
-            _add_hook_log(
-                node_settings, 'gitlab_' + models.NodeLog.FILE_ADDED,
-                path, date, committer, url=True, sha=_id,
-            )
-        for path in commit.get('modified', []):
-            _add_hook_log(
-                node_settings, 'gitlab_' + models.NodeLog.FILE_UPDATED,
-                path, date, committer, url=True, sha=_id,
-            )
-        for path in commit.get('removed', []):
-            _add_hook_log(
-                node_settings, 'gitlab_' + models.NodeLog.FILE_REMOVED,
-                path, date, committer,
-            )
-
+    # Save accumulated changes
     node.save()

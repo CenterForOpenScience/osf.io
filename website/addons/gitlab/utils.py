@@ -4,8 +4,12 @@ import urllib
 import httplib as http
 from slugify import get_slugify
 
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
+
 from framework.exceptions import HTTPError
 
+from website.models import User
 from website.addons.base import AddonError
 from website.profile.utils import reduce_permissions
 
@@ -177,3 +181,17 @@ def gitlab_to_hgrid(node, data, path, permissions, branch=None, sha=None):
         item_to_hgrid(node, item, path, permissions, branch, sha)
         for item in data
     ]
+
+
+def resolve_gitlab_author(author):
+    """Resolve GitLab author information to OSF user.
+
+    :param dict author: Author dictionary from GitLab
+    :returns: User if email found in OSF else email address
+
+    """
+    try:
+        out = User.find_one(Q('username', 'eq', author['email']))
+    except ModularOdmException:
+        out = author['name']
+    return out

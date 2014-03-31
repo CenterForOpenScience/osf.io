@@ -6,6 +6,9 @@ import os
 import urllib
 import urlparse
 
+from tests.base import OsfTestCase
+from tests.factories import UserFactory
+
 from framework.exceptions import HTTPError
 
 from website.addons.base import AddonError
@@ -266,6 +269,7 @@ class TestSetupUser(GitlabTestCase):
         utils.setup_user(self.user)
         assert_false(mock_create_user.called)
 
+
 class TestSetupNode(GitlabTestCase):
 
     def setUp(self):
@@ -295,3 +299,26 @@ class TestSetupNode(GitlabTestCase):
         self.node_settings.project_id = 1
         utils.setup_node(self.project)
         assert_false(mock_create_project.called)
+
+
+class TestResolveGitlabUser(OsfTestCase):
+
+    def setUp(self):
+        super(TestResolveGitlabUser, self).setUp()
+        self.user = UserFactory()
+
+    def test_resolve_to_user(self):
+        author = {
+            'name': self.user.fullname,
+            'email': self.user.username,
+        }
+        user = utils.resolve_gitlab_author(author)
+        assert_equal(user, self.user)
+
+    def test_resolve_to_name(self):
+        author = {
+            'name': 'Gitlab User',
+            'email': 'git@gitlab.com',
+        }
+        user = utils.resolve_gitlab_author(author)
+        assert_equal(user, 'Gitlab User')
