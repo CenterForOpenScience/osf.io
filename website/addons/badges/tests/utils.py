@@ -2,24 +2,25 @@ import string
 import mock
 import random
 
-from website.addons.badges.util import build_badge
+from website.addons.badges.model import Badge
 
 
-@mock.patch('website.addons.badges.util.deal_with_image')
-def create_mock_badger(mock_badger, mock_img):
-    mock_img.return_value = 'temp.png'
-    mock_badger.can_issue = True
+def create_mock_badger(mock_badger):
+    mock_badger.owner.is_organization = True
+    mock_badger.owner.save()
     #mock_badger.configured = True
     mock_badger.name = 'Honey'
     mock_badger.email = 'Not@real.com'
     for _ in range(4):
-        mock_badger.add_badge(create_mock_badge(mock_badger))
+        create_mock_badge(mock_badger)
     mock_badger.save()
     return mock_badger
 
 
-def create_mock_badge(issuer):
-    return build_badge(issuer, create_badge_dict())
+@mock.patch('website.addons.badges.model.badges.deal_with_image')
+def create_mock_badge(issuer, mock_img):
+    mock_img.return_value = 'temp.png'
+    return Badge.create(issuer, create_badge_dict())
 
 
 def create_badge_dict():

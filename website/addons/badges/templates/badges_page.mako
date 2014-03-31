@@ -14,20 +14,22 @@
             </div>
 
             <div class="col-md-2" style="text-align:center">
-                %if assertion.badge.creator._id == uid:
+                %if assertion.badge.creator._id == uid: ##TODO
                   <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion.uid}" type="button">
                     <i class="icon-minus"></i>
                   </button>
                 %endif
                  <h5>Awarded on:</h5>
-                  %for date in assertion.dates:
-                    %if date[1]:
-                     <a href="${date[1]}">${date[0]}</a>
-                    %else:
-                      ${date[0]}
-                    %endif
+                  %for key in assertion.dates.keys():
+                    %for date in assertion.dates[key]:
+                      %if date[1]:
+                        <a href="${date[1]}">${date[0]}</a>
+                      %else:
+                        ${date[0]}
+                      %endif
+                    %endfor
+                    <br />by <a href="${assertion.dates[key][0][2].owner.profile_url}">${assertion.dates[key][0][2].owner.fullname}</a>
                   %endfor
-                <br />by <a href="${assertion.badge.creator.owner.profile_url}">${assertion.badge.creator.owner.fullname}</a>
                 ##TODO
                 <!-- <button class="btn btn-primary" data-toggle="buttons" >Do not display</button> -->
             </div>

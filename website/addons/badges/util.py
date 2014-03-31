@@ -1,6 +1,9 @@
 import os
 import urllib
 from PIL import Image
+from collections import defaultdict
+
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 
 #TODO: Possible security errors
@@ -24,10 +27,11 @@ def sort_badges(items):
     for item in items:
         index = [ind for ind in ret if ind.badge is item.badge]
         if index:
-            index[0].dates.append((item.issued_date, item.evidence))
+            index[0].dates[item.awarder.owner.fullname].append((item.issued_date, item.evidence, item.awarder))
             index[0].amount += 1
         else:
-            item.dates = [(item.issued_date, item.evidence)]
+            item.dates = defaultdict(list)
+            item.dates[item.awarder.owner.fullname] = [(item.issued_date, item.evidence, item.awarder)]
             item.amount = 1
             ret.append(item)
     return ret
@@ -48,3 +52,8 @@ def get_user_badges(user):
 
 def get_sorted_user_badges(user):
     return sort_badges(get_user_badges(user))
+
+
+def get_system_badges():
+    from website.addons.badges.model.badges import Badge
+    return Badge.find(Q('is_system_badge', 'eq', True))

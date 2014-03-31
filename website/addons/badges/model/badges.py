@@ -18,6 +18,8 @@ class Badge(GuidStoredObject):
 
     creator = fields.ForeignField('badgesusersettings', backref='creator')
 
+    is_system_badge = fields.BooleanField(default=False)
+
     #Open Badge protocol
     name = fields.StringField()
     description = fields.StringField()
@@ -39,6 +41,10 @@ class Badge(GuidStoredObject):
         if save:
             badge.save()
         return badge
+
+    def make_system_badge(self, save=True):
+        self.is_system_badge = True
+        self.save()
 
     def to_json(self):
         ret = {
@@ -119,6 +125,7 @@ class BadgeAssertion(StoredObject):
     #Backrefs
     badge = fields.ForeignField('badge', backref='assertion')
     node = fields.ForeignField('node', backref='awarded')
+    _awarder = fields.ForeignField('badgesusersettings', backref='awarder')
 
     #Custom fields
     revoked = fields.BooleanField(default=False)
@@ -132,12 +139,13 @@ class BadgeAssertion(StoredObject):
     expires = fields.StringField()
 
     @classmethod
-    def create(cls, badge, node, evidence=None, save=True):
+    def create(cls, badge, node, evidence=None, save=True, awarder=None):
         b = cls()
         b.badge = badge
         b.node = node
         b.evidence = evidence
         b.issued_on = calendar.timegm(datetime.utctimetuple(datetime.utcnow()))
+        b._awarder = awarder
         if save:
             b.save()
         return b
@@ -191,3 +199,9 @@ class BadgeAssertion(StoredObject):
             'type': 'osfnode',  # TODO Could be an email?
             'hashed': False
         }
+
+    @property
+    def awarder(self):
+        if self.badge.is_system_badge and self._awarder:
+            return self._awarder
+        return self.badge.creator

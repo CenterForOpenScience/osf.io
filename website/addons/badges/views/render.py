@@ -29,7 +29,7 @@ def badges_widget(*args, **kwargs):
             ret.update(badger.to_json(auth.user))
             ret['uid'] = auth.user._id
 
-    ret.update(badger.config.to_json())
+    ret.update(kwargs['node_addon'].config.to_json())
     return ret
 
 
@@ -39,7 +39,6 @@ def badges_widget(*args, **kwargs):
 def badges_page(*args, **kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-
     ret = {
         'complete': True,
         'assertions': get_sorted_node_badges(node),
@@ -50,7 +49,6 @@ def badges_page(*args, **kwargs):
             ret.update(badger.to_json(auth.user))
             ret['uid'] = auth.user._id
     ret.update(_view_project(node, kwargs['auth']))
-
     return ret
 
 

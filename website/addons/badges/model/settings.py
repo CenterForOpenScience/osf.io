@@ -2,6 +2,7 @@ from framework import fields
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
+from ..util import get_system_badges
 
 #TODO Better way around this, No longer needed?
 class BadgesNodeSettings(AddonNodeSettingsBase):
@@ -18,7 +19,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def can_award(self):
-        return bool(self.badge__creator)
+        return self.can_issue
 
     @property
     def badges(self):
@@ -28,12 +29,12 @@ class BadgesUserSettings(AddonUserSettingsBase):
         return [badge.to_json() for badge in self.badges]
 
     def get_badges_json_simple(self):
-        return [{'value': badge._id, 'text': badge.name} for badge in self.badges]
+        return [{'value': badge._id, 'text': badge.name} for badge in self.badges + list(get_system_badges())]
 
     def to_json(self, user):
         ret = super(BadgesUserSettings, self).to_json(user)
         ret['can_issue'] = self.can_issue
-        ret['badges'] = self.get_badges_json()
+        ret['badges'] = self.get_badges_json() + [badge.to_json() for badge in get_system_badges() if badge.creator != self]
         return ret
 
     def to_openbadge(self):

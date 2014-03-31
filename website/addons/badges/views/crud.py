@@ -34,7 +34,8 @@ def award_badge(*args, **kwargs):
     badge = Badge.load(badgeid)
     if not badge or not awarder.can_award:
         raise HTTPError(http.BAD_REQUEST)
-
+    if badge.is_system_badge:
+        return BadgeAssertion.create(badge, node, evidence, awarder=awarder)._id
     return BadgeAssertion.create(badge, node, evidence)._id
 
 

@@ -5,7 +5,13 @@
 <%def name="content()">
 
 <div class="media well">
-  <span class="pull-right">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a> <br/> Awarded ${badge.awarded} Times to ${badge.unique_awards} Projects</span>
+  %if badge.is_system_badge:
+  <span class="pull-right">System Badge
+  %else:
+    <span class="pull-right">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a>
+  %endif
+  <br/>
+  Awarded ${badge.awarded} Times to ${badge.unique_awards} Projects</span>
   <a class="pull-left">
     <img class="media-object" src="${badge.image}" width="150px" height="150px">
   </a>
@@ -31,6 +37,9 @@
         description: '${assertion.node.description or 'No description'}',
         date: '${assertion.issued_date}',
         evidence: '${'<a href="' + assertion.evidence + '">' + assertion.evidence + '</a>' if assertion.evidence else 'None provided'}',
+        %if badge.is_system_badge:
+          awarder: '<a href="${assertion.awarder.owner.profile_url}">${assertion.awarder.owner.fullname}</a>',
+        %endif
         kind: 'item',
         //children: [],
       },
@@ -57,11 +66,22 @@
     sortable: true,
     sortkey: 'evidence', // property of item object on which to sort on
   };
+  %if badge.is_system_badge:
+    var awarderColumn = {
+      text: 'Awarder',
+      itemView: '{{ awarder }}',
+      sortable: true,
+      sortkey: 'awarder', // property of item object on which to sort on
+    };
+  %endif
   var grid = new HGrid('#grid', {
     columns: [
       HGrid.Col.Name,
       descriptionColumn,
       dateColumn,
+      %if badge.is_system_badge:
+        awarderColumn,
+      %endif
       evidenceColumn
     ],
     data: data,
