@@ -2,7 +2,7 @@
 import os
 import logging
 
-from framework import make_response
+from flask import make_response
 
 from website.project.utils import get_cache_content
 from website.util import rubeus

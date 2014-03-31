@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+from flask import request
 
-from framework import request
 from framework.auth import get_current_user
 from website.project.decorators import (must_have_addon,
     must_have_permission, must_not_be_registration,

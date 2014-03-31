@@ -2,6 +2,7 @@
 """OAuth views for the Dropbox addon."""
 import httplib as http
 import logging
+from flask import redirect, request
 from collections import namedtuple
 
 from dropbox.client import DropboxOAuth2Flow
@@ -10,7 +11,6 @@ from werkzeug.wrappers import BaseResponse
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from framework.sessions import session
-from framework import redirect, request
 from framework.status import push_status_message as flash
 from framework.auth.decorators import must_be_logged_in
 from website.project.model import Node
