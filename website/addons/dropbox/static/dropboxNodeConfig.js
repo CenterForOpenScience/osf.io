@@ -78,6 +78,7 @@
          * Whether or not to show the Import Access Token Button
          */
         self.showImport = ko.computed(function() {
+            // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loaded();
@@ -91,6 +92,7 @@
 
         /** Whether or not to show the Create Access Token button */
         self.showTokenCreateButton = ko.computed(function() {
+            // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loaded();

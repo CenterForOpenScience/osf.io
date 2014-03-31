@@ -31,20 +31,19 @@
     FolderPicker.Col.Name = $.extend({}, HGrid.Col.Name);
     // Column title
     FolderPicker.Col.title = 'Folders';
+    // Name for the radio button inputs
+    var INPUT_NAME = 'folder-select';
 
     /**
      * Returns the folder select button for a single row.
      */
-    function folderView() {
-        var btn = {text: '<i class="icon-ok"></i>',
-            action: 'chooseFolder', // Button triggers the custom "chooseFolder" action
-            cssClass: 'btn btn-success btn-mini'};
-        return HGrid.Fmt.button(btn);
+    function folderSelectView(row) {
+        return '<input name="' + INPUT_NAME + '" type="radio" value="' + row.id + '"/>';
     }
 
     // Custom selection button column.
     FolderPicker.Col.SelectFolder = {
-        name: 'Select', folderView: folderView, width: 10
+        name: 'Select', folderView: folderSelectView, width: 10
     };
 
     // Upon clicking the name of folder, toggle its collapsed state
@@ -64,7 +63,9 @@
             {selector: '.' + HGrid.Html.nameClass, on: 'click',
             callback: onClickName}
         ],
+        // Optional selector for progress/loading bars
         progBar: null,
+        formId: null,
         init: function() {
             $(this.options.progBar).hide();
         }
@@ -78,12 +79,15 @@
         if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
-        HGrid.Actions.chooseFolder = {
-            on: 'click', callback: opts.onPickFolder
-        };
         self.options = $.extend({}, defaults, opts);
         // Start up the grid
         self.grid = new HGrid(selector, self.options);
+        // Set up listener for folder selection
+        $(selector).on('change', 'input[name="' + INPUT_NAME + '"]', function(evt) {
+            var id = $(this).val();
+            var row = self.grid.getByID(id);
+            self.options.onPickFolder(evt, row);
+        });
     }
 
     // Augment jQuery
