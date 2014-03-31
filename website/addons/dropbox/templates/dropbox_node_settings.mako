@@ -5,7 +5,7 @@
 </h4>
 
 <div id="dropboxScope" class="scripted">
-    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
+    <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
 
     <!-- Settings Pane -->
     <div class="dropbox-settings" data-bind='if: showSettings'>
@@ -22,24 +22,38 @@
         </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Shared Folder:</strong></p>
+                <p><strong>Current Folder:</strong></p>
 
-                    <!-- The linked folder -->
-                    <h4 class="selected-folder">
-                        <i class="icon-folder-close-alt"></i>
-                        <a data-bind="attr.href: urls().files"class='selected-folder-name'>
-                            {{folderName}}
-                        </a>
-                    </h4>
+                <!-- The linked folder -->
+                <h4 class="selected-folder">
+                    <i class="icon-folder-close-alt"></i>
+                    <a data-bind="attr.href: urls().files"class='selected-folder-name'>
+                        {{folderName}}
+                    </a>
+                </h4>
+
+                <!-- Folder buttons -->
                 <button data-bind="click: togglePicker,
-                                    css: {active: showPicker}"
-                        class="btn btn-default">Change</button>
+                                    css: {active: currentDisplay() === PICKER}"
+                        class="btn btn-sm btn-default">Change</button>
+
+                <button data-bind="visible: urls().share, click: toggleShare,
+                                    css: {active: currentDisplay() === SHARE}"
+                    class="btn btn-sm btn-default">Share on Dropbox</button>
 
                 <!-- Folder picker -->
-                <img style="display: none" id='dropboxProgBar' src="/static/addons/dropbox/loading-bars.svg" alt="Loading folders..."/>
-                <div data-bind="if: showPicker">
+                <img class="scripted" id='dropboxProgBar' src="/static/addons/dropbox/loading-bars.svg" alt="Loading folders..."/>
+                <div data-bind="if: currentDisplay() === PICKER">
                     <div id="myGrid"
                          class="filebrowser hgrid dropbox-folder-picker"></div>
+                </div>
+
+                <!-- Share -->
+                <div data-bind="if: currentDisplay() === SHARE">
+                    <ul data-bind="foreach: {data: emails, as: 'email'}">
+                        <li>{{email}}</li>
+                    </ul>
+                    <a data-bind="attr.href: urls().share" class="btn btn-default">Continue to Dropbox</a>
                 </div>
 
                 <!-- Queued selection -->
@@ -48,7 +62,7 @@
                     <form data-bind="submit: submitSettings">
 
                         <h4 class="dropbox-confirm-dlg">
-                            Share &ldquo;{{ selectedFolderName }}&rdquo;?
+                            Connect &ldquo;{{ selectedFolderName }}&rdquo;?
                         </h4>
                         <div class="pull-right">
                             <button class="btn btn-default"

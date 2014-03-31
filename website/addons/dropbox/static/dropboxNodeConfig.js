@@ -31,15 +31,21 @@
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
-        // Whether or not folder picker is displayed
-        self.showPicker = ko.observable(false);
+        // Display names
+        self.PICKER = 'picker';
+        self.SHARE = 'share';
+        // Current folder display
+        self.currentDisplay = ko.observable(null);
         // CSS selector for the folder picker div
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
         self.selected = ko.observable(null);
+        // Emails of contributors, can only be populated by activating the share dialog
+        self.emails = ko.observableArray([]);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
         self.loaded = ko.observable(false);
+        self.loadedEmails = ko.observable(false);
 
         /**
          * Update the view model from data returned from the server.
@@ -72,6 +78,30 @@
 
         // Initial fetch from server
         self.fetchFromServer();
+
+        self.toggleShare = function() {
+            if (self.currentDisplay() === self.SHARE) {
+                self.currentDisplay(null);
+            } else {
+                // Clear selection
+                self.selected(null);
+                self.currentDisplay(self.SHARE);
+                self.activateShare();
+            }
+        };
+
+        self.activateShare = function() {
+            if (!self.loadedEmails()) {
+                $.ajax({
+                    url: self.urls().emails, type: 'GET', dataType: 'json',
+                    success: function(response) {
+                        var emails = response.result.emails;
+                        self.emails(emails);
+                        self.loadedEmails(true);
+                    }
+                });
+            }
+        };
 
 
         /**
@@ -252,10 +282,9 @@
                 ajaxOptions: {
                     error: function(xhr, textStatus, error) {
                         $progBar.hide();
-                        console.error('Could not fetch Dropbox folders.');
-                        console.error(textStatus);
-                        console.error(error);
-                        self.changeMessage('Could not get folders. Please try again later.', 'text-warning');
+                        console.error(textStatus); console.error(error);
+                        self.changeMessage('Could not connect to Dropbox at this time. ' +
+                                            'Please try again later.', 'text-warning');
                     }
                 },
                 progBar: progBar
@@ -267,11 +296,13 @@
          */
         self.togglePicker = function() {
             // Toggle visibility of folder picker
-            var show = !self.showPicker();
-            self.showPicker(show);
-            if (show) {
+            var shown = self.currentDisplay() === self.PICKER;
+            if (!shown) {
+                self.currentDisplay(self.PICKER);
                 self.activatePicker();
             } else {
+                self.currentDisplay(null);
+                // Clear selection
                 self.selected(null);
             }
         };
