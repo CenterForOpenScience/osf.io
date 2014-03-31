@@ -19,8 +19,32 @@ def deal_with_image(imageurl, uid):
     return os.path.join(BADGES_LOCATION, uid + '.png')
 
 
+def sort_badges(items):
+    ret = []
+    for item in items:
+        index = [ind for ind in ret if ind.badge is item.badge]
+        if index:
+            index[0].dates.append((item.issued_date, item.evidence))
+            index[0].amount += 1
+        else:
+            item.dates = [(item.issued_date, item.evidence)]
+            item.amount = 1
+            ret.append(item)
+    return ret
+
+
 def get_node_badges(node):
-    assertions = node.badgeassertion__awarded
-    if assertions:
-        assertions = [assertion for assertion in assertions if not assertion.revoked]
-    return assertions
+    return [assertion for assertion in node.badgeassertion__awarded if not assertion.revoked]
+
+
+def get_sorted_node_badges(node):
+    return sort_badges(get_node_badges(node))
+
+
+#Lol list comprehensions
+def get_user_badges(user):
+    return [badge for node in user.node__contributed for badge in get_node_badges(node)]
+
+
+def get_sorted_user_badges(user):
+    return sort_badges(get_user_badges(user))

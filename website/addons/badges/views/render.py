@@ -10,7 +10,7 @@ from website.project.decorators import (
 )
 from website.project.views.node import _view_project
 
-from ..util import get_node_badges
+from ..util import get_node_badges, get_sorted_node_badges
 from ..model import Badge
 
 
@@ -42,7 +42,7 @@ def badges_page(*args, **kwargs):
 
     ret = {
         'complete': True,
-        'assertions': get_node_badges(node),
+        'assertions': get_sorted_node_badges(node),
     }
     if auth.user:
         badger = auth.user.get_addon('badges')

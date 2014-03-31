@@ -2,8 +2,9 @@
 <%def name="title()">${profile["fullname"]}'s Profile</%def>
 
 <%def name="javascript_bottom()">
-% if user["is_profile"]:
-    <script>
+
+<script>
+    % if user["is_profile"]:
         $(function() {
             $('#profile-fullname').editable({
                 type:  'text',
@@ -20,8 +21,11 @@
                 }
             });
         });
-    </script>
-% endif
+    % endif
+    $script(['/addons/static/badges/png-baker.js'], 'baker');
+    $script(['/addons/static/badges/bake-badges.js'], 'bakery');
+    $script(['/addons/static/badges/badge-popover.js'], 'display');
+</script>
 
 </%def>
 
@@ -30,7 +34,6 @@
 <div class="alert alert-info">This account has been merged with <a class="alert-link" href="${profile['merged_by']['url']}">${profile['merged_by']['absolute_url']}</a>
 </div>
 % endif
-
 
 <div class="page-header">
     <img src="${profile['gravatar_url']}" />
@@ -63,6 +66,40 @@
 </div><!-- end row -->
 <hr />
 
+<div class="row">
+%if badges:
+    <div class="col-md-6">
+        <h3>Badges Endorsed by This User</h3>
+        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
+            %for badge in badges:
+                <div class="media">
+                    <img src="${badge.image}"  width="64px" height="64px" class="open-badge badge-popover media-object pull-left"/>
+                    <div class="media-body">
+                        <h4 class="media-heading">${badge.name}<small> ${badge.description}</small></h4>
+                        ${badge.criteria_list}
+                    </div>
+                </div>
+            %endfor
+        </div>
+    </div>
+    <div class="col-md-6">
+%else:
+    <div class="col-md-12">
+%endif
+        <h3>"Sash"</h3>
+        <div class="profile-badge-list">
+            %for assertion in reversed(assertions):
+            <div>
+                <img src="${assertion.badge.image}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/badge/assertion/json/${assertion._id}/" data-content="${assertion.badge.description_short}" data-toggle="popover" data-title="<a href=&quot;/${assertion.badge._id}/&quot;>${assertion.badge.name}</a>- <a href=&quot;${assertion.badge.creator.owner.profile_url}&quot;>${assertion.badge.creator.owner.fullname}</a>"/>
+                <br/>
+                <span class="badge">${assertion.amount}<span>
+            </div>
+            %endfor
+        </div>
+    </div>
+</div>
+
+<hr />
 <div class="row">
     <div class="col-md-6">
         <h3>Public Projects</h3>

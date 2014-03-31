@@ -30,7 +30,7 @@
         name: '<a href="${assertion.node.absolute_url}">${assertion.node.title}</a>',
         description: '${assertion.node.description or 'No description'}',
         date: '${assertion.issued_date}',
-        evidence: '${'<a href="assertion.evidence">assertion.evidence</a>' if assertion.evidence else 'None provided'}',
+        evidence: '${'<a href="' + assertion.evidence + '">' + assertion.evidence + '</a>' if assertion.evidence else 'None provided'}',
         kind: 'item',
         //children: [],
       },

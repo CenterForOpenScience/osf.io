@@ -1,10 +1,9 @@
 <div class="addon-widget" name="${short_name}">
-<script src="/addons/static/badges/awardBadge.js"></script>
 
 %if complete:
 
     <h3 class="addon-widget-header">
-          <a href="badges/"><span>${full_name}</span></a>
+          <a href="badges/"><span>Latest Badges</span></a>
     </h3>
 
 %if len(assertions) > 0:
@@ -17,24 +16,14 @@
           %endif
   </div>
 
-<script>
+  <style type="text/css">
+    .badge-list img {
+      cursor: pointer;
+    }
+  </style>
 
-$(document).ready(function(){
-  $('.badge-popover').popover({
-    container: 'body',
-    trigger: 'click',
-    html: true,
-    placement: 'auto'
-  });
-});
+  <script src="/addons/static/badges/badge-popover.js"></script>
 
-$('.badge-popover').on('show.bs.popover', function () {
-  var self = this;
-  $('.badge-popover').each(function(id, popover) {
-    $(popover).not(self).popover('hide');
-  });
-});
-</script>
 %endif
 
 %else:

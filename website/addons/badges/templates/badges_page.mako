@@ -1,17 +1,11 @@
 <%inherit file="project/project_base.mako" />
-<script src="/addons/static/badges/bake-badges.js"></script>
-<script src="/addons/static/badges/png-baker.js"></script>
-<script src="/addons/static/badges/awardBadge.js"></script>
 
 %if len(assertions) > 0:
 <ul class="two-col" id="badgeList">
     %for assertion in reversed(assertions):
         <div class="row well well-sm" style="margin-right: 20px;">
             <div class="col-md-2">
-
-                <a class="pull-left">
-                    <img class="open-badge" badge-url="/${assertion._id}/json/" src="${assertion.badge.image}" width="150px" height="150px" id="image">
-                </a>
+              <img class="open-badge" badge-url="/badge/assertion/json/${assertion._id}/" src="${assertion.badge.image}" width="150px" height="150px" class="pull-left">
             </div>
 
             <div class="col-md-8">
@@ -25,19 +19,25 @@
                     <i class="icon-minus"></i>
                   </button>
                 %endif
-                 <h5>Awarded on
-                %if assertion.evidence:
-                   <a href="${assertion.evidence}">${assertion.issued_date}</a>
-                %else:
-                    ${assertion.issued_date}
-                %endif
-                <br />by <a href="${assertion.badge.creator.owner.profile_url}">${assertion.badge.creator.owner.fullname}</a></h5>
+                 <h5>Awarded on:</h5>
+                  %for date in assertion.dates:
+                    %if date[1]:
+                     <a href="${date[1]}">${date[0]}</a>
+                    %else:
+                      ${date[0]}
+                    %endif
+                  %endfor
+                <br />by <a href="${assertion.badge.creator.owner.profile_url}">${assertion.badge.creator.owner.fullname}</a>
                 ##TODO
                 <!-- <button class="btn btn-primary" data-toggle="buttons" >Do not display</button> -->
             </div>
         </div>
     %endfor
 </ul>
+
+<script src="/addons/static/badges/bake-badges.js"></script>
+<script src="/addons/static/badges/png-baker.js"></script>
+
 %endif
 
 % if can_issue and configured and len(badges) > 0:

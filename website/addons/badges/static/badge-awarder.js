@@ -152,40 +152,37 @@ $(document).ready(function() {
         $.fn.editabletypes.AwardBadge = AwardBadge;
 
     }(window.jQuery));
-  (function(url) {
-    $.ajax({
-      method:'GET',
-      url: url,
-      success: function(ret) {
-        $('#awardBadge').editable({
-                name:  'title',
-                title: 'Award Badge',
-                display: false,
-                highlight: false,
-                placement: 'bottom',
-                showbuttons: 'bottom',
-                type: 'AwardBadge',
-                value: ret[0],
-                badges: ret,
-                ajaxOptions: {
-                  'type': 'POST',
-                  "dataType": "json",
-                  "contentType": "application/json"
-                },
-                url: nodeApiUrl + 'badges/award/',
-                params: function(params){
-                  // Send JSON data
-                  return JSON.stringify(params.value);
-                },
-                success: function(data){
-                  document.location.reload(true);
-                },
-                pk: 'newBadge'
-              });
-      }
-    })
-  })(userApiUrl + 'badges/json/');
+    (function(url) {
+        $.ajax({
+            method: 'GET',
+            url: url,
+            success: function(ret) {
+                $('#awardBadge').editable({
+                    name: 'title',
+                    title: 'Award Badge',
+                    display: false,
+                    highlight: false,
+                    placement: 'bottom',
+                    showbuttons: 'bottom',
+                    type: 'AwardBadge',
+                    value: ret[0],
+                    badges: ret,
+                    ajaxOptions: {
+                        'type': 'POST',
+                        "dataType": "json",
+                        "contentType": "application/json"
+                    },
+                    url: nodeApiUrl + 'badges/award/',
+                    params: function(params) {
+                        // Send JSON data
+                        return JSON.stringify(params.value);
+                    },
+                    success: function(data) {
+                        document.location.reload(true);
+                    },
+                    pk: 'newBadge'
+                });
+            }
+        })
+    })(userApiUrl + 'badges/json/');
 });
-
-
-

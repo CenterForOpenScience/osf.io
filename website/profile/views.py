@@ -54,8 +54,12 @@ def _profile_view(uid=None):
 
     if profile:
         profile_user_data = utils.serialize_user(profile, full=True)
+        #TODO Fix circular improt
+        from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
+            'assertions': get_sorted_user_badges(profile),
+            'badges': _get_user_created_badges(profile),
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
@@ -64,6 +68,13 @@ def _profile_view(uid=None):
         }
 
     raise HTTPError(http.NOT_FOUND)
+
+
+def _get_user_created_badges(user):
+    addon = user.get_addon('badges')
+    if addon:
+        return addon.badge__creator
+    return []
 
 
 def profile_view():

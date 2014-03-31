@@ -1,21 +1,5 @@
 var canvas = document.createElement("canvas");
 
-$(document).ready(function() {
-    $('.open-badge').each(function() {
-        $(this).load(function() {
-            var badge = this
-            $.ajax({
-                method: 'get',
-                url: $(this).attr('badge-url'),
-                success: function(rv) {
-                    bakeBadge(badge, rv)
-                    $(badge).unbind('load');
-                }
-            })
-        });
-    });
-});
-
 var bakeBadge = function(img, metadata) {
     canvas.width = 250;
     canvas.height = 250;
@@ -26,3 +10,27 @@ var bakeBadge = function(img, metadata) {
     var baked = URL.createObjectURL(baker.toBlob());
     img.src = baked;
 };
+
+var beginBake = function(badge) {
+    if ($(badge).attr('badge-url')) {
+        $.ajax({
+            method: 'get',
+            url: $(badge).attr('badge-url'),
+            success: function(rv) {
+                bakeBadge(badge, rv)
+                $(badge).unbind('load');
+            }
+        });
+    }
+};
+
+$('.open-badge').each(function() {
+    var self = this;
+    if (this.complete) {
+        beginBake(self);
+    } else {
+        $(this).load(function() {
+            beginBake(this);
+        });
+    }
+});
