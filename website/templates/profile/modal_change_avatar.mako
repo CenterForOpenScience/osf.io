@@ -12,7 +12,7 @@
                 </p>
                 <p>To change your avatar image, please login or register at
                    <a href="http://gravatar.org/">gravatar.org</a>, and add the
-                   email address you use on the OSF to your account there.
+                   email address you use on the OSF to your Gravatar account.
                 </p>
             </div>
             <div class="modal-footer">
