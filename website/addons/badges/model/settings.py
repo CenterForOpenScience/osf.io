@@ -29,7 +29,8 @@ class BadgesUserSettings(AddonUserSettingsBase):
         return [badge.to_json() for badge in self.badges]
 
     def get_badges_json_simple(self):
-        return [{'value': badge._id, 'text': badge.name} for badge in self.badges + list(get_system_badges())]
+        return [{'value': badge._id, 'text': badge.name} for badge in get_system_badges()] +\
+        [{'value': badge._id, 'text': badge.name} for badge in self.badges if not badge.is_system_badge]
 
     def to_json(self, user):
         ret = super(BadgesUserSettings, self).to_json(user)

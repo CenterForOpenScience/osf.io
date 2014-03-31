@@ -13,7 +13,7 @@
                     <p>${assertion.badge.criteria_list}</p>
             </div>
 
-            <div class="col-md-2" style="text-align:center">
+            <div class="col-md-2" style="text-align:center; max-height:200px; overflow:auto;">
                 %if assertion.badge.creator._id == uid: ##TODO
                   <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion.uid}" type="button">
                     <i class="icon-minus"></i>

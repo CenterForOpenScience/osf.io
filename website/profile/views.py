@@ -73,7 +73,7 @@ def _profile_view(uid=None):
 def _get_user_created_badges(user):
     addon = user.get_addon('badges')
     if addon:
-        return addon.badge__creator
+        return [badge for badge in addon.badge__creator if not badge.is_system_badge]
     return []
 
 

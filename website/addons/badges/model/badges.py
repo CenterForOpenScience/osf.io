@@ -84,7 +84,7 @@ class Badge(GuidStoredObject):
             return ' '.join(words)
         return '{}...'.format(' '.join(words[:9]))
 
-    #TODO Auto link urls
+    #TODO Auto link urls?
     @property
     def criteria_list(self):
         tpl = '<ul>{}</ul>'
