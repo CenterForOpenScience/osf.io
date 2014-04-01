@@ -5,7 +5,7 @@
     <div class="col-md-12">
 
     <h2>Contributors</h2>
-        <div id="manageContributors" style="display: none;">
+        <div id="manageContributors" class="scripted">
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -40,7 +40,7 @@
         </div>
     % if 'write' in user['permissions']:
         <h2>Private Links</h2>
-            <div id="linkScope" >
+            <div class="scripted" id="linkScope" >
                     <table id="privateLinkTable" class="table">
                         <thead>
                             <tr>
@@ -148,24 +148,28 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <% import json %>
-    <script src="/static/js/contribManager.js"></script>
-    <script src="/static/vendor/zeroclipboard/ZeroClipboard.min.js"></script>
-    <script src="/static/vendor/zeroclipboard/main.js"></script>
-    <script type="text/javascript">
-        (function() {
-            var contributors = ${json.dumps(contributors)};
-            var user = ${json.dumps(user)};
-            var manager = new ContribManager('#manageContributors', contributors, user);
 
-            $('tbody .link-create-date').each(function(idx, elem) {
-                var e = $(elem);
-                var dt = new $.osf.FormattableDate(e.text());
-                e.text(dt.local);
-                e.tooltip({
-                    title: dt.utc,
-                    container: "body"
-                });
-            })
-        })();
+    <script type="text/javascript">
+    $script(['/static/js/contribManager.js'], function() {
+        var contributors = ${json.dumps(contributors)};
+        var user = ${json.dumps(user)};
+        var manager = new ContribManager('#manageContributors', contributors, user);
+    });
+
+    $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js',
+            '/static/js/privatelinkManager.js',
+            '/static/js/privatelinkTable.js'], 'privatelinks');
+
+
+    $script.ready(['privatelinks'], function (){
+        // Controls the modal
+        var configUrl = nodeApiUrl + 'privatelinks/config/';
+        var privateLinkManager = new PrivateLinkManager('#private-link', configUrl);
+
+        var tableUrl = nodeApiUrl + 'privatelinks/table/';
+        var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+
+
+    });
     </script>
 </%def>

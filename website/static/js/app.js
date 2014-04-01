@@ -34,7 +34,7 @@ var LinksViewModel = function(elm) {
 
 };
 
-    NODE_OFFSET = 25;
+var NODE_OFFSET = 25;
 var PrivateLinkViewModel = function(title, parentId, parentTitle) {
 
     var self = this;
@@ -42,7 +42,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.title = title;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
-    self.label = ko.observable();
+    self.label = ko.observable(null);
     self.pageTitle = 'Generate New Private Link';
     self.errorMsg = ko.observable('');
 
