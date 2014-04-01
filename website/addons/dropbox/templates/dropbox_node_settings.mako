@@ -5,7 +5,7 @@
 </h4>
 
 <div id="dropboxScope" class="scripted">
-    <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
 
     <!-- Settings Pane -->
     <div class="dropbox-settings" data-bind='if: showSettings'>
