@@ -164,15 +164,7 @@ def make_url_map(app):
             addon_views.disable_addon,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/<addon>/settings/',
-                '/project/<pid>/node/<nid>/<addon>/settings/',
-            ],
-            'get',
-            addon_views.get_addon_config,
-            json_renderer,
-        ),
+
         Rule(
             '/profile/<uid>/<addon>/settings/',
             'get',
@@ -629,6 +621,17 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
+
+        #Private Link
+        Rule([
+            '/project/<pid>/private_link/',
+            '/project/<pid>/node/<nid>/private_link/',
+        ], 'post', project_views.node.project_generate_private_link_post, json_renderer),
+
+        Rule([
+            '/project/<pid>/private_link/',
+            '/project/<pid>/node/<nid>/private_link/',
+        ], 'delete', project_views.node.remove_private_link, json_renderer),
 
         # Create, using existing project as a template
         Rule([

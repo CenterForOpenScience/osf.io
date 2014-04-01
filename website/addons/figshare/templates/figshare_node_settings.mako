@@ -1,7 +1,7 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
 
-<script type="text/javascript" src="/addons/static/figshare/figshare-node-cfg.js"></script>
+<script type="text/javascript" src="/static/addons/figshare/figshare-node-cfg.js"></script>
 
 % if node_has_auth:
 

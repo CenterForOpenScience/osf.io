@@ -21,7 +21,7 @@ app.debug = settings.DEBUG_MODE
 
 addon_base_path = os.path.abspath('website/addons')
 
-@app.route('/addons/static/<addon>/<path:filename>')
+@app.route('/static/addons/<addon>/<path:filename>')
 def addon_static(addon, filename):
     addon_path = os.path.join(addon_base_path, addon, 'static')
     return send_from_directory(addon_path, filename)
