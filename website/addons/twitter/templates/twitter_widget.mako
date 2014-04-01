@@ -87,16 +87,10 @@ $('#twitterTweet').each(function(){
                     contentType: 'application/json',
                     data: JSON.stringify({'status': $('#twitterTweet').val() }),
                     dataType: 'json',
-                    complete: function() {
-	                    if ($('#twitterTweet').val().length > 140){
-                            extraLength = $('#twitterTweet').val().length - 140;
-                            alert('Your tweet is '+extraLength+' characters too long.  Please shorten it and try again.');
-                        }
-                        else{
-                            alert('Tweet posted successfully.');
-                        }
-                      window.location.reload();
-                    }
+                    error: $.osf.handleJSONError
+
+
+
                 });
 
 

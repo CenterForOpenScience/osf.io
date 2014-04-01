@@ -51,21 +51,31 @@ class TestTwitterViewsConfig(DbTestCase):
         self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
 
-    @mock.patch('website.addons.twitter')
-    def test_oauth_start(self):
-
-        # testing whether auth object being built properly, and returning redirect url
-        # redirect url is https://api.twitter.com/oauth/authorize?oauth_token= 'request token key'
-
-        url = self.project.api_url+'/twitter/oauth/'
-        res = self.app.get(url, '', auth=self.user.auth)
-
-        assert_equal(res.status_code, 302)
+    #@mock.patch('tweepy.api.update_status')
+    #def test_user_has_access(self, mock_tweet):
+    #    url = self.project.api_url+'twitter/update_status/'
+    #    res = self.app.post_json(url, {'status':'will the real slim shady....'}, auth=self.user.auth).maybe_follow()
+    #
+    #
+    #    mock_tweet.tweet.assert_called
 
 
+    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
+    def test_revoked_oauth_send_tweet(self, mock_send_tweet):
+
+      #  self.node_settings.oauth_secret = ''
+      #  self.node_settings.reload()
+        url = self.project.api_url+'twitter/update_status/'
+        res = self.app.post_json(url, { 'status':'....'}, auth=self.user.auth).maybe_follow()
+        mock_send_tweet.side_effect = tweepy.TweepError
+
+        assert_equal(res.status_code,400)
 
 
-    def test_user_revokes_oauth(self):
+
+
+#try sending a tweet
+
 #user begins with access
 #oauth is revoked
 #user no longer has access- message appears and user is prompted to reenter stuff
@@ -101,13 +111,12 @@ class TestTwitterViewsConfig(DbTestCase):
 #check if the account is authorized by checking get_username or has_access
 #check if the widget loads on the page
 
-     def test_twitter_widget(self):
-        url = self.project.api_url+'/twitter/widget/'
+    def test_twitter_widget(self):
+        url = self.project.api_url+'twitter/widget/'
         res = self.app.get(url, '', auth=self.user.auth)
 
         assert_equal(self.node_settings.user_name, 'phresh_phish')
         assert_true(self.node_settings.displayed_tweets != None)
-
         assert_equal(res.status_code, 200)
 
 
@@ -149,21 +158,6 @@ class TestTwitterViewsConfig(DbTestCase):
         assert_equal(res.status_code, 200)
 
 
-
-
-
-    def test_twitter_tweet(self):
-        #building OAuthHandler object
-        auth= tweepy.OAuthHandler(self.node_settings.consumer_key, self.node_settings.consumer_secret, secure=True)
-        self.node_settings.oauth_key =  '325216328-OrWD6qHU01Ovc3HLg1cyXno0kbjRLuFpE2byvXqy'
-        self.node_settings.oauth_secret = 'dJTzVdKSa37sV1X82YXJjV2KPgPoQjuZDH2MDRNnDLixb'
-        auth.set_access_token(self.node_settings.oauth_key, self.node_settings.oauth_secret)
-        api = tweepy.API(auth)
-
-        #check to see if status gets posted, by comparing tweet count before and after tweet is sent
-        previous_count = api.me().statuses_count
-        self.tweet('test message')
-        assert_equal(previous_count+1, api.me().statuses_count)
 
 
     def test_parser(self):
@@ -214,14 +208,14 @@ class TestTwitterViewsConfig(DbTestCase):
 
 
 
-    def test_lengthy_tweet_before_default(self):
+    def test_lengthy_tweet_before_default_edited(self):
         url = self.project.api_url+'twitter/settings/'
         res = self.app.post_json(url, {'edit_title_message':'This is waaaayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy too long for a tweeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeettttt'},
                                  auth=self.user.auth).maybe_follow()
         self.node_settings.reload()
         assert_equal(self.node_settings.log_messages.get('edit_title_message'), self.node_settings.DEFAULT_MESSAGES.get('edit_title_message'))
 
-    def test_lengthy_tweet_after_default(self):
+    def test_lengthy_tweet_after_default_edited(self):
         url = self.project.api_url+'twitter/settings/'
         res = self.app.post_json(url, {'edit_title_message':'This is a normal tweet length.'},
                                  auth=self.user.auth).maybe_follow()
@@ -245,7 +239,7 @@ class TestTwitterViewsConfig(DbTestCase):
         title_message = self.node_settings.parse_message(title_log)
         assert_equal(title_message, '$error$')
 
-    def test_auth_user_lengthy_tweet(self):
+   # def test_auth_user_lengthy_tweet(self):
 
 
 

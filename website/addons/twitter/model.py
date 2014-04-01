@@ -15,6 +15,7 @@ from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import AddonError
 from framework.status import push_status_message
+from website.addons.twitter.tests.utils import send_tweet
 
 
 #from . import settings as twitter_settings
@@ -24,6 +25,8 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 
     request_token_key = fields.StringField()
     request_token_secret = fields.StringField()
+    CONSUMER_KEY = fields.StringField()
+    CONSUMER_SECRET = fields.StringField()
     oauth_key = fields.StringField()
     oauth_secret = fields.StringField()
     user_name = fields.StringField()
@@ -93,8 +96,8 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
             'log_messages': self.log_messages or self.DEFAULT_MESSAGES,
             'POSSIBLE_ACTIONS': self.POSSIBLE_ACTIONS or '',
             'DEFAULT_MESSAGES': self.DEFAULT_MESSAGES or '',
-            'CONSUMER_KEY': self.CONSUMER_KEY or '',
-            'CONSUMER_SECRET': self.CONSUMER_SECRET or '',
+            'CONSUMER_KEY': self.CONSUMER_KEY or 'rohTTQSPWzgIXWw0g5dw',
+            'CONSUMER_SECRET': self.CONSUMER_SECRET or '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0',
         })
         return rv
     #
@@ -134,7 +137,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
           if (message == '$error$'):
                 push_status_message('Tweet is too long.  Please try again with a shorter message.')
           else:
-                self.tweet(message)
+                send_tweet(AddonTwitterNodeSettings, message)
 
         return{}
 

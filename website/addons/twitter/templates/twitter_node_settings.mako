@@ -1,15 +1,15 @@
-    <%inherit file="project/addon/node_settings.mako" />
+    <%inherit file="../../project/addon/node_settings.mako" />
 
 <!-- Authorization -->
 <div>
     <div class="alert alert-danger alert-dismissable">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-        Authorizing this Twitter add-on will grant all contributors on this ${node['category']}
+        Authorizing this Twitter add-on will grant all contributors on this feed
         permission to upload, modify, and delete files on the associated Twitter repo.
     </div>
     <div class="alert alert-danger alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-        If one of your collaborators removes you from this ${node['category']},
+        If one of your collaborators removes you from this feed,
         your authorization for Twitter will automatically be revoked.
     </div>
     % if authorized_user:

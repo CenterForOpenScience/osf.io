@@ -4,13 +4,14 @@ import httplib as http
 import os
 import json
 import ctypes
-from framework import request, redirect
+from framework import request, redirect, status
 from framework.sessions import session#, get_session, set_session, create_session
 from framework.exceptions import HTTPError
 from website import models
-from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_addon,must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 from framework.status import push_status_message
+from website.addons.twitter.tests.utils import send_tweet
 from framework.auth import get_current_user
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -133,7 +134,7 @@ def twitter_widget(*args, **kwargs):
         #if user is not authorized, clear out node settings
         #TODO: decide which node settings will persist
         except tweepy.TweepError as e:
-            push_status_message('Twitter authentication failed.', kind='warning')
+            raise HTTPError(400, data={'message_long':'Your authentication token has expired.  Visit the settings page to re-authenticate.', 'message_short':'Twitter Error'})
             screen_name = None
             twitter.log_messages = {}
             twitter.log_actions ={}
@@ -195,7 +196,7 @@ def twitter_oauth_delete_node(*args, **kwargs):
 
      return {}
 
-
+@must_have_permission('write')
 @must_be_contributor_or_public
 @must_have_addon('twitter', 'node')
 def twitter_set_config(*args, **kwargs):
@@ -229,7 +230,7 @@ def twitter_set_config(*args, **kwargs):
               action_name = action_name.replace("_message", "")
               action_name = action_name.replace("_", " ")
               action_name = action_name.title()
-              push_status_message("The custom message for event '"+action_name+"' is "+str(len(v) - 140)+" characters over the 140 character limit, and could not be saved.  Please use a message within the 140 character limit.")
+              push_status_message("The custom message for event '"+action_name+"' is "+str(len(v) - 140)+" characters over the 140 character limit, and could not be saved.  Please use a message within the 140 character limit.", kind='warning')
 
 
 
@@ -240,6 +241,7 @@ def twitter_set_config(*args, **kwargs):
     twitter.save()
 
     return twitter.config.to_json()
+
 
 
 @must_be_contributor_or_public
@@ -260,16 +262,27 @@ def twitter_update_status(*args, **kwargs):
     callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url,  secure=True)
     auth.set_access_token(config.oauth_key, config.oauth_secret)
-    api = tweepy.API(auth)
 
         #error error error
 
 #Store status and tweet
     status = json.loads(request.data).get('status')
-
-    if (len(status) > 140):
-        push_status_message("Your tweet is"+str(len(status) - 140)+" characters too long.  Please shorten it and resend.")
-    api.update_status(status)
+    try:
+        send_tweet(config, status)
+        raise HTTPError(400, data={'message_long':'Your tweet was posted successfully', 'message_short':''})
+    except tweepy.TweepError as e:
+        if (e[0][0].get('code') == 186):
+            string = 'Your tweet is too long by '+str((len(status) - 140))+ ' characters.  Please shorten it and try again.'
+            raise HTTPError(400, data={'message_long': string, 'message_short': 'Twitter Error'})
+        if (e[0][0].get('code') == 89):
+            raise HTTPError(400, data = {'message_long' : 'Your authentication token has expired. Visit the settings page to re-authenticate.','message_short':'Twitter Error'})
+            twitter.screen_name = None
+            twitter.log_messages = {}
+            twitter.log_actions ={}
+            twitter.oauth_key = None
+            twitter.oauth_secret = None
+            twitter.user_name = None
+            twitter.save()
 
     return redirect(os.path.join(node.url, 'settings'))
     return redirect('/settings/')
