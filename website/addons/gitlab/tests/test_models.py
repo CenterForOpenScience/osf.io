@@ -9,6 +9,8 @@ from website.addons.gitlab import settings as gitlab_settings
 
 from website.addons.base import AddonError
 
+from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
+
 class TestUserSettings(GitlabTestCase):
 
     @mock.patch('website.addons.gitlab.model.client.edituser')
@@ -80,3 +82,52 @@ class TestNodeSettings(GitlabTestCase):
         mock_delete_hook.side_effect = GitlabError('Catastrophe')
         with assert_raises(AddonError):
             self.node_settings.remove_hook()
+
+    def test_get_or_create_exists(self):
+        guid = GitlabGuidFileFactory(node=self.project)
+        guid_count = GitlabGuidFileFactory.find().count()
+        retrieved_guid = GitlabGuidFileFactory.get_or_create(
+            self.node_settings, guid.path, 'master'
+        )
+        assert_equal(
+            guid._id,
+            retrieved_guid._id
+        )
+        assert_equal(
+            GitlabGuidFileFactory.find().count(),
+            guid_count
+        )
+
+    def test_get_or_create_not_exists(self):
+        guid_count = GitlabGuidFileFactory.find().count()
+        retrieved_guid = GitlabGuidFileFactory.get_or_create(
+            self.node_settings, 'foo.txt', 'master'
+        )
+        assert_equal(
+            retrieved_guid.node._id,
+            self.project._id
+        )
+        assert_equal(
+            retrieved_guid.path,
+            'foo.txt'
+        )
+        assert_equal(
+            GitlabGuidFileFactory.find().count() + 1,
+            guid_count
+        )
+
+    @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
+    def test_get_or_create_not_exists_not_found(self, mock_list):
+        mock_list.return_value = []
+        with assert_raises(AddonError):
+            GitlabGuidFileFactory.get_or_create(
+                self.node_settings, 'foo.txt', 'master'
+            )
+
+    @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
+    def test_get_or_create_not_exists_gitlab_error(self, mock_list):
+        mock_list.side_effect = AddonError('Ack!')
+        with assert_raises(AddonError):
+            GitlabGuidFileFactory.get_or_create(
+                self.node_settings, 'foo.txt', 'master'
+            )

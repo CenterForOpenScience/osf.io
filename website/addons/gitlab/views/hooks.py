@@ -12,7 +12,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.utils import resolve_gitlab_author
+from website.addons.gitlab.utils import resolve_gitlab_hook_author
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,7 @@ def add_hook_log(node_settings, commit, save=False):
     sha = commit['id']
     date = parse_date(commit['timestamp'])
 
-    user = resolve_gitlab_author(commit['author'])
+    user = resolve_gitlab_hook_author(commit['author'])
     auth = Auth(user=user) if isinstance(user, User) else None
 
     node.add_log(

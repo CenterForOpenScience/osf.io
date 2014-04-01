@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+from flask import send_from_directory
 
 import framework
 from framework import status
@@ -59,7 +60,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'

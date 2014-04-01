@@ -2,11 +2,8 @@ import os
 import base64
 import urllib
 import httplib as http
-from dateutil.parser import parse as parse_date
 from flask import request, redirect, make_response
 
-from framework.mongo import Q
-from framework.auth import get_user
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (
@@ -20,13 +17,13 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base import AddonError
 from website.addons.base.views import check_file_guid
-from website.dates import FILE_MODIFIED
 
-from website.addons.gitlab.api import client
+from website.addons.gitlab.api import client, GitlabError
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
     setup_user, setup_node, gitlab_slugify,
-    kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params
+    kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params,
+    serialize_commit, ref_or_default
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -37,25 +34,35 @@ def get_cache_file(path, sha):
     )
 
 
-# TODO: Test me @jmcarp
-def ref_or_default(node_settings, data):
-    """Get the git reference (SHA or branch) from view arguments; return the
-    default reference if none is supplied.
-
-    :param AddonGitlabNodeSettings node_settings: Gitlab node settings
-    :param dict data: View arguments
-    :returns: SHA or branch if reference found, else None
+def get_guid(node_settings, path, ref):
+    """
 
     """
-    ref = data.get('sha') or data.get('branch')
-    if ref:
-        ret = ref
-    elif node_settings.project_id:
-        project = client.getproject(node_settings.project_id)
-        ret = project['default_branch']
-    else:
-        raise AddonError('Could not get git ref')
-    return ret or gitlab_settings.DEFAULT_BRANCH
+    try:
+        return GitlabGuidFile.get_or_create(node_settings, path, ref)
+    except AddonError:
+        raise HTTPError(http.NOT_FOUND)
+
+
+def gitlab_upload_log(node, action, auth, data, branch):
+
+    urls = build_urls(
+        node, {'type': 'blob'}, data['file_path'],
+        branch=branch
+    )
+    node.add_log(
+        action='gitlab_' + action,
+        params={
+            'project': node.parent_id,
+            'node': node._id,
+            'path': data['file_path'],
+            'urls': urls,
+            'gitlab': {
+                'branch': branch,
+            }
+        },
+        auth=auth,
+    )
 
 
 # TODO: Test me @jmcarp
@@ -73,32 +80,16 @@ def create_or_update(node_settings, user_settings, method_name, action,
         )
     method = getattr(client, method_name)
 
-    response = method(
-        node_settings.project_id, filename, branch, content,
-        gitlab_settings.MESSAGES['add'], encoding='base64',
-        user_id=user_settings.user_id
-    )
-
-    if response:
-        urls = build_urls(
-            node, {'type': 'blob'}, response['file_path'],
-            branch=branch
+    try:
+        response = method(
+            node_settings.project_id, filename, branch, content,
+            gitlab_settings.MESSAGES['add'], encoding='base64',
+            user_id=user_settings.user_id
         )
-        node_settings.owner.add_log(
-            action='gitlab_' + action,
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'path': response['file_path'],
-                'urls': urls,
-                'gitlab': {
-                    'branch': branch,
-                }
-            },
-            auth=auth,
-        )
-
-    return response
+        gitlab_upload_log(node, action, auth, response, branch)
+        return response
+    except GitlabError:
+        raise AddonError('Could not upload file')
 
 
 @must_have_permission(WRITE)
@@ -217,34 +208,31 @@ def gitlab_list_files(**kwargs):
     return gitlab_to_hgrid(node, tree, path, permissions, branch, sha)
 
 
-def path_to_guid(node_settings, node, path, ref):
-    """
+@must_be_contributor_or_public
+@must_have_addon('gitlab', 'node')
+def gitlab_file_commits(node_addon, **kwargs):
 
-    :returns: Tuple of GUID and contents; contents will be empty if we don't
-        need to check existence
+    branch = request.args.get('branch')
+    sha = request.args.get('sha')
+    ref = ref_or_default(node_addon, request.args)
 
-    """
-    contents = None
+    path = kwargs_to_path(kwargs, required=True)
+    guid = get_guid(node_addon, path, ref)
 
-    try:
-        # If GUID has already been created, we won't redirect, and can check
-        # whether the file exists below
-        guid = GitlabGuidFile.find_one(
-            Q('node', 'eq', node) &
-            Q('path', 'eq', path)
-        )
-    except:
-        # If GUID doesn't exist, check whether file exists before creating
-        contents = client.getfile(node_settings.project_id, path, ref)
-        if contents is False:
-            raise HTTPError(http.NOT_FOUND)
-        guid = GitlabGuidFile(
-            node=node,
-            path=path,
-        )
-        guid.save()
+    commits = client.listrepositorycommits(
+        node_addon.project_id, ref_name=branch, path=path
+    )
+    sha = sha or commits[0]['id']
 
-    return guid, contents
+    commit_data = [
+        serialize_commit(commit, guid, branch)
+        for commit in commits
+    ]
+
+    return {
+        'sha': sha,
+        'commits': commit_data,
+    }
 
 
 @must_be_contributor_or_public
@@ -260,51 +248,26 @@ def gitlab_view_file(**kwargs):
 
     branch = request.args.get('branch')
     sha = request.args.get('sha')
-
     ref = ref_or_default(node_settings, request.args)
 
-    guid, contents = path_to_guid(node_settings, node, path, ref)
+    guid = get_guid(node_settings, path, ref)
 
     redirect_url = check_file_guid(guid)
     if redirect_url:
         return redirect(redirect_url)
 
-    commits = client.listrepositorycommits(
-        node_settings.project_id, ref_name=branch, path=path
-    )
-    sha = sha or commits[0]['id']
-    commit_data = []
-    for commit in commits:
-
-        committer_user = get_user(username=commit['author_email'])
-        if committer_user:
-            committer_name = committer_user.fullname
-            committer_url = committer_user.url
-        else:
-            committer_name = commit['author_name']
-            committer_url = 'mailto:{0}'.format(commit['author_email'])
-        urls = {
-            'sha': commit['id'],
-            'view': '/' + guid._id + '/' + refs_to_params(branch, sha=commit['id']),
-            'download': '/' + guid._id + '/download/' + refs_to_params(sha=commit['id']),
-            'date': parse_date(commit['created_at']).strftime(FILE_MODIFIED),
-            'committer_name': committer_name,
-            'committer_url': committer_url,
-        }
-        commit_data.append(urls)
-
-    contents = contents or client.getfile(
-        node_settings.project_id, path, ref
-    )
-
-    contents = base64.b64decode(contents['content'])
+    contents = client.getfile(node_settings.project_id, path, ref)
+    contents_decoded = base64.b64decode(contents['content'])
 
     # Get file URL
+    commits_url = node.api_url_for(
+        'gitlab_file_commits',
+        path=path, branch=branch, sha=sha
+    )
     download_url = '/' + guid._id + '/download/' + refs_to_params(branch, sha)
     render_url = os.path.join(
         node.api_url, 'gitlab', 'files', path, 'render'
     ) + '/' + refs_to_params(branch, sha)
-
 
     # Get or create rendered file
     cache_file = get_cache_file(path, sha)
@@ -313,17 +276,16 @@ def gitlab_view_file(**kwargs):
         # TODO: Skip large files
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
-            file_path=filename, file_content=contents,
+            file_path=filename, file_content=contents_decoded,
             download_path=download_url,
         )
 
     out = {
         'file_name': filename,
-        'sha': sha,
+        'commits_url': commits_url,
         'render_url': render_url,
         'download_url': download_url,
         'rendered': rendered,
-        'commits': commit_data,
     }
     out.update(_view_project(node, auth, primary=True))
     return out

@@ -4,17 +4,21 @@ from nose.tools import *
 
 import os
 import urllib
+import datetime
 import urlparse
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 from tests.factories import UserFactory
 
 from framework.exceptions import HTTPError
 
 from website.addons.base import AddonError
+from website.dates import FILE_MODIFIED
+
+from website.addons.gitlab.tests import GitlabTestCase
+from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
 
 from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab import utils
 from website.addons.gitlab.api import GitlabError
 
@@ -301,10 +305,46 @@ class TestSetupNode(GitlabTestCase):
         assert_false(mock_create_project.called)
 
 
-class TestResolveGitlabUser(OsfTestCase):
+class TestResolveGitlabCommitAuthor(OsfTestCase):
 
     def setUp(self):
-        super(TestResolveGitlabUser, self).setUp()
+        super(TestResolveGitlabCommitAuthor, self).setUp()
+        self.user = UserFactory()
+
+    def test_osf_user(self):
+        commit = {
+            'author_name': self.user.fullname,
+            'author_email': self.user.username,
+        }
+        author = utils.resolve_gitlab_commit_author(commit)
+        assert_equal(
+            author,
+            {
+                'name': self.user.fullname,
+                'url': self.user.url,
+            }
+        )
+
+    def test_not_osf_user(self):
+        name, email = fake.name(), fake.email()
+        commit = {
+            'author_name': name,
+            'author_email': email,
+        }
+        author = utils.resolve_gitlab_commit_author(commit)
+        assert_equal(
+            author,
+            {
+                'name': name,
+                'url': 'mailto:{0}'.format(email)
+            }
+        )
+
+
+class TestResolveGitlabHookAuthor(OsfTestCase):
+
+    def setUp(self):
+        super(TestResolveGitlabHookAuthor, self).setUp()
         self.user = UserFactory()
 
     def test_resolve_to_user(self):
@@ -312,7 +352,7 @@ class TestResolveGitlabUser(OsfTestCase):
             'name': self.user.fullname,
             'email': self.user.username,
         }
-        user = utils.resolve_gitlab_author(author)
+        user = utils.resolve_gitlab_hook_author(author)
         assert_equal(user, self.user)
 
     def test_resolve_to_name(self):
@@ -320,5 +360,66 @@ class TestResolveGitlabUser(OsfTestCase):
             'name': 'Gitlab User',
             'email': 'git@gitlab.com',
         }
-        user = utils.resolve_gitlab_author(author)
+        user = utils.resolve_gitlab_hook_author(author)
         assert_equal(user, 'Gitlab User')
+
+
+class TestSerializeCommit(OsfTestCase):
+
+    def setUp(self):
+        super(TestSerializeCommit, self).setUp()
+        self.user = UserFactory()
+
+    def test_serialize_commit(self):
+        now = datetime.datetime.now()
+        commit = {
+            'id': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
+            'created_at': now.isoformat(),
+            'author_name': 'Freddie Mercury',
+            'author_email': 'freddie@queen.com',
+        }
+        guid = GitlabGuidFileFactory()
+        branch = 'master'
+        serialized = utils.serialize_commit(commit, guid, branch)
+        params = utils.refs_to_params(branch=branch, sha=commit['id'])
+        assert_equal(
+            serialized,
+            {
+                'sha': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
+                'date': now.strftime(FILE_MODIFIED),
+                'committer': utils.resolve_gitlab_commit_author(commit),
+                'urls': {
+                    'view': '/' + guid._id + '/' + params,
+                    'download': '/' + guid._id + '/download/' + params,
+                }
+            }
+        )
+
+class TestRefOrDefault(GitlabTestCase):
+
+    def test_get_ref_branch_and_sha(self):
+        ref = utils.ref_or_default(
+            self.node_settings,
+            {
+                'sha': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+                'branch': 'master',
+            }
+        )
+        assert_equal(ref, '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
+
+    def test_get_ref_branch(self):
+        ref = utils.ref_or_default(self.node_settings, {'branch': 'master'})
+        assert_equal(ref, 'master')
+
+    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    def test_get_ref_project_id(self, mock_get_project):
+        mock_get_project.return_value = {
+            'default_branch': 'master',
+        }
+        ref = utils.ref_or_default(self.node_settings, {})
+        assert_equal(ref, 'master')
+
+    def test_get_ref_no_id_no_refs(self):
+        self.node_settings.project_id = None
+        with assert_raises(AddonError):
+            utils.ref_or_default(self.node_settings, {})

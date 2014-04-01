@@ -45,6 +45,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/gitlab/files/<path:path>/commits/',
+                '/project/<pid>/node/<nid>/gitlab/files/<path:path>/commits/',
+            ],
+            'get',
+            views.crud.gitlab_file_commits,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/gitlab/files/<path:path>/render/',
                 '/project/<pid>/node/<nid>/gitlab/files/<path:path>/render/',
             ],

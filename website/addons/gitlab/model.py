@@ -6,7 +6,9 @@ import os
 import logging
 import urlparse
 
-from framework.mongo import fields
+from modularodm.exceptions import ModularOdmException
+
+from framework.mongo import fields, Q
 
 from website.addons.base import (
     AddonUserSettingsBase, AddonNodeSettingsBase,
@@ -221,3 +223,49 @@ class GitlabGuidFile(GuidFile):
         if self.path is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('gitlab', 'files', self.path)
+
+    @classmethod
+    def get_or_create(cls, node_settings, path, ref, client=None):
+        """
+
+        :param GitlabAddonNodeSettings node_settings:
+        :param str path: Path to file
+        :param str ref: Branch or SHA
+        :param Gitlab client: GitLab client
+        :returns: Retrieved or created GUID
+
+        """
+        node = node_settings.owner
+
+        try:
+
+            # If GUID has already been created, we won't redirect, and can
+            # check whether the file exists below
+            guid = GitlabGuidFile.find_one(
+                Q('node', 'eq', node) &
+                Q('path', 'eq', path)
+            )
+
+        except ModularOdmException:
+
+            if client is None:
+                return None
+
+            # If GUID doesn't exist, check whether file exists; we know the
+            # file exists if it has at least one commit
+            try:
+                commits = client.listrepositorycommits(
+                    node_settings.project_id, path,
+                    ref_name=ref, per_page=1
+                )
+            except GitlabError:
+                raise AddonError('File not found')
+            if not commits:
+                raise AddonError('File not found')
+            guid = cls(
+                node=node,
+                path=path,
+            )
+            guid.save()
+
+        return guid

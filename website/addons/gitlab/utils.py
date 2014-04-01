@@ -3,18 +3,17 @@ import re
 import urllib
 import httplib as http
 from slugify import get_slugify
-
-from modularodm import Q
-from modularodm.exceptions import ModularOdmException
+from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
+from framework.auth import get_user
 
-from website.models import User
 from website.addons.base import AddonError
 from website.profile.utils import reduce_permissions
+from website.dates import FILE_MODIFIED
 
 import settings as gitlab_settings
-from api import client, GitlabError
+from website.addons.gitlab.api import client, GitlabError
 
 
 def translate_permissions(permissions):
@@ -105,7 +104,7 @@ type_to_kind = {
 def kwargs_to_path(kwargs, required=True):
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path)
+        return urllib.unquote_plus(path).rstrip('/')
     elif required:
         raise HTTPError(http.BAD_REQUEST)
     return ''
@@ -183,15 +182,70 @@ def gitlab_to_hgrid(node, data, path, permissions, branch=None, sha=None):
     ]
 
 
-def resolve_gitlab_author(author):
+def resolve_gitlab_hook_author(author):
     """Resolve GitLab author information to OSF user.
 
     :param dict author: Author dictionary from GitLab
     :returns: User if email found in OSF else email address
 
     """
-    try:
-        out = User.find_one(Q('username', 'eq', author['email']))
-    except ModularOdmException:
-        out = author['name']
-    return out
+    return get_user(username=author['email']) or author['name']
+
+
+def resolve_gitlab_commit_author(commit):
+    """Resolve GitLab commit data to name and URL, using OSF user information
+    if available.
+
+    :param dict commit: JSON commit data
+    :returns: Dictionary of committer name and URL
+
+    """
+    committer_user = get_user(username=commit['author_email'])
+    if committer_user:
+        committer_name = committer_user.fullname
+        committer_url = committer_user.url
+    else:
+        committer_name = commit['author_name']
+        committer_url = 'mailto:{0}'.format(commit['author_email'])
+
+    return {
+        'name': committer_name,
+        'url': committer_url,
+    }
+
+
+def serialize_commit(commit, guid, branch):
+    """
+
+    """
+    committer = resolve_gitlab_commit_author(commit)
+    params = refs_to_params(branch=branch, sha=commit['id'])
+    return {
+        'sha': commit['id'],
+        'date': parse_date(commit['created_at']).strftime(FILE_MODIFIED),
+        'committer': committer,
+        'urls': {
+            'view': '/' + guid._id + '/' + params,
+            'download': '/' + guid._id + '/download/' + params,
+        },
+    }
+
+
+def ref_or_default(node_settings, data):
+    """Get the git reference (SHA or branch) from view arguments; return the
+    default reference if none is supplied.
+
+    :param AddonGitlabNodeSettings node_settings: Gitlab node settings
+    :param dict data: View arguments
+    :returns: SHA or branch if reference found, else None
+
+    """
+    ref = data.get('sha') or data.get('branch')
+    if ref:
+        ret = ref
+    elif node_settings.project_id:
+        project = client.getproject(node_settings.project_id)
+        ret = project['default_branch']
+    else:
+        raise AddonError('Could not get git ref')
+    return ret or gitlab_settings.DEFAULT_BRANCH

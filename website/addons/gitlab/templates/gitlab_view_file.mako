@@ -3,7 +3,9 @@
 
 <%def name="file_versions()">
 
-    <table class="table" id="file-version-history">
+<div class="scripted" id="commitScope">
+
+    <table class="table">
 
         <thead>
             <tr>
@@ -14,31 +16,34 @@
             </tr>
         </thead>
 
-        <tbody>
-            % for commit in commits:
-                <tr class="${'active' if commit['sha'] == current_sha else ''}">
-                    <td>
-                        <a href="${commit['view']}" title="${commit['sha']}">
-                            ${commit['sha'][:10]}
-                        </a>
-                    </td>
-                    <td>
-                        ${commit['date']}
-                    </td>
-                    <td>
-                        <a href="${commit['committer_url']}">
-                            ${commit['committer_name']}
-                        </a>
-                    </td>
-                    <td>
-                        <a href="${commit['download']}" download="${file_name}">
-                            <i class="icon-download-alt"></i>
-                        </a>
-                    </td>
-                </tr>
-            % endfor
+        <tbody data-bind="foreach: {data: commits}">
+            <tr data-bind="css.active: $data.sha === $root.sha">
+                <td>
+                    <a data-bind="attr.href: $data.urls.view">{{ $data.sha.slice(0, 10) }}</a>
+                </td>
+                <td>
+                    <a data-bind="attr.href: $data.committer.url">
+                        {{ $data.committer.name }}
+                    </a>
+                </td>
+                <td>{{ $data.modified.local }}</td>
+                <td>
+                    <a data-bind="attr.href: $data.urls.download">
+                        <i class="icon-download-alt"></i>
+                    </a>
+                </td>
+            </tr>
         </tbody>
 
     </table>
+
+</div>
+
+<script>
+    $script(['/static/addons/gitlab/commits.js'], function() {
+        var url = '${commits_url}';
+        var commitTable = new CommitTable('#commitScope', url);
+    });
+</script>
 
 </%def>
