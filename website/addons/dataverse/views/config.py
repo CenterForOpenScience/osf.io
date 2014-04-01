@@ -1,13 +1,10 @@
-"""
-
-"""
+import datetime
 
 import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
 from website.project import decorators
-from website.project.views.node import _view_project
 from website.addons.dataverse.model import connect
 
 
@@ -61,9 +58,14 @@ def dataverse_set_user_config(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse(*args, **kwargs):
 
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
+    user = auth.user
+
     node_settings = kwargs['node_addon']
+    node = node_settings.owner
     dataverse_user = node_settings.user_settings
+
+    now = datetime.datetime.utcnow()
 
     # Make a connection
     connection = connect(
@@ -76,14 +78,32 @@ def set_dataverse(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Set selected Dataverse
-    node_settings.dataverse_number = request.json.get('dataverse_number')
     dataverses = connection.get_dataverses() or []
+    old_dataverse = dataverses[node_settings.dataverse_number].title
+    old_study = node_settings.study
+    node_settings.dataverse_number = request.json.get('dataverse_number')
     dataverse = dataverses[node_settings.dataverse_number] if dataverses else None
     node_settings.dataverse = dataverse.title if dataverse else None
 
-    # Set study to None
-    node_settings.study_hdl = None
-    node_settings.study = None
+    # Set study to None if there was a study
+    if old_study is not None:
+
+        node_settings.study_hdl = None
+        node_settings.study = None
+
+        node.add_log(
+            action='dataverse_study_unlinked',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'dataverse': {
+                    'dataverse': old_dataverse,
+                    'study': old_study,
+                }
+            },
+            auth=auth,
+            log_date=now,
+        )
 
     node_settings.save()
 
@@ -94,9 +114,14 @@ def set_dataverse(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def set_study(*args, **kwargs):
 
-    user = kwargs['auth'].user
+    auth = kwargs['auth']
+    user = auth.user
+
     node_settings = kwargs['node_addon']
+    node = node_settings.owner
     dataverse_user = node_settings.user_settings
+
+    now = datetime.datetime.utcnow()
 
     # Make a connection
     connection = connect(
@@ -107,14 +132,39 @@ def set_study(*args, **kwargs):
     if dataverse_user and dataverse_user.owner != user or connection is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Get current dataverse
+    # Get current dataverse and new study
     dataverse = connection.get_dataverses()[node_settings.dataverse_number]
-
-    # Set selected Study
     hdl = request.json.get('study_hdl')
-    node_settings.study_hdl = hdl if hdl != 'None' else None
-    node_settings.study = dataverse.get_study_by_hdl(hdl).get_title() \
-        if node_settings.study_hdl else None
+
+    # Set study
+    if hdl != 'None':
+        log_action = 'dataverse_study_linked'
+        study_name = dataverse.get_study_by_hdl(hdl).get_title()
+
+        node_settings.study_hdl = hdl
+        node_settings.study = study_name
+
+    else:
+        log_action = 'dataverse_study_unlinked'
+        study_name = node_settings.study
+
+        node_settings.study_hdl = None
+        node_settings.study = None
+
+
+    node.add_log(
+        action=log_action,
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'dataverse': {
+                'dataverse': dataverse.title,
+                'study': study_name,
+            }
+        },
+        auth=auth,
+        log_date=now,
+    )
 
     node_settings.save()
 
