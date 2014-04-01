@@ -27,6 +27,11 @@
         </div>
     </div>
 </div>
+<div class="row">
+    <div class="col-md-12">
+        BADGES HERE
+    </div>
+</div>
 
 </%def>
 

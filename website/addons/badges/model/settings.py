@@ -41,7 +41,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
     def to_openbadge(self):
         ret = {
             'name': self.owner.fullname,
-            'email': self.owner.email,  # TODO ?
+            'email': self.owner.emails[0],  # TODO ?
         }
         # if self.description:
         #     ret['description'] = self.description,

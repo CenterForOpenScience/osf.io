@@ -6,9 +6,9 @@
 
 <div class="media well">
   %if badge.is_system_badge:
-  <span class="pull-right">System Badge
+  <span class="pull-right" style="text-align:end;">System Badge
   %else:
-    <span class="pull-right">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a>
+    <span class="pull-right" style="text-align:end;">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a>
   %endif
   <br/>
   Awarded ${badge.awarded} Times to ${badge.unique_awards} Projects</span>

@@ -67,7 +67,7 @@ class Badge(GuidStoredObject):
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
-            'issuer': '{0}badge/organization/{1}/json/'.format(DOMAIN, self.creator),
+            'issuer': '{0}badge/organization/{1}/json/'.format(DOMAIN, self.creator.owner._id),
             'url': '{0}{1}/json/'.format(DOMAIN, self._id)
         }
 
@@ -102,11 +102,7 @@ class Badge(GuidStoredObject):
 
     @property
     def unique_awards(self):
-        li = []
-        for x in self.assertions:
-            if not x.node._id in li:
-                li.append(x.node._id)
-        return len(li)
+        return len({assertion.node._id for assertion in self.assertions})
 
     @property
     def deep_url(self):
@@ -189,7 +185,7 @@ class BadgeAssertion(StoredObject):
     def verify(self, vtype='hosted'):
         return {
             'type': 'hosted',
-            'url': 'TODO'
+            'url': '{}badge/assertion/json/{}/'.format(DOMAIN, self._id)
         }
 
     @property
