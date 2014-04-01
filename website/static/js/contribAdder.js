@@ -1,8 +1,13 @@
 /**
  * Controller for the Add Contributor modal.
  */
-this.ContribAdder = (function($, global, undefined) {
-
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'bootstrap', 'editable'], factory);
+    } else {
+        global.ContribAdder = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
 
     NODE_OFFSET = 25;
 
@@ -334,8 +339,11 @@ this.ContribAdder = (function($, global, undefined) {
         self.$element.on('hidden.bs.modal', function() {
             self.viewModel.clear();
         });
+        // Load recently added contributors every time the modal is activated.
+        self.$element.on('shown.bs.modal', function() {
+            self.viewModel.recentlyAdded();
+        });
     };
 
     return ContribAdder;
-
-})(jQuery, window);
+}));

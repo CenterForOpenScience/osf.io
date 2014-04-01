@@ -316,6 +316,7 @@ class TestRegistrations(DbTestCase):
         res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
         assert_not_in('Delete project', res)
 
+
     def test_cant_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()

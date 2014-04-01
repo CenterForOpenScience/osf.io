@@ -3,6 +3,7 @@ Files views.
 """
 import os
 import codecs
+import logging
 from website.util import rubeus
 
 from framework.flask import request, secure_filename
@@ -12,6 +13,9 @@ from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project
 
+logger = logging.getLogger(__name__)
+debug = logger.debug
+
 
 @must_be_contributor_or_public
 def collect_file_trees(**kwargs):
@@ -20,12 +24,11 @@ def collect_file_trees(**kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-    data = request.args.to_dict()
-    serialized = _view_project(node, auth, **data)
+
+    serialized = _view_project(node, auth)
     # Add addon static assets
     serialized.update(rubeus.collect_addon_assets(node))
     return serialized
-
 
 @must_be_contributor_or_public
 def grid_data(**kwargs):

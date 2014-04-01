@@ -42,12 +42,6 @@ class Rule(object):
             return [value]
         return value
 
-    @staticmethod
-    def _ensure_slash(value):
-        if not value.endswith('/'):
-            return value + '/'
-        return value
-
     def __init__(self, routes, methods, view_func_or_data, renderer,
                  view_kwargs=None, endpoint_suffix=''):
         """Rule constructor.
@@ -64,10 +58,7 @@ class Rule(object):
         """
         if not callable(renderer):
             raise ValueError('Argument renderer must be callable.')
-        self.routes = [
-            self._ensure_slash(route)
-            for route in self._ensure_list(routes)
-        ]
+        self.routes = self._ensure_list(routes)
         self.methods = self._ensure_list(methods)
         self.view_func_or_data = view_func_or_data
         self.renderer = renderer
