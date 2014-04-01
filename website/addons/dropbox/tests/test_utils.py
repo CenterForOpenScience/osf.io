@@ -47,6 +47,12 @@ def test_clean_path():
     assert_equal(utils.clean_path(None), '')
 
 
+def test_get_share_folder_uri():
+    expected = 'https://dropbox.com/home/foo?shareoptions=1&share_subfolder=0&share=1'
+    assert_equal(utils.get_share_folder_uri('/foo/'), expected)
+    assert_equal(utils.get_share_folder_uri('foo'), expected)
+
+
 def test_serialize_folder():
     metadata = {
         u'bytes': 0,

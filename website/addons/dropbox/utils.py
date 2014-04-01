@@ -168,3 +168,13 @@ def metadata_to_hgrid(item, node, permissions):
         'path': item['path'],
     }
     return serialized
+
+
+def get_share_folder_uri(path):
+    """Return the URI for sharing a folder through the dropbox interface.
+    This is not exposed through Dropbox's REST API, so need to build the URI
+    "manually".
+    """
+    cleaned = clean_path(path)
+    return ('https://dropbox.com/home/{cleaned}'
+            '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)

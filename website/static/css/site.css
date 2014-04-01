@@ -1082,3 +1082,5 @@ a {
 .tagsinput .tag span { cursor:pointer; }
 
 .scripted {display: none;}
+
+.pointer {cursor: pointer;}

@@ -117,6 +117,15 @@ api_routes = {
             json_renderer
         ),
 
+
+        Rule(
+            ['/project/<pid>/dropbox/config/share/',
+            '/project/<pid>/node/<nid>/dropbox/config/share/'],
+            'get',
+            views.config.dropbox_get_share_emails,
+            json_renderer
+        ),
+
         ##### CRUD #####
 
         # Delete
