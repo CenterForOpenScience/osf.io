@@ -1,25 +1,22 @@
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
-
-<h4 class="addon-title">
-    Dropbox
-</h4>
-
 <div id="dropboxScope" class="scripted">
+    <h4 class="addon-title">
+        Dropbox
+        <small class="authorized-by">
+            authorized by <a data-bind="attr.href: urls().owner">
+                {{ownerName}}
+            </a>
+        </small>
+        <small data-bind="visible: userHasAuth">
+            <a data-bind="click: deauthorize"
+                class="text-danger pull-right">Deauthorize</a>
+        </small>
+    </h4>
+
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
 
     <!-- Settings Pane -->
     <div class="dropbox-settings" data-bind='if: showSettings'>
-        <div class="well well-sm">
-            <span class="authorized-by">
-                Authorized by <a data-bind="attr.href: urls().owner">
-                    {{ownerName}}
-                </a>
-            </span>
-            <span data-bind="visible: userHasAuth">
-                <a data-bind="click: deauthorize"
-                    class="text-danger pull-right">Deauthorize</a>
-            </span>
-        </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
                 <p><strong>Current Folder:</strong></p>
