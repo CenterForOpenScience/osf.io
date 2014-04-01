@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -110,3 +111,38 @@ Registration cannot be undone, and the archived content and files cannot be
 deleted after registration. Please be sure the project is complete and
 comprehensive for what you wish to register.
 '''
+
+# Nodes: forking, templating, linking
+
+LINK_ACTION = 'Link to this Project'
+LINK_DESCRIPTION = """
+<p>Linking to this project will reference it in another project, without
+creating a copy. The link will always point to the most up-to-date version.</p>
+"""
+
+TEMPLATE_ACTION = 'Copy Project Structure'
+TEMPLATE_DESCRIPTION = """
+<p>This option will create a new project, using this project as a template.
+The new project will be structured in the same way, but contain no data.</p>
+"""
+
+FORK_ACTION = 'Fork this Project'
+FORK_DESCRIPTION = """
+<p>Fork this project if you plan to build upon it in your own work.
+The new project will be an exact duplicate of this project's current state,
+with you as the only contributor.</p>
+"""
+
+TEMPLATE_DROPDOWN_HELP = """Start typing to search. Selecting project as
+template will duplicate its structure in the new project without importing the
+content of that project."""
+
+TEMPLATED_FROM_PREFIX = "Templated from "
+
+# MFR Error handling
+ERROR_PREFIX = "Unable to render. <a href='{download_path}'>Download</a> file to view it."
+SUPPORT = "Contact support@osf.io for further assistance."
+
+# Custom Error Messages w/ support
+STATA_VERSION_ERROR = 'Version of given Stata file is not 104, 105, 108, 113 (Stata 8/9), 114 (Stata 10/11) or 115 (Stata 12)<p>{0}</p>'.format(SUPPORT)
+BLANK_OR_CORRUPT_TABLE_ERROR = 'Is this a valid instance of this file type?<p>{0}</p>'.format(SUPPORT)

@@ -1,6 +1,16 @@
-this.Comment = (function(window, $, ko) {
-
+/**
+ * Controller for the Add Contributor modal.
+ */
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout',
+                'knockout-punches', 'osfutils'], factory);
+    } else {
+        global.Comment = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
     'use strict';
+    ko.punches.enableAll();
 
     // Maximum length for comments, in characters
     var MAXLENGTH = 500;
@@ -115,7 +125,7 @@ this.Comment = (function(window, $, ko) {
             {target: self.id()},
             function(response) {
                 self.comments(
-                    ko.utils.arrayMap(response.comments, function(comment) {
+                    ko.utils.arrayMap(response.comments.reverse(), function(comment) {
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
@@ -146,7 +156,7 @@ this.Comment = (function(window, $, ko) {
             function(response) {
                 self.cancelReply();
                 self.replyContent(null);
-                self.comments.push(new CommentModel(response.comment, self, self.$root));
+                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
                 if (!self.hasChildren()) {
                     self.hasChildren(true);
                 }
@@ -431,7 +441,7 @@ this.Comment = (function(window, $, ko) {
             function(response) {
                 self.discussion(response.discussion);
             }
-        )
+        );
     };
 
     CommentListModel.prototype.initListeners = function() {
@@ -446,7 +456,6 @@ this.Comment = (function(window, $, ko) {
 
     var init = function(selector, userName, canComment, hasChildren) {
         var viewModel = new CommentListModel(userName, canComment, hasChildren);
-        window.viewModel = viewModel;
         var $elm = $(selector);
         if (!$elm.length) {
             throw('No results found for selector');
@@ -457,6 +466,5 @@ this.Comment = (function(window, $, ko) {
 
     return {
         init: init
-    }
-
-})(window, $, ko);
+    };
+}));

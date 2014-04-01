@@ -1,8 +1,6 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
-<div mod-meta='{"tpl": "include/subnav.mako", "replace": true}'></div>
-
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
@@ -23,6 +21,7 @@
                 </div>
                 <div id="logScope">
                     <%include file="log_list.mako"/>
+                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
                 </div><!-- end #logScope -->
             </div><!-- end #watchFeed -->
         </div>
@@ -34,7 +33,8 @@
 <%def name="javascript_bottom()">
 <script>
     // Initialize the LogFeed
-    $script(['/static/js/logFeed.js'], function() {
+    $script(['/static/js/logFeed.js']);
+    $script.ready('logFeed', function() {
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
 </script>

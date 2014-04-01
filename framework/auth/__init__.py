@@ -28,11 +28,11 @@ def get_current_user():
 
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
-    if len(username) > 22:
-        return '%s...%s' % (username[:9], username[-10:])
+    if len(username) > 40:
+        return '%s...%s' % (username[:15], username[-10:])
     return username
 
-
+# TODO(sloria): This belongs in website.project
 def get_current_node():
     from website.models import Node
     nid = session.data.get('auth_node_id')

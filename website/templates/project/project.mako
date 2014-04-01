@@ -84,6 +84,7 @@
         <div class="logs">
             <div id='logScope'>
                 <%include file="log_list.mako"/>
+                <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
             </div><!-- end #logScope -->
             ## Hide More widget until paging for logs is implemented
             ##<div class="paginate pull-right">more</div>
@@ -199,6 +200,9 @@ ${parent.javascript_bottom()}
             });
         % endif
 
+
+    });
+    $script.ready(['rubeus'], function() {
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
                 data: nodeApiUrl + 'files/grid/',
@@ -209,9 +213,7 @@ ${parent.javascript_bottom()}
                 progBar: '#filetreeProgressBar',
                 searchInput: '#fileSearch'
         });
-
-    });
-
+    })
 </script>
 
 </%def>

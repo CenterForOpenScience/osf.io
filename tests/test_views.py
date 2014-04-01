@@ -8,10 +8,16 @@ import datetime as dt
 import mock
 import httplib as http
 
+
+
 from nose.tools import *  # PEP8 asserts
+from tests.test_features import requires_solr
 from webtest_plus import TestApp
 from webtest.app import AppError
+from werkzeug.wrappers import Response
+
 from framework import auth
+from framework.exceptions import HTTPError
 from framework.auth.model import User
 
 import website.app
@@ -28,9 +34,9 @@ from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
+from website.project.decorators import choose_key, check_can_access
 
-
-from tests.base import DbTestCase, fake, capture_signals
+from tests.base import DbTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -42,6 +48,107 @@ app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
+lookup = URLLookup(app)
+
+class TestViewingProjectWithPrivateLink(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+        self.user = AuthUserFactory()  # Is NOT a contributor
+        self.project = ProjectFactory(is_public=False)
+        self.key = self.project.add_private_link()
+        self.project.save()
+
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_has_private_link_key(self):
+        res = self.app.get(self.project_url,{'key': self.key})
+        assert_equal(res.status_code, 200)
+
+    def test_not_logged_in_no_key(self):
+        res = self.app.get(self.project_url, {'key': None})
+        assert_is_redirect(res)
+        res = res.follow()
+        assert_equal(res.request.path, lookup('web', 'auth_login'))
+
+    def test_logged_in_no_private_key(self):
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+
+    def test_logged_in_has_key(self):
+        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_has_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        assert_is_redirect(res)
+        redirected = res.follow()
+        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.status_code, 200)
+
+    def test_logged_in_with_no_key_ring(self):
+        #check if key_ring works
+        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+            expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    @mock.patch('website.project.decorators.get_key_ring')
+    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
+        mock_get_key_ring.return_value = set([self.key])
+        #check if key_ring works
+        key2 = self.project.add_private_link()
+        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
+        assert_equal(res.request.GET['key'], key2)
+        assert_equal(res.status_code, 200)
+
+    @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
+    def test_prepare_private_key(self):
+        res = self.app.get(self.project_url, {'key': self.key})
+
+        res = res.click('Registrations')
+
+        assert_is_redirect(res)
+        res = res.follow()
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.request.GET['key'], self.key)
+
+    def test_choose_key(self):
+        # User is not logged in, goes to route with a private key
+        res = choose_key(
+            key=self.key,
+            key_ring=set(),
+            api_node='doesntmatter',
+            node=self.project,
+            auth=Auth(None)
+        )
+        assert_is(res, None)
+
+    def test_choose_key_form_key_ring(self):
+        with app.test_request_context():
+            res = choose_key('nope', key_ring=set([self.key]), node=self.project,
+                auth=Auth(None))
+        assert_true(isinstance(res, Response))
+
+    def test_check_can_access_valid(self):
+        contributor = AuthUserFactory()
+        self.project.add_contributor(contributor, auth=Auth(self.project.creator))
+        self.project.save()
+        assert_true(check_can_access(self.project, contributor))
+
+    def test_check_user_access_invalid(self):
+        noncontrib = AuthUserFactory()
+        with assert_raises(HTTPError):
+            check_can_access(self.project, noncontrib)
+
+    def test_check_user_access_if_user_is_None(self):
+        assert_false(check_can_access(self.project, None))
 
 class TestProjectViews(DbTestCase):
 
@@ -298,6 +405,7 @@ class TestProjectViews(DbTestCase):
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
+        assert_false(data['has_more_logs'])
         most_recent = data['logs'][0]
         assert_equal(most_recent['action'], 'file_added')
 
@@ -315,6 +423,7 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, {'count': 3}, auth=self.auth)
         assert_equal(len(res.json['logs']), 3)
+        assert_true(res.json['has_more_logs'])
 
     def test_get_logs_defaults_to_ten(self):
         # Add some logs
@@ -330,6 +439,19 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
+
+    def test_get_more_logs(self):
+        # Add some logs
+        for _ in range(12):
+            self.project.logs.append(NodeLogFactory(user=self.user1,
+                                                    action="file_added",
+                                                    params={"project": self.project._id}))
+        self.project.save()
+        url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 4)
+        assert_false(res.json['has_more_logs'])
 
     def test_logs_private(self):
         """Add logs to a public project, then to its private component. Get
@@ -356,6 +478,7 @@ class TestProjectViews(DbTestCase):
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
+        assert_true(res.json['has_more_logs'])
         assert_equal(
             [self.project._id] * 10,
             [
@@ -378,6 +501,7 @@ class TestProjectViews(DbTestCase):
         url = "/api/v1/project/{0}/".format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
         assert_equal(len(res.json['node']['logs']), 10)
+        assert_true(res.json['node']['has_more_logs'])
 
     def test_remove_project(self):
         url = self.project.api_url
@@ -386,13 +510,6 @@ class TestProjectViews(DbTestCase):
         assert_equal(self.project.is_deleted, True)
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
-
-    def test_remove_project_with_component(self):
-        node = NodeFactory(project=self.project, creator=self.user1)
-        url = self.project.api_url
-        self.app.delete_json(url, {}, auth=self.auth).maybe_follow()
-        node.reload()
-        assert_equal(node.is_deleted, True)
 
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
@@ -543,6 +660,41 @@ class TestAddingContributorViews(DbTestCase):
         rec = new_unreg.get_unclaimed_record(self.project._primary_key)
         assert_equal(rec['name'], name)
         assert_equal(rec['email'], email)
+
+    @mock.patch('website.project.views.contributor.send_claim_email')
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,
+        mock_send_claim_email):
+        # Project has components
+        comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
+        self.project.nodes.append(comp1)
+        self.project.nodes.append(comp2)
+        self.project.save()
+
+        # An unreg user is added to the project AND its components
+        unreg_user = {  # dict because user has not previous unreg record
+            'id': None,
+            'registered': False,
+            'fullname': fake.name(),
+            'email': fake.email(),
+            'permission': 'admin',
+        }
+        payload = {
+            'users': [unreg_user],
+            'node_ids': [comp1._primary_key, comp2._primary_key]
+        }
+
+        # send request
+        with app.test_request_context():
+            url = api_url_for(
+                'project_contributors_post',
+                pid=self.project._primary_key
+            )
+        assert self.project.can_edit(user=self.creator)
+        res = self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # finalize_invitation should only have been called once
+        assert_equal(mock_send_claim_email.call_count, 1)
+
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -748,8 +900,7 @@ class TestClaimViews(DbTestCase):
         )
 
         res = self.app.post_json(url,
-            payload,
-            auth=Auth(user=reg_user)
+            payload
         )
 
         # mail was sent
@@ -763,6 +914,20 @@ class TestClaimViews(DbTestCase):
             'email': reg_user.username,
             'fullname': self.given_name,
         })
+
+    @mock.patch('website.project.views.contributor.send_claim_registered_email')
+    def test_claim_user_post_with_email_already_registered_sends_correct_email(self,
+        send_claim_registered_email):
+        reg_user = UserFactory()
+        payload = {
+            'value': reg_user.username,
+            'pk': self.user._primary_key
+        }
+        with app.test_request_context():
+            url = api_url_for('claim_user_post', uid=self.user._primary_key,
+                pid=self.project._primary_key)
+        res = self.app.post_json(url, payload)
+        assert_true(send_claim_registered_email.called)
 
     def test_user_with_removed_unclaimed_url_claiming(self):
         """ Tests that when an unclaimed user is removed from a project, the
@@ -1022,7 +1187,21 @@ class TestWatchViews(DbTestCase):
         self.user.save()
         url = "/api/v1/watched/logs/"
         res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['logs']), len(project.logs))
+        assert_equal(len(res.json['logs']), 10)
+        assert_equal(res.json['logs'][0]['action'], 'file_added')
+
+    def test_get_more_watched_logs(self):
+        project = ProjectFactory()
+        # Add some logs
+        for _ in range(12):
+            project.logs.append(NodeLogFactory(user=self.user, action="file_added"))
+        project.save()
+        watch_cfg = WatchConfigFactory(node=project)
+        self.user.watch(watch_cfg)
+        self.user.save()
+        url = "/api/v1/watched/logs/"
+        res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
+        assert_equal(len(res.json['logs']), 3)
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
@@ -1352,9 +1531,10 @@ class TestFileViews(DbTestCase):
 
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        with app.test_request_context():
+            res = self.app.get(url, auth=self.user.auth).maybe_follow()
+            expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.status_code, http.OK)
-        expected = _view_project(self.project, auth=Auth(user=self.user))
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
         assert_in('tree_css', res.json)
@@ -1712,6 +1892,21 @@ class TestComments(DbTestCase):
         assert_equal(observed, expected)
 
 
+class TestTagViews(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_tag_get_returns_200(self):
+        with app.test_request_context():
+            url = web_url_for('project_tag', tag='foo')
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+
+@requires_solr
 class TestSearchViews(DbTestCase):
 
     def setUp(self):
@@ -1734,6 +1929,12 @@ class TestSearchViews(DbTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
+
+    def test_search_projects(self):
+        with app.test_request_context():
+            url = web_url_for('search_search')
+        res = self.app.get(url, {'q': self.project.title})
+        assert_equal(res.status_code, 200)
 
 
 if __name__ == '__main__':

@@ -57,7 +57,7 @@ def get_node_contributors_abbrev(**kwargs):
 
         if index == max_count - 1 and len(users) > max_count:
             separator = ' &'
-            others_count = n_contributors - 3
+            others_count = str(n_contributors - 3)
             others_suffix = 's' if others_count > 1 else ''
         elif index == len(users) - 1:
             separator = ''
@@ -275,9 +275,11 @@ def project_contributors_post(**kwargs):
 
     # Prepare input data for `Node::add_contributors`
     contribs = deserialize_contributors(node, user_dicts, auth=auth)
-
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
+
+    # Disconnect listener to avoid multiple invite emails
+    unreg_contributor_added.disconnect(finalize_invitation)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -287,7 +289,8 @@ def project_contributors_post(**kwargs):
         )
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
-
+    # Reconnect listener
+    unreg_contributor_added.connect(finalize_invitation)
     return {'status': 'success'}, 201
 
 
@@ -318,8 +321,12 @@ def project_manage_contributors(**kwargs):
 def get_timestamp():
     return int(time.time())
 
-# TODO: Use throttle?
-def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
+
+def throttle_period_expired(timestamp, throttle):
+    return timestamp is None or (get_timestamp() - timestamp) > throttle
+
+
+def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for('claim_user_registered',
@@ -327,14 +334,18 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
             pid=node._primary_key,
             token=unclaimed_record['token'],
             _external=True)
-    # Send mail to referrer, telling them to forward verification link to claimer
-    mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
-        user=unreg_user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url,
-        fullname=unclaimed_record['name']
-    )
+    timestamp = unclaimed_record.get('last_sent')
+    if throttle_period_expired(timestamp, throttle):
+        # Send mail to referrer, telling them to forward verification link to claimer
+        mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
+            user=unreg_user,
+            referrer=referrer,
+            node=node,
+            claim_url=claim_url,
+            fullname=unclaimed_record['name']
+        )
+        unclaimed_record['last_sent'] = get_timestamp()
+        unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(claimer.username, mails.PENDING_VERIFICATION_REGISTERED,
         fullname=claimer.fullname,
@@ -343,7 +354,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=0):
     )
 
 
-def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
+def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     """Send an email for claiming a user account. Either sends to the given email
     or the referrer's email, depending on the email address provided.
 
@@ -352,8 +363,8 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
     :param Node node: The node where the user claimed their account.
     :param bool notify: If True and an email is sent to the referrer, an email
         will also be sent to the invited user about their pending verification.
-    :param int throttle: Time period after the referrer is emailed during which
-        the referrer will not be emailed again.
+    :param int throttle: Time period (in seconds) after the referrer is
+        emailed during which the referrer will not be emailed again.
 
     """
     invited_email = email.lower().strip()
@@ -374,7 +385,7 @@ def send_claim_email(email, user, node, notify=True, throttle=30 * 60):
                 fullname=unclaimed_record['name'],
                 node=node)
         timestamp = unclaimed_record.get('last_sent')
-        if timestamp is None or (get_timestamp() - timestamp) > throttle:
+        if throttle_period_expired(timestamp, throttle):
             unclaimed_record['last_sent'] = get_timestamp()
             user.save()
         else:  # Don't send the email to the referrer
@@ -512,8 +523,7 @@ def claim_user_form(**kwargs):
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username = form.username.data
-            password = form.password.data
+            username, password = form.username.data, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
@@ -578,22 +588,25 @@ def claim_user_post(**kwargs):
     node = kwargs['node'] or kwargs['project']
     unclaimed_data = user.get_unclaimed_record(node._primary_key)
     # Submitted through X-editable
-    if 'value' in reqdata:
+    if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
-        send_claim_email(email, user, node, notify=True)
-        return {
-            'status': 'success',
-            'fullname': unclaimed_data['name'],
-            'email': email,
-        }
-    elif 'claimerId' in reqdata:
+        claimer = framework.auth.get_user(username=email)
+        if claimer:
+            send_claim_registered_email(claimer=claimer, unreg_user=user,
+                node=node)
+        else:
+            send_claim_email(email, user, node, notify=True)
+    # TODO(sloria): Too many assumptions about the request data. Just use
+    # get_current_user?
+    elif 'claimerId' in reqdata:  # User is logged in and confirmed identity
         claimer_id = reqdata['claimerId']
         claimer = User.load(claimer_id)
         send_claim_registered_email(claimer=claimer, unreg_user=user, node=node)
-        return {
-            'status': 'success',
-            'email': claimer.username,
-            'fullname': unclaimed_data['name']
-        }
+        email = claimer.username
     else:
         raise HTTPError(http.BAD_REQUEST)
+    return {
+        'status': 'success',
+        'email': email,
+        'fullname': unclaimed_data['name']
+    }

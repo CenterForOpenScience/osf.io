@@ -14,6 +14,7 @@ from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
+
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
@@ -28,7 +29,6 @@ from website.util import rubeus, permissions
 from .model import NodeFile, OsfGuidFile
 
 logger = logging.getLogger(__name__)
-
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -51,12 +51,6 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
         for name, fid in node.files_current.iteritems():
 
             fobj = NodeFile.load(fid)
-            unique, total = get_basic_counters(
-                'download:{0}:{1}'.format(
-                    node_settings.owner._id,
-                    fobj.path.replace('.', '_')
-                )
-            )
             item = {
                 rubeus.KIND: rubeus.FILE,
                 'name': _clean_file_name(fobj.path),
@@ -69,7 +63,7 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
                     'view': True,
                     'edit': can_edit,
                 },
-                'downloads': total or 0,
+                'downloads': fobj.download_count(node),
                 'size': [
                     float(fobj.size),
                     rubeus.format_filesize(fobj.size),
@@ -116,7 +110,9 @@ def get_osffiles_public(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
+
     return get_osffiles_hgrid(node_settings, auth)
+
 
 
 @must_be_valid_project # returns project
@@ -213,6 +209,7 @@ def view_file(**kwargs):
     node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
 
+
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
 
@@ -263,9 +260,14 @@ def view_file(**kwargs):
 
     versions = []
 
-    for idx, version in enumerate(list(reversed(node.files_versions[file_name_clean]))):
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+
+    for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
-        number = len(node.files_versions[file_name_clean]) - idx
+        number = len(files_versions) - idx
         unique, total = get_basic_counters('download:{}:{}:{}'.format(
             node._primary_key,
             file_name_clean,
@@ -300,6 +302,7 @@ def view_file(**kwargs):
         'rendered': rendered,
         'versions': versions,
     }
+
     rv.update(_view_project(node, auth))
     return rv
 
@@ -310,15 +313,19 @@ def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
+    key = kwargs['auth'].private_key
 
-    vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    try:
+        vid = len(node_to_use.files_versions[filename.replace('.', '_')])
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
 
-    return redirect('{url}osffiles/{fid}/version/{vid}/'.format(
+    redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
         url=node_to_use.url,
         fid=filename,
         vid=vid,
-    ))
-
+    )
+    return redirect(redirect_url)
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

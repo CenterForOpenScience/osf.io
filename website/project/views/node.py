@@ -13,16 +13,22 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
 from website import language
-from website.project import new_node, clean_template_name
+
+from website.exceptions import NodeStateError
+from website.project import clean_template_name, new_node
 from website.project.decorators import (
-    must_not_be_registration, must_be_valid_project, must_be_contributor,
-    must_be_contributor_or_public, must_have_permission,
+    must_be_contributor,
+    must_be_contributor_or_public,
+    must_be_valid_project,
+    must_have_permission,
+    must_not_be_registration,
 )
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import WatchConfig, Node, Pointer
+from website.models import Node, Pointer, WatchConfig
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
+from website.util import permissions
 
 from .log import _get_logs
 
@@ -63,13 +69,36 @@ def project_new_post(**kwargs):
     user = kwargs['auth'].user
     form = NewProjectForm(request.form)
     if form.validate():
-        project = new_node(
-            'project', form.title.data, user, form.description.data
-        )
+        if form.template.data:
+            original_node = Node.load(form.template.data)
+            project = original_node.use_as_template(
+                auth=kwargs['auth'],
+                changes={
+                    form.template.data: {
+                        'title': form.title.data,
+                    }
+                }
+            )
+                # node._fields['date_created'].__set__(new_date, safe=True)
+        else:
+            project = new_node(
+                'project', form.title.data, user, form.description.data
+            )
         return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
+
+
+@must_be_logged_in
+@must_be_valid_project
+def project_new_from_template(*args, **kwargs):
+    original_node = kwargs.get('node')
+    new_node = original_node.use_as_template(
+        auth=kwargs['auth'],
+        changes=dict(),
+    )
+    return {'url': new_node.url}, http.CREATED, None
 
 
 ##############################################################################
@@ -149,15 +178,16 @@ def node_registrations(**kwargs):
     return _view_project(node_to_use, auth, primary=True)
 
 
+
 @must_be_valid_project
 @must_be_contributor_or_public # returns user, project
 def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
-
     node_to_use = node or project
     return _view_project(node_to_use, auth, primary=True)
+
 
 
 @must_be_valid_project
@@ -167,6 +197,9 @@ def node_setting(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
+    if not node.can_edit(auth):
+        raise HTTPError(http.FORBIDDEN)
+
     rv = _view_project(node, auth, primary=True)
 
     addons_enabled = []
@@ -175,9 +208,8 @@ def node_setting(**kwargs):
     for addon in node.get_addons():
 
         addons_enabled.append(addon.config.short_name)
-
         if 'node' in addon.config.configs:
-            addon_enabled_settings.append(addon.config.short_name)
+            addon_enabled_settings.append(addon.to_json(auth.user))
 
     rv['addon_categories'] = settings.ADDON_CATEGORIES
     rv['addons_available'] = [
@@ -196,7 +228,6 @@ def node_setting(**kwargs):
 
     return rv
 
-
 @must_have_permission('write')
 @must_not_be_registration
 def node_choose_addons(**kwargs):
@@ -206,7 +237,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_be_contributor
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -250,12 +281,22 @@ def project_reorder_components(**kwargs):
         StoredObject.get_collection(schema).load(key)
         for key, schema in new_list
     ]
-    if len(project.nodes) == len(nodes_new) and set(project.nodes) == set(nodes_new):
-        project.nodes = nodes_new
+
+    visible_nodes = [
+        node for node in project.nodes
+        if not node.is_deleted
+    ]
+    deleted_nodes = [
+        node for node in project.nodes
+        if node.is_deleted
+    ]
+
+    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+        project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
 
-    # todo log impossibility
+    logger.error('Got invalid node list in reorder components')
     raise HTTPError(http.BAD_REQUEST)
 
 
@@ -267,7 +308,10 @@ def project_reorder_components(**kwargs):
 def project_statistics(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    if not (node.can_edit(auth) or node.is_public):
+        raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
+
 
 
 ###############################################################################
@@ -370,21 +414,29 @@ def component_remove(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    if node_to_use.remove_node(auth):
-        message = '{} deleted'.format(
-            node_to_use.project_or_component.capitalize()
+    try:
+        node_to_use.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
         )
-        status.push_status_message(message)
-        if node_to_use.node__parent:
-            redirect_url = node_to_use.node__parent[0].url
-        else:
-            redirect_url = '/dashboard/'
-        return {
-            'url': redirect_url,
-        }
-    raise HTTPError(
-        http.BAD_REQUEST, message='Could not delete component'
+
+    message = '{} deleted'.format(
+        node_to_use.project_or_component.capitalize()
     )
+    status.push_status_message(message)
+    if node_to_use.node__parent:
+        redirect_url = node_to_use.node__parent[0].url
+    else:
+        redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
+
 
 
 @must_be_valid_project
@@ -398,6 +450,17 @@ def view_project(**kwargs):
     return rv
 
 
+@must_be_valid_project # returns project
+@must_be_contributor
+def remove_private_link(*args, **kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    link = request.json['private_link']
+    try:
+        node_to_use.remove_private_link(link)
+    except ValueError:
+        raise HTTPError(http.NOT_FOUND)
+
+
 # TODO: Split into separate functions
 def _render_addon(node):
 
@@ -409,7 +472,6 @@ def _render_addon(node):
     for addon in node.get_addons():
 
         configs[addon.config.short_name] = addon.config.to_json()
-
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
 
@@ -421,6 +483,7 @@ def _render_addon(node):
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
+
     project.view.mako.
 
     """
@@ -428,7 +491,7 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs = _get_logs(node, 10, auth)
+    recent_logs, has_more_logs= _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
     # Before page load callback; skip if not primary call
     if primary:
@@ -441,7 +504,7 @@ def _view_project(node, auth, primary=False):
             'id': node._primary_key,
             'title': node.title,
             'category': node.project_or_component,
-            'description': node.description,
+            'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -475,8 +538,12 @@ def _view_project(node, auth, primary=False):
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
             'fork_count': len(node.fork_list),
+            'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
+            'private_links': node.private_links,
+            'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
+            'has_more_logs': has_more_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
 
@@ -492,7 +559,8 @@ def _view_project(node, auth, primary=False):
             'api_url': parent.api_url if parent else '',
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
-            'is_contributor': parent.is_contributor(user) if parent else ''
+            'is_contributor': parent.is_contributor(user) if parent else '',
+            'can_view': (auth.private_key in parent.private_links) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -667,6 +735,22 @@ def get_registrations(**kwargs):
     return _render_nodes(registrations)
 
 
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def project_generate_private_link_post(*args, **kwargs):
+    """ Add contributors to a node. """
+
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_ids = request.json.get('node_ids', [])
+    link = node_to_use.add_private_link()
+
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        node.add_private_link(link)
+
+    return {'status': 'success'}, 201
+
+
 def _serialize_node_search(node):
     """Serialize a node for use in pointer search.
 
@@ -826,8 +910,8 @@ def get_pointed(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
         {
-            'url': each.url,
-            'title': each.title,
+            'url': each.node__parent[0].url,
+            'title': each.node__parent[0].title,
             'authorShort': abbrev_authors(node),
         }
         for each in node.pointed

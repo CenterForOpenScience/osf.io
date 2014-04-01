@@ -27,18 +27,22 @@ from framework.auth.decorators import Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
+from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
 from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
+
+from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website import settings
+from website import language, settings
+from website.util import web_url_for, api_url_for
 
 html_parser = HTMLParser()
 
@@ -261,28 +265,40 @@ class NodeLog(StoredObject):
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
 
     # Log action constants
+    CREATED_FROM = 'created_from'
+
     PROJECT_CREATED = 'project_created'
+    PROJECT_REGISTERED = 'project_registered'
+
     NODE_CREATED = 'node_created'
+    NODE_FORKED = 'node_forked'
     NODE_REMOVED = 'node_removed'
+
     POINTER_CREATED = 'pointer_created'
-    POINTER_REMOVED = 'pointer_removed'
     POINTER_FORKED = 'pointer_forked'
+    POINTER_REMOVED = 'pointer_removed'
+
     WIKI_UPDATED = 'wiki_updated'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
+
     PERMISSIONS_UPDATED = 'permissions_updated'
-    MADE_PUBLIC = 'made_public'
+
     MADE_PRIVATE = 'made_private'
+    MADE_PUBLIC = 'made_public'
+
     TAG_ADDED = 'tag_added'
     TAG_REMOVED = 'tag_removed'
+
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
-    PROJECT_REGISTERED = 'project_registered'
+
     FILE_ADDED = 'file_added'
     FILE_REMOVED = 'file_removed'
     FILE_UPDATED = 'file_updated'
-    NODE_FORKED = 'node_forked'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -384,6 +400,9 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
+    def use_as_template(self, auth, changes=None):
+        return self._clone()
+
     def resolve(self):
         return self.node
 
@@ -452,6 +471,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
+    private_links = fields.StringField(list=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -477,6 +497,9 @@ class Node(GuidStoredObject, AddonModelMixin):
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
     registered_from = fields.ForeignField('node', backref='registrations')
+
+    # The node (if any) used as a template for this node's creation
+    template_node = fields.ForeignField('node', backref='template_node')
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -527,10 +550,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        return (
-            self.is_public or
-            auth.user and self.has_permission(auth.user, 'read')
-        )
+        if auth.user and auth.user.private_keys:
+            key_ring = set(auth.user.private_keys)
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
+                or not key_ring.isdisjoint(self.private_links)
+        else:
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
+                or auth.private_key in self.private_links
+
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -610,12 +639,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         first_save = not self._is_loaded
         is_original = not self.is_registration and not self.is_fork
+        if 'suppress_log' in kwargs.keys():
+            suppress_log = kwargs['suppress_log']
+            del kwargs['suppress_log']
+        else:
+            suppress_log = False
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
-        if first_save and is_original:
+        if first_save and is_original and not suppress_log:
 
             #
+            # TODO: This logic also exists in self.use_as_template()
             for addon in settings.ADDONS_AVAILABLE:
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
@@ -666,6 +701,102 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Return expected value for StoredObject::save
         return saved_fields
+
+    ######################################
+    # Methods that return a new instance #
+    ######################################
+
+    def use_as_template(self, auth, changes=None):
+        """Create a new project, using an existing project as a template.
+
+        :param auth: The user to be assigned as creator
+        :param changes: A dictionary of changes, keyed by node id, which
+                        override the attributes of the template project or its
+                        children.
+        :return: The `Node` instance created.
+        """
+
+        changes = changes or dict()
+
+        # build the dict of attributes to change for the new node
+        try:
+            attributes = changes[self._id]
+            # TODO: explicitly define attributes which may be changed.
+        except (AttributeError, KeyError):
+            attributes = dict()
+
+        new = self.clone()
+
+        # clear permissions, which are not cleared by the clone method
+        new.permissions = {}
+
+        # Clear quasi-foreign fields
+        new.files_current = {}
+        new.files_versions = {}
+        new.wiki_pages_current = {}
+        new.wiki_pages_versions = {}
+        new.fork_list = []
+        new.registration_list = []
+
+        # set attributes which may be overridden by `changes`
+        new.is_public = False
+        new.description = None
+
+        # apply `changes`
+        for attr, val in attributes.iteritems():
+            setattr(new, attr, val)
+
+        # set attributes which may NOT be overridden by `changes`
+        new.creator = auth.user
+        new.add_contributor(contributor=auth.user, log=False, save=False)
+        new.template_node = self
+        new.is_fork = False
+        new.is_registration = False
+
+        # If that title hasn't been changed, apply the default prefix (once)
+        if (new.title == self.title and
+                language.TEMPLATED_FROM_PREFIX not in new.title):
+            new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
+
+        # Slight hack - date_created is a read-only field.
+        new._fields['date_created'].__set__(
+            new,
+            datetime.datetime.utcnow(),
+            safe=True
+        )
+
+        new.save(suppress_log=True)
+
+        # Log the creation
+        new.add_log(
+            NodeLog.CREATED_FROM,
+            params={
+                'node': new._primary_key,
+                'template_node': {
+                    'id': self._primary_key,
+                    'url': self.url,
+                },
+            },
+            auth=auth,
+            log_date=new.date_created,
+            save=False,
+        )
+
+        # add mandatory addons
+        # TODO: This logic also exists in self.save()
+        for addon in settings.ADDONS_AVAILABLE:
+            if 'node' in addon.added_default:
+                new.add_addon(addon.short_name, auth=None, log=False)
+
+        # deal with the children of the node, if any
+        new.nodes = [
+            x.use_as_template(auth, changes)
+            for x in self.nodes
+            if x.can_view(auth)
+        ]
+
+        new.save()
+        return new
 
     ############
     # Pointers #
@@ -909,6 +1040,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         as appropriate.
 
         """
+        def solr_bool(value):
+            """Return a string value for a boolean value that solr will
+            correctly serialize.
+            """
+            return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
             return
 
@@ -947,10 +1083,11 @@ class Node(GuidStoredObject, AddonModelMixin):
                 ],
                 '{}_title'.format(self._id): self.title,
                 '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): self.is_public,
+                '{}_public'.format(self._id): solr_bool(self.is_public),
                 '{}_tags'.format(self._id): [x._id for x in self.tags],
                 '{}_description'.format(self._id): self.description,
                 '{}_url'.format(self._id): self.url,
+                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
             }
 
             # TODO: Move to wiki add-on
@@ -964,54 +1101,56 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             update_solr(solr_document)
 
-    def remove_node(self, auth, date=None, top=True):
-        """Remove node and recursively remove its children. Does not remove
-        nodes from database; instead, removed nodes are flagged as deleted.
-        Git repos are also not deleted. Adds a log to the parent node if top
-        is True.
+    def remove_node(self, auth, date=None):
+        """Marks a node as deleted.
 
-        :param auth: All the auth informtion including user, API key.
+        TODO: Call a hook on addons
+        Adds a log to the parent node if applicable
+
+        :param auth: an instance of :class:`Auth`.
         :param date: Date node was removed
-        :param top: Is this the first node being removed?
+        :type date: `datetime.datetime` or `None`
 
         """
+        # TODO: rename "date" param - it's shadowing a global
+
+
         if not self.can_edit(auth):
-            return False
+            raise PermissionsError()
 
-        date = date or datetime.datetime.utcnow()
+        if [x for x in self.nodes_primary if not x.is_deleted]:
+            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
-        # Remove child nodes
-        for node in self.nodes_primary:
-            if not node.category == 'project':
-                if not node.remove_node(auth, date=date, top=False):
-                    return False
+        log_date = date or datetime.datetime.utcnow()
 
         # Add log to parent
-        if top and self.node__parent:
+        if self.node__parent:
             self.node__parent[0].add_log(
                 NodeLog.NODE_REMOVED,
                 params={
                     'project': self._primary_key,
                 },
                 auth=auth,
-                log_date=datetime.datetime.utcnow(),
+                log_date=log_date,
             )
 
         # Remove self from parent registration list
         if self.is_registration:
             try:
                 self.registered_from.registration_list.remove(self._primary_key)
-                self.registered_from.save()
             except ValueError:
                 pass
+            else:
+                self.registered_from.save()
 
         # Remove self from parent fork list
         if self.is_fork:
             try:
                 self.forked_from.fork_list.remove(self._primary_key)
-                self.forked_from.save()
             except ValueError:
                 pass
+            else:
+                self.forked_from.save()
 
         self.is_deleted = True
         self.deleted_date = date
@@ -1060,6 +1199,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.private_links = []
+
 
         # Forks default to private status
         forked.is_public = False
@@ -1135,6 +1276,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
+        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
@@ -1156,10 +1298,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                schema, auth, template, data
+                 schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
+
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1347,6 +1490,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return committer
 
 
+
     def add_file(self, auth, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
@@ -1450,6 +1594,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
+    def add_private_link(self, link='', save=True):
+        link = link or str(uuid.uuid4()).replace("-", "")
+        self.private_links.append(link)
+        if save:
+            self.save()
+        return link
+
+    def remove_private_link(self, link, save=True):
+        self.private_links.remove(link)
+        if save:
+            self.save()
+
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
@@ -1483,6 +1639,22 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
+
+    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        if self.category == 'project':
+            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
+        else:
+            return web_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        if self.category == 'project':
+            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
+        else:
+            return api_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     @property
     def absolute_url(self):
@@ -1533,6 +1705,14 @@ class Node(GuidStoredObject, AddonModelMixin):
             and_delim,
             author_names[-1]
         )
+
+    @property
+    def templated_list(self):
+        return [
+            x
+            for x in self.node__template_node
+            if not x.is_deleted
+        ]
 
     @property
     def citation_apa(self):

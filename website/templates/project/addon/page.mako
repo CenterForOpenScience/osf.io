@@ -1,12 +1,4 @@
-<%inherit file="../../base.mako" />
-
-<%def name="content()">
-
-<div mod-meta='{
-        "tpl": "project/project_header.mako",
-        "replace": true
-    }'></div>
-    <span></span>
+<%inherit file"../project_base.mako" />
 
 <h4>
     ${full_name} Add-on
@@ -36,8 +28,6 @@
 % endif
 
 <script id="capabilities" type="text/html">${addon_capabilities}</script>
-
-</%def>
 
 <%def name="stylesheets()">
 

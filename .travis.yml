@@ -1,0 +1,15 @@
+# Config file for automatic testing at travis-ci.org
+
+language: python
+services: mongodb
+
+python:
+  - "2.7"
+
+install:
+    - cp website/settings/local-travis.py website/settings/local.py
+    - pip install invoke
+    - invoke requirements
+    - invoke addon_requirements --mfr 0
+
+script: invoke test_all

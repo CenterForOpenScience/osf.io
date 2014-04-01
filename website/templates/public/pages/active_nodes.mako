@@ -7,7 +7,7 @@
 
   <div class="row">
     <div class="col-md-3">
-        <div class="sidebar affix hidden-print" role="complementary">
+        <div data-spy="affix" class="sidebar affix hidden-print" role="complementary">
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
                 <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>

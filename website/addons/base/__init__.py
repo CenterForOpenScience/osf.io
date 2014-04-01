@@ -95,7 +95,7 @@ class AddonConfig(object):
         """
         if filename.startswith('/'):
             return filename
-        return '/addons/static/{addon}/{filename}'.format(
+        return '/static/addons/{addon}/{filename}'.format(
             addon=self.short_name,
             filename=filename,
         )
@@ -178,7 +178,7 @@ class GuidFile(GuidStoredObject):
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
-    deleted = fields.BooleanField()
+    deleted = fields.BooleanField(default=False)
 
     _meta = {
         'abstract': True,
@@ -217,6 +217,21 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     _meta = {
         'abstract': True,
     }
+
+    def to_json(self, user):
+        ret = super(AddonNodeSettingsBase, self).to_json(user)
+        ret.update({
+            'user': {
+                'permissions': self.owner.get_permissions(user)
+            },
+            'node': {
+                'id': self.owner._primary_key,
+                'api_url': self.owner.api_url,
+                'url': self.owner.url,
+                'is_registration': self.owner.is_registration,
+            }
+        })
+        return ret
 
     def render_config_error(self, data):
         """

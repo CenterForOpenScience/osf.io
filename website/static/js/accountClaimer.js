@@ -7,6 +7,8 @@
 this.OSFAccountClaimer = (function($, global, bootbox) {
     'use strict';
 
+    var currentUserId = global.contextVars.currentUser.id;
+
     function AccountClaimer (selector) {
         this.selector = selector;
         this.element = $(selector);  // Should select all span elements for
@@ -29,7 +31,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
 
     function onClickIfLoggedIn() {
         var pk = $(this).data('pk');
-        if (pk !== global.userId) {
+        if (pk !== currentUserId) {
             bootbox.confirm({
                 title: 'Claim as ' + global.contextVars.currentUser.username + '?',
                 message: 'If you claim this account, a contributor of this project ' +
@@ -37,7 +39,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
                 callback: function(confirmed) {
                     if (confirmed) {
                         $.osf.postJSON(getClaimUrl(), {
-                            claimerId: global.userId,
+                            claimerId: currentUserId,
                             pk: pk
                         }, function(response) {
                             alertFinished(response.email);
@@ -55,7 +57,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
             self.element.tooltip({
                 title: 'Is this you? Click to claim'
             });
-            if (global.userId.length) { // If user is logged in, ask for confirmation
+            if (currentUserId.length) { // If user is logged in, ask for confirmation
                 self.element.on('click', onClickIfLoggedIn);
             } else {
                 self.element.editable({

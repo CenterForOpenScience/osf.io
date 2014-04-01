@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-from .model import Node, NodeLog
+import datetime as dt
+
+from .model import Node, NodeLog, Pointer
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 

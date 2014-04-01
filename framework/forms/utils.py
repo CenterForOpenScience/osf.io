@@ -1,6 +1,7 @@
 import bleach
 import urllib
 
+# TODO: Test me @jmcarp
 
 def sanitize(s, **kwargs):
     return bleach.clean(s, **kwargs)
@@ -20,12 +21,18 @@ def process_data(data, func):
     return func(data)
 
 
-def _quote(value):
-    return urllib.quote(value, safe=' ')
-
-
 def process_payload(data):
-    return process_data(data, _quote)
+    return process_data(
+        data,
+        lambda value: urllib.quote(value.encode('utf-8'), safe=' ')
+    )
+
+
+def unprocess_payload(data):
+    return process_data(
+        data,
+        lambda value: urllib.unquote(value.encode('utf-8'))
+    )
 
 
 def jsonify(form):
@@ -38,6 +45,7 @@ def jsonify(form):
                 'id': field.id,
                 'label': str(field.label),
                 'html': str(field),
+                'description': str(field.description)
             }
             for field in form
         ]

@@ -18,7 +18,7 @@ css = Bundle(
             'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
             'vendor/pygments.css',
             'vendor/bootstrap3-editable/css/bootstrap-editable.css',
-            'vendor/bootstrap3/css/bootstrap-theme.css',
+            'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
             'vendor/hgrid/hgrid.css',
             filters='cssmin'),
         # Site-specific CSS
@@ -34,7 +34,7 @@ css = Bundle(
 js = Bundle(
     # Vendorized libraries that are already minified
     Bundle(
-        "vendor/bootstrap3/js/bootstrap.min.js",
+        "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
     ),
@@ -50,16 +50,18 @@ js_bottom = Bundle(
     "vendor/bower_components/momentjs/min/moment.min.js",
     "vendor/jquery-blockui/jquery.blockui.js",
     'vendor/knockout-sortable/knockout-sortable.js',
-    'vendor/dropzone/dropzone.js',
-    'vendor/hgrid/hgrid.js',
+    # 'vendor/dropzone/dropzone.js',
+    # 'vendor/hgrid/hgrid.js',
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle('js/site.js',
+            'js/language.js',
             'js/project.js',
             'js/app.js',
             'js/addons.js',
-            'js/dropzone-patch.js',
-            'js/rubeus.js'),
+            # 'js/dropzone-patch.js',
+            # 'js/rubeus.js'
+            ),
     filters='jsmin',
     output='public/js/site.js'
 )

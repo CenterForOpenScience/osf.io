@@ -196,7 +196,7 @@ class TestAUser(DbTestCase):
     def test_can_create_a_project(self):
         res = self._login(self.user.username, 'science')
         # Goes to dashboard (already logged in)
-        res = res.click('My Dashboard', index=0)
+        res = res.click('Dashboard', index=0)
         # Clicks New Project
         res = res.click('New Project').maybe_follow()
         # Fills out the form
@@ -315,6 +315,7 @@ class TestRegistrations(DbTestCase):
         # Goes to project's page
         res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
         assert_not_in('Delete project', res)
+
 
     def test_cant_see_contributor(self):
         # Goes to project's page
