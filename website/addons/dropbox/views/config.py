@@ -57,16 +57,9 @@ def get_folders(client):
                         for each in metadata['contents'] if each['is_dir']]
     return folders
 
-
-def serialize_settings(node_settings, current_user, client=None):
-    """View helper that returns a dictionary representation of a
-    DropboxNodeSettings record. Provides the return value for the
-    dropbox config endpoints.
-    """
+def serialize_urls(node_settings):
     node = node_settings.owner
-    user_settings = current_user.get_addon('dropbox')
-    user_has_auth = user_settings is not None and user_settings.has_auth
-    if node_settings.folder:
+    if node_settings.folder and node_settings.folder != '/':
         # The link to share a the folder with other Dropbox users
         share_url = utils.get_share_folder_uri(node_settings.folder)
     else:
@@ -83,10 +76,20 @@ def serialize_settings(node_settings, current_user, client=None):
         'share': share_url,
         'emails': node.api_url_for('dropbox_get_share_emails')
     }
+    return urls
+
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a
+    DropboxNodeSettings record. Provides the return value for the
+    dropbox config endpoints.
+    """
+    user_settings = current_user.get_addon('dropbox')
+    user_has_auth = user_settings is not None and user_settings.has_auth
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
-        'urls': urls
+        'urls': serialize_urls(node_settings)
     }
     if node_settings.has_auth:
         # Add owner's profile URL
@@ -119,6 +122,7 @@ def dropbox_config_put(node_addon, auth, **kwargs):
                 'name': 'Dropbox' + path,
                 'path': path
             },
+            'urls': serialize_urls(node_addon)
         },
         'message': 'Successfully updated settings.',
     }, http.OK
