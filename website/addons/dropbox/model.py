@@ -42,7 +42,7 @@ class DropboxFile(GuidFile):
 
     @property
     def download_url(self):
-        return self.node.web_url_for('dropbox_download', path=self.path)
+        return self.node.web_url_for('dropbox_download', path=self.path, _absolute=True)
 
     def update_metadata(self, client=None, rev=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
@@ -182,8 +182,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         """
         category, title = node.project_or_component, node.title
         if self.user_settings and self.user_settings.has_auth:
-            return ('Registering {category} "{title}" will copy Dropbox add-on authorization '
-                    'to the registered {category}.').format(**locals())
+            return ('Registering {category} "{title}" will copy Dropbox add-on '
+                    'authentication to the registered {category}.').format(**locals())
 
     # backwards compatibility
     before_register = before_register_message
@@ -195,16 +195,31 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         category = node.project_or_component
         if self.user_settings and self.user_settings.owner == user:
             return ('Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authorization to '
+                '{category}, forking it will also transfer your authentication to '
                 'the forked {category}.').format(category=category)
 
         else:
             return ('Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authorization to the forked '
+                    'user, forking it will not transfer authentication to the forked '
                     '{category}.').format(category=category)
 
     # backwards compatibility
     before_fork = before_fork_message
+
+    def before_remove_contributor_message(self, node, removed):
+        """Return warning text to display if removed contributor is the user
+        who authorized the Dropbox addon
+        """
+        if self.user_settings and self.user_settings.owner == removed:
+            category = node.project_or_component
+            name = removed.fullname
+            return ('The Dropbox add-on for this {category} is authenticated by {name}. '
+                    'Removing this user will also remove write access to Dropbox '
+                    'unless another contributor re-authenticates the add-on.'
+                    ).format(**locals())
+
+    # backwards compatibility
+    before_remove_contributor = before_remove_contributor_message
 
     def after_register(self, node, registration, user, save=True):
         """After registering a node, copy the user settings and save the
@@ -244,3 +259,18 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if save:
             clone.save()
         return clone, message
+
+    def after_remove_contributor(self, node, removed):
+        """If the removed contributor was the user who authorized the Dropbox
+        addon, remove the auth credentials from this node.
+        Return the message text that will be displayed to the user.
+        """
+        if self.user_settings and self.user_settings.owner == removed:
+            self.user_settings = None
+            self.save()
+            name = removed.fullname
+            url = node.web_url_for('node_setting')
+            return ('Because the Dropbox add-on for this project was authenticated'
+                    'by {name}, authentication information has been deleted. You '
+                    'can re-authenticate on the <a href="{url}">Settings</a> page'
+                    ).format(**locals())

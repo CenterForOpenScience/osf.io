@@ -523,8 +523,7 @@ def claim_user_form(**kwargs):
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username = form.username.data
-            password = form.password.data
+            username, password = form.username.data, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
