@@ -111,9 +111,8 @@ def dataverse_upload_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
-    now = datetime.datetime.utcnow()
 
-    path = kwargs.get('path', '')
+    now = datetime.datetime.utcnow()
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
@@ -122,7 +121,9 @@ def dataverse_upload_file(**kwargs):
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+
+    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -137,23 +138,25 @@ def dataverse_upload_file(**kwargs):
     file_id = study.get_file(filename).fileId
 
     if file_id is not None:
-        # TODO: Log for dataverse
-        # node.add_log(
-        #     action=(
-        #         'dataverse_' + (
-        #             models.NodeLog.FILE_ADDED
-        #         )
-        #     ),
-        #     params={
-        #         'project': node.parent_id,
-        #         'node': node._primary_key,
-        #         'path': os.path.join(path, filename),
-        #     },
-        #     auth=auth,
-        #     log_date=now,
-        # )
+        node.add_log(
+            action='dataverse_file_added',
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+                'filename': filename,
+                'path': os.path.join(
+                    node.api_url, 'dataverse', 'file', file_id
+                ) + '/',
+                'dataverse': {
+                    'dataverse': dataverse.title,
+                    'study': study.get_title(),
+                }
+            },
+            auth=auth,
+            log_date=now,
+        )
 
-        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', file_id) + '/'
+        url = os.path.join(node.api_url, 'dataverse', 'file', file_id) + '/'
 
         info = {
             'addon': 'dataverse',
@@ -198,29 +201,29 @@ def dataverse_delete_file(**kwargs):
         node_settings.dataverse_username,
         node_settings.dataverse_password
     )
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
 
-    study.delete_file(study.get_file_by_id(file_id))
+    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    file = study.get_file_by_id(file_id)
 
-    # TODO: Logs
+    study.delete_file(file)
 
-    # if data is None:
-    #     raise HTTPError(http.BAD_REQUEST)
-    #
-    # node.add_log(
-    #     action='dataverse_' + models.NodeLog.FILE_REMOVED,
-    #     params={
-    #         'project': node.parent_id,
-    #         'node': node._primary_key,
-    #         'path': path,
-    #         'dataverse': {
-    #             'user': node_settings.user,
-    #             'repo': node_settings.repo,
-    #         },
-    #     },
-    #     auth=auth,
-    #     log_date=now,
-    # )
+    # TODO: Check if file was deleted
+
+    node.add_log(
+        action='dataverse_file_removed',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'filename': file.name,
+            'dataverse': {
+                'dataverse': dataverse.title,
+                'study': study.get_title(),
+            }
+        },
+        auth=auth,
+        log_date=now,
+    )
 
     return {}
 
