@@ -4,18 +4,19 @@
  */
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'js/folderPicker', 'osfutils'], factory);
+        define(['knockout', 'jquery', 'js/folderPicker',
+                'zeroclipboard', 'osfutils', 'knockoutpunches'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready('folderPicker', function() {
-            global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker);
+        $script.ready(['folderPicker', 'zeroclipboard'], function() {
+            global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker, ZeroClipboard);
             $script.done('dropboxNodeConfig');
         });
     } else {
-        global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker);
+        global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker, ZeroClipboard);
     }
-}(this, function(ko, $, FolderPicker) {
+}(this, function(ko, $, FolderPicker, ZeroClipboard) {
     'use strict';
-
+    ko.punches.attributeInterpolationMarkup.enable();
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
@@ -31,15 +32,32 @@
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
-        // Whether or not folder picker is displayed
-        self.showPicker = ko.observable(false);
+        // Display names
+        self.PICKER = 'picker';
+        self.SHARE = 'share';
+        // Current folder display
+        self.currentDisplay = ko.observable(null);
         // CSS selector for the folder picker div
         self.folderPicker = folderPicker;
         // Currently selected folder, an Object of the form {name: ..., path: ...}
         self.selected = ko.observable(null);
+        // Emails of contributors, can only be populated by activating the share dialog
+        self.emails = ko.observableArray([]);
+        self.loading = ko.observable(false);
         // Whether the initial data has been fetched form the server. Used for
         // error handling.
-        self.loaded = ko.observable(false);
+        self.loadedSettings = ko.observable(false);
+        // Whether the contributor emails have been loaded from the server
+        self.loadedEmails = ko.observable(false);
+
+        // List of contributor emails as a comma-separated values
+        self.emailList = ko.computed(function() {
+            return self.emails().join([', ']);
+        });
+
+        self.disableShare = ko.computed(function() {
+            return !self.urls().share;
+        });
 
         /**
          * Update the view model from data returned from the server.
@@ -57,7 +75,7 @@
                 url: url, type: 'GET', dataType: 'json',
                 success: function(response) {
                     self.updateFromData(response.result);
-                    self.loaded(true);
+                    self.loadedSettings(true);
                 },
                 error: function(xhr, textStatus, error) {
                     console.error(textStatus); console.error(error);
@@ -73,6 +91,38 @@
         // Initial fetch from server
         self.fetchFromServer();
 
+        self.toggleShare = function() {
+            if (self.currentDisplay() === self.SHARE) {
+                self.currentDisplay(null);
+            } else {
+                // Clear selection
+                self.selected(null);
+                self.currentDisplay(self.SHARE);
+                self.activateShare();
+            }
+        };
+
+
+        function onGetEmailsSuccess(response) {
+            var emails = response.result.emails;
+            self.emails(emails);
+            self.loadedEmails(true);
+        }
+
+        self.activateShare = function() {
+            if (!self.loadedEmails()) {
+                $.ajax({
+                    url: self.urls().emails, type: 'GET', dataType: 'json',
+                    success: onGetEmailsSuccess
+                });
+            }
+            var $copyBtn = $('#copyBtn');
+            var client = new ZeroClipboard($copyBtn);
+            client.on('ready', function(evt) {
+                alert('ready!');
+            });
+        };
+
 
         /**
          * Whether or not to show the Import Access Token Button
@@ -81,7 +131,7 @@
             // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            var loaded = self.loaded();
+            var loaded = self.loadedSettings();
             return userHasAuth && !nodeHasAuth && loaded;
         });
 
@@ -95,7 +145,7 @@
             // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
-            var loaded = self.loaded();
+            var loaded = self.loadedSettings();
             return !userHasAuth && !nodeHasAuth && loaded;
         });
 
@@ -121,6 +171,7 @@
                 'text-success', 5000);
             // Update folder in ViewModel
             self.folder(response.result.folder);
+            self.urls(response.result.urls);
             self.selected(null);
         }
 
@@ -165,7 +216,7 @@
                     // Update observables
                     self.nodeHasAuth(false);
                     self.selected(null);
-                    self.showPicker(false);
+                    self.currentDisplay(null);
                     self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
                 error: function() {
@@ -196,6 +247,7 @@
             // Update view model based on response
             self.changeMessage(msg, 'text-success', 3000);
             self.updateFromData(response.result);
+            self.activatePicker();
         }
 
         function onImportError() {
@@ -237,11 +289,10 @@
         /**
          * Activates the HGrid folder picker.
          */
-        var progBar = '#dropboxProgBar';
         self.activatePicker = function() {
-            // Show progress bar
-            var $progBar = $(progBar);
-            $progBar.show();
+            self.currentDisplay(self.PICKER);
+            // Show loading indicator
+            self.loading(true);
             $(self.folderPicker).folderpicker({
                 onPickFolder: onPickFolder,
                 // Fetch Dropbox folders with AJAX
@@ -252,15 +303,17 @@
                     return row.urls.folders;
                 },
                 ajaxOptions: {
-                    error: function(xhr, textStatus, error) {
-                        $progBar.hide();
-                        console.error('Could not fetch Dropbox folders.');
-                        console.error(textStatus);
-                        console.error(error);
-                        self.changeMessage('Could not get folders. Please try again later.', 'text-warning');
+                   error: function(xhr, textStatus, error) {
+                        self.loading(false);
+                        console.error(textStatus); console.error(error);
+                        self.changeMessage('Could not connect to Dropbox at this time. ' +
+                                            'Please try again later.', 'text-warning');
                     }
                 },
-                progBar: progBar
+                init: function() {
+                    // Hide loading indicator
+                    self.loading(false);
+                }
             });
         };
 
@@ -269,11 +322,13 @@
          */
         self.togglePicker = function() {
             // Toggle visibility of folder picker
-            var show = !self.showPicker();
-            self.showPicker(show);
-            if (show) {
+            var shown = self.currentDisplay() === self.PICKER;
+            if (!shown) {
+                self.currentDisplay(self.PICKER);
                 self.activatePicker();
             } else {
+                self.currentDisplay(null);
+                // Clear selection
                 self.selected(null);
             }
         };

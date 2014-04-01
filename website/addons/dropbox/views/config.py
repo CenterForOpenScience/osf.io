@@ -10,8 +10,9 @@ from website.project.decorators import (must_have_addon,
     must_be_valid_project
 )
 from framework.exceptions import HTTPError
-
 from website.util import web_url_for
+
+from website.addons.dropbox import utils
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -56,15 +57,13 @@ def get_folders(client):
                         for each in metadata['contents'] if each['is_dir']]
     return folders
 
-
-def serialize_settings(node_settings, current_user, client=None):
-    """View helper that returns a dictionary representation of a
-    DropboxNodeSettings record. Provides the return value for the
-    dropbox config endpoints.
-    """
+def serialize_urls(node_settings):
     node = node_settings.owner
-    user_settings = current_user.get_addon('dropbox')
-    user_has_auth = user_settings is not None and user_settings.has_auth
+    if node_settings.folder and node_settings.folder != '/':
+        # The link to share a the folder with other Dropbox users
+        share_url = utils.get_share_folder_uri(node_settings.folder)
+    else:
+        share_url = None
     urls = {
         'config': node.api_url_for('dropbox_config_put'),
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
@@ -73,12 +72,24 @@ def serialize_settings(node_settings, current_user, client=None):
         'files': node.web_url_for('collect_file_trees__page'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents',
-            foldersOnly=1, includeRoot=1)
+            foldersOnly=1, includeRoot=1),
+        'share': share_url,
+        'emails': node.api_url_for('dropbox_get_share_emails')
     }
+    return urls
+
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a
+    DropboxNodeSettings record. Provides the return value for the
+    dropbox config endpoints.
+    """
+    user_settings = current_user.get_addon('dropbox')
+    user_has_auth = user_settings is not None and user_settings.has_auth
     result = {
         'nodeHasAuth': node_settings.has_auth,
         'userHasAuth': user_has_auth,
-        'urls': urls
+        'urls': serialize_urls(node_settings)
     }
     if node_settings.has_auth:
         # Add owner's profile URL
@@ -111,6 +122,7 @@ def dropbox_config_put(node_addon, auth, **kwargs):
                 'name': 'Dropbox' + path,
                 'path': path
             },
+            'urls': serialize_urls(node_addon)
         },
         'message': 'Successfully updated settings.',
     }, http.OK
@@ -138,3 +150,18 @@ def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()
     return None
+
+@must_have_permission('write')
+@must_have_addon('dropbox', 'user')
+@must_have_addon('dropbox', 'node')
+def dropbox_get_share_emails(auth, user_addon, node_addon, **kwargs):
+    if not node_addon.user_settings:
+        raise HTTPError(http.BAD_REQUEST)
+    # Current user must be the user who authorized the addon
+    if node_addon.user_settings.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    result = {
+        'emails': [contrib.username for contrib in node_addon.owner.contributors],
+        'url': utils.get_share_folder_uri(node_addon.folder)
+    }
+    return {'result': result}, http.OK
