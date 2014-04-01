@@ -18,12 +18,18 @@ def dataverse_set_user_config(*args, **kwargs):
     password = request.json.get('dataverse_password')
     connection = connect(username, password)
 
-    if connection is not None:
-        user_settings.dataverse_username = username
-        user_settings.dataverse_password = password
-        user_settings.save()
-    else:
+    # Check for valid connection
+    if connection is None:
+        raise HTTPError(http.UNAUTHORIZED)
+
+    # Dataverse account must have at least 1 Dataverse
+    if not connection.get_dataverses():
         raise HTTPError(http.BAD_REQUEST)
+
+    user_settings.dataverse_username = username
+    user_settings.dataverse_password = password
+
+    user_settings.save()
 
 
 # TODO: Is this needed?

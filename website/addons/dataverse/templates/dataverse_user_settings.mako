@@ -60,8 +60,10 @@
                 dataType: 'json',
             }).success(function() {
                 window.location.reload();
-            }).fail(function() {
-                var message = 'Error: Login was unsuccessful';
+            }).fail(function(args) {
+                var message = args.responseJSON.code == 400 ?
+                        'Error: You do not have any Dataverses on this account'
+                        : 'Error: Username or password is incorrect';
                 msgElm.text(message)
                     .removeClass('text-success').addClass('text-danger')
                     .fadeOut(100).fadeIn();
