@@ -17,7 +17,6 @@ from website.project.model import Node
 from website.project.decorators import must_have_addon
 from website.util import api_url_for, web_url_for
 
-from website import settings as website_settings
 from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
 
@@ -28,8 +27,7 @@ debug = logger.debug
 
 def get_auth_flow():
     # Dropbox only accepts https redirect uris unless using localhost
-    scheme = 'http' if website_settings.DEBUG_MODE else 'https'
-    redirect_uri = api_url_for('dropbox_oauth_finish', _external=True, _scheme=scheme)
+    redirect_uri = api_url_for('dropbox_oauth_finish', _absolute=True)
     return DropboxOAuth2Flow(
         consumer_key=settings.DROPBOX_KEY,
         consumer_secret=settings.DROPBOX_SECRET,

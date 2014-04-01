@@ -32,7 +32,7 @@
             error: function(xhr, textStatus, error){
                 console.error(textStatus); console.error(error);
                 self.changeMessage('Could not retrieve settings. Please refresh the page or ' +
-                    'contact <a href="mailto: contact@cos.io">contact@cos.io</a> if the ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                     'problem persists.', 'text-warning');
             }
         });
