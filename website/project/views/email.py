@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import re
 import hmac
 import json
@@ -150,6 +151,9 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
         address,
         CONFERENCE_SUBMITTED,
         conf_full_name=CONFERENCE_NAMES[conf_id],
+        conf_view_url=urlparse.urljoin(
+            settings.DOMAIN, os.path.join('view', conf_id)
+        ),
         fullname=fullname,
         user_created=user_created,
         set_password_url=set_password_url,
