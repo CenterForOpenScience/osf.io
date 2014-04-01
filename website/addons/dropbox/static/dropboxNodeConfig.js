@@ -70,7 +70,7 @@
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
-                        '<a href="mailto:contact@cos.io">contact@cos.io</a>.',
+                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
                         'text-warning');
                 }
             });
@@ -108,6 +108,7 @@
          * Whether or not to show the Import Access Token Button
          */
         self.showImport = ko.computed(function() {
+            // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loaded();
@@ -121,6 +122,7 @@
 
         /** Whether or not to show the Create Access Token button */
         self.showTokenCreateButton = ko.computed(function() {
+            // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loaded();
