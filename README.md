@@ -161,6 +161,27 @@ $ invoke solr
 
 This will start a Solr server on port 8983.
 
+## Using Bower for front-end dependencies
+
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries.
+
+To get the bower CLI, you must have Node installed.
+
+```bash
+$ brew update && brew install node
+$ npm install -g bower
+```
+
+To install a library:
+
+```bash
+$ bower install zeroclipboard --save
+```
+
+The `--save` option automatically adds an entry to the `bower.json` after downloading the library.
+
+This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
+
 
 ## Summary
 
