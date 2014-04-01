@@ -131,12 +131,25 @@ def make_url_map(app):
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
 
         Rule(
-            '/view/spsp2014/', 'get', project_views.email.spsp_results,
-            OsfWebRenderer('public/pages/spsp2014.mako')
+            '/view/spsp2014/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/spsp2014.mako'),
+            view_kwargs={'tag': 'spsp2014'}, endpoint_suffix='__spsp2014'
         ),
         Rule(
-            '/view/spsp2014/plain/', 'get', project_views.email.spsp_results,
-            OsfWebRenderer('public/pages/spsp2014_plain.mako'), endpoint_suffix='__plain',
+            '/view/spsp2014/plain/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/spsp2014_plain.mako'),
+            view_kwargs={'tag': 'spsp2014'}, endpoint_suffix='__spsp2014__plain',
+        ),
+
+        Rule(
+            '/view/asb2014/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/asb2014.mako'),
+            view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014'
+        ),
+        Rule(
+            '/view/asb2014/plain/', 'get', project_views.email.conference_results,
+            OsfWebRenderer('public/pages/asb2014_plain.mako'),
+            view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014__plain',
         ),
 
     ])
@@ -151,15 +164,7 @@ def make_url_map(app):
             addon_views.disable_addon,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/<addon>/settings/',
-                '/project/<pid>/node/<nid>/<addon>/settings/',
-            ],
-            'get',
-            addon_views.get_addon_config,
-            json_renderer,
-        ),
+
         Rule(
             '/profile/<uid>/<addon>/settings/',
             'get',
@@ -504,9 +509,9 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule(
-            '/email/spsp2014/',
+            '/email/<tag>/',
             'post',
-            project_views.email.spsp_poster_hook,
+            project_views.email.poster_hook,
             json_renderer,
         ),
 
@@ -616,6 +621,17 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
+
+        #Private Link
+        Rule([
+            '/project/<pid>/private_link/',
+            '/project/<pid>/node/<nid>/private_link/',
+        ], 'post', project_views.node.project_generate_private_link_post, json_renderer),
+
+        Rule([
+            '/project/<pid>/private_link/',
+            '/project/<pid>/node/<nid>/private_link/',
+        ], 'delete', project_views.node.remove_private_link, json_renderer),
 
         # Create, using existing project as a template
         Rule([

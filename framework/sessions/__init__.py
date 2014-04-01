@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import urllib
+import urlparse
 import logging
-
+from framework.exceptions import HTTPError
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
@@ -11,6 +13,46 @@ from framework.flask import app, request, redirect
 from .model import Session
 
 logger = logging.getLogger(__name__)
+debug = logger.debug
+
+def add_key_to_url(url, key):
+    """Redirects the user to the requests URL with the given key appended
+    to the query parameters.
+    """
+    parsed_path = urlparse.urlparse(url)
+    args = request.args.to_dict()
+    args['key'] = key
+    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
+    new_path = urlparse.urlunparse(new_parsed_path)
+    return new_path
+
+@app.before_request
+def prepare_private_key():
+
+    # Done if not GET request
+    if request.method != 'GET':
+        return
+
+    # Done if private_key in args
+    key_from_args = request.args.get('key', '')
+    if key_from_args:
+        return
+
+    #grab querry key from previous request for not login user
+    if request.referrer:
+        key = urlparse.parse_qs(
+            urlparse.urlparse(request.referrer).query
+        ).get('key')
+        if key:
+            key = key[0]
+    else:
+        key = None
+
+    # Update URL and redirect
+    if key and not session:
+        new_url = add_key_to_url(request.path, key)
+        return redirect(new_url, code=307)
+
 
 # todo 2-back page view queue
 # todo actively_editing date
@@ -18,8 +60,12 @@ logger = logging.getLogger(__name__)
 def set_previous_url(url=None):
     """Add current URL to session history if not in excluded list; cap history
     at set length.
+    Does nothing if a user is not logged in
 
     """
+    if not session:
+        return
+
     url = url or request.path
     if any([rule(url) for rule in settings.SESSION_HISTORY_IGNORE_RULES]):
         return
@@ -131,7 +177,6 @@ def before_request():
     ## Retry request, preserving status code
     #response = redirect(request.path, code=307)
     return create_session(None)
-
 
 @app.after_request
 def after_request(response):

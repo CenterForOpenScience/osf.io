@@ -49,13 +49,13 @@ settings_routes = {
         # Files
         Rule([
             '/project/<pid>/dataverse/file/',
-            '/project/<pid>/dataverse/file/<path:path>',
+            '/project/<pid>/dataverse/file/<path:path>/',
             '/project/<pid>/node/<nid>/dataverse/file/',
-            '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+            '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
         ], 'post', views.crud.dataverse_upload_file, json_renderer),
         Rule([
-            '/project/<pid>/dataverse/file/<path:path>',
-            '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+            '/project/<pid>/dataverse/file/<path:path>/',
+            '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
         ], 'delete', views.crud.dataverse_delete_file, json_renderer),
     ],
     'prefix': '/api/v1',
@@ -65,8 +65,8 @@ page_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/dataverse/file/<path:path>',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>',
+                '/project/<pid>/dataverse/file/<path:path>/',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/',
             ],
             'get',
             views.crud.dataverse_view_file,

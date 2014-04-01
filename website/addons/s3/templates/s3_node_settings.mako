@@ -1,6 +1,6 @@
-<%inherit file="project/addon/node_settings.mako" />
+<%inherit file="../../project/addon/node_settings.mako" />
 
-<script src="/addons/static/s3/s3-node-settings.js"></script>
+<script src="/static/addons/s3/s3-node-settings.js"></script>
 
 % if bucket_list is not None:
 

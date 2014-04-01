@@ -34,6 +34,7 @@ from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
+
 from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -41,6 +42,7 @@ from website.util.permissions import (expand_permissions,
 )
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import language, settings
+from website.util import web_url_for, api_url_for
 
 html_parser = HTMLParser()
 
@@ -469,6 +471,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
+    private_links = fields.StringField(list=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -547,10 +550,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        return (
-            self.is_public or
-            auth.user and self.has_permission(auth.user, 'read')
-        )
+        if auth.user and auth.user.private_keys:
+            key_ring = set(auth.user.private_keys)
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
+                or not key_ring.isdisjoint(self.private_links)
+        else:
+            return self.is_public or auth.user \
+                and self.has_permission(auth.user, 'read') \
+                or auth.private_key in self.private_links
+
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1110,7 +1119,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise PermissionsError()
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Components list not empty")
+            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1190,6 +1199,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.private_links = []
+
 
         # Forks default to private status
         forked.is_public = False
@@ -1265,6 +1276,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
+        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
@@ -1286,10 +1298,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                schema, auth, template, data
+                 schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
+
 
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
@@ -1477,6 +1490,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return committer
 
 
+
     def add_file(self, auth, file_name, content, size, content_type):
         """
         Instantiates a new NodeFile object, and adds it to the current Node as
@@ -1580,6 +1594,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
+    def add_private_link(self, link='', save=True):
+        link = link or str(uuid.uuid4()).replace("-", "")
+        self.private_links.append(link)
+        if save:
+            self.save()
+        return link
+
+    def remove_private_link(self, link, save=True):
+        self.private_links.remove(link)
+        if save:
+            self.save()
+
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
@@ -1607,6 +1633,22 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def url(self):
         return '/{}/'.format(self._primary_key)
+
+    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        if self.category == 'project':
+            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
+        else:
+            return web_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        if self.category == 'project':
+            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
+        else:
+            return api_url_for(view_name, pid=self.parent_node._primary_key,
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     @property
     def absolute_url(self):

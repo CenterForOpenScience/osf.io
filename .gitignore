@@ -10,7 +10,6 @@ ehthumbs.db
 Thumbs.db
 *.swp
 *~
-*.jshintrc
 
 # R
 #######################
@@ -42,6 +41,7 @@ nosetests.xml
 .hgignore
 env/*
 cover/
+.konchrc
 
 # Assets
 ########

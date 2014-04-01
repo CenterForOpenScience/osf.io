@@ -1,8 +1,13 @@
 /**
  * Controller for the Add Contributor modal.
  */
-this.ContribAdder = (function($, global, undefined) {
-
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'bootstrap', 'editable'], factory);
+    } else {
+        global.ContribAdder = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
 
     NODE_OFFSET = 25;
 
@@ -341,5 +346,4 @@ this.ContribAdder = (function($, global, undefined) {
     };
 
     return ContribAdder;
-
-})(jQuery, window);
+}));

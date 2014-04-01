@@ -1,23 +1,18 @@
-<%inherit file="../../base.mako"/>
+<%inherit file="../project_base.mako"/>
 <%def name="title()">${file_name}</%def>
 
-<%def name="content()">
+<div id="file-container" class="row">
 
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
-
-    <div id="file-container" class="row">
-
-        <div class="col-md-8">
-            ${self.file_contents()}
-        </div>
-
-        <div class="col-md-4">
-            ${self.file_versions()}
-        </div>
-
+    <div class="col-md-8">
+        ${self.file_contents()}
     </div>
 
-</%def>
+    <div class="col-md-4">
+        ${self.file_versions()}
+    </div>
+
+</div>
+
 
 <%def name="file_contents()">
 
@@ -42,7 +37,7 @@
 <%def name="javascript()">
     % if rendered is None:
         <script type="text/javascript">
-            $(document).ready(function() {
+            $script(['/static/js/filerenderer.js'], function() {
                 FileRenderer.start('${render_url}', '#fileRendered');
             });
         </script>

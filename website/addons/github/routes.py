@@ -182,8 +182,8 @@ page_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/github/file/<path:path>',
-                '/project/<pid>/node/<nid>/github/file/<path:path>',
+                '/project/<pid>/github/file/<path:path>/',
+                '/project/<pid>/node/<nid>/github/file/<path:path>/',
             ],
             'get',
             views.crud.github_view_file,

@@ -51,7 +51,6 @@ require.modules = {};
  */
 
 require.aliases = {};
-
 /**
  * Resolve `path`.
  *

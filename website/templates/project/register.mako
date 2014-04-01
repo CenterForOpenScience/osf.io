@@ -27,7 +27,9 @@
             var $this = $(this),
                 val = $this.val();
             if (val != 'Please select')
-                window.location.href += val;
+                var urlparse = window.location.href.split("?");
+                urlparse[0] += '/' + val;
+                window.location.href = urlparse.join("?")
         });
     </script>
 

@@ -69,7 +69,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'user_dataverse_account': user.get_addon('dataverse').dataverse_username,
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
-                'authorized_user_id': self.user._id if self.user else '',
+                'authorized_user_url': self.user.absolute_url if self.user else '',
         })
 
         connection = connect(
