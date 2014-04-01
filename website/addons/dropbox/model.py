@@ -42,7 +42,7 @@ class DropboxFile(GuidFile):
 
     @property
     def download_url(self):
-        return self.node.web_url_for('dropbox_download', path=self.path)
+        return self.node.web_url_for('dropbox_download', path=self.path, _absolute=True)
 
     def update_metadata(self, client=None, rev=None):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
