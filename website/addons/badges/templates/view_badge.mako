@@ -32,17 +32,19 @@
 <script>
   var data = [
     %for assertion in assertions:
-      {
-        name: '<a href="${assertion.node.absolute_url}">${assertion.node.title}</a>',
-        description: '${assertion.node.description or 'No description'}',
-        date: '${assertion.issued_date}',
-        evidence: '${'<a href="' + assertion.evidence + '">' + assertion.evidence + '</a>' if assertion.evidence else 'None provided'}',
-        %if badge.is_system_badge:
-          awarder: '<a href="${assertion.awarder.owner.profile_url}">${assertion.awarder.owner.fullname}</a>',
-        %endif
-        kind: 'item',
-        //children: [],
-      },
+      %if not assertion.revoked:
+        {
+          name: '<a href="${assertion.node.absolute_url}">${assertion.node.title}</a>',
+          description: '${assertion.node.description or 'No description'}',
+          date: '${assertion.issued_date}',
+          evidence: '${'<a href="' + assertion.evidence + '">' + assertion.evidence + '</a>' if assertion.evidence else 'None provided'}',
+          %if badge.is_system_badge:
+            awarder: '<a href="${assertion.awarder.owner.profile_url}">${assertion.awarder.owner.fullname}</a>',
+          %endif
+          kind: 'item',
+          //children: [],
+        },
+      %endif
     %endfor
   ];
 

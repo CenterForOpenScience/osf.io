@@ -66,19 +66,17 @@ def create_badge(*args, **kwargs):
 @must_have_addon('badges', 'user')
 @must_have_addon('badges', 'node')
 def revoke_badge(*args, **kwargs):
-    uid = kwargs['auth'].user._id
     _id = request.json.get('id', None)
     reason = request.json.get('reason', None)
-    if _id and reason:
+    if _id and reason is not None:
         assertion = BadgeAssertion.load(_id)
         if assertion:
-            badge = Badge.load(assertion.badge_id)
-            if badge and badge.creator == uid:
+            if assertion.badge and assertion.awarder.owner._id == kwargs['auth'].user._id:
                 assertion.revoked = True
                 assertion.reason = reason
-                User.load(uid).get_addon('badges').revocation_list[_id] = reason
+                kwargs['user_addon'].revocation_list[_id] = reason
                 assertion.save()
-                User.load(uid).get_addon('badges').save()
+                kwargs['user_addon'].save()
                 return 200
     raise HTTPError(http.BAD_REQUEST)
 

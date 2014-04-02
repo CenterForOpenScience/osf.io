@@ -63,7 +63,7 @@ def view_badge(*args, **kwargs):
     if badge:
         return {
             'badge': badge,
-            'assertions': badge.badgeassertion__assertion,
+            'assertions': badge.assertions,
         }
     raise HTTPError(http.NOT_FOUND)
 

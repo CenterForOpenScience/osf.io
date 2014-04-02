@@ -5,15 +5,19 @@
 
 <script type="text/javascript">
     var assertions = [
-    %for assertion in assertions:
-        {
-            date: '${assertion.issued_date}',
-            badge: '${assertion.badge.name}',
-            badge_id: '${assertion.badge._id}',
-            project: '${assertion.node.title}',
-            project_id:'${assertion.node._id}'
-        },
-    %endfor
+        %for assertion in assertions:
+            %if not assertion.revoked:
+                {
+                    date: '${assertion.issued_date}',
+                    badge: '${assertion.badge.name}',
+                    badge_id: '${assertion.badge._id}',
+                    project: '${assertion.node.title}',
+                    project_id:'${assertion.node._id}',
+                    assertion_id: '${assertion._id}',
+                    node_api_url: '${assertion.node.api_url}'
+                },
+            %endif
+        %endfor
     ];
 
     var dateColumn = {
@@ -34,14 +38,44 @@
         sortable: true,
         sortkey: 'project', // property of item object on which to sort on
     };
-
+    var revokeColumn = {
+        text: 'revoke',
+        itemView: '<button class="btn btn-xs btn-danger revoke-badge" aid="{{ assertion_id }}" url="{{ node_api_url }}"><i class="icon-minus"></i></button>',
+        sortable: false,
+    };
     var grid = new HGrid('#assertionGrid', {
         columns: [
             badgeColumn,
             dateColumn,
-            projectColumn
+            projectColumn,
+            revokeColumn
         ],
         data: assertions,
         width: '100%'
+    });
+
+    $(document).ready(function(){
+        $('.revoke-badge').click(function() {
+            var $self = $(this);
+            bootbox.confirm('Revoke this badge?', function(result) {
+                var bid = $self.attr('aid');
+                var url = $self.attr('url')
+                if(result && bid) {
+                    $.ajax({
+                        url: url + 'badges/revoke/',
+                        method: 'POST',
+                        dataType: 'json',
+                        contentType: 'application/json',
+                        data: JSON.stringify({reason: '', id: bid}),
+                        success: function(data) {
+                            location.reload();
+                        },
+                        error: function(xhr, status, error) {
+                            bootbox.alert('Could not revoke badge');
+                        }
+                    });
+                }
+            });
+        });
     });
 </script>
