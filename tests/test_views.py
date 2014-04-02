@@ -1523,6 +1523,9 @@ class TestAddonUserViews(OsfTestCase):
 class TestFileViews(OsfTestCase):
 
     def setUp(self):
+
+        super(TestFileViews, self).setUp()
+
         self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.project = ProjectFactory.build(creator=self.user, is_public=True)

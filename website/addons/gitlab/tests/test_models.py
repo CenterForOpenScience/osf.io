@@ -8,8 +8,10 @@ from website.addons.gitlab.api import GitlabError
 from website.addons.gitlab import settings as gitlab_settings
 
 from website.addons.base import AddonError
-
+from website.addons.gitlab.model import GitlabGuidFile
+from website.addons.gitlab.api import client
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
+
 
 class TestUserSettings(GitlabTestCase):
 
@@ -85,8 +87,8 @@ class TestNodeSettings(GitlabTestCase):
 
     def test_get_or_create_exists(self):
         guid = GitlabGuidFileFactory(node=self.project)
-        guid_count = GitlabGuidFileFactory.find().count()
-        retrieved_guid = GitlabGuidFileFactory.get_or_create(
+        guid_count = GitlabGuidFile.find().count()
+        retrieved_guid = GitlabGuidFile.get_or_create(
             self.node_settings, guid.path, 'master'
         )
         assert_equal(
@@ -94,14 +96,16 @@ class TestNodeSettings(GitlabTestCase):
             retrieved_guid._id
         )
         assert_equal(
-            GitlabGuidFileFactory.find().count(),
+            GitlabGuidFile.find().count(),
             guid_count
         )
 
-    def test_get_or_create_not_exists(self):
-        guid_count = GitlabGuidFileFactory.find().count()
-        retrieved_guid = GitlabGuidFileFactory.get_or_create(
-            self.node_settings, 'foo.txt', 'master'
+    @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
+    def test_get_or_create_not_exists(self, mock_list):
+        mock_list.return_value = True
+        guid_count = GitlabGuidFile.find().count()
+        retrieved_guid = GitlabGuidFile.get_or_create(
+            self.node_settings, 'foo.txt', 'master', client=client,
         )
         assert_equal(
             retrieved_guid.node._id,
@@ -112,22 +116,22 @@ class TestNodeSettings(GitlabTestCase):
             'foo.txt'
         )
         assert_equal(
-            GitlabGuidFileFactory.find().count() + 1,
-            guid_count
+            GitlabGuidFile.find().count(),
+            guid_count + 1
         )
 
     @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
     def test_get_or_create_not_exists_not_found(self, mock_list):
         mock_list.return_value = []
         with assert_raises(AddonError):
-            GitlabGuidFileFactory.get_or_create(
-                self.node_settings, 'foo.txt', 'master'
+            GitlabGuidFile.get_or_create(
+                self.node_settings, 'bar.txt', 'master', client=client,
             )
 
     @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
     def test_get_or_create_not_exists_gitlab_error(self, mock_list):
         mock_list.side_effect = AddonError('Ack!')
         with assert_raises(AddonError):
-            GitlabGuidFileFactory.get_or_create(
-                self.node_settings, 'foo.txt', 'master'
+            GitlabGuidFile.get_or_create(
+                self.node_settings, 'baz.txt', 'master', client=client,
             )

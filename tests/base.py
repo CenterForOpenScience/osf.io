@@ -113,6 +113,19 @@ class OsfTestCase(DbTestCase):
         copy_mock = copy_patch.start()
         copy_mock.return_value = {'id': 1}
 
+        branches_patch = mock.patch(
+            'website.addons.gitlab.utils.client.listbranches'
+        )
+        branches_mock = branches_patch.start()
+        branches_mock.return_value = [
+            {
+                'name': 'master',
+                'commit': {
+                    'id': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
+                }
+            }
+        ]
+
 
 class AppTestCase(unittest.TestCase):
     '''Base TestCase for OSF tests that require the WSGI app (but no database).

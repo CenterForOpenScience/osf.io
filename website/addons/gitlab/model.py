@@ -255,8 +255,8 @@ class GitlabGuidFile(GuidFile):
             # file exists if it has at least one commit
             try:
                 commits = client.listrepositorycommits(
-                    node_settings.project_id, path,
-                    ref_name=ref, per_page=1
+                    node_settings.project_id,
+                    ref_name=ref, path=path, per_page=1
                 )
             except GitlabError:
                 raise AddonError('File not found')
