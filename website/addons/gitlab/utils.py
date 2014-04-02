@@ -4,7 +4,7 @@ import time
 import urllib
 import logging
 import httplib as http
-from slugify import get_slugify
+from slugify import Slugify
 from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
@@ -208,10 +208,11 @@ def build_full_urls(node, item, path, branch=None, sha=None):
 # Gitlab file names can only contain alphanumeric and [_.-?] and must not end
 # with ".git"
 # See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
-gitlab_slugify = get_slugify(
-    safe_chars='.',
-    pretranslate=lambda value: re.sub(r'\.git$', '', value)
-)
+# Hack: `Slugify::set_pretranslate` is currently broken and doesn't accept
+# callables; until our PR is accepted, set the _pretranslate attribute
+# directly.
+gitlab_slugify = Slugify(safe_chars='.')
+gitlab_slugify._pretranslate = lambda value: re.sub(r'\.git$', '', value)
 
 
 def item_to_hgrid(node, item, path, permissions, branch=None, sha=None):
