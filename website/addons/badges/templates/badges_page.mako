@@ -42,7 +42,8 @@
 
 %endif
 
-% if can_issue and configured and len(badges) > 0:
+##TODO Remove me?
+% if can_award > 0:
   <script type="text/javascript">
   $(document).ready(function(){
       $('.revoke-badge').editable({

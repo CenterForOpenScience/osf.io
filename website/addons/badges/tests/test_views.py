@@ -37,7 +37,6 @@ class TestBadgesViews(AddonTestCase):
 
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge(self, img_proc):
-        assert_true(self.user_settings.can_issue)
         img_proc.return_value = 'temp.png'
         badge = create_badge_dict()
         ret = self.app.post_json(lookup('api', 'create_badge'), badge, auth=self.user.auth)
@@ -48,7 +47,6 @@ class TestBadgesViews(AddonTestCase):
 
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge_no_data(self, img_proc):
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'create_badge')
         badge = {}
         ret = self.app.post_json(url, badge, auth=self.user.auth, expect_errors=True)
@@ -57,7 +55,6 @@ class TestBadgesViews(AddonTestCase):
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge_some_data(self, img_proc):
         img_proc.return_value = 'temp.png'
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'create_badge')
         badge = {
             'badgeName': ''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(4)),
@@ -69,7 +66,6 @@ class TestBadgesViews(AddonTestCase):
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge_empty_data(self, img_proc):
         img_proc.return_value = 'temp.png'
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'create_badge')
         badge = create_badge_dict()
         badge['imageurl'] = ''
@@ -79,21 +75,16 @@ class TestBadgesViews(AddonTestCase):
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge_cant_issue(self, img_proc):
         img_proc.return_value = 'temp.png'
-        self.user.is_organization = False
-        self.user.save()
-        self.user.reload()
-        assert_false(self.user_settings.can_award)
-        assert_false(self.user_settings.can_issue)
+        self.user.delete_addon('badges')
         url = lookup('api', 'create_badge')
         badge = create_badge_dict()
         ret = self.app.post_json(url, badge, auth=self.user.auth, expect_errors=True)
-        assert_equals(ret.status_int, 403)
+        assert_equals(ret.status_int, 400)
 
     def test_award_badge(self):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -103,28 +94,24 @@ class TestBadgesViews(AddonTestCase):
     def test_award_badge_bad_badge_id(self):
         badgeid = 'badid67'
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
     def test_award_badge_empty_badge_id(self):
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': ''}, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
     def test_award_badge_no_badge_id(self):
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_badge_html(self, img_proc):
-        assert_true(self.user_settings.can_issue)
         img_proc.return_value = 'temp.png'
         badge = {
             'badgeName': get_garbage(),
@@ -145,7 +132,6 @@ class TestBadgesViews(AddonTestCase):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -174,7 +160,6 @@ class TestBadgesViews(AddonTestCase):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -200,44 +185,10 @@ class TestBadgesViews(AddonTestCase):
         assert_true(assertion.revoked)
         assert_equals(self.user_settings.revocation_list[assertion._id], 'Is a loser')
 
-    def test_revoke_badge_cant_award(self):
-        badgeid = self.user_settings.badges[0]._id
-        initnum = len(self.project.badgeassertion__awarded)
-        assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
-        url = lookup('api', 'award_badge', pid=self.project._id)
-        ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
-        self.project.reload()
-        assert_equals(ret.status_int, 200)
-        assert_equals(initnum + 1, len(self.project.badgeassertion__awarded))
-
-        assertion = self.project.badgeassertion__awarded[0]
-
-        revoke = lookup('api', 'revoke_badge', pid=self.project._id)
-        self.user.is_organization = False
-        self.user.save()
-        self.user.reload()
-
-        ret = self.app.post_json(revoke,
-            {
-                'id': assertion._id,
-                'reason': ''
-            }, auth=self.user.auth, expect_errors=True)
-        self.project.reload()
-        self.user_settings.reload()
-        assertion.reload()
-
-        assert_equals(ret.status_int, 400)
-        assert_false(assertion.revoked)
-        assert_true(self.project.badgeassertion__awarded[0]._id, assertion._id)
-        assert_false(assertion._id in self.user_settings.revocation_list)
-        assert_equals(len(self.user_settings.revocation_list), 0)
-
     def test_revoke_badge_no_addon(self):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -269,7 +220,6 @@ class TestBadgesViews(AddonTestCase):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -281,8 +231,7 @@ class TestBadgesViews(AddonTestCase):
         revoke = lookup('api', 'revoke_badge', pid=self.project._id)
 
         user2 = AuthUserFactory()
-        user2.is_organization = True
-        user2.add_addon('badges')
+        user2.add_addon('badges', override=True)
         user2.save()
         user2.reload()
 
@@ -307,7 +256,6 @@ class TestBadgesViews(AddonTestCase):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -337,7 +285,6 @@ class TestBadgesViews(AddonTestCase):
         self.user_settings.badges[0].make_system_badge()
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -351,7 +298,6 @@ class TestBadgesViews(AddonTestCase):
         badgeid = self.user_settings.badges[0]._id
         initnum = len(self.project.badgeassertion__awarded)
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badgeid}, auth=self.user.auth)
         self.project.reload()
@@ -364,7 +310,6 @@ class TestBadgesViews(AddonTestCase):
     def test_award_times(self):
         badge = self.user_settings.badges[0]
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
@@ -381,7 +326,6 @@ class TestBadgesViews(AddonTestCase):
     def test_unique_awards(self):
         badge = self.user_settings.badges[0]
         assert_true(self.user_settings.can_award)
-        assert_true(self.user_settings.can_issue)
         url = lookup('api', 'award_badge', pid=self.project._id)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)

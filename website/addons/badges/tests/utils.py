@@ -6,14 +6,13 @@ from website.addons.badges.model import Badge
 
 
 def create_mock_badger(mock_badger):
-    mock_badger.owner.is_organization = True
-    mock_badger.owner.save()
     #mock_badger.configured = True
     mock_badger.name = 'Honey'
     mock_badger.email = 'Not@real.com'
     for _ in range(4):
         create_mock_badge(mock_badger)
     mock_badger.save()
+    mock_badger.reload()
     return mock_badger
 
 

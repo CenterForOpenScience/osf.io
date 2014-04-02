@@ -29,10 +29,10 @@ def award_badge(*args, **kwargs):
     if not auth:
         raise HTTPError(http.BAD_REQUEST)
     awarder = auth.user.get_addon('badges')
-    if not awarder or not awarder.can_issue:
+    if not awarder or not awarder.can_award:
         raise HTTPError(http.FORBIDDEN)
     badge = Badge.load(badgeid)
-    if not badge or not awarder.can_award:
+    if not badge:
         raise HTTPError(http.BAD_REQUEST)
     if badge.is_system_badge:
         return BadgeAssertion.create(badge, node, evidence, awarder=awarder)._id
@@ -44,7 +44,7 @@ def award_badge(*args, **kwargs):
 def create_badge(*args, **kwargs):
     auth = kwargs.get('auth', None)
 
-    if not auth or not auth.user.is_organization:
+    if not auth:
         raise HTTPError(http.FORBIDDEN)
 
     badge_data = request.json

@@ -15,12 +15,8 @@ class BadgesUserSettings(AddonUserSettingsBase):
     revocation_list = fields.DictionaryField()  # {'id':'12345', 'reason':'is a loser'}
 
     @property
-    def can_issue(self):
-        return self.owner.is_organization
-
-    @property
     def can_award(self):
-        return self.can_issue and self.badges and len(get_system_badges()) > 0
+        return bool(self.badges) or len(get_system_badges()) > 0
 
     @property
     def badges(self):
@@ -35,7 +31,6 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     def to_json(self, user):
         ret = super(BadgesUserSettings, self).to_json(user)
-        ret['can_issue'] = self.can_issue
         ret['badges'] = self.get_badges_json() + [badge.to_json() for badge in get_system_badges() if badge.creator != self]
         return ret
 
