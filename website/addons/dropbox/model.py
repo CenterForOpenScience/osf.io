@@ -124,7 +124,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         'dropboxusersettings', backref='authorized'
     )
 
-    folder = fields.StringField(default='/')
+    folder = fields.StringField(default=None)
 
     #: Information saved at the time of registration
     #: Note: This is unused right now

@@ -86,13 +86,13 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
-        assert_true(node_settings.folder)
+        assert_true(hasattr(node_settings, 'folder'))
         assert_true(hasattr(node_settings, 'registration_data'))
 
-    def test_folder_defaults_to_dropbox_root(self):
+    def test_folder_defaults_to_none(self):
         node_settings = DropboxNodeSettings(user_settings=self.user_settings)
         node_settings.save()
-        assert_equal(node_settings.folder, '/')
+        assert_is_none(node_settings.folder)
 
     def test_has_auth(self):
         settings = DropboxNodeSettings(user_settings=self.user_settings)
