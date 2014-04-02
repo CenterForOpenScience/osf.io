@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
+import os
 
 from nose.tools import *  # PEP8 asserts
 from slugify import slugify
@@ -245,9 +245,15 @@ class TestDropboxGuidFile(DbTestCase):
     def test_download_url(self):
         file_obj = DropboxFileFactory()
         with app.test_request_context():
-            dl_url = file_obj.download_url
+            dl_url = file_obj.download_url(guid=False)
             expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
                 _absolute=True)
+        assert_equal(dl_url, expected)
+
+    def test_download_url_guid(self):
+        file_obj = DropboxFileFactory()
+        dl_url = file_obj.download_url(guid=True, rev='123')
+        expected = os.path.join('/', file_obj._primary_key, 'download/') + "?rev=123"
         assert_equal(dl_url, expected)
 
     def test_update_metadata(self):

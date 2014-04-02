@@ -91,10 +91,10 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     # Get metadata for each revision of the file
     # Don't show deleted revisions
     revisions = [rev for rev in client.revisions(path) if not rev.get('is_deleted')]
+    file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     # Add download links
     for revision in revisions:
-        revision['download'] = node.web_url_for('dropbox_download',
-            path=path, rev=revision['rev'])
+        revision['download'] = file_obj.download_url(guid=True, rev=revision['rev'])
         revision['view'] = node.web_url_for('dropbox_view_file',
             path=path, rev=revision['rev'])
     return {
@@ -125,7 +125,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
             path=cleaned_path, rev=rev),  # Append current revision as a query param
         'file_name': get_file_name(path),
         'render_url': node.api_url_for('dropbox_render_file', path=cleaned_path),
-        'download_url': file_obj.download_url,
+        'download_url': file_obj.download_url(guid=True, rev=rev),
         'rendered': rendered,
     }
     response.update(serialize_node(node, auth, primary=True))
