@@ -128,7 +128,7 @@ def render_dropbox_file(file_obj, client=None, rev=None):
             start_render=True,
             file_path=get_file_name(file_obj.path),
             file_content=file_response.read(),
-            download_path=file_obj.download_url
+            download_path=file_obj.download_url(guid=True, rev=rev)
         )
     return rendered
 
