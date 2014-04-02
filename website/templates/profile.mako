@@ -22,17 +22,10 @@
 
             var gravatar = $('#profile-gravatar')
             gravatar
-                .tooltip({
-                    title: 'click to change avatar',
-                    placement: 'bottom'
-                })
-                .css({ cursor: 'pointer' })
                 .on('error', function(e) {
-                    // Change to unknown user avatar
                     gravatar.attr('src', '/static/img/blank_avatar.png')
                 })
                 .attr('src', gravatar.attr('src') + '&d=404')
-                .wrap('<a href="#changeAvatarModal" data-toggle="modal">')
 
         });
     </script>
@@ -49,8 +42,11 @@
 
 
 <div class="page-header">
-    <img id='profile-gravatar' style="float:left;padding-right:.5em;" src="${profile['gravatar_url']}" />
-    <h1 id="profile-fullname" style="display:inline-block;margin-top:0;">${profile["fullname"]}</h1>
+    <a href="#changeAvatarModal" data-toggle="modal">
+        <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                 rel="tooltip" title="click to change avatar" />
+    </a>
+    <h1 id="profile-fullname">${profile["fullname"]}</h1>
 </div><!-- end-page-header -->
 
 <div class="row">
