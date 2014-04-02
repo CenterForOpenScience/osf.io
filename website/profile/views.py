@@ -193,6 +193,9 @@ def profile_settings(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
+            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+                #or addon.short_name in addons_enabled
+                #or user.get_addon(addon.short_name, deleted=True))
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings

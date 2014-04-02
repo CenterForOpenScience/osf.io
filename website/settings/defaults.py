@@ -137,6 +137,11 @@ ADDON_CATEGORIES = [
     'documentation', 'storage', 'bibliography', 'other',
 ]
 
+SYSTEM_ADDED_ADDONS = {
+    'user': ['badges'],
+    'node': []
+}
+
 # Piwik
 
 # TODO: Override in local.py in production
