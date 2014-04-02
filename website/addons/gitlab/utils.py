@@ -279,3 +279,48 @@ def ref_or_default(node_settings, data):
     else:
         raise AddonError('Could not get git ref')
     return ret or gitlab_settings.DEFAULT_BRANCH
+
+
+def get_branch_id(node_settings, branch):
+    """
+
+    """
+    branch_json = client.listbranch(node_settings.project_id, branch)
+    return branch_json['id']
+
+
+def get_default_branch_and_sha(node_settings):
+    """
+
+    """
+    branches_json = client.listbranches(node_settings.project_id)
+    if len(branches_json) == 1:
+        branch = branches_json[0]['name']
+        sha = branches_json[0]['commit']['id']
+    else:
+        project_json = client.getproject(node_settings.project_id)
+        branch = project_json['default_branch']
+        branch_json = [
+            each
+            for each in branches_json
+            if each['name'] == branch
+        ]
+        if not branch_json:
+            raise AddonError('Could not find branch')
+        sha = branch_json[0]['commit']['id']
+    return branch, sha
+
+
+def get_branch_and_sha(node_settings, data):
+    """
+
+    """
+    branch = data.get('branch')
+    sha = data.get('sha')
+
+    if sha is None:
+        if branch:
+            sha = get_branch_id(node_settings, branch)
+        else:
+            branch, sha = get_default_branch_and_sha(node_settings)
+    return branch, sha

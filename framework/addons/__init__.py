@@ -118,9 +118,9 @@ class AddonModelMixin(StoredObject):
 
         """
         for addon_name, enabled in config.iteritems():
-            if enabled:
+            if enabled and not self.has_addon(addon_name):
                 self.add_addon(addon_name, auth)
-            else:
+            elif not enabled and self.has_addon(addon_name):
                 self.delete_addon(addon_name, auth)
         if save:
             self.save()

@@ -3,9 +3,11 @@ import base64
 import urllib
 import httplib as http
 from flask import request, redirect, make_response
+from mako.template import Template
 
 from framework.exceptions import HTTPError
 
+from website import settings
 from website.project.decorators import (
     must_be_contributor_or_public, must_not_be_registration,
     must_have_permission, must_have_addon,
@@ -23,7 +25,7 @@ from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
     setup_user, setup_node, gitlab_slugify,
     kwargs_to_path, item_to_hgrid, gitlab_to_hgrid, build_urls, refs_to_params,
-    serialize_commit, ref_or_default
+    serialize_commit, ref_or_default, get_branch_and_sha
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -156,11 +158,12 @@ def gitlab_upload_file(**kwargs):
     return {'actionTaken': None}
 
 
-def gitlib_hgrid_root(node_settings, auth, **kwargs):
+def gitlab_hgrid_root(node_settings, auth, **kwargs):
 
     node = node_settings.owner
-    branch = kwargs.get('branch')
-    sha = kwargs.get('sha')
+
+    branch, sha = get_branch_and_sha(node_settings, kwargs)
+    print 'bs', branch, sha
 
     permissions = {
         'edit': node.can_edit(auth=auth),
@@ -170,11 +173,21 @@ def gitlib_hgrid_root(node_settings, auth, **kwargs):
         node, {'type': 'tree'}, path='',
         branch=branch, sha=sha
     )
+
+    branches = [
+        each['name']
+        for each in client.listbranches(node_settings.project_id)
+    ]
+    print branch, sha, branches
+    extra = render_branch_picker(branch, sha, branches)
+    print 'extra', extra
+
     return [rubeus.build_addon_root(
         node_settings,
         name=None,
         urls=urls,
         permissions=permissions,
+        extra=extra,
     )]
 
 
@@ -208,13 +221,22 @@ def gitlab_list_files(**kwargs):
     return gitlab_to_hgrid(node, tree, path, permissions, branch, sha)
 
 
+template_path = os.path.join(
+    settings.BASE_PATH, 'addons', 'gitlab', 'templates', 'branch_picker.mako'
+)
+branch_picker_template = Template(open(template_path).read())
+
+def render_branch_picker(branch, sha, branches):
+    return branch_picker_template.render(**locals())
+
+
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
 def gitlab_file_commits(node_addon, **kwargs):
 
     branch = request.args.get('branch')
     sha = request.args.get('sha')
-    ref = ref_or_default(node_addon, request.args)
+    ref = ref_or_default(node_addon, kwargs)
 
     path = kwargs_to_path(kwargs, required=True)
     guid = get_guid(node_addon, path, ref)

@@ -26,7 +26,17 @@ CONFIGS = []
 
 CATEGORIES = ['storage']
 
+INCLUDE_JS = {
+    'files': [
+        'gitlab-rubeus-cfg.js',
+    ]
+}
+
+INCLUDE_CSS = {
+    'files': ['gitlab-rubeus.css']
+}
+
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.crud.gitlib_hgrid_root
+GET_HGRID_DATA = views.crud.gitlab_hgrid_root
 
 MAX_FILE_SIZE = 32

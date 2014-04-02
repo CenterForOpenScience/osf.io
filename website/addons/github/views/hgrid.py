@@ -138,7 +138,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         )
     except NotFoundError:
         # TODO: Show an alert or change GitHub configuration?
-        logger.error('GitHub repo  not found')
+        logger.error('GitHub repo not found')
         return
 
     if branch is not None:
