@@ -72,19 +72,6 @@ ${next.body()}
                     });
                 }
 
-##                if ($linkScope.length >0){
-##                    var $privateLink = $('#private-link');
-##                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
-##                                                            data.parent_node.id,
-##                                                            data.parent_node.title);
-##                    ko.applyBindings(privateLinkVM, $privateLink[0]);
-##                    // Clear user search modal when dismissed; catches dismiss by escape key
-##                    // or cancel button.
-##                    $privateLink.on('hidden', function() {
-##                        privateLinkVM.clear();
-##                    });
-##                }
-
             }
         );
 

@@ -166,9 +166,7 @@
         var configUrl = nodeApiUrl + 'private_link/config/';
         var privateLinkManager = new PrivateLinkManager('#private-link', configUrl);
 
-
-        var tableUrl = nodeApiUrl + 'private_link/table/';
-        var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+        var privateLinkTable = new PrivateLinkTable('#linkScope', nodeApiUrl);
 
 
     });
