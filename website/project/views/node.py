@@ -624,6 +624,20 @@ def private_link_config(**kwargs):
 
     return rv
 
+
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def private_link_table(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    data = {
+        'node': {
+            'absolute_url': node.absolute_url,
+            'private_links': [x.to_json() for x in node.private_links],
+            }
+    }
+    return data
+
+
 @collect_auth
 @must_be_valid_project
 def get_editable_children(**kwargs):

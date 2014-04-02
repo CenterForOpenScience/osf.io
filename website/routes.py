@@ -638,6 +638,11 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/private_link/config/',
         ], 'get', project_views.node.private_link_config, json_renderer),
 
+        Rule([
+            '/project/<pid>/private_link/table/',
+            '/project/<pid>/node/<nid>/private_link/table/',
+        ], 'get', project_views.node.private_link_table, json_renderer),
+
         # Create, using existing project as a template
         Rule([
             '/project/new/<nid>/',

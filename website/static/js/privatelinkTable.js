@@ -1,6 +1,6 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'zeroclipboard'], factory);
+        define(['knockout', 'jquery', 'zeroclipboard', 'osfutils'], factory);
     } else {
         global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
     }
@@ -40,27 +40,50 @@
     function ViewModel(url) {
         var self = this;
         self.url = url;
+        self.private_links = ko.observableArray();
+        self.node_url = ko.observable(null);
+
+        function onFetchSuccess(response) {
+            var node = response.node;
+            self.private_links(node.private_links);
+            self.node_url(node.absolute_url);
+        }
+
+        function onFetchError() {
+          //TODO
+          console.log('an error occurred');
+        }
+
+        function fetch() {
+            $.ajax({url: url, type: 'GET', dataType: 'json',
+              success: onFetchSuccess,
+              error: onFetchError
+            });
+        }
+
+        fetch();
+
+        self.removeLink = function(data){
+            var data_to_send={
+                'private_link_id': data.id
+            };
+            bootbox.confirm('Are you sure to remove this private link?', function(result) {
+                if (result) {
+                    $.ajax({
+                        type: "delete",
+                        url: nodeApiUrl + "private_link/",
+                        contentType: "application/json",
+                        dataType: "json",
+                        data: JSON.stringify(data_to_send)
+                    }).done(function(response) {
+                        window.location.reload();
+                    });
+                }
+             });
+        };
+
     }
 
-    $(".remove-private-link").on("click",function(){
-        var me = $(this);
-        var data_to_send={
-            'private_link_id': me.attr("data-link")
-        };
-        bootbox.confirm('Are you sure to remove this private link?', function(result) {
-            if (result) {
-                $.ajax({
-                    type: "delete",
-                    url: nodeApiUrl + "private_link/",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(data_to_send)
-                }).done(function(response) {
-                    window.location.reload();
-                });
-            }
-         });
-    });
 
 
     $('tbody .link-create-date').each(function(idx, elem) {
@@ -77,6 +100,7 @@
         var self = this;
         self.viewModel = new ViewModel(url);
         $.osf.applyBindings(self.viewModel, selector);
+        window.viewModel = self.viewModel;
     }
 
     return PrivateLinkTable;
