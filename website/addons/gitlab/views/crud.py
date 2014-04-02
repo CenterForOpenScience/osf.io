@@ -206,22 +206,19 @@ def gitlab_hgrid_root_public(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
-def gitlab_list_files(**kwargs):
+def gitlab_list_files(node_addon, auth, path='', **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
 
     # Don't crash if Gitlab project hasn't been created yet
-    if not node_settings.project_id:
+    if not node_addon.project_id:
         return []
 
-    path = kwargs.get('path', '')
     branch = request.args.get('branch')
     sha = request.args.get('sha')
 
     tree = client.listrepositorytree(
-        node_settings.project_id, path=path, ref_name=sha or branch
+        node_addon.project_id, path=path, ref_name=sha or branch
     )
     permissions = {
         'view': True,

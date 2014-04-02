@@ -132,6 +132,9 @@ type_to_kind = {
 
 
 def kwargs_to_path(kwargs, required=True):
+    """
+
+    """
     path = kwargs.get('path')
     if path:
         return urllib.unquote_plus(path).rstrip('/')
@@ -141,6 +144,9 @@ def kwargs_to_path(kwargs, required=True):
 
 
 def refs_to_params(branch=None, sha=None):
+    """
+
+    """
     refs = {}
     if branch:
         refs['branch'] = branch
@@ -152,7 +158,16 @@ def refs_to_params(branch=None, sha=None):
 
 
 def build_full_urls(node, item, path, branch=None, sha=None):
+    """Build full URLs (i.e., without GUIDs) for a file or folder.
 
+    :param Node node: OSF node
+    :param dict item: Dict of GitLab file or folder info
+    :param str path: Path to file or folder
+    :param str branch: Optional branch name
+    :param str sha: Optional commit SHA
+    :returns: Dict of URLs
+
+    """
     quote_path = urllib.quote_plus(path.encode('utf-8'))
     quote_path = None if not quote_path else quote_path
 
@@ -221,7 +236,7 @@ def resolve_gitlab_hook_author(author):
     """Resolve GitLab author information to OSF user.
 
     :param dict author: Author dictionary from GitLab
-    :returns: User if email found in OSF else email address
+    :returns: User if email found in OSF, else email address
 
     """
     return get_user(username=author['email']) or author['name']
@@ -232,7 +247,7 @@ def resolve_gitlab_commit_author(commit):
     if available.
 
     :param dict commit: JSON commit data
-    :returns: Dictionary of committer name and URL
+    :returns: Dict of committer name and URL
 
     """
     committer_user = get_user(username=commit['author_email'])
@@ -258,7 +273,12 @@ def build_guid_urls(guid, branch=None, sha=None):
 
 
 def serialize_commit(commit, guid, branch):
-    """
+    """Serialize GitLab commit to dictionary.
+
+    :param dict commit: GitLab commit data
+    :param str guid: File GUID
+    :param str branch: Branch name
+    :returns: Dict of commit data
 
     """
     committer = resolve_gitlab_commit_author(commit)
@@ -279,19 +299,32 @@ def ref_or_default(node_settings, data):
     :returns: SHA or branch if reference found, else None
 
     """
-    ref = data.get('sha') or data.get('branch')
-    if ref:
-        ret = ref
-    elif node_settings.project_id:
+    return (
+        data.get('sha')
+        or data.get('branch')
+        or get_default_branch(node_settings)
+    )
+
+
+def get_default_branch(node_settings):
+    """Get default branch of GitLab project.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :returns: Name of default branch
+
+    """
+    if node_settings.project_id:
         project = client.getproject(node_settings.project_id)
-        ret = project['default_branch']
-    else:
-        raise AddonError('Could not get git ref')
-    return ret or gitlab_settings.DEFAULT_BRANCH
+        return project['default_branch']
+    raise AddonError('No project ID attached to settings')
 
 
 def get_branch_id(node_settings, branch):
-    """
+    """Get latest commit SHA for branch of GitLab project.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param str branch: Branch name
+    :returns: SHA of branch
 
     """
     branch_json = client.listbranch(node_settings.project_id, branch)
@@ -299,7 +332,10 @@ def get_branch_id(node_settings, branch):
 
 
 def get_default_branch_and_sha(node_settings):
-    """
+    """Get default branch and SHA for GitLab project.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :returns: Tuple of (branch, SHA)
 
     """
     branches_json = client.listbranches(node_settings.project_id)
@@ -307,8 +343,7 @@ def get_default_branch_and_sha(node_settings):
         branch = branches_json[0]['name']
         sha = branches_json[0]['commit']['id']
     else:
-        project_json = client.getproject(node_settings.project_id)
-        branch = project_json['default_branch']
+        branch = get_default_branch(node_settings)
         branch_json = [
             each
             for each in branches_json
@@ -321,15 +356,28 @@ def get_default_branch_and_sha(node_settings):
 
 
 def get_branch_and_sha(node_settings, data):
-    """
+    """Get branch and SHA from dictionary of view data.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings
+    :param dict data: Dictionary of view data; `branch` and `sha` keys will
+        be checked
+    :returns: Tuple of (branch, SHA)
+    :raises: ValueError if SHA but not branch provided
 
     """
     branch = data.get('branch')
     sha = data.get('sha')
+
+    # Can't infer branch from SHA
+    if sha and not branch:
+        raise ValueError('Cannot provide sha without branch')
 
     if sha is None:
         if branch:
             sha = get_branch_id(node_settings, branch)
         else:
             branch, sha = get_default_branch_and_sha(node_settings)
+
+    branch = branch or get_default_branch(node_settings)
+
     return branch, sha
