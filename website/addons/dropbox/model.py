@@ -30,10 +30,23 @@ class DropboxFile(GuidFile):
     #: See https://www.dropbox.com/developers/core/docs#metadata
     metadata = fields.DictionaryField(required=False)
 
-    @property
-    def url(self):
-        """The web url for the file."""
-        return self.node.web_url_for('dropbox_view_file', path=self.path)
+    def url(self, guid=True, rev=None, *args, **kwargs):
+        """The web url for the file.
+
+        :param bool guid: Whether to return the short URL
+        """
+        # Short URLS must be built 'manually'
+        if guid:
+            # If returning short URL, urlencode the kwargs to build querystring
+            base_url = os.path.join('/', self._primary_key)
+            args = {'rev': rev}
+            args.update(**kwargs)
+            querystring = urllib.urlencode(args)
+            url = '/?'.join([base_url, querystring])
+        else:
+            url = self.node.web_url_for('dropbox_view_file', path=self.path,
+                rev=rev, **kwargs)
+        return url
 
     @property
     def file_url(self):
@@ -56,7 +69,7 @@ class DropboxFile(GuidFile):
             url = '?'.join([base_url, querystring])
         else:
             url = self.node.web_url_for('dropbox_download',
-                    path=self.path, _absolute=True, rev=rev, *args, **kwargs)
+                    path=self.path, _absolute=True, rev=rev, **kwargs)
         return url
 
     def update_metadata(self, client=None, rev=None):

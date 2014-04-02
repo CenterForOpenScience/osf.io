@@ -4,6 +4,7 @@ import httplib as http
 import os
 
 from modularodm import Q
+from modularodm.exceptions import ModularOdmException
 
 from website.project.model import NodeLog
 from website.project.utils import serialize_node
@@ -91,12 +92,23 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     # Get metadata for each revision of the file
     # Don't show deleted revisions
     revisions = [rev for rev in client.revisions(path) if not rev.get('is_deleted')]
-    file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
-    # Add download links
+    # Return GUID short urls if a GUID record exists
+    try:
+        file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
+    except ModularOdmException:
+        file_obj = None
     for revision in revisions:
-        revision['download'] = file_obj.download_url(guid=True, rev=revision['rev'])
-        revision['view'] = node.web_url_for('dropbox_view_file',
-            path=path, rev=revision['rev'])
+        # Add download and view links
+        rev = revision['rev']
+        if file_obj:
+            download_url = file_obj.download_url(guid=True, rev=rev)
+            view_url = file_obj.url(guid=True, rev=rev)
+        else:  # No GUID, use long URLs
+            download_url = node.web_url_for('dropbox_download',
+                path=path, rev=rev)
+            view_url = node.web_url_for('dropbox_view_file', path=path, rev=rev)
+        revision['download'] = download_url
+        revision['view'] = view_url
     return {
         'result': revisions,
         'registered': node.registered_date.isoformat() if node.registered_date else None,

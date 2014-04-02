@@ -219,16 +219,21 @@ class TestNodeSettingsCallbacks(DbTestCase):
 
 class TestDropboxGuidFile(DbTestCase):
 
-    def test_web_url(self):
+    def test_verbose_url(self):
         project = ProjectFactory()
         file_obj = DropboxFile(node=project, path='foo.txt')
         file_obj.save()
         with app.test_request_context():
-            file_url = file_obj.url
+            file_url = file_obj.url(guid=False)
 
         url = lookup('web', 'dropbox_view_file',
             pid=project._primary_key, path=file_obj.path)
         assert_equal(url, file_url)
+
+    def test_guid_url(self):
+        file_obj = DropboxFileFactory()
+        result = file_obj.url(guid=True, rev='123')
+        assert_equal(result, '/{guid}/?rev=123'.format(guid=file_obj._primary_key))
 
     def test_cache_file_name(self):
         project = ProjectFactory()
