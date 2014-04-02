@@ -89,7 +89,7 @@ def create_or_update(node_settings, user_settings, method_name, action,
         gitlab_upload_log(node, action, auth, response, branch)
         return response
     except GitlabError:
-        raise AddonError('Could not upload file')
+        return False
 
 
 @must_have_permission(WRITE)
@@ -103,7 +103,7 @@ def gitlab_upload_file(**kwargs):
 
     # Lazily configure Gitlab
     setup_user(auth.user)
-    setup_node(node)
+    setup_node(node, check_ready=True)
 
     user_settings = auth.user.get_addon('gitlab')
 

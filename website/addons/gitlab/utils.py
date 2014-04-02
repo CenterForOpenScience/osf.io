@@ -1,6 +1,8 @@
 import os
 import re
+import time
 import urllib
+import logging
 import httplib as http
 from slugify import get_slugify
 from dateutil.parser import parse as parse_date
@@ -15,6 +17,8 @@ from website.dates import FILE_MODIFIED
 import settings as gitlab_settings
 from website.addons.gitlab.api import client, GitlabError
 
+
+logger = logging.getLogger(__name__)
 
 def translate_permissions(permissions):
     osf_permissions = reduce_permissions(permissions)
@@ -51,7 +55,7 @@ def create_user(user_settings):
     user_settings.save()
 
 
-def create_node(node_settings):
+def create_node(node_settings, check_ready=False):
     """
 
     """
@@ -73,6 +77,11 @@ def create_node(node_settings):
     except GitlabError:
         raise AddonError('Could not create project')
 
+    if check_ready:
+        initialized = check_project_initialized(node_settings)
+        if not initialized:
+            raise AddonError('Project not ready')
+
     # Add web hook
     node_settings.add_hook(save=True)
 
@@ -86,13 +95,34 @@ def setup_user(user):
     return user_settings
 
 
-def setup_node(node):
+def setup_node(node, check_ready=False):
     """
 
     """
     node_settings = node.get_or_add_addon('gitlab')
-    create_node(node_settings)
+    create_node(node_settings, check_ready=check_ready)
     return node_settings
+
+
+def check_project_initialized(node_settings, tries=20, delay=0.1):
+    """Ping the `ready` endpoint until the GitLab project exists.
+
+    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param int tries: Maximum number of tries
+    :param float delay: Delay between tries
+    :returns: Project ready
+
+    """
+    for _ in range(tries):
+        try:
+            status = client.getprojectready(node_settings.project_id)
+            if status['ready']:
+                return True
+        except GitlabError:
+            pass
+        logger.info('GitLab project not initialized.')
+        time.sleep(delay)
+    return False
 
 
 type_to_kind = {

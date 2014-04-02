@@ -10,7 +10,7 @@ def migrate_node(node):
         return
 
     # Ensure Gitlab project
-    node_settings = setup_node(node, initialize=False)
+    node_settings = setup_node(node, check_ready=False)
     creator_settings = node.creator.get_addon('gitlab')
 
     # Hack: Remove contributor from project list; we'll add them back soon
