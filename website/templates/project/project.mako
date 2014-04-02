@@ -59,10 +59,10 @@
             ##                <span>${node['display_absolute_url']}</span>
             ##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
                             <div class="citation-list">
-                <span>Citation:
+                <span><b>Citation:</b>
                 <form id="citationForm" action="#">
                     <select id="humanStyles">
-                        <option value="OSFURL">Permanent OSF ID</option>
+                        <option value="OSFURL">Permanent OSF URL</option>
                         <option value="apa.csl">APA</option>
                         <option value="chicago-author-date.csl">Chicago: Author-Date</option>
                         <option value="chicago-note-bibliography.csl">Chicago: Note-Bibliography</option>
