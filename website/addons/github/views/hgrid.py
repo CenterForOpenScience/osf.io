@@ -5,6 +5,7 @@ import httplib as http
 from mako.template import Template
 
 from framework import request
+from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public
@@ -125,9 +126,15 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     if node_settings.owner.is_public:
-        repo = connection.repo(node_settings.user, node_settings.repo)
+        try:
+            repo = connection.repo(node_settings.user, node_settings.repo)
+        except NotFoundError:
+            # TODO: Test me @jmcarp
+            # TODO: Add warning message
+            logging.error('Could not access GitHub repo')
+            return None
         if repo.private:
-            return
+            return None
 
     try:
         branch, sha, branches = _get_refs(
@@ -138,7 +145,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         )
     except NotFoundError:
         # TODO: Show an alert or change GitHub configuration?
-        logger.error('GitHub repo  not found')
+        logger.error('GitHub repo not found')
         return
 
     if branch is not None:
