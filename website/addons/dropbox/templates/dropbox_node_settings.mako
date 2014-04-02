@@ -1,19 +1,21 @@
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 <div id="dropboxScope" class="scripted">
+    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
         Dropbox
-        <small class="authorized-by">
-            authorized by <a data-bind="attr.href: urls().owner">
-                {{ownerName}}
-            </a>
-        </small>
-        <small data-bind="visible: userHasAuth">
-            <a data-bind="click: deauthorize"
-                class="text-danger pull-right">Deauthorize</a>
-        </small>
+        <span data-bind="if: nodeHasAuth">
+            <small class="authorized-by">
+                authorized by <a data-bind="attr.href: urls().owner">
+                    {{ownerName}}
+                </a>
+            </small>
+            <small data-bind="visible: userHasAuth">
+                <a data-bind="click: deauthorize"
+                    class="text-danger pull-right">Deauthorize</a>
+            </small>
+        </span>
     </h4>
 
-    <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
 
     <!-- Settings Pane -->
     <div class="dropbox-settings" data-bind='if: showSettings'>
@@ -23,10 +25,12 @@
 
                 <!-- The linked folder -->
                 <div class="selected-folder">
-                    <i class="icon-folder-close-alt"></i>
+                    <i data-bind="visible: folder().name" class="icon-folder-close-alt"></i>
                     <a data-bind="attr.href: urls().files"class='selected-folder-name'>
                         {{folderName}}
                     </a>
+
+                    <p data-bind="if: folder().path === null" class="text-muted">No folder selected</p>
                 </div>
 
                 <!-- Folder buttons -->
@@ -38,7 +42,7 @@
                                         click: toggleShare,
                                         css: {active: currentDisplay() === SHARE}"
                         class="btn btn-sm btn-dropbox"><i class="icon-share-alt"></i> Share on Dropbox
-                            <span data-bind="visible: disableShare">(Cannot share root folder)</span>
+                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
                         </button>
                 </div>
 
@@ -54,7 +58,12 @@
                     </div>
 
                     <!-- Share -->
-                    <div data-bind="if: currentDisplay() === SHARE">
+                    <div data-bind="if: currentDisplay() === SHARE && emails().length === 0"
+                        class="help-block">
+                        <p>No contributors to share with.</p>
+                    </div>
+
+                    <div data-bind="if: currentDisplay() === SHARE && emails().length">
                         <div class="help-block">
                             <p>To share this folder with other Dropbox users on this project, copy
                             the email addresses of the contributors (listed below) into the

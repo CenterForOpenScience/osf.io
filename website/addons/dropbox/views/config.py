@@ -95,15 +95,16 @@ def serialize_settings(node_settings, current_user, client=None):
         # Add owner's profile URL
         result['urls']['owner'] = web_url_for('profile_view_id',
             uid=user_settings.owner._primary_key)
+        result['ownerName'] = user_settings.owner.fullname
         # Show available folders
-        path = node_settings.folder or '/'
-        result.update({
-            'folder':  {
+        path = node_settings.folder
+        if path is None:
+            result['folder'] = {'name': None, 'path': None}
+        else:
+            result['folder'] = {
                 'name': 'Dropbox' + path,
                 'path': path
-            },
-            'ownerName': user_settings.owner.fullname
-        })
+            }
     return result
 
 
