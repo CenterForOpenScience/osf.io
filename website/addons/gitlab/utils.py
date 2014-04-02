@@ -151,7 +151,7 @@ def refs_to_params(branch=None, sha=None):
     return ''
 
 
-def build_urls(node, item, path, branch=None, sha=None):
+def build_full_urls(node, item, path, branch=None, sha=None):
 
     quote_path = urllib.quote_plus(path.encode('utf-8'))
     quote_path = None if not quote_path else quote_path
@@ -166,6 +166,7 @@ def build_urls(node, item, path, branch=None, sha=None):
                 'gitlab_list_files',
                 path=quote_path, branch=branch, sha=sha
             ),
+            'root': node.api_url_for('gitlab_hgrid_root_public'),
         }
     elif item['type'] == 'blob':
         return {
@@ -175,6 +176,10 @@ def build_urls(node, item, path, branch=None, sha=None):
             ),
             'download': node.web_url_for(
                 'gitlab_download_file',
+                path=quote_path, branch=branch, sha=sha
+            ),
+            'render': node.api_url_for(
+                'gitlab_get_rendered_file',
                 path=quote_path, branch=branch, sha=sha
             ),
             'delete': node.api_url_for(
@@ -200,7 +205,7 @@ def item_to_hgrid(node, item, path, permissions, branch=None, sha=None):
         'name': item['name'],
         'kind': type_to_kind[item['type']],
         'permissions': permissions,
-        'urls': build_urls(node, item, fullpath, branch, sha),
+        'urls': build_full_urls(node, item, fullpath, branch, sha),
     }
 
 
@@ -244,20 +249,24 @@ def resolve_gitlab_commit_author(commit):
     }
 
 
+def build_guid_urls(guid, branch=None, sha=None):
+    params = refs_to_params(branch=branch, sha=sha)
+    return {
+        'view': '/{0}/'.format(guid._id) + params,
+        'download': '/{0}/download/'.format(guid._id) + params,
+    }
+
+
 def serialize_commit(commit, guid, branch):
     """
 
     """
     committer = resolve_gitlab_commit_author(commit)
-    params = refs_to_params(branch=branch, sha=commit['id'])
     return {
         'sha': commit['id'],
         'date': parse_date(commit['created_at']).strftime(FILE_MODIFIED),
         'committer': committer,
-        'urls': {
-            'view': '/' + guid._id + '/' + params,
-            'download': '/' + guid._id + '/download/' + params,
-        },
+        'urls': build_guid_urls(guid, branch=branch, sha=commit['id'])
     }
 
 
@@ -286,7 +295,7 @@ def get_branch_id(node_settings, branch):
 
     """
     branch_json = client.listbranch(node_settings.project_id, branch)
-    return branch_json['id']
+    return branch_json['commit']['id']
 
 
 def get_default_branch_and_sha(node_settings):

@@ -129,7 +129,7 @@ class TestBuildUrls(GitlabTestCase):
         branch = 'master'
         sha = '12345'
 
-        output = utils.build_urls(
+        output = utils.build_full_urls(
             self.project, item, path, branch, sha
         )
 
@@ -137,7 +137,7 @@ class TestBuildUrls(GitlabTestCase):
 
         assert_equal(
             set(output.keys()),
-            {'upload', 'fetch'}
+            {'upload', 'fetch', 'root'}
         )
         assert_urls_equal(
             output['upload'],
@@ -164,7 +164,7 @@ class TestBuildUrls(GitlabTestCase):
         branch = 'master'
         sha = '12345'
 
-        output = utils.build_urls(
+        output = utils.build_full_urls(
             self.project, item, path, branch, sha
         )
 
@@ -172,7 +172,7 @@ class TestBuildUrls(GitlabTestCase):
 
         assert_equal(
             set(output.keys()),
-            {'view', 'download', 'delete'}
+            {'view', 'download', 'delete', 'render'}
         )
         assert_urls_equal(
             output['view'],
@@ -198,7 +198,7 @@ class TestBuildUrls(GitlabTestCase):
 
     def test_bad_type(self):
         with assert_raises(ValueError):
-            utils.build_urls(
+            utils.build_full_urls(
                 self.project, item={'type': 'bad'}, path=''
             )
 
@@ -230,7 +230,7 @@ class TestGridSerializers(GitlabTestCase):
         assert_equal(output['permissions'], permissions)
         assert_equal(
             output['urls'],
-            utils.build_urls(
+            utils.build_full_urls(
                 self.project, item, os.path.join(path, item['name'])
             )
         )

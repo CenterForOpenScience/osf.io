@@ -13,6 +13,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/gitlab/root/',
+                '/project/<pid>/node/<nid>/gitlab/root/',
+            ],
+             'get',
+             views.crud.gitlab_hgrid_root_public,
+             json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/gitlab/grid/',
                 '/project/<pid>/node/<nid>/gitlab/grid/',
                 '/project/<pid>/gitlab/grid/<path:path>/',
