@@ -68,7 +68,7 @@ def create_badge(*args, **kwargs):
 def revoke_badge(*args, **kwargs):
     _id = request.json.get('id', None)
     reason = request.json.get('reason', None)
-    if _id and reason is not None:
+    if _id and reason is not None and kwargs['user_addon'].can_award:
         assertion = BadgeAssertion.load(_id)
         if assertion:
             if assertion.badge and assertion.awarder.owner._id == kwargs['auth'].user._id:
@@ -81,6 +81,7 @@ def revoke_badge(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
+#Depricated Should be removed
 @must_be_logged_in
 @must_have_addon('badges', 'user')
 def create_organization(*args, **kwargs):
