@@ -27,12 +27,31 @@
         </div>
     </div>
 </div>
+
+<!-- TODO Add addon filtering here -->
 <div class="row">
-    <div class="col-md-12">
-        BADGES HERE
+    <div class="col-md-6">
+        <div class="page-header">
+          <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
+            <h3>Your Badges</h3>
+        </div>
+        <div mod-meta='{
+                 "tpl": "../addons/badges/templates/dashboard_badges.mako",
+                 "uri": "/api/v1/dashboard/get_badges/",
+                 "replace": true
+            }'></div>
+    </div>
+    <div class="col-md-6">
+        <div class="page-header">
+            <h3>Badges You've Awarded</h3>
+        </div>
+        <div mod-meta='{
+                 "tpl": "../addons/badges/templates/dashboard_assertions.mako",
+                 "uri": "/api/v1/dashboard/get_assertions/",
+                 "replace": true
+            }'></div>
     </div>
 </div>
-
 </%def>
 
 <%def name="javascript_bottom()">

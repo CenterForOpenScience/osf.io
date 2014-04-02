@@ -4,6 +4,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
 from ..util import get_system_badges
 
+
 #TODO Better way around this, No longer needed?
 class BadgesNodeSettings(AddonNodeSettingsBase):
     pass
@@ -52,3 +53,16 @@ class BadgesUserSettings(AddonUserSettingsBase):
         # if self.revocation_list:
         #     ret['revocationList'] = self.revocation_list
         return ret
+
+    #TODO Mongoqueryset -> list
+    @property
+    def issued(self):
+        assertions = []
+        for badge in list(self.badges) + list(get_system_badges()):#[badge for badge in self.badges]:
+            for assertion in badge.assertions:
+                if assertion.awarder == self:
+                    assertions.append(assertion)
+        return assertions
+
+    def issued_json(self):
+        return

@@ -6,8 +6,9 @@ from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
-    must_have_permission
+    must_have_permission,
 )
+from framework.auth.decorators import must_be_logged_in
 from website.project.views.node import _view_project
 
 from ..util import get_node_badges, get_sorted_node_badges
@@ -65,3 +66,15 @@ def view_badge(*args, **kwargs):
             'assertions': badge.badgeassertion__assertion,
         }
     raise HTTPError(http.NOT_FOUND)
+
+
+@must_be_logged_in
+@must_have_addon('badges', 'user')
+def dashboard_badges(*args, **kwargs):
+    return kwargs['user_addon'].to_json(kwargs['auth'].user)
+
+
+@must_be_logged_in
+@must_have_addon('badges', 'user')
+def dashboard_assertions(*args, **kwargs):
+    return {'assertions': kwargs['user_addon'].issued}

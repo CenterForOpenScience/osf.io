@@ -16,6 +16,8 @@ render_routes = {
 api_urls = {
     'rules': [
         Rule('/badges/new/', 'post', views.crud.create_badge, json_renderer),
+        Rule('/dashboard/get_badges/', 'get', views.render.dashboard_badges, json_renderer),
+        Rule('/dashboard/get_assertions/', 'get', views.render.dashboard_assertions, json_renderer),
         Rule('/settings/badges/', 'post', views.crud.create_organization, json_renderer),
         Rule([
             '/project/<pid>/badges/award/',
