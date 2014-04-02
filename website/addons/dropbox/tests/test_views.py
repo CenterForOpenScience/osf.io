@@ -198,7 +198,8 @@ class TestConfigViews(DropboxAddonTestCase):
         url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         result = res.json['result']
-        assert_equal(result['emails'], [u.username for u in self.project.contributors])
+        assert_equal(result['emails'], [u.username for u in self.project.contributors
+                                        if u != self.user])
         assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
 
     def test_dropbox_get_share_emails_returns_error_if_not_authorizer(self):
