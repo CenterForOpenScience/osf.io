@@ -5,11 +5,6 @@
   /*font-size: 8pt;*/
 /*}*/
 
-/*body {*/
-  /*background: #c7d3cd;*/
-  /*padding: 0;*/
-  /*margin: 8;*/
-/*}*/
 
 /*h2 {*/
   /*font-size: 10pt;*/
@@ -29,6 +24,14 @@
   /*list-style: none;*/
   /*margin: 0;*/
 /*}*/
+
+.slick-header-column {
+    max-height:17px;
+    /*padding:0px;*/
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
+}
 
 #mfrGrid > div {
   font-family: arial;

@@ -8,33 +8,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
-    <!--[if lt IE 9]>
-      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le styles -->
-    ## Don't bundle Bootstrap or else Glyphicons won't work
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
-    % for url in css_all:
-    <link rel="stylesheet" href="${url}">
-    % endfor
+    ${includes_top()}
     ${self.stylesheets()}
-
-    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
-    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
-    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
-    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
-    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
-    % for url in js_all:
-    <script src="${url}"></script>
-    % endfor
-    <script>
-        ko.punches.enableAll();
-    </script>
     ${self.javascript()}
 
 </head>
@@ -159,4 +134,46 @@
 
 <%def name="javascript_bottom()">
     ### Javascript loaded at the bottom of the page ###
+</%def>
+
+
+<%def name="includes_top()">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    ## Don't bundle Bootstrap or else Glyphicons won't work
+    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
+
+    % for url in css_all:
+    <link rel="stylesheet" href="${url}">
+    % endfor
+
+    <script src="//ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
+    <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
+    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
+
+    % for url in js_all:
+    <script src="${url}"></script>
+    % endfor
+
+    <script>
+        // Enable knockout punches
+        ko.punches.enableAll();
+        // Filebrowser dependencies
+        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
+        $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
+    </script>
+
 </%def>

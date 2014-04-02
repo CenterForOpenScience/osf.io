@@ -35,7 +35,6 @@ from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
 
-from framework import session
 from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -1120,7 +1119,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise PermissionsError()
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Components list not empty")
+            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1635,19 +1634,21 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
         if self.category == 'project':
-            return web_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
-    def api_url_for(self, view_name, *args, **kwargs):
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         if self.category == 'project':
-            return api_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
         else:
             return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     @property
     def absolute_url(self):

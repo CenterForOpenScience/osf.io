@@ -1,11 +1,14 @@
-class TooBigError(Exception):
-    pass
-
+import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 def _ensure_unicode(value):
 
     if not isinstance(value, basestring):
-        return unicode(value)
+        if isinstance(value, int) or isinstance(value, float):
+            if np.isnan(value):
+                return ""
+        return value
 
     try:
         return value.encode('utf-8')
@@ -48,7 +51,7 @@ def row_population(dataframe):
     for n in range(len(dataframe[fields[0]])):
         rows.append({})
         for col_field in fields:
-            rows[n][_ensure_unicode(col_field)] = _ensure_unicode(dataframe[col_field][n])
+            rows[n][_ensure_unicode(col_field)] = str(_ensure_unicode(dataframe[col_field][n]))
     return rows
 
 MAX_COLS = 400
@@ -59,8 +62,8 @@ def check_shape(dataframe):
     """ Takes a data_frame and checks if the number of rows or columns is too
     big to quickly reformat into slickgrid's json data
     """
-    if dataframe.shape[0] > MAX_ROWS or dataframe.shape[1] > MAX_COLS:
-        raise TooBigError
+    return dataframe.shape[0] > MAX_ROWS or dataframe.shape[1] > MAX_COLS
+
 
 
 

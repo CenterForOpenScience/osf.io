@@ -42,13 +42,16 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
-
                 <div class="panel-body">
-
-                    <!-- Delete node -->
-                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+                    <div class="help-block">
+                        A project cannot be deleted if it has any components within it.
+                        To delete a parent project, you must first delete all child components
+                        by visiting their settings pages.
+                    </div>
+                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['category']}</button>
 
                 </div>
+                <!-- Delete node -->
 
             </div>
 
@@ -192,9 +195,6 @@
     ${tpl}
 </%def>
 
-<!-- Include metadata templates -->
-<%include file="metadata/metadata_templates_1.html" />
-
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
@@ -271,7 +271,7 @@ ${parent.javascript_bottom()}
 
         });
 
-        $('#delete-node').on('click', function() {
+        $('#deleteNode').on('click', function() {
             var key = randomString();
             bootbox.prompt(
                 '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +

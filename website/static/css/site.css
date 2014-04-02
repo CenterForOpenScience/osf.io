@@ -1099,3 +1099,8 @@ a {
 .profile-badge-list span {
   display: block;
 }
+
+.scripted {display: none;}
+
+.pointer {cursor: pointer;}
+
