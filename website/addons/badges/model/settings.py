@@ -20,7 +20,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def can_award(self):
-        return self.can_issue
+        return self.can_issue and self.badges and len(get_system_badges()) > 0
 
     @property
     def badges(self):
