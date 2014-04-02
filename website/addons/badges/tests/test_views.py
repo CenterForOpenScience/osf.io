@@ -4,12 +4,11 @@ import string
 from nose.tools import *
 import website.app
 from webtest_plus import TestApp
-from framework.auth.decorators import Auth
 
 from website.addons.base.testing import AddonTestCase
-from website.addons.badges.model import Badge
 
 from tests.base import URLLookup
+from tests.factories import AuthUserFactory
 from utils import create_mock_badger, create_badge_dict, get_garbage
 
 app = website.app.init_app(
@@ -281,16 +280,17 @@ class TestBadgesViews(AddonTestCase):
 
         revoke = lookup('api', 'revoke_badge', pid=self.project._id)
 
-        #Mocking is stupid fix me
-        self.user_settings.badges[0].creator = mock.Mock(owner='abcdefghij')
-        self.user_settings.badges[0].save()
-        self.user_settings.badges[0].reload()
+        user2 = AuthUserFactory()
+        user2.is_organization = True
+        user2.add_addon('badges')
+        user2.save()
+        user2.reload()
 
         ret = self.app.post_json(revoke,
             {
                 'id': assertion._id,
                 'reason': ''
-            }, auth=self.user.auth, expect_errors=True)
+            }, auth=user2.auth, expect_errors=True)
         self.project.reload()
         self.user_settings.reload()
         assertion.reload()
