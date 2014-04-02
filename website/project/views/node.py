@@ -600,6 +600,29 @@ def _get_children(node, auth, indent=0):
 
     return children
 
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def private_link_config(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    if not node.can_edit(auth):
+        return
+    children = _get_children(node, auth)
+
+    parent = node.parent_node
+    rv = {
+        'result': {
+            'node': {
+                'title': node.title,
+                'parentId': parent._primary_key if parent else '',
+                'parentTitle': parent.title if parent else '',
+                },
+            'children': children,
+            }
+    }
+
+    return rv
 
 @collect_auth
 @must_be_valid_project

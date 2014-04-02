@@ -53,7 +53,7 @@
                             </tr>
                         </thead>
                         <tr >
-                            <td colspan="3">
+                            <td colspan="3"  >
                                 <a href="#private-link" data-toggle="modal">
                                     Click to generate a private link
                                 </a>
@@ -163,10 +163,11 @@
 
     $script.ready(['privatelinks'], function (){
         // Controls the modal
-        var configUrl = nodeApiUrl + 'privatelinks/config/';
+        var configUrl = nodeApiUrl + 'private_link/config/';
         var privateLinkManager = new PrivateLinkManager('#private-link', configUrl);
 
-        var tableUrl = nodeApiUrl + 'privatelinks/table/';
+
+        var tableUrl = nodeApiUrl + 'private_link/table/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
 
 

@@ -42,16 +42,36 @@
         self.url = url;
     }
 
+    $(".remove-private-link").on("click",function(){
+        var me = $(this);
+        var data_to_send={
+            'private_link_id': me.attr("data-link")
+        };
+        bootbox.confirm('Are you sure to remove this private link?', function(result) {
+            if (result) {
+                $.ajax({
+                    type: "delete",
+                    url: nodeApiUrl + "private_link/",
+                    contentType: "application/json",
+                    dataType: "json",
+                    data: JSON.stringify(data_to_send)
+                }).done(function(response) {
+                    window.location.reload();
+                });
+            }
+         });
+    });
 
-    // $('tbody .link-create-date').each(function(idx, elem) {
-      //       var e = $(elem);
-      //       var dt = new $.osf.FormattableDate(e.text());
-      //       e.text(dt.local);
-      //       e.tooltip({
-      //           title: dt.utc,
-      //           container: "body"
-      //       });
-      //   });
+
+    $('tbody .link-create-date').each(function(idx, elem) {
+         var e = $(elem);
+         var dt = new $.osf.FormattableDate(e.text());
+         e.text(dt.local);
+         e.tooltip({
+             title: dt.utc,
+             container: "body"
+         });
+     });
 
     function PrivateLinkTable (selector, url) {
         var self = this;
