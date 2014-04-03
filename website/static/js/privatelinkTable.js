@@ -12,30 +12,45 @@
     );
 
     var client = new ZeroClipboard( document.getElementsByClassName("copy-button") );
+
     client.on( "load", function(client) {
     // alert( "movie is loaded" );
 
-    client.on( "complete", function(client, args) {
-      // `this` is the element that was clicked
-        this.blur();
-    } );
+        client.on( "complete", function(client, args) {
+          // `this` is the element that was clicked
+            this.blur();
+        } );
 
-    client.on("mousedown", function(client,args){
-        $(this).addClass("active");
+        client.on("mousedown", function(client,args){
+            $(this).addClass("active");
+        });
+
+        client.on("mouseup", function(client,args){
+            $(this).removeClass("active");
+        });
+
+        client.on("mouseover", function(client,args){
+            $(this).tooltip("show");
+        });
+
+        client.on("mouseout", function(client,args){
+            $(this).tooltip("hide");
+        });
     });
 
-    client.on("mouseup", function(client,args){
-        $(this).removeClass("active");
-    });
+    function LinkViewModel(data, $root) {
 
-    client.on("mouseover", function(client,args){
-        $(this).tooltip("show");
-    });
+        var self = this;
 
-    client.on("mouseout", function(client,args){
-        $(this).tooltip("hide");
-    });
-  } );
+        self.$root = $root;
+        $.extend(self, data);
+
+        self.dateCreated = new $.osf.FormattableDate(data.date_created);
+        self.linkUrl = ko.computed(function(){
+            return self.$root.node_url() + "?key=" + data.key
+        });
+
+    }
 
     function ViewModel(url) {
         var self = this;
@@ -45,7 +60,9 @@
 
         function onFetchSuccess(response) {
             var node = response.node;
-            self.private_links(node.private_links);
+            self.private_links(ko.utils.arrayMap(node.private_links, function(link) {
+                return new LinkViewModel(link, self);
+            }));
             self.node_url(node.absolute_url);
         }
 
@@ -62,6 +79,11 @@
         }
 
         fetch();
+
+//        self.dateCreated = ko.computed(function(data) {
+//            console.log(data);
+//            return $.osf.FormattableDate(data.date_created);
+//        });
 
         self.removeLink = function(data){
             var data_to_send={
@@ -83,18 +105,6 @@
         };
 
     }
-
-
-
-    $('tbody .link-create-date').each(function(idx, elem) {
-         var e = $(elem);
-         var dt = new $.osf.FormattableDate(e.text());
-         e.text(dt.local);
-         e.tooltip({
-             title: dt.utc,
-             container: "body"
-         });
-     });
 
     function PrivateLinkTable (selector, url) {
         var self = this;

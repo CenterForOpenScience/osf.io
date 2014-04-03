@@ -66,20 +66,20 @@
                         </tbody>
                         <tbody data-bind="foreach: private_links">
                                 <tr>
-##                                <td class="col-sm-4 link-name">
-##                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy" data-clipboard-text="${node['absolute_url']}?key=${link['key']}" >
-##                                        <span class="icon-copy" ></span>
-##                                    </button>
-##                                    <a class="key-name" >${node['absolute_url']}?key=${link['key']}</a>
-##                                </td>
+                                <td class="col-sm-4 link-name">
+                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy" data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                        <span class="icon-copy" ></span>
+                                    </button>
+                                    <a class="key-name" data-bind="text: linkUrl"></a>
+                                </td>
 
                                   <td class="col-sm-2 link-label" data-bind="text: label"></td>
                                 <td class="col-sm-3 link-date">
-                                    <span class="link-create-date" data-bind="text: date_created"></span>
+                                    <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                                 </td>
                                 <td class="col-sm-2 link-creator" data-bind="text: creator"></td>
                                 <td class="col-sm-1">
-                                    <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-link="id" data-bind="click: $root.removeLink">-</a>
+                                    <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
                                 </td>
                                 </tr>
                         </tbody>
