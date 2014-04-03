@@ -16,7 +16,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'hgrid'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready('hgrid', function() {
+        $script.ready(['hgrid'], function() {
             global.FolderPicker = factory(jQuery, HGrid);
             $script.done('folderPicker');
         });
