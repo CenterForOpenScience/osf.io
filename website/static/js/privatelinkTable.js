@@ -83,11 +83,6 @@
 
         fetch();
 
-//        self.dateCreated = ko.computed(function(data) {
-//            console.log(data);
-//            return $.osf.FormattableDate(data.date_created);
-//        });
-
         self.removeLink = function(data){
             var data_to_send={
                 'private_link_id': data.id
@@ -115,6 +110,7 @@
             updateClipboard(target);
         }
 
+        // TODO add before remove to remove the unwanted clients
     }
 
     function PrivateLinkTable (selector, url) {
