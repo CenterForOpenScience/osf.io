@@ -40,14 +40,10 @@ def authorize(**kwargs):
 @decorators.must_have_addon('dataverse', 'node')
 def unauthorize(*args, **kwargs):
 
-    user = kwargs['auth'].user
     node_settings = kwargs['node_addon']
-    dataverse_user = node_settings.user_settings
-
-    if dataverse_user and dataverse_user.owner != user:
-        raise HTTPError(http.BAD_REQUEST)
 
     node_settings.unauthorize()
+    node_settings.save()
 
     return {}
 
@@ -60,6 +56,7 @@ def dataverse_delete_user(*args, **kwargs):
     # Remove authorization for nodes
     for node_settings in dataverse_user.addondataversenodesettings__authorized:
         node_settings.unauthorize()
+        node_settings.save()
 
     # Revoke access
     dataverse_user.dataverse_username = None

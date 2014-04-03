@@ -65,14 +65,14 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.study_hdl = None
         self.study = None
         self.user = None
-        self.save()
 
     def to_json(self, user):
 
         dataverse_user = user.get_addon('dataverse')
 
         # Check authorization
-        authorized = dataverse_user.dataverse_username == self.dataverse_username
+        authorized = (self.dataverse_username is not None and
+            dataverse_user.dataverse_username == self.dataverse_username)
 
         # Check connection
         user_connection = connect(

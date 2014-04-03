@@ -135,10 +135,9 @@
 
     $('#dataverseDeauth').on('click', function() {
             bootbox.confirm(
-                'Are you sure you want to unlink your Dataverse account? This will ' +
-                    'revoke the ability to modify and upload files to the Harvard Dataverse. If ' +
-                    'the associated repo is private, this will also disable viewing ' +
-                    'and downloading files from Dataverse. This will not remove your ' +
+                'Are you sure you want to unlink this Dataverse account? This will ' +
+                    'revoke the ability to view, download, modify, and upload files ' +
+                    'to studies on the Dataverse from the OSF. This will not remove your ' +
                     'Dataverse authorization from your <a href="/settings/">user settings</a> ' +
                     'page.',
                 function(result) {
