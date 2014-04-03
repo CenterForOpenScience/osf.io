@@ -2293,6 +2293,7 @@ class PrivateLink(StoredObject):
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
     label = fields.StringField()
+    is_deleted = fields.BooleanField(default=False)
 
     creator = fields.ForeignField('user', backref='created')
 

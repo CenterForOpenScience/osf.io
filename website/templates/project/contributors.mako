@@ -71,7 +71,7 @@
                                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                                         <span class="icon-copy" ></span>
                                     </button>
-                                    <a class="key-name" data-bind="text: linkUrl"></a>
+                                    <span class="key-name" data-bind="text: linkUrl"></span>
                                 </td>
 
                                   <td class="col-sm-2 link-label" data-bind="text: label"></td>

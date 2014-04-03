@@ -108,6 +108,7 @@
             // Add this to client
             var target = $tr.find('.copy-button');
             updateClipboard(target);
+            $tr.find('.remove-private-link').tooltip();
         };
 
     }
