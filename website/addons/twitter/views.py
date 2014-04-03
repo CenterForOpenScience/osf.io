@@ -36,8 +36,6 @@ def oauth_start(*args, **kwargs):
     callback_url = 'http://127.0.0.1:5000/api/v1/project/'+pid+'/twitter/user_auth'
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, callback_url, secure=True)
 
-
-
     try:
         redirect_url = auth.get_authorization_url()
     except tweepy.TweepError as e:
@@ -77,7 +75,8 @@ def username(*args, **kwargs):
     try:
       auth.get_access_token(verifier = verifier)
     except tweepy.TweepError as e:
-        print 'Error!  Please try again'
+            raise HTTPError(400, data={'message_long':'Please try again.', 'message_short':'Twitter Error!'})
+
 #Build access token
     auth.set_access_token(auth.access_token.key, auth.access_token.secret)
 
@@ -269,7 +268,8 @@ def twitter_update_status(*args, **kwargs):
     status = json.loads(request.data).get('status')
     try:
         send_tweet(config, status)
-        raise HTTPError(400, data={'message_long':'Your tweet was posted successfully', 'message_short':''})
+      #  TODO:
+       # raise HTTPError(400, data={'message_long':'Your tweet was posted successfully', 'message_short':''})
     except tweepy.TweepError as e:
         if (e[0][0].get('code') == 186):
             string = 'Your tweet is too long by '+str((len(status) - 140))+ ' characters.  Please shorten it and try again.'

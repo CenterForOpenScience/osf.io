@@ -46,8 +46,6 @@ class TestTwitterViewsConfig(DbTestCase):
                         }
         self.node_settings.save()
 
-
-
         self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
 
@@ -60,16 +58,22 @@ class TestTwitterViewsConfig(DbTestCase):
     #    mock_tweet.tweet.assert_called
 
 
-    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
+    @mock.patch('website.addons.twitter.views.send_tweet')
     def test_revoked_oauth_send_tweet(self, mock_send_tweet):
 
-      #  self.node_settings.oauth_secret = ''
-      #  self.node_settings.reload()
+        mock_send_tweet.side_effect = tweepy.TweepError([{'message':'error', 'code':'186'}])
         url = self.project.api_url+'twitter/update_status/'
-        res = self.app.post_json(url, { 'status':'....'}, auth=self.user.auth).maybe_follow()
-        mock_send_tweet.side_effect = tweepy.TweepError
+        res = self.app.post_json(url, { 'status':'....'}, auth=self.consolidated_auth).maybe_follow()
+        assert_equal(res.status_code, 400)
 
-        assert_equal(res.status_code,400)
+
+    @mock.patch('website.addons.twitter.views.send_tweet')
+    def test_send_tweet(self, mock_send_tweet):
+
+        mock_send_tweet.side_effect = None
+        url = self.project.api_url+'twitter/update_status/'
+        res = self.app.post_json(url, { 'status':'....'}, auth=self.consolidated_auth).maybe_follow()
+        assert_equal(res.status_code, 200)
 
 
 
@@ -111,35 +115,14 @@ class TestTwitterViewsConfig(DbTestCase):
 #check if the account is authorized by checking get_username or has_access
 #check if the widget loads on the page
 
-    def test_twitter_widget(self):
-        url = self.project.api_url+'twitter/widget/'
-        res = self.app.get(url, '', auth=self.user.auth)
-
-        assert_equal(self.node_settings.user_name, 'phresh_phish')
-        assert_true(self.node_settings.displayed_tweets != None)
-        assert_equal(res.status_code, 200)
-
-
-
-#if user is signed in, he/she can tweet
-
-#if user is not signed in, attempting to send a tweet returns an error message
-
-    @mock.patch('website.addons.twitter.model.NodeSettingsModel.has_access')
-    @mock.patch('website.addons.twitter.model.NodeSettingsModel')
-    def test_print_username(self, mock_has_access):
-        mock_has_access.return_value = True
-
-        assert_true()
-
-
-
-
-    def test_update_status(self):
-        url = self.project.api_url+'twitter/update_status/'
-        res = self.app.post_json(url, {'status':'meet my new girl holly!'}, auth=self.user.auth).maybe_follow()
-
-        assert_equal(res.status_code, 302)
+    #def test_twitter_widget(self):
+    #    url = self.project.api_url+'twitter/widget/'
+    #    res = self.app.get(url, '', auth=self.user.auth)
+    #
+    #    assert_equal(self.node_settings.user_name, 'phresh_phish')
+    #    assert_true(self.node_settings.displayed_tweets != None)
+    #    assert_equal(res.status_code, 200)
+    #
 
 
 

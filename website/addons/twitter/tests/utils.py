@@ -54,7 +54,6 @@ from framework.status import push_status_message
 
 
 def send_tweet(twitter_node_settings, message):
-    hello = 'hello'
     auth = tweepy.OAuthHandler(twitter_node_settings.CONSUMER_KEY, twitter_node_settings.CONSUMER_SECRET, secure=True)
     auth.set_access_token(twitter_node_settings.oauth_key, twitter_node_settings.oauth_secret)
     api = tweepy.API(auth)
