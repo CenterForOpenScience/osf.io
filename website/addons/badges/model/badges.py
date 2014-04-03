@@ -47,35 +47,27 @@ class Badge(GuidStoredObject):
         self.save()
 
     def to_json(self):
-        ret = {
+        return {
             'id': self._id,
             'name': self.name,
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
+            'alignment': self.alignment,
+            'tags': self.tags,
         }
-        if self.alignment:
-            ret['alignment'] = self.alignment
-        if self.tags:
-            ret['tags'] = self.tags
-
-        return ret
 
     def to_openbadge(self):
-        ret = {
+        return {
             'name': self.name,
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
             'issuer': '{0}badge/organization/{1}/json/'.format(DOMAIN, self.creator.owner._id),
-            'url': '{0}{1}/json/'.format(DOMAIN, self._id)
+            'url': '{0}{1}/json/'.format(DOMAIN, self._id),
+            'alignment': self.alignment,
+            'tags': self.tags,
         }
-
-        if self.alignment:
-            ret['alignment'] = self.alignment
-        if self.tags:
-            ret['tags'] = self.tags
-        return ret
 
     @property
     def description_short(self):
@@ -90,7 +82,7 @@ class Badge(GuidStoredObject):
         tpl = '<ul>{}</ul>'
         stpl = '<li>{}</li>'
         lines = self.criteria.split('\n')
-        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))  # Please dont kill me steve
+        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))  # Please dont kill me Steve
 
     @property
     def assertions(self):
@@ -128,7 +120,7 @@ class BadgeAssertion(StoredObject):
     reason = fields.StringField()
 
     #Required
-    issued_on = fields.IntegerField()
+    issued_on = fields.IntegerField(required=True)
 
     #Optional
     evidence = fields.StringField()
@@ -147,35 +139,26 @@ class BadgeAssertion(StoredObject):
         return b
 
     def to_json(self):
-        ret = {
+        return {
             'uid': self._id,
             'recipient': self.node._id,
             'badge': self.badge._id,
-            #'verify': self.verify,  #TODO
-            'issued_on': self.issued_date
+            'verify': self.verify,
+            'issued_on': self.issued_date,
+            'evidence': self.evidence,
+            'expires': self.expires
         }
 
-        #Optional Fields
-        if self.evidence:
-            ret['evidence'] = self.evidence
-        if self.expires:
-            ret['expires'] = self.expires
-
-        return ret
-
     def to_openbadge(self):
-        ret = {
+        return {
             'uid': self._id,
             'recipient': self.recipient,
             'badge': '{}{}/json/'.format(DOMAIN, self.badge._id),
             'verify': self.verify,
-            'issuedOn': self.issued_on
+            'issuedOn': self.issued_on,
+            'evidence': self.evidence,
+            'expires': self.expires
         }
-        if self.evidence:
-            ret['evidence'] = self.evidence
-        if self.expires:
-            ret['expires'] = self.expires
-        return ret
 
     @property
     def issued_date(self):
