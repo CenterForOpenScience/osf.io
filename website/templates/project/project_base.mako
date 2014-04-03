@@ -28,7 +28,7 @@ ${next.body()}
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
     %if 'badges' in addons_enabled and badges and badges['can_award']:
-        $script(['/addons/static/badges/badge-awarder.js'], 'awarder');
+        $script(['/static/addons/badges/badge-awarder.js'], 'awarder');
     %endif
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
