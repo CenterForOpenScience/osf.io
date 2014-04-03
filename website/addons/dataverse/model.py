@@ -27,8 +27,14 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)
+
+        connection = connect(
+            self.dataverse_username,
+            self.dataverse_password,
+        )
+
         rv.update({
-            'authorized': self.dataverse_username is not None,
+            'authorized': connection is not None,
             'authorized_dataverse_user': self.dataverse_username or '',
             'show_submit': True,
         })
@@ -61,12 +67,20 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.save()
 
     def to_json(self, user):
+
         dataverse_user = user.get_addon('dataverse')
+
+        user_connection = connect(
+            dataverse_user.dataverse_username,
+            dataverse_user.dataverse_password,
+        )
+
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
                 'connected': False,
                 'show_submit': False,
-                'user_dataverse_account': user.get_addon('dataverse').dataverse_username,
+                'user_dataverse_account': dataverse_user.dataverse_username,
+                'user_dataverse_connected': user_connection,
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
                 'authorized_user_url': self.user.absolute_url if self.user else '',

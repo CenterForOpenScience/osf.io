@@ -61,11 +61,15 @@
         </div>
 
     % else:
-        % if user_dataverse_account:
+        % if user_dataverse_connected:
             <a id="dataverseAuth" class="btn btn-success">Authorize: Link to Dataverse Account</a>
+        % elif user_dataverse_account:
+            Your Dataverse credentials may have changed. Please go to
+            <a href="/settings/">user settings</a> and update your account
+            information.
         % else:
-            In order to access this feature, please go to <a href="/settings/">user settings</a> and link your
-            account to a Dataverse account.
+            In order to access this feature, please go to <a href="/settings/">
+            user settings</a> and link your account to a Dataverse account.
         % endif
 
     % endif
