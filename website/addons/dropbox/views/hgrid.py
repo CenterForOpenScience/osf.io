@@ -25,6 +25,9 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     Takes optional query parameters `foldersOnly` (only return folders) and
     `includeRoot` (include the root folder).
     """
+    # No folder, just return an empty list of data
+    if node_addon.folder is None and not request.args.get('foldersOnly'):
+        return {'data': []}
     node = node_addon.owner
     path = kwargs.get('path',  '')
     permissions = {

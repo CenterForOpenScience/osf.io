@@ -1,65 +1,116 @@
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
-
-<h4 class="addon-title">
-    Dropbox
-</h4>
-
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
+    <h4 class="addon-title">
+        Dropbox
+        <span data-bind="if: nodeHasAuth">
+            <small class="authorized-by">
+                authorized by <a data-bind="attr.href: urls().owner">
+                    {{ownerName}}
+                </a>
+            </small>
+            <small data-bind="visible: userHasAuth">
+                <a data-bind="click: deauthorize"
+                    class="text-danger pull-right">Deauthorize</a>
+            </small>
+        </span>
+    </h4>
+
 
     <!-- Settings Pane -->
     <div class="dropbox-settings" data-bind='if: showSettings'>
-        <div class="well well-sm">
-            <span class="authorized-by">
-                Authorized by <a data-bind="attr.href: urls().owner">
-                    {{ownerName}}
-                </a>
-            </span>
-            <span data-bind="visible: userHasAuth">
-                <a data-bind="click: deauthorize"
-                    class="text-danger pull-right">Deauthorize</a>
-            </span>
-        </div><!-- end well -->
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Shared Folder:</strong></p>
+                <p><strong>Current Folder:</strong></p>
 
-                    <!-- The linked folder -->
-                    <h4 class="selected-folder">
-                        <i class="icon-folder-close-alt"></i>
-                        <a data-bind="attr.href: urls().files"class='selected-folder-name'>
-                            {{folderName}}
-                        </a>
-                    </h4>
-                <button data-bind="click: togglePicker,
-                                    css: {active: showPicker}"
-                        class="btn btn-default">Change</button>
+                <!-- The linked folder -->
+                <div class="selected-folder">
+                    <i data-bind="visible: folder().name" class="icon-folder-close-alt"></i>
+                    <a data-bind="attr.href: urls().files"class='selected-folder-name'>
+                        {{folderName}}
+                    </a>
+
+                    <p data-bind="if: folder().path === null" class="text-muted">No folder selected</p>
+                </div>
+
+                <!-- Folder buttons -->
+                <div class="btn-group">
+                    <button data-bind="click: togglePicker,
+                                        css: {active: currentDisplay() === PICKER}"
+                            class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
+                    <button data-bind="attr.disabled: disableShare,
+                                        click: toggleShare,
+                                        css: {active: currentDisplay() === SHARE}"
+                        class="btn btn-sm btn-dropbox"><i class="icon-share-alt"></i> Share on Dropbox
+                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
+                        </button>
+                </div>
+
 
                 <!-- Folder picker -->
-                <img style="display: none" id='dropboxProgBar' src="/static/addons/dropbox/loading-bars.svg" alt="Loading folders..."/>
-                <div data-bind="if: showPicker">
-                    <div id="myGrid"
-                         class="filebrowser hgrid dropbox-folder-picker"></div>
-                </div>
+                <div class="dropbox-widget">
+                    <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
+                    Loading folders...</p>
 
-                <!-- Queued selection -->
-                <div class="dropbox-confirm-selection"
-                    data-bind="if: selected">
-                    <form data-bind="submit: submitSettings">
+                    <div data-bind="if: currentDisplay() === PICKER">
+                        <div id="myGrid"
+                             class="filebrowser hgrid dropbox-folder-picker"></div>
+                    </div>
 
-                        <h4 class="dropbox-confirm-dlg">
-                            Share &ldquo;{{ selectedFolderName }}&rdquo;?
-                        </h4>
-                        <div class="pull-right">
-                            <button class="btn btn-default"
-                                    data-bind="click: cancelSelection">Cancel</button>
-                            <input type="submit"
-                                    class="btn btn-primary"
-                                    value="Submit">
+                    <!-- Share -->
+                    <div data-bind="if: currentDisplay() === SHARE && emails().length === 0"
+                        class="help-block">
+                        <p>No contributors to share with.</p>
+                    </div>
+
+                    <div data-bind="if: currentDisplay() === SHARE && emails().length">
+                        <div class="help-block">
+                            <p>To share this folder with other Dropbox users on this project, copy
+                            the email addresses of the contributors (listed below) into the
+                            "Share Folder" dialog on Dropbox.</p>
                         </div>
-                    </form>
-                </div>
 
+                        <label for="contrib-emails">Copy these:</label>
+                        <div class="input-group">
+                            <textarea name="contrib-emails"
+                                    class="form-control" rows="3" id="contribEmails"
+                             data-bind="value: emailList,
+                                        attr.autofocus: currentDisplay() === SHARE">
+                            </textarea>
+                            <span data-clipboard-target="contribEmails"
+                                class="input-group-addon pointer"
+                                id="copyBtn">
+                                <i class="icon-paste"></i>
+                            </span>
+                        </div>
+
+                        <div class="input-group pull-right">
+                            <a target="_blank" data-bind="attr.href: urls().share"
+                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to Dropbox...</a>
+                        </div>
+                    </div>
+
+                    <!-- Queued selection -->
+                    <div class="dropbox-confirm-selection"
+                        data-bind="visible: currentDisplay() == PICKER">
+                        <form data-bind="submit: submitSettings">
+
+                            <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
+                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                            </h4>
+                            <div class="pull-right">
+                                <button class="btn btn-default"
+                                        data-bind="click: cancelSelection,
+                                                    visible: selected()">Cancel</button>
+                                <input data-bind="attr.disabled: !selected()"
+                                        type="submit"
+                                        class="btn btn-primary"
+                                        value="Submit">
+                            </div>
+                        </form>
+                    </div><!-- end .dropbox-confirm-selection -->
+
+                </div>
             </div><!-- end col -->
         </div><!-- end row -->
     </div><!-- end .dropbox-settings -->
@@ -86,6 +137,12 @@
 
 
 <script>
+    $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.js'],
+            'zeroclipboard');
+
+    $script.ready('zeroclipboard', function() {
+        ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
+    })
     $script(['/static/addons/dropbox/dropboxNodeConfig.js']);
     $script.ready('dropboxNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable

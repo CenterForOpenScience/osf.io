@@ -10,7 +10,7 @@ import datetime
 from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
-
+from framework.auth.decorators import Auth
 from website.util import api_url_for
 from website.project.model import NodeLog
 from tests.base import DbTestCase, URLLookup, assert_is_redirect
@@ -20,7 +20,7 @@ from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
 from website.addons.dropbox.views.config import serialize_settings
-
+from website.addons.dropbox import utils
 
 lookup = URLLookup(app)
 mock_client = MockDropbox()
@@ -90,6 +90,7 @@ class TestConfigViews(DropboxAddonTestCase):
             assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
             assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
             assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+            assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
             # Includes endpoint for fetching folders only
             # NOTE: Querystring params are in camelCase
             assert_equal(urls['folders'],
@@ -189,20 +190,90 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(last_log.user, self.user)
 
+    def test_dropbox_get_share_emails(self):
+        # project has some contributors
+        contrib = AuthUserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        result = res.json['result']
+        assert_equal(result['emails'], [u.username for u in self.project.contributors
+                                        if u != self.user])
+        assert_equal(result['url'], utils.get_share_folder_uri(self.node_settings.folder))
+
+    def test_dropbox_get_share_emails_returns_error_if_not_authorizer(self):
+        contrib = AuthUserFactory()
+        contrib.add_addon('dropbox')
+        contrib.save()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    def test_dropbox_get_share_emails_requires_user_addon(self):
+        # Node doesn't have auth
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        # Non-authorizing contributor sends request
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.BAD_REQUEST)
+
+
 class TestFilebrowserViews(DropboxAddonTestCase):
 
-    @unittest.skip('finish this')
     def test_dropbox_hgrid_data_contents(self):
-        assert 0, 'finish me'
+        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+            url = lookup('api', 'dropbox_hgrid_data_contents',
+                pid=self.project._primary_key)
+            res = self.app.get(url, auth=self.user.auth)
+            contents = mock_client.metadata('', list=True)['contents']
+            assert_equal(len(res.json), len(contents))
+            first = res.json[0]
+            assert_in('kind', first)
+            assert_equal(first['path'], contents[0]['path'])
 
-    @unittest.skip('finish this')
+    def test_dropbox_hgrid_data_contents_if_folder_is_none(self):
+        # If folder is set to none, no data are returned
+        self.node_settings.folder = None
+        self.node_settings.save()
+        url = lookup('api', 'dropbox_hgrid_data_contents', pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+    def test_dropbox_hgrid_data_contents_if_folder_is_none_and_folders_only(self):
+        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+            self.node_settings.folder = None
+            self.node_settings.save()
+            url = lookup('api', 'dropbox_hgrid_data_contents',
+                pid=self.project._primary_key, foldersOnly=True)
+            res = self.app.get(url, auth=self.user.auth)
+            contents = mock_client.metadata('', list=True)['contents']
+            expected = [each for each in contents if each['is_dir']]
+            assert_equal(len(res.json), len(expected))
+
     def test_dropbox_hgrid_data_contents_folders_only(self):
-        assert 0, 'finish me'
+        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+            url = lookup('api', 'dropbox_hgrid_data_contents',
+                pid=self.project._primary_key, foldersOnly=True)
+            res = self.app.get(url, auth=self.user.auth)
+            contents = mock_client.metadata('', list=True)['contents']
+            expected = [each for each in contents if each['is_dir']]
+            assert_equal(len(res.json), len(expected))
 
-    @unittest.skip('finish this')
     @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
-        assert 0, 'finish me'
+        with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
+            url = lookup('api', 'dropbox_hgrid_data_contents',
+                pid=self.project._primary_key, includeRoot=1)
+            res = self.app.get(url, auth=self.user.auth)
+            contents = mock_client.metadata('', list=True)['contents']
+            assert_equal(len(res.json), len(contents) + 1)
+            first_elem = res.json[0]
+            assert_equal(first_elem['path'], '/')
 
     @unittest.skip('finish this')
     def test_dropbox_addon_folder(self):

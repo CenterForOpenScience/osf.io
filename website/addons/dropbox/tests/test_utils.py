@@ -47,6 +47,12 @@ def test_clean_path():
     assert_equal(utils.clean_path(None), '')
 
 
+def test_get_share_folder_uri():
+    expected = 'https://dropbox.com/home/foo?shareoptions=1&share_subfolder=0&share=1'
+    assert_equal(utils.get_share_folder_uri('/foo/'), expected)
+    assert_equal(utils.get_share_folder_uri('foo'), expected)
+
+
 def test_serialize_folder():
     metadata = {
         u'bytes': 0,
@@ -72,7 +78,7 @@ def test_make_file_response():
         u'icon': u'file',
         u'is_dir': False,
         u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-        u'path': u'song.mp3',
+        u'path': u'foo/song.mp3',
         u'rev': u'3fed51f002c12fc',
         u'revision': 67032351,
         u'root': u'dropbox',
@@ -85,7 +91,7 @@ def test_make_file_response():
     # It's a response
     assert_true(isinstance(resp, Response))
     # Headers are correct
-    disposition = 'attachment; filename=song.mp3'
+    disposition = 'attachment; filename=song-{0}.mp3'.format(metadata['rev'])
     assert_equal(resp.headers['Content-Disposition'], disposition)
     assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
 
