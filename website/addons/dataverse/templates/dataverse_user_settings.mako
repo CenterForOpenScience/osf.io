@@ -13,7 +13,7 @@
 
     ## Your credentials are no longer valid
     % if dataverse_username:
-        <div>
+        <div style="padding-bottom: 10px">
             Warning: Your credentials appear to be incorrect. Please re-enter
             your password.
         </div>

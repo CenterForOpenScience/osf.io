@@ -71,6 +71,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         dataverse_user = user.get_addon('dataverse')
 
+        # Check authorization
+        authorized = dataverse_user.dataverse_username == self.dataverse_username
+
+        # Check connection
         user_connection = connect(
             dataverse_user.dataverse_username,
             dataverse_user.dataverse_password,
@@ -79,6 +83,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
                 'connected': False,
+                'authorized': authorized,
                 'show_submit': False,
                 'user_dataverse_account': dataverse_user.dataverse_username,
                 'user_dataverse_connected': user_connection,
@@ -94,9 +99,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         if connection is not None:
 
-            # Check authorization
-            authorized = dataverse_user.dataverse_username == self.dataverse_username
-
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
             dataverse = dataverses[self.dataverse_number]
@@ -104,7 +106,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             rv.update({
                 'connected': True,
-                'authorized': authorized,
                 'dataverses': [d.title for d in dataverses],
                 'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,

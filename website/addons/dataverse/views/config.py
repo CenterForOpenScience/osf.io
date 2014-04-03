@@ -29,6 +29,11 @@ def dataverse_set_user_config(*args, **kwargs):
     user_settings.dataverse_username = username
     user_settings.dataverse_password = password
 
+    for node_settings in user_settings.addondataversenodesettings__authorized:
+        node_settings.dataverse_username = username
+        node_settings.dataverse_password = password
+        node_settings.save()
+
     user_settings.save()
 
 

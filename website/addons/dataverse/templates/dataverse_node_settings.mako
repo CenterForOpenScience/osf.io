@@ -61,21 +61,31 @@
         </div>
 
     % else:
-        % if user_dataverse_connected:
-            <a id="dataverseAuth" class="btn btn-success">Authorize: Link to Dataverse Account</a>
-        % elif user_dataverse_account:
-            Your Dataverse credentials may have changed. Please go to
-            <a href="/settings/">user settings</a> and update your account
-            information.
-        % else:
-            In order to access this feature, please go to <a href="/settings/">
-            user settings</a> and link your account to a Dataverse account.
-        % endif
+        <div>
+            % if user_dataverse_connected:
+                <a id="dataverseAuth" class="btn btn-success">Authorize: Link to Dataverse Account</a>
+            % elif authorized:
+                There was a problem connecting to the Dataverse using your
+                credentials. If they have changed, please go to
+                <a href="/settings/">user settings</a> and update your account
+                information.
+            % elif authorized_dataverse_user:
+                There was a problem connecting to the Dataverse using the
+                credentials for Dataverse user ${authorized_dataverse_user}.
+                If they have changed, the Dataverse will not be accessible
+                through that account until the information is updated.
+            % else:
+                In order to access this feature, please go to <a href="/settings/">
+                user settings</a> and link your account to a Dataverse account.
+            % endif
+        </div>
 
     % endif
 
-    % if authorized:
-        <a id="dataverseDeauth" class="btn btn-danger" style="padding-top: 10px">Unauthorize</a>
+    % if authorized_dataverse_user:
+        <div style="padding-top: 10px">
+            <a id="dataverseDeauth" class="btn btn-danger">Unauthorize</a>
+        </div>
     % endif
 
 </div>
