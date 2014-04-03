@@ -11,7 +11,9 @@
         moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'}
     );
 
-    var client = new ZeroClipboard( document.getElementsByClassName("copy-button") );
+    var updateClipboard = function(target) {
+
+    var client = new ZeroClipboard( target );
 
     client.on( "load", function(client) {
     // alert( "movie is loaded" );
@@ -38,13 +40,14 @@
         });
     });
 
+    };
+
     function LinkViewModel(data, $root) {
 
         var self = this;
 
         self.$root = $root;
         $.extend(self, data);
-
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
         self.linkUrl = ko.computed(function(){
             return self.$root.node_url() + "?key=" + data.key
@@ -103,6 +106,14 @@
                 }
              });
         };
+
+        self.updateClipboard = function(elm) {
+            console.log('in update');
+            var $tr = $(elm);
+            // Add this to client
+            var target = $tr.find('.copy-button');
+            updateClipboard(target);
+        }
 
     }
 

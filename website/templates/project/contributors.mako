@@ -64,10 +64,11 @@
                             </tr>
 
                         </tbody>
-                        <tbody data-bind="foreach: private_links">
+                        <tbody data-bind="foreach: {data: private_links, afterRender: updateClipboard}">
                                 <tr>
                                 <td class="col-sm-4 link-name">
-                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy" data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
+                                            data-bind="attr: {data-clipboard-text: linkUrl}" >
                                         <span class="icon-copy" ></span>
                                     </button>
                                     <a class="key-name" data-bind="text: linkUrl"></a>
