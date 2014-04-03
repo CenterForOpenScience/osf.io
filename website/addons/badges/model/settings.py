@@ -20,7 +20,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def badges(self):
-        return self.badge__creator
+        return list(self.badge__creator) + [badge for badge in get_system_badges() if badge.creator != self]
 
     def get_badges_json(self):
         return [badge.to_json() for badge in self.badges]
@@ -31,7 +31,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     def to_json(self, user):
         ret = super(BadgesUserSettings, self).to_json(user)
-        ret['badges'] = self.get_badges_json() + [badge.to_json() for badge in get_system_badges() if badge.creator != self]
+        ret['badges'] = self.get_badges_json()
         return ret
 
     def to_openbadge(self):

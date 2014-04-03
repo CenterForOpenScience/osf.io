@@ -1,7 +1,6 @@
 import httplib as http
 
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in
 
 from website.project.views.node import _view_project
 from website.project.decorators import (
@@ -67,10 +66,9 @@ def view_badge(*args, **kwargs):
     raise HTTPError(http.NOT_FOUND)
 
 
-@must_be_logged_in
 @must_have_addon('badges', 'user')
 def dashboard_badges(*args, **kwargs):
-    return kwargs['user_addon'].to_json(kwargs['auth'].user)
+    return {'badges': kwargs['user_addon'].badges}
 
 
 @must_have_addon('badges', 'user')

@@ -43,7 +43,7 @@ class TestBadgesViews(AddonTestCase):
         self.user_settings.reload()
         assert_equals(ret.status_int, 200)
         assert_equals(ret.content_type, 'application/json')
-        assert_true(ret.json['badgeid'] in self.user_settings.badges)
+        assert_true(ret.json['badgeid'] in [badge._id for badge in self.user_settings.badges])
 
     @mock.patch('website.addons.badges.model.badges.deal_with_image')
     def test_create_badge_no_data(self, img_proc):
@@ -123,7 +123,7 @@ class TestBadgesViews(AddonTestCase):
         self.user_settings.reload()
         assert_equals(ret.status_int, 200)
         assert_equals(ret.content_type, 'application/json')
-        assert_true(ret.json['badgeid'] in self.user_settings.badges)
+        assert_true(ret.json['badgeid'] in [badge._id for badge in self.user_settings.badges])
         bstr = str(self.user_settings.badges[0].to_openbadge())
         assert_false('>' in bstr)
         assert_false('<' in bstr)

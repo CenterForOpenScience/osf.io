@@ -5,12 +5,12 @@ You have not created any Badges.
     <ul class="media-list" id="badgeList">
         %for badge in badges:
         <li class="media">
-          <a class="pull-left">
-            <img class="media-object" src="${badge['image']}" width="64px" height="64px">
+          <a class="pull-left" href="/${badge._id}/">
+            <img class="media-object" src="${badge.image}" width="64px" height="64px">
           </a>
           <div class="media-body">
-            <h4 class="media-heading">${badge['name']}<small> ${badge['description']} </small></h4>
-            ${badge['criteria']}
+            <h4 class="media-heading">${badge.name}<small> ${badge.description} </small></h4>
+            ${badge.criteria_list}
           </div>
         </li>
         %endfor

@@ -2,7 +2,6 @@ import httplib as http
 
 from framework.flask import request
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in
 
 from website.util.sanitize import deep_clean
 from website.project.decorators import (
