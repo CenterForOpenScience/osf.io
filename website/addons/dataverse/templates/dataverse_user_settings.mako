@@ -11,10 +11,18 @@
 
 % else:
 
+    ## Your credentials are no longer valid
+    % if dataverse_username:
+        <div>
+            Warning: Your credentials appear to be incorrect. Please re-enter
+            your password.
+        </div>
+    % endif
+
     ## Show auth fields
     <div class="form-group">
         <label for="dataverseUsername">Dataverse Username</label>
-        <input class="form-control" id="dataverseUsername" name="dataverse_username" />
+        <input class="form-control" id="dataverseUsername" name="dataverse_username" value="${dataverse_username}"/>
     </div>
     <div class="form-group">
         <label for="dataversePassword">Dataverse Password</label>
