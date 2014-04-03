@@ -103,14 +103,13 @@
         };
 
         self.updateClipboard = function(elm) {
-            console.log('in update');
+
             var $tr = $(elm);
             // Add this to client
             var target = $tr.find('.copy-button');
             updateClipboard(target);
-        }
+        };
 
-        // TODO add before remove to remove the unwanted clients
     }
 
     function PrivateLinkTable (selector, url) {

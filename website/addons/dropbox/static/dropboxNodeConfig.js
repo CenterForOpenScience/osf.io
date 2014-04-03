@@ -17,7 +17,7 @@
     } else {
         global.DropboxNodeConfig  = factory(ko, jQuery, FolderPicker, ZeroClipboard);
     }
-}(window, function(ko, $, FolderPicker, ZeroClipboard) {
+}(this, function(ko, $, FolderPicker, ZeroClipboard) {
     'use strict';
     ko.punches.attributeInterpolationMarkup.enable();
     /**
