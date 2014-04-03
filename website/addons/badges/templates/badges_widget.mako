@@ -22,7 +22,9 @@
     }
   </style>
 
-  <script src="/addons/static/badges/badge-popover.js"></script>
+  <script>
+    $script('/static/addons/badges/badge-popover.js');
+  </script>
 
 %endif
 

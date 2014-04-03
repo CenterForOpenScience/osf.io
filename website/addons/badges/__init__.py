@@ -28,8 +28,8 @@ CONFIGS = ['user']
 CATEGORIES = ['documentation']
 
 INCLUDE_JS = {
-    'widget': ['bake-badges.js', 'png-baker.js'],
-    'page': ['png-baker.js', 'bake-badges.js'],
+    'widget': ['bake-badges.js', 'badge-popover.js'],
+    'page': [],
 }
 
 INCLUDE_CSS = {

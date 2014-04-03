@@ -2,12 +2,9 @@ import httplib as http
 
 from framework.flask import request
 from framework.exceptions import HTTPError
-
-from website.models import User
+from framework.auth.decorators import must_be_logged_in
 
 from website.util.sanitize import deep_clean
-
-from framework.auth.decorators import must_be_logged_in
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -22,13 +19,10 @@ from ..model import Badge, BadgeAssertion
 @must_have_addon('badges', 'node')
 @must_have_addon('badges', 'user')
 def award_badge(*args, **kwargs):
-    auth = kwargs.get('auth', None)
     badgeid = request.json.get('badgeid', None)
     evidence = request.json.get('evidence', None)
     node = kwargs['node'] or kwargs['project']
-    if not auth:
-        raise HTTPError(http.BAD_REQUEST)
-    awarder = auth.user.get_addon('badges')
+    awarder = kwargs['user_addon']
     if not awarder or not awarder.can_award:
         raise HTTPError(http.FORBIDDEN)
     badge = Badge.load(badgeid)
@@ -39,16 +33,10 @@ def award_badge(*args, **kwargs):
     return BadgeAssertion.create(badge, node, evidence)._id
 
 
-@must_be_logged_in
 @must_have_addon('badges', 'user')
 def create_badge(*args, **kwargs):
-    auth = kwargs.get('auth', None)
-
-    if not auth:
-        raise HTTPError(http.FORBIDDEN)
-
     badge_data = request.json
-    awarder = auth.user.get_addon('badges')
+    awarder = kwargs['user_addon']
 
     if not badge_data or not badge_data.get('badgeName', None) or \
         not badge_data.get('description', None) or \
@@ -61,7 +49,6 @@ def create_badge(*args, **kwargs):
     return {'badgeid': id}, 200
 
 
-@must_be_logged_in
 @must_be_valid_project
 @must_have_addon('badges', 'user')
 @must_have_addon('badges', 'node')
@@ -71,7 +58,7 @@ def revoke_badge(*args, **kwargs):
     if _id and reason is not None and kwargs['user_addon'].can_award:
         assertion = BadgeAssertion.load(_id)
         if assertion:
-            if assertion.badge and assertion.awarder.owner._id == kwargs['auth'].user._id:
+            if assertion.badge and assertion.awarder.owner._id == kwargs['user_addon'].owner._id:
                 assertion.revoked = True
                 assertion.reason = reason
                 kwargs['user_addon'].revocation_list[_id] = reason
@@ -79,25 +66,3 @@ def revoke_badge(*args, **kwargs):
                 kwargs['user_addon'].save()
                 return 200
     raise HTTPError(http.BAD_REQUEST)
-
-
-#Depricated Should be removed
-@must_be_logged_in
-@must_have_addon('badges', 'user')
-def create_organization(*args, **kwargs):
-    auth = kwargs.get('auth', None)
-    if not auth:
-        raise HTTPError(http.BAD_REQUEST)
-    settings = auth.user.get_addon('badges')
-    if not settings or not settings.can_issue:
-        raise HTTPError(http.FORBIDDEN)
-    if not request.json.get('name') or request.json.get('email'):
-        raise HTTPError(http.BAD_REQUEST)
-    deep_clean(request.json)
-    settings.name = request.json['name']
-    settings.email = request.json['email']
-    settings.description = request.json.get('description', '')
-    settings.url = request.json.get('url', '')
-    settings.image = request.json.get('image', '')
-    settings.save()
-    return 200

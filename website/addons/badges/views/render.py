@@ -1,18 +1,18 @@
 import httplib as http
 
 from framework.exceptions import HTTPError
+from framework.auth.decorators import must_be_logged_in
 
+from website.project.views.node import _view_project
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission,
 )
-from framework.auth.decorators import must_be_logged_in
-from website.project.views.node import _view_project
 
-from ..util import get_node_badges, get_sorted_node_badges
 from ..model import Badge
+from ..util import get_node_badges, get_sorted_node_badges
 
 
 @must_be_contributor_or_public
@@ -34,7 +34,6 @@ def badges_widget(*args, **kwargs):
     return ret
 
 
-@must_be_valid_project
 @must_be_contributor_or_public
 @must_have_addon('badges', 'node')
 def badges_page(*args, **kwargs):
@@ -74,7 +73,6 @@ def dashboard_badges(*args, **kwargs):
     return kwargs['user_addon'].to_json(kwargs['auth'].user)
 
 
-@must_be_logged_in
 @must_have_addon('badges', 'user')
 def dashboard_assertions(*args, **kwargs):
     return {'assertions': kwargs['user_addon'].issued}

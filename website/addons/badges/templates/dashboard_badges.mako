@@ -10,7 +10,6 @@ You have not created any Badges.
           </a>
           <div class="media-body">
             <h4 class="media-heading">${badge['name']}<small> ${badge['description']} </small></h4>
-
             ${badge['criteria']}
           </div>
         </li>
@@ -18,7 +17,6 @@ You have not created any Badges.
     </ul>
   </div>
 
-<script type="text/javascript" src="/static/vendor/dropzone/dropzone.js"></script>
 <script type="text/javascript">
 //TODO Make bootbox into a form? [with submit]
 //TODO Image uploading

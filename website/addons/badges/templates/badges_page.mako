@@ -3,7 +3,7 @@
 %if len(assertions) > 0:
 <ul class="two-col" id="badgeList">
     %for assertion in reversed(assertions):
-        <div class="row well well-sm" style="margin-right: 20px;">
+        <div class="row well well-sm assertion">
             <div class="col-md-2">
               <img class="open-badge" badge-url="/badge/assertion/json/${assertion._id}/" src="${assertion.badge.image}" width="150px" height="150px" class="pull-left">
             </div>
@@ -13,12 +13,7 @@
                     <p>${assertion.badge.criteria_list}</p>
             </div>
 
-            <div class="col-md-2" style="text-align:center; max-height:200px; overflow:auto;">
-                %if assertion.badge.creator._id == uid: ##TODO
-                  <button class="btn btn-danger btn-xs pull-right revoke-badge" badge-uid="${assertion.uid}" type="button">
-                    <i class="icon-minus"></i>
-                  </button>
-                %endif
+            <div class="col-md-2 assertion-dates">
                  <h5>Awarded on:</h5>
                   %for key in assertion.dates.keys():
                     %for date in assertion.dates[key]:
@@ -37,47 +32,20 @@
     %endfor
 </ul>
 
-<script src="/addons/static/badges/bake-badges.js"></script>
-<script src="/addons/static/badges/png-baker.js"></script>
+<script>
+  $script('/static/addons/badges/bake-badges.js')
+</script>
 
-%endif
+<style type="text/css">
+  .assertion {
+    margin-right: 20px;
+  }
 
-##TODO Remove me?
-% if can_award > 0:
-  <script type="text/javascript">
-  $(document).ready(function(){
-      $('.revoke-badge').editable({
-        type: 'text',
-        pk: 'revoke',
-        placement: 'left',
-        title: 'Revoke this badge?',
-        placeholder: 'Reason',
-        display: false,
-        validate: function(value) {
-          if($.trim(value) == '') return 'A reason is required';
-        },
-        ajaxOptions: {
-          'type': 'POST',
-          "dataType": "json",
-          "contentType": "application/json"
-        },
-        url: nodeApiUrl + 'badges/revoke/',
-        params: function(params){
-          // Send JSON data
-          var uid = $(this).attr('badge-uid')
-          return JSON.stringify({reason: params.value, id: uid});
-        },
-        success: function(data){
-          document.location.reload(true);
-        },
-      });
+  .assertion-dates {
+    text-align: center;
+    max-height: 200px;
+    overflow: auto;
+  }
+</style>
 
-  });
-  </script>
-
-  <style type="text/css">
-    .btn-danger.editable:hover {
-        background-color: #d2322d;
-    }
-  </style>
 %endif

@@ -49,15 +49,14 @@ class BadgesUserSettings(AddonUserSettingsBase):
         #     ret['revocationList'] = self.revocation_list
         return ret
 
-    #TODO Mongoqueryset -> list
     @property
     def issued(self):
         assertions = []
-        for badge in list(self.badges) + list(get_system_badges()):#[badge for badge in self.badges]:
+        for badge in list(self.badges) + list(get_system_badges()):
             for assertion in badge.assertions:
                 if assertion.awarder == self:
                     assertions.append(assertion)
         return assertions
 
     def issued_json(self):
-        return
+        return [assertion.to_json() for assertion in self.issued]
