@@ -115,6 +115,10 @@ def gitlab_upload_file(**kwargs):
 
     upload = request.files.get('file')
     content = upload.read()
+
+    if not content:
+        return {'message': 'Cannot upload empty file'}, http.BAD_REQUEST
+
     content = base64.b64encode(content)
 
     # Check max file size
@@ -160,10 +164,23 @@ def gitlab_upload_file(**kwargs):
 
 
 def gitlab_hgrid_root(node_settings, auth, **kwargs):
+    """
 
+    """
     node = node_settings.owner
 
-    branch, sha = get_branch_and_sha(node_settings, kwargs)
+    #
+    branch, sha = gitlab_settings.DEFAULT_BRANCH, None
+    branches = []
+
+    #
+    if node_settings.project_id is not None:
+        branches = [
+            each['name']
+            for each in client.listbranches(node_settings.project_id)
+        ]
+        if branches:
+            branch, sha = get_branch_and_sha(node_settings, kwargs)
 
     permissions = {
         'edit': node.can_edit(auth=auth),
@@ -174,10 +191,6 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
         branch=branch, sha=sha
     )
 
-    branches = [
-        each['name']
-        for each in client.listbranches(node_settings.project_id)
-    ]
     extra = render_branch_picker(branch, sha, branches)
 
     return [rubeus.build_addon_root(

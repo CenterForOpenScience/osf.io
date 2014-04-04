@@ -225,7 +225,7 @@ class GitlabGuidFile(GuidFile):
         return os.path.join('gitlab', 'files', self.path)
 
     @classmethod
-    def get_or_create(cls, node_settings, path, ref, client=None):
+    def get_or_create(cls, node_settings, path, ref=None, client=None):
         """
 
         :param GitlabAddonNodeSettings node_settings:
