@@ -526,7 +526,8 @@ class TestProjectViews(DbTestCase):
             )
         self.app.delete_json(url, {'private_link_id': link._id}, auth=self.auth).maybe_follow()
         self.project.reload()
-        assert_not_in(link, self.project.private_links)
+        link.reload()
+        assert_true(link.is_deleted)
 
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)

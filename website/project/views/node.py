@@ -543,7 +543,7 @@ def _view_project(node, auth, primary=False):
             'fork_count': len(node.fork_list),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
-            'private_links': [x.to_json() for x in node.private_links],
+            'private_links': [x.to_json() for x in node.private_links_active],
             'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
@@ -634,7 +634,7 @@ def private_link_table(**kwargs):
     data = {
         'node': {
             'absolute_url': node.absolute_url,
-            'private_links': [x.to_json() for x in node.private_links if not x.is_deleted],
+            'private_links': [x.to_json() for x in node.private_links_active],
             }
     }
     return data

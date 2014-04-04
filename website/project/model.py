@@ -528,11 +528,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def private_links_active(self):
-        return [x for x in self.private_links if not x.is_deleted ]
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
+        return [x for x in self.private_links if not x.is_deleted]
 
     @property
     def private_link_keys_active(self):
@@ -570,11 +566,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             key_ring = set(auth.user.private_link_keys)
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_link_keys)
+                or not key_ring.isdisjoint(self.private_link_keys_active)
         else:
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_link_keys
+                or auth.private_key in self.private_link_keys_active
 
 
     def add_permission(self, user, permission, save=False):

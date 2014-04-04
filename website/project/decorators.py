@@ -91,6 +91,17 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     return True
 
 
+def check_key_expired(key, node, url):
+    """check if key expired
+        if is return url with args so it will push status message
+        else return url
+    """
+    if key in node.private_link_keys_deleted:
+        url = furl(url).add({'status':'expiredkey'}).url
+
+    return url
+
+
 def has_deleted_keys(key_ring, node, user):
     #check if there is deleted keys, if there is delete it from user.private_links
     deleted_keys = key_ring.intersection(node.private_link_keys_deleted)
@@ -159,12 +170,8 @@ def _must_be_contributor_factory(include_public):
                         if not check_can_access(node=node, user=user,
                                 api_node=api_node):
                             url = '/login/?next={0}'.format(request.path)
-
-                            if key in node.private_link_keys_deleted:
-                                url = furl(url).add({'status':'expiredkey'}).url
-
-                            response = redirect(url)
-
+                            redirect_url = check_key_expired(key=key, node=node, url = url)
+                            response = redirect(redirect_url)
 
             #for login user
             else:
@@ -187,12 +194,10 @@ def _must_be_contributor_factory(include_public):
 
                         if not check_can_access(node=node, user=user, has_deleted_keys=delete_key_check,
                                 api_node=api_node):
-                            redirect_url = '/login/?next={0}'.format(request.path)
-
-                            if key in node.private_link_keys_deleted or delete_key_check:
-                                redirect_url = furl(redirect_url).add({'status':'expiredkey'}).url
-
+                            url = '/login/?next={0}'.format(request.path)
+                            redirect_url = check_key_expired(key=key, node=node, url = url)
                             response = redirect(redirect_url)
+
                         kwargs['auth'].private_key = None
 
                     #has intersection: check if the link is valid if not use other key
