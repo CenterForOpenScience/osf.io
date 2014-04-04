@@ -31,9 +31,8 @@ Available variables:
 
 
 def make_shell_context():
-    from framework import Q
+    from framework.mongo import Q, db
     from framework.auth.model import User
-    from framework import db
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
@@ -192,8 +191,8 @@ def test():
 
 @task
 def test_all():
-    test_osf()
-    test_addons()
+    test_module('tests')
+    test_module('website/addons')
 
 
 # TODO: user bower once hgrid is released

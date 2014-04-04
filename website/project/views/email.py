@@ -9,12 +9,12 @@ import hashlib
 import logging
 import urlparse
 import httplib as http
+from flask import request
 from nameparser import HumanName
 
-from framework import Q
+from framework.mongo import Q
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
-from framework.flask import request
 from framework.auth.decorators import Auth
 
 from website import settings, security

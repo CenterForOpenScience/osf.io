@@ -26,12 +26,10 @@ def generate_password_hash(password, rounds=None):
     if not password:
         raise ValueError('Password must be non-empty.')
 
-    pw_hash = bcrypt.hashpw(
+    return bcrypt.hashpw(
         unicode(password).encode('utf-8'),
         bcrypt.gensalt(rounds)
     )
-
-    return pw_hash
 
 
 def constant_time_compare(val1, val2):

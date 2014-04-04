@@ -2,14 +2,17 @@
 import httplib as http
 import logging
 import datetime
+from flask import request, redirect
 
 from modularodm.exceptions import NoResultsFound, ValidationValueError
-import framework
-from framework import set_previous_url, request
-from framework import status, exceptions
+from framework.mongo import Q
+from framework.exceptions import HTTPError
+from framework.sessions import set_previous_url
+from framework import status
 import framework.forms as forms
 from framework import auth
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
+from framework.auth.model import User
 from framework.auth.forms import (RegistrationForm, SignInForm,
     ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
 
@@ -17,29 +20,27 @@ import website.settings
 from website import security, mails, language
 
 
-Q = framework.Q
-User = framework.auth.model.User
 logger = logging.getLogger(__name__)
 
 
 def reset_password(*args, **kwargs):
 
     verification_key = kwargs['verification_key']
-    form = ResetPasswordForm(framework.request.form)
+    form = ResetPasswordForm(request.form)
 
     user_obj = get_user(verification_key=verification_key)
     if not user_obj:
         error_data = {'message_short': 'Invalid url.',
             'message_long': 'The verification key in the URL is invalid or '
             'has expired.'}
-        raise exceptions.HTTPError(400, data=error_data)
+        raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
         user_obj.verification_key = None
         user_obj.set_password(form.password.data)
         user_obj.save()
         status.push_status_message('Password reset')
-        return framework.redirect('/account/')
+        return redirect('/account/')
 
     forms.push_errors_to_status(form.errors)
     return {
@@ -48,7 +49,7 @@ def reset_password(*args, **kwargs):
 
 
 def forgot_password():
-    form = ForgotPasswordForm(framework.request.form, prefix='forgot_password')
+    form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
     if form.validate():
         email = form.email.data
@@ -57,8 +58,8 @@ def forgot_password():
             user_obj.verification_key = security.random_string(20)
             user_obj.save()
             reset_link = "http://{0}{1}".format(
-                framework.request.host,
-                framework.url_for(
+                request.host,
+                url_for(
                     'OsfWebRenderer__reset_password',
                     verification_key=user_obj.verification_key
                 )
@@ -87,11 +88,11 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     """
     if get_current_user():
         if not request.args.get('logout'):
-            return framework.redirect('/dashboard/')
+            return redirect('/dashboard/')
         logout()
     direct_call = registration_form or forgot_password_form
-    if framework.request.method == 'POST' and not direct_call:
-        form = SignInForm(framework.request.form)
+    if request.method == 'POST' and not direct_call:
+        form = SignInForm(request.form)
         if form.validate():
             try:
                 response = login(form.username.data, form.password.data)
@@ -127,7 +128,7 @@ def auth_logout():
 
     """
     logout()
-    rv = framework.redirect('/goodbye/')
+    rv = redirect('/goodbye/')
     rv.delete_cookie(website.settings.COOKIE_NAME)
     return rv
 
@@ -147,7 +148,7 @@ def confirm_email_get(**kwargs):
             user.save()
             # Go to settings page
             status.push_status_message(language.WELCOME_MESSAGE, 'success')
-            response = framework.redirect('/settings/')
+            response = redirect('/settings/')
             return auth.authenticate(user, response=response)
     # Return data for the error template
     return {'code': 400, 'message_short': 'Link Expired', 'message_long': language.LINK_EXPIRED}, 400
@@ -168,8 +169,8 @@ def send_confirm_email(user, email):
 def auth_register_post():
     if not website.settings.ALLOW_REGISTRATION:
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
-        return framework.redirect('/')
-    form = RegistrationForm(framework.request.form, prefix='register')
+        return redirect('/')
+    form = RegistrationForm(request.form, prefix='register')
     set_previous_url()
 
     # Process form
@@ -191,9 +192,8 @@ def auth_register_post():
                 status.push_status_message(message, 'success')
                 return auth_login(registration_form=form)
             else:
-                return framework.redirect('/login/first/')
-                #status.push_status_message('You may now log in')
-            return framework.redirect(framework.url_for('OsfWebRenderer__auth_login'))
+                return redirect('/login/first/')
+            return redirect(url_for('OsfWebRenderer__auth_login'))
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
@@ -201,7 +201,7 @@ def auth_register_post():
 def resend_confirmation():
     """View for resending an email confirmation email.
     """
-    form = ResendConfirmationForm(framework.request.form)
+    form = ResendConfirmationForm(request.form)
     if request.method == 'POST':
         if form.validate():
             clean_email = form.email.data
@@ -262,14 +262,14 @@ def merge_user_post(**kwargs):
             master.save()
             if request.form:
                 status.push_status_message("Successfully merged {0} with this account".format(merged_username))
-                return framework.redirect("/settings/")
+                return redirect("/settings/")
             return {"status": "success"}
         else:
             status.push_status_message("Could not find that user. Please check the username and password.")
             return merge_user_get(**kwargs)
     else:
-        raise framework.exceptions.HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def auth_registerbeta():
-    return framework.redirect('/account')
+    return redirect('/account')

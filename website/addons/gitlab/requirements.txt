@@ -1,0 +1,2 @@
+git+https://github.com/jmcarp/pyapi-gitlab.git@osf
+awesome-slugify

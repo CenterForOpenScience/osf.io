@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+from flask import send_from_directory
 
 import framework
 from framework import status
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
 
 from website import settings, language, util
@@ -59,7 +60,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'

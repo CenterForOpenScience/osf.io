@@ -4,11 +4,11 @@ import httplib as http
 
 from urllib2 import urlopen
 
-from framework.flask import secure_filename
+from flask import request, redirect, make_response
+from werkzeug.utils import secure_filename
 
-from framework import request, make_response
+from framework.mongo import Q
 from framework.exceptions import HTTPError
-from framework import redirect, Q
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators

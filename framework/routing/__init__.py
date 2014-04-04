@@ -12,10 +12,11 @@ import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
+from flask import request, make_response, redirect
 
-from framework import session, request, make_response
+from framework.sessions import session
 from framework.exceptions import HTTPError
-from framework.flask import app, redirect
+from framework.flask import app
 from website import settings
 
 logger = logging.getLogger(__name__)

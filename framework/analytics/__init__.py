@@ -1,7 +1,8 @@
-from framework import db, session
-
 from decorator import decorator
 from datetime import datetime
+
+from framework.mongo import db
+from framework.sessions import session
 
 collection = db['pagecounters']
 

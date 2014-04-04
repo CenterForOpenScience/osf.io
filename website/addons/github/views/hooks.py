@@ -2,8 +2,8 @@ import httplib as http
 import logging
 
 from dateutil.parser import parse as dateparse
+from flask import request
 
-from framework import request
 from framework.exceptions import HTTPError
 
 from website import models

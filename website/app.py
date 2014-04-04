@@ -2,7 +2,10 @@
 import importlib
 import logging
 
-from framework import storage, db, app
+from modularodm import storage
+
+from framework.mongo import db
+from framework.flask import app
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 import website.models

@@ -6,8 +6,7 @@ import sha
 import re
 
 from boto.exception import S3ResponseError, BotoClientError
-
-from framework.flask import request
+from flask import request
 
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public

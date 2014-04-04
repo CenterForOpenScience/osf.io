@@ -2,7 +2,7 @@
 
 """
 
-from framework import fields
+from framework.mongo import fields
 from website.addons.base import AddonNodeSettingsBase
 
 

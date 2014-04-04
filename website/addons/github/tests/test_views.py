@@ -3,7 +3,7 @@
 import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from webtest_plus import TestApp
 
 from github3.repos.branch import Branch
@@ -22,8 +22,12 @@ app = website.app.init_app(
 
 github_mock = create_mock_github(user='fred', private=False)
 
-class TestHGridViews(DbTestCase):
+class TestHGridViews(OsfTestCase):
+
     def setUp(self):
+
+        super(TestHGridViews, self).setUp()
+
         self.github = github_mock
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -61,9 +65,11 @@ class TestHGridViews(DbTestCase):
     # TODO: Test to_hgrid with branch and sha arguments
 
 
-class TestGithubViews(DbTestCase):
+class TestGithubViews(OsfTestCase):
 
     def setUp(self):
+
+        super(TestGithubViews, self).setUp()
 
         self.app = TestApp(app)
         self.user = AuthUserFactory()
@@ -351,11 +357,12 @@ class TestGithubViews(DbTestCase):
         )
 
 
-class TestRegistrationsWithGithub(DbTestCase):
+class TestRegistrationsWithGithub(OsfTestCase):
 
     def setUp(self):
 
         super(TestRegistrationsWithGithub, self).setUp()
+
         self.project = ProjectFactory.build()
         self.project.save()
         self.consolidated_auth = Auth(user=self.project.creator)
@@ -434,11 +441,12 @@ class TestRegistrationsWithGithub(DbTestCase):
         )
 
 
-class TestGithubSettings(DbTestCase):
+class TestGithubSettings(OsfTestCase):
 
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
+
         self.app = TestApp(app)
         self.project = ProjectFactory.build()
         self.project.save()

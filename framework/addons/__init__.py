@@ -2,8 +2,10 @@
 
 """
 
-from framework import StoredObject
+from framework.mongo import StoredObject
+
 from website import settings
+from website.addons.base import AddonError
 
 
 class AddonModelMixin(StoredObject):
@@ -32,10 +34,10 @@ class AddonModelMixin(StoredObject):
         )
 
     def get_addon(self, addon_name, deleted=False):
-        """Get addon for node.
+        """Get addon for owner.
 
         :param str addon_name: Name of addon
-        :return: Settings record if found, else None
+        :returns: Addon settings record if found, else None
 
         """
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
@@ -54,10 +56,9 @@ class AddonModelMixin(StoredObject):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
     def add_addon(self, addon_name, auth=None):
-        """Add an add-on to the node.
+        """Add an add-on to the owner.
 
         :param str addon_name: Name of add-on
-        :param Auth auth: Consolidated authorization object
         :return bool: Add-on was added
 
         """
@@ -66,22 +67,35 @@ class AddonModelMixin(StoredObject):
         if addon:
             if addon.deleted:
                 addon.undelete()
-                return True
-            return False
+                return addon
+            raise AddonError('Add-on already exists')
 
         # Get add-on settings model
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
         if not addon_config or not addon_config.settings_models[self._name]:
-            return False
+            raise AddonError('Could not find settings model')
 
         # Instantiate model
-        model = addon_config.settings_models[self._name](owner=self)
-        model.save()
+        addon = addon_config.settings_models[self._name](owner=self)
+        addon.after_add_addon(self)
+        addon.save()
 
-        return True
+        return addon
+
+    def get_or_add_addon(self, addon_name, auth=None):
+        """Get addon from owner; if it doesn't exist, create one.
+
+        :param str addon_name: Name of addon
+        :returns: Addon settings record
+
+        """
+        addon = self.get_addon(addon_name)
+        if addon:
+            return addon
+        return self.add_addon(addon_name, auth=auth)
 
     def delete_addon(self, addon_name, auth=None):
-        """Delete an add-on from the node.
+        """Delete an add-on from the owner.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
@@ -104,9 +118,9 @@ class AddonModelMixin(StoredObject):
 
         """
         for addon_name, enabled in config.iteritems():
-            if enabled:
+            if enabled and not self.has_addon(addon_name):
                 self.add_addon(addon_name, auth)
-            else:
+            elif not enabled and self.has_addon(addon_name):
                 self.delete_addon(addon_name, auth)
         if save:
             self.save()

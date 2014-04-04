@@ -1,4 +1,4 @@
-from framework import StoredObject, fields
+from framework.mongo import StoredObject, fields
 
 
 class Guid(StoredObject):

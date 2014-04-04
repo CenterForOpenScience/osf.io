@@ -8,7 +8,7 @@ import itertools
 
 from github3 import GitHubError
 
-from framework import fields
+from framework.mongo import fields
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase

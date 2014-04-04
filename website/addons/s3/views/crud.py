@@ -1,8 +1,9 @@
 import urllib
 import datetime
 import httplib as http
+from flask import request, redirect
 
-from framework import request, redirect, Q
+from framework.mongo import Q
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission

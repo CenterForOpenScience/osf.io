@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 import logging
+from flask import request
 
-from framework import request
 from framework.auth import get_current_user, get_api_key, get_current_node
 from framework.auth.decorators import collect_auth, Auth
 from framework.exceptions import HTTPError

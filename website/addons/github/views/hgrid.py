@@ -2,9 +2,9 @@
 import os
 import logging
 import httplib as http
+from flask import request
 from mako.template import Template
 
-from framework import request
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public
@@ -138,7 +138,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         )
     except NotFoundError:
         # TODO: Show an alert or change GitHub configuration?
-        logger.error('GitHub repo  not found')
+        logger.error('GitHub repo not found')
         return
 
     if branch is not None:

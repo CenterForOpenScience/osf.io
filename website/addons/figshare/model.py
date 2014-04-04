@@ -2,11 +2,12 @@
 
 """
 import os
-import json
-from framework import fields
+
+from framework.mongo import fields
+from framework.status import push_status_message
+
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from framework.status import push_status_message
 
 from .api import Figshare
 from . import settings as figshare_settings

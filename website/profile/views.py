@@ -1,17 +1,14 @@
 import json
-import httplib as http
 import bleach
+import httplib as http
+from flask import request, redirect
 
-from framework import (
-    get_user,
-    must_be_logged_in,
-    request,
-    redirect,
-    status
-)
+from framework.auth import get_user
+from framework.auth.decorators import must_be_logged_in
+
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
-from framework.auth import get_current_user, authenticate
+from framework.auth import get_current_user
 from framework.auth.utils import parse_name
 
 from website.models import ApiKey, User

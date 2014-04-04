@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from website.addons.base import AddonError
+from tests.base import OsfTestCase, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory
 
-class AddonTestCase(DbTestCase):
+class AddonTestCase(OsfTestCase):
     """General Addon TestCase that automatically sets up a user and node with
     an addon.
 
@@ -49,6 +50,9 @@ class AddonTestCase(DbTestCase):
         raise NotImplementedError('Must define set_node_settings(self, settings) method')
 
     def setUp(self):
+
+        super(AddonTestCase, self).setUp()
+
         self.app = self.create_app()
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
@@ -62,10 +66,16 @@ class AddonTestCase(DbTestCase):
         self.user_settings.save()
 
         self.project = self.create_project()
-        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        try:
+            self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        except AddonError:
+            pass
         self.project.save()
         self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
         # User has imported their addon settings to this node
         self.node_settings.user_settings = self.user_settings
         self.set_node_settings(self.node_settings)
         self.node_settings.save()
+
+        self.lookup = URLLookup(self.app.app)
+        self.node_lookup = URLLookup(self.app.app, self.project)

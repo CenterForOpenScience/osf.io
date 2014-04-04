@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # PEP8 asserts
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from webtest_plus import TestApp
 
 from framework.auth.decorators import Auth
@@ -15,15 +15,17 @@ app = website.app.init_app(
     settings_module='website.settings'
 )
 
-class TestFilesViews(DbTestCase):
+class TestFilesViews(OsfTestCase):
 
     def setUp(self):
+
+        super(TestFilesViews, self).setUp()
+
         self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.consolidated_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('osffiles', auth=self.consolidated_auth)
         self.node_settings = self.project.get_addon('osffiles')
         self._upload_file('firstfile', 'firstcontent')
 

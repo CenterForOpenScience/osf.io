@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+from flask import make_response
 
-from framework import make_response
 from website.project.utils import get_cache_content
 from website.util import rubeus
 

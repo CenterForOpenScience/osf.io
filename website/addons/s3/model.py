@@ -11,7 +11,7 @@ import os
 
 from boto.exception import BotoServerError
 
-from framework import fields
+from framework.mongo import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
 from .utils import get_bucket_drop_down, serialize_bucket, remove_osf_user

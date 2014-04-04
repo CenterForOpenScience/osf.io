@@ -2,7 +2,8 @@ import httplib as http
 import functools
 import logging
 
-from framework import request, redirect
+from flask import request, redirect
+
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth

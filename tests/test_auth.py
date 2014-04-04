@@ -12,13 +12,13 @@ from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 import framework.auth as auth
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, AuthUserFactory
 )
 
-from framework import Q
 from framework import app
+from framework.mongo import Q
 from framework.auth.model import User
 from framework.auth.decorators import must_be_logged_in, Auth
 
@@ -29,7 +29,7 @@ def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
 
 
-class TestAuthUtils(DbTestCase):
+class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
@@ -88,7 +88,7 @@ class TestAuthUtils(DbTestCase):
             auth.login(user.username, 'wrongpassword')
 
 
-class TestAuthObject(DbTestCase):
+class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
@@ -111,7 +111,7 @@ class TestAuthObject(DbTestCase):
         auth2 = Auth(user=None)
         assert_false(auth2.logged_in)
 
-class TestPrivateLink(DbTestCase):
+class TestPrivateLink(OsfTestCase):
 
     def setUp(self):
         self.flaskapp = Flask('testing_private_links')
@@ -158,9 +158,10 @@ def view_that_needs_contributor(**kwargs):
     return kwargs['project'] or kwargs['node']
 
 
-class AuthAppTestCase(DbTestCase):
+class AuthAppTestCase(OsfTestCase):
 
     def setUp(self):
+        super(AuthAppTestCase, self).setUp()
         self.ctx = decoratorapp.test_request_context()
         self.ctx.push()
 

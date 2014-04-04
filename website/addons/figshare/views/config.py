@@ -1,6 +1,6 @@
 import httplib as http
+from flask import request
 
-from framework import request
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_have_permission
