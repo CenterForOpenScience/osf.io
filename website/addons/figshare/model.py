@@ -91,18 +91,19 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         })
 
         if self.has_auth:
-            ops = Figshare.from_settings(self.user_settings).get_options()
+            rv.update({
+                'authorized_user': self.user_settings.owner.fullname,
+                'owner_url': self.user_settings.owner.url,
+                'is_owner': user == self.user_settings.owner
+            })
+            if user == self.user_settings.owner:
+                options = Figshare.from_settings(self.user_settings).get_options()
 
-            if ops == 401:
-                self.user_settings.remove_auth()
-                push_status_message(messages.OAUTH_INVALID)
-            else:
-                rv.update({
-                    'authorized_user': self.user_settings.owner.fullname,
-                    'owner_url': self.user_settings.owner.url,
-                    'is_owner': user == self.user_settings.owner,
-                    'figshare_options': ops,
-                })
+                if options == 401 or not isinstance(options, list):
+                    self.user_settings.remove_auth()
+                    push_status_message(messages.OAUTH_INVALID)
+                else:
+                    rv['figshare_options'] = options or []
 
         return rv
 
