@@ -73,12 +73,22 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     @property
     def has_auth(self):
-        return self.user_settings and self.user_settings.has_auth
+        return bool(self.user_settings and self.user_settings.has_auth)
 
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
         figshare_user = user.get_addon('figshare')
+
+        rv.update({
+            'figshare_id': self.figshare_id or '',
+            'figshare_type': self.figshare_type or '',
+            'figshare_title': self.figshare_title or '',
+            'node_has_auth': self.has_auth,
+            'user_has_auth': figshare_user and figshare_user.has_auth,
+            'figshare_options': [],
+            'is_registration': self.owner.is_registration,
+        })
 
         if self.has_auth:
             ops = Figshare.from_settings(self.user_settings).get_options()
@@ -86,24 +96,13 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             if ops == 401:
                 self.user_settings.remove_auth()
                 push_status_message(messages.OAUTH_INVALID)
-
-        rv.update({
-            'figshare_id': self.figshare_id or '',
-            'figshare_type': self.figshare_type or '',
-            'figshare_title': self.figshare_title or '',
-            'node_has_auth': self.user_settings and self.user_settings.has_auth,
-            'user_has_auth': figshare_user and figshare_user.has_auth,
-            'figshare_options': [],
-            'is_registration': self.owner.is_registration,
-        })
-
-        if self.user_settings and self.user_settings.has_auth:
-            rv.update({
-                'authorized_user': self.user_settings.owner.fullname,
-                'owner_url': self.user_settings.owner.url,
-                'is_owner': user == self.user_settings.owner,
-                'figshare_options': ops,
-            })
+            else:
+                rv.update({
+                    'authorized_user': self.user_settings.owner.fullname,
+                    'owner_url': self.user_settings.owner.url,
+                    'is_owner': user == self.user_settings.owner,
+                    'figshare_options': ops,
+                })
 
         return rv
 
