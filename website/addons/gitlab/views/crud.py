@@ -354,9 +354,9 @@ def gitlab_download_file(**kwargs):
     path = kwargs_to_path(kwargs, required=True)
     ref = ref_or_default(node_settings, request.args)
 
-    contents = client.getfile(node_settings.project_id, path, ref)
-
-    if contents is False:
+    try:
+        contents = client.getfile(node_settings.project_id, path, ref)
+    except GitlabError:
         raise HTTPError(http.NOT_FOUND)
 
     contents = base64.b64decode(contents['content'])
@@ -387,12 +387,11 @@ def gitlab_delete_file(**kwargs):
     path = kwargs_to_path(kwargs, required=True)
     branch = ref_or_default(node_settings, request.args)
 
-    success = client.deletefile(
-        node_settings.project_id, path, branch,
-        gitlab_settings.MESSAGES['delete']
-    )
-
-    if success:
+    try:
+        client.deletefile(
+            node_settings.project_id, path, branch,
+            gitlab_settings.MESSAGES['delete']
+        )
         node_settings.owner.add_log(
             action='gitlab_' + NodeLog.FILE_REMOVED,
             params={
@@ -405,9 +404,8 @@ def gitlab_delete_file(**kwargs):
             },
             auth=auth,
         )
-    else:
-        # TODO: This should raise an HTTPError
-        return {'message': 'Could not delete file'}, http.BAD_REQUEST
+    except GitlabError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 @must_be_contributor_or_public

@@ -111,7 +111,6 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """
         user_settings = setup_user(added)
         permissions = node.get_permissions(added)
-        print 'PERMISSIONS', permissions
         access_level = translate_permissions(permissions)
         client.addprojectmember(
             self.project_id, user_settings.user_id,

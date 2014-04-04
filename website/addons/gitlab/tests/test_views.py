@@ -1,11 +1,15 @@
 import mock
 from nose.tools import *
 
+import base64
+import httplib as http
+
 from tests.base import fake
 
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.views import hooks
 from website.addons.gitlab import utils
+from website.addons.gitlab.api import GitlabError
 
 from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
@@ -219,15 +223,85 @@ class TestFileCommits(GitlabTestCase):
         )
 
 
-# TODO: Write me @jmcarp
 class TestDownloadFile(GitlabTestCase):
 
     def setUp(self):
         super(TestDownloadFile, self).setUp()
         self.app.app.test_request_context().push()
 
-    def test_download_not_found(self):
-        pass
+    @mock.patch('website.addons.gitlab.views.crud.client.getfile')
+    def test_download(self, mock_get_file):
+        mock_get_file.return_value = {
+            'content': base64.b64encode('pizza')
+        }
+        path = 'pizza/reviews.rst'
+        branch = 'master'
+        res = self.app.get(
+            self.project.web_url_for(
+                'gitlab_download_file',
+                path=path, branch=branch
+            ),
+            auth=self.user.auth,
+        )
+        assert_equal(res.body, 'pizza')
+        assert_equal(
+            res.headers['Content-Disposition'],
+            'attachment; filename=reviews.rst',
+        )
+        mock_get_file.assert_called_with(
+            self.node_settings.project_id,
+            path, branch,
+        )
 
-    def test_download(self):
-        pass
+    @mock.patch('website.addons.gitlab.views.crud.client.getfile')
+    def test_download_not_found(self, mock_get_file):
+        mock_get_file.side_effect = GitlabError('No good')
+        path = 'pizza/reviews.rst'
+        branch = 'master'
+        res = self.app.get(
+            self.project.web_url_for(
+                'gitlab_download_file',
+                path=path, branch=branch
+            ),
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.NOT_FOUND)
+
+
+class TestDeleteFile(GitlabTestCase):
+
+    def setUp(self):
+        super(TestDeleteFile, self).setUp()
+        self.app.app.test_request_context().push()
+
+    @mock.patch('website.addons.gitlab.views.crud.client.deletefile')
+    def test_delete(self, mock_delete_file):
+        path = 'frozen/pizza/reviews.txt'
+        branch = 'develop'
+        self.app.delete(
+            self.project.api_url_for(
+                'gitlab_delete_file',
+                path=path, branch=branch,
+            ),
+            auth=self.user.auth,
+        )
+        mock_delete_file.assert_called_with(
+            self.node_settings.project_id,
+            path, branch, gitlab_settings.MESSAGES['delete']
+        )
+
+    @mock.patch('website.addons.gitlab.views.crud.client.deletefile')
+    def test_delete_gitlab_error(self, mock_delete_file):
+        mock_delete_file.side_effect = GitlabError('Terrible')
+        path = 'frozen/pizza/reviews.txt'
+        branch = 'develop'
+        res = self.app.delete(
+            self.project.api_url_for(
+                'gitlab_delete_file',
+                path=path, branch=branch,
+            ),
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
