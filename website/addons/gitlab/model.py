@@ -111,7 +111,6 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
         """
         user_settings = setup_user(added)
         permissions = node.get_permissions(added)
-        print 'PERMISSIONS', permissions
         access_level = translate_permissions(permissions)
         client.addprojectmember(
             self.project_id, user_settings.user_id,
@@ -225,7 +224,7 @@ class GitlabGuidFile(GuidFile):
         return os.path.join('gitlab', 'files', self.path)
 
     @classmethod
-    def get_or_create(cls, node_settings, path, ref, client=None):
+    def get_or_create(cls, node_settings, path, ref=None, client=None):
         """
 
         :param GitlabAddonNodeSettings node_settings:

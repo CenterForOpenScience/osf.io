@@ -129,7 +129,7 @@ class TestBuildUrls(GitlabTestCase):
         branch = 'master'
         sha = '12345'
 
-        output = utils.build_urls(
+        output = utils.build_full_urls(
             self.project, item, path, branch, sha
         )
 
@@ -137,7 +137,7 @@ class TestBuildUrls(GitlabTestCase):
 
         assert_equal(
             set(output.keys()),
-            {'upload', 'fetch'}
+            {'upload', 'fetch', 'root'}
         )
         assert_urls_equal(
             output['upload'],
@@ -164,7 +164,7 @@ class TestBuildUrls(GitlabTestCase):
         branch = 'master'
         sha = '12345'
 
-        output = utils.build_urls(
+        output = utils.build_full_urls(
             self.project, item, path, branch, sha
         )
 
@@ -172,7 +172,7 @@ class TestBuildUrls(GitlabTestCase):
 
         assert_equal(
             set(output.keys()),
-            {'view', 'download', 'delete'}
+            {'view', 'download', 'delete', 'render'}
         )
         assert_urls_equal(
             output['view'],
@@ -198,7 +198,7 @@ class TestBuildUrls(GitlabTestCase):
 
     def test_bad_type(self):
         with assert_raises(ValueError):
-            utils.build_urls(
+            utils.build_full_urls(
                 self.project, item={'type': 'bad'}, path=''
             )
 
@@ -230,7 +230,7 @@ class TestGridSerializers(GitlabTestCase):
         assert_equal(output['permissions'], permissions)
         assert_equal(
             output['urls'],
-            utils.build_urls(
+            utils.build_full_urls(
                 self.project, item, os.path.join(path, item['name'])
             )
         )
@@ -423,3 +423,156 @@ class TestRefOrDefault(GitlabTestCase):
         self.node_settings.project_id = None
         with assert_raises(AddonError):
             utils.ref_or_default(self.node_settings, {})
+
+class TestDefaultRefs(GitlabTestCase):
+
+    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    def test_get_default_branch(self, mock_get_project):
+        mock_get_project.return_value = {
+            'default_branch': 'master',
+        }
+        assert_equal(
+            utils.get_default_branch(self.node_settings),
+            'master'
+        )
+
+    @mock.patch('website.addons.gitlab.utils.client.listrepositorycommits')
+    def test_get_default_file_sha(self, mock_commits):
+        mock_commits.return_value = [
+            {
+                'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+            }
+        ]
+        utils.get_default_file_sha(
+            self.node_settings,
+            'pizza.py', branch='master',
+        )
+        mock_commits.assert_called_with(
+            self.node_settings.project_id,
+            ref_name='master', path='pizza.py',
+        )
+
+    def test_get_default_file_sha_no_project_id(self):
+        self.node_settings.project_id = None
+        with assert_raises(AddonError):
+            utils.get_default_file_sha(self.node_settings, path='pizza.py')
+
+    @mock.patch('website.addons.gitlab.utils.client.listbranch')
+    def test_get_branch_id(self, mock_list_branch):
+        mock_list_branch.return_value = {
+            'name': 'master',
+            'commit': {
+                'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+            }
+        }
+        assert_equal(
+            utils.get_branch_id(self.node_settings, 'master'),
+            '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
+        )
+
+    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    def test_get_default_branch_and_sha_one_branch(self, mock_list_branches):
+        mock_list_branches.return_value = [
+            {
+                'name': 'master',
+                'commit': {
+                    'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+                }
+            }
+        ]
+        assert_equal(
+            utils.get_default_branch_and_sha(self.node_settings),
+            ('master', '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
+        )
+
+    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    def test_get_default_branch_and_sha_multi_branch(self, mock_list_branches, mock_get_project):
+        mock_list_branches.return_value = [
+            {
+                'name': 'master',
+                'commit': {
+                    'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+                }
+            },
+            {
+                'name': 'develop',
+                'commit': {
+                    'id': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
+                }
+            }
+        ]
+        mock_get_project.return_value = {
+            'default_branch': 'develop',
+        }
+        assert_equal(
+            utils.get_default_branch_and_sha(self.node_settings),
+            ('develop', '0c015ac47ee16eb0fc17c0a6417d57622bbf142d')
+        )
+
+    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    def test_get_default_branch_and_sha_multi_branch_not_found(self, mock_list_branches, mock_get_project):
+        mock_list_branches.return_value = [
+            {
+                'name': 'master',
+                'commit': {
+                    'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+                }
+            },
+            {
+                'name': 'develop',
+                'commit': {
+                    'id': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
+                }
+            }
+        ]
+        mock_get_project.return_value = {
+            'default_branch': 'feature/gitlab',
+        }
+        with assert_raises(AddonError):
+            utils.get_default_branch_and_sha(self.node_settings)
+
+    def test_get_branch_and_sha_both_provided(self):
+        assert_equal(
+            utils.get_branch_and_sha(
+                self.node_settings,
+                {
+                    'branch': 'master',
+                    'sha': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+                }
+            ),
+            ('master', '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
+        )
+
+    @mock.patch('website.addons.gitlab.utils.get_branch_id')
+    def test_get_branch_and_sha_branch_provided(self, mock_branch_id):
+        mock_branch_id.return_value = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
+        assert_equal(
+            utils.get_branch_and_sha(
+                self.node_settings,
+                {
+                    'branch': 'master',
+                }
+            ),
+            ('master', '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
+        )
+
+    def test_get_branch_and_sha_sha_provided(self):
+        with assert_raises(ValueError):
+            utils.get_branch_and_sha(
+                self.node_settings,
+                {
+                    'sha': '2e84e78b5dfdb4a72132e08c9684b0e1a7e97bc2'
+                }
+            )
+
+    @mock.patch('website.addons.gitlab.utils.get_default_branch_and_sha')
+    def test_get_branch_and_sha_none_provided(self, mock_defaults):
+        mock_defaults.return_value = (
+            'master', '2e84e78b5dfdb4a72132e08c9684b0e1a7e97bc2'
+        )
+        assert_equal(
+            utils.get_branch_and_sha(self.node_settings, {}),
+            mock_defaults.return_value
+        )

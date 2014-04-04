@@ -1,22 +1,39 @@
 import os
+import urlparse
 import subprocess
 
+from website.addons.gitlab import settings as gitlab_settings
 
-SOURCE_PATH = '/mount/osf'
-DEST_PATH = '/mount/gitlab/repositories'
+
+SOURCE_PATH = '/opt/data/backup/test'
+DEST_PATH = '/opt/data/gitlab/repositories'
 
 REMOTE_NAME = 'migrate'
 BRANCH_NAME = 'master'
 
 
+def dest_to_http(dest):
+    parts = dest.split('/')
+    parsed = urlparse.urlparse(gitlab_settings.HOST)
+    return 'http://{root}:{pword}@{loc}/{user}/{repo}'.format(
+        root=gitlab_settings.ROOT_NAME,
+        pword=gitlab_settings.ROOT_PASS,
+        loc=parsed.netloc,
+        user=parts[-2],
+        repo=parts[-1],
+    )
+
 def migrate_files(source, dest):
     """Clone the source repo to the destionary as a bare repo.
 
     """
+    # Build HTTP URL
+    url = dest_to_http(dest)
+
     # Add remote, catching exception if already added
     try:
         subprocess.check_call(
-            ['git', 'remote', 'add', REMOTE_NAME, dest],
+            ['git', 'remote', 'add', REMOTE_NAME, url],
             cwd=source
         )
     except subprocess.CalledProcessError as error:

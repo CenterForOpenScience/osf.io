@@ -14,7 +14,7 @@
     function refreshGitLabTree(grid, item, branch) {
         var data = item.data || {};
         data.branch = branch;
-        var url = item.urls.branch + '?' + $.param({branch: branch});
+        var url = item.urls.root + '?' + $.param({branch: branch});
         $.ajax({
             type: 'get',
             url: url,

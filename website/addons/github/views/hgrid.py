@@ -14,7 +14,7 @@ from website.util import rubeus
 from website.addons.github.exceptions import ApiError
 from website.addons.github.api import GitHub, build_github_urls, ref_to_params
 from website.addons.github.views.util import _get_refs, _check_permissions
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.exceptions import NotFoundError
 
 
 logger = logging.getLogger(__name__)
@@ -125,9 +125,15 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if privacy mismatch and not contributor
     if node_settings.owner.is_public:
-        repo = connection.repo(node_settings.user, node_settings.repo)
+        try:
+            repo = connection.repo(node_settings.user, node_settings.repo)
+        except NotFoundError:
+            # TODO: Test me @jmcarp
+            # TODO: Add warning message
+            logging.error('Could not access GitHub repo')
+            return None
         if repo.private:
-            return
+            return None
 
     try:
         branch, sha, branches = _get_refs(
