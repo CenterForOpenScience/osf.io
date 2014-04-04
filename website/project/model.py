@@ -527,8 +527,20 @@ class Node(GuidStoredObject, AddonModelMixin):
                 self.add_permission(self.creator, permission, save=False)
 
     @property
+    def private_links_active(self):
+        return [x for x in self.private_links if not x.is_deleted ]
+
+    @property
     def private_link_keys(self):
         return [x.key for x in self.private_links]
+
+    @property
+    def private_link_keys_active(self):
+        return [x.key for x in self.private_links if not x.is_deleted]
+
+    @property
+    def private_link_keys_deleted(self):
+        return [x.key for x in self.private_links if x.is_deleted]
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.

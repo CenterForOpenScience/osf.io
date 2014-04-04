@@ -457,7 +457,9 @@ def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
     try:
-        PrivateLink.remove_one(Q('_id','eq', link_id))
+        link = PrivateLink.load(link_id)
+        link.is_deleted = True
+        link.save()
     except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
@@ -632,7 +634,7 @@ def private_link_table(**kwargs):
     data = {
         'node': {
             'absolute_url': node.absolute_url,
-            'private_links': [x.to_json() for x in node.private_links],
+            'private_links': [x.to_json() for x in node.private_links if not x.is_deleted],
             }
     }
     return data

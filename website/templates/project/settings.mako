@@ -25,9 +25,6 @@
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
-                % if 'write' in user['permissions']:
-                    <li><a href="#linkScope">Private Links</a></li>
-                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
