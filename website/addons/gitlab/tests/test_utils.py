@@ -436,6 +436,27 @@ class TestDefaultRefs(GitlabTestCase):
             'master'
         )
 
+    @mock.patch('website.addons.gitlab.utils.client.listrepositorycommits')
+    def test_get_default_file_sha(self, mock_commits):
+        mock_commits.return_value = [
+            {
+                'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
+            }
+        ]
+        utils.get_default_file_sha(
+            self.node_settings,
+            'pizza.py', branch='master',
+        )
+        mock_commits.assert_called_with(
+            self.node_settings.project_id,
+            ref_name='master', path='pizza.py',
+        )
+
+    def test_get_default_file_sha_no_project_id(self):
+        self.node_settings.project_id = None
+        with assert_raises(AddonError):
+            utils.get_default_file_sha(self.node_settings, path='pizza.py')
+
     @mock.patch('website.addons.gitlab.utils.client.listbranch')
     def test_get_branch_id(self, mock_list_branch):
         mock_list_branch.return_value = {

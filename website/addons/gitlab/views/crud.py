@@ -26,7 +26,8 @@ from website.addons.gitlab.utils import (
     setup_user, setup_node, gitlab_slugify,
     kwargs_to_path, build_full_urls, build_guid_urls,
     item_to_hgrid, gitlab_to_hgrid,
-    serialize_commit, ref_or_default, get_branch_and_sha
+    serialize_commit, ref_or_default, get_branch_and_sha,
+    get_default_file_sha
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -42,7 +43,9 @@ def get_guid(node_settings, path, ref):
 
     """
     try:
-        return GitlabGuidFile.get_or_create(node_settings, path, ref)
+        return GitlabGuidFile.get_or_create(
+            node_settings, path, ref, client=client
+        )
     except AddonError:
         raise HTTPError(http.NOT_FOUND)
 
@@ -292,16 +295,21 @@ def gitlab_view_file(**kwargs):
     _, filename = os.path.split(path)
 
     branch = request.args.get('branch')
-    sha = request.args.get('sha')
-    ref = ref_or_default(node_settings, request.args)
 
-    guid = get_guid(node_settings, path, ref)
+    # SHA cannot be None here, since it will be used in `get_cache_file`
+    # below
+    sha = (
+        request.args.get('sha')
+        or get_default_file_sha(node_settings, path=path)
+    )
+
+    guid = get_guid(node_settings, path, sha)
 
     redirect_url = check_file_guid(guid)
     if redirect_url:
         return redirect(redirect_url)
 
-    contents = client.getfile(node_settings.project_id, path, ref)
+    contents = client.getfile(node_settings.project_id, path, sha)
     contents_decoded = base64.b64decode(contents['content'])
 
     # Get file URL
@@ -411,10 +419,10 @@ def gitlab_get_rendered_file(**kwargs):
     node_settings = kwargs['node_addon']
     path = kwargs_to_path(kwargs, required=True)
 
-    try:
-        sha = request.args['sha']
-    except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
+    sha = (
+        request.args.get('sha')
+        or get_default_file_sha(node_settings, path)
+    )
 
     cache_file = get_cache_file(path, sha)
     return get_cache_content(node_settings, cache_file)

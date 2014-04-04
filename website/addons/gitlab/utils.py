@@ -307,6 +307,16 @@ def ref_or_default(node_settings, data):
     )
 
 
+def get_default_file_sha(node_settings, path, branch=None):
+    if node_settings.project_id is None:
+        raise AddonError('No project ID attached to settings')
+    commits = client.listrepositorycommits(
+        node_settings.project_id,
+        ref_name=branch, path=path,
+    )
+    return commits[0]['id']
+
+
 def get_default_branch(node_settings):
     """Get default branch of GitLab project.
 
@@ -314,10 +324,10 @@ def get_default_branch(node_settings):
     :returns: Name of default branch
 
     """
-    if node_settings.project_id:
-        project = client.getproject(node_settings.project_id)
-        return project['default_branch']
-    raise AddonError('No project ID attached to settings')
+    if node_settings.project_id is None:
+        raise AddonError('No project ID attached to settings')
+    project = client.getproject(node_settings.project_id)
+    return project['default_branch']
 
 
 def get_branch_id(node_settings, branch):
