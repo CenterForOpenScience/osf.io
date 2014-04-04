@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
-
 from flask import make_response
 
 from website.project.utils import get_cache_content
 from website.util import rubeus
+
 from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
@@ -94,7 +94,13 @@ def make_file_response(fileobject, metadata):
     a Dropbox client.
     """
     resp = make_response(fileobject.read())
-    disposition = 'attachment; filename={0}'.format(metadata['path'])
+    filename = get_file_name(metadata['path'])
+    rev = metadata.get('rev')
+    if rev:
+        # add revision to filename
+        # foo.mp3 -> foo-abc123.mp3
+        filename = '-{rev}'.format(rev=rev).join(os.path.splitext(filename))
+    disposition = 'attachment; filename={0}'.format(filename)
     resp.headers['Content-Disposition'] = disposition
     resp.headers['Content-Type'] = metadata.get('mime_type', 'application/octet-stream')
     return resp
@@ -122,7 +128,7 @@ def render_dropbox_file(file_obj, client=None, rev=None):
             start_render=True,
             file_path=get_file_name(file_obj.path),
             file_content=file_response.read(),
-            download_path=file_obj.download_url
+            download_path=file_obj.download_url(guid=True, rev=rev)
         )
     return rendered
 

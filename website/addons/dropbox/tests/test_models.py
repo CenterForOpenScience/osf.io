@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import mock
+import os
 
 from nose.tools import *  # PEP8 asserts
 from slugify import slugify
@@ -219,16 +219,21 @@ class TestNodeSettingsCallbacks(DbTestCase):
 
 class TestDropboxGuidFile(DbTestCase):
 
-    def test_web_url(self):
+    def test_verbose_url(self):
         project = ProjectFactory()
         file_obj = DropboxFile(node=project, path='foo.txt')
         file_obj.save()
         with app.test_request_context():
-            file_url = file_obj.url
+            file_url = file_obj.url(guid=False)
 
         url = lookup('web', 'dropbox_view_file',
             pid=project._primary_key, path=file_obj.path)
         assert_equal(url, file_url)
+
+    def test_guid_url(self):
+        file_obj = DropboxFileFactory()
+        result = file_obj.url(guid=True, rev='123')
+        assert_equal(result, '/{guid}/?rev=123'.format(guid=file_obj._primary_key))
 
     def test_cache_file_name(self):
         project = ProjectFactory()
@@ -245,9 +250,15 @@ class TestDropboxGuidFile(DbTestCase):
     def test_download_url(self):
         file_obj = DropboxFileFactory()
         with app.test_request_context():
-            dl_url = file_obj.download_url
+            dl_url = file_obj.download_url(guid=False)
             expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
                 _absolute=True)
+        assert_equal(dl_url, expected)
+
+    def test_download_url_guid(self):
+        file_obj = DropboxFileFactory()
+        dl_url = file_obj.download_url(guid=True, rev='123')
+        expected = os.path.join('/', file_obj._primary_key, 'download/') + "?rev=123"
         assert_equal(dl_url, expected)
 
     def test_update_metadata(self):
