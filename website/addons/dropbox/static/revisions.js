@@ -23,6 +23,9 @@
         // Get current revision from URL param
         self.currentRevision = $.osf.urlParams().rev;
         // Date when this project was registered, or null if not a registration
+        // Note: Registering Dropbox content is disabled for now; leaving
+        // this code here in case we enable registrations later on.
+        // @jmcarp
         self.registered = ko.observable(null);
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
