@@ -1646,21 +1646,31 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
+    def url_for_args(self):
+        """
+
+        """
+        if self.category != 'project':
+            if self.parent_node:
+                return {
+                    'pid': self.parent_node._id,
+                    'nid': self._id,
+                }
+            else:
+                logger.error('Parent of component {0} not found'.format(self._id))
+        return {
+            'pid': self._id
+        }
+
     def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
-        if self.category == 'project':
-            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
-        else:
-            return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+        data = self.url_for_args()
+        data.update(**kwargs)
+        return web_url_for(view_name, _absolute=_absolute, *args, **data)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
-        if self.category == 'project':
-            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
-        else:
-            return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+        data = self.url_for_args()
+        data.update(**kwargs)
+        return api_url_for(view_name, _absolute=_absolute, *args, **data)
 
     @property
     def absolute_url(self):
