@@ -179,7 +179,9 @@
             throw "Can't bind ViewModel to multiple elements.";
         }
         // Ensure that the bound element is shown
-        $elem.show();
+        if ($elem.hasClass("scripted")){
+            $elem.show();
+        }
         ko.applyBindings(viewModel, $elem[0]);
     };
 

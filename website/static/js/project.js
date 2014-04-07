@@ -96,26 +96,6 @@ NodeActions.useAsTemplate = function() {
 
 $(function(){
 
-    $(".remove-private-link").on("click",function(){
-        var me = $(this);
-        var data_to_send={
-            'private_link': me.attr("data-link")
-        };
-        bootbox.confirm('Are you sure to remove this private link?', function(result) {
-            if (result) {
-                $.ajax({
-                    type: "delete",
-                    url: nodeApiUrl + "private_link/",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(data_to_send)
-                }).done(function(response) {
-                    window.location.reload();
-                });
-            }
-         });
-    });
-
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
