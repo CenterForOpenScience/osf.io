@@ -11,7 +11,7 @@ from website.project.decorators import must_have_addon
 
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
-def user_settings(user, user_addon, *args, **kwargs):
+def user_settings(user_addon, *args, **kwargs):
     try:
         data = json.loads(request.data)
     except ValueError:
