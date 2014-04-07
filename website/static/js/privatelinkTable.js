@@ -50,7 +50,7 @@
         $.extend(self, data);
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
         self.linkUrl = ko.computed(function(){
-            return self.$root.node_url() + "?key=" + data.key
+            return self.$root.nodeUrl() + "?key=" + data.key
         });
 
     }
@@ -58,15 +58,15 @@
     function ViewModel(url) {
         var self = this;
         self.url = url;
-        self.private_links = ko.observableArray();
-        self.node_url = ko.observable(null);
+        self.privateLinks = ko.observableArray();
+        self.nodeUrl = ko.observable(null);
 
         function onFetchSuccess(response) {
             var node = response.node;
-            self.private_links(ko.utils.arrayMap(node.private_links, function(link) {
+            self.privateLinks(ko.utils.arrayMap(node.privateLinks, function(link) {
                 return new LinkViewModel(link, self);
             }));
-            self.node_url(node.absolute_url);
+            self.nodeUrl(node.absolute_url);
         }
 
         function onFetchError() {
@@ -94,9 +94,13 @@
                         url: nodeApiUrl + "private_link/",
                         contentType: "application/json",
                         dataType: "json",
-                        data: JSON.stringify(data_to_send)
-                    }).done(function(response) {
-                        window.location.reload();
+                        data: JSON.stringify(data_to_send),
+                        success: function(response) {
+                            self.privateLinks.pop(data);
+                        },
+                        error: function(xhr) {
+                            bootbox.alert("Failed to delete the private link.")
+                        }
                     });
                 }
              });
