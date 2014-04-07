@@ -778,7 +778,7 @@ def get_registrations(**kwargs):
 @must_be_valid_project # returns project
 @must_have_permission('write')
 def project_generate_private_link_post(*args, **kwargs):
-    """ Add contributors to a node. """
+    """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']

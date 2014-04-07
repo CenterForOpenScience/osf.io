@@ -13,32 +13,32 @@
 
     var updateClipboard = function(target) {
 
-    var client = new ZeroClipboard( target );
+        var client = new ZeroClipboard( target );
 
-    client.on( "load", function(client) {
-    // alert( "movie is loaded" );
+        client.on( "load", function(client) {
+        // alert( "movie is loaded" );
 
-        client.on( "complete", function(client, args) {
-          // `this` is the element that was clicked
-            this.blur();
-        } );
+            client.on( "complete", function(client, args) {
+              // `this` is the element that was clicked
+                this.blur();
+            } );
 
-        client.on("mousedown", function(client,args){
-            $(this).addClass("active");
+            client.on("mousedown", function(client,args){
+                $(this).addClass("active");
+            });
+
+            client.on("mouseup", function(client,args){
+                $(this).removeClass("active");
+            });
+
+            client.on("mouseover", function(client,args){
+                $(this).tooltip("show");
+            });
+
+            client.on("mouseout", function(client,args){
+                $(this).tooltip("hide");
+            });
         });
-
-        client.on("mouseup", function(client,args){
-            $(this).removeClass("active");
-        });
-
-        client.on("mouseover", function(client,args){
-            $(this).tooltip("show");
-        });
-
-        client.on("mouseout", function(client,args){
-            $(this).tooltip("hide");
-        });
-    });
 
     };
 
