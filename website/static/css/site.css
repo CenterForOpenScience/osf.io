@@ -917,10 +917,17 @@ h1.unavailable {
     width:100%;
 }
 
-
-
 div#logScope a.moreLogs{
     margin-left:50px;
+}
+
+/* private_link*/
+.link-name{
+    margin-left: 10px;
+}
+
+#generate-private-link{
+    margin:20px 20px;
 }
 
 /* Contributor page */
@@ -1053,3 +1060,7 @@ a {
 .ui-autocomplete-category { font-weight: bold }
 
 .tagsinput .tag span { cursor:pointer; }
+
+.scripted {display: none;}
+
+.pointer {cursor: pointer;}

@@ -8,6 +8,7 @@
 <script src="${STATIC_PATH}/tabular/js/jquery.event.drag-2.2.js"></script>
 <script src="${STATIC_PATH}/tabular/js/slick.core.js"></script>
 <script src="${STATIC_PATH}/tabular/js/slick.grid.js"></script>
+<div class="mfr-message">${writing}</div>
 
 <div id="mfrGrid" class="mfr-slickgrid"></div>
 

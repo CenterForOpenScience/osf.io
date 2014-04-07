@@ -14,6 +14,7 @@ from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
+
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
@@ -28,7 +29,6 @@ from website.util import rubeus, permissions
 from .model import NodeFile, OsfGuidFile
 
 logger = logging.getLogger(__name__)
-
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -110,7 +110,9 @@ def get_osffiles_public(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
+
     return get_osffiles_hgrid(node_settings, auth)
+
 
 
 @must_be_valid_project # returns project
@@ -207,6 +209,7 @@ def view_file(**kwargs):
     node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
 
+
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
 
@@ -299,6 +302,7 @@ def view_file(**kwargs):
         'rendered': rendered,
         'versions': versions,
     }
+
     rv.update(_view_project(node, auth))
     return rv
 
@@ -309,18 +313,19 @@ def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
+    key = kwargs['auth'].private_key
 
     try:
         vid = len(node_to_use.files_versions[filename.replace('.', '_')])
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
-    return redirect('{url}osffiles/{fid}/version/{vid}/'.format(
+    redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
         url=node_to_use.url,
         fid=filename,
         vid=vid,
-    ))
-
+    )
+    return redirect(redirect_url)
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

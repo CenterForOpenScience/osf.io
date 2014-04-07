@@ -12,6 +12,7 @@ from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
+
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User
@@ -26,10 +27,12 @@ from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
 )
+from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
+from website.util import web_url_for, api_url_for
 
-from tests.base import DbTestCase, Guid, fake
+from tests.base import DbTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -37,6 +40,8 @@ from tests.factories import (
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
 )
 
+app = init_app(set_backends=False, routes=True)
+lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -687,6 +692,24 @@ class TestNode(DbTestCase):
         self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
+    def test_web_url_for(self):
+        with app.test_request_context():
+            result = self.parent.web_url_for('view_project')
+            assert_equal(result, web_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.web_url_for('view_project')
+            assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
+
+    def test_api_url_for(self):
+        with app.test_request_context():
+            result = self.parent.api_url_for('view_project')
+            assert_equal(result, api_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.api_url_for('view_project')
+            assert_equal(result2, api_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
+
     def test_node_factory(self):
         node = NodeFactory()
         assert_equal(node.category, 'hypothesis')
@@ -1176,6 +1199,17 @@ class TestProject(DbTestCase):
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
+
+    def test_add_private_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+
+    def test_remove_private_link(self):
+        link = self.project.add_private_link()
+        assert_in(link, self.project.private_links)
+        self.project.remove_private_link(link)
+        assert_not_in(link, self.project.private_links)
+
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
             email=fake.email(), auth=Auth(self.project.creator))
@@ -1277,6 +1311,7 @@ class TestProject(DbTestCase):
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
+        link = self.project.add_private_link()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1288,6 +1323,8 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
+        other_guy_auth.private_key = link
+        assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
         creator = UserFactory()
@@ -1669,6 +1706,7 @@ class TestForkNode(DbTestCase):
 
         # Test modified fields
         assert_true(fork.is_fork)
+        assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
         assert_in(fork._id, original.fork_list)
         assert_in(fork._id, original.node__forked)
@@ -1808,6 +1846,11 @@ class TestForkNode(DbTestCase):
         fork = self.project.fork_node(self.consolidate_auth)
         assert_false(fork.is_public)
 
+    def test_not_fork_private_link(self):
+        link = self.project.add_private_link()
+        fork = self.project.fork_node(self.consolidate_auth)
+        assert_not_in(link, fork.private_links)
+
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
@@ -1849,6 +1892,8 @@ class TestRegisterNode(DbTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+        self.project.add_private_link()
+        self.project.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):
@@ -1862,6 +1907,8 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
         assert_equal(len(registration1.registered_meta), 1)
+        assert_equal(len(registration1.private_links), 0)
+
 
         # Create a registration from a project
         user2 = UserFactory()
@@ -1878,7 +1925,6 @@ class TestRegisterNode(DbTestCase):
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
-
 
     def test_title(self):
         assert_equal(self.registration.title, self.project.title)
@@ -1905,6 +1951,12 @@ class TestRegisterNode(DbTestCase):
         fork = self.project.fork_node(self.consolidate_auth)
         registration = RegistrationFactory(project=fork)
         assert_equal(registration.forked_from, self.project)
+
+    def test_private_links(self):
+        assert_not_equal(
+            self.registration.private_links,
+            self.project.private_links
+        )
 
     def test_creator(self):
         user2 = UserFactory()

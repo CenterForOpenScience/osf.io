@@ -1,0 +1,35 @@
+.dropbox-confirm-selection {
+    padding-top: 10px;
+}
+.dropbox-confirm-dlg {
+    display: inline-block;
+}
+.dropbox-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.dropbox-loading-text {
+    padding-top: 20px;
+}
+
+
+.btn-dropbox {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-dropbox:hover,
+.btn-dropbox:focus,
+.btn-dropbox:active,
+.btn-dropbox.active,
+.open .dropdown-toggle.btn-dropbox {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}

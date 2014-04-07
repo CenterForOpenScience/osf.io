@@ -1,6 +1,7 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
 
+
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
@@ -25,9 +26,13 @@
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
+                % if 'write' in user['permissions']:
+                    <li><a href="#linkScope">Private Links</a></li>
+                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
+
     <div class="col-md-6">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -37,17 +42,21 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
-
                 <div class="panel-body">
-
-                    <!-- Delete node -->
-                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+                    <div class="help-block">
+                        A project cannot be deleted if it has any components within it.
+                        To delete a parent project, you must first delete all child components
+                        by visiting their settings pages.
+                    </div>
+                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['category']}</button>
 
                 </div>
+                <!-- Delete node -->
 
             </div>
 
         % endif
+
 
         <div id="configureCommenting" class="panel panel-default">
 
@@ -81,46 +90,44 @@
         </div>
 
         <div id="selectAddons" class="panel panel-default">
+             <div class="panel-heading">
+                 <h3 class="panel-title">Select Add-ons</h3>
+             </div>
+                <div class="panel-body">
 
-            <div class="panel-heading">
-                <h3 class="panel-title">Select Add-ons</h3>
-            </div>
+                    <form id="selectAddonsForm">
 
-            <div class="panel-body">
+                        % for category in addon_categories:
 
-                <form id="selectAddonsForm">
+                            <%
+                                addons = [
+                                    addon
+                                    for addon in addons_available
+                                    if category in addon.categories
+                                ]
+                            %>
 
-                    % for category in addon_categories:
+                            % if addons:
+                                <h3>${category.capitalize()}</h3>
+                                % for addon in addons:
+                                    <div>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                name="${addon.short_name}"
+                                                class="addon-select"
+                                                ${'checked' if addon.short_name in addons_enabled else ''}
+                                                ${'disabled' if node['is_registration'] else ''}
+                                            />
+                                            ${addon.full_name}
+                                        </label>
+                                    </div>
+                                % endfor
+                            % endif
 
-                        <%
-                            addons = [
-                                addon
-                                for addon in addons_available
-                                if category in addon.categories
-                            ]
-                        %>
+                        % endfor
 
-                        % if addons:
-                            <h3>${category.capitalize()}</h3>
-                            % for addon in addons:
-                                <div>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            name="${addon.short_name}"
-                                            class="addon-select"
-                                            ${'checked' if addon.short_name in addons_enabled else ''}
-                                            ${'disabled' if node['is_registration'] else ''}
-                                        />
-                                        ${addon.full_name}
-                                    </label>
-                                </div>
-                            % endfor
-                        % endif
-
-                    % endfor
-
-                    <br />
+                        <br />
 
                     % if not node['is_registration']:
                         <button id="settings-submit" class="btn btn-success">
@@ -131,55 +138,79 @@
 
                 </form>
 
-            </div>
-        </div>
-
-        % if addon_enabled_settings:
-
-            <div id="configureAddons" class="panel panel-default">
-
-                <div class="panel-heading">
-                    <h3 class="panel-title">Configure Add-ons</h3>
-                </div>
-
-                <div class="panel-body">
-
-                    % for name in addon_enabled_settings or []:
-
-                        <div mod-meta='{
-                                "tpl": "../addons/${name}/templates/${name}_node_settings.mako",
-                                "uri": "${node['api_url']}${name}/settings/"
-                            }'></div>
-
-                        % if not loop.last:
-                            <hr />
-                        % endif
-
-                    % endfor
 
                 </div>
             </div>
 
-        % endif
+            % if addon_enabled_settings:
+
+                <div id="configureAddons" class="panel panel-default">
+
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Configure Add-ons</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                    % for node_settings_dict in addon_enabled_settings or []:
+                        ${render_node_settings(node_settings_dict)}
+
+                            % if not loop.last:
+                                <hr />
+                            % endif
+
+                        % endfor
+
+                    </div>
+                </div>
+
+            % endif
+
+##        % if 'write' in user['permissions']:
+##            <div id="linkScope" class="panel panel-default">
+##                <div class="panel-heading">
+##                    <h3 class="panel-title">Private Link</h3>
+##                </div>
+##                <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
+##                % for link in node['private_links']:
+##                    <li class="list-group-item" >
+##                        <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
+##                        <a class="link-name" >${node['absolute_url']}?key=${link}</a>
+##
+##                    </li>
+##                % endfor
+##            </div>
+##        % endif
+
 
     </div>
 
 </div>
 
-<!-- Include metadata templates -->
-<%include file="metadata/metadata_templates_1.html" />
+<%def name="render_node_settings(data)">
+    <%
+       template_name = "{name}/templates/{name}_node_settings.mako".format(name=data['addon_short_name'])
+       tpl = context.lookup.get_template(template_name).render(**data)
+    %>
+    ${tpl}
+</%def>
+
 
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
 
+
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
+
+
 
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
 
 ## TODO: Move to project.js
+
 <script type="text/javascript">
 
     ## TODO: Replace with something more fun, like the name of a famous scientist
@@ -240,7 +271,7 @@ ${parent.javascript_bottom()}
 
         });
 
-        $('#delete-node').on('click', function() {
+        $('#deleteNode').on('click', function() {
             var key = randomString();
             bootbox.prompt(
                 '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +
