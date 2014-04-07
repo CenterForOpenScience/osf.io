@@ -70,10 +70,6 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def get_key_ring(keys):
-    return set(keys)
-
-
 def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
@@ -92,9 +88,12 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
 
 
 def check_key_expired(key, node, url):
-    """check if key expired
-        if is return url with args so it will push status message
+    """check if key expired if is return url with args so it will push status message
         else return url
+        :param str key: the private link key passed in
+        :param Node node: the node object wants to access
+        :param str url: the url redirect to
+        :return: url with pushed message added if key expired else just url
     """
     if key in node.private_link_keys_deleted:
         url = furl(url).add({'status': 'expired'}).url
@@ -103,16 +102,24 @@ def check_key_expired(key, node, url):
 
 
 def has_deleted_keys(key_ring, node, user):
-    #check if there is deleted keys, if there is delete it from user.private_links
+    """check if there is deleted keys, if there is delete it from user.private_links
+        :param set key_ring: the set of kings user have
+        :param Node node: the node object wants to access
+        :param User user: the user who requires to access the node
+        :return: True if there are expired keys to delete and delete the key else return False
+    """
     deleted_keys = key_ring.intersection(node.private_link_keys_deleted)
-    if deleted_keys:
-        for link in deleted_keys:
-            for x in user.private_links:
-                if x.key == link:
-                    user.private_links.remove(x)
+
+    for link in deleted_keys:
+        for x in user.private_links:
+            if x.key == link:
+                user.private_links.remove(x)
                 break
+
+    if deleted_keys:
         user.save()
         return True
+
     return False
 
 
@@ -183,7 +190,7 @@ def _must_be_contributor_factory(include_public):
                             kwargs['auth'].user.save()
                             break
 
-                key_ring = get_key_ring(kwargs['auth'].user.private_link_keys)
+                key_ring = set(kwargs['auth'].user.private_link_keys)
 
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
