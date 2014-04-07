@@ -437,9 +437,11 @@ border-radius: 6px;
 
 /* Profile gravatar
 -------------------------------------------------- */
-.profile-gravatar{
-    border-radius: 4px;
-    -webkit-border-radius: 4px;
+#profile-gravatar{
+    float:left;
+    margin-right:.5em;
+    width:40px;
+    height:40px;
 }
 
 /* Data Vis
