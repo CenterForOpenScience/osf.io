@@ -59,11 +59,9 @@ def new_node(category, title, user, description=None, project=None):
 def new_private_link(label, user):
     """Create a new private link.
 
-    :param str key: private key
     :param str label: private link label
     :param User user: User object
-    :param Node project: node object private link applies to
-    :return private link: Created private link
+    :return PrivateLink: Created private link
 
     """
     key = str(uuid.uuid4()).replace("-", "")

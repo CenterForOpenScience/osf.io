@@ -97,7 +97,7 @@ def check_key_expired(key, node, url):
         else return url
     """
     if key in node.private_link_keys_deleted:
-        url = furl(url).add({'status':'expiredkey'}).url
+        url = furl(url).add({'status': 'expired'}).url
 
     return url
 

@@ -115,10 +115,9 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
             ''
         )
     )
-    key_expired = request.args.get('status', '')
-
-    if key_expired and key_expired == 'expiredkey':
-        status.push_status_message("The private link you used is expired.")
+    status_message = request.args.get('status', '')
+    if status_message == 'expired':
+        status.push_status_message('The private link you used is expired.')
 
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
