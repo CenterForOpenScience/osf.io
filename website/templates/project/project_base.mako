@@ -27,7 +27,12 @@ ${next.body()}
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
+    %if 'badges' in addons_enabled and badges and badges['can_award']:
+    $script(['/static/addons/badges/badge-awarder.js'], function() {
+        attachDropDown('${'{}badges/json/'.format(user_api_url)}');
+    });
 
+    %endif
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
     var userApiUrl = '${user_api_url}';
@@ -69,19 +74,6 @@ ${next.body()}
                             data.parent_node.id,
                             data.parent_node.title
                         );
-                    });
-                }
-
-                if ($linkScope.length >0){
-                    var $privateLink = $('#private-link');
-                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
-                                                            data.parent_node.id,
-                                                            data.parent_node.title);
-                    ko.applyBindings(privateLinkVM, $privateLink[0]);
-                    // Clear user search modal when dismissed; catches dismiss by escape key
-                    // or cancel button.
-                    $privateLink.on('hidden', function() {
-                        privateLinkVM.clear();
                     });
                 }
 

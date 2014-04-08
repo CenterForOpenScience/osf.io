@@ -204,17 +204,17 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
     ##### Callback overrides #####
 
-    def before_register_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        registration.
-        """
-        category, title = node.project_or_component, node.title
-        if self.user_settings and self.user_settings.has_auth:
-            return ('Registering {category} "{title}" will copy Dropbox add-on '
-                    'authentication to the registered {category}.').format(**locals())
-
-    # backwards compatibility
-    before_register = before_register_message
+    # def before_register_message(self, node, user):
+    #     """Return warning text to display if user auth will be copied to a
+    #     registration.
+    #     """
+    #     category, title = node.project_or_component, node.title
+    #     if self.user_settings and self.user_settings.has_auth:
+    #         return ('Registering {category} "{title}" will copy Dropbox add-on '
+    #                 'authentication to the registered {category}.').format(**locals())
+    #
+    # # backwards compatibility
+    # before_register = before_register_message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
@@ -249,22 +249,25 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_register(self, node, registration, user, save=True):
-        """After registering a node, copy the user settings and save the
-        chosen folder.
-
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, message = super(DropboxNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-        # Copy user_settings and add registration data
-        if self.has_auth and self.folder is not None:
-            clone.user_settings = self.user_settings
-            clone.registration_data['folder'] = self.folder
-        if save:
-            clone.save()
-        return clone, message
+    # Note: Registering Dropbox content is disabled for now; leaving this code
+    # here in case we enable registrations later on.
+    # @jmcarp
+    # def after_register(self, node, registration, user, save=True):
+    #     """After registering a node, copy the user settings and save the
+    #     chosen folder.
+    #
+    #     :return: A tuple of the form (cloned_settings, message)
+    #     """
+    #     clone, message = super(DropboxNodeSettings, self).after_register(
+    #         node, registration, user, save=False
+    #     )
+    #     # Copy user_settings and add registration data
+    #     if self.has_auth and self.folder is not None:
+    #         clone.user_settings = self.user_settings
+    #         clone.registration_data['folder'] = self.folder
+    #     if save:
+    #         clone.save()
+    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
