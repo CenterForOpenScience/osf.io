@@ -1,9 +1,10 @@
 import os
+import errno
 import urllib
 from PIL import Image
 from collections import defaultdict
 
-from modularodm.query.querydialect import DefaultQueryDialect as Q
+from modularodm import Q
 
 
 #TODO: Possible security errors
@@ -13,8 +14,11 @@ def deal_with_image(imageurl, uid):
 
     location = os.path.join(BADGES_ABS_LOCATION, uid + '.png')
 
-    if not os.path.exists(BADGES_ABS_LOCATION):
+    try:
         os.makedirs(BADGES_ABS_LOCATION)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
 
     ret, _ = urllib.urlretrieve(imageurl)
     Image.open(ret).save(location)
@@ -25,7 +29,7 @@ def deal_with_image(imageurl, uid):
 def sort_badges(items):
     ret = []
     for item in items:
-        index = [ind for ind in ret if ind.badge is item.badge]
+        index = next((ind for ind in ret if ind.badge is item.badge), None)
         if index:
             index[0].dates[item.awarder.owner.fullname].append((item.issued_date, item.evidence, item.awarder))
             index[0].amount += 1

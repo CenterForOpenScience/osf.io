@@ -216,10 +216,8 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-            and 'node' not in addon.added_mandatory
-            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
-                #or addon.short_name in addons_enabled
-                #or node.get_addon(addon.short_name, deleted=True))
+        and 'node' not in addon.added_mandatory
+        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings

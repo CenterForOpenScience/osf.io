@@ -13,7 +13,7 @@ def get_assertion_json(*args, **kwargs):
         assertion = BadgeAssertion.load(_id)
         if not assertion.revoked:
             return assertion.to_openbadge()
-        return {'revoked': True}, 410
+        return {'revoked': True}, http.GONE
     raise HTTPError(http.BAD_REQUEST)
 
 

@@ -47,7 +47,7 @@ def badges_page(*args, **kwargs):
         if badger:
             ret.update(badger.to_json(auth.user))
             ret['uid'] = auth.user._id
-    ret.update(_view_project(node, kwargs['auth']))
+    ret.update(_view_project(node, auth))
     return ret
 
 
