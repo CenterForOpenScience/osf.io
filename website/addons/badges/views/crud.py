@@ -43,9 +43,11 @@ def create_badge(*args, **kwargs):
         not badge_data.get('criteria'):
 
         raise HTTPError(http.BAD_REQUEST)
-
-    id = Badge.create(awarder, deep_clean(badge_data))._id
-    return {'badgeid': id}, http.CREATED
+    try:
+        id = Badge.create(awarder, deep_clean(badge_data))._id
+        return {'badgeid': id}, http.CREATED
+    except IOError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 @must_be_valid_project

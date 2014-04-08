@@ -1,7 +1,3 @@
-import os
-
-from website.settings import BASE_PATH
-
 from . import model
 from . import routes
 
@@ -10,9 +6,6 @@ USER_SETTINGS_MODEL = model.BadgesUserSettings
 NODE_SETTINGS_MODEL = model.BadgesNodeSettings
 
 ROUTES = [routes.render_routes, routes.api_urls, routes.guid_urls]
-
-BADGES_LOCATION = '/static/img/badges'
-BADGES_ABS_LOCATION = os.path.join(BASE_PATH, 'static/img/badges')
 
 SHORT_NAME = 'badges'
 FULL_NAME = 'Badges'

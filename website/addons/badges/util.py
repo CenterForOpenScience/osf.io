@@ -1,14 +1,15 @@
 import os
 import errno
-import urllib
+import urllib2
 from PIL import Image
 from collections import defaultdict
+
+from website.addons.badges.settings import *
 
 
 #TODO: Possible security errors
 #TODO: Send to task queue may lock up thread
 def deal_with_image(imageurl, uid):
-    from . import BADGES_LOCATION, BADGES_ABS_LOCATION
 
     location = os.path.join(BADGES_ABS_LOCATION, uid + '.png')
 
@@ -17,9 +18,18 @@ def deal_with_image(imageurl, uid):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+    try:
+        dl = urllib2.urlopen(imageurl)
+    except urllib2.URLError:
+        return None
 
-    ret, _ = urllib.urlretrieve(imageurl)
-    Image.open(ret).save(location)
+    length = dl.info().getheaders('Content-Length')[0]
+    mime = dl.info().getheaders('Content-Type')
+
+    if length > MAX_IMAGE_SIZE or 'image' not in mime:
+        return None
+
+    Image.open(dl).save(location)
 
     return os.path.join(BADGES_LOCATION, uid + '.png')
 

@@ -45,6 +45,8 @@ class Badge(GuidStoredObject):
         badge.criteria = badge_data['criteria']
         badge._ensure_guid()
         badge.image = deal_with_image(badge_data['imageurl'], badge._id)
+        if not badge.image:
+            raise IOError
         if save:
             badge.save()
         return badge
