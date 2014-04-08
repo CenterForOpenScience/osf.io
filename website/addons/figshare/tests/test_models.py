@@ -142,3 +142,5 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
+        #TODO Test figshare options and figshare to_json
+

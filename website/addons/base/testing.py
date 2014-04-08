@@ -57,7 +57,7 @@ class AddonTestCase(OsfTestCase):
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
             raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
-        self.user.add_addon(self.ADDON_SHORT_NAME)
+        self.user.add_addon(self.ADDON_SHORT_NAME, override=True)
         assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
         self.user.save()
 

@@ -107,7 +107,7 @@ def get_dashboard_nodes(**kwargs):
 
 @must_be_logged_in
 def dashboard(**kwargs):
-    return {}
+    return {'addons_enabled': kwargs['auth'].user.get_addon_names()}
 
 @must_be_logged_in
 def watched_logs_get(**kwargs):
