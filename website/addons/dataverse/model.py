@@ -7,7 +7,7 @@ import os
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.config import TEST_CERT, HOST
+from website.addons.dataverse.settings import TEST_CERT, HOST
 
 
 def connect(username, password, host=HOST):

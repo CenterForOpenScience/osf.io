@@ -15,7 +15,7 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
-from website.addons.dataverse.config import HOST
+from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.model import connect
 
 import httplib as http
@@ -135,7 +135,7 @@ def dataverse_upload_file(**kwargs):
     content = upload.read()
 
     study.add_file_obj(filename, content)
-    file_id = study.get_file(filename).fileId
+    file_id = study.get_file(filename).id
 
     if file_id is not None:
         node.add_log(

@@ -77,7 +77,7 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     for f in study.get_files():
 
-        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', f.fileId) + '/'
+        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', f.id) + '/'
 
         item = {
             rubeus.KIND: rubeus.FILE,

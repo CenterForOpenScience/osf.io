@@ -122,7 +122,7 @@ class Study(object):
 
     def get_file_by_id(self, file_id):
         for f in self.get_files():
-            if file_id == f.fileId:
+            if file_id == f.id:
                 return f
 
     def get_files(self):

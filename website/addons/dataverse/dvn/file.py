@@ -19,7 +19,7 @@ class DvnFile(object):
         self.mimetype = mimetype
         self.updated = updated
         self.hostStudy = hostStudy
-        self.fileId = editMediaUri.split('/')[-2]
+        self.id = editMediaUri.split('/')[-2]
         
     def __repr__(self):
         return """
@@ -28,7 +28,7 @@ class DvnFile(object):
     Uri: {1}
     Mime: {2}
     Id: {3}
-    """.format(self.name, self.editMediaUri, self.mimetype, self.fileId)
+    """.format(self.name, self.editMediaUri, self.mimetype, self.id)
 
     # Note: Information about files comes from the statement of the study, not the entry
     # # TODO untested!!!!!!!
