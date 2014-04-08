@@ -163,16 +163,6 @@ class TestNodeSettingsCallbacks(DbTestCase):
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner
 
-    def test_after_register(self):
-        registration = ProjectFactory(is_registration=True)
-
-        clone, message = self.node_settings.after_register(
-            node=self.project, registration=registration, user=self.project.creator,
-            save=True
-        )
-        assert_equal(clone.user_settings, self.node_settings.user_settings)
-        assert_equal(clone.registration_data['folder'], self.node_settings.folder)
-
     def test_after_fork_by_authorized_dropbox_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
@@ -190,11 +180,6 @@ class TestNodeSettingsCallbacks(DbTestCase):
             )
             # need request context for url_for
             assert_is(clone.user_settings, None)
-
-    def test_before_register(self):
-        node = ProjectFactory()
-        message = self.node_settings.before_register(node, self.user)
-        assert_true(message)
 
     def test_before_fork(self):
         node = ProjectFactory()

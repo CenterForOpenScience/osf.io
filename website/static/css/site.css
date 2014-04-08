@@ -437,9 +437,11 @@ border-radius: 6px;
 
 /* Profile gravatar
 -------------------------------------------------- */
-.profile-gravatar{
-    border-radius: 4px;
-    -webkit-border-radius: 4px;
+#profile-gravatar{
+    float:left;
+    margin-right:.5em;
+    width:40px;
+    height:40px;
 }
 
 /* Data Vis
@@ -922,12 +924,32 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
-.link-name{
+.key-name{
     margin-left: 10px;
 }
 
 #generate-private-link{
     margin:20px 20px;
+}
+
+.private-link-label{
+    width:60%;
+}
+
+.link-name{
+    width:55%;
+}
+
+.link-label{
+    width:15%;
+}
+
+.link-date{
+    width:15%;
+}
+
+.link-creator{
+    width:20%;
 }
 
 /* Contributor page */

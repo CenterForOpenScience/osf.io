@@ -20,11 +20,21 @@
                     $(".fullname").text(data['name']);
                 }
             });
+
+            var gravatar = $('#profile-gravatar')
+            gravatar
+                .on('error', function(e) {
+                    gravatar.attr('src', '/static/img/blank_avatar.png')
+                })
+                .attr('src', gravatar.attr('src') + '&d=404')
         });
     % endif
     $script(['/static/addons/badges/bake-badges.js'], 'bakery');
     $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>
+% if user['is_profile']:
+    <%include file="profile/modal_change_avatar.mako"/>
+% endif
 
 </%def>
 
@@ -35,8 +45,11 @@
 % endif
 
 <div class="page-header">
-    <img src="${profile['gravatar_url']}" />
-    <h1 id="profile-fullname" style="display:inline-block">${profile["fullname"]}</h1>
+    <a href="#changeAvatarModal" data-toggle="modal">
+        <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                 rel="tooltip" title="click to change avatar" />
+    </a>
+    <h1 id="profile-fullname">${profile["fullname"]}</h1>
 </div><!-- end-page-header -->
 
 <div class="row">
