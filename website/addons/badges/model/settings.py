@@ -22,6 +22,15 @@ class BadgesUserSettings(AddonUserSettingsBase):
     def badges(self):
         return list(self.badge__creator) + [badge for badge in Badge.get_system_badges() if badge.creator != self]
 
+    @property
+    def issued(self):
+        assertions = []
+        for badge in self.badges:
+            for assertion in badge.assertions:
+                if assertion.awarder == self:
+                    assertions.append(assertion)
+        return assertions
+
     def get_badges_json(self):
         return [badge.to_json() for badge in self.badges]
 
@@ -36,7 +45,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
     def to_openbadge(self):
         ret = {
             'name': self.owner.fullname,
-            'email': self.owner.emails[0],
+            'email': self.owner.username,
         }
         # Place holder for later when orgaizations get worked on
         # if self.description:
@@ -48,15 +57,6 @@ class BadgesUserSettings(AddonUserSettingsBase):
         # if self.revocation_list:
         #     ret['revocationList'] = self.revocation_list
         return ret
-
-    @property
-    def issued(self):
-        assertions = []
-        for badge in self.badges:
-            for assertion in badge.assertions:
-                if assertion.awarder == self:
-                    assertions.append(assertion)
-        return assertions
 
     def issued_json(self):
         return [assertion.to_json() for assertion in self.issued]
