@@ -31,7 +31,7 @@ class Dataverse(object):
             tag="dataverseHasBeenReleased",
             numberOfElements=1,
         ).text
-        return bool(status)
+        return status.lower() == 'true'
 
     @property
     def alias(self):
