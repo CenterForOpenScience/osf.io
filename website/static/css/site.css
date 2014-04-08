@@ -1083,6 +1083,46 @@ a {
 
 .tagsinput .tag span { cursor:pointer; }
 
+/* Badging interface CSS*/
+.btn-success.editable:hover {
+    background-color: #419641;
+}
+
+.badge-list {
+  max-height:200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.badge-list img {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.profile-badge-list {
+  max-height:200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: inline-flex;
+  padding-top: 10px;
+}
+
+.profile-badge-list div {
+  margin: 5px;
+}
+
+.profile-badge-list img {
+  display: inline-block;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.profile-badge-list span {
+  display: block;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+

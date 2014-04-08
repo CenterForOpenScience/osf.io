@@ -1,4 +1,4 @@
-<%inherit file"../project_base.mako" />
+<%inherit file="../project_base.mako" />
 
 <h4>
     ${full_name} Add-on
