@@ -88,3 +88,41 @@ class TestBadge(DbTestCase):
         badge.make_system_badge()
         assert_true(badge.is_system_badge)
         assert_equals(badge, Badge.get_system_badges()[0])
+
+    def test_assertions(self):
+        create_mock_badge(self.usersettings)
+        badge = self.usersettings.badges[0]
+        assert_equals(len(badge.assertions), 0)
+        for n in xrange(4):
+            BadgeAssertion.create(badge, None)
+            assert_equals(len(badge.assertions), n + 1)
+
+
+class TestAssertion(DbTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+        self.user.add_addon('badges', override=True)
+        self.usersettings = self.user.get_addon('badges', self.user.auth)
+        self.usersettings.save()
+        self.project = ProjectFactory()
+        self.node_settings = self.project.get_addon('badges')
+        create_mock_badge(self.usersettings)
+        self.badge = self.usersettings.badges[0]
+
+    def test_parent(self):
+        assertion = BadgeAssertion.create(self.badge, self.project)
+        assert_equals(assertion.badge, self.badge)
+
+    def test_recipient(self):
+        assertion = BadgeAssertion.create(self.badge, self.project)
+        test_data = {
+            'idenity': self.project._id,
+            'type': 'osfnode',
+            'hashed': False
+        }
+        assert_equals(assertion.recipient, test_data)
+
+    def test_awarder(self):
+        assertion = BadgeAssertion.create(self.badge, self.project)
+        assert_equals(assertion.awarder, self.usersettings)
