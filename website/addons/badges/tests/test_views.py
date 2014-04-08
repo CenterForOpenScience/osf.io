@@ -41,7 +41,7 @@ class TestBadgesViews(AddonTestCase):
         badge = create_badge_dict()
         ret = self.app.post_json(lookup('api', 'create_badge'), badge, auth=self.user.auth)
         self.user_settings.reload()
-        assert_equals(ret.status_int, 200)
+        assert_equals(ret.status_int, 201)
         assert_equals(ret.content_type, 'application/json')
         assert_true(ret.json['badgeid'] in [badge._id for badge in self.user_settings.badges])
 
@@ -121,10 +121,11 @@ class TestBadgesViews(AddonTestCase):
         }
         ret = self.app.post_json(lookup('api', 'create_badge'), badge, auth=self.user.auth)
         self.user_settings.reload()
-        assert_equals(ret.status_int, 200)
+        assert_equals(ret.status_int, 201)
         assert_equals(ret.content_type, 'application/json')
         assert_true(ret.json['badgeid'] in [badge._id for badge in self.user_settings.badges])
-        bstr = str(self.user_settings.badges[0].to_openbadge())
+        with self.app.app.test_request_context():
+            bstr = str(self.user_settings.badges[0].to_openbadge())
         assert_false('>' in bstr)
         assert_false('<' in bstr)
 
@@ -317,11 +318,11 @@ class TestBadgesViews(AddonTestCase):
         self.project.reload()
         assert_equals(ret.status_int, 200)
         badge.reload()
-        assert_equals(badge.awarded, 3)
+        assert_equals(badge.awarded_count, 3)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         badge.reload()
-        assert_equals(badge.awarded, 5)
+        assert_equals(badge.awarded_count, 5)
 
     def test_unique_awards(self):
         badge = self.user_settings.badges[0]
@@ -333,8 +334,8 @@ class TestBadgesViews(AddonTestCase):
         self.project.reload()
         assert_equals(ret.status_int, 200)
         badge.reload()
-        assert_equals(badge.unique_awards, 1)
+        assert_equals(badge.unique_awards_count, 1)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         ret = self.app.post_json(url, {'badgeid': badge._id}, auth=self.user.auth)
         badge.reload()
-        assert_equals(badge.unique_awards, 1)
+        assert_equals(badge.unique_awards_count, 1)
