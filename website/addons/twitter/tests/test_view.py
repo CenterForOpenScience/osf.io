@@ -8,7 +8,7 @@ from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-from website.addons.twitter.model import AddonTwitterNodeSettings
+from website.addons.twitter.settings import DEFAULT_MESSAGES
 
 
 
@@ -30,35 +30,23 @@ class TestTwitterViewsConfig(DbTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('twitter', auth=self.consolidated_auth)
-        #self.project.creator.add_addon('twitter')
 
-        #setup twitter addon
         self.node_settings = self.project.get_addon('twitter')
-
         self.node_settings.consumer_key = 'rohTTQSPWzgIXWw0g5dw'
         self.node_settings.consumer_secret = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
         self.node_settings.log_messages= {
-        'tag_added_message': 'Added tag $tag_name to our project',
-        'edit_title_message': 'Changed project title from $old_title to $new_title',
-        'edit_description_message': 'Changed project description to $new_desc',
-        'file_added_message':'Just added $filename to our project',
-        'contributor_added_message': 'Added Saul Brodsky to project'
-                        }
+        'tag_added_message': 'Added tag {tag_name} to our project',
+        'edit_title_message': 'Changed project title from {old_title} to {new_title}',
+        'edit_description_message': 'Changed project description to {new_desc}',
+        'file_added_message':'Just added {filename} to our project',
+        }
         self.node_settings.save()
 
-        self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
+        self.node_url = '/api/v1/project/{0}/'.format(
+            self.project._id
+        )
 
-
-    #@mock.patch('tweepy.api.update_status')
-    #def test_user_has_access(self, mock_tweet):
-    #    url = self.project.api_url+'twitter/update_status/'
-    #    res = self.app.post_json(url, {'status':'will the real slim shady....'}, auth=self.user.auth).maybe_follow()
-    #
-    #
-    #    mock_tweet.tweet.assert_called
-
-
-    @mock.patch('website.addons.twitter.views.send_tweet')
+    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
     def test_revoked_oauth_send_tweet(self, mock_send_tweet):
 
         mock_send_tweet.side_effect = tweepy.TweepError([{'message':'error', 'code':'186'}])
@@ -67,7 +55,7 @@ class TestTwitterViewsConfig(DbTestCase):
         assert_equal(res.status_code, 400)
 
 
-    @mock.patch('website.addons.twitter.views.send_tweet')
+    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
     def test_send_tweet(self, mock_send_tweet):
 
         mock_send_tweet.side_effect = None
@@ -193,10 +181,14 @@ class TestTwitterViewsConfig(DbTestCase):
 
     def test_lengthy_tweet_before_default_edited(self):
         url = self.project.api_url+'twitter/settings/'
-        res = self.app.post_json(url, {'edit_title_message':'This is waaaayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy too long for a tweeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeettttt'},
+        res = self.app.post_json(url,
+                                 {'edit_title_message':'This is waaaayyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy '
+                                'too long for a tweeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeettttt'
+                                 },
                                  auth=self.user.auth).maybe_follow()
+
         self.node_settings.reload()
-        assert_equal(self.node_settings.log_messages.get('edit_title_message'), self.node_settings.DEFAULT_MESSAGES.get('edit_title_message'))
+        assert_equal(self.node_settings.log_messages.get('edit_title_message'), DEFAULT_MESSAGES.get('edit_title_message'))
 
     def test_lengthy_tweet_after_default_edited(self):
         url = self.project.api_url+'twitter/settings/'

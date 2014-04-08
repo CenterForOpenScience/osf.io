@@ -5,7 +5,8 @@
     <div class="alert alert-danger alert-dismissable">
     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
         Authorizing this Twitter add-on will grant all contributors on this feed
-        permission to upload, modify, and delete files on the associated Twitter repo.
+        permission to view your account.  Only the user that registers the account will be able to send tweets
+        from the account.
     </div>
     <div class="alert alert-danger alert-dismissable">
         <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -36,17 +37,10 @@
 
         </label>
 
-
-
         </br>
     % endfor
-
-
-
     <hr>
-
           </div>
-
         </br>
 
     % else:
@@ -62,10 +56,6 @@
 </div>
 
 <br />
-
-
-
-
 
 <script type="text/javascript">
 
@@ -87,11 +77,6 @@
             % endif
         });
 
-
-
-
-
-
         $('#twitter_logs :checkbox').click(function(){
             var $this = $(this);
             var $id = this.id;
@@ -105,7 +90,6 @@
 
             }
         });
-
 
         $('#twitterDelKey').on('click', function() {
             bootbox.confirm(
