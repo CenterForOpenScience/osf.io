@@ -1,6 +1,6 @@
 import httplib as http
+from flask import request
 
-from framework.flask import request
 from framework.exceptions import HTTPError
 
 from website.util.sanitize import deep_clean

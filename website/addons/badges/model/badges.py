@@ -4,8 +4,8 @@ from datetime import datetime
 
 from modularodm import Q
 
-from framework import fields
-from framework import GuidStoredObject, StoredObject
+from framework.mongo import fields, StoredObject
+from framework.guid.model import GuidStoredObject
 
 from website.settings import DOMAIN
 from website.util import web_url_for, api_url_for

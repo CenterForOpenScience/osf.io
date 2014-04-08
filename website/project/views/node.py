@@ -3,14 +3,10 @@ import logging
 import httplib as http
 from flask import request
 
-<<<<<<< HEAD
+from modularodm.exceptions import ModularOdmException
+
 from framework.forms import push_errors_to_status
 from framework.mongo import StoredObject, Q
-=======
-from modularodm.exceptions import ModularOdmException
-from framework.flask import request
-from framework import push_errors_to_status, Q
->>>>>>> develop
 
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework import status

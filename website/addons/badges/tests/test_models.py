@@ -55,7 +55,6 @@ class TestNodeSettingsModel(DbTestCase):
     def setUp(self):
         self.user = AuthUserFactory()
         self.project = ProjectFactory()
-        self.project.add_addon('badges', self.user.auth)
         self.node_settings = self.project.get_addon('badges')
 
     def test_exists(self):
