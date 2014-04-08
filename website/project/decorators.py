@@ -116,6 +116,7 @@ def _must_be_contributor_factory(include_public):
     :return: Authorization decorator
 
     """
+
     def wrapper(func):
 
         @functools.wraps(func)
@@ -145,6 +146,7 @@ def _must_be_contributor_factory(include_public):
                             response = redirect(url)
             #for login user
             else:
+
                 #key first time show up record it in the key ring
                 ## todo there may be a session without a user
                 if key not in kwargs['auth'].user.private_keys:
@@ -153,7 +155,7 @@ def _must_be_contributor_factory(include_public):
                 key_ring = get_key_ring(kwargs['auth'].user.private_keys)
 
                 #check if the keyring has intersection with node's private link
-                # if no intersction check other privilege
+                # if no intersection check other privilege
                 if not node.is_public or not include_public:
                     if key_ring.isdisjoint(node.private_links):
                         if not check_can_access(node=node, user=user,
@@ -169,6 +171,7 @@ def _must_be_contributor_factory(include_public):
                             key=key, key_ring=key_ring, node=node,
                             auth=kwargs['auth'], api_node=api_node)
                 else:
+
                     kwargs['auth'].private_key = None
             return response or func(*args, **kwargs)
 
@@ -193,6 +196,7 @@ def must_have_addon(addon_name, model):
     :return function: Decorator function
 
     """
+
     def wrapper(func):
 
         @functools.wraps(func)

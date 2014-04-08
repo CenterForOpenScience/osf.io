@@ -1832,7 +1832,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         messages = []
-        print self.get_addons()
+
         for addon in self.get_addons():
             method = getattr(addon, callback)
             message = method(self, *args, **kwargs)
