@@ -17,9 +17,11 @@ def create_mock_badger(mock_badger):
 
 
 @mock.patch('website.addons.badges.model.badges.deal_with_image')
-def create_mock_badge(issuer, mock_img):
+def create_mock_badge(issuer, mock_img, badge_data=None):
     mock_img.return_value = 'temp.png'
-    return Badge.create(issuer, create_badge_dict())
+    if not badge_data:
+        badge_data = create_badge_dict()
+    return Badge.create(issuer, badge_data)
 
 
 def create_badge_dict():
