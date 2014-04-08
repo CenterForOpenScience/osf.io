@@ -28,7 +28,10 @@ ${next.body()}
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
     %if 'badges' in addons_enabled and badges and badges['can_award']:
-        $script(['/static/addons/badges/badge-awarder.js'], 'awarder');
+    $script(['/static/addons/badges/badge-awarder.js'], function() {
+        attachDropDown('${'{}badges/json/'.format(user_api_url)}');
+    });
+
     %endif
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';

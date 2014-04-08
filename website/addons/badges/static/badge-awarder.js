@@ -1,5 +1,17 @@
-(function($) {
-    "use strict";
+/**
+ * Adds a lovely dropdown menu to the green award button
+ */
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery'], factory);
+    } else if (typeof $script === 'function') {
+        global.attachDropDown  = factory(jQuery);
+        $script.done('awarder');
+    }else {
+        global.attachDropDown  = factory(jQuery);
+    }
+}(this, function($) {
+    'use strict';
 
     var AwardBadge = function(options) {
         this.badges = options.badges;
@@ -92,11 +104,8 @@
 
     $.fn.editabletypes.AwardBadge = AwardBadge;
 
-}(window.jQuery));
-
-
-(function(url) {
-    $.ajax({
+    function attachDropDown (url) {
+        $.ajax({
         method: 'GET',
         url: url,
         success: function(ret) {
@@ -126,5 +135,11 @@
                 pk: 'newBadge'
             });
         }
-    })
-})(userApiUrl + 'badges/json/');
+        });
+    };
+
+    return attachDropDown;
+
+}));
+
+//userApiUrl + 'badges/json/'
