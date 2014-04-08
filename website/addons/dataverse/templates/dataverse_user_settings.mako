@@ -11,8 +11,10 @@
 
 % else:
 
+    ## You are not authorized
+
     ## Your credentials are no longer valid
-    % if dataverse_username:
+    % if authorized_dataverse_user:
         <div style="padding-bottom: 10px">
             Warning: Your credentials appear to be incorrect. Please re-enter
             your password.
@@ -22,13 +24,13 @@
     ## Show auth fields
     <div class="form-group">
         <label for="dataverseUsername">Dataverse Username</label>
-        <input class="form-control" id="dataverseUsername" name="dataverse_username" value="${dataverse_username}"/>
+        <input class="form-control" id="dataverseUsername" name="dataverse_username" value="${authorized_dataverse_user}"/>
     </div>
     <div class="form-group">
         <label for="dataversePassword">Dataverse Password</label>
         <input class="form-control" id="dataversePassword" type="password" name="dataverse_password" />
     </div>
-    <a id="dataverseLinkAccount" class="btn btn-success">Link to Dataverse</a>
+    <a id="dataverseLinkAccount" class="btn btn-success">Submit</a>
 
 % endif
 

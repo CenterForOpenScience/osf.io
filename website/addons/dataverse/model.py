@@ -36,7 +36,6 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
         rv.update({
             'authorized': connection is not None,
             'authorized_dataverse_user': self.dataverse_username or '',
-            'dataverse_username': self.dataverse_username or '',
             'show_submit': True,
         })
         return rv
