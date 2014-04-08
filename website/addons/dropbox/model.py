@@ -30,7 +30,7 @@ class DropboxFile(GuidFile):
     #: See https://www.dropbox.com/developers/core/docs#metadata
     metadata = fields.DictionaryField(required=False)
 
-    def url(self, guid=True, rev=None, *args, **kwargs):
+    def url(self, guid=True, rev='', *args, **kwargs):
         """The web url for the file.
 
         :param bool guid: Whether to return the short URL
@@ -54,7 +54,7 @@ class DropboxFile(GuidFile):
             raise ValueError('Path field must be defined.')
         return os.path.join('dropbox', 'files', self.path)
 
-    def download_url(self, guid=True, rev=None, *args, **kwargs):
+    def download_url(self, guid=True, rev='', *args, **kwargs):
         """Return the download url for the file.
 
         :param bool guid: Whether to return the short URL
@@ -72,18 +72,18 @@ class DropboxFile(GuidFile):
                     path=self.path, _absolute=True, rev=rev, **kwargs)
         return url
 
-    def update_metadata(self, client=None, rev=None):
+    def update_metadata(self, client=None, rev=''):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
         self.metadata = cl.metadata(self.path, list=False, rev=rev)
 
-    def get_metadata(self, client=None, force=False, rev=None):
+    def get_metadata(self, client=None, force=False, rev=''):
         """Gets the file metadata from the Dropbox API (cached)."""
         if force or (not self.metadata):
             self.update_metadata(client=client, rev=rev)
             self.save()
         return self.metadata
 
-    def get_cache_filename(self, client=None, rev=None):
+    def get_cache_filename(self, client=None, rev=''):
         if not rev:
             metadata = self.get_metadata(client=client, rev=rev, force=True)
             revision = metadata['rev']
