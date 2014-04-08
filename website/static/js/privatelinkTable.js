@@ -63,7 +63,7 @@
 
         function onFetchSuccess(response) {
             var node = response.node;
-            self.privateLinks(ko.utils.arrayMap(node.privateLinks, function(link) {
+            self.privateLinks(ko.utils.arrayMap(node.private_links, function(link) {
                 return new LinkViewModel(link, self);
             }));
             self.nodeUrl(node.absolute_url);
