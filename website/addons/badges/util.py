@@ -1,3 +1,4 @@
+import io
 import os
 import errno
 import urllib2
@@ -9,7 +10,7 @@ from website.addons.badges.settings import *
 
 #TODO: Possible security errors
 #TODO: Send to task queue may lock up thread
-def deal_with_image(imageurl, uid):
+def acquire_badge_image(imageurl, uid):
 
     location = os.path.join(BADGES_ABS_LOCATION, uid + '.png')
 
@@ -23,13 +24,13 @@ def deal_with_image(imageurl, uid):
     except urllib2.URLError:
         return None
 
-    length = dl.info().getheaders('Content-Length')[0]
-    mime = dl.info().getheaders('Content-Type')
+    length = int(dl.info().getheaders('Content-Length')[0])
+    mime = dl.info().getheaders('Content-Type')[0]
 
     if length > MAX_IMAGE_SIZE or 'image' not in mime:
         return None
 
-    Image.open(dl).save(location)
+    Image.open(io.BytesIO(dl.read())).save(location)
 
     return os.path.join(BADGES_LOCATION, uid + '.png')
 

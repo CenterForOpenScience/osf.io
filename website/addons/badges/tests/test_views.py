@@ -35,7 +35,7 @@ class TestBadgesViews(AddonTestCase):
     def create_app(self):
         return TestApp(app)
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_create_badge(self, img_proc):
         img_proc.return_value = 'temp.png'
         badge = create_badge_dict()
@@ -45,14 +45,14 @@ class TestBadgesViews(AddonTestCase):
         assert_equals(ret.content_type, 'application/json')
         assert_true(ret.json['badgeid'] in [badge._id for badge in self.user_settings.badges])
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_create_badge_no_data(self, img_proc):
         url = lookup('api', 'create_badge')
         badge = {}
         ret = self.app.post_json(url, badge, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_create_badge_some_data(self, img_proc):
         img_proc.return_value = 'temp.png'
         url = lookup('api', 'create_badge')
@@ -63,7 +63,7 @@ class TestBadgesViews(AddonTestCase):
         ret = self.app.post_json(url, badge, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_create_badge_empty_data(self, img_proc):
         img_proc.return_value = 'temp.png'
         url = lookup('api', 'create_badge')
@@ -72,7 +72,7 @@ class TestBadgesViews(AddonTestCase):
         ret = self.app.post_json(url, badge, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_create_badge_cant_issue(self, img_proc):
         img_proc.return_value = 'temp.png'
         self.user.delete_addon('badges')
@@ -110,7 +110,7 @@ class TestBadgesViews(AddonTestCase):
         ret = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
         assert_equals(ret.status_int, 400)
 
-    @mock.patch('website.addons.badges.model.badges.deal_with_image')
+    @mock.patch('website.addons.badges.model.badges.acquire_badge_image')
     def test_badge_html(self, img_proc):
         img_proc.return_value = 'temp.png'
         badge = {

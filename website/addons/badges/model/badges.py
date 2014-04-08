@@ -9,7 +9,7 @@ from framework import GuidStoredObject, StoredObject
 
 from website.settings import DOMAIN
 from website.util import web_url_for, api_url_for
-from website.addons.badges.util import deal_with_image
+from website.addons.badges.util import acquire_badge_image
 
 
 class Badge(GuidStoredObject):
@@ -44,7 +44,7 @@ class Badge(GuidStoredObject):
         badge.description = badge_data['description']
         badge.criteria = badge_data['criteria']
         badge._ensure_guid()
-        badge.image = deal_with_image(badge_data['imageurl'], badge._id)
+        badge.image = acquire_badge_image(badge_data['imageurl'], badge._id)
         if not badge.image:
             raise IOError
         if save:

@@ -16,7 +16,7 @@ def create_mock_badger(mock_badger):
     return mock_badger
 
 
-@mock.patch('website.addons.badges.model.badges.deal_with_image')
+@mock.patch('website.addons.badges.model.badges.acquire_badge_image')
 def create_mock_badge(issuer, mock_img, badge_data=None):
     mock_img.return_value = 'temp.png'
     if not badge_data:
