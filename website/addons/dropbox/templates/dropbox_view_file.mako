@@ -13,6 +13,11 @@
         </thead>
 
         <!-- Highlight current revision in grey, or yellow if modified post-registration -->
+        <!--
+            Note: Registering Dropbox content is disabled for now; leaving
+            this code here in case we enable registrations later on.
+            @jmcarp
+        -->
         <tbody data-bind="foreach: {data: revisions, as: 'revision'}">
             <tr data-bind="css: {
                     warning: $root.registered() && revision.modified.date > $root.registered(),
