@@ -11,7 +11,7 @@
     <span class="pull-right" style="text-align:end;">Endorsed by <a href="${badge.creator.owner.profile_url}">${badge.creator.owner.fullname}</a>
   %endif
   <br/>
-  Awarded ${badge.awarded} Times to ${badge.unique_awards} Projects</span>
+  Awarded ${badge.awarded_count} Times to ${badge.unique_awards_count} Projects</span>
   <a class="pull-left">
     <img class="media-object" src="${badge.image}" width="150px" height="150px">
   </a>

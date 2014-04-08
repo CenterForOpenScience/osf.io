@@ -22,9 +22,8 @@
             });
         });
     % endif
-    $script(['/addons/static/badges/png-baker.js'], 'baker');
-    $script(['/addons/static/badges/bake-badges.js'], 'bakery');
-    $script(['/addons/static/badges/badge-popover.js'], 'display');
+    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
+    $script(['/static/addons/badges/badge-popover.js'], 'display');
 </script>
 
 </%def>

@@ -4,8 +4,6 @@ import urllib
 from PIL import Image
 from collections import defaultdict
 
-from modularodm import Q
-
 
 #TODO: Possible security errors
 #TODO: Send to task queue may lock up thread
@@ -31,8 +29,8 @@ def sort_badges(items):
     for item in items:
         index = next((ind for ind in ret if ind.badge is item.badge), None)
         if index:
-            index[0].dates[item.awarder.owner.fullname].append((item.issued_date, item.evidence, item.awarder))
-            index[0].amount += 1
+            index.dates[item.awarder.owner.fullname].append((item.issued_date, item.evidence, item.awarder))
+            index.amount += 1
         else:
             item.dates = defaultdict(list)
             item.dates[item.awarder.owner.fullname] = [(item.issued_date, item.evidence, item.awarder)]
@@ -56,8 +54,3 @@ def get_user_badges(user):
 
 def get_sorted_user_badges(user):
     return sort_badges(get_user_badges(user))
-
-
-def get_system_badges():
-    from website.addons.badges.model.badges import Badge
-    return Badge.find(Q('is_system_badge', 'eq', True))

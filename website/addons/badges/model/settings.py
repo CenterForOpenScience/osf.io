@@ -2,7 +2,7 @@ from framework import fields
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 
-from ..util import get_system_badges
+from . import Badge
 
 
 #TODO Better way around this, No longer needed?
@@ -16,18 +16,17 @@ class BadgesUserSettings(AddonUserSettingsBase):
 
     @property
     def can_award(self):
-        return bool(self.badges) or len(get_system_badges()) > 0
+        return bool(self.badges) or len(Badge.get_system_badges()) > 0
 
     @property
     def badges(self):
-        return list(self.badge__creator) + [badge for badge in get_system_badges() if badge.creator != self]
+        return list(self.badge__creator) + [badge for badge in Badge.get_system_badges() if badge.creator != self]
 
     def get_badges_json(self):
         return [badge.to_json() for badge in self.badges]
 
     def get_badges_json_simple(self):
-        return [{'value': badge._id, 'text': badge.name} for badge in get_system_badges()] +\
-        [{'value': badge._id, 'text': badge.name} for badge in self.badges if not badge.is_system_badge]
+        return [{'value': badge._id, 'text': badge.name} for badge in self.badges]
 
     def to_json(self, user):
         ret = super(BadgesUserSettings, self).to_json(user)
@@ -37,8 +36,9 @@ class BadgesUserSettings(AddonUserSettingsBase):
     def to_openbadge(self):
         ret = {
             'name': self.owner.fullname,
-            'email': self.owner.emails[0],  # TODO ?
+            'email': self.owner.emails[0],
         }
+        # Place holder for later when orgaizations get worked on
         # if self.description:
         #     ret['description'] = self.description,
         # if self.image:
@@ -52,7 +52,7 @@ class BadgesUserSettings(AddonUserSettingsBase):
     @property
     def issued(self):
         assertions = []
-        for badge in list(self.badges) + list(get_system_badges()):
+        for badge in self.badges:
             for assertion in badge.assertions:
                 if assertion.awarder == self:
                     assertions.append(assertion)

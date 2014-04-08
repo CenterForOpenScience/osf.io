@@ -2,11 +2,13 @@ import calendar
 from bson import ObjectId
 from datetime import datetime
 
+from modularodm import Q
+
 from framework import fields
 from framework import GuidStoredObject, StoredObject
 
 from website.settings import DOMAIN
-
+from website.util import web_url_for, api_url_for
 from website.addons.badges.util import deal_with_image
 
 
@@ -25,9 +27,14 @@ class Badge(GuidStoredObject):
     description = fields.StringField()
     image = fields.StringField()
     criteria = fields.StringField()
-    #TODO
+
+    #TODO implement tags and alignment
     alignment = fields.DictionaryField(list=True)
     tags = fields.StringField(list=True)
+
+    @classmethod
+    def get_system_badges(cls):
+        return cls.find(Q('is_system_badge', 'eq', True))
 
     @classmethod
     def create(cls, user_settings, badge_data, save=True):
@@ -41,6 +48,41 @@ class Badge(GuidStoredObject):
         if save:
             badge.save()
         return badge
+
+    @property
+    def description_short(self):
+        words = self.description.split(' ')
+        if len(words) < 9:
+            return ' '.join(words)
+        return '{}...'.format(' '.join(words[:9]))
+
+    #TODO Auto link urls?
+    @property
+    def criteria_list(self):
+        tpl = '<ul>{}</ul>'
+        stpl = '<li>{}</li>'
+        lines = self.criteria.split('\n')
+        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))  # Please dont kill me Steve
+
+    @property
+    def assertions(self):
+        return self.badgeassertion__assertion
+
+    @property
+    def awarded_count(self):
+        return len(self.assertions)
+
+    @property
+    def unique_awards_count(self):
+        return len({assertion.node._id for assertion in self.assertions})
+
+    @property
+    def deep_url(self):
+        return web_url_for('view_badge', bid=self._id)
+
+    @property
+    def url(self):
+        return web_url_for('view_badge', bid=self._id)
 
     def make_system_badge(self, save=True):
         self.is_system_badge = True
@@ -63,46 +105,11 @@ class Badge(GuidStoredObject):
             'description': self.description,
             'image': self.image,
             'criteria': self.criteria,
-            'issuer': '{0}badge/organization/{1}/json/'.format(DOMAIN, self.creator.owner._id),
-            'url': '{0}{1}/json/'.format(DOMAIN, self._id),
+            'issuer': api_url_for('get_organization_json', _absolute=True, uid=self.creator.owner._id),
+            'url': '{0}{1}/json/'.format(DOMAIN, self._id),  # web url for and GUIDs?
             'alignment': self.alignment,
             'tags': self.tags,
         }
-
-    @property
-    def description_short(self):
-        words = self.description.split(' ')
-        if len(words) < 9:
-            return ' '.join(words)
-        return '{}...'.format(' '.join(words[:9]))
-
-    #TODO Auto link urls?
-    @property
-    def criteria_list(self):
-        tpl = '<ul>{}</ul>'
-        stpl = '<li>{}</li>'
-        lines = self.criteria.split('\n')
-        return tpl.format(' '.join([stpl.format(line) for line in lines if line]))  # Please dont kill me Steve
-
-    @property
-    def assertions(self):
-        return self.badgeassertion__assertion
-
-    @property
-    def awarded(self):
-        return len(self.assertions)
-
-    @property
-    def unique_awards(self):
-        return len({assertion.node._id for assertion in self.assertions})
-
-    @property
-    def deep_url(self):
-        return '/badge/{}/'.format(self._id)
-
-    @property
-    def url(self):
-        return '/badge/{}/'.format(self._id)
 
 
 #TODO verification hosted and signed
@@ -113,7 +120,7 @@ class BadgeAssertion(StoredObject):
     #Backrefs
     badge = fields.ForeignField('badge', backref='assertion')
     node = fields.ForeignField('node', backref='awarded')
-    _awarder = fields.ForeignField('badgesusersettings', backref='awarder')
+    _awarder = fields.ForeignField('badgesusersettings')
 
     #Custom fields
     revoked = fields.BooleanField(default=False)
@@ -138,28 +145,6 @@ class BadgeAssertion(StoredObject):
             b.save()
         return b
 
-    def to_json(self):
-        return {
-            'uid': self._id,
-            'recipient': self.node._id,
-            'badge': self.badge._id,
-            'verify': self.verify,
-            'issued_on': self.issued_date,
-            'evidence': self.evidence,
-            'expires': self.expires
-        }
-
-    def to_openbadge(self):
-        return {
-            'uid': self._id,
-            'recipient': self.recipient,
-            'badge': '{}{}/json/'.format(DOMAIN, self.badge._id),
-            'verify': self.verify,
-            'issuedOn': self.issued_on,
-            'evidence': self.evidence,
-            'expires': self.expires
-        }
-
     @property
     def issued_date(self):
         return datetime.fromtimestamp(self.issued_on).strftime('%Y/%m/%d')
@@ -168,7 +153,7 @@ class BadgeAssertion(StoredObject):
     def verify(self, vtype='hosted'):
         return {
             'type': 'hosted',
-            'url': '{}badge/assertion/json/{}/'.format(DOMAIN, self._id)
+            'url': api_url_for('get_assertion_json', _absolute=True, aid=self._id)
         }
 
     @property
@@ -184,3 +169,25 @@ class BadgeAssertion(StoredObject):
         if self.badge.is_system_badge and self._awarder:
             return self._awarder
         return self.badge.creator
+
+    def to_json(self):
+        return {
+            'uid': self._id,
+            'recipient': self.node._id,
+            'badge': self.badge._id,
+            'verify': self.verify,
+            'issued_on': self.issued_date,
+            'evidence': self.evidence,
+            'expires': self.expires
+        }
+
+    def to_openbadge(self):
+        return {
+            'uid': self._id,
+            'recipient': self.recipient,
+            'badge': '{}{}/json/'.format(DOMAIN, self.badge._id),  # GUIDs Web url for
+            'verify': self.verify,
+            'issuedOn': self.issued_on,
+            'evidence': self.evidence,
+            'expires': self.expires
+        }

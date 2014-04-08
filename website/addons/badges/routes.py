@@ -16,8 +16,15 @@ render_routes = {
 api_urls = {
     'rules': [
         Rule('/badges/new/', 'post', views.crud.create_badge, json_renderer),
-        Rule('/dashboard/get_badges/', 'get', views.render.dashboard_badges, json_renderer),
-        Rule('/dashboard/get_assertions/', 'get', views.render.dashboard_assertions, json_renderer),
+        Rule(
+            '/dashboard/get_badges/',
+            'get', views.render.dashboard_badges, json_renderer),
+        Rule(
+            '/dashboard/get_assertions/',
+            'get', views.render.dashboard_assertions, json_renderer),
+        Rule(
+            '/profile/<uid>/badges/json/',
+            'get', views.render.organization_badges_listing, json_renderer),
         Rule([
             '/project/<pid>/badges/award/',
             '/project/<pid>/node/<nid>/badges/award/',
@@ -26,9 +33,6 @@ api_urls = {
             '/project/<pid>/badges/revoke/',
             '/project/<pid>/node/<nid>/badges/revoke/',
         ], 'post', views.crud.revoke_badge, json_renderer),
-        Rule([
-            '/profile/<uid>/badges/json/',
-        ], 'get', views.render.organization_badges_listing, json_renderer),
         Rule([
             '/project/<pid>/badges/widget/',
             '/project/<pid>/node/<nid>/badges/widget/',
@@ -39,17 +43,17 @@ api_urls = {
 
 guid_urls = {
     'rules': [
-        Rule([
+        Rule(
             '/badge/<bid>/',
-        ], 'get', views.render.view_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
-        Rule([
+            'get', views.render.view_badge, OsfWebRenderer('../addons/badges/templates/view_badge.mako')),
+        Rule(
             '/badge/<bid>/json/',
-        ], 'get', views.openbadge.get_badge_json, json_renderer),
-        Rule([
+            'get', views.openbadge.get_badge_json, json_renderer),
+        Rule(
             '/badge/assertion/json/<aid>/',
-        ], 'get', views.openbadge.get_assertion_json, json_renderer),
-        Rule([
+            'get', views.openbadge.get_assertion_json, json_renderer),
+        Rule(
             '/badge/organization/<uid>/json/',
-        ], 'get', views.openbadge.get_organization_json, json_renderer),
+            'get', views.openbadge.get_organization_json, json_renderer),
     ]
 }
