@@ -440,15 +440,17 @@ def gitlab_osffiles_url(project, node=None, fid=None, vid=None, **kwargs):
     node = node or project
 
     if vid is None:
-        return redirect(node.url_for('gitlab_download_file', path=fid))
+        return redirect(node.web_url_for('gitlab_download_file', path=fid))
 
-    node_routes = settings.COMPAT_ROUTES.get(node._id, {})
+    node_routes = gitlab_settings.COMPAT_ROUTES.get(node._id, {})
     file_versions = node_routes.get(fid, {})
     try:
         return redirect(
             node.web_url_for(
                 'gitlab_download_file',
-                sha=file_versions[vid]
+                path=fid,
+                branch='master',
+                sha=file_versions[vid],
             )
         )
     except KeyError:
