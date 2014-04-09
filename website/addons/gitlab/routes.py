@@ -7,14 +7,17 @@ from website.routes import OsfWebRenderer, notemplate
 
 from website.addons.gitlab import views
 
+from website.addons.gitlab.settings import ROUTE
+
+
 api_routes = {
 
     'rules': [
 
         Rule(
             [
-                '/project/<pid>/gitlab/root/',
-                '/project/<pid>/node/<nid>/gitlab/root/',
+                '/project/<pid>/{route}/root/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/root/'.format(route=ROUTE),
             ],
              'get',
              views.crud.gitlab_hgrid_root_public,
@@ -23,10 +26,10 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/grid/',
-                '/project/<pid>/node/<nid>/gitlab/grid/',
-                '/project/<pid>/gitlab/grid/<path:path>/',
-                '/project/<pid>/node/<nid>/gitlab/grid/<path:path>/',
+                '/project/<pid>/{route}/grid/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/grid/'.format(route=ROUTE),
+                '/project/<pid>/{route}/grid/<path:path>/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/grid/<path:path>/'.format(route=ROUTE),
             ],
             'get',
             views.crud.gitlab_list_files,
@@ -34,10 +37,10 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/gitlab/files/',
-                '/project/<pid>/gitlab/files/<path:path>',
-                '/project/<pid>/node/<nid>/gitlab/files/',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>',
+                '/project/<pid>/{route}/files/'.format(route=ROUTE),
+                '/project/<pid>/{route}/files/<path:path>'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>'.format(route=ROUTE),
             ],
             'post',
             views.crud.gitlab_upload_file,
@@ -45,8 +48,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/gitlab/files/<path:path>',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>',
+                '/project/<pid>/{route}/files/<path:path>'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>'.format(route=ROUTE),
             ],
             'delete',
             views.crud.gitlab_delete_file,
@@ -55,8 +58,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/files/<path:path>/commits/',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>/commits/',
+                '/project/<pid>/{route}/files/<path:path>/commits/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>/commits/'.format(route=ROUTE),
             ],
             'get',
             views.crud.gitlab_file_commits,
@@ -65,8 +68,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/files/<path:path>/render/',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>/render/',
+                '/project/<pid>/{route}/files/<path:path>/render/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>/render/'.format(route=ROUTE),
             ],
             'get',
             views.crud.gitlab_get_rendered_file,
@@ -75,8 +78,8 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/hook/',
-                '/project/<pid>/node/<nid>/gitlab/hook/',
+                '/project/<pid>/{route}/hook/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/hook/'.format(route=ROUTE),
             ],
             'post',
             views.hooks.gitlab_hook_callback,
@@ -94,8 +97,8 @@ page_routes = {
 
         Rule(
             [
-                '/project/<pid>/gitlab/files/<path:path>',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>',
+                '/project/<pid>/{route}/files/<path:path>'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>'.format(route=ROUTE),
             ],
             'get',
             views.crud.gitlab_view_file,
@@ -103,8 +106,11 @@ page_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/gitlab/files/<path:path>/download/',
-                '/project/<pid>/node/<nid>/gitlab/files/<path:path>/download/',
+                '/project/<pid>/{route}/files/<path:path>/download/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/files/<path:path>/download/'.format(route=ROUTE),
+                # Backwards-compatible routes
+                '/project/<pid>/{route}/<fid>/download/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/<fid>/download/'.format(route=ROUTE),
             ],
             'get',
             views.crud.gitlab_download_file,
@@ -116,8 +122,6 @@ page_routes = {
             [
 
                 # Download file
-                # '/project/<pid>/osffiles/<fid>/download/',
-                # '/project/<pid>/node/<nid>/osffiles/<fid>/download/',
                 '/project/<pid>/osffiles/download/<fid>/',
                 '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
                 '/project/<pid>/files/<fid>/',
@@ -130,8 +134,6 @@ page_routes = {
                 '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/',
 
                 # Download file by version
-                # '/project/<pid>/osffiles/<fid>/version/<vid>/download/',
-                # '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
                 '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/files/<fid>/version/<vid>/',

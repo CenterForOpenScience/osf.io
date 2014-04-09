@@ -3,6 +3,8 @@ import json
 from website.settings import BASE_PATH, DOMAIN
 
 
+ROUTE = 'osffiles'
+
 HOST = None
 TOKEN = None
 
