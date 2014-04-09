@@ -5,7 +5,7 @@
     <div class="col-md-12">
 
     <h2>Contributors</h2>
-        <div id="manageContributors" style="display: none;">
+        <div id="manageContributors" class="scripted">
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -38,8 +38,60 @@
                 </table>
                 ${buttonGroup()}
         </div>
+    % if 'write' in user['permissions']:
+        <h2>Private Links</h2>
+            <div class="scripted" id="linkScope" >
+
+                    <table id="privateLinkTable" class="table">
+                        <thead>
+                            <tr>
+                            <th class="col-sm-2 link-name">Private Link</th>
+                            <th class="col-sm-4 link-label">Label
+                            </th>
+                            <th class="col-sm-3 link-date">Created Date</th>
+                            <th class="col-sm-2 link-creator">Created By</th>
+                            <th class="col-sm-1"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <tr>
+                                <td colspan="3"  >
+                                    <a href="#private-link" data-toggle="modal">
+                                        Click to generate a private link
+                                    </a>
+                                </td>
+                            </tr>
+
+                        </tbody>
+                        <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
+                                <tr>
+                                <td class="col-sm-4 link-name">
+                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
+                                            data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                        <span class="icon-copy" ></span>
+                                    </button>
+                                    <span class="key-name" data-bind="text: linkUrl"></span>
+                                </td>
+
+                                  <td class="col-sm-2 link-label" data-bind="text: label"></td>
+                                <td class="col-sm-3 link-date">
+                                    <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
+                                </td>
+                                <td class="col-sm-2 link-creator" data-bind="text: creator"></td>
+                                <td class="col-sm-1">
+                                    <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
+                                </td>
+                                </tr>
+                        </tbody>
+                        </table>
+
+            </div>
+    % endif
+
     </div><!-- end col-md -->
 </div><!-- end row -->
+
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -101,12 +153,28 @@
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
     <% import json %>
-    <script src="/static/js/contribManager.js"></script>
+
     <script type="text/javascript">
-        (function() {
-            var contributors = ${json.dumps(contributors)};
-            var user = ${json.dumps(user)};
-            var manager = new ContribManager('#manageContributors', contributors, user);
-        })();
+    $script(['/static/js/contribManager.js'], function() {
+        var contributors = ${json.dumps(contributors)};
+        var user = ${json.dumps(user)};
+        var manager = new ContribManager('#manageContributors', contributors, user);
+    });
+
+    $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js',
+            '/static/js/privatelinkManager.js',
+            '/static/js/privatelinkTable.js'], 'privatelinks');
+
+
+    $script.ready(['privatelinks'], function (){
+        // Controls the modal
+        var configUrl = nodeApiUrl + 'private_link/config/';
+        var privateLinkManager = new PrivateLinkManager('#private-link', configUrl);
+
+        var tableUrl = nodeApiUrl + 'private_link/table/';
+        var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+
+
+    });
     </script>
 </%def>

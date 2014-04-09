@@ -55,13 +55,18 @@ class AddonModelMixin(StoredObject):
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name, auth=None):
+    def add_addon(self, addon_name, auth=None, override=False):
         """Add an add-on to the owner.
 
         :param str addon_name: Name of add-on
-        :return bool: Add-on was added
+        :param Auth auth: Consolidated authorization object
+        :param bool override: For shell use only, Allows adding of system addons
+        :returns bool: Add-on was added
 
         """
+        if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self._name]:
+            return False
+
         # Reactivate deleted add-on if present
         addon = self.get_addon(addon_name, deleted=True)
         if addon:

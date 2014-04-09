@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment, PrivateLink
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -96,6 +96,12 @@ class TagFactory(ModularOdmFactory):
 class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
+
+class PrivateLinkFactory(ModularOdmFactory):
+    FACTORY_FOR = PrivateLink
+
+    key = "foobarblaz"
+    creator = SubFactory(AuthUserFactory)
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node

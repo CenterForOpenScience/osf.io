@@ -40,7 +40,7 @@ from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory
 )
 
 app = init_app(set_backends=False, routes=True)
@@ -1204,16 +1204,11 @@ class TestProject(OsfTestCase):
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
-
     def test_add_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        self.project.private_links.append(link)
+        self.project.save()
         assert_in(link, self.project.private_links)
-
-    def test_remove_private_link(self):
-        link = self.project.add_private_link()
-        assert_in(link, self.project.private_links)
-        self.project.remove_private_link(link)
-        assert_not_in(link, self.project.private_links)
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
@@ -1316,7 +1311,9 @@ class TestProject(OsfTestCase):
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        self.project.private_links.append(link)
+        self.project.save()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1328,7 +1325,7 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
-        other_guy_auth.private_key = link
+        other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
@@ -1853,7 +1850,9 @@ class TestForkNode(OsfTestCase):
         assert_false(fork.is_public)
 
     def test_not_fork_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        self.project.private_links.append(link)
+        self.project.save()
         fork = self.project.fork_node(self.consolidate_auth)
         assert_not_in(link, fork.private_links)
 
@@ -1898,7 +1897,8 @@ class TestRegisterNode(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_private_link()
+        self.link = PrivateLinkFactory()
+        self.project.private_links.append(self.link)
         self.project.save()
         self.registration = RegistrationFactory(project=self.project)
 

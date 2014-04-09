@@ -78,6 +78,13 @@
                         </a>
 
                     </div><!-- end btn-grp -->
+                    %if 'badges' in addons_enabled and badges and badges['can_award']:
+                        <div class="btn-group">
+                            <button class="btn btn-success" id="awardBadge" style="border-bottom-right-radius: 4px;border-top-right-radius: 4px;">
+                                <i class="icon-plus"></i> Award
+                            </button>
+                        </div><!-- end btn-grp -->
+                    %endif
                 </div><!-- end btn-toolbar -->
 
             </div><!-- end col-md-->
@@ -163,4 +170,3 @@
         </nav>
     </header>
 </div><!-- end projectScope -->
-

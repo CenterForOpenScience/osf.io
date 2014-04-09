@@ -3,6 +3,8 @@ import logging
 import httplib as http
 from flask import request
 
+from modularodm.exceptions import ModularOdmException
+
 from framework.forms import push_errors_to_status
 from framework.mongo import StoredObject, Q
 
@@ -15,7 +17,7 @@ from framework.mongo.utils import from_mongo
 from website import language
 
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node
+from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor,
     must_be_contributor_or_public,
@@ -24,7 +26,7 @@ from website.project.decorators import (
     must_not_be_registration,
 )
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import Node, Pointer, WatchConfig
+from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
@@ -216,7 +218,8 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-            and 'node' not in addon.added_mandatory
+        and 'node' not in addon.added_mandatory
+        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -451,13 +454,15 @@ def view_project(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_be_contributor
+@must_have_permission("write")
 def remove_private_link(*args, **kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
-    link = request.json['private_link']
+    link_id = request.json['private_link_id']
+
     try:
-        node_to_use.remove_private_link(link)
-    except ValueError:
+        link = PrivateLink.load(link_id)
+        link.is_deleted = True
+        link.save()
+    except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
 
@@ -540,7 +545,7 @@ def _view_project(node, auth, primary=False):
             'fork_count': len(node.fork_list),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
-            'private_links': node.private_links,
+            'private_links': [x.to_json() for x in node.private_links_active],
             'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
@@ -573,6 +578,7 @@ def _view_project(node, auth, primary=False):
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
         },
+        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -582,6 +588,17 @@ def _view_project(node, auth, primary=False):
 
     }
     return data
+
+
+def _get_badge(user):
+    if user:
+        badger = user.get_addon('badges')
+        if badger:
+            return {
+                'can_award': badger.can_award,
+                'badges': badger.get_badges_json()
+            }
+    return {}
 
 
 def _get_children(node, auth, indent=0):
@@ -598,6 +615,43 @@ def _get_children(node, auth, indent=0):
             children.extend(_get_children(child, auth, indent+1))
 
     return children
+
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def private_link_config(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    if not node.can_edit(auth):
+        return
+    children = _get_children(node, auth)
+
+    parent = node.parent_node
+    rv = {
+        'result': {
+            'node': {
+                'title': node.title,
+                'parentId': parent._primary_key if parent else '',
+                'parentTitle': parent.title if parent else '',
+                },
+            'children': children,
+            }
+    }
+
+    return rv
+
+
+@must_be_valid_project # returns project
+@must_have_permission('write')
+def private_link_table(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    data = {
+        'node': {
+            'absolute_url': node.absolute_url,
+            'private_links': [x.to_json() for x in node.private_links_active],
+            }
+    }
+    return data
 
 
 @collect_auth
@@ -738,15 +792,23 @@ def get_registrations(**kwargs):
 @must_be_valid_project # returns project
 @must_have_permission('write')
 def project_generate_private_link_post(*args, **kwargs):
-    """ Add contributors to a node. """
+    """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    link = node_to_use.add_private_link()
+    label = request.json.get('label','')
+
+    link = new_private_link(
+        label =label, user=auth.user
+    )
+    if node_to_use._id not in node_ids:
+        node_ids.append(node_to_use._id)
 
     for node_id in node_ids:
         node = Node.load(node_id)
-        node.add_private_link(link)
+        node.private_links.append(link)
+        node.save()
 
     return {'status': 'success'}, 201
 

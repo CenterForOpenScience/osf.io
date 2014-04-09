@@ -40,7 +40,7 @@ from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory
 )
 
 
@@ -57,13 +57,14 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
-        self.key = self.project.add_private_link()
+        self.link = PrivateLinkFactory()
+        self.project.private_links.append(self.link)
         self.project.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url,{'key': self.key})
+        res = self.app.get(self.project_url,{'key': self.link.key})
         assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
@@ -79,17 +80,17 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'key': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_has_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_has_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
         res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
         assert_is_redirect(res)
         redirected = res.follow()
-        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.request.GET['key'], self.link.key)
         assert_equal(redirected.status_code, 200)
 
     def test_logged_in_with_no_key_ring(self):
@@ -98,18 +99,21 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_with_private_key_with_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
-        key2 = self.project.add_private_link()
-        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
-        assert_equal(res.request.GET['key'], key2)
-        assert_equal(res.status_code, 200)
+        link2 = PrivateLinkFactory(key="123456")
+        res = self.app.get(self.project_url, {'key': link2.key}, auth=self.user.auth)
+        assert_equal(res.request.GET['key'], link2.key)
+        assert_equal(res.status_code, 302)
+        res2 = res.maybe_follow(auth=self.user.auth)
+        assert_equal(res2.request.GET['key'], self.link.key)
+        assert_equal(res2.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
     def test_prepare_private_key(self):
-        res = self.app.get(self.project_url, {'key': self.key})
+        res = self.app.get(self.project_url, {'key': self.link.key})
 
         res = res.click('Registrations')
 
@@ -117,12 +121,12 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.GET['key'], self.key)
+        assert_equal(res.request.GET['key'], self.link.key)
 
     def test_choose_key(self):
         # User is not logged in, goes to route with a private key
         res = choose_key(
-            key=self.key,
+            key=self.link.key,
             key_ring=set(),
             api_node='doesntmatter',
             node=self.project,
@@ -132,7 +136,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_choose_key_form_key_ring(self):
         with app.test_request_context():
-            res = choose_key('nope', key_ring=set([self.key]), node=self.project,
+            res = choose_key('nope', key_ring=set([self.link.key]), node=self.project,
                 auth=Auth(None))
         assert_true(isinstance(res, Response))
 
@@ -510,6 +514,20 @@ class TestProjectViews(OsfTestCase):
         assert_equal(self.project.is_deleted, True)
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
+
+    def test_remove_private_link(self):
+        link = PrivateLinkFactory()
+        self.project.private_links.append(link)
+        self.project.save()
+        with app.test_request_context():
+            url = api_url_for(
+                'remove_private_link',
+                pid=self.project._primary_key
+            )
+        self.app.delete_json(url, {'private_link_id': link._id}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_true(link.is_deleted)
 
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)

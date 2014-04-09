@@ -78,7 +78,7 @@ def dropbox_download(path, node_addon, **kwargs):
     if not path:
         raise HTTPError(http.BAD_REQUEST)
     client = get_node_addon_client(node_addon)
-    revision = request.args.get('rev')
+    revision = request.args.get('rev') or ''
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
     return make_file_response(fileobject, metadata)
 
@@ -99,7 +99,7 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
         file_obj = None
     for revision in revisions:
         # Add download and view links
-        rev = revision['rev']
+        rev = revision.get('rev') or ''
         if file_obj:
             download_url = file_obj.download_url(guid=True, rev=rev)
             view_url = file_obj.url(guid=True, rev=rev)
@@ -129,7 +129,7 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
-    rev = request.args.get('rev')
+    rev = request.args.get('rev') or ''
     rendered = render_dropbox_file(file_obj, client=client, rev=rev)
     cleaned_path = clean_path(path)
     response = {
@@ -154,5 +154,5 @@ def dropbox_render_file(path, node_addon, auth, **kwargs):
     node = node_addon.owner
     file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     client = get_node_addon_client(node_addon)
-    rev = request.args.get('rev')
+    rev = request.args.get('rev', '')
     return render_dropbox_file(file_obj, client=client, rev=rev)

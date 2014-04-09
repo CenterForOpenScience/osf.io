@@ -221,7 +221,7 @@ class GitlabGuidFile(GuidFile):
     def file_url(self):
         if self.path is None:
             raise ValueError('Path field must be defined.')
-        return os.path.join('gitlab', 'files', self.path)
+        return os.path.join(gitlab_settings.ROUTE, 'files', self.path)
 
     @classmethod
     def get_or_create(cls, node_settings, path, ref=None, client=None):
