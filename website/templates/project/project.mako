@@ -55,11 +55,9 @@
 
         <div class="citations">
 
-            ##            <span class="citation-label">Citation:</span>
-            ##                <span>${node['display_absolute_url']}</span>
-            ##                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                            <div class="citation-list">
-                <span><b>Citation:</b>
+                        <span class="citation-label">Citation:</span>
+                        <div class="citation-list">
+##                <span><b>Citation:</b>
                 <form id="citationForm" action="#">
                     <select id="humanStyles">
                         <option value="OSFURL">Permanent OSF URL</option>
