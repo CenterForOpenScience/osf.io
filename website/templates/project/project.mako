@@ -99,7 +99,7 @@
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
             % if 'write' in user['permissions']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent" ${"disabled" if node['is_registration'] else ''}>Add Component</a>
                 <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
             % else:
                 <a class="btn btn-default disabled">Add Component</a>

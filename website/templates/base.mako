@@ -169,6 +169,8 @@
         // Enable knockout punches
         ko.punches.enableAll();
         // Filebrowser dependencies
+        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.js'],
+            'zeroclipboard');
         $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
         $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'

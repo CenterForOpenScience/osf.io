@@ -2,7 +2,10 @@
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'zeroclipboard', 'osfutils'], factory);
     } else {
-        global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
+        $script.ready(['zeroclipboard'], function (){
+            global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
+            $script.done('privateLinkTable');
+        });
     }
 }(this, function(ko, $, ZeroClipboard) {
 
@@ -121,9 +124,9 @@
         var self = this;
         self.viewModel = new ViewModel(url);
         $.osf.applyBindings(self.viewModel, selector);
-        window.viewModel = self.viewModel;
-    }
 
+    }
+    console.log("before return")
     return PrivateLinkTable;
 
 }));

@@ -4,6 +4,7 @@
         define(['jquery', 'knockout', 'osfutils'], factory);
     } else {
         global.PrivateLinkManager  = factory(jQuery, ko);
+        $script.done("privateLinkManager");
     }
 }(this, function($, ko) {
 
