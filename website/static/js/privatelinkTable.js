@@ -126,7 +126,6 @@
         $.osf.applyBindings(self.viewModel, selector);
 
     }
-    console.log("before return")
     return PrivateLinkTable;
 
 }));

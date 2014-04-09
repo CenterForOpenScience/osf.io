@@ -22,7 +22,7 @@
                             <th class="col-sm-1"></th>
                             </tr>
                         </thead>
-                        <tr data-bind="if: userIsAdmin">
+                        <tr data-bind="if: canEdit">
                             <td colspan="3">
                                 <a href="#addContributors" data-toggle="modal">
                                     Click to add a contributor
@@ -31,7 +31,7 @@
                         </tr>
                         <tbody data-bind="sortable: {template: 'contribTpl',
                             data: contributors, as: 'contributor',
-                            isEnabled: userIsAdmin,
+                            isEnabled: canEdit,
                             afterRender: setupEditable,
                             options: {containment: '#manageContributors'}}">
                         </tbody>
@@ -102,7 +102,7 @@
             <span data-bind="text: contributor.fullname"></span>
         </td>
         <td>
-            <!-- ko if: $parent.userIsAdmin -->
+            <!-- ko if: $parent.canEdit -->
                 <span data-bind="visible: notDeleteStaged">
                     <a href="#" class="permission-editable" data-type="select"></a>
                 </span>
@@ -110,12 +110,12 @@
                     <span data-bind="text: formatPermission"></span>
                 </span>
             <!-- /ko -->
-            <!-- ko ifnot: $parent.userIsAdmin -->
+            <!-- ko ifnot: $parent.canEdit -->
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
         <td>
-            <!-- ko if: $parent.userIsAdmin -->
+            <!-- ko if: $parent.canEdit -->
                 <!-- ko ifnot: deleteStaged -->
                     <a
                             class="btn btn-danger contrib-button btn-mini"
@@ -128,8 +128,9 @@
                     Removed
                 <!-- /ko -->
             <!-- /ko -->
-            <!-- ko ifnot: $parent.userIsAdmin -->
-                <!-- ko if: contributorIsUser -->
+
+            <!-- ko ifnot: $parent.canEdit -->
+                <!-- ko if: canRemove -->
                     <a
                             class="btn btn-danger contrib-button btn-mini"
                             data-bind="click: removeSelf"
@@ -160,7 +161,8 @@
     $script(['/static/js/contribManager.js'], function() {
         var contributors = ${json.dumps(contributors)};
         var user = ${json.dumps(user)};
-        var manager = new ContribManager('#manageContributors', contributors, user);
+        var isRegistration = ${json.dumps(node['is_registration'])};
+        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
 
     $script(['/static/js/privateLinkManager.js',
