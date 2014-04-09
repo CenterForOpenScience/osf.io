@@ -1,6 +1,7 @@
 import os
 import base64
 import urllib
+import logging
 import httplib as http
 from flask import request, redirect, make_response
 from mako.template import Template
@@ -30,6 +31,9 @@ from website.addons.gitlab.utils import (
     get_default_file_sha
 )
 from website.addons.gitlab import settings as gitlab_settings
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_cache_file(path, sha):
@@ -424,3 +428,29 @@ def gitlab_get_rendered_file(**kwargs):
 
     cache_file = get_cache_file(path, sha)
     return get_cache_content(node_settings, cache_file)
+
+
+@must_be_contributor_or_public
+@must_have_addon('gitlab', 'node')
+def gitlab_osffiles_url(project, node=None, fid=None, vid=None, **kwargs):
+    """Redirect pre-GitLab URLs to current URLs. Raises 404 if version is
+    specified but not found in routing table.
+
+    """
+    node = node or project
+
+    if vid is None:
+        return redirect(node.url_for('gitlab_download_file', path=fid))
+
+    node_routes = settings.COMPAT_ROUTES.get(node._id, {})
+    file_versions = node_routes.get(fid, {})
+    try:
+        return redirect(
+            node.web_url_for(
+                'gitlab_download_file',
+                sha=file_versions[vid]
+            )
+        )
+    except KeyError:
+        logger.warn('No route found for file {0}:{1}'.format(fid, vid))
+        raise HTTPError(http.NOT_FOUND)

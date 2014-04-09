@@ -111,6 +111,44 @@ page_routes = {
             notemplate,
         ),
 
+        # Backwards compatibility with OSF Storage
+        Rule(
+            [
+
+                # Download file
+                # '/project/<pid>/osffiles/<fid>/download/',
+                # '/project/<pid>/node/<nid>/osffiles/<fid>/download/',
+                '/project/<pid>/osffiles/download/<fid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/',
+                '/project/<pid>/files/<fid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/',
+                '/project/<pid>/files/download/<fid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/',
+                '/api/v1/project/<pid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/',
+
+                # Download file by version
+                # '/project/<pid>/osffiles/<fid>/version/<vid>/download/',
+                # '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
+                '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
+                '/project/<pid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/<fid>/version/<vid>/',
+                '/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/files/download/<fid>/version/<vid>/',
+                '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
+
+            ],
+            'get',
+            views.crud.gitlab_osffiles_url,
+            notemplate,
+        )
+
     ],
 
 }
