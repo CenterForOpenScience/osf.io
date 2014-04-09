@@ -212,7 +212,7 @@ class TestDropboxGuidFile(DbTestCase):
             file_url = file_obj.url(guid=False)
 
         url = lookup('web', 'dropbox_view_file',
-            pid=project._primary_key, path=file_obj.path)
+            pid=project._primary_key, path=file_obj.path, rev='')
         assert_equal(url, file_url)
 
     def test_guid_url(self):
@@ -237,6 +237,7 @@ class TestDropboxGuidFile(DbTestCase):
         with app.test_request_context():
             dl_url = file_obj.download_url(guid=False)
             expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
+                rev='',
                 _absolute=True)
         assert_equal(dl_url, expected)
 
