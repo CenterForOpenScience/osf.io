@@ -32,3 +32,11 @@ un-selected Dataverse study
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="dataverse_study_released">
+released a new version of Dataverse study
+<span data-bind="text: params.dataverse.dataverse"></span> /
+<span data-bind="text: params.dataverse.study"></span> for
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>

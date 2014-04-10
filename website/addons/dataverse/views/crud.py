@@ -140,21 +140,22 @@ def dataverse_upload_file(**kwargs):
     file_id = study.get_file(filename).id
 
     if file_id is not None:
-        node.add_log(
-            action='dataverse_file_added',
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-                'filename': filename,
-                'path': node.web_url_for('dataverse_view_file', path=file_id),
-                'dataverse': {
-                    'dataverse': dataverse.title,
-                    'study': study.get_title(),
-                }
-            },
-            auth=auth,
-            log_date=now,
-        )
+        # TODO: Should changes to draft versions of studies be logged?
+        # node.add_log(
+        #     action='dataverse_file_added',
+        #     params={
+        #         'project': node.parent_id,
+        #         'node': node._primary_key,
+        #         'filename': filename,
+        #         'path': node.web_url_for('dataverse_view_file', path=file_id),
+        #         'dataverse': {
+        #             'dataverse': dataverse.title,
+        #             'study': study.get_title(),
+        #         }
+        #     },
+        #     auth=auth,
+        #     log_date=now,
+        # )
 
         info = {
             'addon': 'dataverse',
@@ -211,20 +212,21 @@ def dataverse_delete_file(**kwargs):
 
     # TODO: Check if file was deleted
 
-    node.add_log(
-        action='dataverse_file_removed',
-        params={
-            'project': node.parent_id,
-            'node': node._primary_key,
-            'filename': file.name,
-            'dataverse': {
-                'dataverse': dataverse.title,
-                'study': study.get_title(),
-            }
-        },
-        auth=auth,
-        log_date=now,
-    )
+    # TODO: Should changes to draft versions of studies be logged?
+    # node.add_log(
+    #     action='dataverse_file_removed',
+    #     params={
+    #         'project': node.parent_id,
+    #         'node': node._primary_key,
+    #         'filename': file.name,
+    #         'dataverse': {
+    #             'dataverse': dataverse.title,
+    #             'study': study.get_title(),
+    #         }
+    #     },
+    #     auth=auth,
+    #     log_date=now,
+    # )
 
     return {}
 
