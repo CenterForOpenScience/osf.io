@@ -145,27 +145,53 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
         params = {'dataverse_number': 0}
 
+        # Select a different dataverse
         self.app.post_json(url, params, auth=self.user.auth)
+        self.project.reload()
         self.node_settings.reload()
 
+        # Dataverse has changed
         assert_equal(self.node_settings.dataverse_number, 0)
         assert_equal(self.node_settings.dataverse, 'Example 1')
+
+        # Study was unselected
         assert_equal(self.node_settings.study, None)
         assert_equal(self.node_settings.study_hdl, None)
+
+        # Log states that a study was unselected
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_study_unlinked')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
+        assert_equal(log_params['dataverse']['study'],
+                     'Example (DVN/00001)')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
         url = lookup('api', 'set_study', pid=self.project._primary_key)
-        params = {'study_hdl': 'DVN/00001'}
+        params = {'study_hdl': 'DVN/00002'}
 
+        # Select a different study
         self.app.post_json(url, params, auth=self.user.auth)
+        self.project.reload()
         self.node_settings.reload()
 
+        # New study was selected, dataverse was unchanged
         assert_equal(self.node_settings.dataverse_number, 1)
-        assert_equal(self.node_settings.study, 'Example (DVN/00001)')
-        assert_equal(self.node_settings.study_hdl, 'DVN/00001')
+        assert_equal(self.node_settings.study, 'Example (DVN/00002)')
+        assert_equal(self.node_settings.study_hdl, 'DVN/00002')
+
+        # Log states that a study was selected
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_study_linked')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
+        assert_equal(log_params['dataverse']['study'],
+                     'Example (DVN/00002)')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_study_to_none(self, mock_connection):
@@ -174,12 +200,24 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         url = lookup('api', 'set_study', pid=self.project._primary_key)
         params = {'study_hdl': 'None'}
 
+        # Set study to none
         self.app.post_json(url, params, auth=self.user.auth)
+        self.project.reload()
         self.node_settings.reload()
 
+        # Study is none, dataverse is unchanged
         assert_equal(self.node_settings.dataverse_number, 1)
         assert_equal(self.node_settings.study, None)
         assert_equal(self.node_settings.study_hdl, None)
+
+        # Log states that a study was unselected
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_study_unlinked')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
+        assert_equal(log_params['dataverse']['study'],
+                     'Example (DVN/00001)')
 
 
 def test_scrape_dataverse():
