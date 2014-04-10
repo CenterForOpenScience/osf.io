@@ -22,7 +22,7 @@ def dataverse_set_user_config(*args, **kwargs):
     if connection is None:
         raise HTTPError(http.UNAUTHORIZED)
 
-    # Dataverse account must have at least 1 Dataverse
+    # Credentials are valid, but there are no dataverses
     if not connection.get_dataverses():
         raise HTTPError(http.BAD_REQUEST)
 

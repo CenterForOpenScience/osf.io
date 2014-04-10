@@ -175,7 +175,7 @@ class TestDataverseViewsConfig(DbTestCase):
         self.user_settings.reload()
 
         # Original user's info has not changed
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
         assert_equal(self.user_settings.dataverse_username, 'snowman')
         assert_equal(self.user_settings.dataverse_password, 'frosty')
 
@@ -185,7 +185,7 @@ class TestDataverseViewsConfig(DbTestCase):
         user_settings.reload()
 
         # New user's incorrect credentials were not saved
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
         assert_equal(user_settings.dataverse_username, None)
         assert_equal(user_settings.dataverse_password, None)
 
