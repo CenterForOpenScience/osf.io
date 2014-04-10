@@ -11,6 +11,8 @@ import hurry
 
 def dataverse_hgrid_data(node_settings, auth, **kwargs):
 
+    node = node_settings.owner
+
     connection = connect(
         node_settings.dataverse_username,
         node_settings.dataverse_password
@@ -27,9 +29,9 @@ def dataverse_hgrid_data(node_settings, auth, **kwargs):
     )
 
     urls = {
-        'upload': node_settings.owner.api_url + 'dataverse/file/',
-        'fetch': node_settings.owner.api_url + 'dataverse/hgrid/',
-        'branch': node_settings.owner.api_url + 'dataverse/hgrid/root/',
+        'upload': node.api_url_for('dataverse_upload_file'),
+        'fetch': node.api_url_for('dataverse_hgrid_data_contents'),
+        'branch': node.api_url_for('dataverse_root_folder_public'),
     }
 
     return [rubeus.build_addon_root(
@@ -77,15 +79,16 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     for f in study.get_files():
 
-        url = os.path.join(node_settings.owner.api_url, 'dataverse', 'file', f.id) + '/'
-
         item = {
             rubeus.KIND: rubeus.FILE,
             'name': f.name,
             'urls': {
-                'view': url,
-                'download': '{0}download/'.format(url),
-                'delete': url,
+                    'view': node.web_url_for('dataverse_view_file',
+                                             path=f.id),
+                    'download': node.api_url_for('dataverse_download_file',
+                                                 path=f.id),
+                    'delete': node.api_url_for('dataverse_delete_file',
+                                               path=f.id),
             },
             'permissions': {
                 'view': can_view,

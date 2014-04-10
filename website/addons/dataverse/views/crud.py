@@ -78,7 +78,7 @@ def dataverse_view_file(**kwargs):
     file = study.get_file_by_id(file_id)
 
     # Get file URL
-    url = os.path.join(node.api_url, 'dataverse', 'file', file_id) + '/'
+    url = node.web_url_for('dataverse_view_file', path=file_id)
 
     # Get or create rendered file
     _, ext = os.path.splitext(file.name)
@@ -95,9 +95,11 @@ def dataverse_view_file(**kwargs):
 
     rv = {
         'file_name': file.name,
-        'render_url': '{0}render/'.format(url),
         'rendered': rendered,
-        'download_url': '{0}proxy/'.format(url),
+        'render_url': node.api_url_for('dataverse_get_rendered_file',
+                                       path=file_id),
+        'download_url': node.api_url_for('dataverse_download_file',
+                                         path=file_id),
     }
     rv.update(_view_project(node, auth))
     return rv
@@ -144,9 +146,7 @@ def dataverse_upload_file(**kwargs):
                 'project': node.parent_id,
                 'node': node._primary_key,
                 'filename': filename,
-                'path': os.path.join(
-                    node.api_url, 'dataverse', 'file', file_id
-                ) + '/',
+                'path': node.web_url_for('dataverse_view_file', path=file_id),
                 'dataverse': {
                     'dataverse': dataverse.title,
                     'study': study.get_title(),
@@ -155,8 +155,6 @@ def dataverse_upload_file(**kwargs):
             auth=auth,
             log_date=now,
         )
-
-        url = os.path.join(node.api_url, 'dataverse', 'file', file_id) + '/'
 
         info = {
             'addon': 'dataverse',
@@ -167,9 +165,12 @@ def dataverse_upload_file(**kwargs):
             ],
             'kind': 'file',
             'urls': {
-                    'view': url,
-                    'download': '{0}download/'.format(url),
-                    'delete': url,
+                    'view': node.web_url_for('dataverse_view_file',
+                                             path=file_id),
+                    'download': node.api_url_for('dataverse_download_file',
+                                                 path=file_id),
+                    'delete': node.api_url_for('dataverse_delete_file',
+                                               path=file_id),
             },
             'permissions': {
                 'view': can_view,

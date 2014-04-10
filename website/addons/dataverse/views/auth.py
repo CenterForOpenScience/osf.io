@@ -8,7 +8,7 @@ from website.addons.dataverse.model import connect
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def authorize(**kwargs):
+def authorize_dataverse(**kwargs):
 
     user = kwargs['auth'].user
 
@@ -38,7 +38,7 @@ def authorize(**kwargs):
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def unauthorize(*args, **kwargs):
+def unauthorize_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
 

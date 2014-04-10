@@ -6,7 +6,7 @@ from webtest_plus import TestApp
 import httplib as http
 from framework.auth.decorators import Auth
 import website.app
-from tests.base import DbTestCase
+from tests.base import DbTestCase, URLLookup
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.dataverse.views.crud import scrape_dataverse
 
@@ -15,6 +15,7 @@ from utils import create_mock_connection
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
 )
+lookup = URLLookup(app)
 
 
 class TestDataverseViewsAuth(DbTestCase):
@@ -48,7 +49,8 @@ class TestDataverseViewsAuth(DbTestCase):
     def test_authorize(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = self.project.api_url + 'dataverse/authorize/'
+        url = lookup('api', 'authorize_dataverse',
+                     pid=self.project._primary_key)
         self.app.post_json(url, auth=self.user.auth)
 
         self.node_settings.reload()
@@ -62,12 +64,14 @@ class TestDataverseViewsAuth(DbTestCase):
     def test_authorize_fail(self, mock_connection):
         mock_connection.return_value = create_mock_connection('wrong', 'info')
 
-        url = self.project.api_url + 'dataverse/authorize/'
+        url = lookup('api', 'authorize_dataverse',
+                     pid=self.project._primary_key)
         res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_unauthorize(self):
-        url = self.project.api_url + 'dataverse/unauthorize/'
+        url = lookup('api', 'unauthorize_dataverse',
+                     pid=self.project._primary_key)
         self.app.post_json(url, auth=self.user.auth)
 
         self.node_settings.reload()
@@ -193,7 +197,7 @@ class TestDataverseViewsConfig(DbTestCase):
     def test_set_dataverse(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = self.project.api_url + 'dataverse/set/'
+        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
         params = {'dataverse_number': 0}
 
         self.app.post_json(url, params, auth=self.user.auth)
@@ -208,7 +212,7 @@ class TestDataverseViewsConfig(DbTestCase):
     def test_set_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = self.project.api_url + 'dataverse/set/study/'
+        url = lookup('api', 'set_study', pid=self.project._primary_key)
         params = {'study_hdl': 'DVN/00001'}
 
         self.app.post_json(url, params, auth=self.user.auth)
@@ -222,7 +226,7 @@ class TestDataverseViewsConfig(DbTestCase):
     def test_set_study_to_none(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = self.project.api_url + 'dataverse/set/study/'
+        url = lookup('api', 'set_study', pid=self.project._primary_key)
         params = {'study_hdl': 'None'}
 
         self.app.post_json(url, params, auth=self.user.auth)

@@ -26,11 +26,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/authorize/',
             '/project/<pid>/node/<nid>/dataverse/authorize/',
-        ], 'post', views.auth.authorize, json_renderer),
+        ], 'post', views.auth.authorize_dataverse, json_renderer),
         Rule([
             '/project/<pid>/dataverse/unauthorize/',
             '/project/<pid>/node/<nid>/dataverse/unauthorize/',
-        ], 'post', views.auth.unauthorize, json_renderer),
+        ], 'post', views.auth.unauthorize_dataverse, json_renderer),
 
         # User Settings
         Rule(
