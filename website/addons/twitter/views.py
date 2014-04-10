@@ -10,10 +10,10 @@ from website.project.decorators import must_have_addon,must_have_permission
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from framework.status import push_status_message
 from website.addons.twitter.tests.utils import check_tweet
-from website.addons.twitter.settings.defaults import CONSUMER_KEY, CONSUMER_SECRET
+from website.addons.twitter.settings import CONSUMER_KEY, CONSUMER_SECRET
 
 @must_be_valid_project
-@must_have_addon('node', 'twitter')
+@must_have_addon('twitter', 'node')
 def twitter_oauth_start(*args, **kwargs):
     """Gets request token from twitter to create OAuthHandler instance
 

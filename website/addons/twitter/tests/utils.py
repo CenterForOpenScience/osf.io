@@ -1,5 +1,5 @@
 import tweepy
-from website.addons.twitter.settings.defaults import CONSUMER_KEY, CONSUMER_SECRET
+from website.addons.twitter.settings import CONSUMER_KEY, CONSUMER_SECRET
 from framework.exceptions import HTTPError
 
 

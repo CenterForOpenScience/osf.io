@@ -16,52 +16,46 @@
     % if authorized_user:
         <a id="twitterDelKey" class="btn btn-danger">Unauthorize: Delete Access Token</a>
         <a class = "btn btn-primary">Authorized by @${authorized_user}</a>
-            <div class="form-group">
-    <label for="twitterUser">Enter # tweets to display on dashboard</label>
-    <input class="form-control" type = "number" id="displayed_tweets" name="displayed_tweets" value="${displayed_tweets}" ${'disabled' if disabled else ''} />
-</div>
-<div class="form-group" id ="twitter_logs" name ="twitter_logs">
-
-<p>Select any "events" you want to tweet, and enter a custom message.  When the event occurs,
-    a tweet will automatically be posted with your message.
-</p>
-    % for action in POSSIBLE_ACTIONS:
-        <%   parsed_action_list = action.split('_')%>
-        <%   parsed_action = ''.join((parsed_action_list[0],' ',parsed_action_list[1])) %>
-        <%   parsed_action = parsed_action.title() %>
-        <%   DEFAULT_MESSAGE = DEFAULT_MESSAGES.get(action) %>
-
-        <label>
-            <input id= "${action}" name="${action}" type="checkbox" ${'checked="checked"' if action in log_actions \
-             else ''}>${parsed_action}
-
-            <input name = "${action}_message"   class = "${action}_message" value =
-            "${ log_messages.get(action+'_message', DEFAULT_MESSAGE) }" ${'type="text"' \
-            if action in log_actions else 'hidden'} >
-
-        </label>
-
-        </br>
-    % endfor
-        <hr>
+        <div class="form-group">
+            <label for="twitterUser">Enter # tweets to display on dashboard</label>
+            <input class="form-control" type = "number" id="displayed_tweets" name="displayed_tweets" value="${displayed_tweets}" ${'disabled' if disabled else ''} />
          </div>
+        <div class="form-group" id ="twitter_logs" name ="twitter_logs">
+            <p>Select any "events" you want to tweet, and enter a custom message.  When the event occurs,
+               a tweet will automatically be posted with your message.
+            </p>
+            % for action in POSSIBLE_ACTIONS:
+                <%   parsed_action_list = action.split('_')%>
+                <%   parsed_action = ''.join((parsed_action_list[0],' ',parsed_action_list[1])) %>
+                <%   parsed_action = parsed_action.title() %>
+                <%   DEFAULT_MESSAGE = DEFAULT_MESSAGES.get(action) %>
+            <label>
+                <input id= "${action}" name="${action}" type="checkbox" ${'checked="checked"' if action in log_actions \
+                else ''}>${parsed_action}
+
+                <input name = "${action}_message"   class = "${action}_message" value =
+                "${ log_messages.get(action+'_message', DEFAULT_MESSAGE) }" ${'type="text"' \
+                if action in log_actions else 'hidden'} >
+            </label>
+            </br>
+    % endfor
+            <hr>
+        </div>
+
         </br>
 
     % else:
         <a id="twitterAddKey" class="btn btn-primary">
-
             % if user_has_authorization:
                 Authorize: Import Token from Profile
             % else:
                 Authorize: Create Access Token
             % endif
 
-            </a>
+        </a>
     % endif
-
 </div>
-
-<br />
+<br/>
 
 <script type="text/javascript">
 
@@ -92,8 +86,6 @@
             }
             else {
                  $('.'+$message_id).hide();
-
-
             }
         });
 
