@@ -1,7 +1,7 @@
 import mock
 from nose.tools import *
 from webtest_plus import TestApp
-import tweepy
+import unittest
 from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
@@ -36,18 +36,18 @@ class TestTwitterViewsConfig(DbTestCase):
         self.node_url = '/api/v1/project/{0}/'.format(
             self.project._id
         )
+    @unittest.skip('This test is not working')
+    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
+    def test_revoked_oauth_send_tweet(self, mock_send_tweet):
 
-    #@mock.patch('website.addons.twitter.tests.utils.send_tweet')
-    #def test_revoked_oauth_send_tweet(self, mock_send_tweet):
-    #
-    #    mock_send_tweet.side_effect = tweepy.TweepError([{'message':'error', 'code':'186'}])
-    #    url = self.project.api_url+'twitter/update_status/'
-    #    res = self.app.post_json(
-    #        url,
-    #        { 'status':'....'},
-    #        auth=self.consolidated_auth
-    #    ).maybe_follow()
-    #    assert_equal(res.status_code, 400)
+        mock_send_tweet.side_effect = tweepy.TweepError([{'message':'error', 'code':'186'}])
+        url = self.project.api_url+'twitter/update_status/'
+        res = self.app.post_json(
+            url,
+            { 'status':'....'},
+            auth=self.consolidated_auth
+        ).maybe_follow()
+        assert_equal(res.status_code, 400)
 
 
     @mock.patch('website.addons.twitter.tests.utils.send_tweet')

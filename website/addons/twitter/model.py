@@ -28,7 +28,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
             'displayed_tweets': self.displayed_tweets or '',
             'log_actions': self.log_actions or '',
             'log_messages': self.log_messages or DEFAULT_MESSAGES,
-            'POSSIBLE_ACTIONS':POSSIBLE_ACTIONS,
+            'POSSIBLE_ACTIONS': POSSIBLE_ACTIONS,
             'DEFAULT_MESSAGES': DEFAULT_MESSAGES,
         })
         return rv

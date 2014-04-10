@@ -49,12 +49,14 @@
 
     % else:
         <a id="twitterAddKey" class="btn btn-primary">
+
             % if user_has_authorization:
                 Authorize: Import Token from Profile
             % else:
                 Authorize: Create Access Token
             % endif
-        </a>
+
+            </a>
     % endif
 
 </div>
