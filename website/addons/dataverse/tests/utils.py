@@ -1,8 +1,35 @@
 import mock
+
+from webtest_plus import TestApp
+
+import website
+from website.addons.base.testing import AddonTestCase
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.study import Study
 
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings'
+)
+
+
+class DataverseAddonTestCase(AddonTestCase):
+    ADDON_SHORT_NAME = 'dataverse'
+
+    def create_app(self):
+        return TestApp(app)
+
+    def set_user_settings(self, settings):
+        settings.dataverse_username = 'snowman'
+        settings.dataverse_password = 'frosty'
+
+    def set_node_settings(self, settings):
+        settings.dataverse_username = 'snowman'
+        settings.dataverse_password = 'frosty'
+        settings.dataverse_number = 1
+        settings.dataverse = 'Example 2'
+        settings.study_hdl = 'DVN/00001'
+        settings.study = 'Example (DVN/00001)'
 
 def create_mock_connection(username='snowman', password='frosty'):
     """

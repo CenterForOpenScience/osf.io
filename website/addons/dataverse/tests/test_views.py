@@ -1,49 +1,18 @@
 import nose
 from nose.tools import *
 import mock
-from webtest_plus import TestApp
 
 import httplib as http
-from framework.auth.decorators import Auth
-import website.app
-from tests.base import DbTestCase, URLLookup
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.base import URLLookup
+from tests.factories import AuthUserFactory
 from website.addons.dataverse.views.crud import scrape_dataverse
 
-from utils import create_mock_connection
+from utils import create_mock_connection, DataverseAddonTestCase, app
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
 lookup = URLLookup(app)
 
 
-class TestDataverseViewsAuth(DbTestCase):
-
-    def setUp(self):
-        self.app = TestApp(app)
-        self.user = AuthUserFactory()
-        self.consolidated_auth = Auth(user=self.user)
-        self.project = ProjectFactory(creator=self.user)
-
-        self.project.add_addon('dataverse', auth=self.consolidated_auth)
-        self.user.add_addon('dataverse')
-
-        self.user_settings = self.user.get_addon('dataverse')
-        self.user_settings.dataverse_username = 'snowman'
-        self.user_settings.dataverse_password = 'frosty'
-        self.user_settings.save()
-
-        self.node_settings = self.project.get_addon('dataverse')
-        self.node_settings.user_settings = self.project.creator.get_addon('dataverse')
-        self.node_settings.dataverse_username = self.user_settings.dataverse_username
-        self.node_settings.dataverse_password = self.user_settings.dataverse_password
-        self.node_settings.dataverse_number = 1
-        self.node_settings.dataverse = 'Example 2'
-        self.node_settings.study_hdl = 'DVN/00001'
-        self.node_settings.study = 'Example (DVN/00001)'
-        self.node_settings.user = self.user
-        self.node_settings.save()
+class TestDataverseViewsAuth(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.auth.connect')
     def test_authorize(self, mock_connection):
@@ -111,31 +80,7 @@ class TestDataverseViewsAuth(DbTestCase):
         assert_false(self.node_settings.user)
 
 
-class TestDataverseViewsConfig(DbTestCase):
-    def setUp(self):
-        self.app = TestApp(app)
-        self.user = AuthUserFactory()
-        self.consolidated_auth = Auth(user=self.user)
-        self.project = ProjectFactory(creator=self.user)
-
-        self.project.add_addon('dataverse', auth=self.consolidated_auth)
-        self.user.add_addon('dataverse')
-
-        self.user_settings = self.user.get_addon('dataverse')
-        self.user_settings.dataverse_username = 'snowman'
-        self.user_settings.dataverse_password = 'frosty'
-        self.user_settings.save()
-
-        self.node_settings = self.project.get_addon('dataverse')
-        self.node_settings.user_settings = self.project.creator.get_addon('dataverse')
-        self.node_settings.dataverse_username = self.user_settings.dataverse_username
-        self.node_settings.dataverse_password = self.user_settings.dataverse_password
-        self.node_settings.dataverse_number = 1
-        self.node_settings.dataverse = 'Example 2'
-        self.node_settings.study_hdl = 'DVN/00001'
-        self.node_settings.study = 'Example (DVN/00001)'
-        self.node_settings.user = self.user
-        self.node_settings.save()
+class TestDataverseViewsConfig(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_user_config(self, mock_connection):
