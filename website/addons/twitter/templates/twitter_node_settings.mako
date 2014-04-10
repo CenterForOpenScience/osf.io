@@ -22,7 +22,8 @@
 </div>
 <div class="form-group" id ="twitter_logs" name ="twitter_logs">
 
-<p>Select any "events" you want to tweet, and enter a custom message.  When the event occurs, a tweet will automatically be posted with your message.
+<p>Select any "events" you want to tweet, and enter a custom message.  When the event occurs,
+    a tweet will automatically be posted with your message.
 </p>
     % for action in POSSIBLE_ACTIONS:
         <%   parsed_action_list = action.split('_')%>
@@ -31,16 +32,19 @@
         <%   DEFAULT_MESSAGE = DEFAULT_MESSAGES.get(action) %>
 
         <label>
-            <input id= "${action}" name="${action}" type="checkbox" ${'checked="checked"' if action in log_actions   else ''}>${parsed_action}
+            <input id= "${action}" name="${action}" type="checkbox" ${'checked="checked"' if action in log_actions \
+             else ''}>${parsed_action}
 
-            <input name = "${action}_message"   class = "${action}_message" value = "${ log_messages.get(action+'_message', DEFAULT_MESSAGE) }" ${'type="text"' if action in log_actions else 'hidden'} >
+            <input name = "${action}_message"   class = "${action}_message" value =
+            "${ log_messages.get(action+'_message', DEFAULT_MESSAGE) }" ${'type="text"' \
+            if action in log_actions else 'hidden'} >
 
         </label>
 
         </br>
     % endfor
-    <hr>
-          </div>
+        <hr>
+         </div>
         </br>
 
     % else:

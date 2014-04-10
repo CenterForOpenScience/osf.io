@@ -39,23 +39,23 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
         if (log.action == 'edit_title'):
             message = self.log_messages.get('edit_title_message')
             new_message = message.format(
-            new_title = log.params['title_new'],
-            old_title = log.params['title_original'],
+                new_title = log.params['title_new'],
+                old_title = log.params['title_original'],
             )
         elif (log.action == 'edit_description'):
             message = self.log_messages.get('edit_description_message')
             new_message = message.format(
-            new_desc = log.params['description_new'],
+                new_desc = log.params['description_new'],
             )
         elif (log.action == 'file_created'):
             message = self.log_messages.get('file_added_message')
             new_message = message.format(
-            filename =  log.params['path'],
+                filename =  log.params['path'],
             )
         elif (log.action == 'tag_added'):
             message = self.log_messages.get('tag_added_message')
             new_message = message.format(
-            tag_name =  log.params['tag'],
+                tag_name =  log.params['tag'],
             )
 
         if len(new_message) > 140:
@@ -68,5 +68,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
           message = self.parse_message(log)
           check_tweet(self,message)
         return{}
+
+
 
 

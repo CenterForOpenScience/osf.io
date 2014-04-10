@@ -1,5 +1,7 @@
-CONSUMER_KEY = 'rohTTQSPWzgIXWw0g5dw'
-CONSUMER_SECRET = '7pmpjEtvoGjnSNCN2GlULrV104uVQQhg60Da7MEEy0'
+CONSUMER_KEY = 'changeme'
+CONSUMER_SECRET = 'changeme'
+
+
 
 
 
