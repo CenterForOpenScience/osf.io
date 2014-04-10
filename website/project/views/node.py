@@ -217,7 +217,8 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-            and 'node' not in addon.added_mandatory
+        and 'node' not in addon.added_mandatory
+        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -576,6 +577,7 @@ def _view_project(node, auth, primary=False):
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
         },
+        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -585,6 +587,17 @@ def _view_project(node, auth, primary=False):
 
     }
     return data
+
+
+def _get_badge(user):
+    if user:
+        badger = user.get_addon('badges')
+        if badger:
+            return {
+                'can_award': badger.can_award,
+                'badges': badger.get_badges_json()
+            }
+    return {}
 
 
 def _get_children(node, auth, indent=0):
