@@ -1,5 +1,6 @@
 from decorator import decorator
 from datetime import datetime
+from flask import request
 
 from framework.mongo import db
 from framework.sessions import session
@@ -37,12 +38,21 @@ def get_total_activity_count(user_id):
     return 0
 
 
+def sorted_qs(data):
+    ordered = sorted(data.items(), key=lambda item: item[0])
+    return '&'.join([
+        '{0}={1}'.format(*item)
+        for item in ordered
+    ])
+
+
 def update_counters(rex):
     def wrapped(func, *args, **kwargs):
         date = datetime.utcnow()
         date = date.strftime('%Y/%m/%d')
+        qs = sorted_qs(request.args.to_dict())
         try:
-            page = rex.format(**kwargs).replace('.', '_')
+            page = rex.format(_qs=qs, **kwargs).replace('.', '_')
         except KeyError:
             return func(*args, **kwargs)
 

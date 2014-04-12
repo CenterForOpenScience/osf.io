@@ -7,6 +7,7 @@ from flask import request, redirect, make_response
 from mako.template import Template
 
 from framework.exceptions import HTTPError
+from framework.analytics import update_counters
 
 from website import settings
 from website.project.decorators import (
@@ -351,6 +352,10 @@ def gitlab_view_file(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
+@update_counters('download:{pid}:{path}:{_qs}')
+@update_counters('download:{nid}:{path}:{_qs}')
+@update_counters('download:{pid}:{path}')
+@update_counters('download:{nid}:{path}')
 def gitlab_download_file(**kwargs):
 
     node_settings = kwargs['node_addon']

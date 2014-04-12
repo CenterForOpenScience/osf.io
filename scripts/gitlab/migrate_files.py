@@ -1,4 +1,5 @@
 import os
+import shutil
 import urlparse
 import subprocess
 
@@ -27,24 +28,29 @@ def migrate_files(source, dest):
     """Clone the source repo to the destionary as a bare repo.
 
     """
-    # Build HTTP URL
-    url = dest_to_http(dest)
+    shutil.rmtree(dest)
 
-    # Add remote, catching exception if already added
-    try:
-        subprocess.check_call(
-            ['git', 'remote', 'add', REMOTE_NAME, url],
-            cwd=source
-        )
-    except subprocess.CalledProcessError as error:
-        if error.returncode != 128:
-            raise
-
-    # Push contents
     subprocess.check_call(
-        ['git', 'push', REMOTE_NAME, BRANCH_NAME],
-        cwd=source
+        ['git', 'clone', '--bare', source, dest]
     )
+    # # Build HTTP URL
+    # url = dest_to_http(dest)
+    #
+    # # Add remote, catching exception if already added
+    # try:
+    #     subprocess.check_call(
+    #         ['git', 'remote', 'add', REMOTE_NAME, url],
+    #         cwd=source
+    #     )
+    # except subprocess.CalledProcessError as error:
+    #     if error.returncode != 128:
+    #         raise
+    #
+    # # Push contents
+    # subprocess.check_call(
+    #     ['git', 'push', REMOTE_NAME, BRANCH_NAME],
+    #     cwd=source
+    # )
 
 
 def walk_repos():
