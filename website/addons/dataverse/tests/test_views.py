@@ -220,6 +220,23 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
                      'Example (DVN/00001)')
 
 
+class TestDataverseViewsCrud(DataverseAddonTestCase):
+
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.Study')
+    def test_delete_file(self, mock_study, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        path = '54321'
+        url = lookup('api', 'dataverse_delete_file',
+                     pid=self.project._primary_key, path=path)
+
+        res = self.app.delete(url=url, auth=self.user.auth)
+
+        mock_study.delete_file.assert_called_once
+        assert_equal(path, mock_study.delete_file.call_args[0][1].id)
+
+
 def test_scrape_dataverse():
     content = scrape_dataverse(2362170)
     assert_not_in('IQSS', content)

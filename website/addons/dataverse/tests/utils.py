@@ -7,6 +7,7 @@ from website.addons.base.testing import AddonTestCase
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.study import Study
+from website.addons.dataverse.dvn.file import DvnFile
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -86,8 +87,18 @@ def create_mock_study(id='DVN/12345'):
     mock_study.get_title.return_value = 'Example ({0})'.format(id)
     mock_study.doi.return_value = 'doi:12.3456/{0}'.format(id)
 
+    mock_study.get_files.return_value = [create_mock_dvn_file()]
+    mock_study.get_file.return_value = create_mock_dvn_file()
+    mock_study.get_file_by_id.return_value = create_mock_dvn_file()
+
     # Fail if not given a valid ID
     if 'DVN' in id:
         return mock_study
 
+def create_mock_dvn_file():
+    mock_file = mock.create_autospec(DvnFile)
 
+    mock_file.name = 'file.txt'
+    mock_file.id = '54321'
+
+    return mock_file

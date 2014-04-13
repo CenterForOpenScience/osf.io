@@ -17,6 +17,7 @@ from website.project.views.file import get_cache_content
 from website.util import rubeus
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.model import connect
+from website.addons.dataverse.dvn.study import Study
 
 import httplib as http
 
@@ -208,7 +209,8 @@ def dataverse_delete_file(**kwargs):
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
 
-    study.delete_file(file)
+    # TODO: Replace with "client" import
+    Study.delete_file(study, file)
 
     # TODO: Check if file was deleted
 
