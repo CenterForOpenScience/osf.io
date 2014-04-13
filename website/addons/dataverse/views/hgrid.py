@@ -1,9 +1,9 @@
 import time
 import os
+from website.addons.dataverse.client import connect
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
-from website.addons.dataverse.model import connect
 from website.util import rubeus
 
 import hurry

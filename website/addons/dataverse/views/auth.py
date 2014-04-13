@@ -2,8 +2,8 @@
 import httplib as http
 
 from framework.exceptions import HTTPError
+from website.addons.dataverse.client import connect
 from website.project import decorators
-from website.addons.dataverse.model import connect
 
 
 @decorators.must_be_contributor

@@ -6,18 +6,11 @@ import os
 
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
-from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.settings import TEST_CERT, HOST
+from website.addons.dataverse.client import connect
+from website.addons.dataverse.settings import HOST
 
 
-def connect(username, password, host=HOST):
-    connection = DvnConnection(
-        username=username,
-        password=password,
-        host=host,
-        cert=TEST_CERT,
-    )
-    return connection if connection.connected else None
+
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):

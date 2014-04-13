@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
+from website.addons.dataverse.client import connect, delete_file
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -16,7 +17,6 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
 from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.model import connect
 from website.addons.dataverse.dvn.study import Study
 
 import httplib as http
@@ -209,8 +209,7 @@ def dataverse_delete_file(**kwargs):
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
 
-    # TODO: Replace with "client" import
-    Study.delete_file(study, file)
+    delete_file(study, file)
 
     # TODO: Check if file was deleted
 
