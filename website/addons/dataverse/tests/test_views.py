@@ -5,9 +5,11 @@ import mock
 import httplib as http
 from tests.base import URLLookup
 from tests.factories import AuthUserFactory
+from webtest import Upload
 from website.addons.dataverse.views.crud import scrape_dataverse
 
-from utils import create_mock_connection, DataverseAddonTestCase, app
+from utils import create_mock_connection, create_mock_dvn_file,\
+    DataverseAddonTestCase, app
 
 lookup = URLLookup(app)
 
@@ -234,7 +236,60 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.delete(url=url, auth=self.user.auth)
 
         mock_delete.assert_called_once
-        assert_equal(path, mock_delete.call_args[0][1].id)
+        assert_equal(path, mock_delete.call_args[0][0].id)
+
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.get_file')
+    def test_upload_file(self, mock_get, mock_upload, mock_connection):
+        mock_get.return_value = None # File does not exist on Dataverse
+        mock_upload.return_value = {}
+        mock_connection.return_value = create_mock_connection()
+
+        # Define payload
+        filename = 'myfile.rst'
+        content = b'baz'
+        path = '54321'
+        payload = {'file': Upload(filename, content,'text/x-rst')}
+
+        # Upload the file
+        url = lookup('api', 'dataverse_upload_file',
+                     pid=self.project._primary_key, path=path)
+        res = self.app.post(url, payload, auth=self.user.auth)
+
+        # File was uploaded
+        assert_equal(res.status_code, http.CREATED)
+        mock_upload.assert_called_once
+
+        # Parameters are correct
+        assert_equal(self.node_settings.study_hdl,
+                     mock_upload.call_args[0][0].get_id())
+        assert_equal(filename, mock_upload.call_args[0][1])
+        assert_equal(content, mock_upload.call_args[0][2])
+
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.get_file')
+    def test_upload_existing(self, mock_get, mock_upload, mock_connection):
+        mock_get.return_value = create_mock_dvn_file() # File already exists
+        mock_upload.return_value = {}
+        mock_connection.return_value = create_mock_connection()
+
+        # Define payload
+        filename = 'myfile.rst'
+        content = b'baz'
+        path = '54321'
+        payload = {'file': Upload(filename, content,'text/x-rst')}
+
+        # Attempt to upload the file
+        url = lookup('api', 'dataverse_upload_file',
+                     pid=self.project._primary_key, path=path)
+        res = self.app.post(url, payload, auth=self.user.auth,
+                            expect_errors=True)
+
+        # File was not uploaded
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(0, mock_upload.call_count)
 
 
 def test_scrape_dataverse():

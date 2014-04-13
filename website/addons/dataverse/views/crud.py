@@ -7,7 +7,8 @@ from bs4 import BeautifulSoup
 from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect, delete_file
+from website.addons.dataverse.client import connect, delete_file, upload_file, \
+    get_file
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -132,12 +133,15 @@ def dataverse_upload_file(**kwargs):
     filename = secure_filename(upload.filename)
 
     # Todo: Allow renaming
-    if study.get_file(filename) is not None:
-        raise HTTPError(http.FORBIDDEN)
+    if get_file(study, filename) is not None:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            message='This study already contains a file with that name'
+        )
 
     content = upload.read()
 
-    study.add_file_obj(filename, content)
+    upload_file(study, filename, content)
     file_id = study.get_file(filename).id
 
     if file_id is not None:
@@ -209,7 +213,7 @@ def dataverse_delete_file(**kwargs):
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
     file = study.get_file_by_id(file_id)
 
-    delete_file(study, file)
+    delete_file(file)
 
     # TODO: Check if file was deleted
 
