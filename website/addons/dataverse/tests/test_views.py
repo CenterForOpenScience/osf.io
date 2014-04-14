@@ -227,7 +227,10 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
-    def test_delete_file(self, mock_delete, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.get_file_by_id',
+                side_effect=[create_mock_dvn_file('54321'), None])
+    def test_delete_file(self, mock_get, mock_delete, mock_connection):
+        mock_get.return_value = None
         mock_connection.return_value = create_mock_connection()
 
         path = '54321'

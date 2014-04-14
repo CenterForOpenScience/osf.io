@@ -152,49 +152,49 @@ def dataverse_upload_file(**kwargs):
     upload_file(study, filename, content)
     file_id = get_file(study, filename).id
 
-    if file_id is not None:
-        # TODO: Should changes to draft versions of studies be logged?
-        # node.add_log(
-        #     action='dataverse_file_added',
-        #     params={
-        #         'project': node.parent_id,
-        #         'node': node._primary_key,
-        #         'filename': filename,
-        #         'path': node.web_url_for('dataverse_view_file', path=file_id),
-        #         'dataverse': {
-        #             'dataverse': dataverse.title,
-        #             'study': study.title,
-        #         }
-        #     },
-        #     auth=auth,
-        #     log_date=now,
-        # )
+    if file_id is None:
+        raise HTTPError(http.BAD_REQUEST)
 
-        info = {
-            'addon': 'dataverse',
-            'name': filename,
-            'size': [
-                len(content),
-                rubeus.format_filesize(len(content))
-            ],
-            'kind': 'file',
-            'urls': {
-                    'view': node.web_url_for('dataverse_view_file',
+    node.add_log(
+        action='dataverse_file_added',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'filename': filename,
+            'path': node.web_url_for('dataverse_view_file', path=file_id),
+            'dataverse': {
+                'dataverse': dataverse.title,
+                'study': study.title,
+            }
+        },
+        auth=auth,
+        log_date=now,
+    )
+
+    info = {
+        'addon': 'dataverse',
+        'name': filename,
+        'size': [
+            len(content),
+            rubeus.format_filesize(len(content))
+        ],
+        'kind': 'file',
+        'urls': {
+                'view': node.web_url_for('dataverse_view_file',
+                                         path=file_id),
+                'download': node.api_url_for('dataverse_download_file',
                                              path=file_id),
-                    'download': node.api_url_for('dataverse_download_file',
-                                                 path=file_id),
-                    'delete': node.api_url_for('dataverse_delete_file',
-                                               path=file_id),
-            },
-            'permissions': {
-                'view': can_view,
-                'edit': can_edit,
-            },
-        }
+                'delete': node.api_url_for('dataverse_delete_file',
+                                           path=file_id),
+        },
+        'permissions': {
+            'view': can_view,
+            'edit': can_edit,
+        },
+    }
 
-        return info, 201
+    return info, 201
 
-    raise HTTPError(http.BAD_REQUEST)
 
 
 @must_have_permission('write')
@@ -223,23 +223,24 @@ def dataverse_delete_file(**kwargs):
 
     delete_file(file)
 
-    # TODO: Check if file was deleted
+    # Check if file was deleted
+    if get_file_by_id(study, file_id) is not None:
+        raise HTTPError(http.BAD_REQUEST)
 
-    # TODO: Should changes to draft versions of studies be logged?
-    # node.add_log(
-    #     action='dataverse_file_removed',
-    #     params={
-    #         'project': node.parent_id,
-    #         'node': node._primary_key,
-    #         'filename': file.name,
-    #         'dataverse': {
-    #             'dataverse': dataverse.title,
-    #             'study': study.title,
-    #         }
-    #     },
-    #     auth=auth,
-    #     log_date=now,
-    # )
+    node.add_log(
+        action='dataverse_file_removed',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'filename': file.name,
+            'dataverse': {
+                'dataverse': dataverse.title,
+                'study': study.title,
+            }
+        },
+        auth=auth,
+        log_date=now,
+    )
 
     return {}
 

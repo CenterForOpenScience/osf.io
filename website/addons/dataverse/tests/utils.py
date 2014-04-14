@@ -95,10 +95,10 @@ def create_mock_study(id='DVN/12345'):
     if 'DVN' in id:
         return mock_study
 
-def create_mock_dvn_file():
+def create_mock_dvn_file(id='54321'):
     mock_file = mock.create_autospec(DvnFile)
 
     mock_file.name = 'file.txt'
-    mock_file.id = '54321'
+    mock_file.id = id
 
     return mock_file
