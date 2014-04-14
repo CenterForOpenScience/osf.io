@@ -163,7 +163,7 @@ class TestFileCommits(GitlabTestCase):
         )
         serialized = [
             utils.serialize_commit(
-                commit, guid, branch
+                self.project, path, commit, guid, branch
             )
             for commit in mock_commits.return_value
         ]
@@ -206,7 +206,7 @@ class TestFileCommits(GitlabTestCase):
         )
         serialized = [
             utils.serialize_commit(
-                commit, guid, branch
+                self.project, path, commit, guid, branch
             )
             for commit in mock_commits.return_value
         ]

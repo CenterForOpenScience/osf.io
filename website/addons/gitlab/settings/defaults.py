@@ -8,10 +8,6 @@ ROUTE = 'osffiles'
 HOST = None
 TOKEN = None
 
-# Only used in migration scripts
-ROOT_NAME = None
-ROOT_PASS = None
-
 PROJECTS_LIMIT = 999999
 
 ACCESS_LEVELS = {

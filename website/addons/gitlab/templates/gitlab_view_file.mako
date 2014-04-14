@@ -12,7 +12,7 @@
                 <th>Commit</th>
                 <th>Date</th>
                 <th>User</th>
-                <th>Download</th>
+                <th colspan="2">Downloads</th>
             </tr>
         </thead>
 
@@ -27,6 +27,7 @@
                     </a>
                 </td>
                 <td>{{ $data.modified.local }}</td>
+                <td>{{ $data.downloads }}</td>
                 <td>
                     <a data-bind="attr.href: $data.urls.download">
                         <i class="icon-download-alt"></i>

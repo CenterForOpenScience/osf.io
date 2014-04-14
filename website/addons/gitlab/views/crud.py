@@ -91,16 +91,13 @@ def create_or_update(node_settings, user_settings, method_name, action,
         )
     method = getattr(client, method_name)
 
-    try:
-        response = method(
-            node_settings.project_id, filename, branch, content,
-            gitlab_settings.MESSAGES['add'], encoding='base64',
-            user_id=user_settings.user_id
-        )
-        gitlab_upload_log(node, action, auth, response, branch)
-        return response
-    except GitlabError:
-        return False
+    response = method(
+        node_settings.project_id, filename, branch, content,
+        gitlab_settings.MESSAGES['add'], encoding='base64',
+        user_id=user_settings.user_id
+    )
+    gitlab_upload_log(node, action, auth, response, branch)
+    return response
 
 
 @must_have_permission(WRITE)
@@ -137,34 +134,34 @@ def gitlab_upload_file(**kwargs):
 
     filename = os.path.join(path, upload.filename)
     slug = gitlab_slugify(filename)
-    
-    response = create_or_update(
-        node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
-        slug, branch, content, auth
-    )
-    if not response:
+
+    try:
+        response = create_or_update(
+            node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
+            slug, branch, content, auth
+        )
+    except GitlabError:
         response = create_or_update(
             node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
             slug, branch, content, auth
         )
 
     # File created or modified
-    if response:
-        head, tail = os.path.split(response['file_path'])
-        grid_data = item_to_hgrid(
-            node,
-            {
-                'type': 'blob',
-                'name': tail,
-            },
-            path=head,
-            permissions={
-                'view': True,
-                'edit': True,
-            },
-            branch=branch
-        )
-        return grid_data, 201
+    head, tail = os.path.split(response['file_path'])
+    grid_data = item_to_hgrid(
+        node,
+        {
+            'type': 'blob',
+            'name': tail,
+        },
+        path=head,
+        permissions={
+            'view': True,
+            'edit': True,
+        },
+        branch=branch
+    )
+    return grid_data, http.CREATED
 
     # File not modified
     # TODO: Test whether something broke
@@ -264,7 +261,9 @@ def render_branch_picker(branch, sha, branches):
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
 def gitlab_file_commits(node_addon, **kwargs):
+    """
 
+    """
     branch = request.args.get('branch')
     sha = request.args.get('sha')
     ref = ref_or_default(node_addon, request.args)
@@ -278,7 +277,7 @@ def gitlab_file_commits(node_addon, **kwargs):
     sha = sha or commits[0]['id']
 
     commit_data = [
-        serialize_commit(commit, guid, branch)
+        serialize_commit(node_addon.owner, path, commit, guid, branch)
         for commit in commits
     ]
 
@@ -352,8 +351,8 @@ def gitlab_view_file(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
-@update_counters('download:{pid}:{path}:{_qs}')
-@update_counters('download:{nid}:{path}:{_qs}')
+@update_counters('download:{pid}:{path}:{sha}')
+@update_counters('download:{nid}:{path}:{sha}')
 @update_counters('download:{pid}:{path}')
 @update_counters('download:{nid}:{path}')
 def gitlab_download_file(**kwargs):

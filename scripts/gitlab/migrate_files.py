@@ -1,9 +1,6 @@
 import os
 import shutil
-import urlparse
 import subprocess
-
-from website.addons.gitlab import settings as gitlab_settings
 
 
 SOURCE_PATH = '/opt/data/backup/test'
@@ -13,44 +10,19 @@ REMOTE_NAME = 'migrate'
 BRANCH_NAME = 'master'
 
 
-def dest_to_http(dest):
-    parts = dest.split('/')
-    parsed = urlparse.urlparse(gitlab_settings.HOST)
-    return 'http://{root}:{pword}@{loc}/{user}/{repo}'.format(
-        root=gitlab_settings.ROOT_NAME,
-        pword=gitlab_settings.ROOT_PASS,
-        loc=parsed.netloc,
-        user=parts[-2],
-        repo=parts[-1],
-    )
-
 def migrate_files(source, dest):
     """Clone the source repo to the destionary as a bare repo.
 
     """
     shutil.rmtree(dest)
 
-    subprocess.check_call(
-        ['git', 'clone', '--bare', source, dest]
-    )
-    # # Build HTTP URL
-    # url = dest_to_http(dest)
-    #
-    # # Add remote, catching exception if already added
-    # try:
-    #     subprocess.check_call(
-    #         ['git', 'remote', 'add', REMOTE_NAME, url],
-    #         cwd=source
-    #     )
-    # except subprocess.CalledProcessError as error:
-    #     if error.returncode != 128:
-    #         raise
-    #
-    # # Push contents
-    # subprocess.check_call(
-    #     ['git', 'push', REMOTE_NAME, BRANCH_NAME],
-    #     cwd=source
-    # )
+    try:
+        subprocess.check_call(
+            ['git', 'clone', '--bare', source, dest]
+        )
+    except subprocess.CalledProcessError as error:
+        if error.returncode != 128:
+            raise
 
 
 def walk_repos():

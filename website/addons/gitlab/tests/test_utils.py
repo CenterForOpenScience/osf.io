@@ -364,7 +364,7 @@ class TestResolveGitlabHookAuthor(OsfTestCase):
         assert_equal(user, 'Gitlab User')
 
 
-class TestSerializeCommit(OsfTestCase):
+class TestSerializeCommit(GitlabTestCase):
 
     def setUp(self):
         super(TestSerializeCommit, self).setUp()
@@ -372,6 +372,7 @@ class TestSerializeCommit(OsfTestCase):
 
     def test_serialize_commit(self):
         now = datetime.datetime.now()
+        path = 'pizza/review.rst'
         commit = {
             'id': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
             'created_at': now.isoformat(),
@@ -380,7 +381,9 @@ class TestSerializeCommit(OsfTestCase):
         }
         guid = GitlabGuidFileFactory()
         branch = 'master'
-        serialized = utils.serialize_commit(commit, guid, branch)
+        serialized = utils.serialize_commit(
+            self.project, path, commit, guid, branch
+        )
         params = utils.refs_to_params(branch=branch, sha=commit['id'])
         assert_equal(
             serialized,
@@ -388,6 +391,7 @@ class TestSerializeCommit(OsfTestCase):
                 'sha': '0c015ac47ee16eb0fc17c0a6417d57622bbf142d',
                 'date': now.strftime(FILE_MODIFIED),
                 'committer': utils.resolve_gitlab_commit_author(commit),
+                'downloads': 0,
                 'urls': {
                     'view': '/' + guid._id + '/' + params,
                     'download': '/' + guid._id + '/download/' + params,
