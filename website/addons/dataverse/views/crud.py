@@ -8,7 +8,7 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, delete_file, upload_file, \
-    get_file
+    get_file, get_file_by_id
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -85,7 +85,7 @@ def dataverse_view_file(**kwargs):
     )
 
     study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
-    file = study.get_file_by_id(file_id)
+    file = get_file_by_id(study, file_id)
 
     # Get file URL
     url = node.web_url_for('dataverse_view_file', path=file_id)
@@ -150,7 +150,7 @@ def dataverse_upload_file(**kwargs):
     content = upload.read()
 
     upload_file(study, filename, content)
-    file_id = study.get_file(filename).id
+    file_id = get_file(study, filename)
 
     if file_id is not None:
         # TODO: Should changes to draft versions of studies be logged?
@@ -219,7 +219,7 @@ def dataverse_delete_file(**kwargs):
 
     dataverse = connection.get_dataverses()[node_settings.dataverse_number]
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
-    file = study.get_file_by_id(file_id)
+    file = get_file_by_id(study, file_id)
 
     delete_file(file)
 

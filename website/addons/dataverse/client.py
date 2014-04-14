@@ -20,5 +20,8 @@ def delete_file(file):
 def upload_file(study, filename, content):
     study.add_file_obj(filename, content)
 
-def get_file(study, filename):
-    return study.get_file(filename)
+def get_file(study, filename, released=False):
+    return study.get_file(filename, released)
+
+def get_file_by_id(study, file_id, released=False):
+    return study.get_file_by_id(file_id, released)
