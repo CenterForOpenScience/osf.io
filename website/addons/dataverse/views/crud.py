@@ -18,7 +18,6 @@ from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
 from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.dvn.study import Study
 
 import httplib as http
 

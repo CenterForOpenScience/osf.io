@@ -291,11 +291,33 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(0, mock_upload.call_count)
 
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    def test_dataverse_view_file(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
 
-def test_scrape_dataverse():
-    content = scrape_dataverse(2362170)
-    assert_not_in('IQSS', content)
-    assert_in('%esp', content)
+        url = lookup('web', 'dataverse_view_file', pid=self.project._primary_key,
+            path='foo')
+        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_equal(res.status_code, 200)
+
+    @unittest.skip('Finish this')
+    def test_download_file(self):
+        assert 0, 'finish me'
+
+    @unittest.skip('Finish this')
+    def test_render_file(self):
+        assert 0, 'finish me'
+
+    @unittest.skip('Finish this')
+    def test_build_dropbox_urls(self):
+        assert 0, 'finish me'
+
+    @unittest.skip('Finish this')
+    def test_scrape_dataverse(self):
+        assert 0, 'finish me'
+        # content = scrape_dataverse(2362170)
+        # assert_not_in('IQSS', content)
+        # assert_in('%esp', content)
 
 if __name__=='__main__':
     nose.run()
