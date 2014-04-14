@@ -235,15 +235,18 @@ class Study(object):
         self._refresh(deposit_receipt=depositReceipt)
     
     def release(self):
-        self.lastDepositReceipt = self.hostDataverse.connection.swordConnection.complete_deposit(
+        depositReceipt = self.hostDataverse.connection.swordConnection.complete_deposit(
             dr=self.lastDepositReceipt,
             se_iri=self.editUri,
         )
-        self._refresh(deposit_receipt=self.lastDepositReceipt)
+        self._refresh(deposit_receipt=depositReceipt)
     
     def delete_file(self, dvnFile):
-        depositReceipt = self.hostDataverse.connection.swordConnection.delete(dvnFile.editMediaUri)
-        self._refresh(deposit_receipt=self.lastDepositReceipt)
+        depositReceipt = self.hostDataverse.connection.swordConnection.delete_file(
+            dvnFile.editMediaUri
+        )
+        # Dataverse does not give a desposit receipt at this time
+        self._refresh(deposit_receipt=None)
         
     def delete_all_files(self):
         for f in self.get_files():
