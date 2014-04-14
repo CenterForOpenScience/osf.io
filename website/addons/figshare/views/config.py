@@ -2,11 +2,103 @@ import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
+from framework.auth import get_current_user
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_not_be_registration
+from website.project.decorators import (must_have_addon,
+    must_have_permission, must_not_be_registration,
+    must_be_valid_project
+)
 
+
+###### AJAX Config
+@must_be_valid_project
+@must_have_addon('figshare', 'node')
+def figshare_config_get(node_addon, **kwargs):
+    """API that returns the serialized node settings."""
+    user = get_current_user()
+    return {
+        'result': serialize_settings(node_addon, user),
+    }, http.OK
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon('figshare', 'node')
+def figshare_config_put(node_addon, auth, **kwargs):
+    """View for changing a node's linked figshare folder."""
+    folder = request.json.get('selected')
+    path = folder['path']
+    node_addon.set_folder(path, auth=auth)
+    node_addon.save()
+    return {
+        'result': {
+            'folder': {
+                'name': 'Figshare' + path,
+                'path': path
+            },
+            'urls': serialize_urls(node_addon)
+        },
+        'message': 'Successfully updated settings.',
+    }, http.OK
+
+
+@must_have_permission('write')
+@must_have_addon('figshare', 'node')
+def figshare_import_user_auth(auth, node_addon, **kwargs):
+    """Import figshare credentials from the currently logged-in user to a node.
+    """
+    user = auth.user
+    user_addon = user.get_addon('figshare')
+    if user_addon is None or node_addon is None:
+        raise HTTPError(http.BAD_REQUEST)
+    node_addon.set_user_auth(user_addon)
+    node_addon.save()
+    return {
+        'result': serialize_settings(node_addon, user),
+        'message': 'Successfully imported access token from profile.',
+    }, http.OK
+
+@must_have_permission('write')
+@must_have_addon('figshare', 'node')
+def figshare_deauthorize(auth, node_addon, **kwargs):
+    node_addon.deauthorize(auth=auth)
+    node_addon.save()
+    return None
+
+def serialize_settings(node_settings, current_user, client=None):
+    """View helper that returns a dictionary representation of a
+    FigshareNodeSettings record. Provides the return value for the
+    figshare config endpoints.
+    """
+    user_settings = current_user.get_addon('figshare')
+    user_has_auth = user_settings is not None and user_settings.has_auth
+    result = {
+        'nodeHasAuth': node_settings.has_auth,
+        'userHasAuth': user_has_auth,
+        'urls': serialize_urls(node_settings)
+    }
+    if node_settings.has_auth:
+        # Add owner's profile URL
+        result['urls']['owner'] = web_url_for('profile_view_id',
+            uid=user_settings.owner._primary_key)
+        result['ownerName'] = user_settings.owner.fullname
+        # Show available projects
+        '''
+        path = node_settings.folder
+        if path is None:
+            result['folder'] = {'name': None, 'path': None}
+        else:
+            result['folder'] = {
+                'name': 'Figshare' + path,
+                'path': path
+            }
+        '''
+    return result
+
+
+##############
 
 @must_have_permission('write')
 @must_not_be_registration
