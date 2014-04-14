@@ -7,6 +7,7 @@ import httplib as http
 from tests.base import URLLookup
 from tests.factories import AuthUserFactory
 from webtest import Upload
+from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.crud import scrape_dataverse
 
 from utils import create_mock_connection, create_mock_dvn_file,\
@@ -299,14 +300,21 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     def test_dataverse_view_file(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = lookup('web', 'dataverse_view_file', pid=self.project._primary_key,
-            path='foo')
+        url = lookup('web', 'dataverse_view_file',
+                     pid=self.project._primary_key, path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    @unittest.skip('Finish this')
     def test_download_file(self):
-        assert 0, 'finish me'
+        path = 'foo'
+        url = lookup('api', 'dataverse_download_file',
+                     pid=self.project._primary_key, path=path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(
+            res.headers.get('location'),
+            'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
+        )
+
 
     @unittest.skip('Finish this')
     def test_render_file(self):
