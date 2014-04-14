@@ -84,8 +84,8 @@ def create_mock_study(id='DVN/12345'):
     mock_study = mock.create_autospec(Study)
 
     mock_study.get_id.return_value = id
-    mock_study.get_title.return_value = 'Example ({0})'.format(id)
-    mock_study.doi.return_value = 'doi:12.3456/{0}'.format(id)
+    mock_study.title = 'Example ({0})'.format(id)
+    mock_study.doi = 'doi:12.3456/{0}'.format(id)
 
     mock_study.get_files.return_value = [create_mock_dvn_file()]
     mock_study.get_file.return_value = create_mock_dvn_file()

@@ -125,7 +125,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],
-                'study_names': [s.get_title() for s in studies],
+                'study_names': [s.title for s in studies],
                 'study': self.study,
                 'study_hdl': self.study_hdl,
             })

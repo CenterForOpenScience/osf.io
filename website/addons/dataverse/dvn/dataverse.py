@@ -81,15 +81,13 @@ class Dataverse(object):
             Study.from_entry_element(element, hostDataverse=self)
             for element in utils.get_elements(studiesResponse.content, tag='entry')
         ]
-        # # get all the entry nodes and parse them into study objects
-        # studies = []
-        # for element in utils.get_elements(studiesResponse.content, tag="entry"):
-        #     s = Study.from_entry_element(element, hostDataverse=self)
-        #     studies.append(s)
-        #
-        # return studies
 
-    # todo: search by handle, DOI, etc
+    def get_study_by_title(self, title):
+        return next((s for s in self.get_studies if s.title == title), None)
+
+    def get_study_by_doi(self, doi):
+        return next((s for s in self.get_studies if s.doi == doi), None)
+
     # todo: rename to global_id
     def get_study_by_hdl(self, hdl):
         studies = self.get_studies()

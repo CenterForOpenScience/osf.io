@@ -150,7 +150,7 @@ def dataverse_upload_file(**kwargs):
     content = upload.read()
 
     upload_file(study, filename, content)
-    file_id = get_file(study, filename)
+    file_id = get_file(study, filename).id
 
     if file_id is not None:
         # TODO: Should changes to draft versions of studies be logged?
@@ -163,7 +163,7 @@ def dataverse_upload_file(**kwargs):
         #         'path': node.web_url_for('dataverse_view_file', path=file_id),
         #         'dataverse': {
         #             'dataverse': dataverse.title,
-        #             'study': study.get_title(),
+        #             'study': study.title,
         #         }
         #     },
         #     auth=auth,
@@ -234,7 +234,7 @@ def dataverse_delete_file(**kwargs):
     #         'filename': file.name,
     #         'dataverse': {
     #             'dataverse': dataverse.title,
-    #             'study': study.get_title(),
+    #             'study': study.title,
     #         }
     #     },
     #     auth=auth,

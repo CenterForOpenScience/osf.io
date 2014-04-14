@@ -28,6 +28,7 @@ class DvnFile(object):
     Uri: {1}
     Mime: {2}
     Id: {3}
+    Status: DRAFT
     """.format(self.name, self.editMediaUri, self.mimetype, self.id)
 
     # Note: Information about files comes from the statement of the study, not the entry
@@ -61,3 +62,20 @@ class DvnFile(object):
         # Note: Updated element is meaningless at the moment
         updated = datetime.strptime(atomStatementEntry.updated, "%Y-%m-%dT%H:%M:%S.%fZ")
         return cls(name, editMediaUri, mimetype, updated, hostStudy)
+
+
+class ReleasedFile(object):
+    def __init__(self, name, uri, hostStudy):
+        self.name = name
+        self.uri = uri
+        self.hostStudy = hostStudy
+        self.id = uri.split('=')[-1]
+
+    def __repr__(self):
+        return """
+    DVN FILE:
+    Name: {0}
+    Uri: {1}
+    Id: {2}
+    Status: RELEASED
+    """.format(self.name, self.uri, self.id)

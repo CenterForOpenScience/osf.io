@@ -150,7 +150,7 @@ def set_study(*args, **kwargs):
     # Set study
     if hdl != 'None':
         log_action = 'dataverse_study_linked'
-        study_name = dataverse.get_study_by_hdl(hdl).get_title()
+        study_name = dataverse.get_study_by_hdl(hdl).title
 
         node_settings.dataverse = dataverse.title
         node_settings.study_hdl = hdl
