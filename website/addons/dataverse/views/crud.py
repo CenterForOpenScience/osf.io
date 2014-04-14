@@ -17,7 +17,9 @@ from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.util import rubeus
+from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
+from website.addons.base.views import check_file_guid
 
 import httplib as http
 
@@ -69,6 +71,13 @@ def dataverse_view_file(**kwargs):
     file_id = kwargs.get('path')
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
+
+    # lazily create a file GUID record
+    file_obj, created = DataverseFile.get_or_create(node=node, path=file_id)
+
+    redirect_url = check_file_guid(file_obj)
+    if redirect_url:
+        return redirect(redirect_url)
 
     connection = connect(
         node_settings.dataverse_username,

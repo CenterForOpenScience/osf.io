@@ -81,17 +81,7 @@ page_routes = {
             views.crud.dataverse_download_file,
             json_renderer,
         ),
-        Rule(
-            [
-                '/project/<pid>/dataverse/file/<path:path>/proxy/',
-                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/proxy/',
-            ],
-            'get',
-            views.crud.dataverse_download_file_proxy,
-            json_renderer,
-        ),
     ],
-    'prefix': '/api/v1'
 }
 
 api_routes = {
@@ -125,7 +115,15 @@ api_routes = {
             views.crud.dataverse_get_rendered_file,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/<pid>/dataverse/file/<path:path>/proxy/',
+                '/project/<pid>/node/<nid>/dataverse/file/<path:path>/proxy/',
+            ],
+            'get',
+            views.crud.dataverse_download_file_proxy,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }

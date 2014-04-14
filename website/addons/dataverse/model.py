@@ -1,16 +1,39 @@
-"""
-
-"""
-
 import os
+
+from modularodm import Q
+from modularodm.exceptions import ModularOdmException
 
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
+from website.addons.base import GuidFile
 from website.addons.dataverse.client import connect
 from website.addons.dataverse.settings import HOST
 
 
+class DataverseFile(GuidFile):
 
+    file_id = fields.StringField(required=True, index=True)
+
+    @property
+    def file_url(self):
+        return os.path.join('dataverse', 'file', self.file_id)
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Get or create a new file record. Return a tuple of the form (obj, created)
+        """
+        try:
+            new = cls.find_one(
+                Q('node', 'eq', node) &
+                Q('file_id', 'eq', path)
+            )
+            created = False
+        except ModularOdmException:
+            # Create new
+            new = cls(node=node, file_id=path)
+            new.save()
+            created = True
+        return new, created
 
 
 class AddonDataverseUserSettings(AddonUserSettingsBase):
