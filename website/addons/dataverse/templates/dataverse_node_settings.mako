@@ -20,11 +20,7 @@
                         Dataverse:
                         <select id="dataverseDropDown" class="form-control">
                             % for i, dv in enumerate(dataverses):
-                                % if i == dataverse_number:
-                                    <option value=${i} selected>${dv}</option>
-                                % else:
-                                    <option value=${i}>${dv}</option>
-                                % endif
+                                <option value=${i} ${'selected' if i == dataverse_number else ''}>${dv}</option>
                             % endfor
                         </select>
                     </div>
@@ -33,15 +29,9 @@
                         Study:
                         <select id="studyDropDown" class="form-control">
                             <option value="None">---</option>
-                            % if len(dataverses) > 0:
-                                % for i, hdl in enumerate(studies):
-                                    % if hdl == study_hdl:
-                                        <option value=${hdl} selected>${study_names[i]}</option>
-                                    % else:
-                                        <option value=${hdl}>${study_names[i]}</option>
-                                    % endif
-                                % endfor
-                            % endif
+                            % for i, hdl in enumerate(studies):
+                                <option value=${hdl} ${'selected' if hdl == study_hdl else ''}>${study_names[i]}</option>
+                            % endfor
                         </select>
                     </div>
 
