@@ -91,7 +91,8 @@ def set_dataverse(*args, **kwargs):
     # Set selected Dataverse
     old_dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     old_study = node_settings.study
-    node_settings.dataverse_alias = request.json.get('dataverse_alias')
+    alias = request.json.get('dataverse_alias')
+    node_settings.dataverse_alias = alias if alias != 'None' else None
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     node_settings.dataverse = dataverse.title if dataverse else None
 

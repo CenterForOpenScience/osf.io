@@ -52,9 +52,9 @@ def create_mock_connection(username='snowman', password='frosty'):
     ]
 
     def _get_dataverse(alias):
-        return next(
+        return next((
             dataverse for dataverse in mock_connection.get_dataverses()
-            if dataverse.title[-1] == alias[-1]
+            if alias is not None and dataverse.title[-1] == alias[-1]), None
         )
 
     mock_connection.get_dataverse = mock.MagicMock(
@@ -81,9 +81,9 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     ]
 
     def _get_study_by_hdl(hdl):
-        return next(
+        return next((
             study for study in mock_dataverse.get_studies()
-            if study.get_id() == hdl
+            if study.get_id() == hdl), None
         )
 
     mock_dataverse.get_study_by_hdl = mock.MagicMock(

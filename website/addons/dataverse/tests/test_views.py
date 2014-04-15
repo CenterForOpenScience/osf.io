@@ -172,6 +172,35 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
                      'Example (DVN/00001)')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_set_dataverse_to_none(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
+        params = {'dataverse_alias': 'None'}
+
+        # Set dataverse to none
+        self.app.post_json(url, params, auth=self.user.auth)
+        self.project.reload()
+        self.node_settings.reload()
+
+        # Dataverse has changed
+        assert_equal(self.node_settings.dataverse_alias, None)
+        assert_equal(self.node_settings.dataverse, None)
+
+        # Study was unselected
+        assert_equal(self.node_settings.study, None)
+        assert_equal(self.node_settings.study_hdl, None)
+
+        # Log states that a study was unselected
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_study_unlinked')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
+        assert_equal(log_params['dataverse']['study'],
+                     'Example (DVN/00001)')
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
