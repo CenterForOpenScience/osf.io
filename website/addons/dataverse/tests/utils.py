@@ -27,7 +27,7 @@ class DataverseAddonTestCase(AddonTestCase):
     def set_node_settings(self, settings):
         settings.dataverse_username = 'snowman'
         settings.dataverse_password = 'frosty'
-        settings.dataverse_number = 1
+        settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.study_hdl = 'DVN/00001'
         settings.study = 'Example (DVN/00001)'
@@ -51,15 +51,28 @@ def create_mock_connection(username='snowman', password='frosty'):
         create_mock_dataverse('Example 3')
     ]
 
+    def _get_dataverse(alias):
+        return next(
+            dataverse for dataverse in mock_connection.get_dataverses()
+            if dataverse.title[-1] == alias[-1]
+        )
+
+    mock_connection.get_dataverse = mock.MagicMock(
+        side_effect=_get_dataverse
+    )
+    mock_connection.get_dataverse.return_value = create_mock_dataverse()
+
     if username=='snowman' and password=='frosty':
         return mock_connection
 
 
-def create_mock_dataverse(title='Example Dataverse'):
+def create_mock_dataverse(title='Example Dataverse 0'):
 
     mock_dataverse = mock.create_autospec(Dataverse)
 
     type(mock_dataverse).title = mock.PropertyMock(return_value=title)
+    type(mock_dataverse).alias = mock.PropertyMock(
+        return_value='ALIAS{}'.format(title[-1]))
 
     mock_dataverse.get_studies.return_value = [
         create_mock_study('DVN/00001'),

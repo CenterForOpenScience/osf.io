@@ -50,7 +50,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         self.node_settings.reload()
         assert_false(self.node_settings.dataverse_username)
         assert_false(self.node_settings.dataverse_password)
-        assert_equal(self.node_settings.dataverse_number, 0)
+        assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
@@ -77,7 +77,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         self.node_settings.reload()
         assert_false(self.node_settings.dataverse_username)
         assert_false(self.node_settings.dataverse_password)
-        assert_equal(self.node_settings.dataverse_number, 0)
+        assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
@@ -147,7 +147,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         mock_connection.return_value = create_mock_connection()
 
         url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
-        params = {'dataverse_number': 0}
+        params = {'dataverse_alias': 'ALIAS1'}
 
         # Select a different dataverse
         self.app.post_json(url, params, auth=self.user.auth)
@@ -155,7 +155,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         self.node_settings.reload()
 
         # Dataverse has changed
-        assert_equal(self.node_settings.dataverse_number, 0)
+        assert_equal(self.node_settings.dataverse_alias, 'ALIAS1')
         assert_equal(self.node_settings.dataverse, 'Example 1')
 
         # Study was unselected
@@ -184,7 +184,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         self.node_settings.reload()
 
         # New study was selected, dataverse was unchanged
-        assert_equal(self.node_settings.dataverse_number, 1)
+        assert_equal(self.node_settings.dataverse_alias, 'ALIAS2')
         assert_equal(self.node_settings.study, 'Example (DVN/00002)')
         assert_equal(self.node_settings.study_hdl, 'DVN/00002')
 
@@ -210,7 +210,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         self.node_settings.reload()
 
         # Study is none, dataverse is unchanged
-        assert_equal(self.node_settings.dataverse_number, 1)
+        assert_equal(self.node_settings.dataverse_alias, 'ALIAS2')
         assert_equal(self.node_settings.study, None)
         assert_equal(self.node_settings.study_hdl, None)
 
