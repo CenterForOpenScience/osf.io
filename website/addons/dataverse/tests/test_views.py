@@ -189,13 +189,13 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(self.node_settings.study_hdl, 'DVN/00002')
 
         # Log states that a study was selected
-        # last_log = self.project.logs[-1]
-        # assert_equal(last_log.action, 'dataverse_study_linked')
-        # log_params = last_log.params
-        # assert_equal(log_params['node'], self.project._primary_key)
-        # assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
-        # assert_equal(log_params['dataverse']['study'],
-        #              'Example (DVN/00002)')
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_study_linked')
+        log_params = last_log.params
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
+        assert_equal(log_params['dataverse']['study'],
+                     'Example (DVN/00002)')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_study_to_none(self, mock_connection):
