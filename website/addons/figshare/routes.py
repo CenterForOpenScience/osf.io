@@ -96,10 +96,10 @@ api_routes = {
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/figshare/config/',
-            '/project/<pid>/node/<nid>/figshare/config/'],
-            'delete',
-            views.config.figshare_deauthorize,
+            ['/project/<pid>/figshare/hgrid/options/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/options/'],
+            'get',
+            views.config.figshare_get_options,
             json_renderer
         ),
         Rule(
@@ -109,6 +109,14 @@ api_routes = {
             views.config.figshare_import_user_auth,
             json_renderer
         ),
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'delete',
+            views.config.figshare_deauthorize,
+            json_renderer
+        ),
+
         #######################
         Rule([
             '/project/<pid>/figshare/hgrid/',

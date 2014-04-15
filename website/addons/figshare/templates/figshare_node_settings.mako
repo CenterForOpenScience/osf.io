@@ -1,7 +1,7 @@
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
-    	FigShare
+    	Figshare
         <span data-bind="if: nodeHasAuth">
             <small class="authorized-by">
                 authorized by <a data-bind="attr.href: urls().owner">
@@ -20,16 +20,16 @@
     <div class="figshare-settings" data-bind='if: showSettings'>
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Current Folder:</strong></p>
+                <p><strong>Current Linked Content:</strong></p>
 
                 <!-- The linked folder -->
                 <div class="selected-folder">
-                    <i data-bind="visible: folder().name" class="icon-folder-close-alt"></i>
-                    <a data-bind="attr.href: urls().files"class='selected-folder-name'>
+                    <i data-bind="visible: linked().name" class="icon-folder-close-alt"></i>
+                    <a data-bind="attr.href: urls().files" class="selected-folder-name">
                         {{folderName}}
                     </a>
 
-                    <p data-bind="if: folder().path === null" class="text-muted">No folder selected</p>
+                    <p data-bind="if: linked().id === null" class="text-muted">No content linked selected</p>
                 </div>
 
                 <!-- Folder buttons -->
@@ -37,12 +37,6 @@
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-figshare"><i class="icon-edit"></i> Change</button>
-                    <button data-bind="attr.disabled: disableShare,
-                                        click: toggleShare,
-                                        css: {active: currentDisplay() === SHARE}"
-                        class="btn btn-sm btn-figshare"><i class="icon-share-alt"></i> Share on Figshare
-                            <span data-bind="visible: folder().path === '/'">(Cannot share root folder)</span>
-                        </button>
                 </div>
 
 
@@ -62,40 +56,13 @@
                         <p>No contributors to share with.</p>
                     </div>
 
-                    <div data-bind="if: currentDisplay() === SHARE && emails().length">
-                        <div class="help-block">
-                            <p>To share this folder with other Figshare users on this project, copy
-                            the email addresses of the contributors (listed below) into the
-                            "Share Folder" dialog on Figshare.</p>
-                        </div>
-
-                        <label for="contrib-emails">Copy these:</label>
-                        <div class="input-group">
-                            <textarea name="contrib-emails"
-                                    class="form-control" rows="3" id="contribEmails"
-                             data-bind="value: emailList,
-                                        attr.autofocus: currentDisplay() === SHARE">
-                            </textarea>
-                            <span data-clipboard-target="contribEmails"
-                                class="input-group-addon pointer"
-                                id="copyBtn">
-                                <i class="icon-paste"></i>
-                            </span>
-                        </div>
-
-                        <div class="input-group pull-right">
-                            <a target="_blank" data-bind="attr.href: urls().share"
-                                class="btn btn-link"><i class="icon-share-alt"></i> Continue to Figshare...</a>
-                        </div>
-                    </div>
-
                     <!-- Queued selection -->
                     <div class="figshare-confirm-selection"
                         data-bind="visible: currentDisplay() == PICKER">
                         <form data-bind="submit: submitSettings">
 
                             <h4 data-bind="if: selected" class="figshare-confirm-dlg">
-                                Connect &ldquo;{{ selectedFolderName }}&rdquo;?
+                                Connect Figshare {{selectedFolderType}} &ldquo;{{ selectedFolderName }}&rdquo;?
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"

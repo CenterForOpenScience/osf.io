@@ -4,14 +4,14 @@ from framework import request
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_have_addon
-from website.project.decorators import must_not_be_registration
+from website.util import web_url_for
 from website.project.decorators import (must_have_addon,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
 
+from ..api import Figshare
+from ..utils import options_to_hgrid
 
 ###### AJAX Config
 @must_be_valid_project
@@ -28,15 +28,19 @@ def figshare_config_get(node_addon, **kwargs):
 @must_have_addon('figshare', 'node')
 def figshare_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked figshare folder."""
-    folder = request.json.get('selected')
-    path = folder['path']
-    node_addon.set_folder(path, auth=auth)
-    node_addon.save()
+    selected = request.json.get('selected')    
+    fields = {}
+    for key in selected.keys():
+        fields[key] = selected[key]
+    node = node_addon.owner
+    node_addon.update_fields(fields, node, auth)
+
     return {
         'result': {
-            'folder': {
-                'name': 'Figshare' + path,
-                'path': path
+            'linked': {
+                'name': fields.get('title') or '',
+                'id': fields.get('id') or None,
+                'type': fields.get('type') or None
             },
             'urls': serialize_urls(node_addon)
         },
@@ -85,40 +89,43 @@ def serialize_settings(node_settings, current_user, client=None):
             uid=user_settings.owner._primary_key)
         result['ownerName'] = user_settings.owner.fullname
         # Show available projects
-        '''
-        path = node_settings.folder
-        if path is None:
-            result['folder'] = {'name': None, 'path': None}
-        else:
-            result['folder'] = {
-                'name': 'Figshare' + path,
-                'path': path
-            }
-        '''
+        linked = node_settings.linked_content
+        if linked is None:
+            linked = {'id': None, 'type': None, 'title': None}
+        result['linked'] = linked
     return result
 
+def serialize_urls(node_settings):
+    node = node_settings.owner
+    urls = {
+        'config': node.api_url_for('figshare_config_put'),
+        'deauthorize': node.api_url_for('figshare_deauthorize'),
+        'auth': node.api_url_for('figshare_oauth_start'),
+        'importAuth': node.api_url_for('figshare_import_user_auth'),
+        'options': node.api_url_for('figshare_get_options'),
+        'files': node.web_url_for('collect_file_trees__page'),
+        # Endpoint for fetching only folders (including root)
+        'contents': node.api_url_for('figshare_hgrid_data_contents'),
+    }
+    return urls
+
+@must_be_valid_project
+@must_have_addon('figshare', 'node')
+def figshare_get_options(node_addon, **kwargs):
+    options = Figshare.from_settings(node_addon.user_settings).get_options()
+    
+    if options == 401 or not isinstance(options, list):
+        self.user_settings.remove_auth()
+        push_status_message(messages.OAUTH_INVALID)
+    else:
+        node = node_addon.owner
+        return options_to_hgrid(node, options) or []
 
 ##############
 
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('figshare', 'node')
-def figshare_set_config(*args, **kwargs):
-
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-
+def figshare_update_config(node, auth, node_settings, fs_title, fs_url, fs_type, fs_id):    
     # If authorized, only owner can change settings
     if not node_settings.has_auth or node_settings.user_settings.owner != auth.user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    try:
-        figshare_title = request.json.get('figshare_title', '')
-        figshare_url = request.json.get('figshare_value', '').split('_')
-        figshare_type = figshare_url[0]
-        figshare_id = figshare_url[1]
-    except:
         raise HTTPError(http.BAD_REQUEST)
 
     if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
@@ -135,20 +142,24 @@ def figshare_set_config(*args, **kwargs):
         node_settings.figshare_title = figshare_title
         node_settings.save()
 
-        node.add_log(
-            action='figshare_content_linked',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'figshare': {
-                    'type': figshare_type,
-                    'id': figshare_id,
-                    'title': figshare_title,
-                }
-            },
-            auth=auth,
-        )
     return {}
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon('figshare', 'node')
+def figshare_set_config(*args, **kwargs):
+    auth = kwargs['auth']
+    node_settings = kwargs['node_addon']
+    node = node_settings.owner
+
+    try:
+        figshare_title = request.json.get('figshare_title', '')
+        figshare_url = request.json.get('figshare_value', '').split('_')
+        figshare_type = figshare_url[0]
+        figshare_id = figshare_url[1]
+    except:
+        raise HTTPError(http.BAD_REQUEST)
+    figshare_update_config(node, auth, node_settings, figshare_title, figshare_url, figshare_type, figshare_id)
 
 
 @must_have_permission('write')

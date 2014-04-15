@@ -12,7 +12,6 @@ from .api import Figshare
 from . import settings as figshare_settings
 from . import messages
 
-
 class FigShareGuidFile(GuidFile):
 
     article_id = fields.StringField(index=True)
@@ -23,7 +22,6 @@ class FigShareGuidFile(GuidFile):
         if self.article_id is None or self.file_id is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('figshare', 'article', self.article_id, 'file', self.file_id)
-
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
 
@@ -75,6 +73,39 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def linked_content(self):
+        return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
+
+    def update_id(self, fid):
+        self.figshare_id = fid
+        self.save()
+    def update_title(self, title):
+        self.figshare_title = title
+        self.save()
+    def update_type(self, ftype):
+        self.figshare_type = ftype
+        self.save()
+
+    def update_fields(self, fields, node, auth):
+        for attr in fields.keys():
+            update = getattr(self, 'update_'+attr) 
+            update(fields[attr])
+        node.add_log(
+            action='figshare_content_linked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'figshare': {
+                    'type': self.figshare_type,
+                    'id': self.figshare_id,
+                    'title': self.figshare_title,
+                }
+            },
+            auth=auth,
+            )
+
+
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
@@ -96,14 +127,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner
             })
-            if user == self.user_settings.owner:
-                options = Figshare.from_settings(self.user_settings).get_options()
-
-                if options == 401 or not isinstance(options, list):
-                    self.user_settings.remove_auth()
-                    push_status_message(messages.OAUTH_INVALID)
-                else:
-                    rv['figshare_options'] = options or []
 
         return rv
 

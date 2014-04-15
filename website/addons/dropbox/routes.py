@@ -100,7 +100,6 @@ api_routes = {
             views.config.dropbox_config_put,
             json_renderer
         ),
-
         Rule(
             ['/project/<pid>/dropbox/config/',
             '/project/<pid>/node/<nid>/dropbox/config/'],
