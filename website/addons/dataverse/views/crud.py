@@ -84,11 +84,9 @@ def dataverse_view_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
     file = get_file_by_id(study, file_id)
-
-    # Get file URL
-    url = node.web_url_for('dataverse_view_file', path=file_id)
 
     # Get or create rendered file
     _, ext = os.path.splitext(file.name)
@@ -97,13 +95,13 @@ def dataverse_view_file(**kwargs):
 
     if rendered is None:
         data = scrape_dataverse(file_id)
-        download_path = node.api_url_for(
+        download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
             file_path=file_id + ext, file_content=data,
-            download_path=download_path,
+            download_path=download_url,
         )
 
     rv = {
@@ -137,7 +135,7 @@ def dataverse_upload_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
     upload = request.files.get('file')
@@ -220,7 +218,7 @@ def dataverse_delete_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
     file = get_file_by_id(study, file_id)
 

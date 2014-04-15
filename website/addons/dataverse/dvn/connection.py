@@ -60,3 +60,7 @@ class DvnConnection(object):
 
         # Cast SWORD collections to Dataverses
         return [Dataverse(self, col) for col in collections]
+
+    def get_dataverse(self, alias):
+        return next((dataverse for dataverse in self.get_dataverses()
+             if dataverse.alias == alias), None)

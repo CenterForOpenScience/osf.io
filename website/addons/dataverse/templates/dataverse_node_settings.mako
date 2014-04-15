@@ -19,8 +19,9 @@
                     <div class="col-md-6">
                         Dataverse:
                         <select id="dataverseDropDown" class="form-control">
+                            <option value="None">---</option>
                             % for i, dv in enumerate(dataverses):
-                                <option value=${i} ${'selected' if i == dataverse_number else ''} ${'disabled' if not dv_status[i] else ''}>${dv} ${'(Not Released)' if not dv_status[i] else ''}</option>
+                                <option value=${dataverse_aliases[i]} ${'selected' if dataverse_aliases[i] == dataverse_alias else ''} ${'disabled' if not dv_status[i] else ''}>${dv} ${'(Not Released)' if not dv_status[i] else ''}</option>
                             % endfor
                         </select>
                     </div>
@@ -86,10 +87,11 @@
 <script>
 
     $("#dataverseDropDown").change(function() {
-        var dn = '{"dataverse_number":' + $(this).find(":selected").val() + '}'
+        var alias = '{"dataverse_alias":"' + $(this).find(":selected").val() + '"}'
+        console.log(alias);
         $.ajax({
-            url: nodeApiUrl + 'dataverse/set/',
-            data: dn,
+            url: '${set_dataverse_url}',
+            data: alias,
             type: 'POST',
             contentType: 'application/json',
             dataType: 'json',
@@ -102,7 +104,7 @@
     $("#studyDropDown").change(function() {
         var sn = '{"study_hdl":"' + $(this).find(":selected").val() + '"}'
         $.ajax({
-            url: nodeApiUrl + 'dataverse/set/study/',
+            url: '${set_study_url}',
             data: sn,
             type: 'POST',
             contentType: 'application/json',

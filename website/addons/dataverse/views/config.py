@@ -89,11 +89,10 @@ def set_dataverse(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Set selected Dataverse
-    dataverses = connection.get_dataverses() or []
-    old_dataverse = dataverses[node_settings.dataverse_number].title
+    old_dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     old_study = node_settings.study
-    node_settings.dataverse_number = request.json.get('dataverse_number')
-    dataverse = dataverses[node_settings.dataverse_number] if dataverses else None
+    node_settings.dataverse_alias = request.json.get('dataverse_alias')
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     node_settings.dataverse = dataverse.title if dataverse else None
 
     # Set study to None if there was a study
@@ -108,7 +107,7 @@ def set_dataverse(*args, **kwargs):
                 'project': node.parent_id,
                 'node': node._primary_key,
                 'dataverse': {
-                    'dataverse': old_dataverse,
+                    'dataverse': old_dataverse.title,
                     'study': old_study,
                 }
             },
@@ -144,7 +143,7 @@ def set_study(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Get current dataverse and new study
-    dataverse = connection.get_dataverses()[node_settings.dataverse_number]
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     hdl = request.json.get('study_hdl')
 
     # Set study

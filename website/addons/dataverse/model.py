@@ -61,8 +61,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
-    #TODO: Replace dataverse number with alias (unique)
-    dataverse_number = fields.IntegerField(default=0)
+    dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
     study_hdl = fields.StringField()
     study = fields.StringField()
@@ -75,7 +74,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     def deauthorize(self):
         self.dataverse_username = None
         self.dataverse_password = None
-        self.dataverse_number = 0
+        self.dataverse_alias = None
         self.dataverse = None
         self.study_hdl = None
         self.study = None
@@ -116,7 +115,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
-            dataverse = dataverses[self.dataverse_number]
+            dataverse = connection.get_dataverse(self.dataverse_alias)
             studies = dataverse.get_studies() if dataverse else []
 
             rv.update({
@@ -124,11 +123,15 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'dataverses': [d.title for d in dataverses],
                 'dv_status': [d.is_released for d in dataverses],
                 'dataverse': self.dataverse or '',
-                'dataverse_number': self.dataverse_number,
+                'dataverse_alias': self.dataverse_alias,
+                'dataverse_aliases': [d.alias for d in dataverses],
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.title for s in studies],
                 'study': self.study,
                 'study_hdl': self.study_hdl,
+                'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
+                'set_study_url': self.owner.api_url_for('set_study'),
+
             })
 
             if self.study_hdl is not None:

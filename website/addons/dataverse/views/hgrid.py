@@ -75,7 +75,8 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     info = []
 
-    study = connection.get_dataverses()[node_settings.dataverse_number].get_study_by_hdl(node_settings.study_hdl)
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
     for f in study.get_files():
 
