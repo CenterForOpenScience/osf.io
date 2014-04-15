@@ -122,6 +122,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             rv.update({
                 'connected': True,
                 'dataverses': [d.title for d in dataverses],
+                'dv_status': [d.is_released for d in dataverses],
                 'dataverse': self.dataverse or '',
                 'dataverse_number': self.dataverse_number,
                 'studies': [s.get_id() for s in studies],

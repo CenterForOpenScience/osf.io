@@ -20,7 +20,7 @@
                         Dataverse:
                         <select id="dataverseDropDown" class="form-control">
                             % for i, dv in enumerate(dataverses):
-                                <option value=${i} ${'selected' if i == dataverse_number else ''}>${dv}</option>
+                                <option value=${i} ${'selected' if i == dataverse_number else ''} ${'disabled' if not dv_status[i] else ''}>${dv} ${'(Not Released)' if not dv_status[i] else ''}</option>
                             % endfor
                         </select>
                     </div>
