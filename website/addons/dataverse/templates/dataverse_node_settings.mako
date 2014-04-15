@@ -3,42 +3,53 @@
 <div>
     % if connected:
 
+        <div class="well well-sm">
+            Authorized by <a href="${authorized_user_url}">${authorized_user_name}</a>
+            on behalf of Dataverse user ${authorized_dataverse_user}
+            % if authorized_dataverse_user:
+                <a id="dataverseDeauth" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
+            % endif
+        </div>
+
         % if authorized:
-            <div style="padding-bottom: 10px">
 
-                % if len(dataverses) != 0:
-                    Dataverse:
-                    <select id="dataverseDropDown" class="form-control">
-                        % for i, dv in enumerate(dataverses):
-                            % if i == dataverse_number:
-                                <option value=${i} selected>${dv}</option>
-                            % else:
-                                <option value=${i}>${dv}</option>
-                            % endif
-                        % endfor
-                    </select>
+            % if len(dataverses) != 0:
+                <div class="row" style="padding-bottom: 10px">
 
-                    <br>
-
-                    Study:
-                    <select id="studyDropDown" class="form-control">
-                        <option value="None">---</option>
-                        % if len(dataverses) > 0:
-                            % for i, hdl in enumerate(studies):
-                                % if hdl == study_hdl:
-                                    <option value=${hdl} selected>${study_names[i]}</option>
+                    <div class="col-md-6">
+                        Dataverse:
+                        <select id="dataverseDropDown" class="form-control">
+                            % for i, dv in enumerate(dataverses):
+                                % if i == dataverse_number:
+                                    <option value=${i} selected>${dv}</option>
                                 % else:
-                                    <option value=${hdl}>${study_names[i]}</option>
+                                    <option value=${i}>${dv}</option>
                                 % endif
                             % endfor
-                        % endif
-                    </select>
+                        </select>
+                    </div>
 
-                % else:
-                    This Dataverse account does not yet have a Dataverse.
-                % endif
+                    <div class="col-md-6">
+                        Study:
+                        <select id="studyDropDown" class="form-control">
+                            <option value="None">---</option>
+                            % if len(dataverses) > 0:
+                                % for i, hdl in enumerate(studies):
+                                    % if hdl == study_hdl:
+                                        <option value=${hdl} selected>${study_names[i]}</option>
+                                    % else:
+                                        <option value=${hdl}>${study_names[i]}</option>
+                                    % endif
+                                % endfor
+                            % endif
+                        </select>
+                    </div>
 
-            </div>
+                </div>
+
+            % else:
+                This Dataverse account does not yet have a Dataverse.
+            % endif
 
         % endif
 
@@ -50,14 +61,6 @@
             % elif len(dataverses) != 0:
                 This node has not yet been linked to a study.
             % endif
-        </div>
-
-        <div style="padding-bottom: 10px">
-            Authorized by OSF user
-            <a href="${authorized_user_url}" target="_blank">
-                ${authorized_user_name}
-            </a>
-            on behalf of Dataverse user ${authorized_dataverse_user}
         </div>
 
     % else:
@@ -80,12 +83,12 @@
             % endif
         </div>
 
-    % endif
+        % if authorized_dataverse_user:
+            <div style="padding-top: 10px">
+                <a id="dataverseDeauth" class="btn btn-danger">Deauthorize</a>
+            </div>
+        % endif
 
-    % if authorized_dataverse_user:
-        <div style="padding-top: 10px">
-            <a id="dataverseDeauth" class="btn btn-danger">Unauthorize</a>
-        </div>
     % endif
 
 </div>
@@ -143,7 +146,7 @@
                 function(result) {
                     if (result) {
                         $.ajax({
-                            url: nodeApiUrl + 'dataverse/unauthorize/',
+                            url: nodeApiUrl + 'dataverse/deauthorize/',
                             type: 'POST',
                             contentType: 'application/json',
                             dataType: 'json',

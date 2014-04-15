@@ -42,8 +42,8 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_unauthorize(self):
-        url = lookup('api', 'unauthorize_dataverse',
+    def test_deauthorize(self):
+        url = lookup('api', 'deauthorize_dataverse',
                      pid=self.project._primary_key)
         self.app.post_json(url, auth=self.user.auth)
 
@@ -73,7 +73,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.user_settings.dataverse_username)
         assert_false(self.user_settings.dataverse_password)
 
-        # User's authorized nodes are now unauthorized
+        # User's authorized nodes are now deauthorized
         self.node_settings.reload()
         assert_false(self.node_settings.dataverse_username)
         assert_false(self.node_settings.dataverse_password)

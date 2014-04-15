@@ -38,11 +38,11 @@ def authorize_dataverse(**kwargs):
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def unauthorize_dataverse(*args, **kwargs):
+def deauthorize_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
 
-    node_settings.unauthorize()
+    node_settings.deauthorize()
     node_settings.save()
 
     return {}
@@ -55,7 +55,7 @@ def dataverse_delete_user(*args, **kwargs):
 
     # Remove authorization for nodes
     for node_settings in dataverse_user.addondataversenodesettings__authorized:
-        node_settings.unauthorize()
+        node_settings.deauthorize()
         node_settings.save()
 
     # Revoke access

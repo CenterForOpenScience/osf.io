@@ -72,7 +72,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         'addondataverseusersettings', backref='authorized'
     )
 
-    def unauthorize(self):
+    def deauthorize(self):
         self.dataverse_username = None
         self.dataverse_password = None
         self.dataverse_number = 0
