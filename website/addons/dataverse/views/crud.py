@@ -97,10 +97,13 @@ def dataverse_view_file(**kwargs):
 
     if rendered is None:
         data = scrape_dataverse(file_id)
+        download_path = node.api_url_for(
+            'dataverse_download_file_proxy', path=file_id
+        )
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
             file_path=file_id + ext, file_content=data,
-            download_path='{}proxy/'.format(url),
+            download_path=download_path,
         )
 
     rv = {
