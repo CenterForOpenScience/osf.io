@@ -52,7 +52,7 @@ class TestViewsConfig(DbTestCase):
         self.node_settings.user_settings = self.user_settings
         self.node_settings.figshare_id = '123456'
         self.node_settings.figshare_type = 'project'
-        self.node_settings.figshare_title = 'OVER9000'
+        self.node_settings.figshare_title = 'FIGSHARE_TITLE'
         self.node_settings.save()
 
         self.figshare = create_mock_figshare('test')
@@ -61,7 +61,7 @@ class TestViewsConfig(DbTestCase):
         num = len(self.project.logs)
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
         rv = self.app.post_json(
-            url, {'figshare_value': 'project_123456', 'figshare_title': 'OVER9000'}, auth=self.user.auth)
+            url, {'figshare_value': 'project_123456', 'figshare_title': 'FIGSHARE_TITLE'}, auth=self.user.auth)
         self.project.reload()
 
         assert_equal(rv.status_int, 200)

@@ -78,32 +78,49 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
 
     def update_id(self, fid):
-        self.figshare_id = fid
-        self.save()
+        if self.figshare_id != fid:
+            self.figshare_id = fid
+            self.save()
+            return True
+        return False
     def update_title(self, title):
-        self.figshare_title = title
-        self.save()
+        if self.figshare_title != title:
+            self.figshare_title = title
+            self.save()
+            return True
+        return False
     def update_type(self, ftype):
-        self.figshare_type = ftype
-        self.save()
+        if self.figshare_type != ftype:
+            self.figshare_type = ftype
+            self.save()
+            return True
+        return False
 
     def update_fields(self, fields, node, auth):
+        updated = False
         for attr in fields.keys():
-            update = getattr(self, 'update_'+attr) 
-            update(fields[attr])
-        node.add_log(
-            action='figshare_content_linked',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'figshare': {
-                    'type': self.figshare_type,
-                    'id': self.figshare_id,
-                    'title': self.figshare_title,
-                }
-            },
-            auth=auth,
-            )
+            try:
+                update = getattr(self, 'update_'+attr) or None
+                if update:                
+                    updated = update(fields[attr]) or updated
+            except AttributeError:
+                # TODO deal with this?
+                pass
+        self.save()
+        if updated:
+            node.add_log(
+                action='figshare_content_linked',
+                params={
+                    'project': node.parent_id,
+                    'node': node._id,
+                    'figshare': {
+                        'type': self.figshare_type,
+                        'id': self.figshare_id,
+                        'title': self.figshare_title,
+                        }
+                    },
+                auth=auth,
+                )
 
 
     def to_json(self, user):

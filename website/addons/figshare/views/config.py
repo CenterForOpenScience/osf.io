@@ -128,18 +128,18 @@ def figshare_update_config(node, auth, node_settings, fs_title, fs_url, fs_type,
     if not node_settings.has_auth or node_settings.user_settings.owner != auth.user:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
+    if not fs_id or not (fs_type == 'project' or fs_type == 'fileset'):
         raise HTTPError(http.BAD_REQUEST)
 
     changed = (
-        figshare_id != node_settings.figshare_id or
-        figshare_type != node_settings.figshare_type or
-        figshare_title != node_settings.figshare_title
+        fs_id != node_settings.figshare_id or
+        fs_type != node_settings.figshare_type or
+        fs_title != node_settings.figshare_title
     )
     if changed:
-        node_settings.figshare_id = figshare_id
-        node_settings.figshare_type = figshare_type
-        node_settings.figshare_title = figshare_title
+        node_settings.figshare_id = fs_id
+        node_settings.figshare_type = fs_type
+        node_settings.figshare_title = fs_title
         node_settings.save()
 
     return {}
@@ -159,7 +159,12 @@ def figshare_set_config(*args, **kwargs):
         figshare_id = figshare_url[1]
     except:
         raise HTTPError(http.BAD_REQUEST)
-    figshare_update_config(node, auth, node_settings, figshare_title, figshare_url, figshare_type, figshare_id)
+
+    if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
+        raise HTTPError(http.BAD_REQUEST)
+
+    fields = {'title': figshare_title, 'type': figshare_type, 'id': figshare_id}    
+    node_settings.update_fields(fields, node, auth)
 
 
 @must_have_permission('write')
