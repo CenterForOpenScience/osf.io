@@ -44,9 +44,10 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         'branch': node.api_url_for('dataverse_root_folder_public'),
     }
 
-    state_append = ' [{}]'.format(state.capitalize())
     if study.get_released_files() and node.can_edit(auth):
-        state_append = dataverse_state_widget(state)
+        state_append = dataverse_state_template.render(state=state)
+    else:
+        state_append = ' [{}]'.format(state.capitalize())
 
     return [rubeus.build_addon_root(
         node_settings,
@@ -56,22 +57,6 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         extra=state_append,
     )]
 
-dataverse_state_template = Template('''
-    <select class="dataverse-state-select">
-        <option ${"selected" if state == "draft" else ""}>Draft</option>
-        <option ${"selected" if state == "released" else ""}>Released</option>
-    </select>
-''')
-
-def dataverse_state_widget(state):
-    """Render branch selection widget for GitHub add-on. Displayed in the
-    name field of HGrid file trees.
-
-    """
-    rendered = dataverse_state_template.render(
-        state=state
-    )
-    return rendered
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
@@ -136,3 +121,11 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
         info.append(item)
 
     return info
+
+
+dataverse_state_template = Template('''
+    <select class="dataverse-state-select">
+        <option ${"selected" if state == "draft" else ""}>Draft</option>
+        <option ${"selected" if state == "released" else ""}>Released</option>
+    </select>
+''')
