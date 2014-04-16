@@ -48,7 +48,6 @@ def dataverse_hgrid_root(node_settings, auth, state=DEFAULT_STATE, **kwargs):
     )]
 
 
-# TODO: Can this be combined with dataverse_hgrid_data?
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_root_folder_public(*args, **kwargs):

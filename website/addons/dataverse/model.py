@@ -104,6 +104,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
                 'authorized_user_url': self.user.absolute_url if self.user else '',
+                'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
+                'set_study_url': self.owner.api_url_for('set_study'),
         })
 
         connection = connect(
@@ -129,9 +131,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'study_names': [s.title for s in studies],
                 'study': self.study,
                 'study_hdl': self.study_hdl,
-                'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
-                'set_study_url': self.owner.api_url_for('set_study'),
-
             })
 
             if self.study_hdl is not None:

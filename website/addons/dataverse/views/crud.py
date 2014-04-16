@@ -272,6 +272,9 @@ def scrape_dataverse(file_id):
         session.post(terms_url, data=data)
         response = session.get(url)
 
+    if 'content-disposition' not in response.headers.keys():
+        raise HTTPError(http.NOT_FOUND)
+
     filename = response.headers['content-disposition'].split('"')[1]
 
     # return file and name
@@ -299,6 +302,9 @@ def scrape_filename(file_id):
         terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
         headers = session.head(url).headers
+
+    if 'content-disposition' not in headers.keys():
+        raise HTTPError(http.NOT_FOUND)
 
     # return file and name
     return headers['content-disposition'].split('"')[1]
