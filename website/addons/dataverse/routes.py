@@ -124,6 +124,15 @@ api_routes = {
             views.crud.dataverse_download_file_proxy,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/release/',
+                '/project/<pid>/node/<nid>/dataverse/release/',
+            ],
+            'get',
+            views.crud.dataverse_release_study,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }

@@ -25,3 +25,6 @@ def get_file(study, filename, released=False):
 
 def get_file_by_id(study, file_id, released=False):
     return study.get_file_by_id(file_id, released)
+
+def release_study(study):
+    return study.release()

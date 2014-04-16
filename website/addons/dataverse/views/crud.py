@@ -8,7 +8,7 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, delete_file, upload_file, \
-    get_file, get_file_by_id
+    get_file, get_file_by_id, release_study
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -26,6 +26,44 @@ import httplib as http
 logger = logging.getLogger(__name__)
 
 session = requests.Session()
+
+
+@must_have_permission('write')
+@must_not_be_registration
+@must_have_addon('dataverse', 'node')
+def dataverse_release_study(**kwargs):
+
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+    node_settings = kwargs['node_addon']
+
+    now = datetime.datetime.utcnow()
+
+    connection = connect(
+        node_settings.username,
+        node_settings.password,
+    )
+
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+
+    release_study(study)
+
+    # Add a log
+    node.add_log(
+        action='dataverse_study_released',
+        params={
+            'project': node.parent_id,
+            'node': node._primary_key,
+            'dataverse': {
+                'dataverse': dataverse.title,
+                'study': study.title,
+            }
+        },
+        auth=auth,
+        log_date=now,
+    )
+
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
