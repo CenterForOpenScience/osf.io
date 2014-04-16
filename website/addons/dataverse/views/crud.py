@@ -46,7 +46,7 @@ def dataverse_download_file_proxy(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    content = scrape_dataverse(file_id)
+    content, filename = scrape_dataverse(file_id)
 
     # Build response
     resp = make_response(content)
@@ -79,22 +79,14 @@ def dataverse_view_file(**kwargs):
     if redirect_url:
         return redirect(redirect_url)
 
-    connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
-    )
-
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
-    file = get_file_by_id(study, file_id)
-
     # Get or create rendered file
-    _, ext = os.path.splitext(file.name)
     cache_file = '{0}.html'.format(file_id)
     rendered = get_cache_content(node_settings, cache_file)
+    filename = None
 
     if rendered is None:
-        data = scrape_dataverse(file_id)
+        data, filename = scrape_dataverse(file_id)
+        _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
@@ -105,7 +97,7 @@ def dataverse_view_file(**kwargs):
         )
 
     rv = {
-        'file_name': file.name,
+        'file_name': filename or scrape_filename(file_id),
         'rendered': rendered,
         'render_url': node.api_url_for('dataverse_get_rendered_file',
                                        path=file_id),
@@ -262,7 +254,8 @@ def dataverse_get_rendered_file(**kwargs):
 def scrape_dataverse(file_id):
 
     # Go to file url
-    response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
+    response = session.get(url)
 
     # Agree to terms if necessary
     if '<title>Account Terms of Use -' in response.content:
@@ -275,8 +268,37 @@ def scrape_dataverse(file_id):
             'form1:termsAccepted':'on',
             'form1:termsButton':'Continue',
         }
-        session.post('http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST), data=data)
-        response = session.get('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+        terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
+        session.post(terms_url, data=data)
+        response = session.get(url)
 
-    # return file
-    return response.content
+    filename = response.headers['content-disposition'].split('"')[1]
+
+    # return file and name
+    return response.content, filename
+
+
+def scrape_filename(file_id):
+
+    # Go to file url
+    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
+    headers = session.head(url).headers
+
+    # Agree to terms if necessary
+    if 'content-disposition' not in headers.keys():
+
+        response = session.get(url)
+        parsed = BeautifulSoup(response.content)
+        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
+        data = {
+            'form1':'form1',
+            'javax.faces.ViewState': view_state,
+            'form1:termsAccepted':'on',
+            'form1:termsButton':'Continue',
+        }
+        terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
+        session.post(terms_url, data=data)
+        headers = session.head(url).headers
+
+    # return file and name
+    return headers['content-disposition'].split('"')[1]

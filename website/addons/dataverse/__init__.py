@@ -42,6 +42,6 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.hgrid.dataverse_hgrid_data
+GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
 
 MAX_FILE_SIZE = 10  # MB

@@ -133,7 +133,10 @@ class Study(object):
         files = self.get_released_files() if released else self.get_files()
         return next((f for f in files if f.id == file_id), None)
 
-    def get_files(self):
+    def get_files(self, released=False):
+        if released:
+            return self.get_released_files()
+
         if not self.statementUri:
             atomXml = self.get_entry()
             statementLink = get_elements(atomXml,
