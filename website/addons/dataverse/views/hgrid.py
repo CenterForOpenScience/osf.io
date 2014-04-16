@@ -1,18 +1,20 @@
 import time
 import os
+
+from mako.template import Template
 from website.addons.dataverse.client import connect
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.util import rubeus
-from website.addons.dataverse.settings import DEFAULT_STATE
 
 import hurry
 
 
-def dataverse_hgrid_root(node_settings, auth, state=DEFAULT_STATE, **kwargs):
+def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     node = node_settings.owner
+    state = state or 'draft' if node.can_edit(auth) else 'released'
 
     connection = connect(
         node_settings.dataverse_username,
@@ -22,6 +24,9 @@ def dataverse_hgrid_root(node_settings, auth, state=DEFAULT_STATE, **kwargs):
     # Quit if no study linked
     if node_settings.study_hdl is None or connection is None:
         return []
+
+    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
     name = '{0} / {1}'.format(
             node_settings.dataverse,
@@ -39,33 +44,55 @@ def dataverse_hgrid_root(node_settings, auth, state=DEFAULT_STATE, **kwargs):
         'branch': node.api_url_for('dataverse_root_folder_public'),
     }
 
+    state_append = ' [{}]'.format(state.capitalize())
+    if study.get_released_files() and node.can_edit(auth):
+        state_append = dataverse_state_widget(state)
+
     return [rubeus.build_addon_root(
         node_settings,
         name,
         urls=urls,
         permissions=permissions,
-        extra=' [{}]'.format(state.capitalize()),
+        extra=state_append,
     )]
 
+dataverse_state_template = Template('''
+    <select class="dataverse-state-select">
+        <option ${"selected" if state == "draft" else ""}>Draft</option>
+        <option ${"selected" if state == "released" else ""}>Released</option>
+    </select>
+''')
+
+def dataverse_state_widget(state):
+    """Render branch selection widget for GitHub add-on. Displayed in the
+    name field of HGrid file trees.
+
+    """
+    rendered = dataverse_state_template.render(
+        state=state
+    )
+    return rendered
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_root_folder_public(*args, **kwargs):
+def dataverse_root_folder_public(state=None, **kwargs):
 
+    node = kwargs['node']
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
-    state = DEFAULT_STATE # TODO: Get from kwargs
+    state = state or 'draft' if node.can_edit(auth) else 'released'
 
     return dataverse_hgrid_root(node_settings, auth=auth, state=state)
 
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_hgrid_data_contents(state=DEFAULT_STATE, **kwargs):
+def dataverse_hgrid_data_contents(state=None, **kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
+    state = state or 'draft' if node.can_edit(auth) else 'released'
     released = state=='released'
 
     can_edit = node.can_edit(auth) and not node.is_registration and not released
