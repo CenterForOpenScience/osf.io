@@ -78,6 +78,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
 
     def update_id(self, fid):
+        fid = str(fid)
         if self.figshare_id != fid:
             self.figshare_id = fid
             self.save()
@@ -137,7 +138,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_options': [],
             'is_registration': self.owner.is_registration,
         })
-
         if self.has_auth:
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
