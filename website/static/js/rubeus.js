@@ -251,9 +251,13 @@
             if (viewUrl) {
                 window.location.href = viewUrl;
             }
-            if (row.kind === HGrid.FOLDER && row.depth !== 0) {
-                grid.toggleCollapse(row);
-            }
+        }
+    }
+
+    function onClickFolderName(evt, row, grid) {
+        onClickName(evt, row, grid);
+        if (row && row.kind === HGrid.FOLDER && row.depth !== 0) {
+            grid.toggleCollapse(row);
         }
     }
 
@@ -403,8 +407,15 @@
             // Go to file's detail page if name is clicked
             {
                 on: 'click',
-                selector: '.' + Rubeus.Html.folderTextClass,
+                selector: '.' + HGrid.Html.itemNameClass,
                 callback: onClickName
+            },
+            // Toggle folder collapse when text is clicked; listen on text
+            // rather than name to avoid Chrome crash on <select>s
+            {
+                on: 'click',
+                selector: '.' + Rubeus.Html.folderTextClass,
+                callback: onClickFolderName
             }
         ],
         progBar: '#filebrowserProgressBar',
