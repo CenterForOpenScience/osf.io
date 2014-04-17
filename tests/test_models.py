@@ -1334,7 +1334,7 @@ class TestProject(DbTestCase):
         project.remove_contributor(creator, auth=Auth(user=contrib))
         assert_false(project.can_view(Auth(user=creator)))
         assert_false(project.can_edit(Auth(user=creator)))
-        assert_false(project.is_contributor(Auth(user=creator)))
+        assert_false(project.is_contributor(creator))
 
     def test_can_view_public(self):
         # Create contributor and noncontributor
