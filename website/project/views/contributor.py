@@ -139,7 +139,6 @@ def get_recently_added_contributors(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -167,7 +166,6 @@ def project_before_remove_contributor(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def project_removecontributor(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -311,9 +309,10 @@ def project_manage_contributors(**kwargs):
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
     # Must redirect user if revoked own access
-    if not node.is_contributor(auth.user):
+    if node.is_contributor(auth.user):
         return {'redirectUrl': node.url}
     if not node.has_permission(auth.user, ADMIN):
+        framework.status.push_status_message('Removed self from project', 'info')
         return {'redirectUrl': '/dashboard/'}
     return {}
 
