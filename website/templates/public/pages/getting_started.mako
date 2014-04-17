@@ -199,7 +199,6 @@
                 <P>The information displayed on the statistics page can be changed. From the statistics page of your project (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
                 <div class="gs-video center"><iframe width="560" height="315" src="//www.youtube.com/embed/WKjyILQzZv0?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
             </div>
-            <div class="empty"></div>
         </div>
     </div>
 </%def>
