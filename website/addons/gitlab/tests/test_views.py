@@ -2,9 +2,12 @@ import mock
 from nose.tools import *
 
 import base64
+import datetime
 import httplib as http
 
 from tests.base import fake
+
+from website.models import NodeLog
 
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.views import hooks
@@ -13,12 +16,98 @@ from website.addons.gitlab.api import GitlabError
 
 from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
+from website.addons.gitlab.views.hooks import add_diff_log
+
+
+add_file_data = {u'a_mode': None,
+  u'b_mode': u'100644',
+  u'deleted_file': False,
+  u'diff': u'--- /dev/null\n+++ b/blah.py\n@@ -1 +1,2 @@\n+import this',
+  u'new_file': True,
+  u'new_path': u'blah.py',
+  u'old_path': u'blah.py',
+  u'renamed_file': False}
+
+update_file_data = {u'a_mode': None,
+  u'b_mode': u'100644',
+  u'deleted_file': False,
+  u'diff': u'--- a/blah.py\n+++ b/blah.py\n@@ -1,2 +1,3 @@\n import this\n+import that',
+  u'new_file': False,
+  u'new_path': u'blah.py',
+  u'old_path': u'blah.py',
+  u'renamed_file': False}
+
+delete_file_data = {u'a_mode': None,
+  u'b_mode': None,
+  u'deleted_file': True,
+  u'diff': u'--- a/blah.py\n+++ /dev/null\n@@ -1,3 +1 @@\n-import this\n-import that',
+  u'new_file': False,
+  u'new_path': u'blah.py',
+  u'old_path': u'blah.py',
+  u'renamed_file': False}
 
 
 class TestHookLog(GitlabTestCase):
 
-    def test_add_log_from_osf(self):
+    def _handle_diff(self, data, user):
+        add_diff_log(
+            self.project,
+            data,
+            sha='e5a7e862ba74fbd765ba6f48c33714adf621b73b',
+            date=datetime.datetime.now(),
+            gitlab_user=user,
+            save=True,
+        )
+
+    def test_hook_add_file_osf_user(self):
         log_count = len(self.project.logs)
+        self._handle_diff(add_file_data, self.user)
+        assert_equal(len(self.project.logs), log_count + 1)
+        assert_equal(self.project.logs[-1].params['path'], add_file_data['new_path'])
+        assert_equal(self.project.logs[-1].user, self.user)
+        assert_equal(self.project.logs[-1].foreign_user, None)
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_ADDED)
+        )
+
+    def test_hook_add_file_foreign_user(self):
+        log_count = len(self.project.logs)
+        self._handle_diff(add_file_data, 'Freddie')
+        assert_equal(len(self.project.logs), log_count + 1)
+        assert_equal(self.project.logs[-1].params['path'], add_file_data['new_path'])
+        assert_equal(self.project.logs[-1].user, None)
+        assert_equal(self.project.logs[-1].foreign_user, 'Freddie')
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_ADDED)
+        )
+
+    def test_hook_update_file(self):
+        log_count = len(self.project.logs)
+        self._handle_diff(update_file_data, 'Freddie')
+        assert_equal(len(self.project.logs), log_count + 1)
+        assert_equal(self.project.logs[-1].params['path'], update_file_data['new_path'])
+        assert_equal(self.project.logs[-1].foreign_user, 'Freddie')
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_UPDATED)
+        )
+
+    def test_hook_delete_file(self):
+        log_count = len(self.project.logs)
+        self._handle_diff(delete_file_data, 'Freddie')
+        assert_equal(len(self.project.logs), log_count + 1)
+        assert_equal(self.project.logs[-1].params['path'], delete_file_data['new_path'])
+        assert_equal(self.project.logs[-1].foreign_user, 'Freddie')
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_REMOVED)
+        )
+
+    @mock.patch('website.addons.gitlab.views.hooks.add_diff_log')
+    @mock.patch('website.addons.gitlab.views.hooks.client.listrepositorycommitdiff')
+    def test_add_log_from_osf(self, mock_list_diff, mock_add_log):
         payload = {
             'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
             'message': gitlab_settings.MESSAGES['add'],
@@ -29,35 +118,13 @@ class TestHookLog(GitlabTestCase):
             }
         }
         hooks.add_hook_log(self.node_settings, payload, save=True)
-        self.project.reload()
-        assert_equal(
-            len(self.project.logs),
-            log_count
-        )
+        assert_false(mock_list_diff.called)
+        assert_false(mock_add_log.called)
 
-    def test_add_log_from_osf_user(self):
-        log_count = len(self.project.logs)
-        payload = {
-            'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
-            'message': 'pushed from git',
-            'timestamp': '2014-03-31T13:40:39+00:00',
-            'author': {
-                'name': self.user.fullname,
-                'email': self.user.username,
-            }
-        }
-        hooks.add_hook_log(self.node_settings, payload, save=True)
-        self.project.reload()
-        assert_equal(
-            len(self.project.logs),
-            log_count + 1
-        )
-        assert_equal(self.project.logs[-1].user, self.user)
-        assert_equal(self.project.logs[-1].foreign_user,  None)
-
-    def test_add_log_from_non_osf_user(self):
+    @mock.patch('website.addons.gitlab.views.hooks.add_diff_log')
+    @mock.patch('website.addons.gitlab.views.hooks.client.listrepositorycommitdiff')
+    def test_add_log_from_non_osf_user(self, mock_list_diff, mock_add_log):
         name, email = fake.name(), fake.email()
-        log_count = len(self.project.logs)
         payload = {
             'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
             'message': 'pushed from git',
@@ -67,15 +134,10 @@ class TestHookLog(GitlabTestCase):
                 'email': email,
             }
         }
+        mock_list_diff.return_value = [{'fake': 'diff'}]
         hooks.add_hook_log(self.node_settings, payload, save=True)
-        self.project.reload()
-        assert_equal(
-            len(self.project.logs),
-            log_count + 1
-        )
-        assert_equal(self.project.logs[-1].user, None)
-        assert_equal(self.project.logs[-1].foreign_user, name)
-
+        assert_true(mock_list_diff.called)
+        assert_true(mock_add_log.called)
 
 class TestListFiles(GitlabTestCase):
 
