@@ -18,6 +18,7 @@ from framework.flask import request
 from framework.auth.decorators import Auth
 
 from website import settings, security
+from website.util import web_url_for
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
@@ -40,6 +41,26 @@ CONFERENCE_NAMES = {
 }
 
 
+def get_or_create_user(fullname, address, is_spam):
+    """Get or create user by email address.
+
+    """
+    user = User.find(Q('username', 'iexact', address))
+    user = user[0] if user.count() else None
+    user_created = False
+    if user is None:
+        password = str(uuid.uuid4())
+        user = User.create_confirmed(address, password, fullname)
+        user.verification_key = security.random_string(20)
+        # Flag as potential spam account if Mailgun detected spam
+        if is_spam:
+            user.system_tags.append('is_spam')
+        user.save()
+        user_created = True
+
+    return user, user_created
+
+
 def add_poster_by_email(conf_id, recipient, address, fullname, subject,
                         message, attachments, tags=None, system_tags=None,
                         is_spam=False):
@@ -58,23 +79,14 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
 
     created = []
 
-    # Find or create user
-    user = User.find(Q('username', 'iexact', address))
-    user = user[0] if user.count() else None
-    user_created = False
-    set_password_url = None
-    if user is None:
-        password = str(uuid.uuid4())
-        user = User.create_confirmed(address, password, fullname)
-        user.verification_key = security.random_string(20)
-        set_password_url = urlparse.urljoin(
-            settings.DOMAIN, 'resetpassword/{0}/'.format(
-                user.verification_key
-            )
-        )
-        user.save()
-        user_created = True
+    user, user_created = get_or_create_user(fullname, address, is_spam)
+
+    if user_created:
         created.append(user)
+        set_password_url = web_url_for(
+            'reset_password',
+            verification_key=user.verification_key,
+        )
 
     auth = Auth(user=user)
 
@@ -86,11 +98,12 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
         created.append(node)
 
     # Make public if confident that this is not spam
-    if True:#not is_spam:
+    if not is_spam:
         node.set_privacy('public', auth=auth)
     else:
         logger.warn(
-            'Possible spam detected in email modification of user {} / node {}'.format(
+            'Possible spam detected in email modification of '
+            'user {0} / node {1}'.format(
                 user._id, node._id,
             )
         )
@@ -103,19 +116,16 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     )
 
     # Add tags
-    if 'talk' in recipient:
-        poster_or_talk = 'talk'
-    else:
-        poster_or_talk = 'poster'
+    presentation_type = 'talk' if 'talk' in recipient else 'poster'
 
     tags = tags or []
-    tags.append(poster_or_talk)
+    tags.append(presentation_type)
     for tag in tags:
         node.add_tag(tag, auth=auth)
 
     # Add system tags
     system_tags = system_tags or []
-    system_tags.append(poster_or_talk)
+    system_tags.append(presentation_type)
     system_tags.append('emailed')
     if is_spam:
         system_tags.append('spam')
@@ -160,8 +170,8 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
         profile_url=user.absolute_url,
         node_url=urlparse.urljoin(settings.DOMAIN, node.url),
         file_url=urlparse.urljoin(settings.DOMAIN, files[0].download_url(node)),
-        poster_or_talk=poster_or_talk,
-        is_spam=False,#is_spam,
+        presentation_type=presentation_type,
+        is_spam=is_spam,
     )
 
 def get_mailgun_subject():
@@ -225,8 +235,8 @@ def check_mailgun_spam():
     spf_header = request.form.get('X-Mailgun-Spf')
 
     return (
-        dkim_header not in DKIM_PASS_VALUES or
-        spf_header not in SPF_PASS_VALUES
+        (dkim_header and dkim_header not in DKIM_PASS_VALUES) or
+        (spf_header and spf_header not in SPF_PASS_VALUES)
     )
 
 def poster_hook(tag):
