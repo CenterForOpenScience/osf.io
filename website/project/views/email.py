@@ -223,7 +223,7 @@ def check_mailgun_headers():
 
 SSCORE_MAX_VALUE = 5
 DKIM_PASS_VALUES = ['Pass']
-SPF_PASS_VALUES = ['Pass']
+SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 def check_mailgun_spam():
     """Check DKIM and SPF verification to determine whether incoming message
@@ -239,7 +239,7 @@ def check_mailgun_spam():
     spf_header = request.form.get('X-Mailgun-Spf')
 
     return (
-        (sscore and sscore > SSCORE_MAX_VALUE) or
+        (sscore_header and sscore_header > SSCORE_MAX_VALUE) or
         (dkim_header and dkim_header not in DKIM_PASS_VALUES) or
         (spf_header and spf_header not in SPF_PASS_VALUES)
     )
