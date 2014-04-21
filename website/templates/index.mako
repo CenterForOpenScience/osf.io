@@ -11,12 +11,12 @@
 
             <div class="item active row"  data-pause="hover" style="padding: 60px 40px 60px 40px;">
                 <div class="col-md-12 col-sm-offset-2" style = "font-size: 50px" class = "lead">
-                    <p><strong>SPSP Meeting 2014</strong></p>
+                    <p><strong>OSF now supports Dropbox</strong></p>
                     <div class="row" style="padding-top: 20px">
-                        <div class="col-md-2" style="padding-top: 10px"> <img src="/static/img/SPSP_logo_WEB.jpg" class="img-responsive"> </div>
+                        <div class="col-md-2" style="padding-top: 10px; height: 300px"> <img src="/static/img/dropbox-notext.png" class="img-responsive"> </div>
                         <div class="col-md-6" >
-                            <p style="font-size: 30px"  class="lead">View and upload talks, posters, and presentations from SPSP.</p>
-                            <p style="font-size: 30px"  class="lead"><a href="https://osf.io/view/spsp2014/" style="text-decoration: none">Get started</a>.</p>
+                            <p style="font-size: 30px"  class="lead">Connect a Dropbox folder with your OSF projects.</p>
+                            <p style="font-size: 30px"  class="lead"><a href="https://osf.io/getting-started#dropbox" style="text-decoration: none">Learn how!</a></p>
                             </div>
                     </div>
                 </div>
