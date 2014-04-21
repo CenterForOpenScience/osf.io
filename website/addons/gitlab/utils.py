@@ -16,6 +16,8 @@ from website.addons.base import AddonError
 from website.profile.utils import reduce_permissions
 from website.dates import FILE_MODIFIED
 
+from website.addons.base.utils import NodeLogger
+
 import settings as gitlab_settings
 from website.addons.gitlab.api import client, GitlabError
 
@@ -25,6 +27,36 @@ logger = logging.getLogger(__name__)
 def translate_permissions(permissions):
     osf_permissions = reduce_permissions(permissions)
     return gitlab_settings.ACCESS_LEVELS[osf_permissions]
+
+
+class GitlabNodeLogger(NodeLogger):
+
+    NAME = 'gitlab'
+
+    def __init__(self, node, auth, foreign_user=None, file_obj=None, path=None, date=None,
+                 branch=None, sha=None):
+        super(GitlabNodeLogger, self).__init__(
+            node, auth, foreign_user, file_obj, path, date
+        )
+        self.branch = branch
+        self.sha = sha
+
+    def build_params(self):
+        params = super(GitlabNodeLogger, self).build_params()
+        params['path'] = self.path
+        if self.file_obj or self.path:
+            path = self.file_obj.path if self.file_obj else self.path
+            params['urls'] = build_full_urls(
+                self.node,
+                {'type': 'blob'},
+                path,
+                sha=self.sha,
+            )
+        params['gitlab'] = {
+            'branch': self.branch,
+            'sha': self.sha,
+        }
+        return params
 
 
 def create_user(user_settings):
