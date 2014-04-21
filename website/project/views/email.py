@@ -221,8 +221,9 @@ def check_mailgun_headers():
         logger.warn('Invalid headers on incoming mail')
         raise HTTPError(http.BAD_REQUEST)
 
+SSCORE_MAX_VALUE = 5
 DKIM_PASS_VALUES = ['Pass']
-SPF_PASS_VALUES = ['Pass', 'Neutral']
+SPF_PASS_VALUES = ['Pass']
 
 def check_mailgun_spam():
     """Check DKIM and SPF verification to determine whether incoming message
@@ -233,10 +234,12 @@ def check_mailgun_spam():
     :return: Is message spam
 
     """
+    sscore_header = request.form.get('X-Mailgun-Sscore')
     dkim_header = request.form.get('X-Mailgun-Dkim-Check-Result')
     spf_header = request.form.get('X-Mailgun-Spf')
 
     return (
+        (sscore and sscore > SSCORE_MAX_VALUE) or
         (dkim_header and dkim_header not in DKIM_PASS_VALUES) or
         (spf_header and spf_header not in SPF_PASS_VALUES)
     )
