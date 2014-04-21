@@ -52,7 +52,7 @@
 }
 
 .hg-item-name:hover,
-.hg-folder-name:hover,
+.hg-folder-text:hover,
 .hg-folder-public:hover {
     text-decoration: underline !important;
     cursor: pointer;
