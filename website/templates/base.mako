@@ -11,7 +11,7 @@
     ${includes_top()}
     ${self.stylesheets()}
     ${self.javascript()}
-<link href='http://fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+
 </head>
 <body data-spy="scroll" data-target=".nav-list-spy">
     % if dev_mode:

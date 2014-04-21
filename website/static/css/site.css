@@ -104,42 +104,45 @@
     color: red;
 }
 
-.hp-banner {
-    z-index: -10;
-    background: url("/static/img/stripes.png");
-    opacity: .7;
-    height: 550px;
-    width: 100vw;
-    position: absolute;
-    left: 0;
-    top: 53px;
-}
 #hpContainerOne{
     height: 520px;
 }
 #hpContainerTwo {
-    height: 700px;
     margin-top: 25px;
     margin-bottom: 25px;
-
+    padding-top: 25px;
+    padding-bottom: 25px;
+    clear: both;
 }
+
+#hpContainerTwo  .featureDescriptions  .col-md-4  img {
+    height: 85px;
+    margin-bottom: 25px;
+    padding-top: 5px;
+}
+
 #hpContainerThree {
-    height: 700px;
     margin-top: 25px;
     margin-bottom: 25px;
+    padding-top: 25px;
+    padding-bottom: 25px;
+    clear: both;
 }
 #containerOneHeader {
     float: left;
-    width: 55%;
     margin-top: 50px;
-    background: white;
-    opacity: .7;
-    padding: 20px 20px 20px 20px;
 }
 .headOne {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 50px;
+    color: black;
+}
+
+.headTwo {
+    font-family: 'Carrois Gothic', Helvetica;
+    letter-spacing:1px;
+    font-size: 40px;
     color: black;
 }
 .subHeadOne {
@@ -148,8 +151,7 @@
     letter-spacing: 1px;
 }
 .subHeadTwo {
-    font-size: 44px;
-    color: #4089C7;
+    font-size: 30px;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
@@ -166,12 +168,11 @@
     color: black;
 }
 .sign-up {
-    height: 350px;
-    width: 400px;
     margin-top: 50px;
-    background: url("/static/img/signinbox.png");
+    background: #aad4f7;
     float: right;
     padding: 30px 30px 30px 30px;
+    border: solid #bacfd8 1px;
 }
 .sign-up .form-control {
     margin-top: 20px;
