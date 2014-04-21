@@ -1,3 +1,8 @@
+"""
+Migrate git files from backup directories to GitLab directories. This script
+should ONLY be run on the GitLab server.
+"""
+
 import os
 import shutil
 import subprocess
@@ -6,16 +11,18 @@ import subprocess
 SOURCE_PATH = '/opt/data/backup/test'
 DEST_PATH = '/opt/data/gitlab/repositories'
 
-REMOTE_NAME = 'migrate'
-BRANCH_NAME = 'master'
-
 
 def migrate_files(source, dest):
-    """Clone the source repo to the destionary as a bare repo.
+    """Clone the source repo to the destination as a bare repo.
+
+    :param str source: Source directory
+    :param str dest: Destination directory
 
     """
+    # Ensure that destination does not already exist
     shutil.rmtree(dest)
 
+    # Clone source to destination
     try:
         subprocess.check_call(
             ['git', 'clone', '--bare', source, dest]

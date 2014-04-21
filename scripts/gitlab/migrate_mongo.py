@@ -1,3 +1,7 @@
+"""
+Create GitLab users and projects.
+"""
+
 import re
 
 from website.models import Node
@@ -43,7 +47,7 @@ def migrate_node(node):
 
 
 def migrate_nodes():
-
+    """Migrate all nodes."""
     for node in Node.find():
         migrate_node(node)
 
