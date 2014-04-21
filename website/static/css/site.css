@@ -1,7 +1,232 @@
 /* Body and structure
 -------------------------------------------------- */
 
+/*News page*/
+.spacer {
+    height: 20px;
+}
+.dashes {
+    background: url("/static/img/stripes.png");
+}
+.table-month {
+    padding: 20px 20px 20px 20px;
+    height: 100px;
+    width: 150px;
+    background-color:#D9E8F4 ;
+    font-family: 'Carrois Gothic', Helvetica;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.table-description{
+    padding-left: 50px;
+}
+
+/* Getting Started */
+
+
+.gs-sidenav > .active > a {
+
+    padding: 9px 15px;
+    font-weight: bold;
+}
+.gs-sidenav li {
+    height: 22px;
+}
+.gs-sidenav a {
+    height: 22px;
+}
+.gs-sidenav li i {
+    display: none
+}
+
+.gs-sidenav .active i {
+    display: inline-block;
+}
+
+.nav .little-nav>li>a {
+ font-size: 12px;
+ opacity: .8;
+ padding-left: 30px;
+
+}
+
+.nav .little-nav> li>a>i{
+    display:none;
+}
+.nav .little-nav> li > a:hover {
+    background: none;
+    font-weight: bold;
+}
+.gs-sidenav> li > a:hover {
+     background: none;
+    font-weight: bold;
+}
+
+.nav .little-nav .active a{
+    font-weight: bold;
+}
+.nav .little-nav .active i {
+    display: inline-block;
+}
+
+ .gs-video {
+        margin-top: 25px;
+        margin-bottom: 25px;
+        margin-left: auto;
+        margin-right: auto;
+     border: solid 1px #ddd;
+     width: 560px;
+     height: 315px;
+ ;
+    }
+ .gs-count {
+     margin-bottom: 20px;
+     margin-top: 50px;
+ }
+
+ .gs-header {
+         display: block;
+    font-family: 'Patua One', cursive;
+    font-size: 24px;
+    padding-bottom: 20px;
+    padding-top: 20px;
+
+ }
+
+
 /*CSS Johanna added for front page*/
+
+
+
+.hpLink:hover{
+    text-decoration: none;
+    color: red;
+}
+
+.hp-banner {
+    z-index: -10;
+    background: url("/static/img/stripes.png");
+    opacity: .7;
+    height: 550px;
+    width: 100vw;
+    position: absolute;
+    left: 0;
+    top: 53px;
+}
+#hpContainerOne{
+    height: 520px;
+}
+#hpContainerTwo {
+    height: 700px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+
+}
+#hpContainerThree {
+    height: 700px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+#containerOneHeader {
+    float: left;
+    width: 55%;
+    margin-top: 50px;
+    background: white;
+    opacity: .7;
+    padding: 20px 20px 20px 20px;
+}
+.headOne {
+    font-family: 'Carrois Gothic', Helvetica;
+    letter-spacing:1px;
+    font-size: 50px;
+    color: black;
+}
+.subHeadOne {
+    font-family: 'Inika', Helvetica;
+    font-size: 24px;
+    letter-spacing: 1px;
+}
+.subHeadTwo {
+    font-size: 44px;
+    color: #4089C7;
+    font-family: 'Patua One', Helvetica;
+    letter-spacing: 1px;
+}
+.subHeadThree {
+    font-size: 28px;
+    color: #4089C7;
+    font-family: 'Patua One', Helvetica;
+    letter-spacing: 1px;
+}
+.subHeadFour {
+    font-family: 'Carrois Gothic', Helvetica;
+    letter-spacing:1px;
+    font-size: 36px;
+    color: black;
+}
+.sign-up {
+    height: 350px;
+    width: 400px;
+    margin-top: 50px;
+    background: url("/static/img/signinbox.png");
+    float: right;
+    padding: 30px 30px 30px 30px;
+}
+.sign-up .form-control {
+    margin-top: 20px;
+    height: 40px;
+}
+.sign-up .btn {
+    font-family: 'Inika', Helvetica;
+    font-size: 28px;
+    letter-spacing: 1pt;
+    margin-top: 40px;
+    float: right;
+}
+.center {
+    text-align: center;
+}
+.right {
+    text-align: right;
+}
+
+.header {
+    display: block;
+    font-family: 'Patua One', cursive;
+    font-size: 24px;
+    padding-bottom: 20px;
+    padding-top: 70px;
+}
+
+.featureDescriptions {
+    padding-top: 75px;
+    font-size: 22px;
+    font-family: 'Carrois Gothic', sans-serif;
+}
+
+.featureDescriptions .featureInfo {
+    font-family: 'Inika', serif;
+    font-size: 16px;
+}
+.steps {
+    padding-bottom: 20px;
+    padding-top: 20px;
+}
+
+.stepsText {
+    font-family: 'Inika', serif;
+    font-size: 16px;
+}
+
+.padded {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.empty {
+    height: 500px;
+}
 .verticalline {
 border-left:  thin solid #D9E8F4;
 }
@@ -84,6 +309,7 @@ font-weight: bold;
   border: 0;
   border-top: 1px solid #D9E8F4;
 }
+
 
 /*End Johanna's CSS*/
 
