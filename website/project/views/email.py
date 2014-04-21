@@ -87,6 +87,8 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
             'reset_password',
             verification_key=user.verification_key,
         )
+    else:
+        set_password_url = None
 
     auth = Auth(user=user)
 
