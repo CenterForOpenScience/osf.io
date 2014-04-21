@@ -29,7 +29,8 @@ from website.addons.gitlab.utils import (
     kwargs_to_path, build_full_urls, build_guid_urls,
     item_to_hgrid, gitlab_to_hgrid,
     serialize_commit, ref_or_default, get_branch_and_sha,
-    get_default_file_sha
+    get_default_file_sha,
+    GitlabNodeLogger
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -57,23 +58,11 @@ def get_guid(node_settings, path, ref):
 
 def gitlab_upload_log(node, action, auth, data, branch):
 
-    urls = build_full_urls(
-        node, {'type': 'blob'}, data['file_path'],
-        branch=branch
+    node_logger = GitlabNodeLogger(
+        node, auth=auth, path=data['file_path'],
+        branch=branch,
     )
-    node.add_log(
-        action='gitlab_' + action,
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'path': data['file_path'],
-            'urls': urls,
-            'gitlab': {
-                'branch': branch,
-            }
-        },
-        auth=auth,
-    )
+    node_logger.log(action)
 
 
 # TODO: Test me @jmcarp
@@ -400,18 +389,13 @@ def gitlab_delete_file(**kwargs):
             node_settings.project_id, path, branch,
             gitlab_settings.MESSAGES['delete']
         )
-        node_settings.owner.add_log(
-            action='gitlab_' + NodeLog.FILE_REMOVED,
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'path': path,
-                'gitlab': {
-                    'branch': branch,
-                }
-            },
-            auth=auth,
+
+        node_logger = GitlabNodeLogger(
+            node, auth=auth, path=path,
+            branch=branch,
         )
+        node_logger.log(NodeLog.FILE_REMOVED)
+
     except GitlabError:
         raise HTTPError(http.BAD_REQUEST)
 

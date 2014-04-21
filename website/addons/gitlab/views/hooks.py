@@ -3,6 +3,7 @@ import httplib as http
 from flask import request
 from dateutil.parser import parse as parse_date
 
+from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 
 from website.models import User, NodeLog
@@ -13,14 +14,14 @@ from website.project.decorators import must_have_addon
 from website.addons.gitlab.api import client
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.utils import (
-    resolve_gitlab_hook_author, build_full_urls
+    resolve_gitlab_hook_author, GitlabNodeLogger
 )
 
 
 logger = logging.getLogger(__name__)
 
 
-def add_diff_log(node, diff, sha, date, user, save=False):
+def add_diff_log(node, diff, sha, date, gitlab_user, save=False):
     """
 
     """
@@ -33,27 +34,19 @@ def add_diff_log(node, diff, sha, date, user, save=False):
 
     path = diff['new_path']
 
-    if not diff['deleted_file']:
-        urls = build_full_urls(node, {'type': 'blob'}, path, sha=sha)
+    if isinstance(gitlab_user, User):
+        auth = Auth(user=gitlab_user)
+        foreign_user = None
     else:
-        urls = {}
+        auth = None
+        foreign_user = gitlab_user
 
-    node.add_log(
-        action='gitlab_{0}'.format(action),
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'path': path,
-            'urls': urls,
-            'gitlab': {
-                'sha': sha,
-            }
-        },
-        foreign_user=user if not isinstance(user, User) else None,
-        log_date=date,
-        auth=None,
-        save=save,
+
+    node_logger = GitlabNodeLogger(
+        node, auth=auth, foreign_user=foreign_user, path=path, date=date,
+        sha=sha
     )
+    node_logger.log(action, save=save)
 
 
 def add_hook_log(node_settings, commit, save=False):
@@ -74,14 +67,14 @@ def add_hook_log(node_settings, commit, save=False):
 
     sha = commit['id']
     date = parse_date(commit['timestamp'])
-    user = resolve_gitlab_hook_author(commit['author'])
+    gitlab_user = resolve_gitlab_hook_author(commit['author'])
 
     diffs = client.listrepositorycommitdiff(
         node_settings.project_id, commit['id']
     )
 
     for diff in diffs:
-        add_diff_log(node, diff, sha, date, user, save=False)
+        add_diff_log(node, diff, sha, date, gitlab_user, save=False)
 
 
 @must_be_valid_project
