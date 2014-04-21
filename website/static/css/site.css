@@ -663,9 +663,11 @@ border-radius: 6px;
 
 /* Profile gravatar
 -------------------------------------------------- */
-.profile-gravatar{
-    border-radius: 4px;
-    -webkit-border-radius: 4px;
+#profile-gravatar{
+    float:left;
+    margin-right:.5em;
+    width:40px;
+    height:40px;
 }
 
 /* Data Vis
@@ -1148,12 +1150,32 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
-.link-name{
+.key-name{
     margin-left: 10px;
 }
 
 #generate-private-link{
     margin:20px 20px;
+}
+
+.private-link-label{
+    width:60%;
+}
+
+.link-name{
+    width:55%;
+}
+
+.link-label{
+    width:15%;
+}
+
+.link-date{
+    width:15%;
+}
+
+.link-creator{
+    width:20%;
 }
 
 /* Contributor page */
@@ -1287,6 +1309,46 @@ a {
 
 .tagsinput .tag span { cursor:pointer; }
 
+/* Badging interface CSS*/
+.btn-success.editable:hover {
+    background-color: #419641;
+}
+
+.badge-list {
+  max-height:200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.badge-list img {
+  display: inline-block;
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.profile-badge-list {
+  max-height:200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: inline-flex;
+  padding-top: 10px;
+}
+
+.profile-badge-list div {
+  margin: 5px;
+}
+
+.profile-badge-list img {
+  display: inline-block;
+  margin-bottom: 5px;
+  cursor: pointer;
+}
+
+.profile-badge-list span {
+  display: block;
+}
+
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+

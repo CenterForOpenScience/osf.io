@@ -2,8 +2,9 @@
 <%def name="title()">${profile["fullname"]}'s Profile</%def>
 
 <%def name="javascript_bottom()">
-% if user["is_profile"]:
-    <script>
+
+<script>
+    % if user["is_profile"]:
         $(function() {
             $('#profile-fullname').editable({
                 type:  'text',
@@ -19,8 +20,20 @@
                     $(".fullname").text(data['name']);
                 }
             });
+
+            var gravatar = $('#profile-gravatar')
+            gravatar
+                .on('error', function(e) {
+                    gravatar.attr('src', '/static/img/blank_avatar.png')
+                })
+                .attr('src', gravatar.attr('src') + '&d=404')
         });
-    </script>
+    % endif
+    $script(['/static/addons/badges/bake-badges.js'], 'bakery');
+    $script(['/static/addons/badges/badge-popover.js'], 'display');
+</script>
+% if user['is_profile']:
+    <%include file="profile/modal_change_avatar.mako"/>
 % endif
 
 </%def>
@@ -31,10 +44,12 @@
 </div>
 % endif
 
-
 <div class="page-header">
-    <img src="${profile['gravatar_url']}" />
-    <h1 id="profile-fullname" style="display:inline-block">${profile["fullname"]}</h1>
+    <a href="#changeAvatarModal" data-toggle="modal">
+        <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                 rel="tooltip" title="click to change avatar" />
+    </a>
+    <h1 id="profile-fullname">${profile["fullname"]}</h1>
 </div><!-- end-page-header -->
 
 <div class="row">
@@ -63,6 +78,45 @@
 </div><!-- end row -->
 <hr />
 
+<div class="row">
+%if badges:
+    <div class="col-md-6">
+        <h3>Badges Endorsed by This User</h3>
+        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
+            %for badge in badges:
+                <div class="media">
+                    <img src="${badge.image}"  width="64px" height="64px" class="open-badge badge-popover media-object pull-left"/>
+                    <div class="media-body">
+                        <h4 class="media-heading">${badge.name}<small> ${badge.description}</small></h4>
+                        ${badge.criteria_list}
+                    </div>
+                </div>
+            %endfor
+        </div>
+    </div>
+    <div class="col-md-6">
+%else:
+    <div class="col-md-12">
+%endif
+        <h3>"Sash"</h3>
+        <div class="profile-badge-list">
+            %for assertion in reversed(assertions):
+            <div>
+                <img src="${assertion.badge.image}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/badge/assertion/json/${assertion._id}/" data-content="${assertion.badge.description_short}" data-toggle="popover" data-title="<a href=&quot;/${assertion.badge._id}/&quot;>${assertion.badge.name}</a>
+                %if not assertion.badge.is_system_badge:
+                    - <a href=&quot;${assertion.badge.creator.owner.profile_url}&quot;>${assertion.badge.creator.owner.fullname}</a>"/>
+                %else:
+                    "/>
+                %endif
+                <br/>
+                <span class="badge">${assertion.amount}<span>
+            </div>
+            %endfor
+        </div>
+    </div>
+</div>
+
+<hr />
 <div class="row">
     <div class="col-md-6">
         <h3>Public Projects</h3>
