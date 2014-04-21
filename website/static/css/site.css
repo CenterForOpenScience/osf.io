@@ -178,7 +178,7 @@
     height: 40px;
 }
 .sign-up .btn {
-    font-family: 'Inika', Helvetica;
+    font-family: 'Inika', Helvetica, sans-serif;
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
