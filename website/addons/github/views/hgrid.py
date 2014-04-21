@@ -93,7 +93,7 @@ github_branch_template = Template('''
         <span>${branch}</span>
     % endif
     % if sha:
-        <a href="https://github.com/${owner}/${repo}/commit/${sha}" class="github-sha text-muted">${sha[:10]}</a>
+        <a href="https://github.com/${owner}/${repo}/commit/${sha}" target="_blank" class="github-sha text-muted">${sha[:10]}</a>
     % endif
 ''')
 
