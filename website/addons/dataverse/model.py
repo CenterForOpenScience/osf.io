@@ -137,6 +137,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
                 study = dataverse.get_study_by_hdl(self.study_hdl)
                 rv.update({
+                    'draft': study.get_state() == 'DRAFT',
                     'dataverse_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias),
                     'study_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias,
                                               'faces', 'study', 'StudyPage.xhtml?globalId=' +

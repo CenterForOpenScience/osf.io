@@ -40,8 +40,8 @@ def dataverse_release_study(**kwargs):
     now = datetime.datetime.utcnow()
 
     connection = connect(
-        node_settings.username,
-        node_settings.password,
+        node_settings.dataverse_username,
+        node_settings.dataverse_password,
     )
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
