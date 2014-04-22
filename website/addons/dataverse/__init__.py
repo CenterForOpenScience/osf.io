@@ -25,7 +25,7 @@ CONFIGS = ['user', 'node']
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': [],
+    'widget': ['dataverse-rubeus-cfg.js'],
     'page': [
         '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
         '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
@@ -34,6 +34,9 @@ INCLUDE_JS = {
         '/static/js/hgrid.js',
         'hgrid-github.js',
     ],
+    'files': [
+        'dataverse-rubeus-cfg.js',
+    ]
 }
 
 INCLUDE_CSS = {

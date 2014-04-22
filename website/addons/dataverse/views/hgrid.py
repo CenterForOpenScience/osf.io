@@ -1,6 +1,7 @@
 import time
 import os
 
+from framework import request
 from mako.template import Template
 from website.addons.dataverse.client import connect
 
@@ -29,8 +30,8 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
     name = '{0} / {1}'.format(
-            node_settings.dataverse,
-            node_settings.study,
+        node_settings.dataverse,
+        node_settings.study,
     )
 
     permissions = {
@@ -41,13 +42,22 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     urls = {
         'upload': node.api_url_for('dataverse_upload_file'),
         'fetch': node.api_url_for('dataverse_hgrid_data_contents', state=state),
-        'branch': node.api_url_for('dataverse_root_folder_public'),
+        'state': node.api_url_for('dataverse_root_folder_public'),
     }
 
-    if study.get_released_files() and node.can_edit(auth):
-        state_append = dataverse_state_template.render(state=state)
+    has_released_files = study.get_released_files()
+
+    # Determine default state / selection permissions
+    if node.can_edit(auth):
+        if has_released_files:
+            state_append = dataverse_state_template.render(state=state)
+        else:
+            state_append = ' [Draft]'
     else:
-        state_append = ' [{}]'.format(state.capitalize())
+        if has_released_files:
+            state_append = ' [Released]'
+        else:
+            return []
 
     return [rubeus.build_addon_root(
         node_settings,
@@ -60,12 +70,11 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_root_folder_public(state=None, **kwargs):
+def dataverse_root_folder_public(**kwargs):
 
-    node = kwargs['node']
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
-    state = state or 'draft' if node.can_edit(auth) else 'released'
+    state = request.args['state']
 
     return dataverse_hgrid_root(node_settings, auth=auth, state=state)
 
@@ -77,7 +86,7 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    state = state or 'draft' if node.can_edit(auth) else 'released'
+    state = request.args.get('state') or 'draft' if node.can_edit(auth) else 'released'
     released = state=='released'
 
     can_edit = node.can_edit(auth) and not node.is_registration and not released
@@ -114,8 +123,8 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
                 'edit': can_edit,
             },
             'size': [
-                    float(0), # TODO: Implement file size (if possible?),
-                    hurry.filesize.size(0, system=hurry.filesize.alternative)
+                float(0), # TODO: Implement file size (if possible?)
+                hurry.filesize.size(0, system=hurry.filesize.alternative)
             ],
         }
         info.append(item)
@@ -125,7 +134,7 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
 
 dataverse_state_template = Template('''
     <select class="dataverse-state-select">
-        <option ${"selected" if state == "draft" else ""}>Draft</option>
-        <option ${"selected" if state == "released" else ""}>Released</option>
+        <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
+        <option value="released" ${"selected" if state == "released" else ""}>Released</option>
     </select>
 ''')

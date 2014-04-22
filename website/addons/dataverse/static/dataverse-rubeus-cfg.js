@@ -11,15 +11,15 @@
 
     // Private members
 
-    function refreshDataverseTree(grid, item, branch) {
+    function refreshDataverseTree(grid, item, state) {
         var data = item.data || {};
-        data.branch = branch;
-        var url = item.urls.branch + '?' + $.param({branch: branch});
+        data.state = state;
+        var url = item.urls.state + '?' + $.param({state: state});
         $.ajax({
             type: 'get',
             url: url,
             success: function(data) {
-                // Update the item with the new branch data
+                // Update the item with the new state data
                 $.extend(item, data[0]);
                 grid.reloadFolder(item);
             }
@@ -28,14 +28,14 @@
 
     // Register configuration
     Rubeus.cfg.dataverse = {
-        // Handle changing the branch select
+        // Handle changing the state
         listeners: [{
             on: 'change',
-            selector: '.dataverse-branch-select',
+            selector: '.dataverse-state-select',
             callback: function(evt, row, grid) {
                 var $this = $(evt.target);
-                var branch = $this.val();
-                refreshDataverseTree(grid, row, branch);
+                var state = $this.val();
+                refreshDataverseTree(grid, row, state);
             }
         }]
     };
