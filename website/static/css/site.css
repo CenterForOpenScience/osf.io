@@ -178,7 +178,7 @@
     height: 40px;
 }
 .sign-up .btn {
-    font-family: 'Inika', Helvetica;
+    font-family: 'Inika', Helvetica, sans-serif;
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
@@ -193,7 +193,7 @@
 
 .header {
     display: block;
-    font-family: 'Patua One', cursive;
+    font-family: 'Patua One', Helvetica;
     font-size: 24px;
     padding-bottom: 20px;
     padding-top: 70px;
