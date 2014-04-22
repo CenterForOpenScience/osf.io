@@ -57,7 +57,7 @@ class TestCallbacks(DbTestCase):
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
-        assert_equals(self.node_settings.figshare_id, 313131)
+        assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_type, 'project')
         assert_equals(self.node_settings.figshare_title, 'A PROJECT')
         # check for log added
@@ -73,7 +73,7 @@ class TestCallbacks(DbTestCase):
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
-        assert_equals(self.node_settings.figshare_id, 313131)
+        assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_type, 'fileset')
         assert_equals(self.node_settings.figshare_title, 'A FILESET')
         # check for log added
@@ -89,7 +89,7 @@ class TestCallbacks(DbTestCase):
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
         #check for updated
-        assert_equals(self.node_settings.figshare_id, 313131)
+        assert_equals(self.node_settings.figshare_id, '313131')
         assert_equals(self.node_settings.figshare_title, 'A PROJECT')
         # check for log added
         assert_equals(len(self.project.logs), num_logs+1)
