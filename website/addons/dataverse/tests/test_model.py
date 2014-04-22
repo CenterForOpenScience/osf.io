@@ -6,17 +6,10 @@ from tests.factories import UserFactory, ProjectFactory
 from website.addons.dataverse.model import AddonDataverseUserSettings, \
     AddonDataverseNodeSettings
 
-from utils import create_mock_connection
+from utils import create_mock_connection, DataverseAddonTestCase
 
 
-class TestCallbacks(DbTestCase):
-
-    def setUp(self):
-
-        super(TestCallbacks, self).setUp()
-
-        self.project = ProjectFactory.build()
-        self.project.save()
+class TestCallbacks(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.model.connect')
     def test_user_settings(self, mock_connection):
@@ -36,3 +29,16 @@ class TestCallbacks(DbTestCase):
         assert_true(dataverse.to_json(creator)['authorized'])
         assert_equals(dataverse.to_json(creator)['authorized_dataverse_user'],
                       'snowman')
+
+    def test_deauthorize(self):
+
+        self.node_settings.deauthorize()
+
+        assert_false(self.node_settings.dataverse_username)
+        assert_false(self.node_settings.dataverse_password)
+        assert_false(self.node_settings.dataverse_alias)
+        assert_false(self.node_settings.dataverse)
+        assert_false(self.node_settings.study_hdl)
+        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.user)
+

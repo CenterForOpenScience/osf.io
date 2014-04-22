@@ -227,7 +227,6 @@ def dataverse_upload_file(**kwargs):
     return info, 201
 
 
-
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
