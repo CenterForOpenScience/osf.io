@@ -1774,7 +1774,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             user is not None
             and (
-                user in self.contributors
+                user._id in self.contributors
             )
         )
 

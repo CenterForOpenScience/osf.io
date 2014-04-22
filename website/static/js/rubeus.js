@@ -25,6 +25,8 @@
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
     Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    // Class for folder name
+    Rubeus.Html.folderTextClass = 'hg-folder-text';
 
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
     Rubeus.Col = {};
@@ -48,9 +50,9 @@
                 cssClass = 'hg-folder-public';
             }
         }
-        opening = '<span class="hg-folder-text ' + cssClass + '">';
+        opening = '<span class="' + Rubeus.Html.folderTextClass + ' ' + cssClass + '">';
         var closing = '</span>';
-        html = [icon, opening, '&nbsp;', item.name, closing].join('');
+        html = [opening, icon, '&nbsp;', item.name, closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
@@ -249,9 +251,13 @@
             if (viewUrl) {
                 window.location.href = viewUrl;
             }
-            if (row.kind === HGrid.FOLDER && row.depth !== 0) {
-                grid.toggleCollapse(row);
-            }
+        }
+    }
+
+    function onClickFolderName(evt, row, grid) {
+        onClickName(evt, row, grid);
+        if (row && row.kind === HGrid.FOLDER && row.depth !== 0) {
+            grid.toggleCollapse(row);
         }
     }
 
@@ -401,8 +407,15 @@
             // Go to file's detail page if name is clicked
             {
                 on: 'click',
-                selector: '.' + HGrid.Html.nameClass,
+                selector: '.' + HGrid.Html.itemNameClass,
                 callback: onClickName
+            },
+            // Toggle folder collapse when text is clicked; listen on text
+            // rather than name to avoid Chrome crash on <select>s
+            {
+                on: 'click',
+                selector: '.' + Rubeus.Html.folderTextClass,
+                callback: onClickFolderName
             }
         ],
         progBar: '#filebrowserProgressBar',

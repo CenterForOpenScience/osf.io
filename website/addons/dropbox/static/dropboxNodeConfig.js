@@ -29,7 +29,7 @@
         self.nodeHasAuth = ko.observable(false);
         self.userHasAuth = ko.observable(false);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
-        self.folder = ko.observable({});
+        self.folder = ko.observable({name: null, path: null});
         self.ownerName = ko.observable('');
         self.urls = ko.observable({});
         // Flashed messages
@@ -69,7 +69,8 @@
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-            self.folder(data.folder);
+            // Make sure folder has name and path properties defined
+            self.folder(data.folder || {name: null, path: null});
             self.urls(data.urls);
         };
 
