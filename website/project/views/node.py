@@ -92,7 +92,7 @@ def project_new_post(**kwargs):
             )
         return {}, 201, None, project.url
     else:
-        push_errors_to_status(form.errors)
+        push_errors_to_status(form.errors)f
     return {}, http.BAD_REQUEST
 
 

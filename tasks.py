@@ -4,28 +4,97 @@
 commands, run ``$ invoke --list``.
 '''
 import os
-from invoke import task, run
+import sys
+import code
 
-import konch
+from invoke import task, run
 
 from website import settings
 
-SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+SOLR_DEV_PATH = os.path.join("scripts", "solr-dev") # Path to example solr app
+
 
 @task
 def server():
     run("python main.py")
 
+
+SHELL_BANNER = """
+{version}
+
+Welcome to the OSF Python Shell. Happy hacking!
+
+Available variables:
+
+{context}
+"""
+
+
+def make_shell_context():
+    from framework import Q
+    from framework.auth.model import User
+    from framework import db
+    from website.app import init_app
+    from website.project.model import Node
+    from website import models # all models
+    import requests
+    app = init_app()
+    context = {'app': app,
+                'db': db,
+                'User': User,
+                'Node': Node,
+                'Q': Q,
+                'models': models,
+                'run_tests': test,
+                'rget': requests.get,
+                'rpost': requests.post,
+                'rdelete': requests.delete,
+                'rput': requests.put
+    }
+    try: # Add a fake factory for generating fake names, emails, etc.
+        from faker import Factory
+        fake = Factory.create()
+        context['fake'] = fake
+    except ImportError:
+        pass
+    return context
+
+
+def format_context(context):
+    lines = []
+    for name, obj in context.items():
+        line = "{name}: {obj!r}".format(**locals())
+        lines.append(line)
+    return '\n'.join(lines)
+
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
 def shell():
-    config = konch.use_file('.konchrc')
-    konch.start(**config)
+    context = make_shell_context()
+    banner = SHELL_BANNER.format(version=sys.version,
+        context=format_context(context)
+    )
+    try:
+        try:
+            # 0.10.x
+            from IPython.Shell import IPShellEmbed
+            ipshell = IPShellEmbed(banner=banner)
+            ipshell(global_ns={}, local_ns=context)
+        except ImportError:
+            # 0.12+
+            from IPython import embed
+            embed(banner1=banner, user_ns=context)
+        return
+    except ImportError:
+        pass
+    # fallback to basic python shell
+    code.interact(banner, local=context)
+    return
 
 @task
 def mongo(daemon=False):
     '''Run the mongod process.
-    '''
+'''
     port = settings.DB_PORT
     cmd = "mongod --port {0}".format(port)
     if daemon:
@@ -51,9 +120,9 @@ def celery_worker(level="debug"):
 def rabbitmq():
     '''Start a local rabbitmq server.
 
-    NOTE: this is for development only. The production environment should start
-    the server as a daemon.
-    '''
+NOTE: this is for development only. The production environment should start
+the server as a daemon.
+'''
     run("rabbitmq-server", pty=True)
 
 
@@ -61,8 +130,8 @@ def rabbitmq():
 def solr():
     '''Start a local solr server.
 
-    NOTE: Requires that Java and Solr are installed. See README for more instructions.
-    '''
+NOTE: Requires that Java and Solr are installed. See README for more instructions.
+'''
     os.chdir(SOLR_DEV_PATH)
     run("java -jar start.jar", pty=True)
 
@@ -90,13 +159,13 @@ def requirements(all=False, addons=False):
 
 
 @task
-def test_module(module=None):
+def test_module(module=None, verbosity=2):
     """
-    Helper for running tests.
-    """
+Helper for running tests.
+"""
     test_cmd = 'nosetests'
     # Allow selecting specific submodule
-    args = " -s %s" % module
+    args = " --verbosity={0} -s {1}".format(verbosity, module)
     # Use pty so the process buffers "correctly"
     run(test_cmd + args, pty=True)
 
@@ -110,14 +179,14 @@ def test_osf():
 @task
 def test_addons():
     """Run all the tests in the addons directory.
-    """
+"""
     test_module(module="website/addons/")
 
 
 @task
 def test():
     """Alias of `invoke test_osf`.
-    """
+"""
     test_osf()
 
 
@@ -131,8 +200,8 @@ def test_all():
 @task
 def get_hgrid():
     """Get the latest development version of hgrid and put it in the static
-    directory.
-    """
+directory.
+"""
     target = 'website/static/vendor/hgrid'
     run('git clone https://github.com/CenterForOpenScience/hgrid.git')
     print('Removing old version')
@@ -169,4 +238,4 @@ def mfr_requirements():
     """Install modular file renderer requirements"""
     mfr = 'mfr'
     print 'Installing mfr requirements'
-    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)  
