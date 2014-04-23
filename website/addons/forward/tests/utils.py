@@ -1,23 +1,13 @@
 # -*- coding: utf-8 -*-
-import mock
-from contextlib import contextmanager
-
 from webtest_plus import TestApp
-
-from framework import storage
-from framework.mongo import db, set_up_storage
 
 import website
 from website.addons.base.testing import AddonTestCase
-from website.addons.dropbox import MODELS
+
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
 )
-
-
-def init_storage():
-    set_up_storage(MODELS, storage_class=storage.MongoStorage, db=db)
 
 
 class ForwardAddonTestCase(AddonTestCase):

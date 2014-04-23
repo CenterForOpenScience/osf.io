@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Factory boy factories for the Dropbox addon."""
+"""Factory boy factories for the Forward addon."""
 
-from factory import SubFactory, Sequence
-from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
+from factory import SubFactory
+from tests.factories import ModularOdmFactory, ProjectFactory
 
-from website.addons.forward.model import (
-    ForwardNodeSettings
-)
+from website.addons.forward.model import ForwardNodeSettings
 
 
 class ForwardSettingsFactory(ModularOdmFactory):

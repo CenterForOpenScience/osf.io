@@ -102,7 +102,7 @@
         }
 
         /**
-         * Send a PUT request to change the linked Dropbox folder.
+         * Submit new settings.
          */
         self.submitSettings = function() {
             $.osf.putJSON(

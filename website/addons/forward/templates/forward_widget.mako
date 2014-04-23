@@ -11,9 +11,9 @@
 
         <p>You will be automatically forwarded in {{ timeLeft }} seconds.</p>
 
-        <div class="spaced-buttons">
+        <div class="spaced-buttons" data-bind="visible: redirecting">
             <a class="btn btn-success" data-bind="click: doRedirect">Redirect</a>
-            <a class="btn btn-warning" data-bind="visible: redirecting, click: cancelRedirect">Cancel</a>
+            <a class="btn btn-warning" data-bind="click: cancelRedirect">Cancel</a>
         </div>
 
     </div>

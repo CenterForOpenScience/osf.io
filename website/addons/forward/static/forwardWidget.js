@@ -2,14 +2,20 @@
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'knockoutpunches'], factory);
     } else if (typeof $script === 'function') {
-        global.ForwardWidget = factory(global, ko, jQuery);
+        global.ForwardWidget = factory(ko, jQuery);
         $script.done('forwardWidget');
     } else {
-        global.ForwardWidget = factory(global, ko, jQuery);
+        global.ForwardWidget = factory(ko, jQuery);
     }
-}(this, function(global, ko, $) {
+}(this, function(ko, $) {
+
     'use strict';
+
+    // Alias `this` for redirect in view model below; h/t @sloria
+    var global = this;
+
     ko.punches.attributeInterpolationMarkup.enable();
+
     /**
      * Knockout view model for the Forward node settings widget.
      */
@@ -27,7 +33,7 @@
 
         self.doRedirect = function() {
             global.location.href = self.url();
-        }
+        };
 
         self.tryRedirect = function() {
             if (self.timeLeft() > 0) {

@@ -25,12 +25,6 @@
                         optionsText: getBoolLabel,
                         value: redirectBool
                     "></select>
-##                <input
-##                        id="forwardBool"
-##                        class="form-control"
-##                        type="checkbox"
-##                        data-bind="checked: redirectBool"
-##                    />
             </div>
 
             <div class="form-group">
