@@ -40,15 +40,15 @@
             </div>
 
 
-    % if 'write' in user['permissions']:
-        <h2>Private Links</h2>
+    % if 'admin' in user['permissions']:
+        <h2>Sharing Private Project</h2>
             <div class="scripted" id="linkScope" >
 
                     <table id="privateLinkTable" class="table">
                         <thead>
                             <tr>
-                            <th class="col-sm-2 link-name">Private Link</th>
-                            <th class="col-sm-4 link-label">Label
+                            <th class="col-sm-2 link-name">Links</th>
+                            <th class="col-sm-4 link-label">Shared Project
                             </th>
                             <th class="col-sm-3 link-date">Created Date</th>
                             <th class="col-sm-2 link-creator">Created By</th>
@@ -60,7 +60,7 @@
                             <tr>
                                 <td colspan="3"  >
                                     <a href="#private-link" data-toggle="modal">
-                                        Click to generate a private link
+                                        Click to create a link to share this project so those who have the link can view but not edit the project
                                     </a>
                                 </td>
                             </tr>
