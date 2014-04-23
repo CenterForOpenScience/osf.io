@@ -5,7 +5,7 @@
 <%def name="file_versions()">
 
     <ol class="breadcrumb">
-        <li><a href="${node['url']}osffiles/">${node['title']}</a></li>
+        <li><a href="${node['url']}files/">${node['title']}</a></li>
         <li class="active overflow" >${file_name}</li>
     </ol>
 
