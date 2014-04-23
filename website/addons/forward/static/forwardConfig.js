@@ -14,7 +14,7 @@
     ko.punches.attributeInterpolationMarkup.enable();
 
     var MESSAGE_TIMEOUT = 5000;
-    var MIN_FORWARD_TIME = 15;
+    var MIN_FORWARD_TIME = 5;
     var MAX_FORWARD_TIME = 60;
 
     var DEFAULT_FORWARD_BOOL = true;
@@ -49,6 +49,12 @@
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
+
+        self.validators = ko.validatedObservable({
+            url: self.url,
+            redirectBool: self.redirectBool,
+            redirectSecs: self.redirectSecs
+        });
 
         self.getBoolLabel = function(item) {
             return self.boolLabels[item];
@@ -86,7 +92,7 @@
         // Initial fetch from server
         self.fetchFromServer();
 
-        function onSubmitSuccess(response) {
+        function onSubmitSuccess() {
             self.changeMessage(
                 'Successfully linked to <a href="' + self.url() + '">' + self.url() + '</a>.',
                 'text-success',
