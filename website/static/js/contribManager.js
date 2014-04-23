@@ -89,6 +89,7 @@
         // TODO: copied-and-pasted from nodeControl. When nodeControl
         // gets refactored, update this to use global method.
         self.removeSelf = function() {
+
             var id = self.id,
                 name = self.fullname;
             var payload = {
@@ -99,6 +100,7 @@
                 nodeApiUrl + 'beforeremovecontributors/',
                 payload,
                 function(response) {
+
                     var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
                     bootbox.confirm({
                         title: 'Delete Contributor?',
@@ -109,6 +111,7 @@
                                     nodeApiUrl + 'removecontributors/',
                                     payload,
                                     function(response) {
+
                                         if (response.redirectUrl) {
                                             window.location.href = response.redirectUrl;
                                         } else {

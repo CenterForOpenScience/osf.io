@@ -32,8 +32,8 @@ def get_log(log_id):
 
 
 def _get_logs(node, count, auth, offset=0):
-
     """
+
     :param Node node:
     :param int count:
     :param auth:
@@ -44,13 +44,23 @@ def _get_logs(node, count, auth, offset=0):
     logs = []
     has_more_logs = False
     for log in (x for idx, x in enumerate(reversed(node.logs)) if idx >= offset):
-        if log and log.node__logged and log.node__logged[0].can_view(auth):
+        # A number of errors due to database inconsistency can arise here. The
+        # log can be None; its `node__logged` back-ref can be empty, and the
+        # 0th logged node can be None. Catch and log these errors and ignore
+        # the offending logs.
+        try:
+            can_view = log.node__logged[0].can_view(auth)
+        except (AttributeError, IndexError) as error:
+            logger.exception(error)
+            continue
+        if can_view:
             if len(logs) < count:
                 logs.append(log.serialize())
             else:
-                has_more_logs =True
+                has_more_logs = True
                 break
     return logs, has_more_logs
+
 
 @collect_auth
 @must_be_valid_project
@@ -79,4 +89,3 @@ def get_logs(**kwargs):
     # logs that the current user / API key cannot access
     logs, has_more_logs = _get_logs(node_to_use, count, auth, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}
-
