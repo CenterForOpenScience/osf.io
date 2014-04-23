@@ -160,6 +160,7 @@
     <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
+    <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
 
     % for url in js_all:
     <script src="${url}"></script>

@@ -313,6 +313,13 @@ font-weight: bold;
 
 /*End Johanna's CSS*/
 
+/* Knockout Validation Styles */
+
+.validationMessage { color: #d9534f; }
+.customMessage { color: #ed9c28; }
+
+.spaced-buttons { margin-top: 10px; }
+
 /*
 'Modern Business' HTML Theme. Licensed under Apache 2.0.
 */
