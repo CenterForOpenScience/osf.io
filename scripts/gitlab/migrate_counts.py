@@ -1,14 +1,13 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 """
-GitLab describes file revisions by branch and SHA; the original OSF files
-describes versions by number (1, 2, 3, ...). This script builds a routing
-table from original OSF files revision identifiers to GitLab SHAs. The table
-is written to website/compat_file_routes.json.
+Migrate OsfGuidFile's download counts to GitlabGuidFile download counts.
 """
 
 import os
 import copy
-import json
 import logging
+
 from dulwich.repo import Repo
 from dulwich.errors import NotGitRepository
 
