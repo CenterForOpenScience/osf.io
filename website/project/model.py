@@ -2302,7 +2302,8 @@ class PrivateLink(StoredObject):
     key = fields.StringField(required=True)
     label = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
-
+    
+    nodes = fields.ForeignField('Node', backref='shared')
     creator = fields.ForeignField('user', backref='created')
 
     def to_json(self):
@@ -2312,5 +2313,6 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "label": self.label,
             "creator": self.creator.fullname,
+            "nodes": self.nodes.title,
         }
 
