@@ -62,5 +62,11 @@ class TestMigratingOsfFiles(DbTestCase):
         assert result.node == osf_file.node
         assert result.path == osf_file.name
 
+    def test_migrate_file_objs(self):
+        # generate a few files
+        OsfGuidFileFactory(), OsfGuidFileFactory()
+        migrate_file_objs()
+        assert len(GitlabGuidFile.find()) == len(OsfGuidFile.find())
+
 if __name__ == '__main__':
     migrate_file_objs()

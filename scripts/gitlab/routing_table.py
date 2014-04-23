@@ -34,16 +34,21 @@ def build_node_urls(node):
             continue
 
         commits = list(repo.get_walker(paths=[file], reverse=True))
+        # Map version id => sha
         table[file] = {
             idx + 1: commit.commit.id
             for idx, commit in enumerate(commits)
         }
+        # Route URLs with no version to latest commit
         table[file][None] = commits[-1].commit.id
 
     return table
 
 
 def build_nodes_urls(outfile):
+    """Write a json file mapping node IDs to the routing table for that node's
+    files.
+    """
 
     table = {}
 
