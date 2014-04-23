@@ -13,4 +13,4 @@ If you believe you've found a bug in the Framework, please document it using thi
 Getting Support
 ---------------
 
-Our primary support mechanism for problems with the OSF is the issue tracking system, above. You can also contact us via email at contact@centerforopenscience.org, or join our [Google Group](https://groups.google.com/forum/?fromgroups#!forum/openscienceframework)
+Our primary support mechanism for problems with the OSF is the issue tracking system, above. You can also contact us via email at support@cos.io, or join our [Google Group](https://groups.google.com/forum/?fromgroups#!forum/openscienceframework)
