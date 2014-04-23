@@ -238,4 +238,4 @@ def mfr_requirements():
     """Install modular file renderer requirements"""
     mfr = 'mfr'
     print 'Installing mfr requirements'
-    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)  
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
