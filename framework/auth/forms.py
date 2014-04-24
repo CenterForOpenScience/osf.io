@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+
+# TODO: Remove me
+
 from wtforms import ValidationError
 from framework.forms import (
     Form,

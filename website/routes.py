@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from flask import redirect
+
 import framework
 from framework import status
 from framework.exceptions import HTTPError
@@ -8,9 +10,10 @@ from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 from framework.auth import views as auth_views
+from framework.auth import get_current_user
 
 from website import settings, language, util
-from website import views as website_routes
+from website import views as website_views
 from website.addons.base import views as addon_views
 from website.search import views as search_views
 from website.discovery import views as discovery_views
@@ -44,7 +47,7 @@ def get_globals():
         'domain': settings.DOMAIN,
         'language': language,
         'web_url_for': util.web_url_for,
-        'api_url_for': util.api_url_for
+        'api_url_for': util.api_url_for,
     }
 
 
@@ -67,10 +70,11 @@ def favicon():
 
 
 def goodbye(**kwargs):
+    # Redirect to dashboard if logged in
+    if get_current_user():
+        return redirect(util.web_url_for('dashboard'))
     status.push_status_message(language.LOGOUT, 'info')
     return {}
-
-
 
 
 def make_url_map(app):
@@ -96,7 +100,7 @@ def make_url_map(app):
                 '/<guid>/<path:suffix>',
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
-            website_routes.resolve_guid,
+            website_views.resolve_guid,
             OsfWebRenderer('', render_mako_string),
         ),
 
@@ -106,7 +110,7 @@ def make_url_map(app):
                 '/api/v1/<guid>/<path:suffix>',
             ],
             ['get', 'post', 'put', 'patch', 'delete'],
-            website_routes.resolve_guid,
+            website_views.resolve_guid,
             json_renderer,
         ),
 
@@ -120,8 +124,8 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_routes.dashboard, OsfWebRenderer('dashboard.mako')),
-        Rule('/reproducibility/', 'get', website_routes.reproducibility, OsfWebRenderer('', render_mako_string)),
+        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
+        Rule('/reproducibility/', 'get', website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako')),
         Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako')),
@@ -152,6 +156,8 @@ def make_url_map(app):
             view_kwargs={'tag': 'asb2014'}, endpoint_suffix='__asb2014__plain',
         ),
 
+        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
+
     ])
 
     process_rules(app, [
@@ -175,7 +181,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/get_nodes/', 'get', website_routes.get_dashboard_nodes, json_renderer),
+        Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -268,11 +274,11 @@ def make_url_map(app):
     ### Forms ###
 
     process_rules(app, [
-        Rule('/forms/registration/', 'get', website_routes.registration_form, json_renderer),
-        Rule('/forms/signin/', 'get', website_routes.signin_form, json_renderer),
-        Rule('/forms/forgot_password/', 'get', website_routes.forgot_password_form, json_renderer),
-        Rule('/forms/reset_password/', 'get', website_routes.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_routes.new_project_form, json_renderer),
+        Rule('/forms/registration/', 'get', website_views.registration_form, json_renderer),
+        Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
+        Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
+        Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
+        Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -311,7 +317,9 @@ def make_url_map(app):
             OsfWebRenderer('public/resetpassword.mako', render_mako_string)
         ),
 
+        # TODO: Remove `auth_register_post`
         Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako')),
+        Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
         Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako')),
         Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
@@ -406,7 +414,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/', 'get', {}, OsfWebRenderer('index.mako')),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
 
         Rule([
@@ -781,7 +789,7 @@ def make_url_map(app):
 
         Rule([
             '/watched/logs/'
-        ], 'get', website_routes.watched_logs_get, json_renderer),
+        ], 'get', website_views.watched_logs_get, json_renderer),
         ### Accounts ###
         Rule([
             '/user/merge/'

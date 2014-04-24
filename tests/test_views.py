@@ -16,6 +16,8 @@ from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
 
+from modularodm import Q
+
 from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth.model import User
@@ -1422,6 +1424,56 @@ class TestAuthViews(DbTestCase):
         assert_true(send_mail.called_with(
             to_addr='fred@queen.com'
         ))
+
+    def test_register_ok(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
+    def test_register_email_mismatch(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email + 'lol',
+                'password': password,
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        users = User.find(Q('username', 'eq', email))
+        assert_equal(users.count(), 0)
+
+    def test_register_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_register_post_sends_user_registered_signal(self):
         with app.test_request_context():
