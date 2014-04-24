@@ -1,9 +1,4 @@
 <%inherit file="base.mako"/>
-
-<%def name="stylesheets()">
-<link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
-</%def>
-
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
 
@@ -27,13 +22,12 @@
                 <li><a href="#links"><i class="icon-chevron-right"></i> Links</a></li>
                 <li><a href="#forking"><i class="icon-chevron-right"></i> Forking</a></li>
                 <li><a href="#registrations"><i class="icon-chevron-right"></i> Registrations</a></li>
-                <li><a href="#dropbox"><i class="icon-chevron-right"></i> Dropbox</a></li>
                 <li><a href="#github"><i class="icon-chevron-right"></i> GitHub</a></li>
                 <li><a href="#s3"><i class="icon-chevron-right"></i> Amazon S3</a></li>
                 <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
                 <li><a href="#commenting"><i class="icon-chevron-right"></i> Commenting</a></li>
                 <li><a href="#citations"><i class="icon-chevron-right"></i> Citations</a></li>
-                <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistics</a></li>
+                <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistsics</a></li>
             </ul>
         </ul>
     </div>
@@ -144,13 +138,7 @@
                 <div class="gs-video center"><iframe width="560" height="315" src="//www.youtube.com/embed/o9elWNmKRq0?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 <p>A registration exists at a separate, permanent URL that is linked to the project.  Then, you can continue editing and revising the project.</p>
             </div>
-            <div id="dropbox"></div>
-            <div class="row">
-                <p class="gs-header">Dropbox Add-on</p>
-                <p>To link a Drobpox folder to a project/component, visit the project you want to add a Dropbox folder to. Then go to "Settings" in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click “OK” on the pop-up, then submit.</p>
-                <p>Then, authenticate with Dropbox by clicking the "Authorize" button. Once you have said "OK" you can choose the folder you would like to add to your OSF project.</p>
-                <div class="gs-video center"><iframe width="560" height="315" src="//www.youtube.com/embed/0iFtgPfYSg4?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
-            </div>
+            <div id="github"></div>
             <div class="row">
                 <p class="gs-header">GitHub Add-on</p>
                 <p>To link a GitHub repository to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "GitHub" under "Select Add-ons" to enable the add-on.</p>
@@ -204,6 +192,7 @@
                 <P>The information displayed on the statistics page can be changed. From the statistics page of your project (found by clicking "Statistics" in the grey navigation bar), click on "Widgets & Dashboard." Select the widget you wish to add by clicking on the orange arrow to the right of the widget's name.</P>
                 <div class="gs-video center"><iframe width="560" height="315" src="//www.youtube.com/embed/WKjyILQzZv0?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
             </div>
+            <div class="empty"></div>
         </div>
     </div>
 </%def>
