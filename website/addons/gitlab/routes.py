@@ -11,6 +11,7 @@ from website.addons.gitlab.settings import ROUTE
 
 
 api_routes = {
+    'prefix': '/api/v1',
 
     'rules': [
 
@@ -85,10 +86,7 @@ api_routes = {
             views.hooks.gitlab_hook_callback,
             json_renderer,
         ),
-
-
     ],
-    'prefix': '/api/v1'
 }
 
 page_routes = {
