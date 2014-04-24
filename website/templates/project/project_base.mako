@@ -35,6 +35,7 @@ ${next.body()}
     $script(['/static/addons/badges/badge-awarder.js'], function() {
         attachDropDown('${'{}badges/json/'.format(user_api_url)}');
     });
+    % endif
 
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
