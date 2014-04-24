@@ -97,7 +97,6 @@ def dataverse_download_file_proxy(**kwargs):
     return resp
 
 
-# TODO: Remove unnecessary API calls
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
 def dataverse_view_file(**kwargs):
@@ -208,7 +207,7 @@ def dataverse_upload_file(**kwargs):
             len(content),
             rubeus.format_filesize(len(content))
         ],
-        'kind': 'file',
+        rubeus.KIND: rubeus.FILE,
         'urls': {
                 'view': node.web_url_for('dataverse_view_file',
                                          path=file_id),

@@ -108,8 +108,10 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
     for f in study.get_files(released):
 
         item = {
+            'addon': 'dataverse',
             rubeus.KIND: rubeus.FILE,
             'name': f.name,
+            'ext': os.path.splitext(f.name)[1],
             'urls': {
                     'view': node.web_url_for('dataverse_view_file',
                                              path=f.id),
@@ -122,10 +124,6 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
                 'view': can_view,
                 'edit': can_edit,
             },
-            'size': [
-                float(0), # TODO: Implement file size (if possible?)
-                hurry.filesize.size(0, system=hurry.filesize.alternative)
-            ],
         }
         info.append(item)
 

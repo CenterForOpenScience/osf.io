@@ -37,34 +37,6 @@ def dataverse_set_user_config(*args, **kwargs):
     user_settings.save()
 
 
-# TODO: Is this needed?
-# @decorators.must_be_contributor
-# @decorators.must_have_addon('dataverse', 'node')
-# def dataverse_set_node_config(*args, **kwargs):
-#
-#     # TODO: Validate
-#
-#     user = kwargs['auth'].user
-#
-#     node_settings = kwargs['node_addon']
-#     dataverse_user = node_settings.user_settings
-#
-#     # If authorized, only owner can change settings
-#     if dataverse_user and dataverse_user.owner != user:
-#         raise HTTPError(http.BAD_REQUEST)
-#
-#     # Verify connection
-#     connection = connect(
-#         node_settings.dataverse_username,
-#         node_settings.dataverse_password,
-#     )
-#     if connection is None:
-#         return {'message': 'Cannot access Dataverse.'}, \
-#                http.BAD_REQUEST
-#
-#     return {}
-
-
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
 def set_dataverse(*args, **kwargs):
