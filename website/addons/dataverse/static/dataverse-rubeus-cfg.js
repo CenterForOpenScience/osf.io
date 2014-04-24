@@ -37,7 +37,21 @@
                 var state = $this.val();
                 refreshDataverseTree(grid, row, state);
             }
-        }]
+        }],
+        // Update file information for updated files
+        uploadSuccess: function(file, row, data) {
+            if (data.actionTaken === 'file_updated') {
+                var gridData = this.getData();
+                for (var i=0; i < gridData.length; i++) {
+                    var item = gridData[i];
+                    if (item.file_id && data.old_id &&
+                        item.file_id === data.old_id) {
+                        $.extend(item, data);
+                        this.updateItem(item);
+                    }
+                }
+            }
+        }
     };
 
 }));

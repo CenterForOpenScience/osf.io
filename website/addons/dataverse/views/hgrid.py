@@ -111,6 +111,7 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
             'addon': 'dataverse',
             rubeus.KIND: rubeus.FILE,
             'name': f.name,
+            'file_id': f.id,
             'ext': os.path.splitext(f.name)[1],
             'urls': {
                     'view': node.web_url_for('dataverse_view_file',

@@ -170,12 +170,14 @@ def dataverse_upload_file(**kwargs):
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
     action = 'file_uploaded'
+    old_id = None
 
     # Replace file if old version exists
     if get_file(study, filename) is not None:
         action = 'file_updated'
-        file = get_file(study, filename)
-        delete_file(file)
+        old_file = get_file(study, filename)
+        old_id = old_file.id
+        delete_file(old_file)
 
     content = upload.read()
     upload_file(study, filename, content)
@@ -202,6 +204,8 @@ def dataverse_upload_file(**kwargs):
 
     info = {
         'addon': 'dataverse',
+        'file_id': file_id,
+        'old_id': old_id,
         'name': filename,
         'size': [
             len(content),
@@ -324,6 +328,7 @@ def scrape_filename(file_id):
     headers = session.head(url).headers
 
     # Agree to terms if necessary
+    # TODO: Check for file not found
     if 'content-disposition' not in headers.keys():
 
         response = session.get(url)
