@@ -27,6 +27,8 @@ class AddonTestCase(DbTestCase):
     """
 
     ADDON_SHORT_NAME = None
+    OWNERS = ['user', 'node']
+    NODE_USER_FIELD = 'user_settings'
 
     # Optional overrides
     def create_user(self):
@@ -48,24 +50,44 @@ class AddonTestCase(DbTestCase):
     def set_node_settings(self, settings):
         raise NotImplementedError('Must define set_node_settings(self, settings) method')
 
+    def create_user_settings(self):
+        """Initialize user settings object if requested by `self.OWNERS`.
+
+        """
+        if 'user' not in self.OWNERS:
+            return
+        self.user.add_addon(self.ADDON_SHORT_NAME, override=True)
+        assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
+        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
+        self.set_user_settings(self.user_settings)
+        self.user_settings.save()
+
+    def create_node_settings(self):
+        """Initialize node settings object if requested by `self.OWNERS`,
+        additionally linking to user settings if requested by
+        `self.NODE_USER_FIELD`.
+
+        """
+        if 'node' not in self.OWNERS:
+            return
+        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
+        # User has imported their addon settings to this node
+        if self.NODE_USER_FIELD:
+            setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
+        self.set_node_settings(self.node_settings)
+        self.node_settings.save()
+
+
     def setUp(self):
         self.app = self.create_app()
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
             raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
-        self.user.add_addon(self.ADDON_SHORT_NAME, override=True)
-        assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
         self.user.save()
 
-        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
-        self.set_user_settings(self.user_settings)
-        self.user_settings.save()
-
         self.project = self.create_project()
-        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
         self.project.save()
-        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
-        # User has imported their addon settings to this node
-        self.node_settings.user_settings = self.user_settings
-        self.set_node_settings(self.node_settings)
-        self.node_settings.save()
+
+        self.create_user_settings()
+        self.create_node_settings()

@@ -1,4 +1,9 @@
 <%inherit file="base.mako"/>
+
+<%def name="stylesheets()">
+<link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+</%def>
+
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
 

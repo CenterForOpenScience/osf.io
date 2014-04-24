@@ -132,6 +132,7 @@ ADDONS_REQUESTED = [
     'github', 's3', 'figshare',
     'dataverse',
     'badges', 'dropbox',
+    'forward',
 ]
 
 ADDON_CATEGORIES = [
