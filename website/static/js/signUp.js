@@ -12,6 +12,21 @@
 
     'use strict';
 
+    ko.extenders.cleanup = function(target, func) {
+        var adapter = ko.computed({
+            read: target,
+            write: function(value) {
+                var current = target();
+                var toWrite = func(value);
+                if (current !== toWrite) {
+                    target(func(value));
+                }
+            }
+        });
+        adapter(target());
+        return adapter;
+    };
+
     var ViewModel = function(submitUrl) {
 
         var self = this;
@@ -31,7 +46,7 @@
                 validator: function(val, other) {
                     return val === other
                 },
-                'message': 'Email addresses must match',
+                'message': 'Email addresses must match.',
                 params: self.email1
             }
         });
@@ -57,6 +72,10 @@
         self.flashMessage = ko.observable();
         self.flashMessageClass = ko.observable();
         self.flashTimeout = null;
+
+        self.trim = function(observable) {
+            observable($.trim(observable()));
+        }
 
         /** Change the flashed message. */
         self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {

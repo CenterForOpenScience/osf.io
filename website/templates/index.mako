@@ -20,7 +20,10 @@
                             data-bind="value: fullName,
                                        valueUpdate: 'input',
                                        disable: submitted(),
-                                       event: {focus: hideValidation}"
+                                       event: {
+                                           focus: hideValidation,
+                                           blur: trim.bind($data, fullName)
+                                       }"
                         />
                 </div>
 
@@ -33,7 +36,10 @@
                             data-bind="value: email1,
                                        valueUpdate: 'input',
                                        disable: submitted(),
-                                       event: {focus: hideValidation}"
+                                       event: {
+                                           focus: hideValidation,
+                                           blur: trim.bind($data, email1)
+                                       }"
                         />
                 </div>
 
@@ -46,7 +52,10 @@
                             data-bind="value: email2,
                                        valueUpdate: 'input',
                                        disable: submitted(),
-                                       event: {focus: hideValidation}"
+                                       event: {
+                                           focus: hideValidation,
+                                           blur: trim.bind($data, email2)
+                                       }"
                         />
                 </div>
 
@@ -60,19 +69,24 @@
                             data-bind="value: password,
                                        valueUpdate: 'input',
                                        disable: submitted(),
-                                       event: {focus: hideValidation}"
+                                       event: {
+                                           focus: hideValidation
+                                           blur: trim.bind($data, password)
+                                       }"
                         />
                 </div>
-
-                <button
-                        type="submit"
-                        class="btn btn-danger"
-                        data-bind="visible: !submitted()"
-                    >Sign up</button>
 
                 <!-- Flashed Messages -->
                 <div class="help-block">
                     <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
+                </div>
+
+                <div>
+                    <button
+                            type="submit"
+                            class="btn btn-danger"
+                            data-bind="visible: !submitted()"
+                        >Sign up</button>
                 </div>
 
             </form>
