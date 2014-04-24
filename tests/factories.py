@@ -78,6 +78,12 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+    """A user that automatically has an api key, for quick authentication.
+
+    Example: ::
+        user = AuthUserFactory()
+        res = self.app.get(url, auth=user.auth)  # user is "logged in"
+    """
 
     @post_generation
     def add_api_key(self, create, extracted):
