@@ -49,6 +49,24 @@ def migrate_file_objs():
     for osf_file_obj in OsfGuidFile.find():
         migrate_file_obj(osf_file_obj)
 
+from tests.base import DbTestCase
+from website.addons.osffiles.tests.factories import OsfGuidFileFactory
+
+class TestMigratingOsfFiles(DbTestCase):
+
+    def test_migrate_file_obj(self):
+        osf_file = OsfGuidFileFactory()
+
+        result = migrate_file_obj(osf_file)
+
+        assert result.node == osf_file.node
+        assert result.path == osf_file.name
+
+    def test_migrate_file_objs(self):
+        # generate a few files
+        OsfGuidFileFactory(), OsfGuidFileFactory()
+        migrate_file_objs()
+        assert len(GitlabGuidFile.find()) == len(OsfGuidFile.find())
 
 if __name__ == '__main__':
     migrate_file_objs()
