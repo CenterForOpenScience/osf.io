@@ -170,16 +170,15 @@ def dataverse_upload_file(**kwargs):
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
+    action = 'file_uploaded'
 
-    # Todo: Allow renaming
+    # Replace file if old version exists
     if get_file(study, filename) is not None:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            message='This study already contains a file with that name'
-        )
+        action = 'file_updated'
+        file = get_file(study, filename)
+        delete_file(file)
 
     content = upload.read()
-
     upload_file(study, filename, content)
     file_id = get_file(study, filename).id
 
@@ -222,6 +221,7 @@ def dataverse_upload_file(**kwargs):
             'view': can_view,
             'edit': can_edit,
         },
+        'actionTaken': action,
     }
 
     return info, 201

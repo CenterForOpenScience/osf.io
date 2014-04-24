@@ -2,6 +2,7 @@ import nose
 import unittest
 from nose.tools import *
 import mock
+import json
 
 import httplib as http
 from tests.base import URLLookup
@@ -300,11 +301,14 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
                      mock_upload.call_args[0][0].get_id())
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
+        assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file')
-    def test_upload_existing(self, mock_get, mock_upload, mock_connection):
+    def test_upload_existing(self, mock_get, mock_delete, mock_upload,
+                             mock_connection):
         mock_get.return_value = create_mock_dvn_file() # File already exists
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
@@ -318,12 +322,21 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         # Attempt to upload the file
         url = lookup('api', 'dataverse_upload_file',
                      pid=self.project._primary_key, path=path)
-        res = self.app.post(url, payload, auth=self.user.auth,
-                            expect_errors=True)
+        res = self.app.post(url, payload, auth=self.user.auth)
 
-        # File was not uploaded
-        assert_equal(res.status_code, http.BAD_REQUEST)
-        assert_equal(0, mock_upload.call_count)
+        # Old file was deleted
+        mock_delete.assert_called_once
+
+        # File was uploaded
+        assert_equal(res.status_code, http.CREATED)
+        mock_upload.assert_called_once
+
+        # Parameters are correct
+        assert_equal(self.node_settings.study_hdl,
+                     mock_upload.call_args[0][0].get_id())
+        assert_equal(filename, mock_upload.call_args[0][1])
+        assert_equal(content, mock_upload.call_args[0][2])
+        assert_equal('file_updated', json.loads(res.body)['actionTaken'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect')
     def test_dataverse_view_file(self, mock_connection):
