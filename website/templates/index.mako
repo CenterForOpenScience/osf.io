@@ -1,8 +1,5 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Home</%def>
-<%def name="stylesheets()">
-    <link href='http://fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
-</%def>
 <%def name="content()">
     <div id="hpContainerOne">
         <div id="containerOneHeader" class="col-md-6">
