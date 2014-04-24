@@ -1,5 +1,5 @@
 """
-
+GitLab add-on routes.
 """
 
 from framework.routing import Rule, json_renderer
@@ -17,12 +17,12 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/{route}/root/'.format(route=ROUTE),
-                '/project/<pid>/node/<nid>/{route}/root/'.format(route=ROUTE),
+                '/project/<pid>/{route}/grid/root/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/grid/root/'.format(route=ROUTE),
             ],
-             'get',
-             views.crud.gitlab_hgrid_root_public,
-             json_renderer,
+            'get',
+            views.crud.gitlab_hgrid_root_public,
+            json_renderer,
         ),
 
         Rule(

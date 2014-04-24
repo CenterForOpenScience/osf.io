@@ -2,6 +2,7 @@ import logging
 
 import gitlab
 from gitlab.exceptions import GitlabError
+GitlabError = GitlabError
 
 from website import settings
 

@@ -4,25 +4,19 @@ from framework.auth.decorators import Auth
 class NodeLogger(object):
     """Helper class for adding correctly-formatted Dropbox logs to nodes.
 
-    Usage: ::
-
-        from website.project.model import NodeLog
-
-        file_obj = DropboxFile(path='foo/bar.txt')
-        file_obj.save()
-        node = ...
-        auth = ...
-        nodelogger = DropboxNodeLogger(node, auth, file_obj)
-        nodelogger.log(NodeLog.FILE_REMOVED, save=True)
-
-
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
-    :param DropboxFile file_obj: File object for file-related logs.
+    :param str foreign_user: Name of non-OSF user; used for services with
+        webhooks such as GitHub and Trello
+    :param GuidFile file_obj: File object for file-related logs.
+    :param str path: Path to file
+    :param datetime date: Optional log date
+
     """
 
     NAME = ''
 
+    # TODO: Generalize to non-file add-ons
     def __init__(self, node, auth, foreign_user=None, file_obj=None, path=None, date=None):
         self.node = node
         self.auth = auth
@@ -32,6 +26,10 @@ class NodeLogger(object):
         self.date = date
 
     def build_params(self):
+        """Build `params` dictionary to pass to `Node::add_log`. Should be
+        overridden by most subclasses.
+
+        """
         return {
             'project': self.node.parent_id,
             'node': self.node._id,
@@ -44,6 +42,8 @@ class NodeLogger(object):
         :param str action: Log action. Should be a class constant from NodeLog.
         :param dict extra: Extra parameters to add to the ``params`` dict of the
             new NodeLog.
+        :param bool save: Save changes to node.
+
         """
         params = self.build_params()
         if extra:

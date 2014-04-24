@@ -3,8 +3,8 @@ import base64
 import urllib
 import logging
 import httplib as http
-from flask import request, redirect, make_response
 from mako.template import Template
+from flask import request, redirect, make_response
 
 from framework.exceptions import HTTPError
 from framework.analytics import update_counters
@@ -17,10 +17,10 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.util.permissions import WRITE
 from website.models import NodeLog
-from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base import AddonError
 from website.addons.base.views import check_file_guid
+from website.project import utils
 
 from website.addons.gitlab.api import client, GitlabError
 from website.addons.gitlab.model import GitlabGuidFile
@@ -151,10 +151,6 @@ def gitlab_upload_file(**kwargs):
         branch=branch
     )
     return grid_data, http.CREATED
-
-    # File not modified
-    # TODO: Test whether something broke
-    return {'actionTaken': None}
 
 
 def gitlab_hgrid_root(node_settings, auth, **kwargs):
@@ -334,7 +330,7 @@ def gitlab_view_file(**kwargs):
         'download_url': guid_urls['download'],
         'rendered': rendered,
     }
-    out.update(_view_project(node, auth, primary=True))
+    out.update(utils.serialize_node(node, auth, primary=True))
     return out
 
 
