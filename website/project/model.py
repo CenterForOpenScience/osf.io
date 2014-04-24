@@ -1214,7 +1214,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.private_links = []
 
 
         # Forks default to private status
@@ -1291,7 +1290,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
-        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
