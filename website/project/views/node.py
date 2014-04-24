@@ -797,17 +797,18 @@ def project_generate_private_link_post(*args, **kwargs):
     auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
     label = request.json.get('label','')
+    nodes=[]
 
-    link = new_private_link(
-        label =label, user=auth.user
-    )
     if node_to_use._id not in node_ids:
         node_ids.append(node_to_use._id)
 
     for node_id in node_ids:
         node = Node.load(node_id)
-        node.private_links.append(link)
-        node.save()
+        nodes.append(node)
+
+    link = new_private_link(
+        label =label, user=auth.user, nodes=nodes
+    )
 
     return {'status': 'success'}, 201
 

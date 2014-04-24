@@ -17,7 +17,7 @@
         self.parentId = ko.observable(null);
         self.parentTitle = ko.observable(null);
         self.label = ko.observable(null);
-        self.pageTitle = 'Generate New Private Link';
+        self.pageTitle = 'Generate New Link to Share Private Project';
         self.errorMsg = ko.observable('');
 
         self.nodes = ko.observableArray([]);

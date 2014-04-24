@@ -48,8 +48,9 @@
                         <thead>
                             <tr>
                             <th class="col-sm-2 link-name">Links</th>
-                            <th class="col-sm-4 link-label">Shared Project
+                            <th class="col-sm-2 link-node">Shared Project
                             </th>
+                            <th class="col-sm-2 link-note">Note</th>
                             <th class="col-sm-3 link-date">Created Date</th>
                             <th class="col-sm-2 link-creator">Created By</th>
                             <th class="col-sm-1"></th>
@@ -60,7 +61,8 @@
                             <tr>
                                 <td colspan="3"  >
                                     <a href="#private-link" data-toggle="modal">
-                                        Click to create a link to share this project so those who have the link can view but not edit the project
+                                        Click to create a link to share this project so those
+                                        who have the link can view but not edit the project
                                     </a>
                                 </td>
                             </tr>
@@ -68,15 +70,17 @@
                         </tbody>
                         <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                                 <tr>
-                                <td class="col-sm-4 link-name">
+                                <td class="col-sm-2 link-name">
                                     <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
                                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                                         <span class="icon-copy" ></span>
                                     </button>
                                     <span class="key-name" data-bind="text: linkUrl"></span>
                                 </td>
-
-                                  <td class="col-sm-2 link-label" data-bind="text: label"></td>
+                                <td></td>
+                                <td class="col-sm-2 link-node" data-bind="text: nodeTitles">
+                                </td>
+                                <td class="col-sm-2 link-note" data-bind="text: note"></td>
                                 <td class="col-sm-3 link-date">
                                     <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                                 </td>

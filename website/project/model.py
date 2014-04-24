@@ -471,7 +471,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_links = fields.ForeignField('privatelink',list=True, backref='key')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -525,6 +524,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    @property
+    def private_links(self):
+        return self.private_link_shared
 
     @property
     def private_links_active(self):
@@ -2300,10 +2303,10 @@ class PrivateLink(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
-    label = fields.StringField()
+    note = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
-    
-    nodes = fields.ForeignField('Node', backref='shared')
+
+    nodes = fields.ForeignField('node', list=True, backref='private_link_shared')
     creator = fields.ForeignField('user', backref='created')
 
     def to_json(self):
@@ -2311,8 +2314,8 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
-            "label": self.label,
+            "note": self.note,
             "creator": self.creator.fullname,
-            "nodes": self.nodes.title,
+            "node": self.nodes.title,
         }
 

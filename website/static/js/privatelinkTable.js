@@ -56,6 +56,10 @@
             return self.$root.nodeUrl() + "?key=" + data.key
         });
 
+        self.nodeTitles = ko.computed(function() {
+            return self.nodes.join(', ');
+        })
+
     }
 
     function ViewModel(url) {
