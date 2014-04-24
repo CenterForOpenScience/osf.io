@@ -46,16 +46,10 @@
                     Loading folders...</p>
 
                     <div data-bind="if: currentDisplay() === PICKER">
-                        <div id="myGrid"
+                        <div id="figshareGrid"
                              class="filebrowser hgrid figshare-folder-picker"></div>
                     </div>
-
-                    <!-- Share -->
-                    <div data-bind="if: currentDisplay() === SHARE && emails().length === 0"
-                        class="help-block">
-                        <p>No contributors to share with.</p>
-                    </div>
-
+            
                     <!-- Queued selection -->
                     <div class="figshare-confirm-selection"
                         data-bind="visible: currentDisplay() == PICKER">
@@ -103,16 +97,10 @@
 
 
 <script>
-    $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.js'],
-            'zeroclipboard');
-
-    $script.ready('zeroclipboard', function() {
-        ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
-    })
     $script(['/static/addons/figshare/figshareNodeConfig.js']);
     $script.ready('figshareNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "figshare/config/"}';
-        var figshare = new FigshareNodeConfig('#figshareScope', url, '#myGrid');
+        var figshare = new FigshareNodeConfig('#figshareScope', url, '#figshareGrid');
     });
 </script>

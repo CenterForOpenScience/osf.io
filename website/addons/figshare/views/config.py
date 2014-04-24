@@ -89,9 +89,7 @@ def serialize_settings(node_settings, current_user, client=None):
             uid=user_settings.owner._primary_key)
         result['ownerName'] = user_settings.owner.fullname
         # Show available projects
-        linked = node_settings.linked_content
-        if linked is None:
-            linked = {'id': None, 'type': None, 'title': None}
+        linked = node_settings.linked_content or {'id': None, 'type': None, 'title': None}
         result['linked'] = linked
     return result
 

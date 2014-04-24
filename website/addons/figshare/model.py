@@ -77,36 +77,18 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def linked_content(self):
         return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
 
-    def update_id(self, fid):
-        fid = str(fid)
-        if self.figshare_id != fid:
-            self.figshare_id = fid
-            self.save()
-            return True
-        return False
-    def update_title(self, title):
-        if self.figshare_title != title:
-            self.figshare_title = title
-            self.save()
-            return True
-        return False
-    def update_type(self, ftype):
-        if self.figshare_type != ftype:
-            self.figshare_type = ftype
-            self.save()
-            return True
-        return False
-
-    def update_fields(self, fields, node, auth):
+    def update_fields(self, fields, node, auth):        
         updated = False
-        for attr in fields.keys():
-            try:
-                update = getattr(self, 'update_'+attr) or None
-                if update:                
-                    updated = update(fields[attr]) or updated
-            except AttributeError:
-                # TODO deal with this?
-                pass
+        if fields.get('id'):
+            updated = updated or (fields['id'] != self.figshare_id)
+            self.figshare_id = fields['id']
+        if fields.get('title'):
+            updated = updated or (fields['title'] != self.figshare_title)
+            self.figshare_title = fields['title']            
+        if fields.get('type'):
+            updated = updated or (fields['type'] != self.figshare_type)
+            self.figshare_type = fields['type']            
+
         self.save()
         if updated:
             node.add_log(

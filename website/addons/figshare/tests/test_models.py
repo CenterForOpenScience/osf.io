@@ -52,7 +52,7 @@ class TestCallbacks(DbTestCase):
         # try updating fields
         newfields = {
             'type': 'project',
-            'id': 313131,
+            'id': '313131',
             'title': 'A PROJECT'
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
@@ -68,7 +68,7 @@ class TestCallbacks(DbTestCase):
         # try updating fields
         newfields = {
             'type': 'fileset',
-            'id': 313131,
+            'id': '313131',
             'title': 'A FILESET'
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
@@ -84,7 +84,7 @@ class TestCallbacks(DbTestCase):
         # try updating fields
         newfields = {
             'type': 'project',
-            'id': 313131,
+            'id': '313131',
             'title': 'A PROJECT'
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
@@ -99,7 +99,7 @@ class TestCallbacks(DbTestCase):
         # try updating fields
         newfields = {
             'adad' : 131313,
-            'i1513': 313131,
+            'i1513': '313131',
             'titladad': 'A PROJECT'
            }
         self.node_settings.update_fields(newfields, self.project, Auth(self.project.creator))
@@ -109,7 +109,6 @@ class TestCallbacks(DbTestCase):
         assert_equals(self.node_settings.figshare_title, 'singlefile')
         # check for log added
         assert_equals(len(self.project.logs), num_logs)
-
 
     def test_node_settings_article(self):
         url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
