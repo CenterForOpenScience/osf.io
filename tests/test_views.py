@@ -1954,6 +1954,41 @@ class TestSearchViews(DbTestCase):
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
+class TestReorderComponents(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+        # Project is public
+        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project.add_contributor(self.contrib, auth=Auth(self.creator))
+
+        # subcomponent that only creator can see
+        self.public_component = NodeFactory(creator=self.creator, public=True)
+        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.project.nodes.append(self.public_component)
+        self.project.nodes.append(self.private_component)
+
+        self.project.save()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
+    def test_reorder_components_with_private_component(self):
+
+        # contrib tries to reorder components
+        payload = {'new_list': [
+                '{0}:node'.format(self.private_component._primary_key),
+                '{0}:node'.format(self.public_component._primary_key),
+            ]
+        }
+        url = lookup('api', 'project_reorder_components', pid=self.project._primary_key)
+        res = self.app.post_json(url, payload, auth=self.contrib.auth)
+        assert_equal(res.status_code, 200)
+
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

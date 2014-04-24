@@ -29,7 +29,6 @@ from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
-from website.util import permissions
 
 from .log import _get_logs
 
@@ -267,14 +266,34 @@ def configure_comments(**kwargs):
 # View Project
 ##############################################################################
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def view_project(**kwargs):
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
+    primary = '/api/v1' not in request.path
+    rv = _view_project(node_to_use, auth, primary=primary)
+    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    return rv
+
+#### Reorder components
 
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
-def project_reorder_components(**kwargs):
+def project_reorder_components(project, **kwargs):
+    """Reorders the components in a project's component list.
 
-    project = kwargs['project']
+    :param-json list new_list: List of strings that include node IDs and
+        node type delimited by ':'.
 
+    """
+    # TODO(sloria): Change new_list parameter to be an array of objects
+    # {
+    #   'newList': {
+    #       {'key': 'abc123', 'type': 'node'}
+    #   }
+    # }
     new_list = [
         tuple(node.split(':'))
         for node in request.json.get('new_list', [])
@@ -284,7 +303,7 @@ def project_reorder_components(**kwargs):
         for key, schema in new_list
     ]
 
-    visible_nodes = [
+    valid_nodes = [
         node for node in project.nodes
         if not node.is_deleted
     ]
@@ -292,8 +311,7 @@ def project_reorder_components(**kwargs):
         node for node in project.nodes
         if node.is_deleted
     ]
-
-    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+    if len(valid_nodes) == len(nodes_new) and set(valid_nodes) == set(nodes_new):
         project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
@@ -317,7 +335,7 @@ def project_statistics(**kwargs):
 
 
 ###############################################################################
-# Make Public
+# Make Private/Public
 ###############################################################################
 
 
@@ -438,19 +456,6 @@ def component_remove(**kwargs):
     return {
         'url': redirect_url,
     }
-
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def view_project(**kwargs):
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
-    primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
-
 
 @must_be_valid_project # returns project
 @must_have_permission("write")
@@ -706,14 +711,16 @@ def get_recent_logs(**kwargs):
 
 
 def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
-
-    summary = {}
+    # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
+    summary = {
+        'id': link_id if link_id else node._id,
+        'primary': primary,
+    }
 
     if node.can_view(auth):
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
-            'id': link_id if link_id else node._id,
             'primary_id': node._id,
             'url': node.url,
             'primary': primary,
