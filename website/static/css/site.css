@@ -97,7 +97,12 @@
 
 /*CSS Johanna added for front page*/
 
+/* Knockout Validation Styles */
 
+.validationMessage { color: #a94442; }
+.customMessage { color: #ed9c28; }
+
+.hideValidation .validationMessage { display: none; }
 
 .hpLink:hover{
     text-decoration: none;

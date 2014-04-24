@@ -6,19 +6,84 @@
 <%def name="content()">
     <div id="hpContainerOne">
         <div id="containerOneHeader" class="col-md-6">
-            <p class ="headOne">Project management with collaborators,<br> project sharing with the public</p>
+            <p class="headOne">Project management with collaborators,<br> project sharing with the public</p>
             <br>
-            <p class ="subHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery. </p>
+            <p class="subHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery. </p>
         </div>
-        <div class="sign-up img-rounded col-md-4">
-            <div>
-                <input type="text" class="form-control" placeholder="Full Name">
-                <input type="text" class="form-control" placeholder="Contact Email">
-                <input type="text" class="form-control" placeholder="Confirm Email">
-                <input type="text" class="form-control" placeholder="Password">
-                <button type="button" class="btn btn-danger">Sign up</button>
-            </div>
-        </div>
+        <div id="signUpScope" class="sign-up img-rounded col-md-4">
+
+            <form data-bind="submit: submit, css: {hideValidation: !showValidation()}">
+
+                <div
+                        class="form-group"
+                        data-bind="css: {'has-error': fullName() && !fullName.isValid()}">
+                    <input
+                            class="form-control"
+                            placeholder="Full Name"
+                            data-bind="value: fullName,
+                                       valueUpdate: 'input',
+                                       disable: submitted(),
+                                       event: {focus: hideValidation}"
+                        />
+                </div>
+
+                <div
+                        class="form-group"
+                        data-bind="css: {'has-error': email1() && !email1.isValid()}">
+                    <input
+                            class="form-control"
+                            placeholder="Contact Email"
+                            data-bind="value: email1,
+                                       valueUpdate: 'input',
+                                       disable: submitted(),
+                                       event: {focus: hideValidation}"
+                        />
+                </div>
+
+                <div
+                        class="form-group"
+                        data-bind="css: {'has-error': email2() && !email2.isValid()}">
+                    <input
+                            class="form-control"
+                            placeholder="Confirm Email"
+                            data-bind="value: email2,
+                                       valueUpdate: 'input',
+                                       disable: submitted(),
+                                       event: {focus: hideValidation}"
+                        />
+                </div>
+
+                <div
+                        class="form-group"
+                        data-bind="css: {'has-error': password() && !password.isValid()}">
+                    <input
+                            type="password"
+                            class="form-control"
+                            placeholder="Password"
+                            data-bind="value: password,
+                                       valueUpdate: 'input',
+                                       disable: submitted(),
+                                       event: {focus: hideValidation}"
+                        />
+                </div>
+
+                <button
+                        type="submit"
+                        class="btn btn-danger"
+                        data-bind="visible: !submitted()"
+                    >Sign up</button>
+
+                <!-- Flashed Messages -->
+                <div class="help-block" data-bind="visible: showValidation()">
+                    <p data-bind="html: validationMessage, attr.class: validationMessageClass"></p>
+                </div>
+                <div class="help-block">
+                    <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
+                </div>
+
+            </form>
+
+        </div><!-- end #signUpScope -->
     </div>
     <div id="hpContainerTwo" class="row">
         <div class="header center col-md-12">
@@ -60,5 +125,21 @@
         </div>
 
     </div>
+
+</%def>
+
+<%def name="javascript_bottom()">
+
+    ${parent.javascript_bottom()}
+
+    <script type="text/javascript">
+        $script(['/static/js/signUp.js']);
+        $script.ready('signUp', function() {
+            var signUp = new SignUp(
+                '#signUpScope',
+                '${api_url_for('register_user')}'
+            );
+        });
+    </script>
 
 </%def>
