@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from flask import redirect
+
 import framework
 from framework import status
 from framework.exceptions import HTTPError
@@ -8,6 +10,7 @@ from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
                        render_mako_string)
 from framework.auth import views as auth_views
+from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
@@ -44,7 +47,7 @@ def get_globals():
         'domain': settings.DOMAIN,
         'language': language,
         'web_url_for': util.web_url_for,
-        'api_url_for': util.api_url_for
+        'api_url_for': util.api_url_for,
     }
 
 
@@ -67,10 +70,11 @@ def favicon():
 
 
 def goodbye(**kwargs):
+    # Redirect to dashboard if logged in
+    if get_current_user():
+        return redirect(util.web_url_for('dashboard'))
     status.push_status_message(language.LOGOUT, 'info')
     return {}
-
-
 
 
 def make_url_map(app):
