@@ -527,7 +527,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def private_links(self):
-        return self.private_link_shared
+        return self.privatelink__shared
 
     @property
     def private_links_active(self):
@@ -2306,7 +2306,7 @@ class PrivateLink(StoredObject):
     note = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
 
-    nodes = fields.ForeignField('node', list=True, backref='private_link_shared')
+    nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
 
     def to_json(self):
@@ -2316,6 +2316,6 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "note": self.note,
             "creator": self.creator.fullname,
-            "node": self.nodes.title,
+            "nodes": [x.title for x in self.nodes],
         }
 

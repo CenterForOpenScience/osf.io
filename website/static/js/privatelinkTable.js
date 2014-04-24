@@ -56,10 +56,6 @@
             return self.$root.nodeUrl() + "?key=" + data.key
         });
 
-        self.nodeTitles = ko.computed(function() {
-            return self.nodes.join(', ');
-        })
-
     }
 
     function ViewModel(url) {
@@ -103,7 +99,7 @@
                         dataType: "json",
                         data: JSON.stringify(data_to_send),
                         success: function(response) {
-                            self.privateLinks.pop(data);
+                            self.privateLinks.remove(data);
                         },
                         error: function(xhr) {
                             bootbox.alert("Failed to delete the private link.")

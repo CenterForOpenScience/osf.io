@@ -183,11 +183,11 @@ def _must_be_contributor_factory(include_public):
             else:
                 #key first time show up record it in the key ring
                 if key not in kwargs['auth'].user.private_link_keys:
-                        for node_link in node.private_links_active:
-                            if node_link.key == key:
-                                user.private_links.append(node_link)
-                                kwargs['auth'].user.save()
-                                break
+                    for node_link in node.private_links_active:
+                        if node_link.key == key:
+                            user.private_links.append(node_link)
+                            kwargs['auth'].user.save()
+                            break
 
                 key_ring = set(kwargs['auth'].user.private_link_keys)
 

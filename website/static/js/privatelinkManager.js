@@ -16,7 +16,7 @@
         self.title = ko.observable('');
         self.parentId = ko.observable(null);
         self.parentTitle = ko.observable(null);
-        self.label = ko.observable(null);
+        self.note = ko.observable(null);
         self.pageTitle = 'Generate New Link to Share Private Project';
         self.errorMsg = ko.observable('');
 
@@ -63,7 +63,7 @@
         };
 
         self.selectNodes = function() {
-            self.nodesToChange(attrMap(self.nodes(), 'id'));
+            self.nodesToChange($.osf.mapByProperty(self.nodes(), 'id'));
         };
         self.deselectNodes = function() {
             self.nodesToChange([]);
@@ -76,7 +76,7 @@
                     type: 'post',
                     data: JSON.stringify({
                         node_ids: self.nodesToChange(),
-                        label: self.label()
+                        note: self.note()
                     }),
                     contentType: 'application/json',
                     dataType: 'json',

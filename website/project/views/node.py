@@ -453,7 +453,7 @@ def view_project(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission("write")
+@must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
@@ -616,7 +616,7 @@ def _get_children(node, auth, indent=0):
     return children
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def private_link_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -641,7 +641,7 @@ def private_link_config(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def private_link_table(**kwargs):
     node = kwargs['node'] or kwargs['project']
     data = {
@@ -789,25 +789,25 @@ def get_registrations(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def project_generate_private_link_post(*args, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    label = request.json.get('label','')
+    note = request.json.get('note', '')
     nodes=[]
 
     if node_to_use._id not in node_ids:
-        node_ids.append(node_to_use._id)
+        node_ids.insert(0, node_to_use._id)
 
     for node_id in node_ids:
         node = Node.load(node_id)
         nodes.append(node)
 
-    link = new_private_link(
-        label =label, user=auth.user, nodes=nodes
+    new_private_link(
+        note =note, user=auth.user, nodes=nodes
     )
 
     return {'status': 'success'}, 201

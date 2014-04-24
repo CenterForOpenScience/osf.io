@@ -47,8 +47,8 @@
                     <table id="privateLinkTable" class="table">
                         <thead>
                             <tr>
-                            <th class="col-sm-2 link-name">Links</th>
-                            <th class="col-sm-2 link-node">Shared Project
+                            <th class="col-sm-3 link-name">Links</th>
+                            <th class="col-sm-1 link-nodes">Shared Project
                             </th>
                             <th class="col-sm-2 link-note">Note</th>
                             <th class="col-sm-3 link-date">Created Date</th>
@@ -70,15 +70,19 @@
                         </tbody>
                         <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                                 <tr>
-                                <td class="col-sm-2 link-name">
+                                <td class="col-sm-3 link-name">
                                     <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
                                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                                         <span class="icon-copy" ></span>
                                     </button>
                                     <span class="key-name" data-bind="text: linkUrl"></span>
                                 </td>
-                                <td></td>
-                                <td class="col-sm-2 link-node" data-bind="text: nodeTitles">
+                                <td class="col-sm-1 link-nodes" data-bind="foreach:nodes">
+                                       <ul class="narrow-list">
+                                           <li >
+                                              {{$data}}
+                                           </li>
+                                       </ul>
                                 </td>
                                 <td class="col-sm-2 link-note" data-bind="text: note"></td>
                                 <td class="col-sm-3 link-date">

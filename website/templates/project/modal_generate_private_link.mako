@@ -12,7 +12,7 @@
                     <div>
                         Would you like to add a note for this link?
                         <div class="form-group">
-                            <input type="text" class="form-control private-link-label" placeholder="New Label" data-bind="value:label"/>
+                            <input type="text" class="form-control private-link-note" placeholder="New Note" data-bind="value:note"/>
                         </div>
                     </div>
 
