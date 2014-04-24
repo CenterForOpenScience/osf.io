@@ -103,7 +103,7 @@
                 <img id="connect" src="/static/img/outlet.gif">
                 <div class="subHeadTwo center">CONNECTIONS</div>
                 <p>with the services you already use</p><br>
-                <div class="featureInfo">Link services to simplify transitions and facilitate interactions; e.g., connect OSF to your GitHub and Amazon S3 repositories and all three work together!</div>
+                <div class="featureInfo">Link services to simplify transitions and facilitate interactions; e.g., connect OSF to your Dropbox, GitHub, and Amazon S3 repositories and all four work together!</div>
             </div>
             <div class="col-md-4 center archive">
                 <img id="archive" src="/static/img/filedrawer.gif"><br>
@@ -129,7 +129,7 @@
                 <p class="subHeadThree steps"><a class="hpLink" href="https://osf.io/getting-started/">Learn how to build a project.</a></p>
                 <p class="subHeadThree steps"><a class="hpLink" href="https://osf.io/explore/activity/">Get inspired.</a></p>
             </div>
-            <p class="stepsText">Want more than an answer to a quick question? Feel free to <a class="hpLink" href="mailto:contact@osf.io">email us</a> to schedule a help session or tutorial for you and your collaborators.<br>OSF is backed by the non-profit <a class="hpLink" href="http://centerforopenscience.org/">Center for Open Science</a>.</p>
+            <p class="stepsText">Want more than an answer to a quick question? Feel free to <a class="hpLink" href="mailto:contact@osf.io">email us</a> to schedule a help session or tutorial for you and your collaborators.<br>OSF is maintained by the non-profit <a class="hpLink" href="http://centerforopenscience.org/">Center for Open Science</a>.</p>
         </div>
 
     </div>
