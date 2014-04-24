@@ -58,9 +58,6 @@
         self.flashMessageClass = ko.observable();
         self.flashTimeout = null;
 
-        self.validationMessage = ko.observable();
-        self.validationMessageClass = ko.observable();
-
         /** Change the flashed message. */
         self.changeMessage = function(message, messageClass, text, css, timeout, timeoutClock) {
             message(text);

@@ -74,9 +74,6 @@
                     >Sign up</button>
 
                 <!-- Flashed Messages -->
-                <div class="help-block" data-bind="visible: showValidation()">
-                    <p data-bind="html: validationMessage, attr.class: validationMessageClass"></p>
-                </div>
                 <div class="help-block">
                     <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
                 </div>
