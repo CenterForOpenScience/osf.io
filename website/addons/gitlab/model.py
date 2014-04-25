@@ -65,6 +65,8 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
     project_id = fields.IntegerField()
     hook_id = fields.IntegerField()
 
+    _migration_done = fields.BooleanField(default=False)
+
     @property
     def hook_url(self):
         """Absolute URL for hook callback."""
