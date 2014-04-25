@@ -132,6 +132,7 @@ ADDONS_REQUESTED = [
     'github', 's3', 'figshare',
     'gitlab',
     'badges', 'dropbox',
+    'forward',
 ]
 
 ADDON_CATEGORIES = [

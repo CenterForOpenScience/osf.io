@@ -87,7 +87,7 @@ class AddonModelMixin(StoredObject):
 
         return addon
 
-    def get_or_add_addon(self, addon_name, auth=None):
+    def get_or_add_addon(self, addon_name, auth=None, override=False):
         """Get addon from owner; if it doesn't exist, create one.
 
         :param str addon_name: Name of addon
@@ -97,7 +97,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name)
         if addon:
             return addon
-        return self.add_addon(addon_name, auth=auth)
+        return self.add_addon(addon_name, auth=auth, override=override)
 
     def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the owner.

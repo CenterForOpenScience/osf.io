@@ -20,7 +20,7 @@ lookup = URLLookup(app)
 
 class TestBadgesViews(AddonTestCase):
 
-    ADDON_SHORT_NAME = 'badges'
+    TEST_FOR = website.settings.ADDONS_AVAILABLE_DICT['badges']
 
     def setUp(self):
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth.decorators import Auth
-from website.addons.base import AddonError
 from tests.base import OsfTestCase, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory
 
@@ -27,7 +26,8 @@ class AddonTestCase(OsfTestCase):
         - self.app: A webtest app.
     """
 
-    ADDON_SHORT_NAME = None
+    TEST_FOR = None
+    NODE_USER_FIELD = 'user_settings'
 
     # Optional overrides
     def create_user(self):
@@ -49,33 +49,54 @@ class AddonTestCase(OsfTestCase):
     def set_node_settings(self, settings):
         raise NotImplementedError('Must define set_node_settings(self, settings) method')
 
-    def setUp(self):
+    def create_user_settings(self):
+        """Initialize user settings object if requested by `self.OWNERS`.
 
-        super(AddonTestCase, self).setUp()
-
-        self.app = self.create_app()
-        self.user = self.create_user()
-        if not self.ADDON_SHORT_NAME:
-            raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
-        self.user.add_addon(self.ADDON_SHORT_NAME, override=True)
-        assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
-        self.user.save()
-
-        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
+        """
+        if 'user' not in self.TEST_FOR.owners:
+            return
+        self.user_settings = self.user.get_or_add_addon(
+            self.TEST_FOR.short_name,
+            auth=Auth(self.user),
+            override=True
+        )
+        assert self.user.has_addon(self.TEST_FOR.short_name), '{0} is not enabled'.format(self.TEST_FOR.short_name)
         self.set_user_settings(self.user_settings)
         self.user_settings.save()
 
-        self.project = self.create_project()
-        try:
-            self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
-        except AddonError:
-            pass
-        self.project.save()
-        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
+    def create_node_settings(self):
+        """Initialize node settings object if requested by `self.OWNERS`,
+        additionally linking to user settings if requested by
+        `self.NODE_USER_FIELD`.
+
+        """
+        if 'node' not in self.TEST_FOR.owners:
+            return
+        self.node_settings = self.project.get_or_add_addon(
+            self.TEST_FOR.short_name,
+            auth=Auth(self.user),
+            override=True
+        )
         # User has imported their addon settings to this node
-        self.node_settings.user_settings = self.user_settings
+        if self.NODE_USER_FIELD:
+            setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
         self.set_node_settings(self.node_settings)
         self.node_settings.save()
+
+
+    def setUp(self):
+
+        self.app = self.create_app()
+        self.user = self.create_user()
+        if not self.TEST_FOR:
+            raise ValueError('Must define TEST_FOR in the test class.')
+        self.user.save()
+
+        self.project = self.create_project()
+        self.project.save()
+
+        self.create_user_settings()
+        self.create_node_settings()
 
         self.lookup = URLLookup(self.app.app)
         self.node_lookup = URLLookup(self.app.app, self.project)

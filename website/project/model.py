@@ -1790,11 +1790,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             user is not None
             and (
-                user in self.contributors
+                user._id in self.contributors
             )
         )
 
-    def add_addon(self, addon_name, auth, log=True):
+    def add_addon(self, addon_name, auth, override=False, log=True):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
@@ -1803,7 +1803,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :returns: Add-on was added
 
         """
-        rv = super(Node, self).add_addon(addon_name)
+        rv = super(Node, self).add_addon(addon_name, auth=auth, override=override)
         if rv and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(

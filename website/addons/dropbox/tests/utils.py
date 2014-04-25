@@ -20,7 +20,8 @@ def init_storage():
 
 
 class DropboxAddonTestCase(AddonTestCase):
-    ADDON_SHORT_NAME = 'dropbox'
+
+    TEST_FOR = website.settings.ADDONS_AVAILABLE_DICT['dropbox']
 
     def create_app(self):
         return TestApp(app)
