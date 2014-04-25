@@ -14,7 +14,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 import datetime
-from factory import base, Sequence, SubFactory, post_generation
+from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from framework.mongo import StoredObject
 from framework.auth import User, Q
@@ -26,6 +26,22 @@ from website.project.model import (
 
 from website.addons.wiki.model import NodeWikiPage
 
+from tests.base import fake
+
+def FakerAttribute(func_name, **kwargs):
+    """An attribute that uses the Faker libary to lazily generate values. The first
+    argument can be the name of any of the providers in faker, plus any keywork
+    arguments to the provider function.
+
+    http://www.joke2k.net/faker/
+
+    Example: ::
+
+        name = FakerAttribute('name')
+        title = FakerAttribute('sentence', nb_words=4)
+    """
+    faker_func = getattr(fake, func_name)
+    return LazyAttribute(lambda x: faker_func(**kwargs))
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -49,6 +65,7 @@ class ModularOdmFactory(base.Factory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+
         save_kwargs(**kwargs)
         instance = target_class(*args, **kwargs)
         instance.save()
@@ -78,6 +95,12 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+    """A user that automatically has an api key, for quick authentication.
+
+    Example: ::
+        user = AuthUserFactory()
+        res = self.app.get(url, auth=user.auth)  # user is "logged in"
+    """
 
     @post_generation
     def add_api_key(self, create, extracted):

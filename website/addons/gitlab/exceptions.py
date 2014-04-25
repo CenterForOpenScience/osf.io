@@ -1,4 +1,4 @@
 from website.addons.base import AddonError
 
-class GitlabError(AddonError):
+class GitlabAddonError(AddonError):
     pass

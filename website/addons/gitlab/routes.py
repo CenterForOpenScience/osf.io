@@ -1,5 +1,5 @@
 """
-
+GitLab add-on routes.
 """
 
 from framework.routing import Rule, json_renderer
@@ -11,17 +11,18 @@ from website.addons.gitlab.settings import ROUTE
 
 
 api_routes = {
+    'prefix': '/api/v1',
 
     'rules': [
 
         Rule(
             [
-                '/project/<pid>/{route}/root/'.format(route=ROUTE),
-                '/project/<pid>/node/<nid>/{route}/root/'.format(route=ROUTE),
+                '/project/<pid>/{route}/grid/root/'.format(route=ROUTE),
+                '/project/<pid>/node/<nid>/{route}/grid/root/'.format(route=ROUTE),
             ],
-             'get',
-             views.crud.gitlab_hgrid_root_public,
-             json_renderer,
+            'get',
+            views.crud.gitlab_hgrid_root_public,
+            json_renderer,
         ),
 
         Rule(
@@ -85,10 +86,7 @@ api_routes = {
             views.hooks.gitlab_hook_callback,
             json_renderer,
         ),
-
-
     ],
-    'prefix': '/api/v1'
 }
 
 page_routes = {

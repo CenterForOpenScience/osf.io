@@ -1,50 +1,35 @@
-import os
-import urlparse
-import subprocess
+"""
+Migrate git files from backup directories to GitLab directories. This script
+should ONLY be run on the GitLab server.
+"""
 
-from website.addons.gitlab import settings as gitlab_settings
+import os
+import shutil
+import subprocess
 
 
 SOURCE_PATH = '/opt/data/backup/test'
 DEST_PATH = '/opt/data/gitlab/repositories'
 
-REMOTE_NAME = 'migrate'
-BRANCH_NAME = 'master'
-
-
-def dest_to_http(dest):
-    parts = dest.split('/')
-    parsed = urlparse.urlparse(gitlab_settings.HOST)
-    return 'http://{root}:{pword}@{loc}/{user}/{repo}'.format(
-        root=gitlab_settings.ROOT_NAME,
-        pword=gitlab_settings.ROOT_PASS,
-        loc=parsed.netloc,
-        user=parts[-2],
-        repo=parts[-1],
-    )
 
 def migrate_files(source, dest):
-    """Clone the source repo to the destionary as a bare repo.
+    """Clone the source repo to the destination as a bare repo.
+
+    :param str source: Source directory
+    :param str dest: Destination directory
 
     """
-    # Build HTTP URL
-    url = dest_to_http(dest)
+    # Ensure that destination does not already exist
+    shutil.rmtree(dest)
 
-    # Add remote, catching exception if already added
+    # Clone source to destination
     try:
         subprocess.check_call(
-            ['git', 'remote', 'add', REMOTE_NAME, url],
-            cwd=source
+            ['git', 'clone', '--bare', source, dest]
         )
     except subprocess.CalledProcessError as error:
         if error.returncode != 128:
             raise
-
-    # Push contents
-    subprocess.check_call(
-        ['git', 'push', REMOTE_NAME, BRANCH_NAME],
-        cwd=source
-    )
 
 
 def walk_repos():

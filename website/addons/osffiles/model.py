@@ -32,6 +32,7 @@ class OsfGuidFile(GuidFile):
         return os.path.join('osffiles', self.name)
 
 
+# NOTE: This model is deprecated
 class NodeFile(GuidStoredObject):
 
     redirect_mode = 'redirect'

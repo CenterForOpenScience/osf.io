@@ -39,5 +39,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, *args, **kwar
 
     for schema in _schemas:
         collection = "{0}{1}".format(prefix, schema._name)
+        # Clear all other storage
+        schema._storage = []
         schema.set_storage(storage_class(collection=collection, **kwargs))
     return None

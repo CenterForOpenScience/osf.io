@@ -95,6 +95,14 @@ class OsfTestCase(DbTestCase):
             'username': 'Roger',
         }
 
+        setup_user_patch = mock.patch(
+            'website.addons.gitlab.model.setup_user'
+        )
+        setup_user_mock = setup_user_patch.start()
+        setup_user_rv = mock.Mock()
+        setup_user_rv.user_id = 1
+        setup_user_mock.return_value = setup_user_rv
+
         add_member_patch = mock.patch(
             'website.addons.gitlab.model.client.addprojectmember'
         )

@@ -1,4 +1,10 @@
+"""
+Create GitLab users and projects.
+"""
+
 import re
+
+from framework.mongo import StoredObject
 
 from website.models import Node
 from website.app import init_app
@@ -14,7 +20,7 @@ email_regex = re.compile(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$', re.I)
 def migrate_node(node):
 
     # Quit if no creator
-    if not node.contributors[0]:
+    if not node.contributors or not node.contributors[0] or not node.creator:
         return
 
     # Quit if no files
@@ -41,9 +47,12 @@ def migrate_node(node):
             setup_user(contrib)
         node_settings.after_add_contributor(node, contrib)
 
+    # Prevent cache from exploding
+    StoredObject._clear_caches()
+
 
 def migrate_nodes():
-
+    """Migrate all nodes."""
     for node in Node.find():
         migrate_node(node)
 

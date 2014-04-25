@@ -3,10 +3,11 @@ import base64
 import urllib
 import logging
 import httplib as http
-from flask import request, redirect, make_response
 from mako.template import Template
+from flask import request, redirect, make_response
 
 from framework.exceptions import HTTPError
+from framework.analytics import update_counters
 
 from website import settings
 from website.project.decorators import (
@@ -16,10 +17,10 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.util.permissions import WRITE
 from website.models import NodeLog
-from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
 from website.addons.base import AddonError
 from website.addons.base.views import check_file_guid
+from website.project import utils
 
 from website.addons.gitlab.api import client, GitlabError
 from website.addons.gitlab.model import GitlabGuidFile
@@ -28,7 +29,8 @@ from website.addons.gitlab.utils import (
     kwargs_to_path, build_full_urls, build_guid_urls,
     item_to_hgrid, gitlab_to_hgrid,
     serialize_commit, ref_or_default, get_branch_and_sha,
-    get_default_file_sha
+    get_default_file_sha,
+    GitlabNodeLogger
 )
 from website.addons.gitlab import settings as gitlab_settings
 
@@ -56,23 +58,11 @@ def get_guid(node_settings, path, ref):
 
 def gitlab_upload_log(node, action, auth, data, branch):
 
-    urls = build_full_urls(
-        node, {'type': 'blob'}, data['file_path'],
-        branch=branch
+    node_logger = GitlabNodeLogger(
+        node, auth=auth, path=data['file_path'],
+        branch=branch,
     )
-    node.add_log(
-        action='gitlab_' + action,
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'path': data['file_path'],
-            'urls': urls,
-            'gitlab': {
-                'branch': branch,
-            }
-        },
-        auth=auth,
-    )
+    node_logger.log(action)
 
 
 # TODO: Test me @jmcarp
@@ -90,16 +80,13 @@ def create_or_update(node_settings, user_settings, method_name, action,
         )
     method = getattr(client, method_name)
 
-    try:
-        response = method(
-            node_settings.project_id, filename, branch, content,
-            gitlab_settings.MESSAGES['add'], encoding='base64',
-            user_id=user_settings.user_id
-        )
-        gitlab_upload_log(node, action, auth, response, branch)
-        return response
-    except GitlabError:
-        return False
+    response = method(
+        node_settings.project_id, filename, branch, content,
+        gitlab_settings.MESSAGES['add'], encoding='base64',
+        user_id=user_settings.user_id
+    )
+    gitlab_upload_log(node, action, auth, response, branch)
+    return response
 
 
 @must_have_permission(WRITE)
@@ -136,38 +123,34 @@ def gitlab_upload_file(**kwargs):
 
     filename = os.path.join(path, upload.filename)
     slug = gitlab_slugify(filename)
-    
-    response = create_or_update(
-        node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
-        slug, branch, content, auth
-    )
-    if not response:
+
+    try:
+        response = create_or_update(
+            node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
+            slug, branch, content, auth
+        )
+    except GitlabError:
         response = create_or_update(
             node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
             slug, branch, content, auth
         )
 
     # File created or modified
-    if response:
-        head, tail = os.path.split(response['file_path'])
-        grid_data = item_to_hgrid(
-            node,
-            {
-                'type': 'blob',
-                'name': tail,
-            },
-            path=head,
-            permissions={
-                'view': True,
-                'edit': True,
-            },
-            branch=branch
-        )
-        return grid_data, 201
-
-    # File not modified
-    # TODO: Test whether something broke
-    return {'actionTaken': None}
+    head, tail = os.path.split(response['file_path'])
+    grid_data = item_to_hgrid(
+        node,
+        {
+            'type': 'blob',
+            'name': tail,
+        },
+        path=head,
+        permissions={
+            'view': True,
+            'edit': True,
+        },
+        branch=branch
+    )
+    return grid_data, http.CREATED
 
 
 def gitlab_hgrid_root(node_settings, auth, **kwargs):
@@ -263,7 +246,9 @@ def render_branch_picker(branch, sha, branches):
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
 def gitlab_file_commits(node_addon, **kwargs):
+    """
 
+    """
     branch = request.args.get('branch')
     sha = request.args.get('sha')
     ref = ref_or_default(node_addon, request.args)
@@ -277,7 +262,7 @@ def gitlab_file_commits(node_addon, **kwargs):
     sha = sha or commits[0]['id']
 
     commit_data = [
-        serialize_commit(commit, guid, branch)
+        serialize_commit(node_addon.owner, path, commit, guid, branch)
         for commit in commits
     ]
 
@@ -345,12 +330,16 @@ def gitlab_view_file(**kwargs):
         'download_url': guid_urls['download'],
         'rendered': rendered,
     }
-    out.update(_view_project(node, auth, primary=True))
+    out.update(utils.serialize_node(node, auth, primary=True))
     return out
 
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
+@update_counters('download:{pid}:{path}:{sha}')
+@update_counters('download:{nid}:{path}:{sha}')
+@update_counters('download:{pid}:{path}')
+@update_counters('download:{nid}:{path}')
 def gitlab_download_file(**kwargs):
 
     node_settings = kwargs['node_addon']
@@ -396,18 +385,13 @@ def gitlab_delete_file(**kwargs):
             node_settings.project_id, path, branch,
             gitlab_settings.MESSAGES['delete']
         )
-        node_settings.owner.add_log(
-            action='gitlab_' + NodeLog.FILE_REMOVED,
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'path': path,
-                'gitlab': {
-                    'branch': branch,
-                }
-            },
-            auth=auth,
+
+        node_logger = GitlabNodeLogger(
+            node, auth=auth, path=path,
+            branch=branch,
         )
+        node_logger.log(NodeLog.FILE_REMOVED)
+
     except GitlabError:
         raise HTTPError(http.BAD_REQUEST)
 

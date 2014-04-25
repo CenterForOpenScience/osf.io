@@ -26,7 +26,6 @@
         self.commits = ko.observableArray([]);
 
         self.fetch = function() {
-            console.log('fetching');
             $.getJSON(
                 self.url,
                 function(resp) {

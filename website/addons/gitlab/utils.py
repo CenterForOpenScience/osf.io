@@ -9,10 +9,14 @@ from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
 from framework.auth import get_user
+from framework.analytics import get_basic_counters
+
 
 from website.addons.base import AddonError
 from website.profile.utils import reduce_permissions
 from website.dates import FILE_MODIFIED
+
+from website.addons.base.utils import NodeLogger
 
 import settings as gitlab_settings
 from website.addons.gitlab.api import client, GitlabError
@@ -23,6 +27,36 @@ logger = logging.getLogger(__name__)
 def translate_permissions(permissions):
     osf_permissions = reduce_permissions(permissions)
     return gitlab_settings.ACCESS_LEVELS[osf_permissions]
+
+
+class GitlabNodeLogger(NodeLogger):
+
+    NAME = 'gitlab'
+
+    def __init__(self, node, auth, foreign_user=None, file_obj=None, path=None, date=None,
+                 branch=None, sha=None):
+        super(GitlabNodeLogger, self).__init__(
+            node, auth, foreign_user, file_obj, path, date
+        )
+        self.branch = branch
+        self.sha = sha
+
+    def build_params(self):
+        params = super(GitlabNodeLogger, self).build_params()
+        params['path'] = self.path
+        if self.file_obj or self.path:
+            path = self.file_obj.path if self.file_obj else self.path
+            params['urls'] = build_full_urls(
+                self.node,
+                {'type': 'blob'},
+                path,
+                sha=self.sha,
+            )
+        params['gitlab'] = {
+            'branch': self.branch,
+            'sha': self.sha,
+        }
+        return params
 
 
 def create_user(user_settings):
@@ -215,14 +249,36 @@ gitlab_slugify = Slugify(safe_chars='.')
 gitlab_slugify._pretranslate = lambda value: re.sub(r'\.git$', '', value)
 
 
+def get_download_count(node, path, sha=None):
+    """Get unique and total download counts for a file by path and optional
+    keyword arguments.
+
+    :param Node node: Node object
+    :param str path: Path to file
+    :param str sha: Commit ID
+    :returns: Tuple of (unique, total)
+
+    """
+    clean_path = path.replace('.', '_')
+    parts = ['download', node._id, clean_path]
+    if sha:
+        parts.append(sha)
+    key = ':'.join(parts)
+    return get_basic_counters(key)
+
+
 def item_to_hgrid(node, item, path, permissions, branch=None, sha=None):
     fullpath = os.path.join(path, item['name'])
-    return {
+    out = {
         'name': item['name'],
         'kind': type_to_kind[item['type']],
         'permissions': permissions,
         'urls': build_full_urls(node, item, fullpath, branch, sha),
     }
+    if item['type'] == 'blob':
+        unique, total = get_download_count(node, fullpath)
+        out['downloads'] = total or 0
+    return out
 
 
 def gitlab_to_hgrid(node, data, path, permissions, branch=None, sha=None):
@@ -273,9 +329,11 @@ def build_guid_urls(guid, branch=None, sha=None):
     }
 
 
-def serialize_commit(commit, guid, branch):
+def serialize_commit(node, path, commit, guid, branch):
     """Serialize GitLab commit to dictionary.
 
+    :param Node node: Parent node
+    :param str path: Path to file
     :param dict commit: GitLab commit data
     :param str guid: File GUID
     :param str branch: Branch name
@@ -283,10 +341,12 @@ def serialize_commit(commit, guid, branch):
 
     """
     committer = resolve_gitlab_commit_author(commit)
+    unique, total = get_download_count(node, path, sha=commit['id'])
     return {
         'sha': commit['id'],
         'date': parse_date(commit['created_at']).strftime(FILE_MODIFIED),
         'committer': committer,
+        'downloads': total or 0,
         'urls': build_guid_urls(guid, branch=branch, sha=commit['id'])
     }
 

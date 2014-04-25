@@ -1,6 +1,6 @@
-import mock
 from webtest_plus import TestApp
 
+from website import settings
 from website.app import init_app
 from website.addons.base.testing import AddonTestCase
 
@@ -10,7 +10,7 @@ app = init_app(
 
 class GitlabTestCase(AddonTestCase):
 
-    ADDON_SHORT_NAME = 'gitlab'
+    TEST_FOR = settings.ADDONS_AVAILABLE_DICT['gitlab']
 
     def create_app(self):
         return TestApp(app)

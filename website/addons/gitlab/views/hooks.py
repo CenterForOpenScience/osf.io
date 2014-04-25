@@ -3,19 +3,51 @@ import httplib as http
 from flask import request
 from dateutil.parser import parse as parse_date
 
-from framework.exceptions import HTTPError
 from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
 
-from website.models import User
+from website.models import User, NodeLog
 from website.project.decorators import must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
+from website.addons.gitlab.api import client
 from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.utils import resolve_gitlab_hook_author
+from website.addons.gitlab.utils import (
+    resolve_gitlab_hook_author, GitlabNodeLogger
+)
 
 
 logger = logging.getLogger(__name__)
+
+
+def add_diff_log(node, diff, sha, date, gitlab_user, save=False):
+    """
+
+    """
+    if diff['new_file']:
+        action = NodeLog.FILE_ADDED
+    elif diff['deleted_file']:
+        action = NodeLog.FILE_REMOVED
+    else:
+        action = NodeLog.FILE_UPDATED
+
+    path = diff['new_path']
+
+    if isinstance(gitlab_user, User):
+        auth = Auth(user=gitlab_user)
+        foreign_user = None
+    else:
+        auth = None
+        foreign_user = gitlab_user
+
+
+    node_logger = GitlabNodeLogger(
+        node, auth=auth, foreign_user=foreign_user, path=path, date=date,
+        sha=sha
+    )
+    node_logger.log(action, save=save)
+
 
 def add_hook_log(node_settings, commit, save=False):
     """Log a commit through GitLab hooks. Use the associated OSF user if one
@@ -35,24 +67,14 @@ def add_hook_log(node_settings, commit, save=False):
 
     sha = commit['id']
     date = parse_date(commit['timestamp'])
+    gitlab_user = resolve_gitlab_hook_author(commit['author'])
 
-    user = resolve_gitlab_hook_author(commit['author'])
-    auth = Auth(user=user) if isinstance(user, User) else None
-
-    node.add_log(
-        action='gitlab_commit_added',
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'gitlab': {
-                'sha': sha,
-            }
-        },
-        foreign_user=user if not isinstance(user,  User) else None,
-        log_date=date,
-        auth=auth,
-        save=save,
+    diffs = client.listrepositorycommitdiff(
+        node_settings.project_id, commit['id']
     )
+
+    for diff in diffs:
+        add_diff_log(node, diff, sha, date, gitlab_user, save=False)
 
 
 @must_be_valid_project
@@ -64,7 +86,7 @@ def gitlab_hook_callback(**kwargs):
     """
     # Request must come from GitLab hooks IP, unless testing
     if not request.json.get('test'):
-        if gitlab_settings.HOST not in request.remote_addr:
+        if gitlab_settings.HOOK_DOMAIN not in request.url:
             raise HTTPError(http.BAD_REQUEST)
 
     node = kwargs['node'] or kwargs['project']

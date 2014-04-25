@@ -7,9 +7,8 @@ from flask import request, redirect
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth import get_user, get_current_user, authenticate
-from framework.status import push_status_message
-from framework.auth.model import User
 from framework import status
+from framework.auth.model import User
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework import forms
@@ -143,7 +142,6 @@ def get_recently_added_contributors(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def project_before_remove_contributor(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -171,7 +169,6 @@ def project_before_remove_contributor(**kwargs):
 @must_be_contributor
 @must_not_be_registration
 def project_removecontributor(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -190,9 +187,9 @@ def project_removecontributor(**kwargs):
 
     if outcome:
         if auth.user == contributor:
-            push_status_message('Removed self from project', 'info')
+            status.push_status_message('Removed self from project', 'info')
             return {'redirectUrl': '/dashboard/'}
-        push_status_message('Contributor removed', 'info')
+        status.push_status_message('Contributor removed', 'info')
         return {}
 
     raise HTTPError(
@@ -301,9 +298,17 @@ def project_contributors_post(**kwargs):
 @must_be_valid_project # returns project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def project_manage_contributors(**kwargs):
+def project_manage_contributors(auth, **kwargs):
+    """Reorder and remove contributors.
 
-    auth = kwargs['auth']
+    :param Auth auth: Consolidated authorization
+    :param-json list contributors: Ordered list of contributors represented as
+        dictionaries of the form:
+        {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+    :raises: HTTPError(400) if contributors to be removed are not in list
+        or if no admin users would remain after changes were applied
+
+    """
     node = kwargs['node'] or kwargs['project']
 
     contributors = request.json.get('contributors')
@@ -314,11 +319,24 @@ def project_manage_contributors(**kwargs):
     except ValueError as error:
         raise HTTPError(http.BAD_REQUEST, data={'message_long': error.message})
 
-    # Must redirect user if revoked own access
+    # If user has removed herself from project, alert; redirect to user
+    # dashboard if node is private, else node dashboard
     if not node.is_contributor(auth.user):
-        return {'redirectUrl': node.url}
+        status.push_status_message(
+            'You have removed yourself as a contributor from this project',
+            'info'
+        )
+        if node.is_public:
+            return {'redirectUrl': node.url}
+        return {'redirectUrl': web_url_for('dashboard')}
+    # Else if user has revoked her admin permissions, alert and stay on
+    # current page
     if not node.has_permission(auth.user, ADMIN):
-        return {'redirectUrl': '/dashboard/'}
+        status.push_status_message(
+            'You have removed your administrative privileges for this project',
+            'info'
+        )
+    # Else stay on current page
     return {}
 
 

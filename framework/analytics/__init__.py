@@ -1,5 +1,6 @@
 from decorator import decorator
 from datetime import datetime
+from flask import request
 
 from framework.mongo import db
 from framework.sessions import session
@@ -41,8 +42,11 @@ def update_counters(rex):
     def wrapped(func, *args, **kwargs):
         date = datetime.utcnow()
         date = date.strftime('%Y/%m/%d')
+        data = {}
+        data.update(kwargs)
+        data.update(request.args.to_dict())
         try:
-            page = rex.format(**kwargs).replace('.', '_')
+            page = rex.format(**data).replace('.', '_')
         except KeyError:
             return func(*args, **kwargs)
 

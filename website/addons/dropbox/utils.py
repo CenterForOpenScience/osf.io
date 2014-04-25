@@ -6,14 +6,15 @@ from flask import make_response
 from website.project.utils import get_cache_content
 from website.util import rubeus
 
+from website.addons.base.utils import NodeLogger
+
 from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
 
-# TODO: Generalize this for other addons?
-class DropboxNodeLogger(object):
+class DropboxNodeLogger(NodeLogger):
     """Helper class for adding correctly-formatted Dropbox logs to nodes.
 
     Usage: ::
@@ -32,25 +33,12 @@ class DropboxNodeLogger(object):
     :param Auth auth: Authorization of the person who did the action.
     :param DropboxFile file_obj: File object for file-related logs.
     """
-    def __init__(self, node, auth, file_obj=None, path=None):
-        self.node = node
-        self.auth = auth
-        self.file_obj = file_obj
-        self.path = path
 
-    def log(self, action, extra=None, save=False):
-        """Log an event. Wraps the Node#add_log method, automatically adding
-        relevant parameters and prefixing log events with `"dropbox_"`.
+    NAME = 'dropbox'
 
-        :param str action: Log action. Should be a class constant from NodeLog.
-        :param dict extra: Extra parameters to add to the ``params`` dict of the
-            new NodeLog.
-        """
-        params = {
-            'project': self.node.parent_id,
-            'node': self.node._primary_key,
-            'folder': self.node.get_addon('dropbox').folder
-        }
+    def build_params(self):
+        params = super(DropboxNodeLogger, self).build_params()
+        params['folder'] = self.node.get_addon('dropbox').folder
         # If logging a file-related action, add the file's view and download URLs
         if self.file_obj or self.path:
             path = self.file_obj.path if self.file_obj else self.path
@@ -63,16 +51,7 @@ class DropboxNodeLogger(object):
                 },
                 'path': cleaned_path,
             })
-        if extra:
-            params.update(extra)
-        # Prefix the action with dropbox_
-        self.node.add_log(
-            action="dropbox_{0}".format(action),
-            params=params,
-            auth=self.auth
-        )
-        if save:
-            self.node.save()
+        return params
 
 
 def get_file_name(path):
