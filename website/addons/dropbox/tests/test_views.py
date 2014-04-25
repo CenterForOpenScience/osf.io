@@ -13,7 +13,7 @@ from webtest import Upload
 from framework.auth.decorators import Auth
 from website.util import api_url_for
 from website.project.model import NodeLog
-from tests.base import DbTestCase, URLLookup, assert_is_redirect
+from tests.base import OsfTestCase, URLLookup, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.dropbox.tests.utils import (
@@ -26,7 +26,7 @@ lookup = URLLookup(app)
 mock_client = MockDropbox()
 
 
-class TestAuthViews(DbTestCase):
+class TestAuthViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

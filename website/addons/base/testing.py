@@ -86,6 +86,8 @@ class AddonTestCase(OsfTestCase):
 
     def setUp(self):
 
+        super(AddonTestCase, self).setUp()
+
         self.app = self.create_app()
         self.user = self.create_user()
         if not self.TEST_FOR:
