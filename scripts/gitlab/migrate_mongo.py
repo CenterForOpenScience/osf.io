@@ -3,6 +3,7 @@ Create GitLab users and projects.
 """
 
 import re
+import logging
 
 from framework.mongo import StoredObject
 
@@ -19,6 +20,8 @@ email_regex = re.compile(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$', re.I)
 
 def migrate_node(node):
 
+    logging.warn('Migrating node {0}'.format(node._id))
+
     # Quit if no creator
     if not node.contributors or not node.contributors[0] or not node.creator:
         return
@@ -30,6 +33,10 @@ def migrate_node(node):
     # Ensure Gitlab project
     user_settings = setup_user(node.contributors[0])
     node_settings = setup_node(node, check_ready=False)
+
+    if node_settings._migration_done:
+        logging.warn('Migration already complete.')
+        return
 
     # Hack: Remove contributor from project list; we'll add them back soon
     client.deleteprojectmember(
@@ -46,6 +53,9 @@ def migrate_node(node):
         if contrib.is_active() and contrib != node.contributors[0]:
             setup_user(contrib)
         node_settings.after_add_contributor(node, contrib)
+
+    node_settings._migration_done = True
+    node_settings.save()
 
     # Prevent cache from exploding
     StoredObject._clear_caches()
