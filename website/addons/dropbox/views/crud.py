@@ -99,6 +99,9 @@ def dropbox_download(path, node_addon, **kwargs):
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     """API view that gets a list of revisions for a file."""
+    # Check if current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Get metadata for each revision of the file

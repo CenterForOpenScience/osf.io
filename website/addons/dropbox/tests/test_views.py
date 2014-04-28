@@ -355,6 +355,13 @@ class TestRestrictions(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
+    def test_restricted_get_revisions(self):
+        path = 'foo bar/baz.rst'
+        url = lookup('api', 'dropbox_get_revisions', path=path,
+            pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
 
 class TestCRUDViews(DropboxAddonTestCase):
 
