@@ -32,7 +32,7 @@ class AddonTestCase(DbTestCase):
 
     # Optional overrides
     def create_user(self):
-        return AuthUserFactory()
+        return AuthUserFactory.build()
 
     def create_project(self):
         return ProjectFactory(creator=self.user)
