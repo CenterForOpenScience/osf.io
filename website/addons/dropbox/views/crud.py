@@ -20,8 +20,13 @@ from framework.exceptions import HTTPError
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
-    render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path,
-    DropboxNodeLogger, make_file_response
+    render_dropbox_file,
+    get_file_name,
+    metadata_to_hgrid,
+    clean_path,
+    DropboxNodeLogger,
+    make_file_response,
+    abort_if_not_subdir,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +39,8 @@ debug = logger.debug
 def dropbox_delete_file(path, auth, node_addon, **kwargs):
     node = node_addon.owner
     if path and auth:
+        if auth.user != node_addon.user_settings.owner:
+            abort_if_not_subdir(path, node_addon.folder)
         client = get_node_addon_client(node_addon)
         client.file_delete(path)
         # log the event

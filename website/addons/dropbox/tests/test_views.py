@@ -228,6 +228,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     def test_dropbox_hgrid_data_contents(self):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
             url = lookup('api', 'dropbox_hgrid_data_contents',
+                path=self.node_settings.folder,
                 pid=self.project._primary_key)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
@@ -302,6 +303,22 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_restricted_to_shared_folder(self, mock_metadata):
+        mock_metadata.return_value = mock_responses['metadata_list']
+        # make project public
+        self.project.is_public = True
+        self.project.save()
+        # set the folder
+        self.node_settings.folder = '/foo/bar'
+        self.node_settings.save()
+        # tries to access a parent folder
+        with self.app.app.test_request_context():
+            url = self.project.api_url_for('dropbox_hgrid_data_contents', path='foo')
+        # import pdb; pdb.set_trace()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
 
 class TestCRUDViews(DropboxAddonTestCase):
 
@@ -345,6 +362,24 @@ class TestCRUDViews(DropboxAddonTestCase):
 
         mock_file_delete.assert_called_once
         assert_equal(path, mock_file_delete.call_args[0][0])
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
+    def test_restricted_deletion(self, mock_file_delete):
+        # contributor is added to project
+        contrib = AuthUserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.user))
+        self.project.save()
+
+        # Set shared folder
+        self.node_settings.folder = 'foo/bar'
+        self.node_settings.save()
+        # Tries to delete a file in a parent folder of the shared folder (foo)
+        url = lookup('api', 'dropbox_delete_file', 'dropbox_delete_file',
+            pid=self.project._primary_key, path='foo/secret.txt')
+        # gets 403 error
+        res = self.app.delete(url=url, auth=contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
 
     @unittest.skip('Finish this')
     def test_download_file(self):

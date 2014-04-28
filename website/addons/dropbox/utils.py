@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+import httplib as http
 
 from framework import make_response
+from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
 from website.util import rubeus
 
@@ -79,6 +81,13 @@ def is_subdir(path, directory):
     abs_directory = os.path.abspath(directory)
     abs_path = os.path.abspath(path)
     return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
+
+
+def abort_if_not_subdir(path, directory):
+    if not is_subdir(clean_path(path), clean_path(directory)):
+        raise HTTPError(http.FORBIDDEN)
+    return True
+
 
 def get_file_name(path):
     """Given a path, get just the base filename.

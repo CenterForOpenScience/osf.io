@@ -10,7 +10,9 @@ from website.util import rubeus
 
 from website.addons.dropbox.client import get_node_client
 from website.addons.dropbox.utils import (
-    clean_path, metadata_to_hgrid, build_dropbox_urls
+    clean_path,
+    metadata_to_hgrid,
+    abort_if_not_subdir,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,6 +32,9 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         return {'data': []}
     node = node_addon.owner
     path = kwargs.get('path',  '')
+    # Verify that path is a subdirectory of the node's shared folder
+    if auth.user != node_addon.user_settings.owner:
+        abort_if_not_subdir(path, node_addon.folder)
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration,
         'view': node.can_view(auth)
