@@ -29,6 +29,14 @@ def build_node_urls(node):
     if not os.path.exists(path):
         return
 
+    git_commits = utils.get_commits(node)
+    mongo_commits = utils.get_mongo_commits(node)
+
+    # Note: Database inconsistencies arise periodically, so we can't trust
+    # the SHAs stored in mongo. Only trust the stored SHAs if the sets of the
+    # mongo SHAs and the git SHAs are the same.
+    trust_mongo = set(git_commits) == set(sum(mongo_commits.values(), []))
+
     table = {}
 
     for file in os.listdir(path):
@@ -36,7 +44,10 @@ def build_node_urls(node):
         if file == '.git':
             continue
 
-        commits = utils.get_file_commits(node, file)
+        if trust_mongo:
+            commits = mongo_commits[file.replace('.', '_')]
+        else:
+            commits = utils.get_commits(node, file)
 
         if len(commits) == 0:
             logger.error('File {0}/{1} has no commits'.format(node._id, file))
@@ -56,8 +67,8 @@ def build_node_urls(node):
 def build_nodes_urls(outfile):
     """Write a json file mapping node IDs to the routing table for that node's
     files.
-    """
 
+    """
     table = {}
 
     for node in Node.find():

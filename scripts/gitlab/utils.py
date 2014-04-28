@@ -1,10 +1,9 @@
 import os
 import logging
 import subprocess
-from dulwich.repo import Repo
-from dulwich.errors import NotGitRepository
 
 from website import settings
+from website.addons.osffiles.model import NodeFile
 
 
 logger = logging.getLogger(__name__)
@@ -13,28 +12,15 @@ logger = logging.getLogger(__name__)
 def get_node_path(node):
     return os.path.join(settings.UPLOADS_PATH, node._id)
 
-def get_node_repo(node):
 
-    if not node.files_current:
-        return None
-
-    path = get_node_path(node)
-
-    if not os.path.exists(path):
-        logging.warn('No folder found for node {0}'.format(node._id))
-        return None
+def get_commits(node, file=None):
 
     try:
-        return Repo(path)
-    except NotGitRepository:
-        logging.warn('No repo found for node {0}'.format(node._id))
-        return None
-
-def get_file_commits(node, file):
-
-    try:
+        cmd_args = ['git', 'rev-list', '--all', '--reverse']
+        if file:
+            cmd_args.append(file)
         output = subprocess.check_output(
-            ['git', 'rev-list', '--all', '--reverse', file],
+            cmd_args,
             cwd=get_node_path(node)
         )
     except subprocess.CalledProcessError as error:
@@ -44,3 +30,17 @@ def get_file_commits(node, file):
         # return []
 
     return output.strip().split('\n')
+
+
+def get_mongo_commits(node):
+
+    out = {}
+
+    for name, versions in node.files_versions.iteritems():
+        out[name] = []
+        for fid in versions:
+            fobj = NodeFile.load(fid)
+            if fobj and fobj.git_commit:
+                out[name].append(fobj.git_commit)
+
+    return out

@@ -44,7 +44,7 @@ def migrate_counter(record):
     if not os.path.exists(path):
         return
 
-    commits = utils.get_file_commits(node, file_path)
+    commits = utils.get_commits(node, file_path)
     try:
         sha = commits[version_id + 1]
     except IndexError:
