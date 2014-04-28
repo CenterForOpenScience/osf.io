@@ -75,15 +75,10 @@ class DropboxNodeLogger(object):
             self.node.save()
 
 def is_subdir(path, directory):
-    path = os.path.realpath(path)
-    directory = os.path.realpath(directory)
-
-    relative = os.path.relpath(path, directory)
-
-    if relative.startswith(os.pardir + os.sep):
-        return False
-    else:
-        return True
+    #make both absolute
+    abs_directory = os.path.abspath(directory)
+    abs_path = os.path.abspath(path)
+    return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
 
 def get_file_name(path):
     """Given a path, get just the base filename.
