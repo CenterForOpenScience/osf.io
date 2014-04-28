@@ -13,6 +13,7 @@ data must be migrated to GitLab.
         * python -m scripts.gitlab.migrate_mongo
 4. Clone backed-up repos to bare repos in GitLab directory
 	* [On GitLab server]
+	    * Verify SOURCE_PATH and DEST_PATH in scripts/gitlab/migrate_files.py
 		* cd /root/osf
 		* python -m scripts.gitlab.migrate_files
 5. Migrate file GUIDs from OSF files to GitLab
