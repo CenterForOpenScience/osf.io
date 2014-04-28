@@ -24,6 +24,9 @@
         var self = this;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
+        // whether current user is authorizer of the addon
+        self.userIsOwner = ko.observable(false);
+        // whether current user has an auth token
         self.userHasAuth = ko.observable(false);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.folder = ko.observable({name: null, path: null});
@@ -68,6 +71,7 @@
         self.updateFromData = function(data) {
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
+            self.userIsOwner(data.userIsOwner);
             self.userHasAuth(data.userHasAuth);
             // Make sure folder has name and path properties defined
             self.folder(data.folder || {name: null, path: null});
@@ -163,9 +167,9 @@
         });
 
         self.selectedFolderName = ko.computed(function() {
-            var userHasAuth = self.userHasAuth();
+            var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            return (userHasAuth && selected) ? selected.name : '';
+            return (userIsOwner && selected) ? selected.name : '';
         });
 
         function onSubmitSuccess(response) {

@@ -69,7 +69,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(res.status_code, 200)
         # The JSON result
         result = res.json['result']
-        assert_equal(result['userHasAuth'], self.user_settings.has_auth)
+        assert_equal(result['userIsOwner'], self.user_settings.has_auth)
 
     def test_dropbox_user_config_get_returns_correct_urls(self):
         url = lookup('api', 'dropbox_user_config_get')
@@ -101,7 +101,7 @@ class TestConfigViews(DropboxAddonTestCase):
         with self.app.app.test_request_context():
             result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
-        assert_equal(result['userHasAuth'], self.user_settings.has_auth)
+        assert_equal(result['userIsOwner'], self.user_settings.has_auth)
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
         # Need request context because url_for is used by serialize_settings

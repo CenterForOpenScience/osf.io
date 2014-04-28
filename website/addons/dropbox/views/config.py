@@ -85,12 +85,13 @@ def serialize_settings(node_settings, current_user, client=None):
     dropbox config endpoints.
     """
     user_settings = node_settings.user_settings
-    user_has_auth = user_settings is not None and (
+    user_is_owner = user_settings is not None and (
         user_settings.owner._primary_key == current_user._primary_key
     )
     result = {
         'nodeHasAuth': node_settings.has_auth,
-        'userHasAuth': user_has_auth,
+        'userIsOwner': user_is_owner,
+        'userHasAuth': current_user.get_addon('dropbox') is not None,
         'urls': serialize_urls(node_settings)
     }
     if node_settings.has_auth:
