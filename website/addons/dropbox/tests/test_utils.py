@@ -41,6 +41,17 @@ def test_get_file_name():
     assert_equal(utils.get_file_name('/foo/bar/baz.txt/'), 'baz.txt')
 
 
+def test_is_subdir():
+    assert_true(utils.is_subdir('foo/bar', 'foo'))
+    assert_true(utils.is_subdir('foo', 'foo'))
+    assert_true(utils.is_subdir('foo/bar baz', 'foo'))
+    assert_true(utils.is_subdir('bar baz/foo', 'bar baz'))
+
+    assert_false(utils.is_subdir('foo/bar', 'baz'))
+    assert_false(utils.is_subdir('foo/bar', 'bar'))
+    assert_false(utils.is_subdir('foo', 'foo/bar'))
+
+
 def test_clean_path():
     assert_equal(utils.clean_path('/'), '')
     assert_equal(utils.clean_path('/foo/bar/baz/'), 'foo/bar/baz')
