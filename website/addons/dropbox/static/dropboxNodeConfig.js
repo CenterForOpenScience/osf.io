@@ -50,6 +50,9 @@
         // Whether the contributor emails have been loaded from the server
         self.loadedEmails = ko.observable(false);
 
+        // Whether the dropbox folders have been loaded from the server/Dropbox API
+        self.loadedFolders = ko.observable(false);
+
         // List of contributor emails as a comma-separated values
         self.emailList = ko.computed(function() {
             return self.emails().join([', ']);
@@ -292,30 +295,35 @@
          */
         self.activatePicker = function() {
             self.currentDisplay(self.PICKER);
-            // Show loading indicator
-            self.loading(true);
-            $(self.folderPicker).folderpicker({
-                onPickFolder: onPickFolder,
-                // Fetch Dropbox folders with AJAX
-                data: self.urls().folders, // URL for fetching folders
-                // Lazy-load each folder's contents
-                // Each row stores its url for fetching the folders it contains
-                fetchUrl: function(row) {
-                    return row.urls.folders;
-                },
-                ajaxOptions: {
-                   error: function(xhr, textStatus, error) {
+            // Only load folders if they haven't already been requested
+            if (!self.loadedFolders()) {
+                // Show loading indicator
+                self.loading(true);
+                $(self.folderPicker).folderpicker({
+                    onPickFolder: onPickFolder,
+                    // Fetch Dropbox folders with AJAX
+                    data: self.urls().folders, // URL for fetching folders
+                    // Lazy-load each folder's contents
+                    // Each row stores its url for fetching the folders it contains
+                    fetchUrl: function(row) {
+                        return row.urls.folders;
+                    },
+                    ajaxOptions: {
+                       error: function(xhr, textStatus, error) {
+                            self.loading(false);
+                            console.error(textStatus); console.error(error);
+                            self.changeMessage('Could not connect to Dropbox at this time. ' +
+                                                'Please try again later.', 'text-warning');
+                        }
+                    },
+                    init: function() {
+                        // Hide loading indicator
                         self.loading(false);
-                        console.error(textStatus); console.error(error);
-                        self.changeMessage('Could not connect to Dropbox at this time. ' +
-                                            'Please try again later.', 'text-warning');
+                        // Set flag to prevent repeated requests
+                        self.loadedFolders(true);
                     }
-                },
-                init: function() {
-                    // Hide loading indicator
-                    self.loading(false);
-                }
-            });
+                });
+            };
         };
 
         /**

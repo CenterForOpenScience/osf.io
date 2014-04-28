@@ -309,7 +309,8 @@ class TestRestrictions(DropboxAddonTestCase):
     def setUp(self):
         super(DropboxAddonTestCase, self).setUp()
 
-        # Nasty contributor who will try to access folders tha
+        # Nasty contributor who will try to access folders that he shouldn't have
+        # access to
         self.contrib = AuthUserFactory()
         self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
