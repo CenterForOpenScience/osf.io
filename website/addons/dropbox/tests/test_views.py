@@ -345,7 +345,13 @@ class TestRestrictions(DropboxAddonTestCase):
         with self.app.app.test_request_context():
             url = self.project.api_url_for('dropbox_hgrid_data_contents',
                 path='foo bar')
-        # import pdb; pdb.set_trace()
+        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    def test_restricted_view_file(self):
+        url = lookup('web', 'dropbox_view_file',
+            pid=self.project._primary_key,
+            path='foo bar/baz.txt')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 

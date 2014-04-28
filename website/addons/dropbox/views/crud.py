@@ -133,6 +133,9 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     """Web view for the file detail page."""
     if not path:
         raise HTTPError(http.NOT_FOUND)
+    # check that current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Lazily create a file GUID record
