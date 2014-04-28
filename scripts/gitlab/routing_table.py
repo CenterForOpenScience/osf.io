@@ -24,37 +24,31 @@ ROUTE_PATH = os.path.join(settings.BASE_PATH, 'compat_file_routes.json')
 
 def build_node_urls(node):
 
-    repo = utils.get_node_repo(node)
+    path = utils.get_node_path(node)
 
-    if not repo:
+    if not os.path.exists(path):
         return
 
     table = {}
 
-    for file in os.listdir(repo.path):
+    for file in os.listdir(path):
 
         if file == '.git':
             continue
 
-        try:
-            commits = list(repo.get_walker(paths=[file], reverse=True))
-        except Exception as error:
-            logger.error('Could not get repo')
-            logger.exception(error)
-            continue
+        commits = utils.get_file_commits(node, file)
 
         if len(commits) == 0:
-            logger.error('File {0} has no commits'.format(file))
+            logger.error('File {0}/{1} has no commits'.format(node._id, file))
             continue
 
-        commits = list(repo.get_walker(paths=[file], reverse=True))
         # Map version id => sha
         table[file] = {
-            idx + 1: commit.commit.id
+            idx + 1: commit
             for idx, commit in enumerate(commits)
         }
         # Route URLs with no version to latest commit
-        table[file][None] = commits[-1].commit.id
+        table[file][None] = commits[-1]
 
     return table
 

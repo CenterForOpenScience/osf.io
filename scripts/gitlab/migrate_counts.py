@@ -39,11 +39,14 @@ def migrate_counter(record):
         logger.warn('Node {0} not found'.format(node_id))
         return
 
-    repo = utils.get_node_repo(node)
+    path = utils.get_node_path(node)
 
-    commits = list(repo.get_walker(paths=[file_path], reverse=True))
+    if not os.path.exists(path):
+        return
+
+    commits = utils.get_file_commits(node, file_path)
     try:
-        sha = commits[version_id + 1].commit.id
+        sha = commits[version_id + 1]
     except IndexError:
         logging.warn('Could not find version {0} on {1}: {2}'.format(
             version_id, node._id, file_path
