@@ -27,6 +27,7 @@ from website.addons.dropbox.utils import (
     DropboxNodeLogger,
     make_file_response,
     abort_if_not_subdir,
+    is_authorizer,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +40,8 @@ debug = logger.debug
 def dropbox_delete_file(path, auth, node_addon, **kwargs):
     node = node_addon.owner
     if path and auth:
-        if auth.user != node_addon.user_settings.owner:
+        # Check that user has access to the folder of the file to be deleted
+        if not is_authorizer(auth, node_addon):
             abort_if_not_subdir(path, node_addon.folder)
         client = get_node_addon_client(node_addon)
         client.file_delete(path)
@@ -65,6 +67,9 @@ def dropbox_upload(node_addon, auth, **kwargs):
     node = node_addon.owner
     if path and file_obj and client:
         filepath = os.path.join(path, file_obj.filename)
+        # Check that user has access to the folder being uploaded to
+        if not is_authorizer(auth, node_addon):
+            abort_if_not_subdir(path, node_addon.folder)
         metadata = client.put_file(filepath, file_obj)
         permissions = {
             'edit': node.can_edit(auth),

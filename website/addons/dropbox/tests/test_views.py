@@ -303,20 +303,50 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
-    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
-    def test_dropbox_hgrid_data_contents_restricted_to_shared_folder(self, mock_metadata):
-        mock_metadata.return_value = mock_responses['metadata_list']
-        # make project public
-        self.project.is_public = True
+
+class TestRestrictions(DropboxAddonTestCase):
+
+    def setUp(self):
+        super(DropboxAddonTestCase, self).setUp()
+
+        # Nasty contributor who will try to access folders tha
+        self.contrib = AuthUserFactory()
+        self.project.add_contributor(self.contrib, auth=Auth(self.user))
         self.project.save()
-        # set the folder
-        self.node_settings.folder = '/foo/bar'
+
+        # Set shared folder
+        self.node_settings.folder = 'foo bar/bar'
         self.node_settings.save()
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
+    def test_restricted_deletion(self, mock_file_delete):
+        # Tries to delete a file in a parent folder of the shared folder (foo bar)
+        url = lookup('api', 'dropbox_delete_file', 'dropbox_delete_file',
+            pid=self.project._primary_key, path='foo bar/secret.txt')
+        # gets 403 error
+        res = self.app.delete(url=url, auth=self.contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
+    def test_restricted_uploads(self, mock_put_file):
+        mock_put_file.return_value = mock_responses['put_file']
+        # tries to uplaod file to a parent folder of shared folder
+        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key,
+            path='foo bar')
+        payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
+        res = self.app.post(url, payload, auth=self.contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_restricted_hgrid_data_contents(self, mock_metadata):
+        mock_metadata.return_value = mock_responses['metadata_list']
+
         # tries to access a parent folder
         with self.app.app.test_request_context():
-            url = self.project.api_url_for('dropbox_hgrid_data_contents', path='foo')
+            url = self.project.api_url_for('dropbox_hgrid_data_contents',
+                path='foo bar')
         # import pdb; pdb.set_trace()
-        res = self.app.get(url, expect_errors=True)
+        res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
 
@@ -325,7 +355,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
     def test_upload_file_to_folder(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('myfile.rst', b'baz','text/x-rst')}
+        payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
         url = lookup('api', 'dropbox_upload', pid=self.project._primary_key,
             path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
@@ -339,7 +369,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
     def test_upload_file_to_root(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
+        payload = {'file': Upload('rootfile.rst', b'baz', 'text/x-rst')}
         url = lookup('api', 'dropbox_upload',
                 pid=self.project._primary_key,
                 path='')
@@ -362,24 +392,6 @@ class TestCRUDViews(DropboxAddonTestCase):
 
         mock_file_delete.assert_called_once
         assert_equal(path, mock_file_delete.call_args[0][0])
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
-    def test_restricted_deletion(self, mock_file_delete):
-        # contributor is added to project
-        contrib = AuthUserFactory()
-        self.project.add_contributor(contrib, auth=Auth(self.user))
-        self.project.save()
-
-        # Set shared folder
-        self.node_settings.folder = 'foo/bar'
-        self.node_settings.save()
-        # Tries to delete a file in a parent folder of the shared folder (foo)
-        url = lookup('api', 'dropbox_delete_file', 'dropbox_delete_file',
-            pid=self.project._primary_key, path='foo/secret.txt')
-        # gets 403 error
-        res = self.app.delete(url=url, auth=contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
 
     @unittest.skip('Finish this')
     def test_download_file(self):
