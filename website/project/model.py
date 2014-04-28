@@ -61,7 +61,9 @@ def normalize_unicode(ustr):
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
+contributor_removed = signals.signal('contributor-removed')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
+permission_changed = signals.signal('permission-changed')
 
 
 class MetaSchema(StoredObject):
@@ -623,6 +625,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         if save:
             self.save()
+
+        permission_changed.send(self, user=user, permissions=permissions)
 
     def has_permission(self, user, permission):
         """Check whether user has permission.
@@ -1912,6 +1916,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.permissions.pop(contributor._id, None)
 
         self.save()
+
+        contributor_removed.send(self, contributor=contributor, auth=auth)
 
         # After remove callback
         for addon in self.get_addons():

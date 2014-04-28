@@ -65,6 +65,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
     project_id = fields.IntegerField()
     hook_id = fields.IntegerField()
 
+    # Temporary migration flag; delete after migration is complete
     _migration_done = fields.BooleanField(default=False)
 
     @property
