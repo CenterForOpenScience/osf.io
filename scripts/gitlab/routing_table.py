@@ -26,11 +26,25 @@ def build_node_urls(node):
 
     repo = utils.get_node_repo(node)
 
+    if not repo:
+        return
+
     table = {}
 
     for file in os.listdir(repo.path):
 
         if file == '.git':
+            continue
+
+        try:
+            commits = list(repo.get_walker(paths=[file], reverse=True))
+        except Exception as error:
+            logger.error('Could not get repo')
+            logger.exception(error)
+            continue
+
+        if len(commits) == 0:
+            logger.error('File {0} has no commits'.format(file))
             continue
 
         commits = list(repo.get_walker(paths=[file], reverse=True))
@@ -53,6 +67,8 @@ def build_nodes_urls(outfile):
     table = {}
 
     for node in Node.find():
+
+        logger.warn('Building node {0}'.format(node._id))
 
         subtable = build_node_urls(node)
 

@@ -26,6 +26,9 @@ def migrate_node(node):
     if not node.contributors or not node.contributors[0] or not node.creator:
         return
 
+    if not node.contributors[0].username:
+        return
+
     # Quit if no files
     if not node.files_current:
         return
