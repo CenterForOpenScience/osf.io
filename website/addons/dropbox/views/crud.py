@@ -86,9 +86,12 @@ def dropbox_upload(node_addon, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
-def dropbox_download(path, node_addon, **kwargs):
+def dropbox_download(path, node_addon, auth, **kwargs):
     if not path:
         raise HTTPError(http.BAD_REQUEST)
+    # Check if current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     client = get_node_addon_client(node_addon)
     revision = request.args.get('rev') or ''
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
@@ -169,6 +172,9 @@ def dropbox_render_file(path, node_addon, auth, **kwargs):
     """View polled by the FileRenderer. Return the rendered HTML for the
     requested file.
     """
+    # check that current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     client = get_node_addon_client(node_addon)

@@ -34,7 +34,7 @@
                 </div>
 
                 <!-- Folder buttons -->
-                <div class="btn-group">
+                <div class="btn-group" data-bind="visible: userHasAuth()">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
