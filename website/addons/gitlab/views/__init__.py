@@ -1,1 +1,1 @@
-from . import crud, hooks
+from . import crud, hooks, migrate

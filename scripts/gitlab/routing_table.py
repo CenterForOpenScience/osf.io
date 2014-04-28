@@ -24,23 +24,42 @@ ROUTE_PATH = os.path.join(settings.BASE_PATH, 'compat_file_routes.json')
 
 def build_node_urls(node):
 
-    repo = utils.get_node_repo(node)
+    path = utils.get_node_path(node)
+
+    if not os.path.exists(path):
+        return
+
+    git_commits = utils.get_commits(node)
+    mongo_commits = utils.get_mongo_commits(node)
+
+    # Note: Database inconsistencies arise periodically, so we can't trust
+    # the SHAs stored in mongo. Only trust the stored SHAs if the sets of the
+    # mongo SHAs and the git SHAs are the same.
+    trust_mongo = set(git_commits) == set(sum(mongo_commits.values(), []))
 
     table = {}
 
-    for file in os.listdir(repo.path):
+    for file in os.listdir(path):
 
         if file == '.git':
             continue
 
-        commits = list(repo.get_walker(paths=[file], reverse=True))
+        if trust_mongo:
+            commits = mongo_commits[file.replace('.', '_')]
+        else:
+            commits = utils.get_commits(node, file)
+
+        if len(commits) == 0:
+            logger.error('File {0}/{1} has no commits'.format(node._id, file))
+            continue
+
         # Map version id => sha
         table[file] = {
-            idx + 1: commit.commit.id
+            idx + 1: commit
             for idx, commit in enumerate(commits)
         }
         # Route URLs with no version to latest commit
-        table[file][None] = commits[-1].commit.id
+        table[file][None] = commits[-1]
 
     return table
 
@@ -48,11 +67,13 @@ def build_node_urls(node):
 def build_nodes_urls(outfile):
     """Write a json file mapping node IDs to the routing table for that node's
     files.
-    """
 
+    """
     table = {}
 
     for node in Node.find():
+
+        logger.warn('Building node {0}'.format(node._id))
 
         subtable = build_node_urls(node)
 

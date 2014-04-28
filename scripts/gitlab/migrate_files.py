@@ -8,7 +8,7 @@ import shutil
 import subprocess
 
 
-SOURCE_PATH = '/opt/data/backup/test'
+SOURCE_PATH = '/opt/data/backup/uploads'
 DEST_PATH = '/opt/data/gitlab/repositories'
 
 
