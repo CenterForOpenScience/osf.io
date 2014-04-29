@@ -29,10 +29,9 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
-    name = '{0} / {1}'.format(
-        node_settings.dataverse,
-        node_settings.study,
-    )
+    study_name = node_settings.study
+    if len(study_name) > 23:
+        study_name = '{0}...'.format(study_name[:20])
 
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration and state == 'draft',
@@ -62,7 +61,7 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     return [rubeus.build_addon_root(
         node_settings,
-        name,
+        study_name,
         urls=urls,
         permissions=permissions,
         extra=state_append,
