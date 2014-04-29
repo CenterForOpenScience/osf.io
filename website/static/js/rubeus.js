@@ -171,7 +171,7 @@
         try {
             // Raises TypeError if row's HTML is not rendered.
             var $rowElem = $(this.getRowElement(row.id));
-        } catch (err if err instanceof TypeError) {
+        } catch (err) {
             return;
         }
         var $status = $rowElem.find(Rubeus.statusSelector);
