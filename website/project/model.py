@@ -1636,7 +1636,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         return '/{}/'.format(self._primary_key)
 
     def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
-        if self.category == 'project':
+        # Note: Check `parent_node` rather than `category` to avoid database
+        # inconsistencies [jmcarp]
+        if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
                 *args, **kwargs)
         else:
@@ -1644,7 +1646,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
-        if self.category == 'project':
+        # Note: Check `parent_node` rather than `category` to avoid database
+        # inconsistencies [jmcarp]
+        if self.parent_node is None:
             return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
                 *args, **kwargs)
         else:

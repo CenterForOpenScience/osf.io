@@ -20,8 +20,14 @@ from framework.exceptions import HTTPError
 from website.addons.dropbox.model import DropboxFile
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import (
-    render_dropbox_file, get_file_name, metadata_to_hgrid, clean_path,
-    DropboxNodeLogger, make_file_response
+    render_dropbox_file,
+    get_file_name,
+    metadata_to_hgrid,
+    clean_path,
+    DropboxNodeLogger,
+    make_file_response,
+    abort_if_not_subdir,
+    is_authorizer,
 )
 
 logger = logging.getLogger(__name__)
@@ -34,6 +40,9 @@ debug = logger.debug
 def dropbox_delete_file(path, auth, node_addon, **kwargs):
     node = node_addon.owner
     if path and auth:
+        # Check that user has access to the folder of the file to be deleted
+        if not is_authorizer(auth, node_addon):
+            abort_if_not_subdir(path, node_addon.folder)
         client = get_node_addon_client(node_addon)
         client.file_delete(path)
         # log the event
@@ -58,6 +67,9 @@ def dropbox_upload(node_addon, auth, **kwargs):
     node = node_addon.owner
     if path and file_obj and client:
         filepath = os.path.join(path, file_obj.filename)
+        # Check that user has access to the folder being uploaded to
+        if not is_authorizer(auth, node_addon):
+            abort_if_not_subdir(path, node_addon.folder)
         metadata = client.put_file(filepath, file_obj)
         permissions = {
             'edit': node.can_edit(auth),
@@ -74,9 +86,12 @@ def dropbox_upload(node_addon, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')
-def dropbox_download(path, node_addon, **kwargs):
+def dropbox_download(path, node_addon, auth, **kwargs):
     if not path:
         raise HTTPError(http.BAD_REQUEST)
+    # Check if current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     client = get_node_addon_client(node_addon)
     revision = request.args.get('rev') or ''
     fileobject, metadata = client.get_file_and_metadata(path, rev=revision)
@@ -87,6 +102,9 @@ def dropbox_download(path, node_addon, **kwargs):
 @must_have_addon('dropbox', 'node')
 def dropbox_get_revisions(path, node_addon, auth, **kwargs):
     """API view that gets a list of revisions for a file."""
+    # Check if current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Get metadata for each revision of the file
@@ -121,6 +139,9 @@ def dropbox_view_file(path, node_addon, auth, **kwargs):
     """Web view for the file detail page."""
     if not path:
         raise HTTPError(http.NOT_FOUND)
+    # check that current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     client = get_node_addon_client(node_addon)
     # Lazily create a file GUID record
@@ -151,6 +172,9 @@ def dropbox_render_file(path, node_addon, auth, **kwargs):
     """View polled by the FileRenderer. Return the rendered HTML for the
     requested file.
     """
+    # check that current user has access to the path
+    if not is_authorizer(auth, node_addon):
+        abort_if_not_subdir(path, node_addon.folder)
     node = node_addon.owner
     file_obj = DropboxFile.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
     client = get_node_addon_client(node_addon)

@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+import httplib as http
 
 from framework import make_response
+from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
 from website.util import rubeus
 
@@ -73,6 +75,26 @@ class DropboxNodeLogger(object):
         )
         if save:
             self.node.save()
+
+def is_subdir(path, directory):
+    if not (path and directory):
+        return False
+    #make both absolute
+    abs_directory = os.path.abspath(directory)
+    abs_path = os.path.abspath(path)
+    return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
+
+def is_authorizer(auth, node_addon):
+    """Return if the auth object's user is the same as the authorizer of the node."""
+    return auth.user == node_addon.user_settings.owner
+
+def abort_if_not_subdir(path, directory):
+    """Check if path is a subdirectory of directory. If not, abort the current
+    request with a 403 error.
+    """
+    if not is_subdir(clean_path(path), clean_path(directory)):
+        raise HTTPError(http.FORBIDDEN)
+    return True
 
 
 def get_file_name(path):

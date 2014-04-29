@@ -1,3 +1,4 @@
+
 <link rel="stylesheet" href="/static/addons/dropbox/dropbox.css">
 <div id="dropboxScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
@@ -9,7 +10,7 @@
                     {{ownerName}}
                 </a>
             </small>
-            <small data-bind="visible: userHasAuth">
+            <small>
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>
             </small>
@@ -34,7 +35,7 @@
                 </div>
 
                 <!-- Folder buttons -->
-                <div class="btn-group">
+                <div class="btn-group" data-bind="visible: userIsOwner()">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
@@ -52,18 +53,18 @@
                     <p class="text-muted text-center dropbox-loading-text" data-bind="visible: loading">
                     Loading folders...</p>
 
-                    <div data-bind="if: currentDisplay() === PICKER">
+                    <div data-bind="visible: currentDisplay() === PICKER">
                         <div id="myGrid"
                              class="filebrowser hgrid dropbox-folder-picker"></div>
                     </div>
 
                     <!-- Share -->
-                    <div data-bind="if: currentDisplay() === SHARE && emails().length === 0"
+                    <div data-bind="visible: currentDisplay() === SHARE && emails().length === 0"
                         class="help-block">
                         <p>No contributors to share with.</p>
                     </div>
 
-                    <div data-bind="if: currentDisplay() === SHARE && emails().length">
+                    <div data-bind="visible: currentDisplay() === SHARE && emails().length">
                         <div class="help-block">
                             <p>To share this folder with other Dropbox users on this project, copy
                             the email addresses of the contributors (listed below) into the
