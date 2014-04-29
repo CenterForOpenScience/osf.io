@@ -12,7 +12,11 @@ from website.util import rubeus
 def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     node = node_settings.owner
-    state = state or 'released' if node.can_edit(auth) else 'released'
+    state = state or 'draft' if node.can_edit(auth) else 'released'
+
+    # Only show released version on files widget
+    if 'files' not in request.referrer:
+        state = 'released'
 
     connection = connect(
         node_settings.dataverse_username,
@@ -91,7 +95,12 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    state = request.args.get('state') or 'released' if node.can_edit(auth) else 'released'
+    state = request.args.get('state') or 'draft' if node.can_edit(auth) else 'released'
+
+    # Only show released version on files widget
+    if 'files' not in request.referrer:
+        state = 'released'
+
     released = state == 'released'
 
     can_edit = node.can_edit(auth) and not node.is_registration and not released
