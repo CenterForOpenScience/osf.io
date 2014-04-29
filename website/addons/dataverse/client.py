@@ -31,3 +31,14 @@ def get_file_by_id(study, file_id, released=False):
 
 def release_study(study):
     return study.release()
+
+
+def get_studies(dataverse):
+    studies = dataverse.get_studies()
+    acessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
+    return acessible_studies
+
+
+def get_study(dataverse, hdl):
+    study = dataverse.get_study_by_hdl(hdl)
+    return study if study.get_state() != 'DEACCESSIONED' else None

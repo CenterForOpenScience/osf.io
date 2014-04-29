@@ -3,7 +3,7 @@ import os
 
 from framework import request
 from mako.template import Template
-from website.addons.dataverse.client import connect
+from website.addons.dataverse.client import connect, get_study
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -27,7 +27,11 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         return []
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    study = get_study(dataverse, node_settings.study_hdl)
+
+    # Quit if hdl does not produce a study
+    if study is None:
+        return []
 
     study_name = node_settings.study
     if len(study_name) > 23:
@@ -103,7 +107,7 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
     info = []
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    study = get_study(dataverse, node_settings.study_hdl)
 
     for f in study.get_files(released):
 

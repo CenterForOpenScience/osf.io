@@ -4,7 +4,7 @@ import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect
+from website.addons.dataverse.client import connect, get_study
 from website.project import decorators
 
 
@@ -122,7 +122,7 @@ def set_study(*args, **kwargs):
     # Set study
     if hdl != 'None':
         log_action = 'dataverse_study_linked'
-        study_name = dataverse.get_study_by_hdl(hdl).title
+        study_name = get_study(dataverse, hdl).title
 
         node_settings.dataverse = dataverse.title
         node_settings.study_hdl = hdl

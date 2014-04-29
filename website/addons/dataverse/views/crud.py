@@ -8,7 +8,7 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, delete_file, upload_file, \
-    get_file, get_file_by_id, release_study
+    get_file, get_file_by_id, release_study, get_study
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -45,7 +45,7 @@ def dataverse_release_study(**kwargs):
     )
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    study = get_study(dataverse, node_settings.study_hdl)
 
     if study.get_state() == 'RELEASED':
         raise HTTPError(http.CONFLICT)
@@ -168,7 +168,7 @@ def dataverse_upload_file(**kwargs):
     )
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    study = get_study(dataverse, node_settings.study_hdl)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -254,7 +254,7 @@ def dataverse_delete_file(**kwargs):
     )
 
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
-    study = dataverse.get_study_by_hdl(node_settings.study_hdl)
+    study = get_study(dataverse, node_settings.study_hdl)
     file = get_file_by_id(study, file_id)
 
     delete_file(file)

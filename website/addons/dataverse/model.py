@@ -6,7 +6,7 @@ from modularodm.exceptions import ModularOdmException
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from website.addons.dataverse.client import connect
+from website.addons.dataverse.client import connect, get_studies, get_study
 from website.addons.dataverse.settings import HOST
 
 
@@ -118,7 +118,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             # Get list of dataverses and studies
             dataverses = connection.get_dataverses() or []
             dataverse = connection.get_dataverse(self.dataverse_alias)
-            studies = dataverse.get_studies() if dataverse else []
+            studies = get_studies(dataverse) if dataverse else []
+            study = get_study(dataverse, self.study_hdl)
 
             rv.update({
                 'connected': True,
@@ -130,18 +131,22 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.title for s in studies],
                 'study': self.study,
-                'study_hdl': self.study_hdl,
+                'study_hdl': self.study_hdl if study is not None else None,
             })
 
-            if self.study_hdl is not None:
 
-                study = dataverse.get_study_by_hdl(self.study_hdl)
+
+            if study is not None:
                 rv.update({
                     'draft': study.get_state() == 'DRAFT',
-                    'dataverse_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias),
-                    'study_url': os.path.join('http://', HOST, 'dvn', 'dv', dataverse.alias,
-                                              'faces', 'study', 'StudyPage.xhtml?globalId=' +
-                                              study.doi),
+                    'dataverse_url': os.path.join(
+                        'http://', HOST, 'dvn', 'dv', dataverse.alias
+                    ),
+                    'study_url': os.path.join(
+                        'http://', HOST, 'dvn', 'dv', dataverse.alias,
+                        'faces', 'study', 'StudyPage.xhtml?globalId=' +
+                        study.doi
+                    ),
                 })
 
         return rv
