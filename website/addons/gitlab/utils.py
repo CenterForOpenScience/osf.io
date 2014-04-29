@@ -60,7 +60,9 @@ class GitlabNodeLogger(NodeLogger):
 
 
 def create_user(user_settings):
-    """
+    """Provision GitLab user account.
+
+    :param GitlabUserSettings user_settings: GitLab user model
 
     """
     # Quit if OSF user is already linked to a Gitlab user
@@ -90,7 +92,9 @@ def create_user(user_settings):
 
 
 def create_node(node_settings, check_ready=False):
-    """
+    """Provision GitLab project.
+
+    :param GitlabNodeSettings node_settings: GitLab node model
 
     """
     # Quit if OSF node is already linked to a Gitlab project
@@ -98,7 +102,7 @@ def create_node(node_settings, check_ready=False):
         return
 
     node = node_settings.owner
-    user_settings = node.creator.get_or_add_addon('gitlab')
+    user_settings = node.contributors[0].get_or_add_addon('gitlab')
 
     # Create Gitlab project
     try:
@@ -121,7 +125,10 @@ def create_node(node_settings, check_ready=False):
 
 
 def setup_user(user):
-    """
+    """Ensure user add-on model and provision GitLab user account.
+
+    :param User user: OSF user
+    :returns: User add-on model
 
     """
     user_settings = user.get_or_add_addon('gitlab')
@@ -130,7 +137,11 @@ def setup_user(user):
 
 
 def setup_node(node, check_ready=False):
-    """
+    """Ensure node add-on model and provision GitLab project.
+
+    :param Node node: OSF node
+    :param bool check_ready: Wait until GitLab project is ready
+    :returns: Node add-on model
 
     """
     node_settings = node.get_or_add_addon('gitlab')
@@ -141,7 +152,7 @@ def setup_node(node, check_ready=False):
 def check_project_initialized(node_settings, tries=20, delay=0.1):
     """Ping the `ready` endpoint until the GitLab project exists.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param GitlabNodeSettings node_settings: Node settings object
     :param int tries: Maximum number of tries
     :param float delay: Delay between tries
     :returns: Project ready
@@ -355,7 +366,7 @@ def ref_or_default(node_settings, data):
     """Get the git reference (SHA or branch) from view arguments; return the
     default reference if none is supplied.
 
-    :param AddonGitlabNodeSettings node_settings: Gitlab node settings
+    :param GitlabNodeSettings node_settings: Gitlab node settings
     :param dict data: View arguments
     :returns: SHA or branch if reference found, else None
 
@@ -380,7 +391,7 @@ def get_default_file_sha(node_settings, path, branch=None):
 def get_default_branch(node_settings):
     """Get default branch of GitLab project.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param GitlabNodeSettings node_settings: Node settings object
     :returns: Name of default branch
 
     """
@@ -393,7 +404,7 @@ def get_default_branch(node_settings):
 def get_branch_id(node_settings, branch):
     """Get latest commit SHA for branch of GitLab project.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param GitlabNodeSettings node_settings: Node settings object
     :param str branch: Branch name
     :returns: SHA of branch
 
@@ -405,7 +416,7 @@ def get_branch_id(node_settings, branch):
 def get_default_branch_and_sha(node_settings):
     """Get default branch and SHA for GitLab project.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings object
+    :param GitlabNodeSettings node_settings: Node settings object
     :returns: Tuple of (branch, SHA)
 
     """
@@ -429,7 +440,7 @@ def get_default_branch_and_sha(node_settings):
 def get_branch_and_sha(node_settings, data):
     """Get branch and SHA from dictionary of view data.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings
+    :param GitlabNodeSettings node_settings: Node settings
     :param dict data: Dictionary of view data; `branch` and `sha` keys will
         be checked
     :returns: Tuple of (branch, SHA)

@@ -54,7 +54,7 @@ def add_hook_log(node_settings, commit, save=False):
     can be inferred through the commit email, else use the plaintext name
     from the hook payload.
 
-    :param AddonGitlabNodeSettings node_settings: Node settings instance
+    :param GitlabNodeSettings node_settings: Node settings instance
     :param dict commit: Commit payload
     :param bool save: Save changes
 

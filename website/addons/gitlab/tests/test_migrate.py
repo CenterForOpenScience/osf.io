@@ -23,7 +23,7 @@ class TestMigration(GitlabTestCase):
         self.project.add_contributor(user)
         assert_false(self.node_settings._migration_done)
 
-    @mock.patch('website.addons.gitlab.model.AddonGitlabNodeSettings.after_remove_contributor')
+    @mock.patch('website.addons.gitlab.model.GitlabNodeSettings.after_remove_contributor')
     def test_remove_contributor(self, mock_callback):
         mock_callback.return_value = None
         self.project.remove_contributor(
