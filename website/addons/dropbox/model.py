@@ -213,7 +213,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         )
 
     def __repr__(self):
-        return '<DropboxNodeSettings({self.owner._primary_key!r})>'.format(self=self)
+        return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
 
