@@ -1,4 +1,3 @@
-import time
 import os
 
 from framework import request
@@ -9,13 +8,11 @@ from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.util import rubeus
 
-import hurry
-
 
 def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     node = node_settings.owner
-    state = state or 'draft' if node.can_edit(auth) else 'released'
+    state = state or 'released' if node.can_edit(auth) else 'released'
 
     connection = connect(
         node_settings.dataverse_username,
@@ -94,8 +91,8 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    state = request.args.get('state') or 'draft' if node.can_edit(auth) else 'released'
-    released = state=='released'
+    state = request.args.get('state') or 'released' if node.can_edit(auth) else 'released'
+    released = state == 'released'
 
     can_edit = node.can_edit(auth) and not node.is_registration and not released
     can_view = node.can_view(auth)
