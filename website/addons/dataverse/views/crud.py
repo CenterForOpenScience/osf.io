@@ -301,7 +301,7 @@ def scrape_dataverse(file_id):
     response = session.get(url)
 
     # Agree to terms if necessary
-    if '<title>Account Terms of Use -' in response.content:
+    if 'set-cookie' in response.headers.keys():
 
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
@@ -331,8 +331,7 @@ def scrape_filename(file_id):
     headers = session.head(url).headers
 
     # Agree to terms if necessary
-    # TODO: Check for file not found
-    if 'content-disposition' not in headers.keys():
+    if 'set-cookie' in headers.keys():
 
         response = session.get(url)
         parsed = BeautifulSoup(response.content)
