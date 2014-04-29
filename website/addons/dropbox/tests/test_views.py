@@ -104,6 +104,14 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
+    def test_serialize_settings_for_user_no_auth(self):
+        no_addon_user = AuthUserFactory()
+        with self.app.app.test_request_context():
+            result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
+        assert_false(result['userIsOwner'])
+        assert_false(result['userHasAuth'])
+
+
     def test_serialize_settings_helper_returns_correct_folder_info(self):
         # Need request context because url_for is used by serialize_settings
         with self.app.app.test_request_context():
