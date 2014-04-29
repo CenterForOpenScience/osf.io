@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
 import logging
+import itertools
 import httplib as http
-import datetime
-import json
-import framework
-from framework import Q, request, redirect
+from flask import request, redirect
+from modularodm import Q
+
 from framework.exceptions import HTTPError
 from framework.forms import utils
 from framework.routing import proxy_url
 from framework.auth import get_current_user
-from framework.auth.decorators import must_be_logged_in, Auth
+from framework.auth.decorators import collect_auth, must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm,
                                   SetEmailAndPasswordForm)
-import itertools
-from website.models import Guid, Node
+
+from website.models import Guid
+from website.util import web_url_for
 from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +96,16 @@ def _get_user_activity(node, user, rescale_ratio):
     return ua_count, ua, non_ua
 
 
+@collect_auth
+def index(auth, **kwargs):
+    """Redirect to dashboard if user is logged in, else show homepage.
+
+    """
+    if auth.user:
+        return redirect(web_url_for('dashboard'))
+    return {}
+
+
 @must_be_logged_in
 def get_dashboard_nodes(**kwargs):
     user = kwargs['auth'].user
@@ -108,6 +120,7 @@ def get_dashboard_nodes(**kwargs):
 @must_be_logged_in
 def dashboard(**kwargs):
     return {'addons_enabled': kwargs['auth'].user.get_addon_names()}
+
 
 @must_be_logged_in
 def watched_logs_get(**kwargs):
@@ -130,7 +143,7 @@ def watched_logs_get(**kwargs):
     return {"logs": watch_logs, "has_more_logs": has_more_logs}
 
 def reproducibility():
-    return framework.redirect('/EZcUj/wiki')
+    return redirect('/EZcUj/wiki')
 
 
 def registration_form():

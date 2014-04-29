@@ -16,6 +16,8 @@ from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
 
+from modularodm import Q
+
 from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth.model import User
@@ -1423,6 +1425,56 @@ class TestAuthViews(DbTestCase):
             to_addr='fred@queen.com'
         ))
 
+    def test_register_ok(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
+    def test_register_email_mismatch(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email + 'lol',
+                'password': password,
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        users = User.find(Q('username', 'eq', email))
+        assert_equal(users.count(), 0)
+
+    def test_register_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
+
     def test_register_post_sends_user_registered_signal(self):
         with app.test_request_context():
             url = web_url_for('auth_register_post')
@@ -1953,6 +2005,41 @@ class TestSearchViews(DbTestCase):
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+
+class TestReorderComponents(DbTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+        # Project is public
+        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project.add_contributor(self.contrib, auth=Auth(self.creator))
+
+        # subcomponent that only creator can see
+        self.public_component = NodeFactory(creator=self.creator, public=True)
+        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.project.nodes.append(self.public_component)
+        self.project.nodes.append(self.private_component)
+
+        self.project.save()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
+    def test_reorder_components_with_private_component(self):
+
+        # contrib tries to reorder components
+        payload = {'new_list': [
+                '{0}:node'.format(self.private_component._primary_key),
+                '{0}:node'.format(self.public_component._primary_key),
+            ]
+        }
+        url = lookup('api', 'project_reorder_components', pid=self.project._primary_key)
+        res = self.app.post_json(url, payload, auth=self.contrib.auth)
+        assert_equal(res.status_code, 200)
+
+
+
+
 
 
 if __name__ == '__main__':
