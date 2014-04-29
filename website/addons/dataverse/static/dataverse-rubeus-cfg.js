@@ -11,7 +11,20 @@
 
     // Private members
 
-    function releaseStudy(grid, item) {
+    function getCitation(item) {
+        bootbox.alert(
+            '<div class="col-md-3"><b>Title: </b></div>' +
+                '<div class="col-md-8">' + item.study + '</div><br>' +
+            '<div class="col-md-3"><b>Study Global ID: </b></div>' +
+                '<div class="col-md-8">' + item.doi + '</div><br>' +
+            '<div class="col-md-3"><b>Dataverse: </b></div>' +
+                '<div class="col-md-8">' + item.dataverse + '</div><br>' +
+            '<div class="col-md-3" style="padding-top: 10px;"><b>Citation: </b></div>' +
+                '<div class="col-md-8" style="padding-top: 10px;">' + item.citation + '</div><br>'
+        )
+    }
+
+    function releaseStudy(item) {
         var url = item.urls.release;
         bootbox.confirm(
             'By releasing this study, all content will be ' +
@@ -58,7 +71,7 @@
 
     // Register configuration
     Rubeus.cfg.dataverse = {
-        // Handle changing the state
+        // Handle events
         listeners: [
             {
                 on: 'change',
@@ -72,10 +85,17 @@
             {
                 on: 'click',
                 selector: '#dataverseReleaseStudy',
-                callback: function(evt, row, grid) {
-                    releaseStudy(grid, row)
+                callback: function(evt, row) {
+                    releaseStudy(row)
                 }
-            }
+            },
+            {
+                on: 'click',
+                selector: '#dataverseGetCitation',
+                callback: function(evt, row) {
+                    getCitation(row)
+                }
+            },
         ],
         // Update file information for updated files
         uploadSuccess: function(file, row, data) {

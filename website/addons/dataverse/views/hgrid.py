@@ -50,18 +50,18 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     }
 
     has_released_files = study.get_released_files()
+    authorized = node.can_edit(auth)
+
+    # Return if no files are available
+    if not authorized and not has_released_files:
+        return []
 
     # Determine default state / selection permissions
-    if node.can_edit(auth):
-        state_append = dataverse_state_template.render(
-            state=state,
-            has_released_files=has_released_files,
-        )
-    else:
-        if has_released_files:
-            state_append = ' [Released]'
-        else:
-            return []   # No files to access; simply return
+    state_append = dataverse_state_template.render(
+        state=state,
+        has_released_files=has_released_files,
+        authorized=authorized,
+    )
 
     return [rubeus.build_addon_root(
         node_settings,
@@ -69,6 +69,10 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         urls=urls,
         permissions=permissions,
         extra=state_append,
+        study=study_name,
+        doi=study.doi,
+        dataverse=dataverse.title,
+        citation=study.get_citation(),
     )]
 
 
@@ -136,15 +140,20 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
 
 
 dataverse_state_template = Template('''
-    % if has_released_files:
-        <select class="dataverse-state-select">
-            <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
-            <option value="released" ${"selected" if state == "released" else ""}>Released</option>
-        </select>
+    <i id="dataverseGetCitation" class="icon-info-sign"></i>
+    % if authorized:
+        % if has_released_files:
+            <select class="dataverse-state-select">
+                <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
+                <option value="released" ${"selected" if state == "released" else ""}>Released</option>
+            </select>
+        % else:
+            [Draft]
+        % endif
+        % if state == "draft":
+            <a id="dataverseReleaseStudy">Release</a>
+        % endif
     % else:
-        [Draft]
-    % endif
-    % if state == "draft":
-        <a id="dataverseReleaseStudy">Release</a>
+        [Released]
     % endif
 ''')
