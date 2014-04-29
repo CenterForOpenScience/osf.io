@@ -119,7 +119,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             dataverses = connection.get_dataverses() or []
             dataverse = connection.get_dataverse(self.dataverse_alias)
             studies = get_studies(dataverse) if dataverse else []
-            study = get_study(dataverse, self.study_hdl)
+            study = get_study(dataverse, self.study_hdl) \
+                if self.study_hdl is not None else None
 
             rv.update({
                 'connected': True,
@@ -133,8 +134,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'study': self.study,
                 'study_hdl': self.study_hdl if study is not None else None,
             })
-
-
 
             if study is not None:
                 rv.update({
