@@ -77,6 +77,8 @@ class DropboxNodeLogger(object):
             self.node.save()
 
 def is_subdir(path, directory):
+    if not (path and directory):
+        return False
     #make both absolute
     abs_directory = os.path.abspath(directory)
     abs_path = os.path.abspath(path)
