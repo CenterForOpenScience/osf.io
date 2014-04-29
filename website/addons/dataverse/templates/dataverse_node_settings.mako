@@ -53,14 +53,6 @@
                 <a href=${dataverse_url}>${dataverse}.</a>
             </div>
 
-            ## TODO: Move to HGrid button
-            % if draft:
-                <div>
-                    <a id="dataverseReleaseStudy" class="btn btn-success">Release Study</a>
-                    <div class="study-release-message" style="display: none; padding-top: 10px;"/>
-                </div>
-            % endif
-
         % elif len(dataverses) != 0:
 
             <div>
@@ -166,39 +158,6 @@
                 }
             )
         });
-
-    $('#dataverseReleaseStudy').on('click', function() {
-        bootbox.confirm(
-            'By releasing this study, all content will be ' +
-                'made available through the Harvard Dataverse using their ' +
-                'internal privacy settings, regardless of your OSF project ' +
-                'settings. Are you sure you want to release this study?' +
-                '<br> <br>' +
-                '* Released files may take up to 24 hours to appear on ' +
-                'your OSF project\'s file page.',
-            function(result) {
-                if (result) {
-                    var msgElm = $('#addonSettingsDataverse .study-release-message');
-                    $.ajax({
-                        url: nodeApiUrl + 'dataverse/release/',
-                        type: 'POST',
-                        contentType: 'application/json',
-                        dataType: 'json',
-                    }).success(function() {
-                        var message = 'The study was released.';
-                        msgElm.text(message)
-                            .fadeOut(100).fadeIn();
-                        window.location.reload();
-                    }).fail( function() {
-                        var message = 'There was a problem releasing your study.';
-                        msgElm.text(message)
-                            .removeClass('text-success').addClass('text-danger')
-                            .fadeOut(100).fadeIn();
-                    });
-                }
-            }
-        )
-    });
 
 </script>
 

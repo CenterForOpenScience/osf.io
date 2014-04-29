@@ -43,21 +43,22 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         'upload': node.api_url_for('dataverse_upload_file'),
         'fetch': node.api_url_for('dataverse_hgrid_data_contents', state=state),
         'state': node.api_url_for('dataverse_root_folder_public'),
+        'release': node.api_url_for('dataverse_release_study'),
     }
 
     has_released_files = study.get_released_files()
 
     # Determine default state / selection permissions
     if node.can_edit(auth):
-        if has_released_files:
-            state_append = dataverse_state_template.render(state=state)
-        else:
-            state_append = ' [Draft]'
+        state_append = dataverse_state_template.render(
+            state=state,
+            has_released_files=has_released_files,
+        )
     else:
         if has_released_files:
             state_append = ' [Released]'
         else:
-            return []
+            return []   # No files to access; simply return
 
     return [rubeus.build_addon_root(
         node_settings,
@@ -132,8 +133,15 @@ def dataverse_hgrid_data_contents(state=None, **kwargs):
 
 
 dataverse_state_template = Template('''
-    <select class="dataverse-state-select">
-        <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
-        <option value="released" ${"selected" if state == "released" else ""}>Released</option>
-    </select>
+    % if has_released_files:
+        <select class="dataverse-state-select">
+            <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
+            <option value="released" ${"selected" if state == "released" else ""}>Released</option>
+        </select>
+    % else:
+        [Draft]
+    % endif
+    % if state == "draft":
+        <a id="dataverseReleaseStudy">Release</a>
+    % endif
 ''')

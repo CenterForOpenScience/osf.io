@@ -47,6 +47,9 @@ def dataverse_release_study(**kwargs):
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     study = dataverse.get_study_by_hdl(node_settings.study_hdl)
 
+    if study.get_state() == 'RELEASED':
+        raise HTTPError(http.CONFLICT)
+
     release_study(study)
 
     # Add a log
