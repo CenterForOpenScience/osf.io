@@ -370,6 +370,12 @@ class TestRestrictions(DropboxAddonTestCase):
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
+    def test_restricted_config(self):
+        url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
+        res = self.app.put_json(url, {'selected': {'path': 'foo'}},
+            auth=self.contrib.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.FORBIDDEN)
+
 
 class TestCRUDViews(DropboxAddonTestCase):
 
