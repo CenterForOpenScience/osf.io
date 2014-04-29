@@ -136,14 +136,12 @@ def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
 
 
 @must_have_permission('write')
+@must_have_addon('dropbox', 'user')
 @must_have_addon('dropbox', 'node')
-def dropbox_import_user_auth(auth, node_addon, **kwargs):
+def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import dropbox credentials from the currently logged-in user to a node.
     """
     user = auth.user
-    user_addon = user.get_addon('dropbox')
-    if user_addon is None or node_addon is None:
-        raise HTTPError(http.BAD_REQUEST)
     node_addon.set_user_auth(user_addon)
     node_addon.save()
     return {
