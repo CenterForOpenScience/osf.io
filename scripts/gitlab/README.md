@@ -23,7 +23,7 @@ data must be migrated to GitLab.
 6. Build routing table to preserve old URLs
 	* On app server
 		* cd /opt/apps/osf
-		* python -m scripts.gitlab.routing_table
+		* sudo env/bin/python -m scripts.gitlab.routing_table
 7. Migrate download counts from OSF files to GitLab
 	* On app server
 		* cd /opt/apps/osf
