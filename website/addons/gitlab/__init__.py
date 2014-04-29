@@ -1,12 +1,12 @@
 from . import routes, views, model
 
 MODELS = [
-    model.AddonGitlabUserSettings,
-    model.AddonGitlabNodeSettings,
+    model.GitlabUserSettings,
+    model.GitlabNodeSettings,
     model.GitlabGuidFile,
 ]
-USER_SETTINGS_MODEL = model.AddonGitlabUserSettings
-NODE_SETTINGS_MODEL = model.AddonGitlabNodeSettings
+USER_SETTINGS_MODEL = model.GitlabUserSettings
+NODE_SETTINGS_MODEL = model.GitlabNodeSettings
 
 ROUTES = [
     routes.api_routes,

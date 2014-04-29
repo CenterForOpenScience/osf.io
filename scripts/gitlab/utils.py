@@ -25,9 +25,9 @@ def get_commits(node, file=None):
         )
     except subprocess.CalledProcessError as error:
         logger.error(error)
-        raise
-        # if error.status_code ...
-        # return []
+        if error.returncode not in [128, 129]:
+            raise
+        return []
 
     return output.strip().split('\n')
 
@@ -39,8 +39,8 @@ def get_mongo_commits(node):
     for name, versions in node.files_versions.iteritems():
         out[name] = []
         for fid in versions:
-            fobj = NodeFile.load(fid)
-            if fobj and fobj.git_commit:
-                out[name].append(fobj.git_commit)
+            fdata = NodeFile._storage[0].store.find_one({'_id': fid})
+            if fdata and 'git_commit' in fdata:
+                out[name].append(fdata['git_commit'])
 
     return out

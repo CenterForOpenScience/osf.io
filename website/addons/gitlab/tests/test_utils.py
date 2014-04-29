@@ -280,7 +280,7 @@ class TestSetupNode(GitlabTestCase):
         super(TestSetupNode, self).setUp()
         self.node_settings.project_id = None
 
-    @mock.patch('website.addons.gitlab.model.AddonGitlabNodeSettings.add_hook')
+    @mock.patch('website.addons.gitlab.model.GitlabNodeSettings.add_hook')
     @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
     def test_setup_node(self, mock_create_project, mock_add_hook):
         mock_create_project.return_value = {

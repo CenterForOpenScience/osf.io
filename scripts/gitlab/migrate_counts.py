@@ -8,14 +8,10 @@ import os
 import copy
 import logging
 
-from dulwich.repo import Repo
-from dulwich.errors import NotGitRepository
-
 from framework.mongo import db
 
 from website.app import init_app
 from website.models import Node
-from website import settings
 
 from . import utils
 
@@ -32,7 +28,16 @@ def migrate_counter(record):
     counts are stored with keys of format <path>:<sha>.
 
     """
+
+    logger.warn('Migrating counter {0}'.format(record['_id']))
+
     _, node_id, file_path, version_id = record['_id'].split(':')
+
+    # Catch ObjectId keys
+    try:
+        version_id = int(version_id)
+    except:
+        return
 
     node = Node.load(node_id)
     if not node:
@@ -44,19 +49,26 @@ def migrate_counter(record):
     if not os.path.exists(path):
         return
 
-    commits = utils.get_commits(node, file_path)
+    files = os.listdir(path)
+    raw_path = next((file for file in files if file.replace('.', '_') == file_path), None)
+    if not raw_path:
+        logger.error('Could not find file {0}'.format(file_path))
+
+    commits = utils.get_commits(node, raw_path)
     try:
-        sha = commits[version_id + 1]
+        sha = commits[version_id - 1]
     except IndexError:
         logging.warn('Could not find version {0} on {1}: {2}'.format(
             version_id, node._id, file_path
         ))
         return
 
-    new_record = copy.deepcopy(record)
-    new_record['_id'] = 'download:{0}:{1}:{2}'.format(
+    _id = 'download:{0}:{1}:{2}'.format(
         node._id, file_path, sha
     )
+    counters.remove({'_id': _id})
+    new_record = copy.deepcopy(record)
+    new_record['_id'] = _id
 
     counters.insert(new_record)
 

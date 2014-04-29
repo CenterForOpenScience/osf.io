@@ -27,7 +27,7 @@ from website.addons.gitlab import settings as gitlab_settings
 logger = logging.getLogger(__name__)
 
 
-class AddonGitlabUserSettings(AddonUserSettingsBase):
+class GitlabUserSettings(AddonUserSettingsBase):
 
     ########
     # Data #
@@ -55,7 +55,7 @@ class AddonGitlabUserSettings(AddonUserSettingsBase):
             )
 
 
-class AddonGitlabNodeSettings(AddonNodeSettingsBase):
+class GitlabNodeSettings(AddonNodeSettingsBase):
 
     ########
     # Data #
@@ -147,7 +147,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
 
         """
         # Call superclass method
-        clone, message = super(AddonGitlabNodeSettings, self).after_fork(
+        clone, message = super(GitlabNodeSettings, self).after_fork(
             node, fork, user, save=False
         )
 
@@ -177,7 +177,7 @@ class AddonGitlabNodeSettings(AddonNodeSettingsBase):
 
         """
         # Call superclass method
-        clone, message = super(AddonGitlabNodeSettings, self).after_register(
+        clone, message = super(GitlabNodeSettings, self).after_register(
             node, registration, user, save=False
         )
 

@@ -9,6 +9,8 @@ import os
 import json
 import logging
 
+from framework.mongo import StoredObject
+
 from website.app import init_app
 from website.models import Node
 from website import settings
@@ -44,7 +46,8 @@ def build_node_urls(node):
         if file == '.git':
             continue
 
-        if trust_mongo:
+        clean_file = file.replace('.', '_')
+        if trust_mongo and clean_file in mongo_commits:
             commits = mongo_commits[file.replace('.', '_')]
         else:
             commits = utils.get_commits(node, file)
@@ -60,6 +63,9 @@ def build_node_urls(node):
         }
         # Route URLs with no version to latest commit
         table[file][None] = commits[-1]
+
+    # Prevent cache from exploding
+    StoredObject._clear_caches()
 
     return table
 
