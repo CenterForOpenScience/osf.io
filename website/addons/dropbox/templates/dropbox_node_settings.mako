@@ -10,7 +10,7 @@
                     {{ownerName}}
                 </a>
             </small>
-            <small data-bind="visible: userHasAuth">
+            <small>
                 <a data-bind="click: deauthorize"
                     class="text-danger pull-right">Deauthorize</a>
             </small>
@@ -35,7 +35,7 @@
                 </div>
 
                 <!-- Folder buttons -->
-                <div class="btn-group" data-bind="visible: userHasAuth()">
+                <div class="btn-group" data-bind="visible: userIsOwner()">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-dropbox"><i class="icon-edit"></i> Change</button>
