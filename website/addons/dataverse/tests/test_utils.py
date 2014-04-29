@@ -1,13 +1,9 @@
 from nose.tools import *
 import mock
 
-from tests.base import DbTestCase
-from tests.factories import UserFactory, ProjectFactory
-from website.addons.dataverse.model import AddonDataverseUserSettings, \
-    AddonDataverseNodeSettings
 from website.addons.dataverse.dvn.dataverse import Dataverse
-
-from utils import create_mock_connection, DataverseAddonTestCase
+from website.addons.dataverse.tests.utils import create_mock_connection, \
+    DataverseAddonTestCase
 
 class TestUtils(DataverseAddonTestCase):
 

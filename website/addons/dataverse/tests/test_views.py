@@ -10,9 +10,8 @@ from tests.factories import AuthUserFactory
 from webtest import Upload
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.crud import scrape_dataverse
-
-from utils import create_mock_connection, create_mock_dvn_file,\
-    DataverseAddonTestCase, app
+from website.addons.dataverse.tests.utils import create_mock_connection, \
+    create_mock_dvn_file, DataverseAddonTestCase, app
 
 lookup = URLLookup(app)
 
