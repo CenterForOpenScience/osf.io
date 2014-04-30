@@ -14,7 +14,7 @@ ROUTES = [
 ]
 
 SHORT_NAME = 'gitlab'
-FULL_NAME = 'GitLab'
+FULL_NAME = 'OSF Storage'
 
 OWNERS = ['user', 'node']
 

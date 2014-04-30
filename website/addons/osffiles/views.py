@@ -135,6 +135,9 @@ def list_file_paths(**kwargs):
 @must_have_addon('osffiles', 'node')
 def upload_file_public(**kwargs):
 
+    if not settings.FEATURES['upload']:
+        raise HTTPError(http.NOT_FOUND)
+
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 

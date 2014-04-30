@@ -4,7 +4,9 @@ The GitLab add-on has been implemented as a drop-in replacement for the
 original OSF storage, meaning that all OSF files and their associated meta-
 data must be migrated to GitLab.
 
-1. In `website/settings/local.py` add `'gitlab'` to `ADDONS_REQUESTED`.
+1. Configure settings
+    * In website/settings/local.py add 'gitlab' to `ADDONS_REQUESTED`.
+    * In website/addons/gitlab/settings/defaults.py set ROUTE to 'gitlab'.
 2. Copy all git data from the app server to a backup directory on the GitLab server
     * sudo rsync -vaz /opt/data/uploads root@50.116.57.122:/opt/data/backup
 3. Create GitLab users and projects corresponding to OSF users and components
@@ -28,5 +30,6 @@ data must be migrated to GitLab.
 	* On app server
 		* cd /opt/apps/osf
 		* python -m scripts.gitlab.migrate_counts
-8. In `website/settings/local.py` remove `'osffiles'` from `ADDONS_REQUESTED`.
-9. In `website/addons/gitlab/settings/defaults.py` switch `ROUTE` from `'gitlab'` to `'osffiles'`.
+8. Finalize settings
+    * In website/settings/local.py remove 'osffiles' from `ADDONS_REQUESTED`.
+    * In website/addons/gitlab/settings/defaults.py switch `ROUTE` from 'gitlab' to 'osffiles'.
