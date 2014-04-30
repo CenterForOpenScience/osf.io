@@ -110,14 +110,14 @@ def dropbox_oauth_finish(**kwargs):
         return redirect(node.web_url_for('node_setting'))
     return redirect(web_url_for('profile_settings'))
 
-
+@must_be_logged_in
 @must_have_addon('dropbox', 'user')
-def dropbox_oauth_delete_user(user_addon, **kwargs):
+def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Dropbox."""
     client = get_client_from_user_settings(user_addon)
-    client.disable_access_token()
-    user_addon.clear_auth()
+    user_addon.clear()
     user_addon.save()
+    client.disable_access_token()
     return None
 
 

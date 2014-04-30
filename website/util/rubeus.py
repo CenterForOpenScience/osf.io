@@ -6,6 +6,7 @@ import os
 import hurry
 
 from framework.auth.decorators import Auth
+from website import settings
 
 FOLDER = 'folder'
 FILE = 'item'
@@ -148,6 +149,11 @@ class NodeFileCollector(object):
             children = self._collect_addons(node) + self._collect_components(node, visited)
         else:
             children = []
+        # TODO: Delete me after GitLab migration
+        if 'osffiles' in settings.ADDONS_AVAILABLE_DICT and settings.FEATURES['upload']:
+            upload_url = os.path.join(node.api_url, 'osffiles') + '/'
+        else:
+            upload_url = None
         return {
             'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
                 if can_view
@@ -158,7 +164,7 @@ class NodeFileCollector(object):
                 'view': can_view,
             },
             'urls': {
-                'upload': os.path.join(node.api_url, 'osffiles') + '/',
+                'upload': upload_url,
                 'fetch': None,
             },
             'children': children,

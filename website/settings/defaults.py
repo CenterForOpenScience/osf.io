@@ -144,6 +144,10 @@ SYSTEM_ADDED_ADDONS = {
     'node': []
 }
 
+FEATURES = {
+    'upload': False,
+}
+
 # Piwik
 
 # TODO: Override in local.py in production
