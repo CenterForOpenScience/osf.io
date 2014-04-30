@@ -44,12 +44,28 @@ class TestUserSettingsModel(DbTestCase):
         user_settings.save()
         assert_true(user_settings.has_auth)
 
-    def test_clear_auth(self):
+    def test_clear_clears_associated_node_settings(self):
+        node_settings = DropboxNodeSettingsFactory.build()
+        user_settings = DropboxUserSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        user_settings.clear()
+        user_settings.save()
+
+        # Node settings no longer associated with user settings
+        assert_is(node_settings.user_settings, None)
+        assert_is(node_settings.folder, None)
+
+    def test_clear(self):
+        node_settings = DropboxNodeSettingsFactory.build()
         user_settings = DropboxUserSettingsFactory(access_token='abcde',
             dropbox_id='abc')
+        node_settings.user_settings = user_settings
+        node_settings.save()
 
         assert_true(user_settings.access_token)
-        user_settings.clear_auth()
+        user_settings.clear()
         user_settings.save()
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
