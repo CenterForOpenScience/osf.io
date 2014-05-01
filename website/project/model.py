@@ -440,6 +440,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         'is_registration',
         'is_public',
         'is_deleted',
+        'is_dashboard',
+        'is_folder',
         'wiki_pages_current',
     }
 
@@ -452,6 +454,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     # Permissions
     permissions = fields.DictionaryField()
+
+    # Project Organization
+    is_dashboard = fields.BooleanField(default=False)
+    is_folder = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
