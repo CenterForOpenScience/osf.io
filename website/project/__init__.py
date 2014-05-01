@@ -55,6 +55,45 @@ def new_node(category, title, user, description=None, project=None):
 
     return node
 
+def new_dashboard(user):
+    """Create a new dashboard project.
+
+    :param User user: User object
+    :return Node: Created node
+
+    """
+    # TODO: A user can only have one dashboard. Prevent a second one from being created.
+
+    node = Node(
+        title="Dashboard",
+        creator=user,
+        is_dashboard=True,
+        is_folder=True
+    )
+
+    node.save()
+
+    return node
+
+def new_folder(title, user):
+    """Create a new folder project.
+
+    :param str title: Node title
+    :param User user: User object
+    :return Node: Created node
+
+    """
+    title = sanitize(title.strip())
+
+    node = Node(
+        title=title,
+        creator=user,
+        is_folder=True
+    )
+
+    node.save()
+
+    return node
 
 def new_private_link(label, user):
     """Create a new private link.
