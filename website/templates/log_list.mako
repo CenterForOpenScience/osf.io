@@ -25,4 +25,4 @@
     </dd>
 </dl><!-- end foreach logs -->
 
-<%include file="log_templates.mako"/>
+<%include file="_log_templates.mako"/>

@@ -1,3 +1,11 @@
+<!--
+    Core log templates.
+    Note: Template changes are not detected by Flask's auto-restart; you must
+        restart your app for changes to take effect.
+    Note: Change this file to change log templates; do not modify auto-
+        generated file _log_templates.mako.
+-->
+
 <script type="text/html" id="project_created">
 created <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -157,3 +165,549 @@ removed file <span data-bind="text: params.path"></span> from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 <!-- End legacy templates -->
+<script type="text/html" id="file_added">
+added file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_updated">
+updated file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_removed">
+removed file <span data-bind="text: params.path"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="github_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_linked">
+selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> for
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_unlinked">
+un-selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="s3_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path}"></a> in
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_linked">
+selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_unlinked">
+un-selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="figshare_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+FigShare <span data-bind="text: params.figshare.title"></span> in
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_linked">
+linked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_unlinked">
+unlinked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="gitlab_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> in
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_removed">
+removed file <span class="overflow"">{{params.path}}</span> from
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_commit_added">
+pushed commit <span class="overflow">{{params.gitlab.sha}}</span> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+<script type="text/html" id="dropbox_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.path }}</a> to
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_file_removed">
+removed file <span class="overflow">{{ params.path }}</span> from
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_folder_selected">
+linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_deauthorized">
+deauthorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_authorized">
+authorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link oeverflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+<script type="text/html" id="forward_url_changed">
+changed forward URL to
+<a target="_blank" class="overflow log-file-link" data-bind="attr.href: params.forward_url">{{ params.forward_url }}</a>
+in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+<script type="text/html" id="file_added">
+added file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_updated">
+updated file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_removed">
+removed file <span data-bind="text: params.path"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="github_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_linked">
+selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> for
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_unlinked">
+un-selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="s3_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path}"></a> in
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_linked">
+selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_unlinked">
+un-selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="figshare_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+FigShare <span data-bind="text: params.figshare.title"></span> in
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_linked">
+linked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_unlinked">
+unlinked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="gitlab_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> in
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_removed">
+removed file <span class="overflow"">{{params.path}}</span> from
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_commit_added">
+pushed commit <span class="overflow">{{params.gitlab.sha}}</span> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+<script type="text/html" id="dropbox_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.path }}</a> to
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_file_removed">
+removed file <span class="overflow">{{ params.path }}</span> from
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_folder_selected">
+linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_deauthorized">
+deauthorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_authorized">
+authorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link oeverflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+<script type="text/html" id="forward_url_changed">
+changed forward URL to
+<a target="_blank" class="overflow log-file-link" data-bind="attr.href: params.forward_url">{{ params.forward_url }}</a>
+in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+<script type="text/html" id="file_added">
+added file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_updated">
+updated file <a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="file_removed">
+removed file <span data-bind="text: params.path"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="github_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> to
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_linked">
+selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> for
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_repo_unlinked">
+un-selected GitHub repo
+<span data-bind="text: params.github.user"></span> /
+<span data-bind="text: params.github.repo"></span> from
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="s3_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path}"></a> in
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_file_removed">
+removed file <span class="overflow" data-bind="text: params.path"></span> from
+bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_linked">
+selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="s3_bucket_unlinked">
+un-selected bucket
+<span data-bind="text: params.bucket"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="figshare_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> to
+FigShare <span data-bind="text: params.figshare.title"></span> in
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_linked">
+linked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="figshare_content_unlinked">
+unlinked FigShare project <span data-bind="text: params.figshare.title"></span> in
+<span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+<script type="text/html" id="gitlab_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_updated">
+updated file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{params.path}}</a> in
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_file_removed">
+removed file <span class="overflow"">{{params.path}}</span> from
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+
+<script type="text/html" id="gitlab_commit_added">
+pushed commit <span class="overflow">{{params.gitlab.sha}}</span> to
+{{nodeCategory}}
+<a class="log-node-title-link overflow" data-bind="attr.href: nodeUrl">{{nodeTitle}}</a>
+</script>
+<script type="text/html" id="dropbox_file_added">
+added file
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect">{{ params.path }}</a> to
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_file_removed">
+removed file <span class="overflow">{{ params.path }}</span> from
+Dropbox in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_folder_selected">
+linked Dropbox folder <span class="overflow">{{ params.folder }}</span> to {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_deauthorized">
+deauthorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dropbox_node_authorized">
+authorized the Dropbox addon for {{ nodeCategory }}
+<a class="log-node-title-link oeverflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+<script type="text/html" id="forward_url_changed">
+changed forward URL to
+<a target="_blank" class="overflow log-file-link" data-bind="attr.href: params.forward_url">{{ params.forward_url }}</a>
+in {{ nodeCategory }}
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
