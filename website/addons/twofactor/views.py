@@ -12,12 +12,10 @@ from website.project.decorators import must_have_addon
 @must_be_logged_in
 @must_have_addon('twofactor', 'user')
 def user_settings(user_addon, *args, **kwargs):
-    try:
-        data = json.loads(request.data)
-    except ValueError:
-        raise HTTPError(code=http.BAD_REQUEST)
 
-    code = data.get('code')
+    code = request.json.get('code')
+    if code is None:
+        raise HTTPError(code=http.BAD_REQUEST)
 
     if user_addon.verify_code(code):
         user_addon.is_confirmed = True

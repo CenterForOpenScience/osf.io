@@ -1,15 +1,24 @@
 <%inherit file="project/addon/user_settings.mako" />
 
-<script type="text/javascript" src="/static/vendor/jquery-qrcode/jquery.qrcode.min.js"></script>
+<script type="text/javascript" src="/static/addons/twofactor/jquery.qrcode.min.js"></script>
 
 % if not is_confirmed:
+<style>
+    #TfaCode {
+        width:6em;
+        display:inline;
+        margin-right:5px;
+        padding-top: 4px;
+    }
+</style>
 <div id="TfaVerify">
+        <p>To use two-factor authentication, you must install an appropriate application on your mobile device. Google Authenticator is a popular choice and is available for both <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.</p>
     <p>Scan the image below, or enter the secret key <code>${ secret }</code> into your authentication device.</p>
     <div id="twoFactorQrCode"></div>
-    <div class="form-group" style="margin-bottom:0;margin-top:10px;">
+    <div class="form-group"></div>
         <label class="control-label" for="TfaCode">Enter your verification code:</label>
         <div>
-            <input type="text" name='TfaCode' id="TfaCode" class="form-control" style="width:6em;display:inline;margin-right:5px;"/>
+            <input type="text" name='TfaCode' id="TfaCode" class="form-control" />
             <button class="btn btn-primary" id="TfaSubmit">Submit</button>
         </div>
     </div>
@@ -22,33 +31,30 @@
         $('#TfaSubmit').on('click', function(e) {
             e.preventDefault();
             var settingsElm = $(e.target).parents('.addon-settings');
-            $.ajax({
-                url: '/api/v1/settings/twofactor/',
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({code: $('#TfaCode').val()}),
-                success: function(data) {
-                    $('#TfaVerify').slideUp(complete = function() {
-                        $('#TfaDeactivate').slideDown();
-                    });
-                    settingsElm.find('.addon-settings-message')
-                            .removeClass('text-danger')
-                            .fadeOut(100)
-                },
-                error: function(e) {
-                    var msgElm = settingsElm.find('.addon-settings-message')
-                        .removeClass('text-success')
-                        .addClass('text-danger');
+            $.osf.postJSON(
+                    '/api/v1/settings/twofactor/',
+                    {code: $('#TfaCode').val()},
+                    function(data) {
+                        $('#TfaVerify').slideUp(function() {
+                            $('#TfaDeactivate').slideDown();
+                        });
+                        settingsElm.find('.addon-settings-message')
+                                .removeClass('text-danger')
+                                .fadeOut(100)
+                    },
+                    function(e) {
+                        var msgElm = settingsElm.find('.addon-settings-message')
+                            .removeClass('text-success')
+                            .addClass('text-danger');
 
-                    if (e.status == 403) {
-                        msgElm.text('Verification failed');
-                    } else {
-                        msgElm.text('Unexpected HTTP Error (' + e.status + '/' + e.statusText + ')');
+                        if (e.status == 403) {
+                            msgElm.text('Verification failed');
+                        } else {
+                            msgElm.text('Unexpected HTTP Error (' + e.status + '/' + e.statusText + ')');
+                        }
+                        msgElm.fadeOut(100).fadeIn();
                     }
-                    msgElm.fadeOut(100).fadeIn();
-                }
-            })
+            )
         })
     });
 </script>

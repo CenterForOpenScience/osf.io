@@ -5,7 +5,7 @@ WIDGET_HELP = 'Two-Factor Authentication (Alpha)'
 from .model import TwoFactorUserSettings
 from .routes import settings_routes
 
-USER_SETTINGS_MODEL = model.TwoFactorUserSettings
+USER_SETTINGS_MODEL = TwoFactorUserSettings
 
 MODELS = [TwoFactorUserSettings]
 
