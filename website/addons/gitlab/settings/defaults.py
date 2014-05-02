@@ -3,7 +3,7 @@ import json
 from website.settings import BASE_PATH, DOMAIN
 
 
-ROUTE = 'osffiles'
+ROUTE = 'gitlab'
 
 HOST = None
 TOKEN = None
