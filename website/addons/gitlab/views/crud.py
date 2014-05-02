@@ -80,11 +80,15 @@ def create_or_update(node_settings, user_settings, method_name, action,
         )
     method = getattr(client, method_name)
 
-    response = method(
-        node_settings.project_id, filename, branch, content,
-        gitlab_settings.MESSAGES['add'], encoding='base64',
-        user_id=user_settings.user_id
-    )
+    try:
+        response = method(
+            node_settings.project_id, filename, branch, content,
+            gitlab_settings.MESSAGES['add'], encoding='base64',
+            user_id=user_settings.user_id
+        )
+    except GitlabError:
+        return False
+
     gitlab_upload_log(node, action, auth, response, branch)
     return response
 
@@ -124,16 +128,24 @@ def gitlab_upload_file(**kwargs):
     filename = os.path.join(path, upload.filename)
     slug = gitlab_slugify(filename)
 
-    try:
-        response = create_or_update(
-            node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
-            slug, branch, content, auth
-        )
-    except GitlabError:
-        response = create_or_update(
-            node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
-            slug, branch, content, auth
-        )
+    # Attempt to create file; if fails, update
+    # TODO: Add an update or create endpoint to GitLab
+    response = create_or_update(
+        node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
+        slug, branch, content, auth
+    )
+    response = response or create_or_update(
+        node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
+        slug, branch, content, auth
+    )
+
+    # No action taken if create and upload both fail
+    # TODO: Make error handling more specific
+    if not response:
+        return {
+            'actionTaken': None,
+            'name': filename,
+        }
 
     # File created or modified
     head, tail = os.path.split(response['file_path'])
