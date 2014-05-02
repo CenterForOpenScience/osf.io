@@ -17,7 +17,8 @@ data must be migrated to GitLab.
 	* [On GitLab server]
 	    * Verify SOURCE_PATH and DEST_PATH in scripts/gitlab/migrate_files.py
 		* cd /root/osf
-		* python -m scripts.gitlab.migrate_files
+		* sudo -u git python -m scripts.gitlab.migrate_files
+		    * Must run as user git for permissions happiness
 5. Migrate file GUIDs from OSF files to GitLab
 	* On app server
 		* cd /opt/apps/osf

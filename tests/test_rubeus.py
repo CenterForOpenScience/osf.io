@@ -264,14 +264,6 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             'view': True,
             'edit': True
         })
-        assert_equal(
-            ret['urls'],
-            {
-                'upload': os.path.join(self.project.api_url, 'osffiles') + '/',
-                'fetch': None
-            },
-            'project root data has no upload or fetch urls'
-        )
 
     def test_collect_js_recursive(self):
         self.project.get_addons.return_value[0].config.include_js = {'files': ['foo.js']}

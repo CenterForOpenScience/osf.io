@@ -5,14 +5,15 @@ import shutil
 
 from framework import app
 
+from website import settings
 from website.app import init_app
 from website.project.model import ensure_schemas
 
-_LOG_TEMPLATES = 'website/templates/_log_templates.mako'
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
-
 try:
-    shutil.copyfile(_LOG_TEMPLATES, LOG_TEMPLATES)
+    shutil.copyfile(
+        settings.BASE_LOG_TEMPLATES,
+        settings.GENERATED_LOG_TEMPLATES
+    )
 except OSError:
     pass
 

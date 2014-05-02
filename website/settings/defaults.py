@@ -111,6 +111,11 @@ WIKI_WHITELIST = {
     ]
 }
 
+
+BASE_LOG_TEMPLATES = os.path.join(BASE_PATH, 'templates', 'log_templates.mako')
+GENERATED_LOG_TEMPLATES = os.path.join(BASE_PATH, 'templates', '_log_templates.mako')
+
+
 ##### Celery #####
 ## Default RabbitMQ broker
 BROKER_URL = 'amqp://'
