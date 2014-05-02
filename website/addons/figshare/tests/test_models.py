@@ -145,3 +145,5 @@ class TestCallbacks(DbTestCase):
             None,
         )
 
+        #TODO Test figshare options and figshare to_json
+

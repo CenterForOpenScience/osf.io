@@ -84,12 +84,16 @@ def serialize_settings(node_settings, current_user, client=None):
     DropboxNodeSettings record. Provides the return value for the
     dropbox config endpoints.
     """
-    user_settings = current_user.get_addon('dropbox')
-    user_has_auth = user_settings is not None and user_settings.has_auth
+    user_settings = node_settings.user_settings
+    user_is_owner = user_settings is not None and (
+        user_settings.owner._primary_key == current_user._primary_key
+    )
+    current_user_settings = current_user.get_addon('dropbox')
     result = {
         'nodeHasAuth': node_settings.has_auth,
-        'userHasAuth': user_has_auth,
-        'urls': serialize_urls(node_settings)
+        'userIsOwner': user_is_owner,
+        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
+        'urls': serialize_urls(node_settings),
     }
     if node_settings.has_auth:
         # Add owner's profile URL
@@ -110,9 +114,12 @@ def serialize_settings(node_settings, current_user, client=None):
 
 @must_have_permission('write')
 @must_not_be_registration
+@must_have_addon('dropbox', 'user')
 @must_have_addon('dropbox', 'node')
-def dropbox_config_put(node_addon, auth, **kwargs):
+def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked dropbox folder."""
+    if node_addon.user_settings.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
     folder = request.json.get('selected')
     path = folder['path']
     node_addon.set_folder(path, auth=auth)
@@ -130,14 +137,12 @@ def dropbox_config_put(node_addon, auth, **kwargs):
 
 
 @must_have_permission('write')
+@must_have_addon('dropbox', 'user')
 @must_have_addon('dropbox', 'node')
-def dropbox_import_user_auth(auth, node_addon, **kwargs):
+def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
     """Import dropbox credentials from the currently logged-in user to a node.
     """
     user = auth.user
-    user_addon = user.get_addon('dropbox')
-    if user_addon is None or node_addon is None:
-        raise HTTPError(http.BAD_REQUEST)
     node_addon.set_user_auth(user_addon)
     node_addon.save()
     return {

@@ -30,7 +30,7 @@ class DropboxFile(GuidFile):
     #: See https://www.dropbox.com/developers/core/docs#metadata
     metadata = fields.DictionaryField(required=False)
 
-    def url(self, guid=True, rev=None, *args, **kwargs):
+    def url(self, guid=True, rev='', *args, **kwargs):
         """The web url for the file.
 
         :param bool guid: Whether to return the short URL
@@ -54,7 +54,7 @@ class DropboxFile(GuidFile):
             raise ValueError('Path field must be defined.')
         return os.path.join('dropbox', 'files', self.path)
 
-    def download_url(self, guid=True, rev=None, *args, **kwargs):
+    def download_url(self, guid=True, rev='', *args, **kwargs):
         """Return the download url for the file.
 
         :param bool guid: Whether to return the short URL
@@ -72,18 +72,18 @@ class DropboxFile(GuidFile):
                     path=self.path, _absolute=True, rev=rev, **kwargs)
         return url
 
-    def update_metadata(self, client=None, rev=None):
+    def update_metadata(self, client=None, rev=''):
         cl = client or get_node_addon_client(self.node.get_addon('dropbox'))
         self.metadata = cl.metadata(self.path, list=False, rev=rev)
 
-    def get_metadata(self, client=None, force=False, rev=None):
+    def get_metadata(self, client=None, force=False, rev=''):
         """Gets the file metadata from the Dropbox API (cached)."""
         if force or (not self.metadata):
             self.update_metadata(client=client, rev=rev)
             self.save()
         return self.metadata
 
-    def get_cache_filename(self, client=None, rev=None):
+    def get_cache_filename(self, client=None, rev=''):
         if not rev:
             metadata = self.get_metadata(client=client, rev=rev, force=True)
             revision = metadata['rev']
@@ -132,18 +132,28 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear_auth(self):
+    def clear(self):
+        """Clear settings and deauthorize any associated nodes.
+
+        :param Auth auth: Auth object for the user performing the "clear" action.
+        """
         self.dropbox_id = None
         self.access_token = None
+        for node_settings in self.dropboxnodesettings__authorized:
+            node_settings.deauthorize(Auth(self.owner))
+            node_settings.save()
         return self
 
     def delete(self):
         super(DropboxUserSettings, self).delete()
-        self.clear_auth()
+        self.clear()
         for node_settings in self.dropboxnodesettings__authorized:
             node_settings.delete(save=False)
             node_settings.user_settings = None
             node_settings.save()
+
+    def __repr__(self):
+        return '<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
@@ -202,19 +212,22 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             auth=auth,
         )
 
+    def __repr__(self):
+        return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+
     ##### Callback overrides #####
 
-    def before_register_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        registration.
-        """
-        category, title = node.project_or_component, node.title
-        if self.user_settings and self.user_settings.has_auth:
-            return ('Registering {category} "{title}" will copy Dropbox add-on '
-                    'authentication to the registered {category}.').format(**locals())
-
-    # backwards compatibility
-    before_register = before_register_message
+    # def before_register_message(self, node, user):
+    #     """Return warning text to display if user auth will be copied to a
+    #     registration.
+    #     """
+    #     category, title = node.project_or_component, node.title
+    #     if self.user_settings and self.user_settings.has_auth:
+    #         return ('Registering {category} "{title}" will copy Dropbox add-on '
+    #                 'authentication to the registered {category}.').format(**locals())
+    #
+    # # backwards compatibility
+    # before_register = before_register_message
 
     def before_fork_message(self, node, user):
         """Return warning text to display if user auth will be copied to a
@@ -249,22 +262,25 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     # backwards compatibility
     before_remove_contributor = before_remove_contributor_message
 
-    def after_register(self, node, registration, user, save=True):
-        """After registering a node, copy the user settings and save the
-        chosen folder.
-
-        :return: A tuple of the form (cloned_settings, message)
-        """
-        clone, message = super(DropboxNodeSettings, self).after_register(
-            node, registration, user, save=False
-        )
-        # Copy user_settings and add registration data
-        if self.has_auth and self.folder is not None:
-            clone.user_settings = self.user_settings
-            clone.registration_data['folder'] = self.folder
-        if save:
-            clone.save()
-        return clone, message
+    # Note: Registering Dropbox content is disabled for now; leaving this code
+    # here in case we enable registrations later on.
+    # @jmcarp
+    # def after_register(self, node, registration, user, save=True):
+    #     """After registering a node, copy the user settings and save the
+    #     chosen folder.
+    #
+    #     :return: A tuple of the form (cloned_settings, message)
+    #     """
+    #     clone, message = super(DropboxNodeSettings, self).after_register(
+    #         node, registration, user, save=False
+    #     )
+    #     # Copy user_settings and add registration data
+    #     if self.has_auth and self.folder is not None:
+    #         clone.user_settings = self.user_settings
+    #         clone.registration_data['folder'] = self.folder
+    #     if save:
+    #         clone.save()
+    #     return clone, message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized

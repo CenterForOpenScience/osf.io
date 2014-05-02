@@ -21,7 +21,7 @@ from framework.auth import User, Q
 from framework.auth.decorators import Auth
 from framework.auth.utils import parse_name
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
+    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment, PrivateLink
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -78,6 +78,12 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+    """A user that automatically has an api key, for quick authentication.
+
+    Example: ::
+        user = AuthUserFactory()
+        res = self.app.get(url, auth=user.auth)  # user is "logged in"
+    """
 
     @post_generation
     def add_api_key(self, create, extracted):
@@ -96,6 +102,12 @@ class TagFactory(ModularOdmFactory):
 class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
+
+class PrivateLinkFactory(ModularOdmFactory):
+    FACTORY_FOR = PrivateLink
+
+    key = "foobarblaz"
+    creator = SubFactory(AuthUserFactory)
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node

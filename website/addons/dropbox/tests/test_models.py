@@ -44,12 +44,28 @@ class TestUserSettingsModel(DbTestCase):
         user_settings.save()
         assert_true(user_settings.has_auth)
 
-    def test_clear_auth(self):
+    def test_clear_clears_associated_node_settings(self):
+        node_settings = DropboxNodeSettingsFactory.build()
+        user_settings = DropboxUserSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        user_settings.clear()
+        user_settings.save()
+
+        # Node settings no longer associated with user settings
+        assert_is(node_settings.user_settings, None)
+        assert_is(node_settings.folder, None)
+
+    def test_clear(self):
+        node_settings = DropboxNodeSettingsFactory.build()
         user_settings = DropboxUserSettingsFactory(access_token='abcde',
             dropbox_id='abc')
+        node_settings.user_settings = user_settings
+        node_settings.save()
 
         assert_true(user_settings.access_token)
-        user_settings.clear_auth()
+        user_settings.clear()
         user_settings.save()
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
@@ -163,16 +179,6 @@ class TestNodeSettingsCallbacks(DbTestCase):
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner
 
-    def test_after_register(self):
-        registration = ProjectFactory(is_registration=True)
-
-        clone, message = self.node_settings.after_register(
-            node=self.project, registration=registration, user=self.project.creator,
-            save=True
-        )
-        assert_equal(clone.user_settings, self.node_settings.user_settings)
-        assert_equal(clone.registration_data['folder'], self.node_settings.folder)
-
     def test_after_fork_by_authorized_dropbox_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
@@ -190,11 +196,6 @@ class TestNodeSettingsCallbacks(DbTestCase):
             )
             # need request context for url_for
             assert_is(clone.user_settings, None)
-
-    def test_before_register(self):
-        node = ProjectFactory()
-        message = self.node_settings.before_register(node, self.user)
-        assert_true(message)
 
     def test_before_fork(self):
         node = ProjectFactory()
@@ -227,7 +228,7 @@ class TestDropboxGuidFile(DbTestCase):
             file_url = file_obj.url(guid=False)
 
         url = lookup('web', 'dropbox_view_file',
-            pid=project._primary_key, path=file_obj.path)
+            pid=project._primary_key, path=file_obj.path, rev='')
         assert_equal(url, file_url)
 
     def test_guid_url(self):
@@ -252,6 +253,7 @@ class TestDropboxGuidFile(DbTestCase):
         with app.test_request_context():
             dl_url = file_obj.download_url(guid=False)
             expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
+                rev='',
                 _absolute=True)
         assert_equal(dl_url, expected)
 
