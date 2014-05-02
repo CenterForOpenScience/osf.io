@@ -150,7 +150,7 @@ SYSTEM_ADDED_ADDONS = {
 }
 
 FEATURES = {
-    'upload': False,
+    'upload': True,
 }
 
 # Piwik

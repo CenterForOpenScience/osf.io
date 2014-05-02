@@ -29,6 +29,9 @@ def migrate_node(node):
     if not node.contributors[0].username:
         return
 
+    # Ensure GitLab add-on added to node
+    node_settings = node.get_or_add_addon('gitlab', log=False)
+
     # Quit if no files
     if not node.files_current:
         return

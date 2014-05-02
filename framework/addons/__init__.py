@@ -45,7 +45,11 @@ class AddonModelMixin(StoredObject):
             return False
 
         backref_key = self._backref_key(addon_config)
-        addons = getattr(self, backref_key)
+        # TODO: Figure out where None add-ons come from
+        addons = [
+            addon for addon in getattr(self, backref_key)
+            if addon is not None
+        ]
         if addons:
             if deleted or not addons[0].deleted:
                 assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
@@ -55,7 +59,7 @@ class AddonModelMixin(StoredObject):
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name, auth=None, override=False):
+    def add_addon(self, addon_name, auth=None, log=True, override=False):
         """Add an add-on to the owner.
 
         :param str addon_name: Name of add-on
@@ -87,7 +91,7 @@ class AddonModelMixin(StoredObject):
 
         return addon
 
-    def get_or_add_addon(self, addon_name, auth=None, override=False):
+    def get_or_add_addon(self, addon_name, auth=None, log=True, override=False):
         """Get addon from owner; if it doesn't exist, create one.
 
         :param str addon_name: Name of addon
@@ -97,7 +101,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name)
         if addon:
             return addon
-        return self.add_addon(addon_name, auth=auth, override=override)
+        return self.add_addon(addon_name, auth=auth, log=True, override=override)
 
     def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the owner.
