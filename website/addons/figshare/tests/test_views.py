@@ -4,11 +4,10 @@ from nose.tools import *
 from webtest_plus import TestApp
 
 import website.app
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 
 from tests.factories import ProjectFactory, AuthUserFactory
 
-from website.addons.base import AddonError
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
@@ -24,7 +23,7 @@ app = website.app.init_app(
 figshare_mock = create_mock_figshare(project=436)
 
 
-class TestViewsConfig(DbTestCase):
+class TestViewsConfig(OsfTestCase):
 
     def setUp(self):
 
@@ -103,7 +102,7 @@ class TestViewsConfig(DbTestCase):
         assert_equal(rv.status_int, 400)
 
 
-class TestUtils(DbTestCase):
+class TestUtils(OsfTestCase):
 
     def setUp(self):
         super(TestUtils, self).setUp()
@@ -182,7 +181,7 @@ class TestUtils(DbTestCase):
         assert_equal(ref, None)
 
 
-class TestViewsCrud(DbTestCase):
+class TestViewsCrud(OsfTestCase):
 
     def setUp(self):
         super(TestViewsCrud, self).setUp()
@@ -289,7 +288,7 @@ class TestViewsCrud(DbTestCase):
         resp = self.app.get(url, expect_errors=True).maybe_follow()
         assert_equal(resp.status_int, 404)
 
-class TestViewsAuth(DbTestCase):
+class TestViewsAuth(OsfTestCase):
 
     def setUp(self):
         super(TestViewsAuth, self).setUp()

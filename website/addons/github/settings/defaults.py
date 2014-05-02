@@ -10,6 +10,7 @@ SET_PRIVACY = False
 
 # GitHub hook domain
 HOOK_DOMAIN = None
+HOOK_CONTENT_TYPE = 'json'
 
 # Max render size in bytes; no max if None
 MAX_RENDER_SIZE = None

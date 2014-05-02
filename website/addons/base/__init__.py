@@ -21,9 +21,6 @@ lookup = TemplateLookup(
     ]
 )
 
-class AddonError(Exception): pass
-
-
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
