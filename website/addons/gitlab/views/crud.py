@@ -185,7 +185,7 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
             branch, sha = get_branch_and_sha(node_settings, kwargs)
 
     permissions = {
-        'edit': node.can_edit(auth=auth),
+        'edit': node.can_edit(auth=auth) and not node.is_registration,
         'view': True,
     }
     urls = build_full_urls(
