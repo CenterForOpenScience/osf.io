@@ -55,6 +55,9 @@ class NodeFile(GuidStoredObject):
     node = fields.ForeignField('node', backref='uploads')
     uploader = fields.ForeignField('user', backref='uploads')
 
+    # Holding space for backing up fields changed during corruption recovery
+    backup = fields.DictionaryField()
+
     @property
     def clean_filename(self):
         return self.filename.replace('.', '_')
