@@ -11,13 +11,10 @@ import logging
 import subprocess
 
 from website import settings
-from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 
-app = init_app('website.settings', set_backends=True, routes=True)
 
-
-RECOVER_PATH = '/home/jmcarp/git-recovery'
+RECOVER_PATH = '/opt/data/git-recovery'
 
 
 def get_node_path(node):
