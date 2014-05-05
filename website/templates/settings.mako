@@ -35,41 +35,145 @@
             <div class="panel-heading"><h3 class="panel-title">Profile Information</h3></div>
             <div class="panel-body">
                 <div id="profile">
-                    <form>
-                        <%include file="metadata/metadata_1.html" />
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Style</th>
-                                    <th>Citation Format</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>APA</td>
-                                    <td data-bind="text:$root.citation_apa"></td>
-                                </tr>
-                                <tr>
-                                    <td>MLA</td>
-                                    <td data-bind="text:$root.citation_mla"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <div>
-                            If you have any questions or comments about how
-                            your name will appear in citations, please let us
-                            know at <a href="mailto:feedback+citations@osf.io">
-                            feedback+citations@osf.io</a>.
+
+                    <form role="form" data-bind="submit: submit">
+
+                        <!--  -->
+                        <div data-bind="with: names">
+
+                            <div class="form-group">
+                                <label>Full Name</label>
+                                <input class="form-control" data-bind="value: full" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Given Name</label>
+                                <input class="form-control" data-bind="value: given" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Middle Name(s)</label>
+                                <input class="form-control" data-bind="value: middle" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Family Name</label>
+                                <input class="form-control" data-bind="value: family" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Suffix</label>
+                                <input class="form-control" data-bind="value: suffix" />
+                            </div>
+
                         </div>
-                        <br />
-                        <button id="profile-submit" class="btn btn-success">
-                            Submit
-                        </button>
-                        <div>
-                            <br />
-                            <div id="profile-message" style="display: none;"></div>
+
+                        <!--  -->
+                        <div data-bind="with: social">
+
+                            <div class="form-group">
+                                <label>Personal Site</label>
+                                <input class="form-control" data-bind="value: personal" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>ORCID</label>
+                                <input class="form-control" data-bind="value: orcid" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>ResearcherID</label>
+                                <input class="form-control" data-bind="value: researcherId" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Twitter</label>
+                                <input class="form-control" data-bind="value: twitter" />
+                            </div>
+
                         </div>
+
+                        <!--  -->
+                        <div>
+
+                            <div data-bind="foreach: history">
+
+                                <div>
+
+                                    <div class="form-group">
+                                        <label>Institution</label>
+                                        <input class="form-control" data-bind="value: institution" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Department</label>
+                                        <input class="form-control" data-bind="value: department" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Job Title</label>
+                                        <input class="form-control" data-bind="value: title" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Start Date</label>
+                                        <input class="form-control" data-bind="value: startDate" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>End Date</label>
+                                        <input class="form-control" data-bind="value: endDate" />
+                                    </div>
+
+                                </div>
+
+                                <a class="btn btn-danger" data-bind="click: remove">Remove</a>
+
+                            </div>
+
+                            <a class="btn btn-default" data-bind="click: addHistory">Add</a>
+
+                        </div>
+
+                        <button type="submit" class="btn btn-success">Submit</button>
+
                     </form>
+
+##                    <form>
+##                        <%include file="metadata/metadata_1.html" />
+##                        <table class="table">
+##                            <thead>
+##                                <tr>
+##                                    <th>Style</th>
+##                                    <th>Citation Format</th>
+##                                </tr>
+##                            </thead>
+##                            <tbody>
+##                                <tr>
+##                                    <td>APA</td>
+##                                    <td data-bind="text:$root.citation_apa"></td>
+##                                </tr>
+##                                <tr>
+##                                    <td>MLA</td>
+##                                    <td data-bind="text:$root.citation_mla"></td>
+##                                </tr>
+##                            </tbody>
+##                        </table>
+##                        <div>
+##                            If you have any questions or comments about how
+##                            your name will appear in citations, please let us
+##                            know at <a href="mailto:feedback+citations@osf.io">
+##                            feedback+citations@osf.io</a>.
+##                        </div>
+##                        <br />
+##                        <button id="profile-submit" class="btn btn-success">
+##                            Submit
+##                        </button>
+##                        <div>
+##                            <br />
+##                            <div id="profile-message" style="display: none;"></div>
+##                        </div>
+##                    </form>
                 </div>
             </div>
         </div>
@@ -154,8 +258,6 @@
 ##            "route": "/settings/"}
 ##        }'></div>
 
-<script type="text/javascript" src="/static/js/metadata_1.js"></script>
-
 <script type="text/javascript">
 
     // TODO: Move all this to its own module
@@ -203,138 +305,39 @@
         return false;
     }
 
-    function getInitials(names) {
-        return names
-            .split(' ')
-            .map(function(name) {
-                return name[0].toUpperCase() + '.';
-            })
-            .filter(function(initial) {
-                return initial.match(/^[a-z]/i);
-            }).join(' ');
-    }
-
-    $(document).ready(function() {
-
-        function getNames() {
-            var names = {};
-            $.each(profileViewModel.serialize().data, function(key, value) {
-                names[key] = $.trim(value);
-            });
-            return names;
-        }
-
-        function getSuffix(suffix) {
-            var suffixLower = suffix.toLowerCase();
-            if ($.inArray(suffixLower, ['jr', 'sr']) != -1) {
-                suffix = suffix + '.';
-                suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) != -1) {
-                suffix = suffix.toUpperCase();
-            }
-            return suffix;
-        }
-
-        // Set up view model
-        var profileViewModel = new MetaData.ViewModel(${schema});
-        profileViewModel.updateIdx('add', true);
-
-        // Patch computed for APA citation
-        profileViewModel.citation_apa = ko.computed(function() {
-            var names = getNames();
-            var citation_name = names['family_name'];
-            var given_names = $.trim(names['given_name'] + ' ' + names['middle_names']);
-            if (given_names) {
-                citation_name = citation_name + ', ' + getInitials(given_names);
-            }
-            if (names['suffix']) {
-                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
-            }
-            return citation_name;
-        });
-
-        // Patch computed for MLA citation
-        profileViewModel.citation_mla = ko.computed(function() {
-            var names = getNames();
-            var citation_name = names['family_name'];
-            if (names['given_name']) {
-                citation_name = citation_name + ', ' + names['given_name'];
-                if (names['middle_names']) {
-                    citation_name = citation_name + ' ' + getInitials(names['middle_names']);
-                }
-            }
-            if (names['suffix']) {
-                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
-            }
-            return citation_name;
-        });
-
-        // Unserialize data from server
-        profileViewModel.unserialize(${names});
-
-        // Apply completed bindings
-        ko.applyBindings(profileViewModel, $('#profile')[0]);
-
-        $('#profile form').delegate('#profile-impute', 'click', function() {
-
-            var modelData = profileViewModel.observedData;
-            var fullname = modelData['fullname'].value();
-
-            // POST data asynchronously
-            $.ajax({
-                type: 'POST',
-                url: '/api/v1/settings/names/parse/',
-                data: JSON.stringify({fullname: fullname}),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    modelData.given_name.value(response.given_name);
-                    modelData.middle_names.value(response.middle_names);
-                    modelData.family_name.value(response.family_name);
-                    modelData.suffix.value(response.suffix);
-                }
-            });
-
-            // Don't submit the form
-            return false;
-
-        });
-
-        $('#profile form').on('submit', function() {
-
-            // Serialize responses
-            var serialized = profileViewModel.serialize(),
-                data = serialized.data,
-                complete = serialized.complete;
-
-            // Stop if incomplete
-            if (!complete) {
-                return false;
-            }
-
-            // POST data asynchronously
-            $.ajax({
-                type: 'POST',
-                url: '/api/v1/settings/names/',
-                data: JSON.stringify(data),
-                contentType: 'application/json',
-                dataType: 'json'
-            }).done(function(response) {
-                $('#profile-message').text('Names updated')
-                    .removeClass('text-danger').addClass('text-success')
-                    .fadeOut(100).fadeIn();
-            }).fail(function() {
-                $('#profile-message').text('Error: Names not updated')
-                    .removeClass('text-success').addClass('text-danger')
-                    .fadeOut(100).fadeIn();
-            });
-
-            // Don't resubmit the form
-            return false;
-
-        });
-
-    });
+##    $(document).ready(function() {
+##
+##        // Patch computed for APA citation
+##        profileViewModel.citation_apa = ko.computed(function() {
+##            var names = getNames();
+##            var citation_name = names['family_name'];
+##            var given_names = $.trim(names['given_name'] + ' ' + names['middle_names']);
+##            if (given_names) {
+##                citation_name = citation_name + ', ' + getInitials(given_names);
+##            }
+##            if (names['suffix']) {
+##                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
+##            }
+##            return citation_name;
+##        });
+##
+##        // Patch computed for MLA citation
+##        profileViewModel.citation_mla = ko.computed(function() {
+##            var names = getNames();
+##            var citation_name = names['family_name'];
+##            if (names['given_name']) {
+##                citation_name = citation_name + ', ' + names['given_name'];
+##                if (names['middle_names']) {
+##                    citation_name = citation_name + ' ' + getInitials(names['middle_names']);
+##                }
+##            }
+##            if (names['suffix']) {
+##                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
+##            }
+##            return citation_name;
+##        });
+##
+##    });
 
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {
@@ -360,7 +363,14 @@
 
     });
 
+    $script(['/static/js/profile.js']);
+    $script.ready('profile', function() {
+        var getUrl = '${ api_url_for('serialize_personal') }';
+        var putUrl = '${ api_url_for('unserialize_personal') }';
+        var profile = new Profile('#userProfile', getUrl, putUrl);
+    });
 
 </script>
+
 
 </%def>

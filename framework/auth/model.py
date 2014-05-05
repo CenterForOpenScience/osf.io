@@ -97,6 +97,18 @@ class User(GuidStoredObject, AddonModelMixin):
     family_name = fields.StringField()
     suffix = fields.StringField()
 
+    # Employment history
+    # Format: {
+    #     'position': <position or job title>,
+    #     'institution': <institution or organization>,
+    #     'department': <department>,
+    #     'location': <location>,
+    #     'start': <start date>,
+    #     'end': <end date>,
+    # }
+    # TODO: add validation
+    history = fields.DictionaryField(list=True)
+
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
     piwik_token = fields.StringField()

@@ -106,76 +106,22 @@ def get_profile_summary(user_id, formatter='long'):
     return user.get_summary(formatter)
 
 
-profile_schema = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'Names',
-            'contents': [
-                {
-                    'id': 'fullname',
-                    'type': 'textfield',
-                    'label': 'Full/display name',
-                    'required': True,
-                    'helpText': 'The field above is your full name and the name that will be '
-                                'displayed in your profile. You can use the "Guess fields" button '
-                                'or edit the fields below in order to accurately generate '
-                                'citations.',
-                },
-                {
-                    'id': 'impute',
-                    'type': 'htmlfield',
-                    'label': '',
-                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields</button>',
-                },
-                {
-                    'id': 'given_name',
-                    'type': 'textfield',
-                    'label': 'Given name',
-                    'helpText': 'First name; e.g., Stephen',
-                },
-                {
-                    'id': 'middle_names',
-                    'type': 'textfield',
-                    'label': 'Middle name(s)',
-                    'helpText': 'Middle names; e.g., Jay',
-                },
-                {
-                    'id': 'family_name',
-                    'type': 'textfield',
-                    'label': 'Family name',
-                    'required': True,
-                    'helpText': 'Surname; e.g., Gould',
-                },
-                {
-                    'id': 'suffix',
-                    'type': 'textfield',
-                    'label': 'Suffix',
-                    'helpText': 'E.g., Sr., Jr., III',
-                },
-            ]
-        }
-    ]
-}
-
-
 # TODO: Similar to node_setting; refactor
 @must_be_logged_in
 def profile_settings(**kwargs):
 
     user = kwargs['auth'].user
 
-    rv = {
+    out = {
         'user_id': user._primary_key,
         'user_api_url': user.api_url,
-        'names': json.dumps({
+        'names': {
             'fullname': user.fullname,
             'given_name': user.given_name,
             'middle_names': user.middle_names,
             'family_name': user.family_name,
             'suffix': user.suffix,
-        }),
-        'schema': json.dumps(profile_schema),
+        },
     }
 
     addons_enabled = []
@@ -188,17 +134,17 @@ def profile_settings(**kwargs):
         if 'user' in addon.config.configs:
             addon_enabled_settings.append(addon.config.short_name)
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    out['addon_categories'] = settings.ADDON_CATEGORIES
+    out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
         and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
+    out['addons_enabled'] = addons_enabled
+    out['addon_enabled_settings'] = addon_enabled_settings
 
-    return rv
+    return out
 
 
 @must_be_logged_in
@@ -299,4 +245,78 @@ def post_names(**kwargs):
     user = kwargs['auth'].user
     for field in NAME_FIELDS:
         setattr(user, field, scrub_html(request.json[field]))
+    user.save()
+
+
+def serialize_names(user):
+    return {
+        'full': user.fullname,
+        'given': user.given_name,
+        'middle': user.middle_names,
+        'family': user.family_name,
+        'suffix': user.suffix,
+    }
+
+
+def serialize_social(user):
+    return user.social
+
+
+def serialize_history(history):
+    return history
+
+
+def serialize_histories(user):
+    return [
+        serialize_history(history)
+        for history in user.history
+    ]
+
+
+def unserialize_names(user, names):
+    user.fullname = names.get('full')
+    user.given_name = names.get('given')
+    user.middle_names = names.get('middle')
+    user.family_name = names.get('family')
+    user.suffix = names.get('suffix')
+
+
+def unserialize_social(user, social):
+    user.social['personal'] = social.get('personal')
+    user.social['orcid'] = social.get('orcid')
+    user.social['researcher_id'] = social.get('researcherId')
+    user.social['twitter'] = social.get('twitter')
+
+
+def unserialize_history(history):
+    return history
+
+
+def unserialize_histories(user, histories):
+    user.history = [
+        unserialize_history(history)
+        for history in histories
+    ]
+
+
+@must_be_logged_in
+def serialize_personal(**kwargs):
+
+    user = kwargs['auth'].user
+
+    return {
+        'names': serialize_names(user),
+        'history': serialize_histories(user),
+    }
+
+
+@must_be_logged_in
+def unserialize_personal(**kwargs):
+
+    user = kwargs['auth'].user
+
+    unserialize_names(user, request.json.get('names', {}))
+    unserialize_social(user, request.json.get('social', {}))
+    unserialize_histories(user, request.json.get('history', {}))
+
     user.save()

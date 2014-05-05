@@ -372,6 +372,9 @@ def make_url_map(app):
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
+        Rule('/settings/personal/', 'get', profile_views.serialize_personal, json_renderer),
+        Rule('/settings/personal/', 'put', profile_views.unserialize_personal, json_renderer),
+
         Rule('/settings/names/parse/', 'post', profile_views.parse_names, json_renderer),
         Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
 
