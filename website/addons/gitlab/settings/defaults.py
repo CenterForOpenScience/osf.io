@@ -18,7 +18,7 @@ ACCESS_LEVELS = {
 
 DEFAULT_BRANCH = 'master'
 
-# TODO: Change me to `False` after GitLab migration
+# TODO: Change me to `True` after GitLab migration
 VERIFY_SSL = False
 
 # `HOOK_DOMAIN` defaults to `DOMAIN`, which should be the value used in
