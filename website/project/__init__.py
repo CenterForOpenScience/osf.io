@@ -65,8 +65,9 @@ def new_dashboard(user):
     # TODO: A user can only have one dashboard. Prevent a second one from being created.
 
     node = Node(
-        title="Dashboard",
+        title='Dashboard',
         creator=user,
+        category='folder',
         is_dashboard=True,
         is_folder=True
     )
@@ -88,6 +89,7 @@ def new_folder(title, user):
     node = Node(
         title=title,
         creator=user,
+        category='folder',
         is_folder=True
     )
 
