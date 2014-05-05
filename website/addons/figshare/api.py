@@ -221,7 +221,7 @@ class Figshare(object):
         projects = self._send("http://api.figshare.com/v1/my_data/projects")
         articles = self._send("http://api.figshare.com/v1/my_data/articles")
 
-        if not projects or not articles:
+        if projects is False or articles is False:
             return self._get_last_error()
 
         return [{'label': project['title'], 'value': 'project_{0}'.format(project['id'])}
