@@ -70,7 +70,7 @@ def build_addon_root(node_settings, name, permissions=None,
         auth = permissions
         permissions = {
             'view': node_settings.owner.can_view(auth),
-            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration
+            'edit': node_settings.owner.can_edit(auth) and not node_settings.owner.is_registration,
         }
     rv = {
         'addon': node_settings.config.short_name,
@@ -143,7 +143,6 @@ class NodeFileCollector(object):
         """
         visited = visited or []
         visited.append(node.resolve()._id)
-        can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = node.can_view(auth=self.auth)
         if can_view:
             children = self._collect_addons(node) + self._collect_components(node, visited)
@@ -160,7 +159,7 @@ class NodeFileCollector(object):
                 else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': can_edit,
+                'edit': False,
                 'view': can_view,
             },
             'urls': {
