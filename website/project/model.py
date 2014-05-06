@@ -440,8 +440,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         'is_registration',
         'is_public',
         'is_deleted',
-        'is_dashboard',
-        'is_folder',
         'wiki_pages_current',
     }
 
@@ -1064,6 +1062,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             """
             return 'true' if value is True else 'false'
         if not settings.USE_SOLR:
+            return
+
+        # Don't save folders to Solr. Dashboards are also folders. Neither should be user-searchable.
+        if self.is_folder:
             return
 
         from website.addons.wiki.model import NodeWikiPage

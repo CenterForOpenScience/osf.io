@@ -67,7 +67,7 @@ def new_dashboard(user):
     node = Node(
         title='Dashboard',
         creator=user,
-        category='folder',
+        category='project',
         is_dashboard=True,
         is_folder=True
     )
@@ -89,7 +89,7 @@ def new_folder(title, user):
     node = Node(
         title=title,
         creator=user,
-        category='folder',
+        category='project',
         is_folder=True
     )
 
