@@ -72,7 +72,7 @@ def new_dashboard(user):
     )
 
     # TODO: This should raise some sort of error.
-    if existing_dashboard is None:
+    if existing_dashboard is not None:
         return None
 
     node = Node(
