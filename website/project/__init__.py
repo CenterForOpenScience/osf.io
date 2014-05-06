@@ -4,6 +4,7 @@ import uuid
 from .model import Node, NodeLog, Pointer, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
+from modularodm import Q
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -55,6 +56,7 @@ def new_node(category, title, user, description=None, project=None):
 
     return node
 
+
 def new_dashboard(user):
     """Create a new dashboard project.
 
@@ -62,7 +64,16 @@ def new_dashboard(user):
     :return Node: Created node
 
     """
-    # TODO: A user can only have one dashboard. Prevent a second one from being created.
+    existing_dashboard = user.node__contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_dashboard','eq', True)
+    )
+
+    # TODO: This should raise some sort of error.
+    if existing_dashboard is None:
+        return None
 
     node = Node(
         title='Dashboard',
@@ -75,6 +86,7 @@ def new_dashboard(user):
     node.save()
 
     return node
+
 
 def new_folder(title, user):
     """Create a new folder project.
@@ -96,6 +108,7 @@ def new_folder(title, user):
     node.save()
 
     return node
+
 
 def new_private_link(label, user):
     """Create a new private link.
