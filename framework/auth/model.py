@@ -106,8 +106,28 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'start': <start date>,
     #     'end': <end date>,
     # }
-    # TODO: add validation
-    history = fields.DictionaryField(list=True)
+    # TODO: Add validation
+    jobs = fields.DictionaryField(list=True)
+
+    # Educational history
+    # Format: {
+    #     'degree': <position or job title>,
+    #     'institution': <institution or organization>,
+    #     'department': <department>,
+    #     'location': <location>,
+    #     'start': <start date>,
+    #     'end': <end date>,
+    # }
+    # TODO: Add validation
+    schools = fields.DictionaryField(list=True)
+
+    # Social links
+    # Format: {
+    #     'personal': <personal site>,
+    #     'twitter': <twitter id>,
+    # }
+    # TODO: Add validation
+    social = fields.DictionaryField()
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -174,10 +194,10 @@ class User(GuidStoredObject, AddonModelMixin):
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
         """
-        parsed = utils.parse_name(self.fullname)
-        self.given_name = parsed['given_name']
-        self.middle_names = parsed['middle_names']
-        self.family_name = parsed['family_name']
+        parsed = utils.impute_names(self.fullname)
+        self.given_name = parsed['given']
+        self.middle_names = parsed['middle']
+        self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
     def register(self, username, password=None):

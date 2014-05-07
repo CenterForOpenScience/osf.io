@@ -1,10 +1,11 @@
 from nameparser.parser import HumanName
 
-def parse_name(name):
+
+def impute_names(name):
     human = HumanName(name)
     return {
-        'given_name': human.first,
-        'middle_names': human.middle,
-        'family_name': human.last,
+        'given': human.first,
+        'middle': human.middle,
+        'family': human.last,
         'suffix': human.suffix,
     }

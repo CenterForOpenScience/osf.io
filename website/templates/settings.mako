@@ -31,152 +31,283 @@
 
     <div class="col-md-6">
 
-        <div id="userProfile" class="panel panel-default">
-            <div class="panel-heading"><h3 class="panel-title">Profile Information</h3></div>
-            <div class="panel-body">
-                <div id="profile">
+        <div id="userProfile">
+
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#names" data-toggle="tab">Name</a></li>
+                <li><a href="#social" data-toggle="tab">Social</a></li>
+                <li><a href="#jobs" data-toggle="tab">Employment</a></li>
+                <li><a href="#schools" data-toggle="tab">Education</a></li>
+            </ul>
+
+            <div class="tab-content">
+
+                <div class="tab-pane active" id="names">
 
                     <form role="form" data-bind="submit: submit">
 
-                        <!--  -->
-                        <div data-bind="with: names">
+                        <h3>Name</h3>
 
-                            <div class="form-group">
-                                <label>Full Name</label>
-                                <input class="form-control" data-bind="value: full" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Given Name</label>
-                                <input class="form-control" data-bind="value: given" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Middle Name(s)</label>
-                                <input class="form-control" data-bind="value: middle" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Family Name</label>
-                                <input class="form-control" data-bind="value: family" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Suffix</label>
-                                <input class="form-control" data-bind="value: suffix" />
-                            </div>
-
+                        <div class="form-group">
+                            <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
+                            <input class="form-control" data-bind="value: full" />
                         </div>
 
-                        <!--  -->
-                        <div data-bind="with: social">
-
-                            <div class="form-group">
-                                <label>Personal Site</label>
-                                <input class="form-control" data-bind="value: personal" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>ORCID</label>
-                                <input class="form-control" data-bind="value: orcid" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>ResearcherID</label>
-                                <input class="form-control" data-bind="value: researcherId" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Twitter</label>
-                                <input class="form-control" data-bind="value: twitter" />
-                            </div>
-
-                        </div>
-
-                        <!--  -->
                         <div>
-
-                            <div data-bind="foreach: history">
-
-                                <div>
-
-                                    <div class="form-group">
-                                        <label>Institution</label>
-                                        <input class="form-control" data-bind="value: institution" />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Department</label>
-                                        <input class="form-control" data-bind="value: department" />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Job Title</label>
-                                        <input class="form-control" data-bind="value: title" />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Start Date</label>
-                                        <input class="form-control" data-bind="value: startDate" />
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>End Date</label>
-                                        <input class="form-control" data-bind="value: endDate" />
-                                    </div>
-
-                                </div>
-
-                                <a class="btn btn-danger" data-bind="click: remove">Remove</a>
-
-                            </div>
-
-                            <a class="btn btn-default" data-bind="click: addHistory">Add</a>
-
+                            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Guess names</a>
                         </div>
 
-                        <button type="submit" class="btn btn-success">Submit</button>
+                        <div class="form-group">
+                            <label>Given Name (e.g. Rosalind)</label>
+                            <input class="form-control" data-bind="value: given" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Middle Name(s) (e.g. Elsie)</label>
+                            <input class="form-control" data-bind="value: middle" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Family Name (e.g. Franklin)</label>
+                            <input class="form-control" data-bind="value: family" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Suffix</label>
+                            <input class="form-control" data-bind="value: suffix" />
+                        </div>
+
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Style</th>
+                                    <th>Citation Format</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>APA</td>
+                                    <td>{{ citeApa }}</td>
+                                </tr>
+                                <tr>
+                                    <td>MLA</td>
+                                    <td>{{ citeMla }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <button
+                                type="submit"
+                                class="btn btn-success"
+                                data-bind="enable: isValid"
+                            >Submit</button>
+
+                        <!-- Flashed Messages -->
+                        <div class="help-block">
+                            <p data-bind="html: message, attr.class: messageClass"></p>
+                        </div>
 
                     </form>
 
-##                    <form>
-##                        <%include file="metadata/metadata_1.html" />
-##                        <table class="table">
-##                            <thead>
-##                                <tr>
-##                                    <th>Style</th>
-##                                    <th>Citation Format</th>
-##                                </tr>
-##                            </thead>
-##                            <tbody>
-##                                <tr>
-##                                    <td>APA</td>
-##                                    <td data-bind="text:$root.citation_apa"></td>
-##                                </tr>
-##                                <tr>
-##                                    <td>MLA</td>
-##                                    <td data-bind="text:$root.citation_mla"></td>
-##                                </tr>
-##                            </tbody>
-##                        </table>
-##                        <div>
-##                            If you have any questions or comments about how
-##                            your name will appear in citations, please let us
-##                            know at <a href="mailto:feedback+citations@osf.io">
-##                            feedback+citations@osf.io</a>.
-##                        </div>
-##                        <br />
-##                        <button id="profile-submit" class="btn btn-success">
-##                            Submit
-##                        </button>
-##                        <div>
-##                            <br />
-##                            <div id="profile-message" style="display: none;"></div>
-##                        </div>
-##                    </form>
                 </div>
+
+                <div class="tab-pane" id="social">
+
+                    <form role="form" data-bind="submit: submit">
+
+                        <h3>Social</h3>
+
+                        <div class="form-group">
+                            <label>Personal Site</label>
+                            <input class="form-control" data-bind="value: personal" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>ORCID</label>
+                            <input class="form-control" data-bind="value: orcid" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>ResearcherID</label>
+                            <input class="form-control" data-bind="value: researcherId" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Twitter</label>
+                            <input class="form-control" data-bind="value: twitter" />
+                        </div>
+
+                        <button
+                                type="submit"
+                                class="btn btn-success"
+                                data-bind="enable: isValid"
+                            >Submit</button>
+
+                        <!-- Flashed Messages -->
+                        <div class="help-block">
+                            <p data-bind="html: message, attr.class: messageClass"></p>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="tab-pane" id="jobs">
+
+                    <form role="form" data-bind="submit: submit">
+
+                        <h3>Education / Employment History</h3>
+
+                        <div data-bind="foreach: contents">
+
+                            <div>Position {{ $index() + 1 }}</div>
+
+                            <div>
+                                <div class="pull-right">
+                                    <a class="btn btn-danger" data-bind="click: $parent.removeContent">Remove</a>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Institution / Employer</label>
+                                <input class="form-control" data-bind="value: institution" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Department</label>
+                                <input class="form-control" data-bind="value: department" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Job Title</label>
+                                <input class="form-control" data-bind="value: title" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input class="form-control" data-bind="value: startDate" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input class="form-control" data-bind="value: endDate" />
+                            </div>
+
+                            <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
+
+                        </div>
+
+                        <div>
+                            <a class="btn btn-default" data-bind="click: addContent">
+                                Add
+                            </a>
+                        </div>
+
+                        <div class="padded">
+                            <button
+                                    type="submit"
+                                    class="btn btn-success"
+                                    data-bind="enable: isValid"
+                                >Submit</button>
+                        </div>
+
+                        <!-- Flashed Messages -->
+                        <div class="help-block">
+                            <p data-bind="html: message, attr.class: messageClass"></p>
+                        </div>
+
+                    </form>
+
+                </div>
+
+                <div class="tab-pane" id="schools">
+
+                    <form role="form" data-bind="submit: submit">
+
+                        <h3>Education</h3>
+
+                        <div data-bind="foreach: contents">
+
+                            <div>Position {{ $index() + 1 }}</div>
+
+                            <div>
+                                <div class="pull-right">
+                                    <a class="btn btn-danger" data-bind="click: remove">Remove</a>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Institution</label>
+                                <input class="form-control" data-bind="value: institution" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Department</label>
+                                <input class="form-control" data-bind="value: department" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Degree</label>
+                                <input class="form-control" data-bind="value: degree" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Start Date</label>
+                                <input class="form-control" data-bind="value: startDate" />
+                            </div>
+
+                            <div class="form-group">
+                                <label>End Date</label>
+                                <input class="form-control" data-bind="value: endDate" />
+                            </div>
+
+                            <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
+
+                        </div>
+
+                        <div>
+                            <a class="btn btn-default" data-bind="click: addContent">
+                                Add
+                            </a>
+                        </div>
+
+                        <div class="padded">
+                            <button
+                                    type="submit"
+                                    class="btn btn-success"
+                                    data-bind="enable: isValid"
+                                >Submit</button>
+                        </div>
+
+                        <!-- Flashed Messages -->
+                        <div class="help-block">
+                            <p data-bind="html: message, attr.class: messageClass"></p>
+                        </div>
+
+                    </form>
+
+                </div>
+
             </div>
+
         </div>
+
+##        <div id="userProfile" class="panel panel-default">
+##            <div class="panel-heading"><h3 class="panel-title">Profile Information</h3></div>
+##            <div class="panel-body">
+##                <div id="profile">
+##
+##                    <form role="form" data-bind="submit: submit">
+##
+##                        </div>
+##
+##                        <button type="submit" class="btn btn-success">Submit</button>
+##
+##                    </form>
+##
+##                </div>
+##            </div>
+##        </div>
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>
@@ -305,40 +436,6 @@
         return false;
     }
 
-##    $(document).ready(function() {
-##
-##        // Patch computed for APA citation
-##        profileViewModel.citation_apa = ko.computed(function() {
-##            var names = getNames();
-##            var citation_name = names['family_name'];
-##            var given_names = $.trim(names['given_name'] + ' ' + names['middle_names']);
-##            if (given_names) {
-##                citation_name = citation_name + ', ' + getInitials(given_names);
-##            }
-##            if (names['suffix']) {
-##                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
-##            }
-##            return citation_name;
-##        });
-##
-##        // Patch computed for MLA citation
-##        profileViewModel.citation_mla = ko.computed(function() {
-##            var names = getNames();
-##            var citation_name = names['family_name'];
-##            if (names['given_name']) {
-##                citation_name = citation_name + ', ' + names['given_name'];
-##                if (names['middle_names']) {
-##                    citation_name = citation_name + ' ' + getInitials(names['middle_names']);
-##                }
-##            }
-##            if (names['suffix']) {
-##                citation_name = citation_name + ', ' + getSuffix(names['suffix']);
-##            }
-##            return citation_name;
-##        });
-##
-##    });
-
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {
 
@@ -365,9 +462,23 @@
 
     $script(['/static/js/profile.js']);
     $script.ready('profile', function() {
-        var getUrl = '${ api_url_for('serialize_personal') }';
-        var putUrl = '${ api_url_for('unserialize_personal') }';
-        var profile = new Profile('#userProfile', getUrl, putUrl);
+        var nameUrls = {
+            crud: '${ api_url_for('serialize_names') }',
+            impute: '${ api_url_for('impute_names') }'
+        };
+        var socialUrls = {
+            crud: '${ api_url_for('serialize_social') }'
+        };
+        var jobsUrls = {
+            crud: '${ api_url_for('serialize_jobs') }'
+        };
+        var schoolsUrls = {
+            crud: '${ api_url_for('serialize_schools') }'
+        };
+        var names = new profile.Names('#names', nameUrls);
+        var social = new profile.Social('#social', socialUrls);
+        var jobs = new profile.Jobs('#jobs', jobsUrls);
+        var schools = new profile.Schools('#schools', schoolsUrls);
     });
 
 </script>

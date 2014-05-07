@@ -372,14 +372,22 @@ def make_url_map(app):
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
-        Rule('/settings/personal/', 'get', profile_views.serialize_personal, json_renderer),
-        Rule('/settings/personal/', 'put', profile_views.unserialize_personal, json_renderer),
-
-        Rule('/settings/names/parse/', 'post', profile_views.parse_names, json_renderer),
-        Rule('/settings/names/', 'post', profile_views.post_names, json_renderer),
-
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
         Rule('/user/<uid>/<pid>/claim/email/', 'post', project_views.contributor.claim_user_post, json_renderer),
+
+        # Rules for user profile configuration
+        Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
+        Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),
+        Rule('/settings/names/impute/', 'get', profile_views.impute_names, json_renderer),
+
+        Rule('/settings/social/', 'get', profile_views.serialize_social, json_renderer),
+        Rule('/settings/social/', 'put', profile_views.unserialize_social, json_renderer),
+
+        Rule('/settings/jobs/', 'get', profile_views.serialize_jobs, json_renderer),
+        Rule('/settings/jobs/', 'put', profile_views.unserialize_jobs, json_renderer),
+
+        Rule('/settings/schools/', 'get', profile_views.serialize_schools, json_renderer),
+        Rule('/settings/schools/', 'put', profile_views.unserialize_schools, json_renderer),
 
     ], prefix='/api/v1',)
 

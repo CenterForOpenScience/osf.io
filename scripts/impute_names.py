@@ -5,7 +5,7 @@ Email users to verify citation information.
 import re
 import logging
 
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names
 from framework.email.tasks import send_email
 
 from website.app import init_app
@@ -72,7 +72,7 @@ def email_name(user):
     logging.debug('Emailing user {0}'.format(user.fullname))
 
     names = {'fullname': user.fullname}
-    names.update(parse_name(user.fullname))
+    names.update(impute_names(user.fullname))
 
     message=email_template.format(**names).encode('utf-8')
 

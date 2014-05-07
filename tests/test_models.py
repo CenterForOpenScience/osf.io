@@ -16,7 +16,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names
 from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
@@ -57,7 +57,7 @@ class TestUser(DbTestCase):
         u.update_guessed_names()
         u.save()
 
-        parsed = parse_name(name)
+        parsed = impute_names(name)
         assert_equal(u.fullname, name)
         assert_equal(u.given_name, parsed['given_name'])
         assert_equal(u.middle_names, parsed['middle_names'])
@@ -80,7 +80,7 @@ class TestUser(DbTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
-        parsed = parse_name(name)
+        parsed = impute_names(name)
         assert_equal(u.given_name, parsed['given_name'])
 
     @mock.patch('framework.auth.model.User.update_solr')
@@ -129,7 +129,7 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password('foobar'))
         assert_true(user._id)
-        assert_equal(user.given_name, parse_name(name)['given_name'])
+        assert_equal(user.given_name, impute_names(name)['given_name'])
 
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
@@ -402,12 +402,12 @@ class TestUser(DbTestCase):
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
-        parsed = parse_name('John Darnielle')
+        parsed = impute_names('John Darnielle')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'Darnielle')
 
     def test_parse_first_last_particles(self):
-        parsed = parse_name('John van der Slice')
+        parsed = impute_names('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
 
