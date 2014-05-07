@@ -63,6 +63,25 @@ class TestUserValidation(DbTestCase):
         with assert_raises(ValidationValueError):
             self.user.save()
 
+    def test_validate_social_personal_empty(self):
+        self.user.social = {'personal_site': ''}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_valid(self):
+        self.user.social = {'personal_site': 'http://cos.io/'}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_personal_invalid(self):
+        self.user.social = {'personal_site': 'help computer'}
+        with assert_raises(ValidationError):
+            self.user.save()
+
     def test_validate_jobs_valid(self):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',

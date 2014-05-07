@@ -89,6 +89,22 @@
         message: 'Date must be greater than or equal to {0}.'
     };
 
+    var addRegexValidator = function(label, regex, message) {
+        ko.validation.rules[label] = {
+            validator: function(value, options) {
+                return ko.validation.utils.isEmptyVal(value) ||
+                    regex.test(ko.utils.unwrapObservable(value))
+            },
+            message: message
+        };
+    };
+
+    addRegexValidator(
+        'url',
+        /^(ftp|http|https):\/\/[^ "]+$/,
+        'Please enter a valid URL.'
+    );
+
     /*
      * End helpers
      */
@@ -280,10 +296,12 @@
 
         self.urls = urls;
 
-        self.personal = ko.observable('');
-        self.orcid = ko.observable('');
-        self.researcherId = ko.observable('');
-        self.twitter = ko.observable('');
+        self.personal = ko.observable().extend({
+            url: true
+        });
+        self.orcid = ko.observable();
+        self.researcherId = ko.observable();
+        self.twitter = ko.observable();
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {

@@ -8,6 +8,7 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm.validators import URLValidator
 from modularodm.exceptions import (
     ValidationError, ValidationValueError, ValidationTypeError
 )
@@ -54,6 +55,16 @@ def validate_history_item(item):
     end = item.get('end')
     if start and end and end < start:
         raise ValidationValueError('End date must be later than start date.')
+
+
+validate_url = URLValidator()
+def validate_personal_site(value):
+    if value:
+       validate_url(value)
+
+
+def validate_social(value):
+    validate_personal_site(value.get('personal_site'))
 
 
 class User(GuidStoredObject, AddonModelMixin):
@@ -141,8 +152,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
     # }
-    # TODO: Add validation
-    social = fields.DictionaryField()
+    social = fields.DictionaryField(validate=validate_social)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
