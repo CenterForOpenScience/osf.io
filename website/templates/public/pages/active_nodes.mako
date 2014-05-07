@@ -2,7 +2,7 @@
 <%def name="title()">Explore</%def>
 <%def name="content()">
 <%
-    from framework import get_user
+    from framework.auth import get_user
 %>
 
   <div class="row">
