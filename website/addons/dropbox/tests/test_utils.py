@@ -9,7 +9,7 @@ from werkzeug.wrappers import Response
 from framework.auth.decorators import Auth
 from website.project.model import NodeLog
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.dropbox.tests.factories import DropboxFileFactory
@@ -113,7 +113,7 @@ def test_make_file_response():
     assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
 
 
-class TestMetadataSerialization(DbTestCase):
+class TestMetadataSerialization(OsfTestCase):
 
     def test_metadata_to_hgrid(self):
         metadata = {
@@ -142,7 +142,7 @@ class TestMetadataSerialization(DbTestCase):
             assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
-class TestBuildDropboxUrls(DbTestCase):
+class TestBuildDropboxUrls(OsfTestCase):
 
     def test_build_dropbox_urls_file(self):
         node = ProjectFactory()
