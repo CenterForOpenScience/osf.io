@@ -1,5 +1,5 @@
 """
-
+Ensure that all GitHub web hooks have a secret key for verification.
 """
 
 import logging
