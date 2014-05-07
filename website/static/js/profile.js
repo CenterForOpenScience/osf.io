@@ -321,6 +321,10 @@
         self.ContentModel = ContentModel;
         self.contents = ko.observableArray();
 
+        self.canRemove = ko.computed(function() {
+            return self.contents().length > 1;
+        });
+
         self.isValid = ko.computed(function() {
             for (var i=0; i<self.contents().length; i++) {
                 if (! self.contents()[i].isValid()) {

@@ -160,17 +160,19 @@
 
                     <form role="form" data-bind="submit: submit">
 
-                        <h3>Education / Employment History</h3>
+                        <h3>Employment History</h3>
 
                         <div data-bind="foreach: contents">
 
-                            <div>Position {{ $index() + 1 }}</div>
-
-                            <div>
-                                <div class="pull-right">
-                                    <a class="btn btn-danger" data-bind="click: $parent.removeContent">Remove</a>
-                                </div>
+                            <div class="well well-sm">
+                                Position {{ $index() + 1 }}
+                                <a
+                                        class="text-danger pull-right"
+                                        data-bind="click: $parent.removeContent,
+                                                   visible: $parent.canRemove"
+                                    >Remove</a>
                             </div>
+
 
                             <div class="form-group">
                                 <label>Institution / Employer</label>
@@ -203,7 +205,7 @@
 
                         <div>
                             <a class="btn btn-default" data-bind="click: addContent">
-                                Add
+                                Add another
                             </a>
                         </div>
 
@@ -232,12 +234,13 @@
 
                         <div data-bind="foreach: contents">
 
-                            <div>Position {{ $index() + 1 }}</div>
-
-                            <div>
-                                <div class="pull-right">
-                                    <a class="btn btn-danger" data-bind="click: remove">Remove</a>
-                                </div>
+                            <div class="well well-sm">
+                                Position {{ $index() + 1 }}
+                                <a
+                                        class="text-danger pull-right"
+                                        data-bind="click: $parent.removeContent,
+                                                   visible: $parent.canRemove"
+                                    >Remove</a>
                             </div>
 
                             <div class="form-group">
@@ -271,7 +274,7 @@
 
                         <div>
                             <a class="btn btn-default" data-bind="click: addContent">
-                                Add
+                                Add another
                             </a>
                         </div>
 
