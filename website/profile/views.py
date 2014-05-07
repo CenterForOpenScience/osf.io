@@ -267,8 +267,8 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'startDate': job.get('start_date'),
-        'endDate': job.get('end_date'),
+        'start': job.get('start'),
+        'end': job.get('end'),
     }
 
 
@@ -277,8 +277,8 @@ def serialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'title': school.get('title'),
-        'startDate': school.get('start_date'),
-        'endDate': school.get('end_date'),
+        'start': school.get('start'),
+        'end': school.get('end'),
     }
 
 
@@ -329,8 +329,8 @@ def unserialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start_date': date_or_none(job.get('startDate')),
-        'end_date': date_or_none(job.get('endDate')),
+        'start': date_or_none(job.get('start')),
+        'end': date_or_none(job.get('end')),
     }
 
 
@@ -339,8 +339,8 @@ def unserialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start_date': date_or_none(school.get('startDate')),
-        'end_date': date_or_none(school.get('endDate')),
+        'start': date_or_none(school.get('start')),
+        'end': date_or_none(school.get('end')),
     }
 
 

@@ -36,14 +36,62 @@ from tests.base import DbTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory
+    NodeWikiFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
+    AuthUserFactory
 )
 
 app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
+
+
+class TestUserValidation(DbTestCase):
+
+    def setUp(self):
+        super(TestUserValidation, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_validate_fullname_none(self):
+        self.user.fullname = None
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_fullname_empty(self):
+        self.user.fullname = ''
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_jobs_valid(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1980, 1, 1),
+        }]
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_jobs_institution_empty(self):
+        self.user.jobs = [{'institution': ''}]
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_end_date(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1960, 1, 1),
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
 
 class TestUser(DbTestCase):
 

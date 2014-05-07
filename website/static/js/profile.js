@@ -351,14 +351,14 @@
         self.department = ko.observable('');
         self.title = ko.observable('');
 
-        self.startDate = ko.observable().extend({
+        self.start = ko.observable().extend({
             asDate: true,
             date: true
         });
-        self.endDate = ko.observable().extend({
+        self.end = ko.observable().extend({
             asDate: true,
             date: true,
-            minDate: self.startDate
+            minDate: self.start
         });
 
         var validated = ko.validatedObservable(self);
@@ -379,14 +379,14 @@
         self.department = ko.observable('');
         self.degree = ko.observable('');
 
-        self.startDate = ko.observable().extend({
+        self.start = ko.observable().extend({
             asDate: true,
             date: true
         });
-        self.endDate = ko.observable().extend({
+        self.end = ko.observable().extend({
             asDate: true,
             date: true,
-            minDate: self.startDate
+            minDate: self.start
         });
 
         var validated = ko.validatedObservable(self);

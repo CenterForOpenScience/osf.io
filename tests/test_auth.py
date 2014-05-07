@@ -111,6 +111,7 @@ class TestAuthObject(DbTestCase):
         auth2 = Auth(user=None)
         assert_false(auth2.logged_in)
 
+
 class TestPrivateLink(DbTestCase):
 
     def setUp(self):

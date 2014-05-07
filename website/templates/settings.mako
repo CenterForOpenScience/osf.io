@@ -185,12 +185,12 @@
 
                             <div class="form-group">
                                 <label>Start Date</label>
-                                <input class="form-control" data-bind="value: startDate" />
+                                <input class="form-control" data-bind="value: start" />
                             </div>
 
                             <div class="form-group">
                                 <label>End Date</label>
-                                <input class="form-control" data-bind="value: endDate" />
+                                <input class="form-control" data-bind="value: end" />
                             </div>
 
                             <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
@@ -253,12 +253,12 @@
 
                             <div class="form-group">
                                 <label>Start Date</label>
-                                <input class="form-control" data-bind="value: startDate" />
+                                <input class="form-control" data-bind="value: start" />
                             </div>
 
                             <div class="form-group">
                                 <label>End Date</label>
-                                <input class="form-control" data-bind="value: endDate" />
+                                <input class="form-control" data-bind="value: end" />
                             </div>
 
                             <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
@@ -291,23 +291,6 @@
             </div>
 
         </div>
-
-##        <div id="userProfile" class="panel panel-default">
-##            <div class="panel-heading"><h3 class="panel-title">Profile Information</h3></div>
-##            <div class="panel-body">
-##                <div id="profile">
-##
-##                    <form role="form" data-bind="submit: submit">
-##
-##                        </div>
-##
-##                        <button type="submit" class="btn btn-success">Submit</button>
-##
-##                    </form>
-##
-##                </div>
-##            </div>
-##        </div>
 
         <div id="selectAddons" class="panel panel-default">
             <div class="panel-heading"><h3 class="panel-title">Select Add-ons</h3></div>

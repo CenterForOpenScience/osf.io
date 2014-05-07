@@ -8,6 +8,10 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm.exceptions import (
+    ValidationError, ValidationValueError, ValidationTypeError
+)
+
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
@@ -39,6 +43,19 @@ def generate_claim_token():
     return security.random_string(30)
 
 
+def string_required(value):
+    if value is None or value == '':
+        raise ValidationValueError('Value must not be empty.')
+
+
+def validate_history_item(item):
+    string_required(item.get('institution'))
+    start = item.get('start')
+    end = item.get('end')
+    if start and end and end < start:
+        raise ValidationValueError('End date must be later than start date.')
+
+
 class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -54,7 +71,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # May be None for unregistered contributors
     username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
-    fullname = fields.StringField(required=True)
+    fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_links = fields.ForeignField('privatelink', list=True)
@@ -106,8 +123,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'start': <start date>,
     #     'end': <end date>,
     # }
-    # TODO: Add validation
-    jobs = fields.DictionaryField(list=True)
+    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Educational history
     # Format: {
@@ -118,8 +134,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'start': <start date>,
     #     'end': <end date>,
     # }
-    # TODO: Add validation
-    schools = fields.DictionaryField(list=True)
+    schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
     # Social links
     # Format: {
