@@ -151,7 +151,7 @@ class Figshare(object):
         return articles
 
     def article_is_public(self, article):
-        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', article))
+        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', str(article)))
         if res.status_code == 200:
             data = json.loads(res.content)
             if data['count'] == 0:

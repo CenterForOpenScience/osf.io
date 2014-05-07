@@ -1,3 +1,22 @@
+from website.util import rubeus
+
+def options_to_hgrid(node, fs_options):
+    permissions = {
+        'view': True       
+    }
+    for o in fs_options:
+        parts = o['value'].split('_')
+        ftype = parts[0]
+        fid = int(parts[1])
+        o['name'] = o['label']
+        o[rubeus.KIND] = rubeus.FOLDER
+        o['urls'] = {'fetch': node.api_url_for('figshare_hgrid_data_contents', type=ftype, id=fid)}
+        o['permissions'] = permissions
+        o['addon'] = 'figshare'        
+        o['type'] = ftype
+        o['id'] = fid
+    return fs_options
+
 def project_to_hgrid(node, project, expand=False):
     if project:
         if not project.get('articles') or len(project['articles']) == 0:
@@ -12,13 +31,6 @@ def article_to_hgrid(node, article, expand=False):
         return {
             'name': '{0}:{1}'.format(article['title'] or 'Unnamed', article['article_id']),  # Is often blank?
             'kind': 'folder' if article['files'] else 'folder',  # TODO Change me
-            #'published': article['published_date'],
-            #'tags': ', '.join([tag['name'] for tag in article['tags']]),
-            #'description': article['description_nohtml'],
-            #'authors': ', '.join([author['full_name'] for author in article['authors']]),
-            #'status': article['status'],
-            #'versions': article['version'],
-            #'size': str(len(article['files'])),
             'urls':  {
                 'upload': '{base}figshare/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'delete': '' if article['status'] == 'public' else node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
