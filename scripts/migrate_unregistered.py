@@ -9,7 +9,7 @@ from modularodm.exceptions import ValidationValueError
 from website import app, models
 from framework import auth
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import DeprecatedUnregUserFactory, ProjectFactory, UserFactory
 
 
@@ -77,7 +77,7 @@ def migrate_contributors(node):
 
 # To run tests: pytest scripts/migrate_unregistered.py
 # or nosetests scripts/migrate_unregistered.py
-class TestMigratingUnreg(DbTestCase):
+class TestMigratingUnreg(OsfTestCase):
 
     def test_make_user_from_reg_user(self):
         reg_user = UserFactory(is_registered=True)

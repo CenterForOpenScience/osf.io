@@ -1,13 +1,10 @@
-import mock
-import unittest
 from nose.tools import *
 from webtest_plus import TestApp
 
 import website.app
-from tests.base import DbTestCase
-from tests.factories import ProjectFactory, AuthUserFactory, UserFactory
+from tests.base import OsfTestCase
+from tests.factories import ProjectFactory, AuthUserFactory
 
-from website.addons.base import AddonError
 from framework.auth.decorators import Auth
 from website.addons.figshare import settings as figshare_settings
 
@@ -16,7 +13,7 @@ app = website.app.init_app(
 )
 
 
-class TestCallbacks(DbTestCase):
+class TestCallbacks(OsfTestCase):
 
     def setUp(self):
 

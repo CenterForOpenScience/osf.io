@@ -3,12 +3,12 @@
 from nose.tools import *  # PEP8 asserts
 
 from tests.factories import ProjectFactory, UserFactory
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
 from website.project.views.node import _get_summary
 
-class TestNodeSerializers(DbTestCase):
+class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489

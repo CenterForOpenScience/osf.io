@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-class AddonTestCase(DbTestCase):
+class AddonTestCase(OsfTestCase):
     """General Addon TestCase that automatically sets up a user and node with
     an addon.
 
