@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from website.addons.base import AddonError
+from website.addons.base.exceptions import AddonError
 from dropbox.client import DropboxClient
 
 

@@ -22,7 +22,7 @@ from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
-from website.addons.github.views.util import MESSAGES, get_path
+from website.addons.github.utils import MESSAGES, get_path
 
 
 logger = logging.getLevelName(__name__)

@@ -14,7 +14,7 @@ from website.util import rubeus
 
 from website.addons.github.exceptions import ApiError
 from website.addons.github.api import GitHub, build_github_urls, ref_to_params
-from website.addons.github.views.util import _get_refs, _check_permissions
+from website.addons.github.utils import get_refs, check_permissions
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 
 
@@ -137,7 +137,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
             return None
 
     try:
-        branch, sha, branches = _get_refs(
+        branch, sha, branches = get_refs(
             node_settings,
             branch=kwargs.get('branch'),
             sha=kwargs.get('sha'),
@@ -150,7 +150,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     if branch is not None:
         ref = ref_to_params(branch, sha)
-        can_edit = _check_permissions(
+        can_edit = check_permissions(
             node_settings, auth, connection, branch, sha, repo=repo,
         )
         name_append = github_branch_widget(branches, owner=node_settings.user,
@@ -213,7 +213,7 @@ def github_hgrid_data_contents(**kwargs):
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_refs(
+    branch, sha, branches = get_refs(
         node_addon, req_branch, req_sha, connection=connection
     )
     # Get file tree
@@ -225,7 +225,7 @@ def github_hgrid_data_contents(**kwargs):
     except ApiError:
         raise HTTPError(http.NOT_FOUND)
 
-    can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
+    can_edit = check_permissions(node_addon, auth, connection, branch, sha)
 
     if contents:
         hgrid_tree = to_hgrid(

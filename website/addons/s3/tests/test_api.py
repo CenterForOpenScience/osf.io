@@ -3,12 +3,12 @@ import mock
 import unittest
 from nose.tools import *
 from tests.factories import ProjectFactory, UserFactory
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from utils import create_mock_s3
 from website.addons.s3 import api
 
 # TODO: finish me
-class TestS3Api(DbTestCase):
+class TestS3Api(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()

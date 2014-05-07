@@ -43,7 +43,10 @@ class AddonModelMixin(StoredObject):
             return False
 
         backref_key = self._backref_key(addon_config)
-        addons = getattr(self, backref_key)
+        addons = [
+            addon for addon in getattr(self, backref_key)
+            if addon is not None
+        ]
         if addons:
             if deleted or not addons[0].deleted:
                 assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
