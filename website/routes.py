@@ -357,14 +357,14 @@ def make_url_map(app):
             '/settings/',
             'get',
             profile_views.user_profile,
-            OsfWebRenderer('settings.mako'),
+            OsfWebRenderer('profile/settings.mako'),
         ),
 
         Rule(
             '/settings/addons/',
             'get',
             profile_views.user_addons,
-            OsfWebRenderer('user_addons.mako'),
+            OsfWebRenderer('profile/addons.mako'),
         ),
 
     ])
