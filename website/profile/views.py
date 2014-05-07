@@ -116,23 +116,21 @@ def get_profile_summary(user_id, formatter='long'):
     return user.get_summary(formatter)
 
 
-# TODO: Similar to node_setting; refactor
 @must_be_logged_in
-def profile_settings(**kwargs):
-
-    user = kwargs['auth'].user
-
-    out = {
-        'user_id': user._primary_key,
+def user_profile(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
         'user_api_url': user.api_url,
-        'names': {
-            'fullname': user.fullname,
-            'given_name': user.given_name,
-            'middle_names': user.middle_names,
-            'family_name': user.family_name,
-            'suffix': user.suffix,
-        },
     }
+
+
+@must_be_logged_in
+def user_addons(auth, **kwargs):
+
+    user = auth.user
+
+    out = {}
 
     addons_enabled = []
     addon_enabled_settings = []
@@ -149,7 +147,7 @@ def profile_settings(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
-        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings

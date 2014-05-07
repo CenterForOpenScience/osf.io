@@ -342,7 +342,6 @@ def make_url_map(app):
     process_rules(app, [
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
         Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
-        Rule('/settings/', 'get', profile_views.profile_settings, OsfWebRenderer('settings.mako')),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.mako')),
         Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
         Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
@@ -352,6 +351,22 @@ def make_url_map(app):
             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
             project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
+
+
+        Rule(
+            '/settings/',
+            'get',
+            profile_views.user_profile,
+            OsfWebRenderer('settings.mako'),
+        ),
+
+        Rule(
+            '/settings/addons/',
+            'get',
+            profile_views.user_addons,
+            OsfWebRenderer('user_addons.mako'),
+        ),
+
     ])
 
     # API
@@ -366,7 +381,6 @@ def make_url_map(app):
         Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, json_renderer),
         Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
 
-        Rule('/settings/', 'get', profile_views.profile_settings, json_renderer),
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
         Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
@@ -457,16 +471,26 @@ def make_url_map(app):
             OsfWebRenderer('project/contributors.mako'),
         ),
 
-        Rule([
-            '/project/<pid>/settings/',
-            '/project/<pid>/node/<nid>/settings/',
-        ], 'get', project_views.node.node_setting, OsfWebRenderer('project/settings.mako')),
+        Rule(
+            [
+                '/project/<pid>/settings/',
+                '/project/<pid>/node/<nid>/settings/',
+            ],
+            'get',
+            project_views.node.node_setting,
+            OsfWebRenderer('project/settings.mako')
+        ),
 
         # Permissions
-        Rule([
-            '/project/<pid>/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/permissions/<permissions>/',
-        ], 'post', project_views.node.project_set_privacy, OsfWebRenderer('project/project.mako')),
+        Rule(
+            [
+                '/project/<pid>/permissions/<permissions>/',
+                '/project/<pid>/node/<nid>/permissions/<permissions>/',
+            ],
+            'post',
+            project_views.node.project_set_privacy,
+            OsfWebRenderer('project/project.mako')
+        ),
 
         ### Logs ###
 
