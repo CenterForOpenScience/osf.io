@@ -29,10 +29,8 @@ class TestHookVerify(OsfTestCase):
 
     def test_verify_no_secret(self):
         self.node_settings.hook_secret = None
-        try:
+        with assert_raises(HookError):
             utils.verify_hook_signature(self.node_settings, {}, {})
-        except HookError:
-            assert 0
 
     def test_verify_valid(self):
         try:

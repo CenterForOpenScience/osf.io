@@ -24,7 +24,7 @@ def make_hook_secret():
 
 HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
 def verify_hook_signature(node_settings, data, headers):
-    """Verify hook signature if secret key is set.
+    """Verify hook signature.
 
     :param AddonGithubNodeSettings node_settings:
     :param dict data: JSON response body
@@ -32,15 +32,16 @@ def verify_hook_signature(node_settings, data, headers):
     :raises: HookError if signature is missing or invalid
 
     """
-    if node_settings.hook_secret is not None:
-        digest = hmac.new(
-            str(node_settings.hook_secret),
-            data,
-            digestmod=hashlib.sha1
-        ).hexdigest()
-        signature = headers.get(HOOK_SIGNATURE_KEY, '').replace('sha1=', '')
-        if digest != signature:
-            raise HookError('Invalid signature')
+    if node_settings.hook_secret is None:
+        raise HookError('No secret key')
+    digest = hmac.new(
+        str(node_settings.hook_secret),
+        data,
+        digestmod=hashlib.sha1
+    ).hexdigest()
+    signature = headers.get(HOOK_SIGNATURE_KEY, '').replace('sha1=', '')
+    if digest != signature:
+        raise HookError('Invalid signature')
 
 
 def get_path(kwargs, required=True):

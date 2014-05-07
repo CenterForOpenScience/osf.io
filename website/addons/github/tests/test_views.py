@@ -203,7 +203,8 @@ class TestGithubViews(OsfTestCase):
     def test_github_contents(self):
         pass
 
-    def test_hook_callback_add_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -227,7 +228,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_added")
 
-    def test_hook_callback_modify_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -244,7 +246,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
 
-    def test_hook_callback_remove_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -261,7 +264,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
 
-    def test_hook_callback_add_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -278,7 +282,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_added")
 
-    def test_hook_callback_modify_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -295,7 +300,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_updated")
 
-    def test_hook_callback_remove_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
