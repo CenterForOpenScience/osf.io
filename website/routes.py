@@ -394,13 +394,38 @@ def make_url_map(app):
         Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),
         Rule('/settings/names/impute/', 'get', profile_views.impute_names, json_renderer),
 
-        Rule('/settings/social/', 'get', profile_views.serialize_social, json_renderer),
+        Rule(
+            [
+                '/settings/social/',
+                '/settings/social/<uid>/',
+            ],
+            'get',
+            profile_views.serialize_social,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/settings/jobs/',
+                '/settings/jobs/<uid>/',
+            ],
+            'get',
+            profile_views.serialize_jobs,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/settings/schools/',
+                '/settings/schools/<uid>/',
+            ],
+            'get',
+            profile_views.serialize_schools,
+            json_renderer,
+        ),
+
         Rule('/settings/social/', 'put', profile_views.unserialize_social, json_renderer),
-
-        Rule('/settings/jobs/', 'get', profile_views.serialize_jobs, json_renderer),
         Rule('/settings/jobs/', 'put', profile_views.unserialize_jobs, json_renderer),
-
-        Rule('/settings/schools/', 'get', profile_views.serialize_schools, json_renderer),
         Rule('/settings/schools/', 'put', profile_views.unserialize_schools, json_renderer),
 
     ], prefix='/api/v1',)

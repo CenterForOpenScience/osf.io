@@ -8,6 +8,7 @@ from framework import (
     request,
     redirect,
 )
+from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.auth import get_current_user
@@ -64,7 +65,7 @@ def _profile_view(uid=None):
 
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
-        #TODO Fix circular improt
+        # TODO: Fix circular import
         from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
@@ -254,10 +255,17 @@ def serialize_names(**kwargs):
     }
 
 
-@must_be_logged_in
-def serialize_social(**kwargs):
-    user = kwargs['auth'].user
-    return user.social
+def get_target_user(auth, uid=None):
+    target = User.load(uid) if uid else auth.user
+    if target is None:
+        raise HTTPError(http.NOT_FOUND)
+    return target
+
+
+@collect_auth
+def serialize_social(auth, uid=None, **kwargs):
+    target = get_target_user(auth, uid)
+    return target.social
 
 
 def serialize_job(job):
@@ -280,23 +288,23 @@ def serialize_school(school):
     }
 
 
-def serialize_contents(field, func, **kwargs):
-    user = kwargs['auth'].user
+def serialize_contents(field, func, auth, uid=None):
+    target = get_target_user(auth, uid)
     return {
         'contents': [
             func(content)
-            for content in getattr(user, field)
+            for content in getattr(target, field)
         ]
     }
 
-@must_be_logged_in
-def serialize_jobs(**kwargs):
-    return serialize_contents('jobs', serialize_job, **kwargs)
+@collect_auth
+def serialize_jobs(auth, uid=None, **kwargs):
+    return serialize_contents('jobs', serialize_job, auth, uid)
 
 
-@must_be_logged_in
-def serialize_schools(**kwargs):
-    return serialize_contents('schools', serialize_school, **kwargs)
+@collect_auth
+def serialize_schools(auth, uid=None, **kwargs):
+    return serialize_contents('schools', serialize_school, auth, uid)
 
 
 @must_be_logged_in

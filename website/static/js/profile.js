@@ -308,6 +308,15 @@
             return validated.isValid();
         });
 
+        self.values = ko.computed(function() {
+            return [
+                {key: 'Personal Site', value: self.personal()},
+                {key: 'ORCID', value: self.orcid()},
+                {key: 'ResearcherId', value: self.researcherId()},
+                {key: 'Twitter', value: self.twitter()}
+            ];
+        });
+
         self.fetch();
 
     };
