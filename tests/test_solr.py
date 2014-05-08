@@ -1,7 +1,7 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
 from framework.search.solr import solr
@@ -60,7 +60,7 @@ class TestCleanSolr(unittest.TestCase):
         )
 
 @unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class SolrTestCase(DbTestCase):
+class SolrTestCase(OsfTestCase):
 
     def tearDown(self):
         solr.delete_all()

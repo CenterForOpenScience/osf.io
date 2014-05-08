@@ -5,7 +5,7 @@ import framework
 from framework.auth.decorators import Auth
 from website.app import init_app
 from webtest_plus import TestApp
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (
     UserFactory, NodeFactory, PointerFactory, ProjectFactory
 )
@@ -15,7 +15,7 @@ from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
 app = init_app(routes=True, set_backends=False)
 
 
-class TestWikiViews(DbTestCase):
+class TestWikiViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

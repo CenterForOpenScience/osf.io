@@ -1,6 +1,6 @@
 import mock
 from nose.tools import *  # PEP8 asserts
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 
 from framework.auth.decorators import Auth
@@ -15,7 +15,7 @@ app = website.app.init_app(
 )
 
 
-class TestGitHubFileView(DbTestCase):
+class TestGitHubFileView(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()

@@ -7,7 +7,7 @@ from boto.exception import S3ResponseError
 
 from framework.auth.decorators import Auth
 import website.app
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.s3.model import AddonS3NodeSettings, S3GuidFile
 
@@ -20,7 +20,7 @@ app = website.app.init_app(
 )
 
 
-class TestS3ViewsConfig(DbTestCase):
+class TestS3ViewsConfig(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -244,7 +244,7 @@ class TestS3ViewsConfig(DbTestCase):
         assert_true('mybucket' in rv.body)
 
 
-class TestS3ViewsCRUD(DbTestCase):
+class TestS3ViewsCRUD(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
@@ -290,7 +290,7 @@ class TestS3ViewsCRUD(DbTestCase):
         assert_equals(rv.status_int, http.NOT_FOUND)
 
 
-class TestS3ViewsHgrid(DbTestCase):
+class TestS3ViewsHgrid(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
@@ -339,7 +339,7 @@ class TestS3ViewsHgrid(DbTestCase):
         assert_equals(rv.body, 'null')
 
 
-class TestCreateBucket(DbTestCase):
+class TestCreateBucket(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = AuthUserFactory()

@@ -27,7 +27,7 @@
                 <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
                 <li><a href="#commenting"><i class="icon-chevron-right"></i> Commenting</a></li>
                 <li><a href="#citations"><i class="icon-chevron-right"></i> Citations</a></li>
-                <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistsics</a></li>
+                <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistics</a></li>
             </ul>
         </ul>
     </div>

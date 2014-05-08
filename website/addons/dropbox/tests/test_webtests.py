@@ -2,7 +2,7 @@
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from website.app import init_app
-from tests.base import DbTestCase, URLLookup
+from tests.base import OsfTestCase, URLLookup
 from tests.factories import AuthUserFactory
 
 app = init_app(set_backends=False, routes=True)
@@ -10,7 +10,7 @@ app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 
-class TestDropboxIntegration(DbTestCase):
+class TestDropboxIntegration(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

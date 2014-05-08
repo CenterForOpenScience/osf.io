@@ -87,6 +87,9 @@ class User(GuidStoredObject, AddonModelMixin):
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_links = fields.ForeignField('privatelink', list=True)
 
+    # Tags for internal use
+    system_tags = fields.StringField(list=True)
+
     # Per-project unclaimed user data:
     # Format: {
     #   <project_id>: {
