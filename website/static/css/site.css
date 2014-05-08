@@ -1339,8 +1339,9 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
-.key-name{
-    margin-left: 10px;
+.narrow-list{
+    padding: 0px 0px;
+    margin: 0px 0px;
 }
 
 #generate-private-link {

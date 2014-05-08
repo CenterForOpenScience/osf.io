@@ -1269,8 +1269,8 @@ class TestProject(OsfTestCase):
 
     def test_add_private_link(self):
         link = PrivateLinkFactory()
-        self.project.private_links.append(link)
-        self.project.save()
+        link.nodes.append(self.project)
+        link.save()
         assert_in(link, self.project.private_links)
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
@@ -1375,8 +1375,8 @@ class TestProject(OsfTestCase):
     def test_can_view_private(self):
         # Create contributor and noncontributor
         link = PrivateLinkFactory()
-        self.project.private_links.append(link)
-        self.project.save()
+        link.nodes.append(self.project)
+        link.save()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1913,8 +1913,8 @@ class TestForkNode(OsfTestCase):
 
     def test_not_fork_private_link(self):
         link = PrivateLinkFactory()
-        self.project.private_links.append(link)
-        self.project.save()
+        link.nodes.append(self.project)
+        link.save()
         fork = self.project.fork_node(self.consolidate_auth)
         assert_not_in(link, fork.private_links)
 
@@ -1960,8 +1960,8 @@ class TestRegisterNode(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.link = PrivateLinkFactory()
-        self.project.private_links.append(self.link)
-        self.project.save()
+        self.link.nodes.append(self.project)
+        self.link.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):

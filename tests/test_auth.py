@@ -127,8 +127,8 @@ class TestPrivateLink(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory()
-        self.project.private_links.append(self.link)
-        self.project.save()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')

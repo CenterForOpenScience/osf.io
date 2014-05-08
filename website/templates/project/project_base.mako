@@ -106,6 +106,7 @@ ${next.body()}
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
+
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.

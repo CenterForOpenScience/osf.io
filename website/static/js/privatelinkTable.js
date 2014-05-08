@@ -2,7 +2,10 @@
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'zeroclipboard', 'osfutils'], factory);
     } else {
-        global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
+        $script.ready(['zeroclipboard'], function (){
+            global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
+            $script.done('privateLinkTable');
+        });
     }
 }(this, function(ko, $, ZeroClipboard) {
 
@@ -96,7 +99,7 @@
                         dataType: "json",
                         data: JSON.stringify(data_to_send),
                         success: function(response) {
-                            self.privateLinks.pop(data);
+                            self.privateLinks.remove(data);
                         },
                         error: function(xhr) {
                             bootbox.alert("Failed to delete the private link.")
@@ -121,9 +124,8 @@
         var self = this;
         self.viewModel = new ViewModel(url);
         $.osf.applyBindings(self.viewModel, selector);
-        window.viewModel = self.viewModel;
-    }
 
+    }
     return PrivateLinkTable;
 
 }));

@@ -317,12 +317,12 @@ class TestRegistrations(OsfTestCase):
         assert_not_in('Delete project', res)
 
 
-    def test_cant_see_contributor(self):
+    def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Contributors', subnav.text)
+        assert_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
 

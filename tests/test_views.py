@@ -60,8 +60,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory()
-        self.project.private_links.append(self.link)
-        self.project.save()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
@@ -519,8 +519,8 @@ class TestProjectViews(OsfTestCase):
 
     def test_remove_private_link(self):
         link = PrivateLinkFactory()
-        self.project.private_links.append(link)
-        self.project.save()
+        link.nodes.append(self.project)
+        link.save()
         with app.test_request_context():
             url = api_url_for(
                 'remove_private_link',

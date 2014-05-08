@@ -51,7 +51,7 @@
         });
     };
 
-    var ContributorModel = function(contributor, pageOwner) {
+    var ContributorModel = function(contributor, pageOwner, isRegistration) {
 
         var self = this;
 
@@ -82,8 +82,8 @@
             return permission.charAt(0).toUpperCase() + permission.slice(1);
         });
 
-        self.contributorIsUser = ko.computed(function() {
-            return self.id === pageOwner['id'];
+        self.canRemove = ko.computed(function(){
+            return (self.id === pageOwner['id']) && !isRegistration;
         });
 
         // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -132,7 +132,7 @@
 
     };
 
-    var ContributorsViewModel = function(contributors, user) {
+    var ContributorsViewModel = function(contributors, user, isRegistration) {
 
         var self = this;
         for (var i=0; i<contributors.length; i++) {
@@ -144,6 +144,9 @@
 
         self.user = ko.observable(user);
         self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
+        self.canEdit = ko.computed(function() {
+            return (self.userIsAdmin()) && !isRegistration;
+        });
 
         self.messageText = ko.observable('');
         self.messageType = ko.observable('');
@@ -206,7 +209,7 @@
         self.init = function() {
             self.messageText('');
             self.contributors(self.original().map(function(item) {
-                return new ContributorModel(item, self.user());
+                return new ContributorModel(item, self.user(), isRegistration);
             }));
         };
 
@@ -314,12 +317,12 @@
     // Public API //
     ////////////////
 
-    function ContribManager(selector, contributors, user) {
+    function ContribManager(selector, contributors, user, isRegistration) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.contributors = contributors;
-        self.viewModel = new ContributorsViewModel(contributors, user);
+        self.viewModel = new ContributorsViewModel(contributors, user, isRegistration);
         self.init();
     }
 
