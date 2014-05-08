@@ -36,7 +36,7 @@ def request_to_data():
 
 
 CONFERENCE_NAMES = {
-    'spsp2014': 'SPSP 2014',
+    # 'spsp2014': 'SPSP 2014',
     'asb2014': 'ASB 2014',
 }
 
@@ -176,12 +176,14 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
         is_spam=is_spam,
     )
 
+
 def get_mailgun_subject():
     subject = request.form['subject']
     subject = re.sub(r'^re:', '', subject, flags=re.I)
     subject = re.sub(r'^fwd:', '', subject, flags=re.I)
     subject = subject.strip()
     return subject
+
 
 def get_mailgun_from():
     """Get name and email address of sender. Note: this uses the `from` field
@@ -195,6 +197,7 @@ def get_mailgun_from():
     address = match.groups()[0] if match else ''
     return name, address
 
+
 def get_mailgun_attachments():
     attachment_count = request.form.get('attachment-count', 0)
     attachment_count = int(attachment_count)
@@ -202,6 +205,7 @@ def get_mailgun_attachments():
         request.files['attachment-{0}'.format(idx + 1)]
         for idx in range(attachment_count)
     ]
+
 
 def check_mailgun_headers():
     """Verify that request comes from Mailgun. Based on sample code from
@@ -221,9 +225,11 @@ def check_mailgun_headers():
         logger.warn('Invalid headers on incoming mail')
         raise HTTPError(http.BAD_REQUEST)
 
+
 SSCORE_MAX_VALUE = 5
 DKIM_PASS_VALUES = ['Pass']
 SPF_PASS_VALUES = ['Pass', 'Neutral']
+
 
 def check_mailgun_spam():
     """Check DKIM and SPF verification to determine whether incoming message
@@ -234,7 +240,10 @@ def check_mailgun_spam():
     :return: Is message spam
 
     """
-    sscore_header = request.form.get('X-Mailgun-Sscore')
+    try:
+        sscore_header = float(request.form.get('X-Mailgun-Sscore'))
+    except (TypeError, ValueError):
+        return True
     dkim_header = request.form.get('X-Mailgun-Dkim-Check-Result')
     spf_header = request.form.get('X-Mailgun-Spf')
 
@@ -243,6 +252,7 @@ def check_mailgun_spam():
         (dkim_header and dkim_header not in DKIM_PASS_VALUES) or
         (spf_header and spf_header not in SPF_PASS_VALUES)
     )
+
 
 def poster_hook(tag):
 
@@ -263,6 +273,7 @@ def poster_hook(tag):
         system_tags=[tag],
         is_spam=check_mailgun_spam(),
     )
+
 
 def _render_conference_node(node, idx):
 
@@ -288,6 +299,7 @@ def _render_conference_node(node, idx):
         'download': download_count,
         'downloadUrl': download_url,
     }
+
 
 def conference_results(tag):
 
