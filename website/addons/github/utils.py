@@ -1,9 +1,14 @@
+import hmac
+import uuid
 import urllib
+import hashlib
 import httplib as http
 from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
-from ..api import GitHub
+from website.addons.base.exceptions import HookError
+
+from website.addons.github.api import GitHub
 
 MESSAGE_BASE = 'via the Open Science Framework'
 MESSAGES = {
@@ -11,6 +16,32 @@ MESSAGES = {
     'update': 'Updated {0}'.format(MESSAGE_BASE),
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
+
+
+def make_hook_secret():
+    return str(uuid.uuid4()).replace('-', '')
+
+
+HOOK_SIGNATURE_KEY = 'X-Hub-Signature'
+def verify_hook_signature(node_settings, data, headers):
+    """Verify hook signature.
+
+    :param AddonGithubNodeSettings node_settings:
+    :param dict data: JSON response body
+    :param dict headers: Request headers
+    :raises: HookError if signature is missing or invalid
+
+    """
+    if node_settings.hook_secret is None:
+        raise HookError('No secret key')
+    digest = hmac.new(
+        str(node_settings.hook_secret),
+        data,
+        digestmod=hashlib.sha1
+    ).hexdigest()
+    signature = headers.get(HOOK_SIGNATURE_KEY, '').replace('sha1=', '')
+    if digest != signature:
+        raise HookError('Invalid signature')
 
 
 def get_path(kwargs, required=True):
@@ -21,7 +52,7 @@ def get_path(kwargs, required=True):
         raise HTTPError(http.BAD_REQUEST)
 
 
-def _get_refs(addon, branch=None, sha=None, connection=None):
+def get_refs(addon, branch=None, sha=None, connection=None):
     """Get the appropriate branch name and sha given the addon settings object,
     and optionally the branch and sha from the request arguments.
 
@@ -69,7 +100,7 @@ def _get_refs(addon, branch=None, sha=None, connection=None):
     return branch, sha, branches
 
 
-def _check_permissions(node_settings, auth, connection, branch, sha=None, repo=None):
+def check_permissions(node_settings, auth, connection, branch, sha=None, repo=None):
 
     user_settings = node_settings.user_settings
     has_access = False

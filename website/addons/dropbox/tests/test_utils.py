@@ -9,7 +9,7 @@ from werkzeug.wrappers import Response
 from framework.auth.decorators import Auth
 from website.project.model import NodeLog
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.dropbox.tests.factories import DropboxFileFactory
@@ -39,6 +39,23 @@ def test_get_file_name():
     assert_equal(utils.get_file_name('foo/bar/baz.txt'), 'baz.txt')
     assert_equal(utils.get_file_name('/foo/bar/baz.txt'), 'baz.txt')
     assert_equal(utils.get_file_name('/foo/bar/baz.txt/'), 'baz.txt')
+
+
+def test_is_subdir():
+    assert_true(utils.is_subdir('foo/bar', 'foo'))
+    assert_true(utils.is_subdir('foo', 'foo'))
+    assert_true(utils.is_subdir('foo/bar baz', 'foo'))
+    assert_true(utils.is_subdir('bar baz/foo', 'bar baz'))
+
+    assert_false(utils.is_subdir('foo/bar', 'baz'))
+    assert_false(utils.is_subdir('foo/bar', 'bar'))
+    assert_false(utils.is_subdir('foo', 'foo/bar'))
+    assert_false(utils.is_subdir('', 'foo'))
+    assert_false(utils.is_subdir('foo', ''))
+    assert_false(utils.is_subdir('foo', None))
+    assert_false(utils.is_subdir(None, 'foo'))
+    assert_false(utils.is_subdir(None, None))
+    assert_false(utils.is_subdir('', ''))
 
 
 def test_clean_path():
@@ -96,7 +113,7 @@ def test_make_file_response():
     assert_equal(resp.headers['Content-Type'], metadata['mime_type'])
 
 
-class TestMetadataSerialization(DbTestCase):
+class TestMetadataSerialization(OsfTestCase):
 
     def test_metadata_to_hgrid(self):
         metadata = {
@@ -125,7 +142,7 @@ class TestMetadataSerialization(DbTestCase):
             assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
-class TestBuildDropboxUrls(DbTestCase):
+class TestBuildDropboxUrls(OsfTestCase):
 
     def test_build_dropbox_urls_file(self):
         node = ProjectFactory()

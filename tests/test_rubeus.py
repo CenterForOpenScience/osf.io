@@ -3,7 +3,7 @@ import os
 import mock
 from nose.tools import *
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory)
 
@@ -11,7 +11,7 @@ from framework.auth.decorators import Auth
 from website.util import rubeus
 
 
-class TestRubeus(DbTestCase):
+class TestRubeus(OsfTestCase):
 
     def setUp(self):
 
@@ -240,7 +240,7 @@ serialized = {
 }
 mock_addon.config.get_hgrid_data.return_value = [serialized]
 
-class TestSerializingNodeWithAddon(DbTestCase):
+class TestSerializingNodeWithAddon(OsfTestCase):
     def setUp(self):
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)

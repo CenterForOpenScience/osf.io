@@ -1,25 +1,22 @@
-import httplib as http
 import logging
-
 from dateutil.parser import parse as dateparse
 
 from framework import request
-from framework.exceptions import HTTPError
 
 from website import models
 from website.project.decorators import must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from .util import MESSAGES
+from website.addons.github import utils
 
-
-# All GitHub hooks come from 192.30.252.0/22
-HOOKS_IP = '192.30.252.'
 
 logger = logging.getLogger(__name__)
 
-def _add_hook_log(node, github, action, path, date, committer, url=None, sha=None, save=False):
+
+# TODO: Refactor using NodeLogger
+def add_hook_log(node, github, action, path, date, committer, url=None,
+                 sha=None, save=False):
 
     github_data = {
         'user': github.user,
@@ -58,10 +55,14 @@ def github_hook_callback(**kwargs):
     if request.json is None:
         return {}
 
-    # Request must come from GitHub hooks IP
-    if not request.json.get('test'):
-        if HOOKS_IP not in request.remote_addr:
-            raise HTTPError(http.BAD_REQUEST)
+    node_settings = kwargs['node_addon']
+
+    # Fail if hook signature is invalid
+    utils.verify_hook_signature(
+        node_settings,
+        request.data,
+        request.headers,
+    )
 
     node = kwargs['node'] or kwargs['project']
     github = kwargs['node_addon']
@@ -73,7 +74,7 @@ def github_hook_callback(**kwargs):
         # TODO: Look up OSF user by commit
 
         # Skip if pushed by OSF
-        if commit['message'] and commit['message'] in MESSAGES.values():
+        if commit['message'] and commit['message'] in utils.MESSAGES.values():
             continue
 
         _id = commit['id']
@@ -82,17 +83,17 @@ def github_hook_callback(**kwargs):
 
         # Add logs
         for path in commit.get('added', []):
-            _add_hook_log(
+            add_hook_log(
                 node, github, 'github_' + models.NodeLog.FILE_ADDED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('modified', []):
-            _add_hook_log(
+            add_hook_log(
                 node, github, 'github_' + models.NodeLog.FILE_UPDATED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('removed', []):
-            _add_hook_log(
+            add_hook_log(
                 node, github, 'github_' + models.NodeLog.FILE_REMOVED,
                 path, date, committer,
             )

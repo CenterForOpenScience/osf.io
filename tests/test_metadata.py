@@ -9,10 +9,10 @@ from website.project.model import MetaSchema
 from website.project.model import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 
 
-class TestMetaData(DbTestCase):
+class TestMetaData(OsfTestCase):
 
     def test_ensure_schemas(self):
 

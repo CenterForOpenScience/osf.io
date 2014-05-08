@@ -9,12 +9,12 @@ from pytz import utc
 from nose.tools import *  # PEP8 asserts
 import bson
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
                             WatchConfigFactory)
 
 
-class TestWatching(DbTestCase):
+class TestWatching(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
