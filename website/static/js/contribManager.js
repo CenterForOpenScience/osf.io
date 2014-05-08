@@ -83,7 +83,7 @@
         });
 
         self.canRemove = ko.computed(function(){
-            return self.id === pageOwner['id'] & !isRegistration;
+            return (self.id === pageOwner['id']) && !isRegistration;
         });
 
         // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -145,7 +145,7 @@
         self.user = ko.observable(user);
         self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
         self.canEdit = ko.computed(function() {
-            return self.userIsAdmin() & !isRegistration;
+            return (self.userIsAdmin()) && !isRegistration;
         });
 
         self.messageText = ko.observable('');

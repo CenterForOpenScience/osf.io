@@ -172,7 +172,7 @@
         // Enable knockout punches
         ko.punches.enableAll();
         // Filebrowser dependencies
-        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.js'],
+        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
         $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
         $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
