@@ -3,7 +3,7 @@
 
 <div>
     <nobr>
-        <div id="leftDiv" style="display:inline-block;">
+        <div id="leftDiv" class="mfr-pdf-button-container">
             <button unselectable="on" id="previousButton" class="mfr-pdf-button">
                 <img id="leftArrow" class="mfr-pdf-arrow" src="/static/mfr/pdf/images/leftarrow.png" style="width: 25px">
             </button>
@@ -11,7 +11,7 @@
 
         <canvas id="the-canvas" style="border:1px solid black"></canvas>
 
-        <div id="rightDiv" style="display:inline-block;">
+        <div id="rightDiv" class="mfr-pdf-button-container">
             <button unselectable="on" id="nextButton" class="mfr-pdf-button">
                 <img id="rightArrow" class="mfr-pdf-arrow" src="/static/mfr/pdf/images/rightarrow.png" style="width: 25px;">
             </button>
