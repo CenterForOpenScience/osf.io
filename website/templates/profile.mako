@@ -53,29 +53,148 @@
 </div><!-- end-page-header -->
 
 <div class="row">
-    <div class="col-md-4">
-        <table class="table table-plain">
-            <tr>
-              <td>Name</td>
-              <td class="fullname">${profile["fullname"]}</td>
-            </tr>
-            <tr>
-              <td>Member Since</td>
-              <td>${profile['date_registered']}</td>
-            </tr>
-            <tr>
-              <td>Public Profile</td>
-              <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
-            </tr>
-        </table>
+
+    <div class="col-md-6">
+
+
+        <div>
+            <table class="table table-plain">
+                <tr>
+                  <td>Name</td>
+                  <td class="fullname">${profile["fullname"]}</td>
+                </tr>
+                <tr>
+                  <td>Member Since</td>
+                  <td>${profile['date_registered']}</td>
+                </tr>
+                <tr>
+                  <td>Public Profile</td>
+                  <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
+                </tr>
+            </table>
+        </div>
+        <div>
+            <h2>
+               ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
+               ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
+            </h2>
+        </div>
+
+
     </div>
-    <div class="col-md-4 col-md-offset-4">
-        <h2>
-           ${profile['activity_points'] or "No"} activity point${'s' if profile['activity_points'] != 1 else ''}<br />
-           ${profile["number_projects"]} project${'s' if profile["number_projects"] != 1  else ''}, ${profile["number_public_projects"]} public
-        </h2>
+
+    <div class="col-md-6">
+
+
+        <ul class="nav nav-tabs">
+            <li class="active"><a href="#social" data-toggle="tab">Social</a></li>
+            <li><a href="#jobs" data-toggle="tab">Employment</a></li>
+            <li><a href="#schools" data-toggle="tab">Education</a></li>
+        </ul>
+
+        <div class="tab-content">
+
+            <div class="tab-pane active" id="social">
+
+                <dl class="dl-horizontal" data-bind="foreach: values">
+
+                    <dt>{{ key }}</dt>
+                    <dd>{{ value }}</dd>
+
+                </dl>
+
+            </div>
+
+            <div class="tab-pane" id="jobs">
+
+                <div data-bind="ifnot: contents().length">
+
+                    Missing
+
+                </div>
+
+                <div data-bind="if: contents().length">
+
+                    <table class="table">
+
+                        <thead>
+                            <tr>
+                                <th>Institution</th>
+                                <th>Department</th>
+                                <th>Title</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody data-bind="foreach: contents">
+
+                            <tr>
+
+                                <td>{{ institution }}</td>
+                                <td>{{ department }}</td>
+                                <td>{{ title }}</td>
+                                <td>{{ start }}</td>
+                                <td>{{ end }}</td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <div class="tab-pane" id="schools">
+
+                <div data-bind="ifnot: contents().length">
+
+                    Missing
+
+                </div>
+
+                <div data-bind="if: contents().length">
+
+                    <table class="table">
+
+                        <thead>
+                            <tr>
+                                <th>Institution</th>
+                                <th>Department</th>
+                                <th>Title</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody data-bind="foreach: contents">
+
+                            <tr>
+
+                                <td>{{ institution }}</td>
+                                <td>{{ department }}</td>
+                                <td>{{ degree }}</td>
+                                <td>{{ start }}</td>
+                                <td>{{ end }}</td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
     </div>
-</div><!-- end row -->
+
+</div>
+
 <hr />
 
 <div class="row">
@@ -139,4 +258,26 @@
 </div><!-- end row -->
 
 <%include file="log_templates.mako"/>
+
+
+<script type="text/javascript">
+
+    $script(['/static/js/profile.js']);
+    $script.ready('profile', function() {
+        var socialUrls = {
+            crud: '${ api_url_for('serialize_social', uid=profile['id']) }'
+        };
+        var jobsUrls = {
+            crud: '${ api_url_for('serialize_jobs', uid=profile['id']) }'
+        };
+        var schoolsUrls = {
+            crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
+        };
+        var social = new profile.Social('#social', socialUrls);
+        var jobs = new profile.Jobs('#jobs', jobsUrls);
+        var schools = new profile.Schools('#schools', schoolsUrls);
+    });
+
+</script>
+
 </%def>

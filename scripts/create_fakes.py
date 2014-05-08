@@ -38,7 +38,7 @@ app = init_app('website.settings', set_backends=True, routes=True)
 def create_fake_user():
     email = fake.email()
     name = fake.name()
-    parsed = utils.parse_name(name)
+    parsed = utils.impute_names(name)
     user = UserFactory.build(username=email, fullname=name,
         is_registered=True, is_claimed=True,
         verification_key=security.random_string(15),
