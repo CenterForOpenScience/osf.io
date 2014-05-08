@@ -32,4 +32,4 @@ class TestDropboxIntegration(OsfTestCase):
 
         # Is redirected back to settings page
         assert_equal(res.request.path,
-            lookup('web', 'profile_settings'))
+            lookup('web', 'user_addons'))

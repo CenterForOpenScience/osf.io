@@ -21,6 +21,7 @@ from modularodm import Q
 from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth.model import User
+from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -1050,7 +1051,7 @@ class TestClaimViews(OsfTestCase):
         # Full name was set correctly
         assert_equal(unreg.fullname, different_name)
         # CSL names were set correctly
-        parsed_name = auth.utils.parse_name(different_name)
+        parsed_name = impute_names_model(different_name)
         assert_equal(unreg.given_name, parsed_name['given_name'])
         assert_equal(unreg.family_name, parsed_name['family_name'])
 
@@ -1529,24 +1530,6 @@ class TestAuthViews(OsfTestCase):
         user.save()
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
-
-    def test_change_names(self):
-        self.app.post(
-            '/api/v1/settings/names/',
-            json.dumps({
-                'fullname': 'Lyndon Baines Johnson',
-                'given_name': 'Lyndon',
-                'middle_names': 'Baines',
-                'family_name': 'Johnson',
-                'suffix': '',
-            }),
-            content_type='application/json',
-            auth=self.auth
-        ).maybe_follow()
-        self.user.reload()
-        assert_equal(self.user.given_name, 'Lyndon')
-        assert_equal(self.user.middle_names, 'Baines')
-        assert_equal(self.user.family_name, 'Johnson')
 
 
 # TODO: Use mock add-on
