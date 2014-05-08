@@ -111,6 +111,7 @@ class TestAuthObject(OsfTestCase):
         auth2 = Auth(user=None)
         assert_false(auth2.logged_in)
 
+
 class TestPrivateLink(OsfTestCase):
 
     def setUp(self):

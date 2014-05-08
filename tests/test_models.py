@@ -16,7 +16,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names
 from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
@@ -36,14 +36,82 @@ from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory
+    NodeWikiFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
+    AuthUserFactory
 )
 
 app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
+
+<<<<<<< HEAD
+
+class TestUserValidation(DbTestCase):
+
+    def setUp(self):
+        super(TestUserValidation, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_validate_fullname_none(self):
+        self.user.fullname = None
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_fullname_empty(self):
+        self.user.fullname = ''
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_social_personal_empty(self):
+        self.user.social = {'personal_site': ''}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_valid(self):
+        self.user.social = {'personal_site': 'http://cos.io/'}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_personal_invalid(self):
+        self.user.social = {'personal_site': 'help computer'}
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_valid(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1980, 1, 1),
+        }]
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_jobs_institution_empty(self):
+        self.user.jobs = [{'institution': ''}]
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_end_date(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1960, 1, 1),
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
 
 class TestUser(OsfTestCase):
 
@@ -57,7 +125,7 @@ class TestUser(OsfTestCase):
         u.update_guessed_names()
         u.save()
 
-        parsed = parse_name(name)
+        parsed = impute_names(name)
         assert_equal(u.fullname, name)
         assert_equal(u.given_name, parsed['given_name'])
         assert_equal(u.middle_names, parsed['middle_names'])
@@ -80,7 +148,7 @@ class TestUser(OsfTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
-        parsed = parse_name(name)
+        parsed = impute_names(name)
         assert_equal(u.given_name, parsed['given_name'])
 
     @mock.patch('framework.auth.model.User.update_solr')
@@ -129,7 +197,7 @@ class TestUser(OsfTestCase):
         user.save()
         assert_true(user.check_password('foobar'))
         assert_true(user._id)
-        assert_equal(user.given_name, parse_name(name)['given_name'])
+        assert_equal(user.given_name, impute_names(name)['given_name'])
 
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
@@ -402,12 +470,12 @@ class TestUser(OsfTestCase):
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
-        parsed = parse_name('John Darnielle')
+        parsed = impute_names('John Darnielle')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'Darnielle')
 
     def test_parse_first_last_particles(self):
-        parsed = parse_name('John van der Slice')
+        parsed = impute_names('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
 
