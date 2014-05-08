@@ -1,6 +1,6 @@
 Hello ${fullname},
 
-Congratulations! You have successfully added your ${conf_full_name} ${poster_or_talk} to the Open Science Framework (OSF).
+Congratulations! You have successfully added your ${conf_full_name} ${presentation_type} to the Open Science Framework (OSF).
 
 % if user_created:
 Your account on the Open Science Framework has been created. To claim your account, please create a password by clicking here: [ ${set_password_url} ]. Please verify your profile information at [ ${profile_url} ].
@@ -8,6 +8,10 @@ Your account on the Open Science Framework has been created. To claim your accou
 % endif
 Your ${conf_full_name} poster has been added to the Open Science Framework. You now have a permanent, citable URL, that you can share: [ ${node_url} ]. All submitted ${conf_full_name} posters and talks may be viewed at the following link: [ ${conf_view_url} ].
 
+% if is_spam:
+Your email was flagged as spam by our mail processing service. To prevent potential spam, we have made your project private. If this is a real project, please log in to your account, browse to your project, and click the "Make Public" button so that other users can view it.
+
+% endif
 Get more from the OSF by enhancing your page with the following:
 
 * Collaborators/contributors to the poster
