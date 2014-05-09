@@ -458,7 +458,7 @@ def component_remove(**kwargs):
     }
 
 @must_be_valid_project # returns project
-@must_have_permission("write")
+@must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
 
@@ -569,7 +569,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': (auth.private_key in parent.private_links) if parent else False
+            'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -621,7 +621,7 @@ def _get_children(node, auth, indent=0):
     return children
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def private_link_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
@@ -646,7 +646,7 @@ def private_link_config(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def private_link_table(**kwargs):
     node = kwargs['node'] or kwargs['project']
     data = {
@@ -796,25 +796,26 @@ def get_registrations(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def project_generate_private_link_post(*args, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    label = request.json.get('label','')
+    note = request.json.get('note', '')
+    nodes=[]
 
-    link = new_private_link(
-        label =label, user=auth.user
-    )
     if node_to_use._id not in node_ids:
-        node_ids.append(node_to_use._id)
+        node_ids.insert(0, node_to_use._id)
 
     for node_id in node_ids:
         node = Node.load(node_id)
-        node.private_links.append(link)
-        node.save()
+        nodes.append(node)
+
+    new_private_link(
+        note =note, user=auth.user, nodes=nodes
+    )
 
     return {'status': 'success'}, 201
 

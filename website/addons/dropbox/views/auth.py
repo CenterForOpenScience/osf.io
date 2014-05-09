@@ -55,7 +55,7 @@ def finish_auth():
         raise HTTPError(http.FORBIDDEN)
     except DropboxOAuth2Flow.NotApprovedException:  # User canceled flow
         flash('Did not approve token.', 'info')
-        return redirect(web_url_for('profile_settings'))
+        return redirect(web_url_for('user_addons'))
     except DropboxOAuth2Flow.ProviderException:
         raise HTTPError(http.FORBIDDEN)
     return AuthResult(access_token, dropbox_id, url_state)
@@ -74,7 +74,7 @@ def dropbox_oauth_start(**kwargs):
     # If user has already authorized dropbox, flash error message
     if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
         flash('You have already authorized Dropbox for this account', 'warning')
-        return redirect(web_url_for('profile_settings'))
+        return redirect(web_url_for('user_addons'))
     return redirect(get_auth_flow().start())
 
 
@@ -108,7 +108,7 @@ def dropbox_oauth_finish(**kwargs):
             node_addon.set_user_auth(user_settings)
             node_addon.save()
         return redirect(node.web_url_for('node_setting'))
-    return redirect(web_url_for('profile_settings'))
+    return redirect(web_url_for('user_addons'))
 
 @must_be_logged_in
 @must_have_addon('dropbox', 'user')

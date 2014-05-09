@@ -475,7 +475,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_links = fields.ForeignField('privatelink',list=True, backref='key')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -496,6 +495,8 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
+
+    # Tags for internal use
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
@@ -529,6 +530,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    @property
+    def private_links(self):
+        return self.privatelink__shared
 
     @property
     def private_links_active(self):
@@ -1219,7 +1224,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.private_links = []
 
 
         # Forks default to private status
@@ -1296,7 +1300,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
-        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
@@ -2312,9 +2315,10 @@ class PrivateLink(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
-    label = fields.StringField()
+    note = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
 
+    nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
 
     def to_json(self):
@@ -2322,7 +2326,8 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
-            "label": self.label,
+            "note": self.note,
             "creator": self.creator.fullname,
+            "nodes": [x.title for x in self.nodes],
         }
 

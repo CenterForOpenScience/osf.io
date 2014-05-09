@@ -8,6 +8,11 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm.validators import URLValidator
+from modularodm.exceptions import (
+    ValidationError, ValidationValueError, ValidationTypeError
+)
+
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
@@ -39,6 +44,29 @@ def generate_claim_token():
     return security.random_string(30)
 
 
+def string_required(value):
+    if value is None or value == '':
+        raise ValidationValueError('Value must not be empty.')
+
+
+def validate_history_item(item):
+    string_required(item.get('institution'))
+    start = item.get('start')
+    end = item.get('end')
+    if start and end and end < start:
+        raise ValidationValueError('End date must be later than start date.')
+
+
+validate_url = URLValidator()
+def validate_personal_site(value):
+    if value:
+       validate_url(value)
+
+
+def validate_social(value):
+    validate_personal_site(value.get('personal_site'))
+
+
 class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -54,10 +82,13 @@ class User(GuidStoredObject, AddonModelMixin):
     # May be None for unregistered contributors
     username = fields.StringField(required=False, unique=True, index=True)
     password = fields.StringField()
-    fullname = fields.StringField(required=True)
+    fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_links = fields.ForeignField('privatelink', list=True)
+
+    # Tags for internal use
+    system_tags = fields.StringField(list=True)
 
     # Per-project unclaimed user data:
     # Format: {
@@ -96,6 +127,35 @@ class User(GuidStoredObject, AddonModelMixin):
     middle_names = fields.StringField()
     family_name = fields.StringField()
     suffix = fields.StringField()
+
+    # Employment history
+    # Format: {
+    #     'position': <position or job title>,
+    #     'institution': <institution or organization>,
+    #     'department': <department>,
+    #     'location': <location>,
+    #     'start': <start date>,
+    #     'end': <end date>,
+    # }
+    jobs = fields.DictionaryField(list=True, validate=validate_history_item)
+
+    # Educational history
+    # Format: {
+    #     'degree': <position or job title>,
+    #     'institution': <institution or organization>,
+    #     'department': <department>,
+    #     'location': <location>,
+    #     'start': <start date>,
+    #     'end': <end date>,
+    # }
+    schools = fields.DictionaryField(list=True, validate=validate_history_item)
+
+    # Social links
+    # Format: {
+    #     'personal': <personal site>,
+    #     'twitter': <twitter id>,
+    # }
+    social = fields.DictionaryField(validate=validate_social)
 
     api_keys = fields.ForeignField('apikey', list=True, backref='keyed')
 
@@ -162,10 +222,10 @@ class User(GuidStoredObject, AddonModelMixin):
     def update_guessed_names(self):
         """Updates the CSL name fields inferred from the the full name.
         """
-        parsed = utils.parse_name(self.fullname)
-        self.given_name = parsed['given_name']
-        self.middle_names = parsed['middle_names']
-        self.family_name = parsed['family_name']
+        parsed = utils.impute_names(self.fullname)
+        self.given_name = parsed['given']
+        self.middle_names = parsed['middle']
+        self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
     def register(self, username, password=None):

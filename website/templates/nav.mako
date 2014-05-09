@@ -49,7 +49,7 @@
               <span>${user_name}</span>
             </a>
           </li>
-          <li><a rel="tooltip" title="Settings" href="${ web_url_for('profile_settings') }"><span class="icon-cog"></span></a></li>
+          <li><a rel="tooltip" title="Settings" href="${ web_url_for('user_profile') }"><span class="icon-cog"></span></a></li>
           <li><a rel="tooltip" title="Log out" href="${ web_url_for('auth_logout') }"><span class="icon-signout"></span></a></li>
           %else:
               %if allow_login:

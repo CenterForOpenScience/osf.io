@@ -354,6 +354,88 @@ a.disabled {
     cursor: default;
 }
 
+#addPointer td {
+    vertical-align: middle;
+}
+
+li.pointer {
+    border-style: dashed;
+}
+
+/* Add-on styles */
+
+.dropdown-scroll {
+    height: auto;
+    max-height: 200px;
+    overflow-x: hidden;
+}
+
+.comment-container {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    padding: 5px;
+    background-color: white;
+}
+
+.comment-author {
+    color: #999999;
+}
+
+.comment-date {
+    color: #999999;
+}
+.edit-comment {
+    background-color: #F3F3F3;
+    cursor: pointer;
+}
+
+.comment-body i {
+    cursor: pointer;
+    padding-right: 5px;
+}
+
+.comment-handle-icon {
+    color: white;
+    vertical-align: middle;
+    line-height: 50px;
+    cursor: pointer;
+}
+
+/* Make embedded iframes responsive */
+.addon-widget-container iframe {
+    max-width: 100%;
+}
+
+.comment-error {
+    color: #a94442;
+}
+
+.addon-widget-container:first-of-type h1,
+.addon-widget-container:first-of-type h2,
+.addon-widget-container:first-of-type h3 {
+    margin-top: 0;
+}
+
+/* Make wiki images responsive */
+.wiki img,
+.addon-widget-container img {
+  vertical-align: middle;
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+img.hg-addon-icon {
+    width: 16px;
+    display: inline;
+    vertical-align: middle;
+}
+
+/* End add-on styles */
+
 .citation-label {
     font-weight: bold;
 }
@@ -614,16 +696,6 @@ h4 {
 .featurette-image.pull-right {margin-left: 0; margin-bottom: 10px;}
 
 }
-
-/* Make wiki images responsive */
-.wiki img {
-  vertical-align: middle;
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-
 
 /* Jumbotrons
 -------------------------------------------------- */
@@ -1015,6 +1087,10 @@ form.form-horizontal.form-horizontal-narrow .control-group {
     border-spacing: 5px;
 }
 
+#manageContributors td {
+    vertical-align: middle;
+}
+
 #addContributors .error {
     color: red;
 }
@@ -1236,6 +1312,10 @@ h1.unavailable {
 
 /* Logs */
 
+.log-file-link {
+    cursor: pointer;
+}
+
 .log-date {
     font-size: 13px;
 }
@@ -1255,36 +1335,37 @@ h1.unavailable {
 }
 
 div#logScope a.moreLogs{
-    margin-left:50px;
+    margin-left: 50px;
 }
 
 /* private_link*/
-.key-name{
-    margin-left: 10px;
+.narrow-list{
+    padding: 0px 0px;
+    margin: 0px 0px;
 }
 
-#generate-private-link{
-    margin:20px 20px;
+#generate-private-link {
+    margin: 20px 20px;
 }
 
 .private-link-label{
-    width:60%;
+    width: 60%;
 }
 
 .link-name{
-    width:55%;
+    width: 55%;
 }
 
 .link-label{
-    width:15%;
+    width: 15%;
 }
 
 .link-date{
-    width:15%;
+    width: 15%;
 }
 
 .link-creator{
-    width:20%;
+    width: 20%;
 }
 
 /* Contributor page */
@@ -1360,6 +1441,11 @@ button.save {
     overflow: auto;
 }
 
+.mfr-pdf-button-container {
+    display: inline-block;
+    vertical-align: top;
+}
+
 .mfr-pdf-button {
     height: 500px;
     width: 25px;
@@ -1370,10 +1456,6 @@ button.save {
     -webkit-user-select: none;
     border-style:none;
     -webkit-box-shadow: none;
-    -webkit-box-shadow: none;
-    box-shadow: none;
-    padding: 0;
-
 }
 
 .mfr-pdf-button.active {
