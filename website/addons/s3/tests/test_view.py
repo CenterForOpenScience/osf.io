@@ -11,7 +11,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.s3.model import AddonS3NodeSettings, S3GuidFile
 
-from website.addons.s3.views.utils import create_bucket, validate_bucket_name
+from website.addons.s3.utils import validate_bucket_name
 
 from utils import create_mock_wrapper, create_mock_key
 
@@ -376,7 +376,7 @@ class TestCreateBucket(OsfTestCase):
         assert_true(validate_bucket_name('can-have-dashes'))
         assert_true(validate_bucket_name('kinda.name.spaced'))
 
-    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    @mock.patch('website.addons.s3.views.crud.create_bucket')
     def test_create_bucket_pass(self, mock_make):
         mock_make.return_value = True
         url = "/api/v1/project/{0}/s3/newbucket/".format(self.project._id)
@@ -384,7 +384,7 @@ class TestCreateBucket(OsfTestCase):
 
         assert_equals(rv.status_int, http.OK)
 
-    @mock.patch('website.addons.s3.views.utils.create_bucket')
+    @mock.patch('website.addons.s3.views.crud.create_bucket')
     def test_create_bucket_fail(self, mock_make):
         error = S3ResponseError(418, 'because Im a test')
         error.message = 'This should work'
