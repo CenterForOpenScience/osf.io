@@ -13,16 +13,19 @@ from website.addons.base.views import check_file_guid
 
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
-from website.project.decorators import must_have_permission, \
-    must_be_contributor_or_public, \
+from website.project.decorators import (
+    must_have_permission, must_be_contributor_or_public,
     must_not_be_registration, must_have_addon
+)
 
 from website.addons.s3.model import S3GuidFile
 from website.addons.s3.settings import MAX_RENDER_SIZE
 from website.addons.s3.api import S3Wrapper, create_bucket
 
-from website.addons.s3.utils import create_version_list, build_urls, get_cache_file_name, \
-    generate_signed_url, validate_bucket_name
+from website.addons.s3.utils import (
+    create_version_list, build_urls, get_cache_file_name, generate_signed_url,
+    validate_bucket_name
+)
 
 
 @must_be_contributor_or_public
@@ -181,17 +184,17 @@ def s3_upload(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def create_new_bucket(*args, **kwargs):
+def create_new_bucket(**kwargs):
     user = kwargs['auth'].user
     user_settings = user.get_addon('s3')
     bucket_name = request.json.get('bucket_name')
 
     if not validate_bucket_name(bucket_name):
-        return {'message': 'That bucket name is not valid.'}, 406
+        return {'message': 'That bucket name is not valid.'}, http.NOT_ACCEPTABLE
     try:
         create_bucket(user_settings, request.json.get('bucket_name'))
         return {}
     except BotoClientError as e:
-        return {'message': e.message}, 406
+        return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:
-        return {'message': e.message}, 406
+        return {'message': e.message}, http.NOT_ACCEPTABLE

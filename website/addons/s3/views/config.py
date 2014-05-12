@@ -12,7 +12,6 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.s3.api import S3Wrapper, has_access, does_bucket_exist
-
 from website.addons.s3.utils import adjust_cors, create_osf_user
 
 
@@ -49,12 +48,12 @@ def s3_authorize_user(**kwargs):
 
     try:
         if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
-            return {'message': 'Incorrect credentials'}, 400
+            return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
     except BotoServerError:
         #Note: Can't send back mark up :[
         return {
             'message': 'Could not access IAM. Please allow these keys permission.'
-        }, 400
+        }, http.BAD_REQUEST
     return {}
 
 
@@ -76,7 +75,7 @@ def s3_authorize_node(**kwargs):
         user_settings = user.get_addon('s3')
 
     if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
-        return {'message': 'Incorrect credentials'}, 400
+        return {'message': 'Incorrect credentials'}, http.BAD_REQUEST
 
     node_settings.user_settings = user_settings
     node_settings.save()
