@@ -51,7 +51,10 @@ def s3_authorize_user(**kwargs):
         if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
             return {'message': 'Incorrect credentials'}, 400
     except BotoServerError:
-        return {'message': 'Incorrect Permissions'}, 400
+        #Note: Can't send back mark up :[
+        return {
+            'message': 'Could not access IAM. Please allow these keys permission.'
+        }, 400
     return {}
 
 
