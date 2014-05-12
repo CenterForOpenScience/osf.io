@@ -1,5 +1,7 @@
 import httplib as http
 
+from boto.exception import BotoServerError
+
 from framework import request
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
@@ -9,8 +11,7 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from website.addons.s3.api import S3Wrapper
-from website.addons.s3.api import has_access, does_bucket_exist
+from website.addons.s3.api import S3Wrapper, has_access, does_bucket_exist
 
 from website.addons.s3.utils import adjust_cors, create_osf_user
 
@@ -46,8 +47,11 @@ def s3_authorize_user(**kwargs):
     if not s3_access_key or not s3_secret_key:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
-        return {'message': 'Incorrect credentials'}, 400
+    try:
+        if not add_s3_auth(s3_access_key, s3_secret_key, user_settings):
+            return {'message': 'Incorrect credentials'}, 400
+    except BotoServerError:
+        return {'message': 'Incorrect Permissions'}, 400
     return {}
 
 
