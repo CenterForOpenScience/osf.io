@@ -54,6 +54,8 @@ web_routes = {
                 '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
                 # Note: Added these old URLs for backwards compatibility with
                 # hard-coded links.
+                '/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
                 '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/files/<fid>/version/<vid>/',
