@@ -2,28 +2,30 @@ import urllib
 import datetime
 import httplib as http
 
+from boto.exception import S3ResponseError, BotoClientError
+
 from framework import request, redirect, Q
 from framework.exceptions import HTTPError
 
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_have_addon
-from website.project.views.node import _view_project
-from website.project.views.file import get_cache_content
+from website.models import NodeLog
 
-from ..model import S3GuidFile
 from website.addons.base.views import check_file_guid
 
-from ..api import S3Wrapper
+from website.project.views.node import _view_project
+from website.project.views.file import get_cache_content
+from website.project.decorators import (
+    must_have_permission, must_be_contributor_or_public,
+    must_not_be_registration, must_have_addon
+)
 
-# TODO: Rename at least one utils module; could be confusing later on
-from .utils import get_cache_file_name, generate_signed_url
-from ..utils import create_version_list, build_urls
-
-from website import models
-
+from website.addons.s3.model import S3GuidFile
 from website.addons.s3.settings import MAX_RENDER_SIZE
+from website.addons.s3.api import S3Wrapper, create_bucket
+
+from website.addons.s3.utils import (
+    create_version_list, build_urls, get_cache_file_name, generate_signed_url,
+    validate_bucket_name
+)
 
 
 @must_be_contributor_or_public
@@ -55,7 +57,7 @@ def s3_delete(**kwargs):
     connect.delete_file(dfile)
 
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_REMOVED,
+        action='s3_' + NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
             'node': node._id,
@@ -164,7 +166,8 @@ def s3_upload(**kwargs):
 
     update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + (models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED),
+        action='s3_' +
+        (NodeLog.FILE_UPDATED if update else NodeLog.FILE_ADDED),
         params={
             'project': node.parent_id,
             'node': node._primary_key,
@@ -177,3 +180,21 @@ def s3_upload(**kwargs):
     )
 
     return generate_signed_url(mime, file_name, s3)
+
+
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
+def create_new_bucket(**kwargs):
+    user = kwargs['auth'].user
+    user_settings = user.get_addon('s3')
+    bucket_name = request.json.get('bucket_name')
+
+    if not validate_bucket_name(bucket_name):
+        return {'message': 'That bucket name is not valid.'}, http.NOT_ACCEPTABLE
+    try:
+        create_bucket(user_settings, request.json.get('bucket_name'))
+        return {}
+    except BotoClientError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE
+    except S3ResponseError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE
