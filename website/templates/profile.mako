@@ -163,7 +163,7 @@
                             <tr>
                                 <th>Institution</th>
                                 <th>Department</th>
-                                <th>Title</th>
+                                <th>Degree</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
                             </tr>
