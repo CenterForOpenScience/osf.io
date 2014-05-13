@@ -99,7 +99,7 @@
                 <dl class="dl-horizontal" data-bind="foreach: values">
 
                     <dt>{{ key }}</dt>
-                    <dd>{{ value }}</dd>
+                    <dd>{{ value || '&nbsp;' }}</dd>
 
                 </dl>
 
