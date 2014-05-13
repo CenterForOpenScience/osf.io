@@ -61,7 +61,7 @@
 
                     <tr>
                         <td colspan="3">
-                            <a href="#private-link" data-toggle="modal">
+                            <a href="#addPrivateLink" data-toggle="modal">
                                 Click to create a link to share this project so those
                                 who have the link can view but not edit the project
                             </a>
