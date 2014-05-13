@@ -288,7 +288,7 @@ def serialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
-        'title': school.get('title'),
+        'degree': school.get('degree'),
         'start': fmt_date_or_none(school.get('start')),
         'end': fmt_date_or_none(school.get('end')),
     }
@@ -377,4 +377,4 @@ def unserialize_jobs(**kwargs):
 
 @must_be_logged_in
 def unserialize_schools(**kwargs):
-    unserialize_contents('schools', unserialize_job, **kwargs)
+    unserialize_contents('schools', unserialize_school, **kwargs)
