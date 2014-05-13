@@ -262,6 +262,12 @@ def get_target_user(auth, uid=None):
     return target
 
 
+def fmt_date_or_none(date, fmt='%Y-%m-%d'):
+    if date:
+        return date.strftime(fmt)
+    return None
+
+
 @collect_auth
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
@@ -273,8 +279,8 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': job.get('start'),
-        'end': job.get('end'),
+        'start': fmt_date_or_none(job.get('start')),
+        'end': fmt_date_or_none(job.get('end')),
     }
 
 
@@ -283,8 +289,8 @@ def serialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'title': school.get('title'),
-        'start': school.get('start'),
-        'end': school.get('end'),
+        'start': fmt_date_or_none(school.get('start')),
+        'end': fmt_date_or_none(school.get('end')),
     }
 
 
