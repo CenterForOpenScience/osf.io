@@ -177,9 +177,13 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
 
     #
     if node_settings.project_id is not None:
+        # TODO: Improve error handling
+        gitlab_branches = client.listbranches(node_settings.project_id)
+        if not gitlab_branches:
+            return None
         branches = [
             each['name']
-            for each in client.listbranches(node_settings.project_id)
+            for each in branches
         ]
         if branches:
             branch, sha = get_branch_and_sha(node_settings, kwargs)
