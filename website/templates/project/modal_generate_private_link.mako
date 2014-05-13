@@ -10,15 +10,18 @@
                 <div >
 
                     <div>
-                        Generating Private Link to Component
-                        <span data-bind="text:title"></span>.
+                        Would you like to add a note for this link?
+                        <div class="form-group">
+                            <input type="text" class="form-control private-link-note" placeholder="New Note" data-bind="value:note"/>
+                        </div>
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to apply the link privilege to any children of
-                        the current component?
+                        Anyone with the private link can view, but not edit,
+                        the components associated with the link.
+                        Which components would you like to associate with this link?
                     </div>
 
                     <div class="row">

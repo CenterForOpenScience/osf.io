@@ -22,11 +22,20 @@ ${next.body()}
 
 <%def name="javascript_bottom()">
 <script>
+
+    <% import json %>
+
     // Import modules
     $script(['/static/js/nodeControl.js'], 'nodeControl');
     $script(['/static/js/logFeed.js'], 'logFeed');
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
+
+    % if 'badges' in addons_enabled and badges and badges['can_award']:
+    $script(['/static/addons/badges/badge-awarder.js'], function() {
+        attachDropDown('${'{}badges/json/'.format(user_api_url)}');
+    });
+    % endif
 
     // TODO: Put these in the contextVars object below
     var nodeId = '${node['id']}';
@@ -35,18 +44,20 @@ ${next.body()}
     // Mako variables accessible globally
     window.contextVars = {
         currentUser: {
-            username: '${user.get("username")}',
+            ## TODO: Abstract me
+            username: ${json.dumps(user['username']) | n},
             id: '${user_id}'
         },
         node: {
-            title: "${node['title']}"
+            ## TODO: Abstract me
+            title: ${json.dumps(node['title']) | n}
         }
     };
 
     $(function() {
 
         $logScope = $('#logScope');
-        $linkScope= $("#linkScope");
+        $linkScope = $('#linkScope');
         // Get project data from the server and initiate KO modules
         $.getJSON(nodeApiUrl, function(data){
                // Initialize nodeControl and logFeed on success
@@ -72,27 +83,13 @@ ${next.body()}
                     });
                 }
 
-                if ($linkScope.length >0){
-                    var $privateLink = $('#private-link');
-                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
-                                                            data.parent_node.id,
-                                                            data.parent_node.title);
-                    ko.applyBindings(privateLinkVM, $privateLink[0]);
-                    // Clear user search modal when dismissed; catches dismiss by escape key
-                    // or cancel button.
-                    $privateLink.on('hidden', function() {
-                        privateLinkVM.clear();
-                    });
-                }
-
             }
         );
-
-
 
         var linksModal = $('#showLinks')[0];
         var linksVM = new LinksViewModel(linksModal);
         ko.applyBindings(linksVM, linksModal);
+        
     });
 
     $script.ready('pointers', function() {
@@ -109,6 +106,7 @@ ${next.body()}
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
+
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.

@@ -8,9 +8,10 @@ from mfr.renderer import FileRenderer
 import mfr
 import tempfile
 from mfr.renderer.exceptions import MFRError
-from mfr.renderer.tabular.exceptions import StataVersionError, BlankOrCorruptTableError
-logger = logging.getLogger(__name__)
 from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
+
+
+logger = logging.getLogger(__name__)
 
 config = {}
 FileRenderer.STATIC_PATH = '/static/mfr'
@@ -23,10 +24,15 @@ def ensure_path(path):
         if exception.errno != errno.EEXIST:
             raise
 
-CUSTOM_ERROR_MESSAGES = {
-    StataVersionError: STATA_VERSION_ERROR,
-    BlankOrCorruptTableError: BLANK_OR_CORRUPT_TABLE_ERROR,
-}
+CUSTOM_ERROR_MESSAGES = {}
+
+# Catch ImportError in case tabular or its dependencies are not installed
+try:
+    from mfr.renderer.tabular.exceptions import StataVersionError, BlankOrCorruptTableError
+    CUSTOM_ERROR_MESSAGES[StataVersionError] = STATA_VERSION_ERROR
+    CUSTOM_ERROR_MESSAGES[BlankOrCorruptTableError] = BLANK_OR_CORRUPT_TABLE_ERROR
+except ImportError:
+    logger.warn('Unable to import tabular module')
 
 # Unable to render. Download the file to view it.
 def render_mfr_error(err):

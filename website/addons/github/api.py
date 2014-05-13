@@ -286,7 +286,7 @@ def ref_to_params(branch=None, sha=None):
         return '?' + params
     return ''
 
-
+# TODO: Use Node#api_url_for and Node#web_url_for
 def build_github_urls(item, node_url, node_api_url, branch, sha):
 
     quote_path = urllib.quote_plus(item.path)

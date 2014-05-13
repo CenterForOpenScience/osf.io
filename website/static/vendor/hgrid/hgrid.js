@@ -4,13 +4,14 @@
  */
 (function (global, factory) {
   if (typeof define === 'function' && define.amd) {  // AMD/RequireJS
-    define(['jquery'], factory);
+    // Modified by SL: add dropzone dependency
+    define(['jquery', 'dropzone'], factory);
   } else if (typeof module === 'object') {  // CommonJS/Node
-    module.exports = factory(jQuery);
+    module.exports = factory(jQuery, Dropzone);
   } else {  // No module system
-    global.HGrid = factory(jQuery);
+    global.HGrid = factory(jQuery, Dropzone);
   }
-}(this, function(jQuery) {
+}(this, function(jQuery, Dropzone) {
 
 /**
  * Provides the main HGrid class and HGrid.Error.

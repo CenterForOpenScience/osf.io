@@ -24,10 +24,12 @@
 
     </div>
 
-    <script type="text/javascript" src="/static/js/conference.js"></script>
     <script type="text/javascript">
-        var data = ${data}
-        new Meeting.Meeting(data);
+        var data = ${data};
+        $script('/static/js/conference.js');
+        $script.ready('conference', function() {
+            new Meeting(data);
+        })
     </script>
 
 </body>

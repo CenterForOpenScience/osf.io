@@ -3,8 +3,19 @@
  * is opened only after options.method and options.url have been resolved.
  */
 /*jshint ignore:start */
-(function($, Dropzone) {
 
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['dropzone'], factory);
+    } else if (typeof $script === 'function' ) {
+        $script.ready(['dropzone'], function() {
+            factory(global.Dropzone);
+            $script.done('dropzone-patch');
+        });
+    } else {
+        factory(global.Dropzone);
+    }
+}(this, function(Dropzone) {
         __hasProp = {}.hasOwnProperty,
         __extends = function(child, parent) {
             for (var key in parent) {
@@ -211,5 +222,7 @@
                 }
             });
     };
-})(jQuery, Dropzone);
+
+    return Dropzone;
+}));
 /*jshint ignore:end */

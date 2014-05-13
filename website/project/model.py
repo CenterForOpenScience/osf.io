@@ -35,7 +35,6 @@ from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
 
-from framework import session
 from website.exceptions import NodeStateError
 from website.util.permissions import (expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
@@ -472,7 +471,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
-    private_links = fields.StringField(list=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -488,11 +486,10 @@ class Node(GuidStoredObject, AddonModelMixin):
     contributors = fields.ForeignField('user', list=True, backref='contributed')
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
-    # TODO: Remove me; only included for migration purposes
-    contributor_list = fields.DictionaryField(list=True)
-
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
+
+    # Tags for internal use
     system_tags = fields.StringField(list=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
@@ -527,6 +524,22 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
+    @property
+    def private_links(self):
+        return self.privatelink__shared
+
+    @property
+    def private_links_active(self):
+        return [x for x in self.private_links if not x.is_deleted]
+
+    @property
+    def private_link_keys_active(self):
+        return [x.key for x in self.private_links if not x.is_deleted]
+
+    @property
+    def private_link_keys_deleted(self):
+        return [x.key for x in self.private_links if x.is_deleted]
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -551,15 +564,15 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_keys:
-            key_ring = set(auth.user.private_keys)
+        if auth.user and auth.user.private_links:
+            key_ring = set(auth.user.private_link_keys)
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_links)
+                or not key_ring.isdisjoint(self.private_link_keys_active)
         else:
             return self.is_public or auth.user \
                 and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_links
+                or auth.private_key in self.private_link_keys_active
 
 
     def add_permission(self, user, permission, save=False):
@@ -1120,7 +1133,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise PermissionsError()
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
-            raise NodeStateError("Components list not empty")
+            raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1200,7 +1213,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
-        forked.private_links = []
 
 
         # Forks default to private status
@@ -1277,7 +1289,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
-        registered.private_links = []
         registered.forked_from = self.forked_from
         registered.creator = self.creator
         registered.logs = self.logs
@@ -1595,18 +1606,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return node_file
 
-    def add_private_link(self, link='', save=True):
-        link = link or str(uuid.uuid4()).replace("-", "")
-        self.private_links.append(link)
-        if save:
-            self.save()
-        return link
-
-    def remove_private_link(self, link, save=True):
-        self.private_links.remove(link)
-        if save:
-            self.save()
-
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None
         api_key = auth.api_key if auth else None
@@ -1635,19 +1634,25 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, *args, **kwargs):
-        if self.category == 'project':
-            return web_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        # Note: Check `parent_node` rather than `category` to avoid database
+        # inconsistencies [jmcarp]
+        if self.parent_node is None:
+            return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
-    def api_url_for(self, view_name, *args, **kwargs):
-        if self.category == 'project':
-            return api_url_for(view_name, pid=self._primary_key, *args, **kwargs)
+    def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
+        # Note: Check `parent_node` rather than `category` to avoid database
+        # inconsistencies [jmcarp]
+        if self.parent_node is None:
+            return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
+                *args, **kwargs)
         else:
             return api_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
 
     @property
     def absolute_url(self):
@@ -1767,7 +1772,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return (
             user is not None
             and (
-                user in self.contributors
+                user._id in self.contributors
             )
         )
 
@@ -2292,3 +2297,26 @@ class MailRecord(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     data = fields.DictionaryField()
     records = fields.AbstractForeignField(list=True, backref='created')
+
+
+class PrivateLink(StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    key = fields.StringField(required=True)
+    note = fields.StringField()
+    is_deleted = fields.BooleanField(default=False)
+
+    nodes = fields.ForeignField('node', list=True, backref='shared')
+    creator = fields.ForeignField('user', backref='created')
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
+            "key": self.key,
+            "note": self.note,
+            "creator": self.creator.fullname,
+            "nodes": [x.title for x in self.nodes],
+        }
+

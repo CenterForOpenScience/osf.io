@@ -210,3 +210,18 @@
     </div><!--end col-md -->
 </div><!-- end row -->
 </%def>
+
+<%def name="javascript_bottom()">
+<script>
+    //  Initiate tag cloud (on search page)
+    $.fn.tagcloud.defaults = {
+      size: {start: 14, end: 18, unit: 'pt'},
+      color: {start: '#cde', end: '#f52'}
+    };
+
+    $(function () {
+      $('#tagCloud a').tagcloud();
+    });
+</script>
+
+</%def>

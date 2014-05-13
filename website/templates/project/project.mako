@@ -98,12 +98,9 @@
 <div class="page-header">
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
-            % if 'write' in user['permissions']:
+            % if 'write' in user['permissions'] and not node['is_registration']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                 <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % else:
-                <a class="btn btn-default disabled">Add Component</a>
-                <a class="btn btn-default disabled">Add Link</a>
             % endif
         </div>
 
@@ -200,6 +197,9 @@ ${parent.javascript_bottom()}
             });
         % endif
 
+
+    });
+    $script.ready(['rubeus'], function() {
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
                 data: nodeApiUrl + 'files/grid/',
@@ -210,9 +210,7 @@ ${parent.javascript_bottom()}
                 progBar: '#filetreeProgressBar',
                 searchInput: '#fileSearch'
         });
-
-    });
-
+    })
 </script>
 
 </%def>

@@ -37,7 +37,7 @@
 <%def name="javascript()">
     % if rendered is None:
         <script type="text/javascript">
-            $(document).ready(function() {
+            $script(['/static/js/filerenderer.js'], function() {
                 FileRenderer.start('${render_url}', '#fileRendered');
             });
         </script>

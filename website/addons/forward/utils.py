@@ -1,0 +1,18 @@
+"""
+Utility functions for Forward add-on.
+"""
+
+def serialize_settings(node_addon):
+    return {
+        'url': node_addon.url,
+        'redirectBool': node_addon.redirect_bool,
+        'redirectSecs': node_addon.redirect_secs,
+    }
+
+
+def settings_complete(node_addon):
+    return (
+        node_addon.url is not None
+        and node_addon.redirect_bool is not None
+        and node_addon.redirect_secs is not None
+    )

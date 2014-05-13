@@ -16,9 +16,12 @@ from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
 
+from modularodm import Q
+
 from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth.model import User
+from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -36,11 +39,11 @@ from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 from website.project.decorators import choose_key, check_can_access
 
-from tests.base import DbTestCase, fake, capture_signals, URLLookup, assert_is_redirect
+from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory
 )
 
 
@@ -50,20 +53,21 @@ app = website.app.init_app(
 
 lookup = URLLookup(app)
 
-class TestViewingProjectWithPrivateLink(DbTestCase):
+class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
 
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
-        self.key = self.project.add_private_link()
-        self.project.save()
+        self.link = PrivateLinkFactory()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url,{'key': self.key})
+        res = self.app.get(self.project_url,{'key': self.link.key})
         assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
@@ -79,17 +83,17 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
 
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'key': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_has_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_has_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
         res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
         assert_is_redirect(res)
         redirected = res.follow()
-        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.request.GET['key'], self.link.key)
         assert_equal(redirected.status_code, 200)
 
     def test_logged_in_with_no_key_ring(self):
@@ -98,18 +102,21 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_with_private_key_with_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
-        key2 = self.project.add_private_link()
-        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
-        assert_equal(res.request.GET['key'], key2)
-        assert_equal(res.status_code, 200)
+        link2 = PrivateLinkFactory(key="123456")
+        res = self.app.get(self.project_url, {'key': link2.key}, auth=self.user.auth)
+        assert_equal(res.request.GET['key'], link2.key)
+        assert_equal(res.status_code, 302)
+        res2 = res.maybe_follow(auth=self.user.auth)
+        assert_equal(res2.request.GET['key'], self.link.key)
+        assert_equal(res2.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
     def test_prepare_private_key(self):
-        res = self.app.get(self.project_url, {'key': self.key})
+        res = self.app.get(self.project_url, {'key': self.link.key})
 
         res = res.click('Registrations')
 
@@ -117,12 +124,12 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.GET['key'], self.key)
+        assert_equal(res.request.GET['key'], self.link.key)
 
     def test_choose_key(self):
         # User is not logged in, goes to route with a private key
         res = choose_key(
-            key=self.key,
+            key=self.link.key,
             key_ring=set(),
             api_node='doesntmatter',
             node=self.project,
@@ -132,7 +139,7 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
 
     def test_choose_key_form_key_ring(self):
         with app.test_request_context():
-            res = choose_key('nope', key_ring=set([self.key]), node=self.project,
+            res = choose_key('nope', key_ring=set([self.link.key]), node=self.project,
                 auth=Auth(None))
         assert_true(isinstance(res, Response))
 
@@ -150,7 +157,7 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
-class TestProjectViews(DbTestCase):
+class TestProjectViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -511,6 +518,20 @@ class TestProjectViews(DbTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_remove_private_link(self):
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
+        with app.test_request_context():
+            url = api_url_for(
+                'remove_private_link',
+                pid=self.project._primary_key
+            )
+        self.app.delete_json(url, {'private_link_id': link._id}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_true(link.is_deleted)
+
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
         url = node.api_url
@@ -554,7 +575,7 @@ class TestProjectViews(DbTestCase):
         recent = [c for c in self.user1.recently_added if c.is_active()]
         assert_equal(len(res.json['contributors']), len(recent))
 
-class TestAddingContributorViews(DbTestCase):
+class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -766,7 +787,7 @@ class TestAddingContributorViews(DbTestCase):
             n_contributors_pre + len(payload['users']))
 
 
-class TestUserInviteViews(DbTestCase):
+class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -870,7 +891,7 @@ class TestUserInviteViews(DbTestCase):
 
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
-class TestClaimViews(DbTestCase):
+class TestClaimViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1030,7 +1051,7 @@ class TestClaimViews(DbTestCase):
         # Full name was set correctly
         assert_equal(unreg.fullname, different_name)
         # CSL names were set correctly
-        parsed_name = auth.utils.parse_name(different_name)
+        parsed_name = impute_names_model(different_name)
         assert_equal(unreg.given_name, parsed_name['given_name'])
         assert_equal(unreg.family_name, parsed_name['family_name'])
 
@@ -1084,7 +1105,7 @@ class TestClaimViews(DbTestCase):
         # Response is a 400
         assert_equal(res.status_code, 400)
 
-class TestWatchViews(DbTestCase):
+class TestWatchViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1205,7 +1226,7 @@ class TestWatchViews(DbTestCase):
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
-class TestPointerViews(DbTestCase):
+class TestPointerViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1361,7 +1382,7 @@ class TestPointerViews(DbTestCase):
         assert_equal(len(prompts), 0)
 
 
-class TestPublicViews(DbTestCase):
+class TestPublicViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1371,7 +1392,7 @@ class TestPublicViews(DbTestCase):
         assert_equal(res.status_code, 200)
 
 
-class TestAuthViews(DbTestCase):
+class TestAuthViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1404,6 +1425,56 @@ class TestAuthViews(DbTestCase):
         assert_true(send_mail.called_with(
             to_addr='fred@queen.com'
         ))
+
+    def test_register_ok(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email,
+                'password': password,
+            }
+        )
+        user = User.find_one(Q('username', 'eq', email))
+        assert_equal(user.fullname, name)
+
+    def test_register_email_mismatch(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        res = self.app.post_json(
+            url,
+            {
+                'fullName': name,
+                'email1': email,
+                'email2': email + 'lol',
+                'password': password,
+            },
+            expect_errors=True
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        users = User.find(Q('username', 'eq', email))
+        assert_equal(users.count(), 0)
+
+    def test_register_sends_user_registered_signal(self):
+        with app.test_request_context():
+            url = api_url_for('register_user')
+        name, email, password = fake.name(), fake.email(), 'underpressure'
+        with capture_signals() as mock_signals:
+            self.app.post_json(
+                url,
+                {
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
 
     def test_register_post_sends_user_registered_signal(self):
         with app.test_request_context():
@@ -1460,27 +1531,9 @@ class TestAuthViews(DbTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_change_names(self):
-        self.app.post(
-            '/api/v1/settings/names/',
-            json.dumps({
-                'fullname': 'Lyndon Baines Johnson',
-                'given_name': 'Lyndon',
-                'middle_names': 'Baines',
-                'family_name': 'Johnson',
-                'suffix': '',
-            }),
-            content_type='application/json',
-            auth=self.auth
-        ).maybe_follow()
-        self.user.reload()
-        assert_equal(self.user.given_name, 'Lyndon')
-        assert_equal(self.user.middle_names, 'Baines')
-        assert_equal(self.user.family_name, 'Johnson')
-
 
 # TODO: Use mock add-on
-class TestAddonUserViews(DbTestCase):
+class TestAddonUserViews(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -1520,7 +1573,7 @@ class TestAddonUserViews(DbTestCase):
 
 
 # TODO: Move to OSF Storage
-class TestFileViews(DbTestCase):
+class TestFileViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1548,7 +1601,7 @@ class TestFileViews(DbTestCase):
         assert_equal(len(data), len(expected))
 
 
-class TestComments(DbTestCase):
+class TestComments(OsfTestCase):
 
     def setUp(self):
         self.project = ProjectFactory(is_public=True)
@@ -1892,7 +1945,7 @@ class TestComments(DbTestCase):
         assert_equal(observed, expected)
 
 
-class TestTagViews(DbTestCase):
+class TestTagViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1907,7 +1960,7 @@ class TestTagViews(DbTestCase):
 
 
 @requires_solr
-class TestSearchViews(DbTestCase):
+class TestSearchViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1935,6 +1988,41 @@ class TestSearchViews(DbTestCase):
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+
+class TestReorderComponents(OsfTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+        # Project is public
+        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project.add_contributor(self.contrib, auth=Auth(self.creator))
+
+        # subcomponent that only creator can see
+        self.public_component = NodeFactory(creator=self.creator, public=True)
+        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.project.nodes.append(self.public_component)
+        self.project.nodes.append(self.private_component)
+
+        self.project.save()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
+    def test_reorder_components_with_private_component(self):
+
+        # contrib tries to reorder components
+        payload = {'new_list': [
+                '{0}:node'.format(self.private_component._primary_key),
+                '{0}:node'.format(self.public_component._primary_key),
+            ]
+        }
+        url = lookup('api', 'project_reorder_components', pid=self.project._primary_key)
+        res = self.app.post_json(url, payload, auth=self.contrib.auth)
+        assert_equal(res.status_code, 200)
+
+
+
+
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ from nose.tools import *
 
 from github3.repos import Repository
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 from framework.auth.decorators import Auth
@@ -14,7 +14,7 @@ from website.addons.github.exceptions import NotFoundError
 from .utils import create_mock_github
 mock_github = create_mock_github()
 
-class TestCallbacks(DbTestCase):
+class TestCallbacks(OsfTestCase):
 
     def setUp(self):
 

@@ -1,12 +1,15 @@
 /////////////////////
 // Project JS      //
 /////////////////////
-(function($){
-
-
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'js/logFeed', 'osfutils'], factory);
+    } else {
+        factory(jQuery, global.LogFeed);
+    }
+}(this, function($, LogFeed) {
 
 window.NodeActions = {};  // Namespace for NodeActions
-
 
 // TODO: move me to the NodeControl or separate module
 NodeActions.beforeForkNode = function(url, done) {
@@ -93,26 +96,6 @@ NodeActions.useAsTemplate = function() {
 
 $(function(){
 
-    $(".remove-private-link").on("click",function(){
-        var me = $(this);
-        var data_to_send={
-            'private_link': me.attr("data-link")
-        };
-        bootbox.confirm('Are you sure to remove this private link?', function(result) {
-            if (result) {
-                $.ajax({
-                    type: "delete",
-                    url: nodeApiUrl + "private_link/",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(data_to_send)
-                }).done(function(response) {
-                    window.location.reload();
-                });
-            }
-         });
-    });
-
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -139,26 +122,6 @@ $(function(){
               e.preventDefault();
 
           }
-//          else{
-//              $.ajax({
-//                   url: $(e.target).attr("action"),
-//                   type:"POST",
-//                   timeout:60000,
-//                   data:$(e.target).serialize()
-//              }).success(function(){
-//                  location.reload();
-//              }).fail(function(jqXHR, textStatus, errorThrown){
-//                    if(textStatus==="timeout") {
-//                        $("#alert").text("Add component timed out"); //Handle the timeout
-//                    }else{
-//                        $("#alert").text('Add component failed');
-//                    }
-//                    $("#add-component-submit")
-//                      .removeAttr("disabled","disabled")
-//                      .text("OK");
-//              });
-//          }
-
      });
 });
 
@@ -217,35 +180,6 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
 
 
 
-/*
-refresh rendered file through mfr
-*/
-
-window.FileRenderer = {
-    start: function(url, selector){
-        this.url = url;
-        this.element = $(selector);
-        this.tries = 0;
-        this.refreshContent = window.setInterval(this.getCachedFromServer.bind(this), 1000);
-    },
-
-    getCachedFromServer: function() {
-        var self = this;
-        $.get( self.url, function(data) {
-            if (data) {
-                self.element.html(data);
-                clearInterval(self.refreshContent);
-            } else {
-                self.tries += 1;
-                if(self.tries > 10){
-                    clearInterval(self.refreshContent);
-                    self.element.html("Timeout occurred while loading, please refresh the page")
-                }
-            }
-        });
-     }
-};
-
 
 /*
 Display recent logs for for a node on the project view page.
@@ -258,9 +192,7 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    $script(['/static/js/logFeed.js'], function() {
-                        var log = new LogFeed($logs, response.logs);
-                    });
+                    var log = new LogFeed($logs, response.logs);
                     $logs.addClass('served');
                 }
             );
@@ -308,7 +240,7 @@ $(document).ready(function() {
 
     $('body').on('click', '.tagsinput .tag > span', function(e) {
         window.location = "/search/?q=" + $(e.target).text().toString().trim();
-    })
+    });
 
     $('.citation-toggle').on('click', function(evt) {
         $(this).closest('.citations').find('.citation-list').slideToggle();
@@ -317,4 +249,4 @@ $(document).ready(function() {
 
 });
 
-}).call(this, jQuery);
+}));

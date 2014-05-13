@@ -19,9 +19,9 @@ from factory import base, Sequence, SubFactory, post_generation
 from framework import StoredObject
 from framework.auth import User, Q
 from framework.auth.decorators import Auth
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names_model
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -70,7 +70,7 @@ class UserFactory(ModularOdmFactory):
 
     @post_generation
     def set_names(self, create, extracted):
-        parsed = parse_name(self.fullname)
+        parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
         if create:
@@ -78,6 +78,12 @@ class UserFactory(ModularOdmFactory):
 
 
 class AuthUserFactory(UserFactory):
+    """A user that automatically has an api key, for quick authentication.
+
+    Example: ::
+        user = AuthUserFactory()
+        res = self.app.get(url, auth=user.auth)  # user is "logged in"
+    """
 
     @post_generation
     def add_api_key(self, create, extracted):
@@ -96,6 +102,12 @@ class TagFactory(ModularOdmFactory):
 class ApiKeyFactory(ModularOdmFactory):
     FACTORY_FOR = ApiKey
 
+
+class PrivateLinkFactory(ModularOdmFactory):
+    FACTORY_FOR = PrivateLink
+
+    key = "foobarblaz"
+    creator = SubFactory(AuthUserFactory)
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node

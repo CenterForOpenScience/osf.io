@@ -59,7 +59,7 @@ def check_password_hash(pw_hash, password):
     return constant_time_compare(
         bcrypt.hashpw(
             unicode(password).encode('utf-8'),
-            pw_hash
+            unicode(pw_hash).encode('utf-8')
         ),
         pw_hash
     )

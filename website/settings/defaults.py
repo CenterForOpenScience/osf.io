@@ -130,11 +130,18 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
+    'badges', 'dropbox',
+    'forward',
 ]
 
 ADDON_CATEGORIES = [
     'documentation', 'storage', 'bibliography', 'other',
 ]
+
+SYSTEM_ADDED_ADDONS = {
+    'user': ['badges'],
+    'node': []
+}
 
 # Piwik
 

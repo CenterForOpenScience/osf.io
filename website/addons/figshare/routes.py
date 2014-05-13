@@ -80,6 +80,44 @@ settings_routes = {
 
 api_routes = {
     'rules': [
+        ##### Node settings #####
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'get',
+            views.config.figshare_config_get,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'put',
+            views.config.figshare_config_put,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/hgrid/options/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/options/'],
+            'get',
+            views.config.figshare_get_options,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/import-auth/',
+            '/project/<pid>/node/<nid>/figshare/config/import-auth/'],
+            'put',
+            views.config.figshare_import_user_auth,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'delete',
+            views.config.figshare_deauthorize,
+            json_renderer
+        ),
+
+        #######################
         Rule([
             '/project/<pid>/figshare/hgrid/',
             '/project/<pid>/node/<nid>/figshare/hgrid/',

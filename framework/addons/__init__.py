@@ -43,23 +43,32 @@ class AddonModelMixin(StoredObject):
             return False
 
         backref_key = self._backref_key(addon_config)
-        addons = getattr(self, backref_key)
+        addons = [
+            addon for addon in getattr(self, backref_key)
+            if addon is not None
+        ]
         if addons:
             if deleted or not addons[0].deleted:
+                assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
                 return addons[0]
         return None
 
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name, auth=None):
+    def add_addon(self, addon_name, auth=None, override=False):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
+        :param bool override: For shell use only, Allows adding of system addons
         :return bool: Add-on was added
 
         """
+
+        if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self._name]:
+            return False
+
         # Reactivate deleted add-on if present
         addon = self.get_addon(addon_name, deleted=True)
         if addon:

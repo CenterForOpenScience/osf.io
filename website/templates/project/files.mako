@@ -35,18 +35,17 @@ ${parent.javascript_bottom()}
 % for script in tree_js:
 <script type="text/javascript" src="${script}"></script>
 % endfor
-<script src="/static/js/dropzone-patch.js"></script>
 <script>
-$(function(global) {
 // Don't show dropped content if user drags outside grid
-global.ondragover = function(e) { e.preventDefault(); };
-global.ondrop = function(e) { e.preventDefault(); };
+window.ondragover = function(e) { e.preventDefault(); };
+window.ondrop = function(e) { e.preventDefault(); };
 
-var filebrowser = new Rubeus('#myGrid', {
-    data: nodeApiUrl + 'files/grid/',
-    searchInput: '#fileSearch'
+$script.ready(['rubeus'], function() {
+    var filebrowser = new Rubeus('#myGrid', {
+        data: nodeApiUrl + 'files/grid/',
+        searchInput: '#fileSearch'
+    });
 });
 
-});
 </script>
 </%def>

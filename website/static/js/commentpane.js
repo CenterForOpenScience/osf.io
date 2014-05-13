@@ -102,8 +102,8 @@
     if (typeof ender === 'undefined') {
         this.CommentPane = CommentPane;
     }
-    if ((typeof define === 'function') && define.amd) {
-        define('commentpane', [], function() {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery'], function($) {
             return CommentPane;
         });
     }

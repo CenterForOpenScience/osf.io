@@ -2,6 +2,7 @@
 import logging
 import httplib as http
 
+from modularodm.exceptions import ModularOdmException
 from framework.flask import request
 from framework import push_errors_to_status, Q
 
@@ -15,7 +16,7 @@ from framework.mongo.utils import from_mongo
 from website import language
 
 from website.exceptions import NodeStateError
-from website.project import clean_template_name, new_node
+from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor,
     must_be_contributor_or_public,
@@ -24,11 +25,10 @@ from website.project.decorators import (
     must_not_be_registration,
 )
 from website.project.forms import NewProjectForm, NewNodeForm
-from website.models import Node, Pointer, WatchConfig
+from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
-from website.util import permissions
 
 from .log import _get_logs
 
@@ -216,7 +216,8 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-            and 'node' not in addon.added_mandatory
+        and 'node' not in addon.added_mandatory
+        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -265,14 +266,34 @@ def configure_comments(**kwargs):
 # View Project
 ##############################################################################
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def view_project(**kwargs):
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
+    primary = '/api/v1' not in request.path
+    rv = _view_project(node_to_use, auth, primary=primary)
+    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    return rv
+
+#### Reorder components
 
 @must_be_valid_project
 @must_not_be_registration
 @must_have_permission('write')
-def project_reorder_components(**kwargs):
+def project_reorder_components(project, **kwargs):
+    """Reorders the components in a project's component list.
 
-    project = kwargs['project']
+    :param-json list new_list: List of strings that include node IDs and
+        node type delimited by ':'.
 
+    """
+    # TODO(sloria): Change new_list parameter to be an array of objects
+    # {
+    #   'newList': {
+    #       {'key': 'abc123', 'type': 'node'}
+    #   }
+    # }
     new_list = [
         tuple(node.split(':'))
         for node in request.json.get('new_list', [])
@@ -282,7 +303,7 @@ def project_reorder_components(**kwargs):
         for key, schema in new_list
     ]
 
-    visible_nodes = [
+    valid_nodes = [
         node for node in project.nodes
         if not node.is_deleted
     ]
@@ -290,8 +311,7 @@ def project_reorder_components(**kwargs):
         node for node in project.nodes
         if node.is_deleted
     ]
-
-    if len(visible_nodes) == len(nodes_new) and set(visible_nodes) == set(nodes_new):
+    if len(valid_nodes) == len(nodes_new) and set(valid_nodes) == set(nodes_new):
         project.nodes = nodes_new + deleted_nodes
         project.save()
         return {}
@@ -315,7 +335,7 @@ def project_statistics(**kwargs):
 
 
 ###############################################################################
-# Make Public
+# Make Private/Public
 ###############################################################################
 
 
@@ -437,27 +457,16 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def view_project(**kwargs):
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
-    primary = '/api/v1' not in request.path
-    rv = _view_project(node_to_use, auth, primary=primary)
-    rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
-    return rv
-
-
 @must_be_valid_project # returns project
-@must_be_contributor
+@must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
-    link = request.json['private_link']
+    link_id = request.json['private_link_id']
+
     try:
-        node_to_use.remove_private_link(link)
-    except ValueError:
+        link = PrivateLink.load(link_id)
+        link.is_deleted = True
+        link.save()
+    except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
 
@@ -540,7 +549,7 @@ def _view_project(node, auth, primary=False):
             'fork_count': len(node.fork_list),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
-            'private_links': node.private_links,
+            'private_links': [x.to_json() for x in node.private_links_active],
             'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
@@ -560,7 +569,7 @@ def _view_project(node, auth, primary=False):
             'absolute_url':  parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
-            'can_view': (auth.private_key in parent.private_links) if parent else False
+            'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
         },
         'user': {
             'is_contributor': node.is_contributor(user),
@@ -573,6 +582,7 @@ def _view_project(node, auth, primary=False):
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
         },
+        'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
         'addons_enabled': node.get_addon_names(),
         'addons': configs,
@@ -582,6 +592,17 @@ def _view_project(node, auth, primary=False):
 
     }
     return data
+
+
+def _get_badge(user):
+    if user:
+        badger = user.get_addon('badges')
+        if badger:
+            return {
+                'can_award': badger.can_award,
+                'badges': badger.get_badges_json()
+            }
+    return {}
 
 
 def _get_children(node, auth, indent=0):
@@ -598,6 +619,43 @@ def _get_children(node, auth, indent=0):
             children.extend(_get_children(child, auth, indent+1))
 
     return children
+
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def private_link_config(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    if not node.can_edit(auth):
+        return
+    children = _get_children(node, auth)
+
+    parent = node.parent_node
+    rv = {
+        'result': {
+            'node': {
+                'title': node.title,
+                'parentId': parent._primary_key if parent else '',
+                'parentTitle': parent.title if parent else '',
+                },
+            'children': children,
+            }
+    }
+
+    return rv
+
+
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def private_link_table(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    data = {
+        'node': {
+            'absolute_url': node.absolute_url,
+            'private_links': [x.to_json() for x in node.private_links_active],
+            }
+    }
+    return data
 
 
 @collect_auth
@@ -653,14 +711,16 @@ def get_recent_logs(**kwargs):
 
 
 def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
-
-    summary = {}
+    # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
+    summary = {
+        'id': link_id if link_id else node._id,
+        'primary': primary,
+    }
 
     if node.can_view(auth):
         summary.update({
             'can_view': True,
             'can_edit': node.can_edit(auth),
-            'id': link_id if link_id else node._id,
             'primary_id': node._id,
             'url': node.url,
             'primary': primary,
@@ -736,17 +796,26 @@ def get_registrations(**kwargs):
 
 
 @must_be_valid_project # returns project
-@must_have_permission('write')
+@must_have_permission('admin')
 def project_generate_private_link_post(*args, **kwargs):
-    """ Add contributors to a node. """
+    """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    link = node_to_use.add_private_link()
+    note = request.json.get('note', '')
+    nodes=[]
+
+    if node_to_use._id not in node_ids:
+        node_ids.insert(0, node_to_use._id)
 
     for node_id in node_ids:
         node = Node.load(node_id)
-        node.add_private_link(link)
+        nodes.append(node)
+
+    new_private_link(
+        note =note, user=auth.user, nodes=nodes
+    )
 
     return {'status': 'success'}, 201
 

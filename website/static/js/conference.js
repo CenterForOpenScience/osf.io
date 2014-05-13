@@ -1,4 +1,15 @@
-var Meeting = (function() {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'hgrid'], factory);
+    } else if (typeof $script === 'function' ){
+        $script.ready(['hgrid'], function() {
+            global.Meeting = factory(jQuery, global.Slick);
+            $script.done('conference');
+        });
+    }else {
+        global.Rubeus = factory(jQuery, global.Slick);
+    }
+}(this, function($, Slick){
 
     function titleFormatter(row, cell, value, columnDef, dataContext) {
         return '<a target="_blank" href="' + dataContext.nodeUrl + '">' +
@@ -96,7 +107,7 @@ var Meeting = (function() {
             dataView.refresh();
         }
 
-        $("#gridSearch").keyup(function (e) {
+        $('#gridSearch').keyup(function (e) {
             // clear on Esc
             if (e.which == 27) {
               this.value = '';
@@ -118,8 +129,6 @@ var Meeting = (function() {
 
     }
 
-    return {
-        Meeting: Meeting
-    }
+    return Meeting;
 
-})();
+}));

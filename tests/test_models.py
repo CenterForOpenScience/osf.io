@@ -12,10 +12,11 @@ from dateutil import parser
 
 from modularodm.exceptions import ValidationError, ValidationValueError, ValidationTypeError
 
+
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names_model
 from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
@@ -26,21 +27,92 @@ from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
 )
+from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
+from website.util import web_url_for, api_url_for
 
-from tests.base import DbTestCase, Guid, fake
+from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
+    NodeWikiFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
+    AuthUserFactory
 )
 
+app = init_app(set_backends=False, routes=True)
+lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
-class TestUser(DbTestCase):
+
+class TestUserValidation(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserValidation, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_validate_fullname_none(self):
+        self.user.fullname = None
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_fullname_empty(self):
+        self.user.fullname = ''
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_social_personal_empty(self):
+        self.user.social = {'personal_site': ''}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_valid(self):
+        self.user.social = {'personal_site': 'http://cos.io/'}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_personal_invalid(self):
+        self.user.social = {'personal_site': 'help computer'}
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_valid(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1980, 1, 1),
+        }]
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_jobs_institution_empty(self):
+        self.user.jobs = [{'institution': ''}]
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_end_date(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1960, 1, 1),
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+
+class TestUser(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -52,7 +124,7 @@ class TestUser(DbTestCase):
         u.update_guessed_names()
         u.save()
 
-        parsed = parse_name(name)
+        parsed = impute_names_model(name)
         assert_equal(u.fullname, name)
         assert_equal(u.given_name, parsed['given_name'])
         assert_equal(u.middle_names, parsed['middle_names'])
@@ -75,7 +147,7 @@ class TestUser(DbTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
-        parsed = parse_name(name)
+        parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
     @mock.patch('framework.auth.model.User.update_solr')
@@ -124,7 +196,7 @@ class TestUser(DbTestCase):
         user.save()
         assert_true(user.check_password('foobar'))
         assert_true(user._id)
-        assert_equal(user.given_name, parse_name(name)['given_name'])
+        assert_equal(user.given_name, impute_names_model(name)['given_name'])
 
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
@@ -397,17 +469,17 @@ class TestUser(DbTestCase):
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
-        parsed = parse_name('John Darnielle')
+        parsed = impute_names_model('John Darnielle')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'Darnielle')
 
     def test_parse_first_last_particles(self):
-        parsed = parse_name('John van der Slice')
+        parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
 
 
-class TestMergingUsers(DbTestCase):
+class TestMergingUsers(OsfTestCase):
 
     def setUp(self):
         self.master = UserFactory(fullname='Joe Shmo',
@@ -451,7 +523,7 @@ class TestMergingUsers(DbTestCase):
         assert_false(project.is_contributor(self.dupe))
 
 
-class TestGUID(DbTestCase):
+class TestGUID(OsfTestCase):
 
     def setUp(self):
 
@@ -482,7 +554,7 @@ class TestGUID(DbTestCase):
             )
 
 
-class TestNodeFile(DbTestCase):
+class TestNodeFile(OsfTestCase):
 
     def setUp(self):
         # Create a project with a NodeFile
@@ -510,7 +582,7 @@ class TestNodeFile(DbTestCase):
         )
 
 
-class TestAddFile(DbTestCase):
+class TestAddFile(OsfTestCase):
 
     def setUp(self):
         # Create a project
@@ -574,7 +646,7 @@ class TestAddFile(DbTestCase):
                               'Type 2')
 
 
-class TestApiKey(DbTestCase):
+class TestApiKey(OsfTestCase):
 
     def test_factory(self):
         key = ApiKeyFactory()
@@ -585,7 +657,7 @@ class TestApiKey(DbTestCase):
         assert_equal(ApiKey.find().count(), 1)
 
 
-class TestNodeWikiPage(DbTestCase):
+class TestNodeWikiPage(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -606,7 +678,7 @@ class TestNodeWikiPage(DbTestCase):
                                     .format(project_url=self.project.url))
 
 
-class TestUpdateNodeWiki(DbTestCase):
+class TestUpdateNodeWiki(OsfTestCase):
 
     def setUp(self):
         # Create project with component
@@ -678,7 +750,7 @@ class TestUpdateNodeWiki(DbTestCase):
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
 
-class TestNode(DbTestCase):
+class TestNode(OsfTestCase):
 
     def setUp(self):
         # Create project with component
@@ -686,6 +758,24 @@ class TestNode(DbTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
+
+    def test_web_url_for(self):
+        with app.test_request_context():
+            result = self.parent.web_url_for('view_project')
+            assert_equal(result, web_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.web_url_for('view_project')
+            assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
+
+    def test_api_url_for(self):
+        with app.test_request_context():
+            result = self.parent.api_url_for('view_project')
+            assert_equal(result, api_url_for('view_project', pid=self.parent._primary_key))
+
+            result2 = self.node.api_url_for('view_project')
+            assert_equal(result2, api_url_for('view_project', pid=self.parent._primary_key,
+                nid=self.node._primary_key))
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -910,7 +1000,7 @@ class TestNode(DbTestCase):
         pass
 
 
-class TestRemoveNode(DbTestCase):
+class TestRemoveNode(OsfTestCase):
 
     def setUp(self):
         # Create project with component
@@ -953,7 +1043,7 @@ class TestRemoveNode(DbTestCase):
         assert_false(target.is_deleted)
 
 
-class TestAddonCallbacks(DbTestCase):
+class TestAddonCallbacks(OsfTestCase):
     """Verify that callback functions are called at the right times, with the
     right arguments.
 
@@ -1031,7 +1121,7 @@ class TestAddonCallbacks(DbTestCase):
             )
 
 
-class TestProject(DbTestCase):
+class TestProject(OsfTestCase):
 
     def setUp(self):
         # Create project
@@ -1176,16 +1266,11 @@ class TestProject(DbTestCase):
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
-
     def test_add_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         assert_in(link, self.project.private_links)
-
-    def test_remove_private_link(self):
-        link = self.project.add_private_link()
-        assert_in(link, self.project.private_links)
-        self.project.remove_private_link(link)
-        assert_not_in(link, self.project.private_links)
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
@@ -1288,7 +1373,9 @@ class TestProject(DbTestCase):
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1300,7 +1387,7 @@ class TestProject(DbTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
-        other_guy_auth.private_key = link
+        other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
@@ -1314,7 +1401,7 @@ class TestProject(DbTestCase):
         project.remove_contributor(creator, auth=Auth(user=contrib))
         assert_false(project.can_view(Auth(user=creator)))
         assert_false(project.can_edit(Auth(user=creator)))
-        assert_false(project.is_contributor(Auth(user=creator)))
+        assert_false(project.is_contributor(creator))
 
     def test_can_view_public(self):
         # Create contributor and noncontributor
@@ -1457,7 +1544,7 @@ class TestProject(DbTestCase):
             contrib.unclaimed_records.keys()
         )
 
-class TestTemplateNode(DbTestCase):
+class TestTemplateNode(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -1653,7 +1740,7 @@ class TestTemplateNode(DbTestCase):
             )
 
 
-class TestForkNode(DbTestCase):
+class TestForkNode(OsfTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1824,7 +1911,9 @@ class TestForkNode(DbTestCase):
         assert_false(fork.is_public)
 
     def test_not_fork_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         fork = self.project.fork_node(self.consolidate_auth)
         assert_not_in(link, fork.private_links)
 
@@ -1862,15 +1951,16 @@ class TestForkNode(DbTestCase):
                                 self.registration)
 
 
-class TestRegisterNode(DbTestCase):
+class TestRegisterNode(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_private_link()
-        self.project.save()
+        self.link = PrivateLinkFactory()
+        self.link.nodes.append(self.project)
+        self.link.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):
@@ -2064,7 +2154,7 @@ class TestRegisterNode(DbTestCase):
         assert_in(self.registration._id, self.project.registration_list)
 
 
-class TestNodeLog(DbTestCase):
+class TestNodeLog(OsfTestCase):
 
     def setUp(self):
         self.log = NodeLogFactory()
@@ -2118,7 +2208,7 @@ class TestNodeLog(DbTestCase):
         assert_equal(parsed, self.log.tz_date)
 
 
-class TestPermissions(DbTestCase):
+class TestPermissions(OsfTestCase):
 
     def setUp(self):
         self.project = ProjectFactory()
@@ -2174,7 +2264,7 @@ class TestPermissions(DbTestCase):
         assert_false(self.project.has_permission(self.project.creator, 'dance'))
 
 
-class TestPointer(DbTestCase):
+class TestPointer(OsfTestCase):
 
     def setUp(self):
         self.pointer = PointerFactory()
@@ -2228,7 +2318,7 @@ class TestPointer(DbTestCase):
         assert_equal(registration.nodes[0].node, pointee)
 
 
-class TestWatchConfig(DbTestCase):
+class TestWatchConfig(OsfTestCase):
 
     def test_factory(self):
         config = WatchConfigFactory(digest=True, immediate=False)
@@ -2237,7 +2327,7 @@ class TestWatchConfig(DbTestCase):
         assert_true(config.node._id)
 
 
-class TestUnregisteredUser(DbTestCase):
+class TestUnregisteredUser(OsfTestCase):
 
     def setUp(self):
         self.referrer = UserFactory()
@@ -2325,7 +2415,7 @@ class TestUnregisteredUser(DbTestCase):
 
 
 
-class TestProjectWithAddons(DbTestCase):
+class TestProjectWithAddons(OsfTestCase):
 
     def test_factory(self):
         p = ProjectWithAddonFactory(addon='s3')
@@ -2333,7 +2423,7 @@ class TestProjectWithAddons(DbTestCase):
         assert_true(p.creator.get_addon('s3'))
 
 
-class TestComments(DbTestCase):
+class TestComments(OsfTestCase):
 
     def setUp(self):
         self.comment = CommentFactory()

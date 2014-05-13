@@ -1,20 +1,38 @@
 /**
+ * An OSF-flavored wrapper around HGrid.
+ *
  * Module to render the consolidated files view. Reads addon configurations and
  * initializes an HGrid.
  */
-this.Rubeus = (function($, HGrid, bootbox, window) {
-
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap'], factory);
+    } else if (typeof $script === 'function' ){
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid'], function() {
+            global.Rubeus = factory(jQuery, global.HGrid);
+            $script.done('rubeus');
+        });
+    }else {
+        global.Rubeus = factory(jQuery, global.HGrid);
+    }
+}(this, function($, HGrid){
     /////////////////////////
     // HGrid configuration //
     /////////////////////////
 
+    Rubeus.Html = $.extend({}, HGrid.Html);
     // Custom folder icon indicating private component
-    HGrid.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
+    Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    HGrid.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    // Class for folder name
+    Rubeus.Html.folderTextClass = 'hg-folder-text';
 
     // Override Name column folder view to allow for extra widgets, e.g. github branch picker
-    HGrid.Col.Name.folderView = function(item) {
+    Rubeus.Col = {};
+    // Copy default name column from HGrid
+    Rubeus.Col.Name = $.extend({}, HGrid.Col.Name);
+    Rubeus.Col.Name.folderView = function(item) {
         var icon, opening, cssClass;
         if (item.iconUrl) {
             // use item's icon based on filetype
@@ -22,31 +40,31 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             cssClass = '';
         } else {
             if (!item.permissions.view) {
-                icon = HGrid.Html.folderIconPrivate;
+                icon = Rubeus.Html.folderIconPrivate;
                 cssClass = 'hg-folder-private';
             } else if (item.isPointer) {
-                icon = HGrid.Html.folderIconPointer;
+                icon = Rubeus.Html.folderIconPointer;
                 cssClass = 'hg-folder-pointer';
             } else {
                 icon = HGrid.Html.folderIcon;
                 cssClass = 'hg-folder-public';
             }
         }
-        opening = '<span class="hg-folder-text ' + cssClass + '">';
+        opening = '<span class="' + Rubeus.Html.folderTextClass + ' ' + cssClass + '">';
         var closing = '</span>';
-        html = [icon, opening, '&nbsp;', item.name, closing].join('');
+        html = [opening, icon, '&nbsp;', item.name, closing].join('');
         if(item.extra) {
             html += '<span class="hg-extras">' + item.extra + '</span>';
         }
         return html;
     };
 
-    HGrid.Col.Name.showExpander = function(row) {
+    Rubeus.Col.Name.showExpander = function(row) {
         var isTopLevel = row.parentID === HGrid.ROOT_ID;
         return row.kind === HGrid.FOLDER && row.permissions.view && !isTopLevel;
     };
 
-    HGrid.Col.Name.itemView = function(item) {
+    Rubeus.Col.Name.itemView = function(item) {
         var tooltipMarkup = genTooltipMarkup('View file');
         icon = Rubeus.getIcon(item);
         return [icon, '<span ' + tooltipMarkup + ' >&nbsp;', item.name, '</span>'].join('');
@@ -68,25 +86,26 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
                                 'data-toggle="tooltip" ';
     }
 
-    HGrid.Col.ActionButtons.itemView = function(item) {
-	var buttonDefs = [];
-	if(item.permissions){
-	    if(item.permissions.download !== false){
-        	buttonDefs.push({
-        	    text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
-        	    action: 'download',
-        	    cssClass: 'btn btn-primary btn-mini'
-        	});
-	    }
+    Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
+    Rubeus.Col.ActionButtons.itemView = function(item) {
+    var buttonDefs = [];
+    if(item.permissions){
+        if(item.permissions.download !== false){
+            buttonDefs.push({
+                text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+                action: 'download',
+                cssClass: 'btn btn-primary btn-mini'
+            });
+        }
         if (item.permissions.edit) {
-    		buttonDefs.push({
-    		    text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
-    		    action: 'delete',
-    		    cssClass: 'btn btn-link btn-mini btn-delete'
-    		});
-	    }
-	}
-	return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+            buttonDefs.push({
+                text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+                action: 'delete',
+                cssClass: 'btn btn-link btn-mini btn-delete'
+            });
+        }
+    }
+    return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
@@ -95,9 +114,9 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
         return name.slice(name.indexOf(':') + 1).trim();
     }
 
-    HGrid.Col.ActionButtons.name = 'Actions';
-    HGrid.Col.ActionButtons.width = 70;
-    HGrid.Col.ActionButtons.folderView = function(row) {
+    Rubeus.Col.ActionButtons.name = 'Actions';
+    Rubeus.Col.ActionButtons.width = 70;
+    Rubeus.Col.ActionButtons.folderView = function(row) {
         var buttonDefs = [];
         var tooltipMarkup = genTooltipMarkup('Upload');
         if (this.options.uploads && row.urls.upload &&
@@ -116,7 +135,7 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     /**
-     * Get the status message from the addon, if any.
+     * Get the status message from the addon if defined, otherwise use the default message.
      */
      function getStatusCfg(addon, whichStatus, extra) {
         if (addon && Rubeus.cfg[addon] && Rubeus.cfg[addon][whichStatus]) {
@@ -149,7 +168,12 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
-        var $rowElem = $(this.getRowElement(row.id));
+        try {
+            // Raises TypeError if row's HTML is not rendered.
+            var $rowElem = $(this.getRowElement(row.id));
+        } catch (err) {
+            return;
+        }
         var $status = $rowElem.find(Rubeus.statusSelector);
         this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
@@ -232,9 +256,13 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             if (viewUrl) {
                 window.location.href = viewUrl;
             }
-            if (row.kind === HGrid.FOLDER && row.depth !== 0) {
-                grid.toggleCollapse(row);
-            }
+        }
+    }
+
+    function onClickFolderName(evt, row, grid) {
+        onClickName(evt, row, grid);
+        if (row && row.kind === HGrid.FOLDER && row.depth !== 0) {
+            grid.toggleCollapse(row);
         }
     }
 
@@ -254,8 +282,8 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     baseOptions = {
         /*jshint unused: false */
         columns: [
-            HGrid.Col.Name,
-            HGrid.Col.ActionButtons,
+            Rubeus.Col.Name,
+            Rubeus.Col.ActionButtons,
             DownloadCount
         ],
         width: '100%',
@@ -384,8 +412,15 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
             // Go to file's detail page if name is clicked
             {
                 on: 'click',
-                selector: '.' + HGrid.Html.nameClass,
+                selector: '.' + HGrid.Html.itemNameClass,
                 callback: onClickName
+            },
+            // Toggle folder collapse when text is clicked; listen on text
+            // rather than name to avoid Chrome crash on <select>s
+            {
+                on: 'click',
+                selector: '.' + Rubeus.Html.folderTextClass,
+                callback: onClickFolderName
             }
         ],
         progBar: '#filebrowserProgressBar',
@@ -508,5 +543,5 @@ this.Rubeus = (function($, HGrid, bootbox, window) {
     };
 
     return Rubeus;
+}));
 
-})(jQuery, HGrid, bootbox, window);

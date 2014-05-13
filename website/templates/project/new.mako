@@ -26,3 +26,15 @@
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/vendor/bower_components/jquery-ui/themes/base/jquery-ui.css">
 </%def>
+
+<%def name="javascript_bottom()">
+<script>
+    // TODO(sloria): require('jquery') here
+    //block the create new project button when the form is submitted
+    $('#projectForm').on('submit',function(){
+        $('button[type="submit"]', this)
+            .attr('disabled', 'disabled')
+            .text('Creating');
+    });
+</script>
+</%def>

@@ -21,6 +21,7 @@ wtforms-recaptcha==0.2.0
 bleach==1.2.2
 pystache==0.5.3
 blinker==1.3
+furl==0.3.7
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 

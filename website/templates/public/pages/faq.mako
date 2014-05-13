@@ -45,7 +45,7 @@
 <h3>What if I don't want to register anything in the OSF?</h3><p>Registering is
     an optional feature of the OSF.</p>
 
-<h3>How is secure is my information?</h3><p>Security is extremely important for
+<h3>How secure is my information?</h3><p>Security is extremely important for
     the OSF. When you sign up and create a password, your password is not
     recorded. Instead, we store a <a href="http://bcrypt.sourceforge.net/">bcrypt
         hash</a> of your password. This is a computation on your password that
@@ -73,7 +73,7 @@
 
 <p>The OSF infrastructure will be open-sourced to encourage a community of
     developers to contribute to open science by adding features and improving
-    existing features. For updates on new features, you can join our <a href="">Google
+    existing features. For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
         Group</a>, find us on <a
             href="https://twitter.com/osframework">Twitter</a> and on <a
             href="https://www.facebook.com/OpenScienceFramework">Facebook</a>,

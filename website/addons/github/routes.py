@@ -67,7 +67,7 @@ settings_routes = {
         Rule(
             [
                 '/project/<pid>/github/hook/',
-                '/project/<pid>/node/<nid>github/hook/',
+                '/project/<pid>/node/<nid>/github/hook/',
             ],
             'post',
             views.hooks.github_hook_callback,
@@ -182,8 +182,8 @@ page_routes = {
     'rules': [
         Rule(
             [
-                '/project/<pid>/github/file/<path:path>',
-                '/project/<pid>/node/<nid>/github/file/<path:path>',
+                '/project/<pid>/github/file/<path:path>/',
+                '/project/<pid>/node/<nid>/github/file/<path:path>/',
             ],
             'get',
             views.crud.github_view_file,

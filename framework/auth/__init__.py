@@ -32,7 +32,7 @@ def get_display_name(username):
         return '%s...%s' % (username[:15], username[-10:])
     return username
 
-
+# TODO(sloria): This belongs in website.project
 def get_current_node():
     from website.models import Node
     nid = session.data.get('auth_node_id')

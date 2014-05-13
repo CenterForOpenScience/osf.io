@@ -1,7 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">Project Settings</%def>
 
-
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
 ##        "tpl": "util/render_keys.mako",
@@ -26,9 +25,6 @@
                 % if addon_enabled_settings:
                     <li><a href="#configureAddons">Configure Add-ons</a></li>
                 % endif
-                % if 'write' in user['permissions']:
-                    <li><a href="#linkScope">Private Links</a></li>
-                % endif
             </ul>
         </div><!-- end sidebar -->
     </div>
@@ -42,13 +38,16 @@
                 <div class="panel-heading">
                     <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
                 </div>
-
                 <div class="panel-body">
-
-                    <!-- Delete node -->
-                    <button id="delete-node" class="btn btn-danger">Delete ${node['category']}</button>
+                    <div class="help-block">
+                        A project cannot be deleted if it has any components within it.
+                        To delete a parent project, you must first delete all child components
+                        by visiting their settings pages.
+                    </div>
+                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['category']}</button>
 
                 </div>
+                <!-- Delete node -->
 
             </div>
 
@@ -163,23 +162,6 @@
 
             % endif
 
-        % if 'write' in user['permissions']:
-            <div id="linkScope" class="panel panel-default">
-                <div class="panel-heading">
-                    <h3 class="panel-title">Private Link</h3>
-                </div>
-                <button id="generate-private-link" class="btn btn-success private-link" data-toggle="modal" href="#private-link">Generate Private Link</button>
-                % for link in node['private_links']:
-                    <li class="list-group-item" >
-                        <a class="remove-private-link btn btn-danger btn-mini" data-link="${link}">-</a>
-                        <a class="link-name" >${node['absolute_url']}?key=${link}</a>
-
-                    </li>
-                % endfor
-            </div>
-        % endif
-
-
     </div>
 
 </div>
@@ -191,9 +173,6 @@
     %>
     ${tpl}
 </%def>
-
-<!-- Include metadata templates -->
-<%include file="metadata/metadata_templates_1.html" />
 
 
 % for name, capabilities in addon_capabilities.iteritems():
@@ -271,7 +250,7 @@ ${parent.javascript_bottom()}
 
         });
 
-        $('#delete-node').on('click', function() {
+        $('#deleteNode').on('click', function() {
             var key = randomString();
             bootbox.prompt(
                 '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +

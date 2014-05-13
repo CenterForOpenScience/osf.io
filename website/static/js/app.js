@@ -34,6 +34,7 @@ var LinksViewModel = function(elm) {
 
 };
 
+var NODE_OFFSET = 25;
 var PrivateLinkViewModel = function(title, parentId, parentTitle) {
 
     var self = this;
@@ -41,6 +42,7 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
     self.title = title;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
+    self.label = ko.observable(null);
     self.pageTitle = 'Generate New Private Link';
     self.errorMsg = ko.observable('');
 
@@ -77,7 +79,8 @@ var PrivateLinkViewModel = function(title, parentId, parentTitle) {
             {
                 type: 'post',
                 data: JSON.stringify({
-                    node_ids: self.nodesToChange()
+                    node_ids: self.nodesToChange(),
+                    label: self.label()
                 }),
                 contentType: 'application/json',
                 dataType: 'json',

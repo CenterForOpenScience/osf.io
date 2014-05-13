@@ -77,3 +77,5 @@ website/addons/figshare/__init__.py.orig
 src/
 Notes.txt
 website/mfrcache/
+docs/_build
+website/static/img/badges

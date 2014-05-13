@@ -9,12 +9,13 @@
     <meta name="description" content="${self.description()}">
 
     ${includes_top()}
-
     ${self.stylesheets()}
     ${self.javascript()}
 
+    <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
+
 </head>
-<body>
+<body data-spy="scroll" data-target=".nav-list-spy">
     % if dev_mode:
     <style>
         #devmode {
@@ -44,14 +45,14 @@
     <%include file="footer.mako"/>
 
         %if use_cdn:
-            <div id="fb-root"></div>
-            <script>(function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) {return;}
-              js = d.createElement(s); js.id = id;
-              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));</script>
+##            <div id="fb-root"></div>
+##            <script>(function(d, s, id) {
+##              var js, fjs = d.getElementsByTagName(s)[0];
+##              if (d.getElementById(id)) {return;}
+##              js = d.createElement(s); js.id = id;
+##              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+##              fjs.parentNode.insertBefore(js, fjs);
+##            }(document, 'script', 'facebook-jssdk'));</script>
 
             <script>
             var _prum = [['id', '526076f6abe53d9e35000000'],
@@ -137,6 +138,7 @@
     ### Javascript loaded at the bottom of the page ###
 </%def>
 
+
 <%def name="includes_top()">
 
     <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
@@ -160,13 +162,23 @@
     <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
+    <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
 
     % for url in js_all:
     <script src="${url}"></script>
     % endfor
 
     <script>
+        // Enable knockout punches
         ko.punches.enableAll();
+        // Filebrowser dependencies
+        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
+            'zeroclipboard');
+        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
+        $script(['/static/js/rubeus.js']); // exports 'rubeus'
+        $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
     </script>
 
 </%def>

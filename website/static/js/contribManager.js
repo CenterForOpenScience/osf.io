@@ -1,4 +1,13 @@
-this.ContribManager = (function(window, $, ko, bootbox) {
+(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['jquery', 'knockout', 'jquery-ui',
+                'vendor/jquery-blockui/jquery.blockui',
+                'vendor/knockout-sortable/knockout-sortable',
+                'osfutils'], factory);
+    } else {
+        global.ContribManager = factory(jQuery, global.ko);
+    }
+}(this, function($, ko) {
 
     var contribsEqual = function(a, b) {
         return a.id === b.id && a.permission === b.permission &&
@@ -42,7 +51,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         });
     };
 
-    var ContributorModel = function(contributor, pageOwner) {
+    var ContributorModel = function(contributor, pageOwner, isRegistration) {
 
         var self = this;
 
@@ -73,13 +82,14 @@ this.ContribManager = (function(window, $, ko, bootbox) {
             return permission.charAt(0).toUpperCase() + permission.slice(1);
         });
 
-        self.contributorIsUser = ko.computed(function() {
-            return self.id === pageOwner['id'];
+        self.canRemove = ko.computed(function(){
+            return (self.id === pageOwner['id']) && !isRegistration;
         });
 
         // TODO: copied-and-pasted from nodeControl. When nodeControl
         // gets refactored, update this to use global method.
         self.removeSelf = function() {
+
             var id = self.id,
                 name = self.fullname;
             var payload = {
@@ -90,6 +100,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
                 nodeApiUrl + 'beforeremovecontributors/',
                 payload,
                 function(response) {
+
                     var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
                     bootbox.confirm({
                         title: 'Delete Contributor?',
@@ -100,6 +111,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
                                     nodeApiUrl + 'removecontributors/',
                                     payload,
                                     function(response) {
+
                                         if (response.redirectUrl) {
                                             window.location.href = response.redirectUrl;
                                         } else {
@@ -120,7 +132,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
 
     };
 
-    var ContributorsViewModel = function(contributors, user) {
+    var ContributorsViewModel = function(contributors, user, isRegistration) {
 
         var self = this;
         for (var i=0; i<contributors.length; i++) {
@@ -132,6 +144,9 @@ this.ContribManager = (function(window, $, ko, bootbox) {
 
         self.user = ko.observable(user);
         self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
+        self.canEdit = ko.computed(function() {
+            return (self.userIsAdmin()) && !isRegistration;
+        });
 
         self.messageText = ko.observable('');
         self.messageType = ko.observable('');
@@ -194,7 +209,7 @@ this.ContribManager = (function(window, $, ko, bootbox) {
         self.init = function() {
             self.messageText('');
             self.contributors(self.original().map(function(item) {
-                return new ContributorModel(item, self.user());
+                return new ContributorModel(item, self.user(), isRegistration);
             }));
         };
 
@@ -302,12 +317,12 @@ this.ContribManager = (function(window, $, ko, bootbox) {
     // Public API //
     ////////////////
 
-    function ContribManager(selector, contributors, user) {
+    function ContribManager(selector, contributors, user, isRegistration) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.contributors = contributors;
-        self.viewModel = new ContributorsViewModel(contributors, user);
+        self.viewModel = new ContributorsViewModel(contributors, user, isRegistration);
         self.init();
     }
 
@@ -318,4 +333,4 @@ this.ContribManager = (function(window, $, ko, bootbox) {
 
     return ContribManager;
 
-})(window, $, ko, bootbox);
+}));
