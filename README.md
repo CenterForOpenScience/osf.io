@@ -30,6 +30,12 @@ $ brew install libxslt
 $ pip install -r dev-requirements.txt
 ```
 
+- Install addon requirements.
+
+```bash
+$ invoke addon_requirements
+```
+
 - Create your local settings file.
 
 ```bash
