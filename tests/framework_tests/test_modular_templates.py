@@ -17,7 +17,7 @@ from framework.routing import (
     render_mako_string,
 )
 
-from tests.base import AppTestCase, DbTestCase
+from tests.base import AppTestCase, OsfTestCase
 
 # Need to use OsfWebRenderer to get global variables
 from website.routes import OsfWebRenderer
@@ -25,7 +25,7 @@ from website.routes import OsfWebRenderer
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
-class RendererTestCase(DbTestCase, AppTestCase):
+class RendererTestCase(OsfTestCase, AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
