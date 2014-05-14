@@ -273,10 +273,21 @@ def append_editable(data, auth, uid=None):
     data['editable'] = auth.user == target
 
 
+def serialize_social_addons(auth):
+    user = auth.user
+    out = {}
+    for user_settings in user.get_addons():
+        config = user_settings.config
+        if user_settings.public_id:
+            out[config.short_name] = user_settings.public_id
+    return out
+
+
 @collect_auth
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     out = target.social
+    out['addons'] = serialize_social_addons(auth)
     append_editable(out, auth, uid)
     return out
 
@@ -355,8 +366,11 @@ def unserialize_social(auth, **kwargs):
 
     user.social['personal'] = json_data.get('personal')
     user.social['orcid'] = json_data.get('orcid')
-    user.social['researcher_id'] = json_data.get('researcherId')
+    user.social['researcherId'] = json_data.get('researcherId')
     user.social['twitter'] = json_data.get('twitter')
+    user.social['github'] = json_data.get('github')
+    user.social['scholar'] = json_data.get('scholar')
+    user.social['linkedIn'] = json_data.get('linkedIn')
 
     user.save()
 

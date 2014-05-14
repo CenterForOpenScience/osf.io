@@ -20,6 +20,12 @@ from ..auth import oauth_start_url, oauth_get_token
 logger = logging.getLogger(__name__)
 
 
+def get_profile_view(user_settings):
+    return {
+        'url': user_settings.url
+    }
+
+
 @must_have_permission('write')
 @must_have_addon('github', 'node')
 def github_add_user_auth(**kwargs):

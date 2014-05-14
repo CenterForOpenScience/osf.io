@@ -24,6 +24,32 @@
                 <input class="form-control" data-bind="value: twitter" />
             </div>
 
+            <div class="form-group">
+                <label>Google Scholar</label>
+                <input class="form-control" data-bind="value: scholar" />
+            </div>
+
+            <div class="form-group">
+                <label>LinkedIn</label>
+                <input class="form-control" data-bind="value: linkedIn" />
+            </div>
+
+            <div class="form-group">
+                <label>GitHub</label>
+                <div data-bind="css: {'input-group': github.hasAddon()}">
+                    <input class="form-control" data-bind="value: github" />
+                    <span
+                            class="input-group-btn"
+                            data-bind="if: github.hasAddon()"
+                        >
+                        <button
+                                class="btn btn-success"
+                                data-bind="click: github.importAddon"
+                            >Import</button>
+                    </span>
+                </div>
+            </div>
+
             <button
                     type="submit"
                     class="btn btn-success"
