@@ -62,16 +62,36 @@
         return out;
     });
 
-    addExtender('sanitize', function(value, options) {
-        if (!! value) {
-            return value.replace(/<\/?[^>]+>/g, '');
+    var sanitize = function(value) {
+        return value.replace(/<\/?[^>]+>/g, '');
+    };
+
+    var socialRules = {
+        orcid: /orcid\.org\/([-\d]+)/i,
+        researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
+        scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
+        twitter: /twitter\.com\/(\w+)/i,
+        linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
+        github: /github\.com\/(\w+)/i
+    };
+
+    var cleanByRule = function(rule) {
+        return function(value) {
+            var match = value.match(rule);
+            if (match) {
+                return match[1];
+            }
+            return value;
         }
-        return '';
+    };
+
+    addExtender('cleanup', function(value, cleaner) {
+        return !!value ? cleaner(value) : '';
     });
 
     var sanitizedObservable = function(value) {
         return ko.observable(value).extend({
-            sanitize: true
+            cleanup: sanitize
         });
     };
 
@@ -95,8 +115,8 @@
         message: 'Date must be greater than or equal to {0}.'
     };
 
-    var addRegexValidator = function(label, regex, message) {
-        ko.validation.rules[label] = {
+    var makeRegexValidator = function(regex, message) {
+        return {
             validator: function(value, options) {
                 return ko.validation.utils.isEmptyVal(value) ||
                     regex.test(ko.utils.unwrapObservable(value))
@@ -105,8 +125,7 @@
         };
     };
 
-    addRegexValidator(
-        'url',
+    ko.validation.rules['url'] = makeRegexValidator(
         /^(ftp|http|https):\/\/[^ "]+$/,
         'Please enter a valid URL.'
     );
@@ -311,50 +330,84 @@
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
     $.extend(NameViewModel.prototype, SerializeMixin.prototype);
 
+    /*
+     * Custom observable for use with external services.
+     */
+    var extendLink = function(obs, $parent, label, baseUrl) {
+
+        obs.url = ko.computed(function($data, event) {
+            // Prevent click from submitting form
+            event && event.preventDefault();
+            if (obs()) {
+                return baseUrl ? baseUrl + obs() : obs();
+            }
+            return '';
+        });
+
+        obs.hasAddon = ko.computed(function() {
+            return $parent.addons()[label] !== undefined;
+        });
+
+        obs.importAddon = function() {
+            if (obs.hasAddon()) {
+                obs($parent.addons()[label]);
+            }
+        };
+
+        return obs;
+
+    };
+
     var SocialViewModel = function(urls, modes) {
 
         var self = this;
         BaseViewModel.call(self, urls, modes);
 
-        self.personal = ko.observable().extend({
-            url: true
-        });
-        self.orcid = ko.observable();
-        self.researcherId = ko.observable();
-        self.twitter = ko.observable();
+        self.addons = ko.observableArray();
+
+        self.personal = extendLink(
+            ko.observable().extend({url: true}),
+            self, 'personal'
+        );
+        self.orcid = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.orcid)}),
+            self, 'orcid', 'http://orcid.com/'
+        );
+        self.researcherId = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
+            self, 'researcherId', 'http://researcherId.com/'
+        );
+        self.twitter = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.twitter)}),
+            self, 'twitter', 'https://twitter.com/'
+        );
+        self.scholar = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.scholar)}),
+            self, 'scholar', 'http://scholar.google.com/citations?user='
+        );
+        self.linkedIn = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.linkedIn)}),
+            self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
+        );
+        self.github = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.github)}),
+            self, 'github', 'https://github.com/'
+        );
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
-        self.personalUrl = ko.computed(function() {
-            if (self.personal()) {
-                return self.personal();
-            }
-        });
-        self.orcidUrl = ko.computed(function() {
-            if (self.orcid()) {
-                return 'http://orcid.org/' + self.orcid();
-            }
-        });
-        self.researcherIdUrl = ko.computed(function() {
-            if (self.researcherId()) {
-                return 'http://www.researcherid.com/rid/' + self.orcid();
-            }
-        });
-        self.twitterUrl = ko.computed(function() {
-            if (self.twitter()) {
-                return 'https://twitter.com/' + self.twitter();
-            }
-        });
-
         self.values = ko.computed(function() {
             return [
-                {label: 'Personal Site', text: self.personalUrl(), value: self.personalUrl()},
-                {label: 'ORCID', text: self.orcid(), value: self.orcidUrl()},
-                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherIdUrl()},
-                {label: 'Twitter', text: self.twitter(), value: self.twitterUrl()}
+                {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
+                {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
+                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherId.url()},
+                {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
+                {label: 'GitHub', text: self.github(), value: self.github.url()},
+                {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
+                {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
             ];
         });
 
@@ -510,6 +563,7 @@
     var Social = function(selector, urls, modes) {
         this.viewModel = new SocialViewModel(urls, modes);
         $.osf.applyBindings(this.viewModel, selector);
+        window.social = this.viewModel;
     };
 
     var Jobs = function(selector, urls, modes) {
