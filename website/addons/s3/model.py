@@ -14,8 +14,8 @@ from boto.exception import BotoServerError
 from framework import fields
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from .utils import get_bucket_drop_down, serialize_bucket, remove_osf_user
-from .api import S3Wrapper
+from website.addons.s3.api import S3Wrapper
+from website.addons.s3.utils import get_bucket_drop_down, serialize_bucket, remove_osf_user
 
 
 class S3GuidFile(GuidFile):
@@ -55,7 +55,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
             remove_osf_user(self)
             return True
         except BotoServerError as error:
-            if error.code in ['InvalidClientTokenId', 'ValidationError']:
+            if error.code in ['InvalidClientTokenId', 'ValidationError', 'AccessDenied']:
                 return False
             raise
 
@@ -80,6 +80,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
             node_settings.delete(save=False)
             node_settings.user_settings = None
             node_settings.save()
+
 
 class AddonS3NodeSettings(AddonNodeSettingsBase):
 

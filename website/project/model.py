@@ -490,9 +490,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     contributors = fields.ForeignField('user', list=True, backref='contributed')
     users_watching_node = fields.ForeignField('user', list=True, backref='watched')
 
-    # TODO: Remove me; only included for migration purposes
-    contributor_list = fields.DictionaryField(list=True)
-
     logs = fields.ForeignField('nodelog', list=True, backref='logged')
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 

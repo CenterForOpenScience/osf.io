@@ -262,10 +262,23 @@ def get_target_user(auth, uid=None):
     return target
 
 
+def fmt_date_or_none(date, fmt='%Y-%m-%d'):
+    if date:
+        return date.strftime(fmt)
+    return None
+
+
+def append_editable(data, auth, uid=None):
+    target = get_target_user(auth, uid)
+    data['editable'] = auth.user == target
+
+
 @collect_auth
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
-    return target.social
+    out = target.social
+    append_editable(out, auth, uid)
+    return out
 
 
 def serialize_job(job):
@@ -273,8 +286,8 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': job.get('start'),
-        'end': job.get('end'),
+        'start': fmt_date_or_none(job.get('start')),
+        'end': fmt_date_or_none(job.get('end')),
     }
 
 
@@ -282,29 +295,36 @@ def serialize_school(school):
     return {
         'institution': school.get('institution'),
         'department': school.get('department'),
-        'title': school.get('title'),
-        'start': school.get('start'),
-        'end': school.get('end'),
+        'degree': school.get('degree'),
+        'start': fmt_date_or_none(school.get('start')),
+        'end': fmt_date_or_none(school.get('end')),
     }
 
 
 def serialize_contents(field, func, auth, uid=None):
     target = get_target_user(auth, uid)
-    return {
+    out = {
         'contents': [
             func(content)
             for content in getattr(target, field)
         ]
     }
+    append_editable(out, auth, uid)
+    return out
+
 
 @collect_auth
 def serialize_jobs(auth, uid=None, **kwargs):
-    return serialize_contents('jobs', serialize_job, auth, uid)
+    out = serialize_contents('jobs', serialize_job, auth, uid)
+    append_editable(out, auth, uid)
+    return out
 
 
 @collect_auth
 def serialize_schools(auth, uid=None, **kwargs):
-    return serialize_contents('schools', serialize_school, auth, uid)
+    out = serialize_contents('schools', serialize_school, auth, uid)
+    append_editable(out, auth, uid)
+    return out
 
 
 @must_be_logged_in
@@ -319,14 +339,25 @@ def unserialize_names(**kwargs):
     user.save()
 
 
+def verify_user_match(auth, **kwargs):
+    uid = kwargs.get('uid')
+    if uid and uid != auth.user._id:
+        raise HTTPError(http.FORBIDDEN)
+
+
 @must_be_logged_in
-def unserialize_social(**kwargs):
-    user = kwargs['auth'].user
+def unserialize_social(auth, **kwargs):
+
+    verify_user_match(auth, **kwargs)
+
+    user = auth.user
     json_data = deep_clean(request.get_json())
+
     user.social['personal'] = json_data.get('personal')
     user.social['orcid'] = json_data.get('orcid')
     user.social['researcher_id'] = json_data.get('researcherId')
     user.social['twitter'] = json_data.get('twitter')
+
     user.save()
 
 
@@ -350,8 +381,8 @@ def unserialize_school(school):
     }
 
 
-def unserialize_contents(field, func, **kwargs):
-    user = kwargs['auth'].user
+def unserialize_contents(field, func, auth):
+    user = auth.user
     json_data = deep_clean(request.get_json())
     setattr(
         user,
@@ -365,10 +396,12 @@ def unserialize_contents(field, func, **kwargs):
 
 
 @must_be_logged_in
-def unserialize_jobs(**kwargs):
-    unserialize_contents('jobs', unserialize_job, **kwargs)
+def unserialize_jobs(auth, **kwargs):
+    verify_user_match(auth, **kwargs)
+    unserialize_contents('jobs', unserialize_job, auth)
 
 
 @must_be_logged_in
-def unserialize_schools(**kwargs):
-    unserialize_contents('schools', unserialize_job, **kwargs)
+def unserialize_schools(auth, **kwargs):
+    verify_user_match(auth, **kwargs)
+    unserialize_contents('schools', unserialize_school, auth)
