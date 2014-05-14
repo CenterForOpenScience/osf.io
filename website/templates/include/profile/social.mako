@@ -1,0 +1,63 @@
+<script id="profileSocial" type="text/html">
+
+    <div data-bind="if: mode() === 'edit'">
+
+        <form role="form" data-bind="submit: submit">
+
+            <div class="form-group">
+                <label>Personal Site</label>
+                <input class="form-control" data-bind="value: personal" />
+            </div>
+
+            <div class="form-group">
+                <label>ORCID</label>
+                <input class="form-control" data-bind="value: orcid" />
+            </div>
+
+            <div class="form-group">
+                <label>ResearcherID</label>
+                <input class="form-control" data-bind="value: researcherId" />
+            </div>
+
+            <div class="form-group">
+                <label>Twitter</label>
+                <input class="form-control" data-bind="value: twitter" />
+            </div>
+
+            <button
+                    type="submit"
+                    class="btn btn-success"
+                    data-bind="enable: isValid"
+                >Submit</button>
+
+            <!-- Flashed Messages -->
+            <div class="help-block">
+                <p data-bind="html: message, attr.class: messageClass"></p>
+            </div>
+
+        </form>
+
+    </div>
+
+    <div data-bind="if: mode() === 'view'">
+
+        <table class="table" data-bind="if: hasValues()">
+            <tbody data-bind="foreach: values">
+                <tr data-bind="if: value">
+                    <td>{{ label }}</td>
+                    <td><a target="_blank" data-bind="attr.href: value">{{ text }}</a></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div data-bind="ifnot: hasValues()">
+            <div class="well well-sm">Not provided</div>
+        </div>
+
+        <div data-bind="if: editable">
+            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
+        </div>
+
+    </div>
+
+</script>

@@ -69,6 +69,12 @@
         return '';
     });
 
+    var sanitizedObservable = function(value) {
+        return ko.observable(value).extend({
+            sanitize: true
+        });
+    };
+
     ko.validation.rules['minDate'] = {
         validator: function (val, minDate) {
             // Skip if values empty
@@ -109,12 +115,13 @@
      * End helpers
      */
 
-    var BaseViewModel = function() {
-        this.message = ko.observable();
-        this.messageClass = ko.observable();
+    var SerializeMixin = function() {};
+
+    SerializeMixin.prototype.serialize = function() {
+        return ko.toJSON(this);
     };
 
-    BaseViewModel.prototype.unserialize = function(data) {
+    SerializeMixin.prototype.unserialize = function(data) {
         var self = this;
         $.each(data || {}, function(key, value) {
             if (ko.isObservable(self[key])) {
@@ -126,8 +133,20 @@
         return self;
     };
 
-    BaseViewModel.prototype.serialize = function() {
-        return ko.toJSON(this);
+    var BaseViewModel = function(urls, modes) {
+
+        var self = this;
+
+        self.urls = urls;
+        self.modes = modes || ['view'];
+        self.editable = ko.observable(false);
+        self.mode = ko.observable(
+            $.inArray('view', modes) >= 0 ? 'view' : 'edit'
+        );
+
+        this.message = ko.observable();
+        this.messageClass = ko.observable();
+
     };
 
     BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
@@ -148,11 +167,15 @@
     };
 
     BaseViewModel.prototype.handleSuccess = function() {
-        this.changeMessage(
-            'Settings updated',
-            'text-success',
-            5000
-        );
+        if ($.inArray('view', this.modes) >= 0) {
+            this.mode('view');
+        } else {
+            this.changeMessage(
+                'Settings updated',
+                'text-success',
+                5000
+            );
+        }
     };
 
     BaseViewModel.prototype.handleError = function() {
@@ -173,6 +196,12 @@
         });
     };
 
+    BaseViewModel.prototype.edit = function() {
+        if (this.editable()) {
+            this.mode('edit');
+        }
+    };
+
     BaseViewModel.prototype.submit = function() {
         if (this.isValid() === false) {
             return
@@ -188,18 +217,10 @@
         });
     };
 
-    var sanitizedObservable = function(value) {
-        return ko.observable(value).extend({
-            sanitize: true
-        });
-    };
-
-    var NameViewModel = function(urls) {
+    var NameViewModel = function(urls, modes) {
 
         var self = this;
-        BaseViewModel.call(self);
-
-        self.urls = urls;
+        BaseViewModel.call(self, urls, modes);
 
         self.full = sanitizedObservable().extend({
             required: true
@@ -288,13 +309,12 @@
 
     };
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
+    $.extend(NameViewModel.prototype, SerializeMixin.prototype);
 
-    var SocialViewModel = function(urls) {
+    var SocialViewModel = function(urls, modes) {
 
         var self = this;
-        BaseViewModel.call(self);
-
-        self.urls = urls;
+        BaseViewModel.call(self, urls, modes);
 
         self.personal = ko.observable().extend({
             url: true
@@ -308,24 +328,56 @@
             return validated.isValid();
         });
 
+        self.personalUrl = ko.computed(function() {
+            if (self.personal()) {
+                return self.personal();
+            }
+        });
+        self.orcidUrl = ko.computed(function() {
+            if (self.orcid()) {
+                return 'http://orcid.org/' + self.orcid();
+            }
+        });
+        self.researcherIdUrl = ko.computed(function() {
+            if (self.researcherId()) {
+                return 'http://www.researcherid.com/rid/' + self.orcid();
+            }
+        });
+        self.twitterUrl = ko.computed(function() {
+            if (self.twitter()) {
+                return 'https://twitter.com/' + self.twitter();
+            }
+        });
+
         self.values = ko.computed(function() {
             return [
-                {key: 'Personal Site', value: self.personal()},
-                {key: 'ORCID', value: self.orcid()},
-                {key: 'ResearcherId', value: self.researcherId()},
-                {key: 'Twitter', value: self.twitter()}
+                {label: 'Personal Site', text: self.personalUrl(), value: self.personalUrl()},
+                {label: 'ORCID', text: self.orcid(), value: self.orcidUrl()},
+                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherIdUrl()},
+                {label: 'Twitter', text: self.twitter(), value: self.twitterUrl()}
             ];
+        });
+
+        self.hasValues = ko.computed(function() {
+            var values = self.values();
+            for (var i=0; i<self.values().length; i++) {
+                if (values[i].value) {
+                    return true;
+                }
+            }
+            return false;
         });
 
         self.fetch();
 
     };
     SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
+    $.extend(SocialViewModel.prototype, SerializeMixin.prototype);
 
-    var ListViewModel = function(ContentModel) {
+    var ListViewModel = function(ContentModel, urls, modes) {
 
         var self = this;
-        BaseViewModel.call(self);
+        BaseViewModel.call(self, urls, modes);
 
         self.ContentModel = ContentModel;
         self.contents = ko.observableArray();
@@ -348,6 +400,7 @@
 
     ListViewModel.prototype.unserialize = function(data) {
         var self = this;
+        self.editable(data.editable);
         self.contents(ko.utils.arrayMap(data.contents || [], function(each) {
             return new self.ContentModel(self).unserialize(each);
         }));
@@ -398,7 +451,7 @@
         });
 
     };
-    JobViewModel.prototype = Object.create(BaseViewModel.prototype);
+    $.extend(JobViewModel.prototype, SerializeMixin.prototype);
 
     var SchoolViewModel = function() {
 
@@ -426,49 +479,47 @@
         });
 
     };
-    SchoolViewModel.prototype = Object.create(BaseViewModel.prototype);
+    $.extend(SchoolViewModel.prototype, SerializeMixin.prototype);
 
-    var JobsViewModel = function(urls) {
+    var JobsViewModel = function(urls, modes) {
 
         var self = this;
-        self.urls = urls;
-        ListViewModel.call(self, JobViewModel);
+        ListViewModel.call(self, JobViewModel, urls, modes);
 
         self.fetch();
 
     };
     JobsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-    var SchoolsViewModel = function(urls) {
+    var SchoolsViewModel = function(urls, modes) {
 
         var self = this;
-        self.urls = urls;
-        ListViewModel.call(self, SchoolViewModel);
+        ListViewModel.call(self, SchoolViewModel, urls, modes);
 
         self.fetch();
 
     };
     SchoolsViewModel.prototype = Object.create(ListViewModel.prototype);
 
-    var Names = function(selector, urls) {
-        this.viewModel = new NameViewModel(urls);
+    var Names = function(selector, urls, modes) {
+        this.viewModel = new NameViewModel(urls, modes);
         $.osf.applyBindings(this.viewModel, selector);
         window.nameModel = this.viewModel;
     };
 
-    var Social = function(selector, urls) {
-        this.viewModel = new SocialViewModel(urls);
+    var Social = function(selector, urls, modes) {
+        this.viewModel = new SocialViewModel(urls, modes);
         $.osf.applyBindings(this.viewModel, selector);
     };
 
-    var Jobs = function(selector, urls) {
-        this.viewModel = new JobsViewModel(urls);
+    var Jobs = function(selector, urls, modes) {
+        this.viewModel = new JobsViewModel(urls, modes);
         $.osf.applyBindings(this.viewModel, selector);
         window.jobsModel = this.viewModel;
     };
 
-    var Schools = function(selector, urls) {
-        this.viewModel = new SchoolsViewModel(urls);
+    var Schools = function(selector, urls, modes) {
+        this.viewModel = new SchoolsViewModel(urls, modes);
         $.osf.applyBindings(this.viewModel, selector);
     };
 

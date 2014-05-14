@@ -95,98 +95,15 @@
         <div class="tab-content">
 
             <div class="tab-pane active" id="social">
-
-                <dl class="dl-horizontal" data-bind="foreach: values">
-
-                    <dt>{{ key }}</dt>
-                    <dd>{{ value || '&nbsp;' }}</dd>
-
-                </dl>
-
+                <div data-bind="template: {name: 'profileSocial'}"></div>
             </div>
 
             <div class="tab-pane" id="jobs">
-
-                <div data-bind="ifnot: contents().length">
-
-                    Missing
-
-                </div>
-
-                <div data-bind="if: contents().length">
-
-                    <table class="table">
-
-                        <thead>
-                            <tr>
-                                <th>Institution</th>
-                                <th>Department</th>
-                                <th>Title</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-
-                        <tbody data-bind="foreach: contents">
-
-                            <tr>
-
-                                <td>{{ institution }}</td>
-                                <td>{{ department }}</td>
-                                <td>{{ title }}</td>
-                                <td>{{ start }}</td>
-                                <td>{{ end }}</td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                <div data-bind="template: {name: 'profileJobs'}"></div>
             </div>
 
             <div class="tab-pane" id="schools">
-
-                <div data-bind="ifnot: contents().length">
-
-                    Missing
-
-                </div>
-
-                <div data-bind="if: contents().length">
-
-                    <table class="table">
-
-                        <thead>
-                            <tr>
-                                <th>Institution</th>
-                                <th>Department</th>
-                                <th>Degree</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-
-                        <tbody data-bind="foreach: contents">
-
-                            <tr>
-
-                                <td>{{ institution }}</td>
-                                <td>{{ department }}</td>
-                                <td>{{ degree }}</td>
-                                <td>{{ start }}</td>
-                                <td>{{ end }}</td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                <div data-bind="template: {name: 'profileSchools'}"></div>
             </div>
 
         </div>
@@ -258,7 +175,9 @@
 </div><!-- end row -->
 
 <%include file="log_templates.mako"/>
-
+<%include file="include/profile/social.mako" />
+<%include file="include/profile/jobs.mako" />
+<%include file="include/profile/schools.mako" />
 
 <script type="text/javascript">
 
@@ -273,9 +192,9 @@
         var schoolsUrls = {
             crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
         };
-        var social = new profile.Social('#social', socialUrls);
-        var jobs = new profile.Jobs('#jobs', jobsUrls);
-        var schools = new profile.Schools('#schools', schoolsUrls);
+        var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
+        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
+        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);;
     });
 
 </script>
