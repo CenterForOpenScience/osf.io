@@ -24,11 +24,12 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.forms import NewProjectForm, NewNodeForm
+from website.project.forms import NewProjectForm, NewNodeForm, NewFolderForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes
+from website.views import _render_nodes, find_dashboard
 from website.profile import utils
+from website.project import new_folder
 
 from .log import _get_logs
 
@@ -100,7 +101,72 @@ def project_new_from_template(*args, **kwargs):
     )
     return {'url': new_node.url}, http.CREATED, None
 
+##############################################################################
+# New Folder
+##############################################################################
 
+
+@must_be_logged_in
+def folder_new(**kwargs):
+    node_id = kwargs['nid']
+    return_value = {}
+    if node_id is not None:
+        return_value = {'node_id': node_id}
+    return return_value
+
+
+@must_be_logged_in
+def folder_new_post(**kwargs):
+    auth = kwargs['auth']
+    user = auth.user
+    form = NewFolderForm(request.form)
+    if form.validate():
+        node_id = kwargs['nid']
+        # Ensuring in various ways that people aren't trying to add a new folder improperly
+        nodes = user.node__contributed.find(
+            Q('_id', 'eq', node_id) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder','eq', True)
+        )
+        if len(nodes) > 0:
+            folder = new_folder(
+                form.title.data, user
+            )
+            folders = [folder]
+            for node in nodes:
+                _add_pointers(node, folders, auth)
+            return {}, 201, None, "/dashboard/"
+        else:
+            return {}, http.BAD_REQUEST
+    else:
+        push_errors_to_status(form.errors)
+    return {}, http.BAD_REQUEST
+
+@must_have_permission('write')
+@must_not_be_registration
+def add_folder(**kwargs):
+    auth = kwargs['auth']
+    user = auth.user
+    title = request.json.get('title')
+    node_id = request.json.get('node_id')
+    if title is not None and node_id is not None:
+        # Ensuring in various ways that people aren't trying to add a new folder improperly
+        nodes = user.node__contributed.find(
+            Q('_id', 'eq', node_id) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder','eq', True)
+        )
+        if len(nodes) > 0:
+            folder = new_folder(
+                title, user
+            )
+            folders = [folder]
+            for node in nodes:
+                _add_pointers(node, folders, auth)
+            return {}, 201, None, "/dashboard/"
+    return {}, http.BAD_REQUEST
 ##############################################################################
 # New Node
 ##############################################################################

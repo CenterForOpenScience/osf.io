@@ -56,7 +56,6 @@ def new_node(category, title, user, description=None, project=None):
 
     return node
 
-
 def new_dashboard(user):
     """Create a new dashboard project.
 
@@ -64,7 +63,7 @@ def new_dashboard(user):
     :return Node: Created node
 
     """
-    existing_dashboard = user.node__contributed.find(
+    existing_dashboards = user.node__contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
@@ -72,8 +71,8 @@ def new_dashboard(user):
     )
 
     # TODO: This should raise some sort of error.
-    if existing_dashboard is not None:
-        return None
+    if existing_dashboards.count() > 0:
+        return
 
     node = Node(
         title='Dashboard',
@@ -108,7 +107,6 @@ def new_folder(title, user):
     node.save()
 
     return node
-
 
 def new_private_link(label, user):
     """Create a new private link.

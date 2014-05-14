@@ -13,11 +13,12 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm,
                                   SetEmailAndPasswordForm)
+from framework import SelectField
 
 from website.models import Guid
-from website.util import web_url_for
-from website.project.forms import NewProjectForm
-from website.project import model
+from website.util import web_url_for, rubeus
+from website.project.forms import NewProjectForm, NewFolderForm
+from website.project import model, new_dashboard, new_folder
 from website import settings
 
 
@@ -44,6 +45,39 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
+def _render_project(node, **kwargs):
+    """
+
+    :param node:
+    :return:
+
+    """
+    return rubeus.to_project_hgrid(node, **kwargs)
+
+
+def _render_projects(nodes, **kwargs):
+    """
+
+    :param nodes:
+    :return:
+    """
+    ret = {'data': [_render_project(node, **kwargs) for node in nodes]}
+    return ret
+
+
+def _render_dashboard(nodes, **kwargs):
+    """
+
+    :param nodes:
+    :return:
+    """
+    dashboard_projects = [_render_project(node, **kwargs) for node in nodes]
+    dashboard_project = dashboard_projects[0]
+    ret = {'data': dashboard_project}
+    return ret
+
+
+
 def _render_node(node):
     """
 
@@ -57,7 +91,6 @@ def _render_node(node):
         'api_url': node.api_url,
         'primary': node.primary,
     }
-
 
 
 def _render_nodes(nodes):
@@ -105,21 +138,72 @@ def index(auth, **kwargs):
         return redirect(web_url_for('dashboard'))
     return {}
 
-
-@must_be_logged_in
-def get_dashboard_nodes(**kwargs):
-    user = kwargs['auth'].user
-    nodes = user.node__contributed.find(
-        Q('category', 'eq', 'project') &
+def find_dashboard(user):
+    dashboard_folder = user.node__contributed.find(
+        Q('is_dashboard','eq', True) &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(nodes)
+
+    if dashboard_folder.count() == 0:
+        new_dashboard(user)
+        dashboard_folder = user.node__contributed.find(
+            Q('is_dashboard','eq', True) &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False)
+        )
+    return dashboard_folder
+
+@must_be_logged_in
+def get_dashboard(**kwargs):
+    user = kwargs['auth'].user
+    dashboard_folder = find_dashboard(user)
+    return_value = _render_dashboard(dashboard_folder, **kwargs)
+    return return_value
+
+@must_be_logged_in
+def get_all_projects_smart_folder(**kwargs):
+
+    user = kwargs['auth'].user
+
+    nodes = user.node__contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder','eq', False)
+    )
+
+    return_value = _render_projects(nodes, **kwargs)
+    return return_value
+
+
+@must_be_logged_in
+def get_dashboard_nodes(**kwargs):
+
+    user = kwargs['auth'].user
+
+    nodes = user.node__contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder','eq', False)
+    )
+
+    return_value = _render_projects(nodes, **kwargs)
+    return return_value
 
 
 @must_be_logged_in
 def dashboard(**kwargs):
-    return {'addons_enabled': kwargs['auth'].user.get_addon_names()}
+    auth = kwargs['auth']
+    user = auth.user
+    dashboard_folder = find_dashboard(user)
+    dashboard_id = dashboard_folder[0]._id
+
+
+    return {'addons_enabled': user.get_addon_names(),
+            'dashboard_id': dashboard_id
+            }
 
 
 @must_be_logged_in
@@ -164,6 +248,30 @@ def reset_password_form():
 
 def new_project_form():
     return utils.jsonify(NewProjectForm())
+
+def new_folder_form():
+    form = NewFolderForm()
+    # form._fields['location']['choices'] = get_folders()
+    # form.location.choices=get_folders()
+    return utils.jsonify(form)
+
+
+
+@must_be_logged_in
+def get_folders(**kwargs):
+    """Find the user's folder nodes
+
+    :param User user: User object
+    :return array of tuples with key, value of the nodes
+    """
+    auth = kwargs['auth']
+    user = auth.user
+    folders = user.node__contributed.find(
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder','eq', True)
+    )
+    return [(folder._id, folder.title) for folder in folders]
 
 
 ### GUID ###

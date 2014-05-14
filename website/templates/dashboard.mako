@@ -4,15 +4,20 @@
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
-            <div class="pull-right"><a class="btn btn-default" href="/project/new">New Project</a></div>
+            <div class="pull-right"><a class="btn btn-default" href="/folder/new/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
+            <div class="pull-right"><a class="btn btn-default" href="/project/new/">New Project</a></div>
             <h3>Projects</h3>
         </div>
-        <div mod-meta='{
-                 "tpl": "util/render_nodes.mako",
-                 "uri": "/api/v1/dashboard/get_nodes/",
-                 "replace": true
-            }'></div>
-    </div>
+        <link rel="stylesheet" href="/static/css/projectorganizer.css">
+        <div class="hgrid" id="projectGrid"></div>
+        <script>
+                $script(["/static/js/projectorganizer.js"]);
+                $script.ready(['projectorganizer'], function() {
+                    var projectbrowser = new ProjectOrganizer('#projectGrid');
+                });
+            </script>
+    <%include file='log_templates.mako'/>
+    </div><div class="projectDetails"></div>
     <div class="row">
         <div class="col-md-6">
            <div id="watchFeed">
@@ -27,6 +32,7 @@
         </div>
     </div>
 </div>
+
 %if 'badges' in addons_enabled:
     <div class="row">
         <div class="col-md-6">
@@ -55,6 +61,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
+
 <script>
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js']);

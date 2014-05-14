@@ -4,7 +4,7 @@ formated hgrid list/folders.
 """
 import os
 import hurry
-
+import datetime
 from framework.auth.decorators import Auth
 
 FOLDER = 'folder'
@@ -40,6 +40,15 @@ def to_hgrid(node, auth, **data):
     """
     return NodeFileCollector(node, auth, **data).to_hgrid()
 
+def to_project_hgrid(node, auth, **data):
+    """Converts a node into a rubeus grid format
+
+    :param node Node: the node to be parsed
+    :param auth Auth: the user authorization object
+    :returns: rubeus-formatted dict
+
+    """
+    return NodeProjectCollector(node, auth, **data).to_hgrid()
 
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, **kwargs):
@@ -111,10 +120,9 @@ def validate_row(item):
         return False
 
 
-class NodeFileCollector(object):
+class NodeProjectCollector(object):
 
-    """A utility class for creating rubeus formatted node data"""
-
+    """A utility class for creating rubeus formatted node data for project organization"""
     def __init__(self, node, auth, **kwargs):
         self.node = node
         self.auth = auth
@@ -122,12 +130,79 @@ class NodeFileCollector(object):
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) and not node.is_registration
 
+    def _collect_components(self, node, visited):
+        rv = []
+        for child in node.nodes: #(child.resolve()._id not in visited or node.is_folder) and
+            if not child.is_deleted and node.can_view(self.auth):
+                visited.append(child.resolve()._id)
+                rv.append(self._serialize_node(child, visited=visited, parent_is_folder=node.is_folder))
+        return rv
+
     def to_hgrid(self):
         """Return the Rubeus.JS representation of the node's file data, including
         addons and components
         """
-        root = self._serialize_node(self.node)
-        return [root]
+        root = []
+        if self.node.is_dashboard:
+            for child in self.node.nodes:
+                if not child.is_deleted:
+                    root.append(self._serialize_node(child, visited=None, parent_is_folder=True))
+        else:
+            root = self._serialize_node(self.node, visited=None, parent_is_folder=True)
+        return root
+
+    def _serialize_node(self, node, visited=None, parent_is_folder=False):
+        """Returns the rubeus representation of a node folder for the project organizer.
+        """
+        visited = visited or []
+        visited.append(node.resolve()._id)
+        can_edit = node.can_edit(auth=self.auth) and not node.is_registration
+        can_view = True # node.can_view(auth=self.auth)
+        modified_delta = prettydate(node.date_modified)
+        contributors = [contributor.family_name for contributor in node.contributors]
+        modified_by = node.logs[-1].user.family_name
+        if can_view and (node.primary or node.is_folder or parent_is_folder):
+            children = self._collect_components(node, visited)
+        else:
+            children = []
+        return {
+            'name': node.title
+                if can_view
+                else u'Private Component',
+            'kind': FILE
+                if children == []
+                else FOLDER,
+            'permissions': {
+                'edit': can_edit,
+                'view': can_view,
+            },
+            'urls': {
+                'upload': None,
+                'fetch': node.url
+                    if not node.is_folder
+                    else None,
+            },
+            'children': children,
+            'isPointer': not node.primary,
+            'isFolder': node.is_folder,
+            'dateModified': modified_delta,
+            'modifiedBy': modified_by,
+            'parentIsFolder': parent_is_folder,
+            'isDashboard': node.is_dashboard,
+            'contributors': contributors,
+            'node_id':node.resolve()._id,
+        }
+
+
+class NodeFileCollector(object):
+
+    """A utility class for creating rubeus formatted node data"""
+    def __init__(self, node, auth, **kwargs):
+        self.node = node
+        self.auth = auth
+        self.extra = kwargs
+        self.can_view = node.can_view(auth)
+        self.can_edit = node.can_edit(auth) and not node.is_registration
 
     def _collect_components(self, node, visited):
         rv = []
@@ -136,6 +211,13 @@ class NodeFileCollector(object):
                 visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
+
+    def to_hgrid(self):
+        """Return the Rubeus.JS representation of the node's file data, including
+        addons and components
+        """
+        root = self._serialize_node(self.node)
+        return [root]
 
     def _serialize_node(self, node, visited=None):
         """Returns the rubeus representation of a node folder.
@@ -163,6 +245,7 @@ class NodeFileCollector(object):
             },
             'children': children,
             'isPointer': not node.primary,
+            'isSmartFolder': False,
         }
 
     def _collect_addons(self, node):
@@ -172,6 +255,7 @@ class NodeFileCollector(object):
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
                 rv.extend(temp or [])
         return rv
+
 
 # TODO: these might belong in addons module
 def collect_addon_assets(node):
@@ -222,3 +306,8 @@ def collect_addon_css(node, visited=None):
             visited.append(each._id)
             css = css.union(collect_addon_css(each, visited=visited))
     return css
+
+def prettydate(d):
+    diff = datetime.datetime.utcnow() - d
+    s = diff.seconds
+    return s

@@ -180,9 +180,9 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-
+        Rule('/dashboard/get_dashboard/', 'get', website_views.get_dashboard, json_renderer),
+        Rule('/dashboard/get_all_projects/', 'get', website_views.get_all_projects_smart_folder, json_renderer),
     ], prefix='/api/v1')
 
     ### Meta-data ###
@@ -279,6 +279,7 @@ def make_url_map(app):
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
         Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
+        Rule('/forms/new_folder/', 'get', website_views.new_folder_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -455,6 +456,8 @@ def make_url_map(app):
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
+        Rule('/search/projects/my/', 'get', search_views.search_my_projects_by_title, json_renderer),
+        Rule('/search/projects/public/', 'get', search_views.search_public_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -485,7 +488,9 @@ def make_url_map(app):
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
-
+        Rule('/folder/new/<nid>', 'get', project_views.node.folder_new, OsfWebRenderer('project/new_folder.mako')),
+        Rule('/folder/new/<nid>', 'post', project_views.node.folder_new_post, OsfWebRenderer('project/new_folder.mako')),
+        Rule('/api/v1/folder/new/', 'post', project_views.node.add_folder, json_renderer),
         Rule(
             [
                 '/project/<pid>/contributors/',
