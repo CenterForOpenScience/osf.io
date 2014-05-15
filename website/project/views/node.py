@@ -122,26 +122,19 @@ def folder_new_post(**kwargs):
     form = NewFolderForm(request.form)
     if form.validate():
         node_id = kwargs['nid']
-        # Ensuring in various ways that people aren't trying to add a new folder improperly
-        nodes = user.node__contributed.find(
-            Q('_id', 'eq', node_id) &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder','eq', True)
+        node = Node.load(node_id)
+        if node.is_deleted or node.is_registration or not node.is_folder:
+            raise HTTPError(http.BAD_REQUEST)
+        folder = new_folder(
+            form.title.data, user
         )
-        if len(nodes) > 0:
-            folder = new_folder(
-                form.title.data, user
-            )
-            folders = [folder]
-            for node in nodes:
-                _add_pointers(node, folders, auth)
-            return {}, 201, None, "/dashboard/"
-        else:
-            return {}, http.BAD_REQUEST
+        folders = [folder]
+        _add_pointers(node, folders, auth)
+        return {}, 201, None, "/dashboard/"
     else:
         push_errors_to_status(form.errors)
     return {}, http.BAD_REQUEST
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -150,23 +143,17 @@ def add_folder(**kwargs):
     user = auth.user
     title = request.json.get('title')
     node_id = request.json.get('node_id')
-    if title is not None and node_id is not None:
-        # Ensuring in various ways that people aren't trying to add a new folder improperly
-        nodes = user.node__contributed.find(
-            Q('_id', 'eq', node_id) &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False) &
-            Q('is_folder','eq', True)
-        )
-        if len(nodes) > 0:
-            folder = new_folder(
-                title, user
-            )
-            folders = [folder]
-            for node in nodes:
-                _add_pointers(node, folders, auth)
-            return {}, 201, None, "/dashboard/"
-    return {}, http.BAD_REQUEST
+    node = Node.load(node_id)
+    if node.is_deleted or node.is_registration or not node.is_folder:
+        raise HTTPError(http.BAD_REQUEST)
+
+    folder = new_folder(
+        title, user
+    )
+    folders = [folder]
+    _add_pointers(node, folders, auth)
+    return {}, 201, None, "/dashboard/"
+
 ##############################################################################
 # New Node
 ##############################################################################
