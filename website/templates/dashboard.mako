@@ -11,11 +11,13 @@
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
         <div class="hgrid" id="projectGrid"></div>
         <script>
-                $script(["/static/js/projectorganizer.js"]);
-                $script.ready(['projectorganizer'], function() {
-                    var projectbrowser = new ProjectOrganizer('#projectGrid');
-                });
-            </script>
+        $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
+        $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
+            $script(["/static/js/projectorganizer.js"]);
+            $script.ready(['projectorganizer'], function() {
+                var projectbrowser = new ProjectOrganizer('#projectGrid');
+            });
+        </script>
     <%include file='log_templates.mako'/>
     </div><div class="projectDetails"></div>
     <div class="row">

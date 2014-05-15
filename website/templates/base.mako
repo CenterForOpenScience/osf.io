@@ -179,8 +179,6 @@
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
-        $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
-        $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
         $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
