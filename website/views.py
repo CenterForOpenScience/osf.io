@@ -142,8 +142,9 @@ def watched_logs_get(**kwargs):
 
     return {"logs": watch_logs, "has_more_logs": has_more_logs}
 
+
 def reproducibility():
-    return redirect('/EZcUj/wiki')
+    return redirect('/ezcuj/wiki')
 
 
 def registration_form():
