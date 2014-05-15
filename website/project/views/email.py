@@ -35,9 +35,23 @@ def request_to_data():
     }
 
 
-CONFERENCE_NAMES = {
-    # 'spsp2014': 'SPSP 2014',
-    'asb2014': 'ASB 2014',
+# TODO: Move me to database
+MEETING_DATA = {
+    'spsp2014': {
+        'name': 'SPSP 2014',
+        'info_url': 'http://cos.io/spsp/',
+        'active': False,
+    },
+    'asb2014': {
+        'name': 'ASB 2014',
+        'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
+        'active': True,
+    },
+    'aps2014': {
+        'name': 'APS 2014',
+        'info_url': '',
+        'active': True,
+    }
 }
 
 
@@ -162,7 +176,7 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     send_mail(
         address,
         CONFERENCE_SUBMITTED,
-        conf_full_name=CONFERENCE_NAMES[conf_id],
+        conf_full_name=MEETING_DATA[conf_id]['name'],
         conf_view_url=urlparse.urljoin(
             settings.DOMAIN, os.path.join('view', conf_id)
         ),
@@ -254,7 +268,47 @@ def check_mailgun_spam():
     )
 
 
-def poster_hook(tag):
+def parse_mailgun_receiver():
+    """Check Mailgun recipient and extract test status, meeting name, and
+    content category. Crash if test status does not match development mode in
+    settings.
+
+    :returns: Tuple of (meeting, category)
+
+    """
+    match = re.search(
+        r'''^
+            (?P<test>test-)?
+            (?P<meeting>\w*?)
+            -
+            (?P<category>poster|talk)
+            @osf\.io
+            $''',
+        request.form['recipient'],
+        flags=re.IGNORECASE | re.VERBOSE,
+    )
+
+    if not match:
+        raise HTTPError(http.NOT_ACCEPTABLE)
+
+    data = match.groupdict()
+
+    if bool(settings.DEV_MODE) != bool(data):
+        raise HTTPError(http.NOT_ACCEPTABLE)
+
+    return data['meeting'], data['category']
+
+
+def meeting_hook():
+
+    meeting, category = parse_mailgun_receiver()
+
+    # Note: Throw 406 to disable Mailgun retries
+    try:
+        if not MEETING_DATA[meeting]['active']:
+            raise HTTPError(http.NOT_ACCEPTABLE)
+    except KeyError:
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
     # Fail if not from Mailgun
     check_mailgun_headers()
@@ -262,15 +316,15 @@ def poster_hook(tag):
 
     # Add poster
     add_poster_by_email(
-        conf_id=tag,
+        conf_id=meeting,
         recipient=request.form['recipient'],
         address=address,
         fullname=name,
         subject=get_mailgun_subject(),
         message=request.form['stripped-text'],
         attachments=get_mailgun_attachments(),
-        tags=[tag],
-        system_tags=[tag],
+        tags=[meeting],
+        system_tags=[meeting],
         is_spam=check_mailgun_spam(),
     )
 
@@ -301,10 +355,13 @@ def _render_conference_node(node, idx):
     }
 
 
-def conference_results(tag):
+def conference_results(meeting):
+
+    if meeting not in MEETING_DATA:
+        raise HTTPError(http.NOT_FOUND)
 
     nodes = Node.find(
-        Q('tags', 'eq', tag) &
+        Q('tags', 'eq', meeting) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
@@ -314,4 +371,7 @@ def conference_results(tag):
         for idx, each in enumerate(nodes)
     ]
 
-    return {'data': json.dumps(data)}
+    return {
+        'data': json.dumps(data),
+        'meeting': MEETING_DATA[meeting],
+    }
