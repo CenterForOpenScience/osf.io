@@ -61,11 +61,21 @@
             </tbody>
         </table>
 
-        <button
-                type="submit"
-                class="btn btn-success"
-                data-bind="enable: isValid"
-            >Submit</button>
+        <div class="padded">
+
+            <button
+                    type="submit"
+                    class="btn btn-default"
+                    data-bind="visible: viewable, click: cancel"
+                >Cancel</button>
+
+            <button
+                    type="submit"
+                    class="btn btn-primary"
+                    data-bind="enable: isValid"
+                >Submit</button>
+
+        </div>
 
         <!-- Flashed Messages -->
         <div class="help-block">

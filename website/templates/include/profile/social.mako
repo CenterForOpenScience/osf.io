@@ -43,18 +43,28 @@
                             data-bind="if: github.hasAddon()"
                         >
                         <button
-                                class="btn btn-success"
+                                class="btn btn-default"
                                 data-bind="click: github.importAddon"
                             >Import</button>
                     </span>
                 </div>
             </div>
 
-            <button
-                    type="submit"
-                    class="btn btn-success"
-                    data-bind="enable: isValid"
-                >Submit</button>
+            <div class="padded">
+
+                <button
+                        type="submit"
+                        class="btn btn-default"
+                        data-bind="visible: viewable, click: cancel"
+                    >Cancel</button>
+
+                <button
+                        type="submit"
+                        class="btn btn-primary"
+                        data-bind="enable: isValid"
+                    >Submit</button>
+
+            </div>
 
             <!-- Flashed Messages -->
             <div class="help-block">
@@ -81,7 +91,7 @@
         </div>
 
         <div data-bind="if: editable">
-            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
+            <a class="btn btn-default" data-bind="click: edit">Edit</a>
         </div>
 
     </div>
