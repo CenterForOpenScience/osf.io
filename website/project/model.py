@@ -837,6 +837,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'Pointer to node {0} already in list'.format(node._id)
             )
 
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
+        # Also, no pointers to the dashboard project, which could cause loops as well.
+        already_pointed = node.pointed
+        if node.is_folder and len(already_pointed) > 0:
+            raise ValueError(
+                'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
+            )
+        if node.is_dashboard:
+            raise ValueError(
+                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+            )
+
         # Append pointer
         pointer = Pointer(node=node)
         pointer.save()
