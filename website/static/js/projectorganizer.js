@@ -1,8 +1,8 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel', 'rowselectionmodel','typeahead', ['knockout']], factory);
+        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel', 'rowselectionmodel','typeahead'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel', 'rowselectionmodel','typeahead', ['knockout']], function () {
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel', 'rowselectionmodel','typeahead'], function () {
             global.ProjectOrganizer = factory(jQuery, global.HGrid);
             $script.done('projectorganizer');
         });
