@@ -1,8 +1,10 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel', 'rowselectionmodel','typeahead'], factory);
+        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel',
+            'rowselectionmodel','typeahead'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel', 'rowselectionmodel','typeahead'], function () {
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel',
+            'rowselectionmodel', 'typeahead'], function () {
             global.ProjectOrganizer = factory(jQuery, global.HGrid);
             $script.done('projectorganizer');
         });
@@ -288,28 +290,21 @@
                 if(theItem.id != -1) {
                     var contributors = theItem.contributors;
                     var url = theItem.urls.fetch;
-                    var displayHTML = '<span class = "title">'+theItem.name+'</span>';
-                    displayHTML += '<span class = "contributors"><ul>'
-                    contributors.forEach(function(item){
-                        displayHTML += "<li>"+item +"</li>";
+                    var detailTemplateSource   = $("#project-detail-template").html();
+                    Handlebars.registerHelper('commalist', function(items, options) {
+                        var out = '';
+
+                        for(var i=0, l=items.length; i<l; i++) {
+                        out = out + options.fn(items[i]) + (i!==(l-1) ? ",":"");
+                        }
+                        return out;
                     });
-                    if(theItem.parentIsFolder){
-                        displayHTML += "<p>Parent is folder.</p>"
-                    }
-                    displayHTML += "</ul></span>"
-                    displayHTML += '<div class = "organizeProjectControls">';
-                    if(theItem.isFolder){
-                        displayHTML += '<div id = "buttons'+theItem.node_id+'">';
-                        displayHTML += '<div id="add_folder_'+theItem.node_id+'" node_id="'+theItem.node_id+'"><a class = "organizeBtn btn btn-default" href="/folder/new/'+theItem.node_id+'">Add a Folder</a></div>';
-                        displayHTML += '<div class = "organizeBtn btn btn-default" id="add_item_'+theItem.node_id+'" node_id="'+theItem.node_id+'">Add a Link</div>';
-                        displayHTML += '</div>';
-                        displayHTML += '<div id="findNode'+theItem.node_id+'">';
-                        displayHTML += '<input class="typeahead" id="input'+theItem.node_id+'" type="text" placeholder="Project Name">';
-                        displayHTML += '<span class = "findBtn btn btn-default" id="add_link_'+theItem.node_id+'" node_id="'+theItem.node_id+'" disabled="disabled">Add the Link</span>';
-                        displayHTML += '</div>';
-                    }
-                    displayHTML += '</div>';
-                    $(".projectDetails").html(displayHTML);
+                    var detailTemplate = Handlebars.compile(detailTemplateSource);
+                    var detailTemplateContext = {
+                        theItem: theItem
+                    };
+                    var displayHTML    = detailTemplate(detailTemplateContext);
+                     $(".projectDetails").html(displayHTML);
                     $('#findNode'+theItem.node_id).hide();
                     $('#findNode'+theItem.node_id+' .typeahead').typeahead({
                       highlight: true
