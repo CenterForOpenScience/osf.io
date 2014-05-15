@@ -1,8 +1,8 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel', 'rowselectionmodel','typeahead'], factory);
+        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel', 'rowselectionmodel','typeahead', ['knockout']], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel', 'rowselectionmodel','typeahead'], function () {
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel', 'rowselectionmodel','typeahead', ['knockout']], function () {
             global.ProjectOrganizer = factory(jQuery, global.HGrid);
             $script.done('projectorganizer');
         });
@@ -16,6 +16,10 @@
     ProjectOrganizer.Col = {};
     ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
 
+
+    //
+    // Private Helper Functions
+    //
     var substringMatcher = function(strs) {
       return function findMatches(q, cb) {
         var matches, substringRegex;
@@ -88,7 +92,10 @@
         return ""
     }
 
-// Custom column schemas
+    //
+    // HGrid Custom column schemas
+    //
+
     function nameRowView(row) {
         var name = row.name.toString();
 
@@ -191,7 +198,11 @@
             multiSelect: false
         }
     };
-    
+
+    //
+    // Public methods
+    //
+
     function ProjectOrganizer(selector, options) {
         var self = this;
         this.selector = selector;
@@ -213,6 +224,14 @@
             }
         });
 
+
+        self.grid.grid.setSelectionModel(new Slick.RowSelectionModel());
+
+        //
+        // Initially add the data to the HGrid
+        // Start with the Smart Folder
+        //
+
         self.grid.addItem({
             name: 'All My Projects',
             urls: {fetch: null},
@@ -227,7 +246,10 @@
             modifiedBy: ""
         });
 
-        self.grid.grid.setSelectionModel(new Slick.RowSelectionModel());
+        //
+        // Grab the JSON for the contents of the smart folder. Add that data to the grid and put the
+        // projects you can contribute to into self.myProjects so that we can use it for the autocomplete
+        //
 
         $.getJSON("/api/v1/dashboard/get_all_projects/", function (projects) {
             self.grid.addData(projects.data, -1);
@@ -243,9 +265,19 @@
             });
         });
 
+        //
+        // Grab the dashboard structure and add it to the HGrid
+        //
+
         $.getJSON("/api/v1/dashboard/get_dashboard/", function (projects) {
             self.grid.addData(projects.data);
         });
+
+        //
+        // When the selection changes, create the div that holds the detail information for the project including
+        // whichever action buttons will work with that type of node. This is what will be changed by moving
+        // to Knockout.js
+        //
 
         this.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
@@ -327,7 +359,7 @@
             } else {
                 $(".projectDetails").hide();
             }
-        });
+        }); // end onSelectedRowsChanged
 
 
     }
