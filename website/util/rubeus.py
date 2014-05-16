@@ -129,6 +129,7 @@ class NodeProjectCollector(object):
         self.extra = kwargs
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) and not node.is_registration
+        self.just_one_level = kwargs.get('just_one_level', False)
 
     def _collect_components(self, node, visited):
         rv = []
@@ -162,7 +163,7 @@ class NodeProjectCollector(object):
         date_modified = node.date_modified.isoformat();
         contributors = [contributor.family_name for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
-        if can_view and (node.primary or node.is_folder or parent_is_folder):
+        if can_view and (node.primary or node.is_folder or parent_is_folder) and not self.just_one_level:
             children = self._collect_components(node, visited)
         else:
             children = []
