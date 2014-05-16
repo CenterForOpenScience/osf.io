@@ -9,16 +9,19 @@
             <h3>Projects</h3>
         </div>
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
-        <%include file='projectGridDetailTemplates.html'/>
+        <%include file="projectGridTemplates.html"/>
+        <div class = "projectGridMenu"><span class="pg-collapse-all">Collapse All</span></div>
         <div class="hgrid" id="projectGrid"></div>
         <script>
         $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
         $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
-        $script(['/static/js/handlebars-v1.3.0.js'], function() {
-            $script(["/static/js/projectorganizer.js"]);
-            $script.ready(['projectorganizer'], function() {
-                var projectbrowser = new ProjectOrganizer('#projectGrid');
-            });
+        $script(['/static/js/moment.min.js'], function() {
+            $script(['/static/js/handlebars-v1.3.0.js'], function() {
+                $script(["/static/js/projectorganizer.js"]);
+                $script.ready(['projectorganizer'], function() {
+                    var projectbrowser = new ProjectOrganizer('#projectGrid');
+                });
+          });
         });
          </script>
 

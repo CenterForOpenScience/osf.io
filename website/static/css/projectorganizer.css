@@ -158,4 +158,28 @@ input.typeahead.tt-input {
   font-size: 14px;
 }
 
+div.projectDetails span.title {
+	font-size: 18px;
+	font-weight: bold;
+}
+
+div.projectGridMenu {
+	text-align: right;
+	margin-top: -20px;
+}
+
+div.projectGridMenu span.pg-expand-all  {
+	color: #468cc8;
+	text-decoration: underline;
+	cursor: pointer;
+	margin-right: 10px;
+}
+
+div.projectGridMenu span.pg-collapse-all  {
+	color: #468cc8;
+	text-decoration: underline;
+	cursor: pointer;
+	margin-right: 7px;
+}
+
 

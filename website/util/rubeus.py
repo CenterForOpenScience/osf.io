@@ -158,7 +158,8 @@ class NodeProjectCollector(object):
         visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = True # node.can_view(auth=self.auth)
-        modified_delta = prettydate(node.date_modified)
+        modified_delta = delta_date(node.date_modified)
+        date_modified = node.date_modified.isoformat();
         contributors = [contributor.family_name for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         if can_view and (node.primary or node.is_folder or parent_is_folder):
@@ -185,7 +186,8 @@ class NodeProjectCollector(object):
             'children': children,
             'isPointer': not node.primary,
             'isFolder': node.is_folder,
-            'dateModified': modified_delta,
+            'dateModified': date_modified,
+            'modifiedDelta': modified_delta,
             'modifiedBy': modified_by,
             'parentIsFolder': parent_is_folder,
             'isDashboard': node.is_dashboard,
@@ -307,7 +309,8 @@ def collect_addon_css(node, visited=None):
             css = css.union(collect_addon_css(each, visited=visited))
     return css
 
-def prettydate(d):
+
+def delta_date(d):
     diff = datetime.datetime.utcnow() - d
-    s = diff.seconds
+    s = diff.total_seconds()
     return s

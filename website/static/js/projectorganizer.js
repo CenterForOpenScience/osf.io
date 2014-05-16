@@ -14,11 +14,6 @@
 }(this, function ($, HGrid) {
     'use strict';
 
-    ProjectOrganizer.Html = $.extend({}, HGrid.Html);
-    ProjectOrganizer.Col = {};
-    ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
-
-
     //
     // Private Helper Functions
     //
@@ -46,57 +41,14 @@
       };
     };
 
-    function timeDifference(elapsed) {
-        var sPerMinute = 60;
-        var sPerHour = sPerMinute * 60;
-        var sPerDay = sPerHour * 24;
-        var sPerMonth = sPerDay * 30;
-        var sPerYear = sPerDay * 365;
-        var number = 0;
-
-        if (elapsed == 0) {
-            return '';
-        }
-        if (elapsed < sPerMinute) {
-             return 'Just now';
-        }
-
-        else if (elapsed < sPerHour) {
-            number = Math.round(elapsed/sPerMinute);
-             return  number + ' minute' + isPlural(number);
-        }
-
-        else if (elapsed < sPerDay ) {
-            number = Math.round(elapsed/sPerHour );
-             return  number + ' hour' + isPlural(number);
-        }
-
-        else if (elapsed < sPerMonth) {
-            number = Math.round(elapsed/sPerDay);
-
-            return '~ ' + number + ' day' + isPlural(number);
-        }
-
-        else if (elapsed < sPerYear) {
-            number = Math.round(elapsed/sPerMonth);
-            return '~' + number + ' month' + isPlural(number);
-        }
-
-        else {
-            number = Math.round(elapsed/sPerYear );
-            return '~' + number + ' year' + isPlural(number);
-        }
-    }
-    function isPlural(number){
-        if(number > 1){
-            return "s"
-        }
-        return ""
-    }
-
     //
-    // HGrid Custom column schemas
+    // HGrid Customization
     //
+
+    ProjectOrganizer.Html = $.extend({}, HGrid.Html);
+    ProjectOrganizer.Col = {};
+    ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
+
 
     function nameRowView(row) {
         var name = row.name.toString();
@@ -120,19 +72,20 @@
         text: 'Modified',
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
-            if(row.dateModified == 0){
+            if(row.modifiedDelta == 0){
                 return "";
             }
-            return timeDifference(row.dateModified)+", "+row.modifiedBy.toString();
+            return moment(row.dateModified).fromNow(true)+", "+row.modifiedBy.toString();
         },
         folderView: function (row) {
-            if(row.dateModified == 0){
+            if(row.modifiedDelta == 0){
                 return "";
             }
-            return timeDifference(row.dateModified)+", "+row.modifiedBy.toString();
+            return moment(row.dateModified).fromNow(true)+", "+row.modifiedBy.toString();
         },
         sortable: false,
-        selectable: true
+        selectable: true,
+        width: 40
     };
 
     var contributorsColumn = {
@@ -161,7 +114,8 @@
             return contributorString;
         },
         sortable: false,
-        selectable: true
+        selectable: true,
+        width: 30
     };
 
     ProjectOrganizer.Col.Name.selectable = true;
@@ -201,6 +155,15 @@
         }
     };
 
+    var collapseAllInHGrid = function(grid) {
+        grid.collapseAll();
+    };
+
+    var expandAllInHGrid = function(grid) {
+        var dataView = grid.getDataView();
+        dataView.expandAllGroups();
+    };
+
     //
     // Public methods
     //
@@ -209,8 +172,20 @@
         var self = this;
         this.selector = selector;
         this.options = $.extend({}, baseOptions, options);
-        this.grid = new HGrid(this.selector, this.options);
-        this.myProjects = [];
+        this.init(self)
+    }
+
+    ProjectOrganizer.prototype.init = function(self) {
+        self.grid = new HGrid(this.selector, this.options);
+        self.myProjects = [];
+
+        // Expand/collapse All functions
+        $(".pg-expand-all").click(function (){
+            expandAllInHGrid(self.grid);
+        });
+        $(".pg-collapse-all").click(function (){
+            collapseAllInHGrid(self.grid);
+        });
 
         // This useful function found on StackOverflow http://stackoverflow.com/a/7385673
         // Used to hide the detail card when you click outside of it onto its containing div
@@ -240,6 +215,7 @@
             isFolder: true,
             isSmartFolder: true,
             isPointer: false,
+            modifiedDelta: "",
             dateModified: "",
             permissions: {edit: false, view: true},
             kind: 'folder',
@@ -288,8 +264,6 @@
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
                 if(theItem.id != -1) {
-                    var contributors = theItem.contributors;
-                    var url = theItem.urls.fetch;
                     var detailTemplateSource   = $("#project-detail-template").html();
                     Handlebars.registerHelper('commalist', function(items, options) {
                         var out = '';
@@ -301,10 +275,11 @@
                     });
                     var detailTemplate = Handlebars.compile(detailTemplateSource);
                     var detailTemplateContext = {
-                        theItem: theItem
+                        theItem: theItem,
+                        multipleContributors: theItem.contributors.length > 1
                     };
                     var displayHTML    = detailTemplate(detailTemplateContext);
-                     $(".projectDetails").html(displayHTML);
+                    $(".projectDetails").html(displayHTML);
                     $('#findNode'+theItem.node_id).hide();
                     $('#findNode'+theItem.node_id+' .typeahead').typeahead({
                       highlight: true
