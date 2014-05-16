@@ -116,13 +116,11 @@ def folder_new(**kwargs):
 
 
 @must_be_logged_in
-def folder_new_post(**kwargs):
-    auth = kwargs['auth']
+def folder_new_post(auth, nid, **kwargs):
     user = auth.user
     form = NewFolderForm(request.form)
     if form.validate():
-        node_id = kwargs['nid']
-        node = Node.load(node_id)
+        node = Node.load(nid)
         if node.is_deleted or node.is_registration or not node.is_folder:
             raise HTTPError(http.BAD_REQUEST)
         folder = new_folder(
