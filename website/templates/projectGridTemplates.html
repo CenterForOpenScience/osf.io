@@ -4,7 +4,7 @@
       {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{ theItem.name }}</a>{{/unless}}
     </span>
     <span class= "contributors"><p>Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}{{ this }}{{/commalist}}</p></span>
-    {{ theItem.dateModified }}
+
     {{#if theItem.isFolder}}
     <div class = "organizeProjectControls">
         <div id = "buttons{{theItem.node_id}}">
