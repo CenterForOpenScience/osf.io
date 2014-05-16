@@ -88,7 +88,7 @@ def project_new_post(**kwargs):
         return {}, 201, None, project.url
     else:
         push_errors_to_status(form.errors)
-    return {}, http.BAD_REQUEST
+    raise HTTPError(http.BAD_REQUEST)
 
 
 @must_be_logged_in
@@ -131,7 +131,7 @@ def folder_new_post(auth, nid, **kwargs):
         return {}, 201, None, "/dashboard/"
     else:
         push_errors_to_status(form.errors)
-    return {}, http.BAD_REQUEST
+    raise HTTPError(http.BAD_REQUEST)
 
 
 @must_have_permission('write')
