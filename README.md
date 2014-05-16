@@ -2,6 +2,7 @@
 
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
 - Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
+- Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
 - Wiki: https://osf.io/a92ji/wiki/home/
 
 ## Help
