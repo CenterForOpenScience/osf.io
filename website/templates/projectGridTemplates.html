@@ -3,7 +3,7 @@
       {{#if theItem.isFolder}}{{ theItem.name }}{{/if}}
       {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{ theItem.name }}</a>{{/unless}}
     </span>
-    <span class= "contributors"><p>Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}{{ this }}{{/commalist}}</p></span>
+    <span class= "contributors"><p>Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a> {{/commalist}}</p></span>
 
     {{#if theItem.isFolder}}
     <div class = "organizeProjectControls">

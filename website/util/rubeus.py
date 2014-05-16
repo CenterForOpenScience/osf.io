@@ -160,8 +160,8 @@ class NodeProjectCollector(object):
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         can_view = True # node.can_view(auth=self.auth)
         modified_delta = delta_date(node.date_modified)
-        date_modified = node.date_modified.isoformat();
-        contributors = [contributor.family_name for contributor in node.contributors]
+        date_modified = node.date_modified.isoformat()
+        contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         if can_view and (node.primary or node.is_folder or parent_is_folder) and not self.just_one_level:
             children = self._collect_components(node, visited)

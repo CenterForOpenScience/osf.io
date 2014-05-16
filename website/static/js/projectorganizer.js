@@ -96,7 +96,7 @@
             if(contributorCount == 0){
                 return "";
             }
-            var contributorString = row.contributors[0].toString();
+            var contributorString = row.contributors[0].name.toString();
             if(contributorCount > 1) {
                 contributorString += " +" + (contributorCount - 1);
             }
@@ -107,7 +107,7 @@
             if(contributorCount == 0){
                 return "";
             }
-            var contributorString = row.contributors[0].toString();
+            var contributorString = row.contributors[0].name.toString();
             if(contributorCount > 1) {
                 contributorString += " +" + (contributorCount - 1);
             }
