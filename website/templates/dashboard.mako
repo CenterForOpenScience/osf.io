@@ -15,13 +15,10 @@
         <script>
         $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
         $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
-        $script(['/static/js/moment.min.js'], function() {
-            $script(['/static/js/handlebars-v1.3.0.js'], function() {
-                $script(["/static/js/projectorganizer.js"]);
-                $script.ready(['projectorganizer'], function() {
-                    var projectbrowser = new ProjectOrganizer('#projectGrid');
-                });
-          });
+        $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
+        $script(["/static/js/projectorganizer.js"]);
+        $script.ready(['projectorganizer'], function() {
+            var projectbrowser = new ProjectOrganizer('#projectGrid');
         });
          </script>
 

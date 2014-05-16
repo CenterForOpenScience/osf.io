@@ -1,10 +1,10 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel',
-            'rowselectionmodel','typeahead'], factory);
+            'rowselectionmodel','typeahead', 'handlebars'], factory);
     } else if (typeof $script === 'function') {
         $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel',
-            'rowselectionmodel', 'typeahead'], function () {
+            'rowselectionmodel', 'typeahead', 'handlebars'], function () {
             global.ProjectOrganizer = factory(jQuery, global.HGrid);
             $script.done('projectorganizer');
         });
@@ -260,7 +260,7 @@
 
         this.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
-            if (selectedRows.length > 0){
+            if (selectedRows.length > 0 ){
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
