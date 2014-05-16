@@ -160,8 +160,9 @@
     };
 
     var expandAllInHGrid = function(grid) {
-        var dataView = grid.getDataView();
-        dataView.expandAllGroups();
+        grid.getData().forEach(function(item) {
+           grid.expandItem(item);
+        });
     };
 
     //

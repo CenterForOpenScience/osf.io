@@ -10,7 +10,7 @@
         </div>
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
         <%include file="projectGridTemplates.html"/>
-        <div class = "projectGridMenu"><span class="pg-collapse-all">Collapse All</span></div>
+        <div class = "projectGridMenu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
         <div class="hgrid" id="projectGrid"></div>
         <script>
         $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
