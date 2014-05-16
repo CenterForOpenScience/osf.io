@@ -1,9 +1,8 @@
-[This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
-===========================
+# OSF 
 
 ## Help
 
-Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
 
 ## Quickstart
 
@@ -27,7 +26,8 @@ $ brew install libxslt
 - Install requirements.
 
 ```bash
-$ pip install -r dev-requirements.txt
+$ pip install invoke
+$ invoke requirements --all
 ```
 
 - Create your local settings file.
