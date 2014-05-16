@@ -20,11 +20,13 @@
     {{/if}}
     {{#unless theItem.isFolder}}
         {{#if theItem.parentIsFolder}}
-        <div class = "organizeProjectControls">
-            <div id = "buttons{{theItem.node_id}}">
-                <div id="remove_link_{{theItem.node_id}}"><a class = "organizeBtn btn btn-default" href="">Remove from folder</a></div>
-            </div>
-        </div>
+            {{#unless parentIsSmartFolder}}
+                <div class = "organizeProjectControls">
+                    <div id = "buttons{{theItem.node_id}}">
+                        <div id="remove_link_{{theItem.node_id}}"><a class = "organizeBtn btn btn-default" href="">Remove from folder</a></div>
+                    </div>
+                </div>
+            {{/unless}}
         {{/if}}
     {{/unless}}
 </script>

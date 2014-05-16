@@ -263,6 +263,10 @@
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
+                var parentIsSmartFolder = false;
+                if (theItem.parentID == -1){
+                    parentIsSmartFolder = true;
+                }
                 if(theItem.id != -1) {
                     var detailTemplateSource   = $("#project-detail-template").html();
                     Handlebars.registerHelper('commalist', function(items, options) {
@@ -276,7 +280,8 @@
                     var detailTemplate = Handlebars.compile(detailTemplateSource);
                     var detailTemplateContext = {
                         theItem: theItem,
-                        multipleContributors: theItem.contributors.length > 1
+                        multipleContributors: theItem.contributors.length > 1,
+                        parentIsSmartFolder: parentIsSmartFolder
                     };
                     var displayHTML    = detailTemplate(detailTemplateContext);
                     $(".projectDetails").html(displayHTML);
