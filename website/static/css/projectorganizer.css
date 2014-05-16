@@ -57,6 +57,7 @@ div.organizeProjectControls {
 
 input.typeahead.tt-input {
 	width: 100%;
+	height: 110%;
 }
 
 .organizeProjectControls span.twitter-typeahead {
@@ -182,4 +183,8 @@ div.projectGridMenu span.pg-collapse-all  {
 	margin-right: 7px;
 }
 
+.hg-item-name:hover {
+	text-decoration: none !important;
+	cursor: default;
+}
 
