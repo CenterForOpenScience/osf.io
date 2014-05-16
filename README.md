@@ -1,5 +1,9 @@
 # OSF 
 
+- Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
+- Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
+- Wiki: https://osf.io/a92ji/wiki/home/
+
 ## Help
 
 Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
