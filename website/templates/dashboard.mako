@@ -10,20 +10,20 @@
         </div>
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
         <%include file="projectGridTemplates.html"/>
-        <div class = "projectGridMenu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
-        <div class="hgrid" id="projectGrid"></div>
+        <div class = "project-grid-menu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
+        <div class="hgrid" id="project-grid"></div>
         <script>
         $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
         $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
         $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
         $script(["/static/js/projectorganizer.js"]);
         $script.ready(['projectorganizer'], function() {
-            var projectbrowser = new ProjectOrganizer('#projectGrid');
+            var projectbrowser = new ProjectOrganizer('#project-grid');
         });
          </script>
 
     <%include file='log_templates.mako'/>
-    </div><div class="projectDetails"></div>
+    </div><div class="project-details"></div>
     <div class="row">
         <div class="col-md-6">
            <div id="watchFeed">

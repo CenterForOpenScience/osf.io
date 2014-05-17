@@ -1,190 +1,192 @@
 /* @override http://localhost:5000/static/css/projectorganizer.css */
 
+/* Project organizer HGrid  */
 .cell-selection {
-  border-right-color: silver;
-  border-right-style: solid;
-  background: #f5f5f5;
-  color: gray;
-  text-align: right;
-  font-size: 10px;
+    border-right-color: silver;
+    border-right-style: solid;
+    background: #f5f5f5;
+    color: gray;
+    text-align: right;
+    font-size: 10px;
 }
 
-.slick-row.active {
-	background-color: #fefab4;
+.slick-row.active{
+    background-color: #fefab4;
 }
 
-span.projDetails {
-	visibility: hidden;
+.hg-cell.selected {
+    background-color: #fefab4;
 }
 
-div.projectDetails {
-	width:450px;
-	height: 300px;
-	border: 1px solid silver;
-	background-color: white;
-	float:right;
-	margin-right:-100px;
-	margin-left:600px;
-	margin-top: 130px;
-	position:fixed;
-	z-index:10;
-	display: none;
-	overflow: visible;
-	border-radius: 5px;
-	padding: 8px;
-	box-shadow: 10px 10px 5px #888888;
+/* Preventing folders that are HGrid leaves from showing underlines when hovered over */
+
+.project-folder:hover {
+    text-decoration: none !important;
 }
 
-.projfolder:hover {
-	text-decoration: none !important;
+span.project-folder {
+    text-decoration: none;
 }
 
-span.projfolder {
-	text-decoration: none;
-}
-.organizeProjectControls{
-	z-index: 11;
+.hg-item-name:hover {
+    text-decoration: none !important;
+    cursor: default;
 }
 
-div.organizeProjectControls {
-	display: block;
-	position: relative;
-	width: 100%;
-	bottom: 0;
+/* Controls above the HGrid */
+
+div.project-grid-menu {
+    text-align: right;
+    margin-top: -20px;
 }
 
+div.project-grid-menu span.pg-expand-all {
+    color: #468cc8;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-right: 10px;
+}
 
+div.project-grid-menu span.pg-collapse-all {
+    color: #468cc8;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-right: 7px;
+}
+
+/* Project details box  */
+span.project-details {
+    visibility: hidden;
+}
+
+div.project-details span.title {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+div.project-details {
+    width: 450px;
+    height: 300px;
+    border: 1px solid silver;
+    background-color: white;
+    float: right;
+    margin-right: -100px;
+    margin-left: 600px;
+    margin-top: 130px;
+    position: fixed;
+    z-index: 10;
+    display: none;
+    overflow: visible;
+    border-radius: 5px;
+    padding: 8px;
+    box-shadow: 10px 10px 5px #888888;
+}
+
+.organize-project-controls {
+    z-index: 11;
+}
+
+div.organize-project-controls {
+    display: block;
+    position: relative;
+    width: 100%;
+    bottom: 0;
+}
+
+.organize-project-controls .organizeBtn.btn.btn-default {
+    display: block;
+    width: 33%;
+    float: left;
+    margin-bottom: 10px;
+}
+
+/* Typeahead autocomplete box */
 
 input.typeahead.tt-input {
-	width: 100%;
-	height: 110%;
+    width: 100%;
+    height: 110%;
 }
 
-.organizeProjectControls span.twitter-typeahead {
-	width: 100%;
-	
+.organize-project-controls span.twitter-typeahead {
+    width: 100%;
+
 }
 
-.organizeProjectControls .organizeBtn.btn.btn-default {
-	display: block;
-	width: 33%;
-	float: left;
-	margin-bottom: 10px;
-}
-
-
-
-
-
-/* scaffolding */
+/* Typeahead scaffolding */
 /* ----------- */
-
-
-
 
 .tt-dropdown-menu,
 .gist {
-  text-align: left;
+    text-align: left;
 }
 
-/* base styles */
+/* Typeahead base styles */
 /* ----------- */
-
 
 .typeahead,
 .tt-query,
 .tt-hint {
-  width: 100%;
-  height: 30px;
-  padding: 8px 12px;
-  font-size: 18px;
-  line-height: 30px;
-  border: 2px solid #ccc;
-  -webkit-border-radius: 8px;
-     -moz-border-radius: 8px;
-          border-radius: 8px;
-  outline: none;
+    width: 100%;
+    height: 30px;
+    padding: 8px 12px;
+    font-size: 18px;
+    line-height: 30px;
+    border: 2px solid #ccc;
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    outline: none;
 }
 
 .typeahead {
-  background-color: #fff;
+    background-color: #fff;
 }
 
 .typeahead:focus {
-  border: 2px solid #0097cf;
+    border: 2px solid #0097cf;
 }
 
 .tt-query {
-  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-     -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
-          box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
 }
 
 .tt-hint {
-  color: #999
+    color: #999
 }
 
 .tt-dropdown-menu {
-  width: 422px;
-  margin-top: 12px;
-  padding: 8px 0;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  -webkit-border-radius: 8px;
-     -moz-border-radius: 8px;
-          border-radius: 8px;
-  -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.2);
-     -moz-box-shadow: 0 5px 10px rgba(0,0,0,.2);
-          box-shadow: 0 5px 10px rgba(0,0,0,.2);
+    width: 422px;
+    margin-top: 12px;
+    padding: 8px 0;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 8px;
+    -moz-border-radius: 8px;
+    border-radius: 8px;
+    -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+    -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
 }
 
 .tt-suggestion {
-  padding: 3px 20px;
-  font-size: 18px;
-  line-height: 24px;
+    padding: 3px 20px;
+    font-size: 18px;
+    line-height: 24px;
 }
 
 .tt-suggestion.tt-cursor {
-  color: #fff;
-  background-color: #0097cf;
+    color: #fff;
+    background-color: #0097cf;
 
 }
 
 .tt-suggestion p {
-  margin: 0;
+    margin: 0;
 }
 
 .gist {
-  font-size: 14px;
+    font-size: 14px;
 }
-
-div.projectDetails span.title {
-	font-size: 18px;
-	font-weight: bold;
-}
-
-div.projectGridMenu {
-	text-align: right;
-	margin-top: -20px;
-}
-
-div.projectGridMenu span.pg-expand-all  {
-	color: #468cc8;
-	text-decoration: underline;
-	cursor: pointer;
-	margin-right: 10px;
-}
-
-div.projectGridMenu span.pg-collapse-all  {
-	color: #468cc8;
-	text-decoration: underline;
-	cursor: pointer;
-	margin-right: 7px;
-}
-
-.hg-item-name:hover {
-	text-decoration: none !important;
-	cursor: default;
-}
-

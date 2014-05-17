@@ -191,8 +191,8 @@
         // This useful function found on StackOverflow http://stackoverflow.com/a/7385673
         // Used to hide the detail card when you click outside of it onto its containing div
         $(document).click(function (e) {
-            var container = $("#projectGrid");
-            var altContainer = $(".projectDetails");
+            var container = $("#project-grid");
+            var altContainer = $(".project-details");
 
             if (!container.is(e.target) && !altContainer.is(e.target) // if the target of the click isn't the container...
                 && container.has(e.target).length === 0 && altContainer.has(e.target).length === 0)// ... nor a descendant of the container
@@ -260,7 +260,7 @@
 
         this.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
-            if (selectedRows.length > 0 ){
+            if (selectedRows.length == 1 ){
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
@@ -285,7 +285,7 @@
                         parentIsSmartFolder: parentIsSmartFolder
                     };
                     var displayHTML    = detailTemplate(detailTemplateContext);
-                    $(".projectDetails").html(displayHTML);
+                    $(".project-details").html(displayHTML);
                     $('#findNode'+theItem.node_id).hide();
                     $('#findNode'+theItem.node_id+' .typeahead').typeahead({
                       highlight: true
@@ -304,11 +304,11 @@
                       }
                     });
                     $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
-                        $('#add_link_'+theItem.node_id).removeAttr('disabled');
+                        $('#add-link-'+theItem.node_id).removeAttr('disabled');
                         linkName = datum.value.name;
                         linkID = datum.value.node_id;
                     });
-                    $('#add_link_'+theItem.node_id).click(function() {
+                    $('#add-link-'+theItem.node_id).click(function() {
                         var url = "/api/v1/project/"+theItem.node_id+"/pointer/"; // the script where you handle the form input.
                         var postData = JSON.stringify({nodeIds: [linkID]});
                         $.ajax({
@@ -323,17 +323,17 @@
                         });
                     });
 
-                    $('#add_item_'+theItem.node_id).click(function(){
+                    $('#add-item-'+theItem.node_id).click(function(){
                         $('#buttons'+theItem.node_id).hide();
                         $('#findNode'+theItem.node_id).show();
                     });
 
-                    $(".projectDetails").show();
+                    $(".project-details").show();
                 } else {
-                    $(".projectDetails").hide();
+                    $(".project-details").hide();
                 }
             } else {
-                $(".projectDetails").hide();
+                $(".project-details").hide();
             }
         }); // end onSelectedRowsChanged
 
