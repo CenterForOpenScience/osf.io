@@ -53,7 +53,7 @@ MEETING_DATA = {
         'info_url': 'http://centerforopenscience.org/aps/',
         'active': True,
     },
-    'annopeer': {
+    'annopeer2014': {
         'name': '#annopeer',
         'info_url': '',
         'active': True,
@@ -205,15 +205,15 @@ def get_mailgun_subject(form):
     return subject
 
 
-def get_mailgun_from(form):
+def get_mailgun_from():
     """Get name and email address of sender. Note: this uses the `from` field
     instead of the `sender` field, meaning that envelope headers are ignored.
 
     """
-    name = re.sub(r'<.*?>', '', form['from']).strip()
+    name = re.sub(r'<.*?>', '', request.form['from']).strip()
     name = name.replace('"', '')
     name = str(HumanName(name))
-    match = re.search(r'<(.*?)>', form['from'])
+    match = re.search(r'<(.*?)>', request.form['from'])
     address = match.groups()[0] if match else ''
     return name, address
 
@@ -311,7 +311,7 @@ def meeting_hook():
     # Fail if not from Mailgun
     check_mailgun_headers()
 
-    form = deep_clean(dict(request.form))
+    form = deep_clean(request.form.to_dict())
     meeting, category = parse_mailgun_receiver(form)
 
     # Fail if not found or inactive
@@ -322,7 +322,7 @@ def meeting_hook():
     except KeyError:
         raise HTTPError(http.NOT_ACCEPTABLE)
 
-    name, address = get_mailgun_from(form)
+    name, address = get_mailgun_from()
 
     # Add poster
     add_poster_by_email(
