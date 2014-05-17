@@ -22,6 +22,7 @@ from website.util import web_url_for
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
+from website.util.sanitize import deep_clean
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 logger = logging.getLogger(__name__)
@@ -49,9 +50,14 @@ MEETING_DATA = {
     },
     'aps2014': {
         'name': 'APS 2014',
+        'info_url': 'http://centerforopenscience.org/aps/',
+        'active': True,
+    },
+    'annopeer': {
+        'name': '#annopeer',
         'info_url': '',
         'active': True,
-    }
+    },
 }
 
 
@@ -191,23 +197,23 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     )
 
 
-def get_mailgun_subject():
-    subject = request.form['subject']
+def get_mailgun_subject(form):
+    subject = form['subject']
     subject = re.sub(r'^re:', '', subject, flags=re.I)
     subject = re.sub(r'^fwd:', '', subject, flags=re.I)
     subject = subject.strip()
     return subject
 
 
-def get_mailgun_from():
+def get_mailgun_from(form):
     """Get name and email address of sender. Note: this uses the `from` field
     instead of the `sender` field, meaning that envelope headers are ignored.
 
     """
-    name = re.sub(r'<.*?>', '', request.form['from']).strip()
+    name = re.sub(r'<.*?>', '', form['from']).strip()
     name = name.replace('"', '')
     name = str(HumanName(name))
-    match = re.search(r'<(.*?)>', request.form['from'])
+    match = re.search(r'<(.*?)>', form['from'])
     address = match.groups()[0] if match else ''
     return name, address
 
@@ -226,6 +232,7 @@ def check_mailgun_headers():
     http://documentation.mailgun.com/user_manual.html#webhooks
 
     """
+    # TODO: Cap request payload at 25MB
     signature = hmac.new(
         key=settings.MAILGUN_API_KEY,
         msg='{}{}'.format(
@@ -237,7 +244,7 @@ def check_mailgun_headers():
 
     if signature != request.form['signature']:
         logger.warn('Invalid headers on incoming mail')
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
 
 SSCORE_MAX_VALUE = 5
@@ -268,7 +275,7 @@ def check_mailgun_spam():
     )
 
 
-def parse_mailgun_receiver():
+def parse_mailgun_receiver(form):
     """Check Mailgun recipient and extract test status, meeting name, and
     content category. Crash if test status does not match development mode in
     settings.
@@ -284,7 +291,7 @@ def parse_mailgun_receiver():
             (?P<category>poster|talk)
             @osf\.io
             $''',
-        request.form['recipient'],
+        form['recipient'],
         flags=re.IGNORECASE | re.VERBOSE,
     )
 
@@ -301,8 +308,13 @@ def parse_mailgun_receiver():
 
 def meeting_hook():
 
-    meeting, category = parse_mailgun_receiver()
+    # Fail if not from Mailgun
+    check_mailgun_headers()
 
+    form = deep_clean(dict(request.form))
+    meeting, category = parse_mailgun_receiver(form)
+
+    # Fail if not found or inactive
     # Note: Throw 406 to disable Mailgun retries
     try:
         if not MEETING_DATA[meeting]['active']:
@@ -310,18 +322,16 @@ def meeting_hook():
     except KeyError:
         raise HTTPError(http.NOT_ACCEPTABLE)
 
-    # Fail if not from Mailgun
-    check_mailgun_headers()
-    name, address = get_mailgun_from()
+    name, address = get_mailgun_from(form)
 
     # Add poster
     add_poster_by_email(
         conf_id=meeting,
-        recipient=request.form['recipient'],
+        recipient=form['recipient'],
         address=address,
         fullname=name,
-        subject=get_mailgun_subject(),
-        message=request.form['stripped-text'],
+        subject=get_mailgun_subject(form),
+        message=form['stripped-text'],
         attachments=get_mailgun_attachments(),
         tags=[meeting],
         system_tags=[meeting],
