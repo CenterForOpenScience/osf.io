@@ -5,6 +5,7 @@ from .model import Node, NodeLog, Pointer, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
+from website.exceptions import NodeStateError
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -65,14 +66,11 @@ def new_dashboard(user):
     """
     existing_dashboards = user.node__contributed.find(
         Q('category', 'eq', 'project') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
         Q('is_dashboard','eq', True)
     )
 
-    # TODO: This should raise some sort of error.
     if existing_dashboards.count() > 0:
-        return
+        raise NodeStateError("Users may only have one dashboard")
 
     node = Node(
         title='Dashboard',

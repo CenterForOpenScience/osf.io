@@ -510,13 +510,14 @@ class Node(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic': True}
 
     def __init__(self, *args, **kwargs):
-
         super(Node, self).__init__(*args, **kwargs)
 
         # Crash if parent provided and not project
         project = kwargs.get('project')
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
+
+        #Crash if trying to create a second dashboard
 
         if kwargs.get('_is_loaded', False):
             return
@@ -656,6 +657,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+        if first_save and self.is_dashboard:
+            existing_dashboards = self.creator.node__contributed.find(
+                Q('is_dashboard','eq',True)
+            )
+            if existing_dashboards.count() > 0:
+                raise NodeStateError("Only one dashboard allowed per user.")
+
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1148,6 +1157,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
+        if self.is_dashboard:
+            raise NodeStateError("Dashboards may not be deleted.")
 
         if not self.can_edit(auth):
             raise PermissionsError()
@@ -1283,6 +1294,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if not self.can_edit(auth):
             return
+
+        if self.is_folder:
+            raise NodeStateError("Folders may not be registered")
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
