@@ -10,13 +10,14 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 def get_projects(user):
-    '''Return a list of user's projects, excluding registrations.'''
+    '''Return a list of user's projects, excluding registrations and folders.'''
     return [
         node
         for node in user.node__contributed
         if node.category == 'project'
         and not node.is_registration
         and not node.is_deleted
+        and not node.is_folder
     ]
 
 

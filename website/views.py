@@ -15,11 +15,12 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
                                   SetEmailAndPasswordForm)
 from framework import SelectField
 
-from website.models import Guid
+from website.models import Guid, Node
 from website.util import web_url_for, rubeus
 from website.project.forms import NewProjectForm, NewFolderForm
 from website.project import model, new_dashboard, new_folder
 from website import settings
+
 
 
 logger = logging.getLogger(__name__)
@@ -45,14 +46,7 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-def _render_project(node, **kwargs):
-    """
-
-    :param node:
-    :return:
-
-    """
-    return rubeus.to_project_hgrid(node, **kwargs)
+_render_project = rubeus.to_project_hgrid
 
 
 def _render_projects(nodes, **kwargs):
@@ -140,17 +134,13 @@ def index(auth, **kwargs):
 
 def find_dashboard(user):
     dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard','eq', True) &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
+        Q('is_dashboard','eq', True)
     )
 
     if dashboard_folder.count() == 0:
         new_dashboard(user)
         dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard','eq', True) &
-            Q('is_deleted', 'eq', False) &
-            Q('is_registration', 'eq', False)
+            Q('is_dashboard','eq', True)
         )
     return dashboard_folder
 
