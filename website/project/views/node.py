@@ -1032,20 +1032,18 @@ def remove_pointer(**kwargs):
 @must_be_valid_project # returns project
 @must_have_permission('write')
 @must_not_be_registration
-def remove_pointer_from_folder(**kwargs):
+def remove_pointer_from_folder(pointer_id, **kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
 
     """
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    # TODO: since these a delete request, shouldn't use request body. put pointer
-    # id in the URL instead
-    pointer_node_id = request.json.get('pointerNodeId')
-    if pointer_node_id is None:
+
+    if pointer_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer_id = node.pointing_at(pointer_node_id)
+    pointer_id = node.pointing_at(pointer_id)
 
     pointer = Pointer.load(pointer_id)
 

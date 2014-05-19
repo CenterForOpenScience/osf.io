@@ -331,8 +331,8 @@
                     });
 
                     $('#remove-link-'+theItem.node_id).click(function() {
-                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/';
-                        var postData = JSON.stringify({pointerNodeId: theItem.node_id});
+                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
+                        var postData = JSON.stringify({});
                         $.ajax({
                             type: "DELETE",
                             url: url,

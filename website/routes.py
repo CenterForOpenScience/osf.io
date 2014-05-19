@@ -655,7 +655,7 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/folder/<pid>/pointer/',
+                '/folder/<pid>/pointer/<pointer_id>',
             ],
             'delete',
             project_views.node.remove_pointer_from_folder,
