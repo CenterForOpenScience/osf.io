@@ -1,4 +1,4 @@
-<div class="modal fade" id="private-link">
+<div class="modal fade" id="addPrivateLink">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -10,17 +10,18 @@
                 <div >
 
                     <div>
-                        Would you like to add a label for this private link?
+                        Would you like to add a note for this link?
                         <div class="form-group">
-                            <input type="text" class="form-control private-link-label" placeholder="New Label" data-bind="value:label"/>
+                            <input type="text" class="form-control private-link-note" placeholder="New Note" data-bind="value:note"/>
                         </div>
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to apply the link privilege to any children of
-                        the current component?
+                        Anyone with the private link can view, but not edit,
+                        the components associated with the link.
+                        Which components would you like to associate with this link?
                     </div>
 
                     <div class="row">

@@ -4,7 +4,7 @@ from wtforms import Form, Field
 
 from framework.auth import forms
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import UserFactory, UnregUserFactory
 
 
@@ -30,7 +30,7 @@ def test_merge_account_form_cleaning():
     assert_equal(form.user_password.data, 'bohemi1aN')
 
 
-class TestValidation(DbTestCase):
+class TestValidation(OsfTestCase):
 
     def test_unique_email_validator(self):
         class MockForm(Form):

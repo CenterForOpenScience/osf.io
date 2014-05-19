@@ -1,15 +1,25 @@
-[This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
-===========================
+# OSF 
+
+- Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
+- Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
+- Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
+- Wiki: https://osf.io/a92ji/wiki/home/
 
 ## Help
 
-Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
 
 ## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
 
 - Create your virtualenv.
+- Copy `website/settings/local-dist.py` to `website/settings/local.py`. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+
+```sh
+$ cp website/settings/local-dist.py website/settings/local.py
+```
+
 - Install MongoDB. On MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
@@ -27,16 +37,9 @@ $ brew install libxslt
 - Install requirements.
 
 ```bash
-$ pip install -r dev-requirements.txt
+$ pip install invoke
+$ invoke requirements --all
 ```
-
-- Create your local settings file.
-
-```bash
-$ cp website/settings/local-dist.py website/settings/local.py
-```
-
-`local.py` will override settings in `base.py`. It will not be added to source control, so change it as you wish.
 
 ## Starting Up
 

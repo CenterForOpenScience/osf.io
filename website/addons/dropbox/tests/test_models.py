@@ -8,7 +8,7 @@ from framework.auth.decorators import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
-from tests.base import DbTestCase, fake, URLLookup
+from tests.base import OsfTestCase, fake, URLLookup
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
@@ -21,7 +21,7 @@ app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 
-class TestUserSettingsModel(DbTestCase):
+class TestUserSettingsModel(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -84,7 +84,7 @@ class TestUserSettingsModel(DbTestCase):
         assert_equal(result['has_auth'], user_settings.has_auth)
 
 
-class TestDropboxNodeSettingsModel(DbTestCase):
+class TestDropboxNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -168,7 +168,7 @@ class TestDropboxNodeSettingsModel(DbTestCase):
         assert_equal(last_log.user, user_settings.owner)
 
 
-class TestNodeSettingsCallbacks(DbTestCase):
+class TestNodeSettingsCallbacks(OsfTestCase):
 
     def setUp(self):
         # Create node settings with auth
@@ -218,7 +218,7 @@ class TestNodeSettingsCallbacks(DbTestCase):
         assert_true(message)
 
 
-class TestDropboxGuidFile(DbTestCase):
+class TestDropboxGuidFile(OsfTestCase):
 
     def test_verbose_url(self):
         project = ProjectFactory()

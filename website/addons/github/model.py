@@ -13,11 +13,11 @@ from framework import fields
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
-from website.addons.base import AddonError
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import ApiError, NotFoundError
 from website.addons.github.api import GitHub
+from website.addons.github import utils
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
 
@@ -42,6 +42,10 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     @property
     def has_auth(self):
         return self.oauth_access_token is not None
+
+    @property
+    def public_id(self):
+        return self.github_user
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
@@ -88,6 +92,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()
+    hook_secret = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addongithubusersettings', backref='authorized'
@@ -123,6 +128,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.user_settings and self.user_settings.has_auth
         )
 
+    # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
@@ -424,7 +430,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     # Hooks #
     #########
 
-    # TODO Should Events be added here?
+    # TODO: Should Events be added here?
+    # TODO: Move hook logic to service
     def add_hook(self, save=True):
 
         if self.user_settings:
@@ -438,12 +445,15 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
-                    )
+                    ),
+                    'content_type': github_settings.HOOK_CONTENT_TYPE,
+                    'secret': utils.make_hook_secret(),
                 }
             )
 
             if hook:
                 self.hook_id = hook.id
+                self.hook_secret = hook.config['secret']
                 if save:
                     self.save()
 

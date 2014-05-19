@@ -3,10 +3,10 @@
 from nose.tools import *  # PEP8 asserts
 from dropbox.client import DropboxClient
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import UserFactory
 
-from website.addons.base import AddonError
+from website.addons.base.exceptions import AddonError
 from website.addons.dropbox.model import DropboxUserSettings
 from website.addons.dropbox.tests.factories import (
     DropboxNodeSettingsFactory,
@@ -16,7 +16,7 @@ from website.addons.dropbox.client import (
     get_client, get_node_addon_client, get_node_client, get_client_from_user_settings
 )
 
-class TestCore(DbTestCase):
+class TestCore(OsfTestCase):
     def setUp(self):
         self.user = UserFactory()
         self.user.add_addon('dropbox')
@@ -31,7 +31,7 @@ class TestCore(DbTestCase):
         assert_true(isinstance(result, DropboxUserSettings))
 
 
-class TestClientHelpers(DbTestCase):
+class TestClientHelpers(OsfTestCase):
     def setUp(self):
         self.user_settings = DropboxUserSettingsFactory()
         self.node_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings)

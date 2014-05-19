@@ -1,7 +1,3 @@
-"""
-
-"""
-
 from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
@@ -16,7 +12,7 @@ settings_routes = {
                 '/project/<pid>/node/<nid>/s3/newbucket/',
             ],
             'post',
-            views.utils.create_new_bucket,
+            views.crud.create_new_bucket,
             json_renderer
         ),
         Rule(

@@ -2,7 +2,7 @@
 Impute name parts for all existing users.
 """
 
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names
 
 from website.app import init_app
 from website import models
@@ -13,7 +13,7 @@ def impute_names():
 
     for user in models.User.find():
 
-        parsed = parse_name(user.fullname)
+        parsed = impute_names(user.fullname)
         for field, value in parsed.items():
             if getattr(user, field, None) is None:
                 setattr(user, field, value)

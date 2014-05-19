@@ -12,7 +12,7 @@ from webtest_plus import TestApp
 
 from framework.exceptions import HTTPError
 import framework.auth as auth
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, AuthUserFactory, PrivateLinkFactory
 )
@@ -29,7 +29,7 @@ def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
 
 
-class TestAuthUtils(DbTestCase):
+class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
@@ -88,7 +88,7 @@ class TestAuthUtils(DbTestCase):
             auth.login(user.username, 'wrongpassword')
 
 
-class TestAuthObject(DbTestCase):
+class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
@@ -111,7 +111,8 @@ class TestAuthObject(DbTestCase):
         auth2 = Auth(user=None)
         assert_false(auth2.logged_in)
 
-class TestPrivateLink(DbTestCase):
+
+class TestPrivateLink(OsfTestCase):
 
     def setUp(self):
         self.flaskapp = Flask('testing_private_links')
@@ -126,8 +127,8 @@ class TestPrivateLink(DbTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory()
-        self.project.private_links.append(self.link)
-        self.project.save()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
@@ -159,7 +160,7 @@ def view_that_needs_contributor(**kwargs):
     return kwargs['project'] or kwargs['node']
 
 
-class AuthAppTestCase(DbTestCase):
+class AuthAppTestCase(OsfTestCase):
 
     def setUp(self):
         self.ctx = decoratorapp.test_request_context()

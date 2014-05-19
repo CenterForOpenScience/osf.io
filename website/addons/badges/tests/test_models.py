@@ -8,7 +8,7 @@ from website.addons.badges.model import (
     BadgesUserSettings, BadgesNodeSettings, Badge, BadgeAssertion
 )
 from utils import *
-from tests.base import DbTestCase, fake, URLLookup
+from tests.base import OsfTestCase, fake, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.app import init_app
@@ -17,7 +17,7 @@ app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 
-class TestUserSettingsModel(DbTestCase):
+class TestUserSettingsModel(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -50,7 +50,7 @@ class TestUserSettingsModel(DbTestCase):
         assert_equal(len(self.usersettings.badges), 3)
 
 
-class TestNodeSettingsModel(DbTestCase):
+class TestNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -65,7 +65,7 @@ class TestNodeSettingsModel(DbTestCase):
         pass
 
 
-class TestBadge(DbTestCase):
+class TestBadge(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -98,7 +98,7 @@ class TestBadge(DbTestCase):
             assert_equals(len(badge.assertions), n + 1)
 
 
-class TestAssertion(DbTestCase):
+class TestAssertion(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()

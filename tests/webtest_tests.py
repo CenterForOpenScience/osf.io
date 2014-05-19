@@ -12,7 +12,7 @@ from webtest_plus import TestApp
 from framework import Q
 from framework.auth.model import User
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase, fake
+from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
@@ -29,7 +29,7 @@ from website.app import init_app
 app = init_app(set_backends=False, routes=True)
 
 
-class TestAnUnregisteredUser(DbTestCase):
+class TestAnUnregisteredUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -86,7 +86,7 @@ class TestAnUnregisteredUser(DbTestCase):
         )
 
 
-class TestAUser(DbTestCase):
+class TestAUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -293,7 +293,7 @@ class TestAUser(DbTestCase):
         assert_equal(td2.text, user2.display_absolute_url)
 
 
-class TestRegistrations(DbTestCase):
+class TestRegistrations(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -317,12 +317,12 @@ class TestRegistrations(DbTestCase):
         assert_not_in('Delete project', res)
 
 
-    def test_cant_see_contributor(self):
+    def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Contributors', subnav.text)
+        assert_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
 
@@ -366,7 +366,7 @@ class TestRegistrations(DbTestCase):
         assert_not_in('Registrations', subnav.text)
 
 
-class TestComponents(DbTestCase):
+class TestComponents(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -427,7 +427,7 @@ class TestComponents(DbTestCase):
         )
 
 
-class TestMergingAccounts(DbTestCase):
+class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -535,7 +535,7 @@ class TestMergingAccounts(DbTestCase):
 # FIXME: These affect search in development environment. So need to migrate solr after running.
 # # Remove this side effect.
 @unittest.skipIf(not settings.USE_SOLR, 'Skipping because USE_SOLR is False')
-class TestSearching(DbTestCase):
+class TestSearching(OsfTestCase):
 
     '''Test searching using the search bar. NOTE: These may affect the
     Solr database. May need to migrate after running these.
@@ -575,7 +575,7 @@ class TestSearching(DbTestCase):
         assert_in('Foobar Project', res)
 
 
-class TestShortUrls(DbTestCase):
+class TestShortUrls(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -650,7 +650,7 @@ class TestShortUrls(DbTestCase):
 
 
 @requires_piwik
-class TestPiwik(DbTestCase):
+class TestPiwik(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.users = [
@@ -704,7 +704,7 @@ class TestPiwik(DbTestCase):
         )
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
-class TestClaiming(DbTestCase):
+class TestClaiming(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -870,7 +870,7 @@ class TestClaiming(DbTestCase):
         assert_in(different_name, res)
 
 
-class TestConfirmingEmail(DbTestCase):
+class TestConfirmingEmail(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = UnconfirmedUserFactory()
@@ -936,7 +936,7 @@ class TestConfirmingEmail(DbTestCase):
         # Sees alert message
         assert_in('already been confirmed', res)
 
-class TestClaimingAsARegisteredUser(DbTestCase):
+class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

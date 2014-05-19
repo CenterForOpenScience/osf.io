@@ -21,9 +21,6 @@ lookup = TemplateLookup(
     ]
 )
 
-class AddonError(Exception): pass
-
-
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
@@ -149,6 +146,10 @@ class AddonConfig(object):
             'has_widget': 'widget' in self.views,
         }
 
+    @property
+    def path(self):
+        return os.path.join(settings.BASE_PATH, self.short_name)
+
 
 class GuidFile(GuidStoredObject):
 
@@ -209,6 +210,10 @@ class AddonUserSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    @property
+    def public_id(self):
+        return None
+
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
@@ -225,7 +230,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'permissions': self.owner.get_permissions(user)
             },
             'node': {
-                'id': self.owner._primary_key,
+                'id': self.owner._id,
                 'api_url': self.owner.api_url,
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
@@ -237,7 +242,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
 
         """
-        # Note: `config` is added to `self` in AddonConfig::__init__.
+        # Note: `config` is added to `self` in `AddonConfig::__init__`.
         template = lookup.get_template('project/addon/config_error.mako')
         return template.get_def('config_error').render(
             title=self.config.full_name,
