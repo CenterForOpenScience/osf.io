@@ -21,6 +21,7 @@ from modularodm import Q
 from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth.model import User
+from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -38,7 +39,7 @@ from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 from website.project.decorators import choose_key, check_can_access
 
-from tests.base import DbTestCase, fake, capture_signals, URLLookup, assert_is_redirect
+from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -52,7 +53,7 @@ app = website.app.init_app(
 
 lookup = URLLookup(app)
 
-class TestViewingProjectWithPrivateLink(DbTestCase):
+class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -60,8 +61,8 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory()
-        self.project.private_links.append(self.link)
-        self.project.save()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
@@ -156,7 +157,7 @@ class TestViewingProjectWithPrivateLink(DbTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
-class TestProjectViews(DbTestCase):
+class TestProjectViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -519,8 +520,8 @@ class TestProjectViews(DbTestCase):
 
     def test_remove_private_link(self):
         link = PrivateLinkFactory()
-        self.project.private_links.append(link)
-        self.project.save()
+        link.nodes.append(self.project)
+        link.save()
         with app.test_request_context():
             url = api_url_for(
                 'remove_private_link',
@@ -574,7 +575,7 @@ class TestProjectViews(DbTestCase):
         recent = [c for c in self.user1.recently_added if c.is_active()]
         assert_equal(len(res.json['contributors']), len(recent))
 
-class TestAddingContributorViews(DbTestCase):
+class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -786,7 +787,7 @@ class TestAddingContributorViews(DbTestCase):
             n_contributors_pre + len(payload['users']))
 
 
-class TestUserInviteViews(DbTestCase):
+class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -890,7 +891,7 @@ class TestUserInviteViews(DbTestCase):
 
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
-class TestClaimViews(DbTestCase):
+class TestClaimViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1050,7 +1051,7 @@ class TestClaimViews(DbTestCase):
         # Full name was set correctly
         assert_equal(unreg.fullname, different_name)
         # CSL names were set correctly
-        parsed_name = auth.utils.parse_name(different_name)
+        parsed_name = impute_names_model(different_name)
         assert_equal(unreg.given_name, parsed_name['given_name'])
         assert_equal(unreg.family_name, parsed_name['family_name'])
 
@@ -1104,7 +1105,7 @@ class TestClaimViews(DbTestCase):
         # Response is a 400
         assert_equal(res.status_code, 400)
 
-class TestWatchViews(DbTestCase):
+class TestWatchViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1225,7 +1226,7 @@ class TestWatchViews(DbTestCase):
         assert_equal(res.json['logs'][0]['action'], 'file_added')
 
 
-class TestPointerViews(DbTestCase):
+class TestPointerViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1381,7 +1382,7 @@ class TestPointerViews(DbTestCase):
         assert_equal(len(prompts), 0)
 
 
-class TestPublicViews(DbTestCase):
+class TestPublicViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1391,7 +1392,7 @@ class TestPublicViews(DbTestCase):
         assert_equal(res.status_code, 200)
 
 
-class TestAuthViews(DbTestCase):
+class TestAuthViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1530,27 +1531,9 @@ class TestAuthViews(DbTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_change_names(self):
-        self.app.post(
-            '/api/v1/settings/names/',
-            json.dumps({
-                'fullname': 'Lyndon Baines Johnson',
-                'given_name': 'Lyndon',
-                'middle_names': 'Baines',
-                'family_name': 'Johnson',
-                'suffix': '',
-            }),
-            content_type='application/json',
-            auth=self.auth
-        ).maybe_follow()
-        self.user.reload()
-        assert_equal(self.user.given_name, 'Lyndon')
-        assert_equal(self.user.middle_names, 'Baines')
-        assert_equal(self.user.family_name, 'Johnson')
-
 
 # TODO: Use mock add-on
-class TestAddonUserViews(DbTestCase):
+class TestAddonUserViews(OsfTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
@@ -1590,7 +1573,7 @@ class TestAddonUserViews(DbTestCase):
 
 
 # TODO: Move to OSF Storage
-class TestFileViews(DbTestCase):
+class TestFileViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1618,7 +1601,7 @@ class TestFileViews(DbTestCase):
         assert_equal(len(data), len(expected))
 
 
-class TestComments(DbTestCase):
+class TestComments(OsfTestCase):
 
     def setUp(self):
         self.project = ProjectFactory(is_public=True)
@@ -1962,7 +1945,7 @@ class TestComments(DbTestCase):
         assert_equal(observed, expected)
 
 
-class TestTagViews(DbTestCase):
+class TestTagViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -1977,7 +1960,7 @@ class TestTagViews(DbTestCase):
 
 
 @requires_solr
-class TestSearchViews(DbTestCase):
+class TestSearchViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -2006,7 +1989,7 @@ class TestSearchViews(DbTestCase):
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
-class TestReorderComponents(DbTestCase):
+class TestReorderComponents(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

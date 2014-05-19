@@ -19,9 +19,9 @@ from factory import base, Sequence, SubFactory, post_generation
 from framework import StoredObject
 from framework.auth import User, Q
 from framework.auth.decorators import Auth
-from framework.auth.utils import parse_name
+from framework.auth.utils import impute_names_model
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment, PrivateLink
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
 )
 
 from website.addons.wiki.model import NodeWikiPage
@@ -70,7 +70,7 @@ class UserFactory(ModularOdmFactory):
 
     @post_generation
     def set_names(self, create, extracted):
-        parsed = parse_name(self.fullname)
+        parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
         if create:

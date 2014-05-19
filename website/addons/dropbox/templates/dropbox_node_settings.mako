@@ -138,9 +138,6 @@
 
 
 <script>
-    $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.js'],
-            'zeroclipboard');
-
     $script.ready('zeroclipboard', function() {
         ZeroClipboard.config({moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'})
     });

@@ -168,7 +168,12 @@
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
-        var $rowElem = $(this.getRowElement(row.id));
+        try {
+            // Raises TypeError if row's HTML is not rendered.
+            var $rowElem = $(this.getRowElement(row.id));
+        } catch (err) {
+            return;
+        }
         var $status = $rowElem.find(Rubeus.statusSelector);
         this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));

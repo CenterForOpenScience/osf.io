@@ -132,18 +132,28 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear_auth(self):
+    def clear(self):
+        """Clear settings and deauthorize any associated nodes.
+
+        :param Auth auth: Auth object for the user performing the "clear" action.
+        """
         self.dropbox_id = None
         self.access_token = None
+        for node_settings in self.dropboxnodesettings__authorized:
+            node_settings.deauthorize(Auth(self.owner))
+            node_settings.save()
         return self
 
     def delete(self):
         super(DropboxUserSettings, self).delete()
-        self.clear_auth()
+        self.clear()
         for node_settings in self.dropboxnodesettings__authorized:
             node_settings.delete(save=False)
             node_settings.user_settings = None
             node_settings.save()
+
+    def __repr__(self):
+        return '<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
@@ -201,6 +211,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             },
             auth=auth,
         )
+
+    def __repr__(self):
+        return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
 

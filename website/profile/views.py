@@ -1,23 +1,26 @@
-import json
+import logging
 import httplib as http
-import bleach
+from dateutil.parser import parse as parse_date
 
 from framework import (
     get_user,
     must_be_logged_in,
     request,
     redirect,
-    status
 )
+from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
-from framework.auth import get_current_user, authenticate
-from framework.auth.utils import parse_name
+from framework.auth import get_current_user
+from framework.auth import utils as auth_utils
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
 from website import settings
-from website.profile import utils
+from website.profile import utils as profile_utils
+from website.util.sanitize import deep_clean
+
+logger = logging.getLogger(__name__)
 
 
 def get_public_projects(uid=None, user=None):
@@ -44,6 +47,14 @@ def get_public_components(uid=None, user=None):
     ])
 
 
+def date_or_none(date):
+    try:
+        return parse_date(date)
+    except Exception as error:
+        logger.exception(error)
+        return None
+
+
 def _profile_view(uid=None):
 
     user = get_current_user()
@@ -53,8 +64,8 @@ def _profile_view(uid=None):
         return redirect('/login/?next={0}'.format(request.path))
 
     if profile:
-        profile_user_data = utils.serialize_user(profile, full=True)
-        #TODO Fix circular improt
+        profile_user_data = profile_utils.serialize_user(profile, full=True)
+        # TODO: Fix circular import
         from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
@@ -106,77 +117,21 @@ def get_profile_summary(user_id, formatter='long'):
     return user.get_summary(formatter)
 
 
-profile_schema = {
-    'pages': [
-        {
-            'id': 'null',
-            'title': 'Names',
-            'contents': [
-                {
-                    'id': 'fullname',
-                    'type': 'textfield',
-                    'label': 'Full/display name',
-                    'required': True,
-                    'helpText': 'The field above is your full name and the name that will be '
-                                'displayed in your profile. You can use the "Guess fields" button '
-                                'or edit the fields below in order to accurately generate '
-                                'citations.',
-                },
-                {
-                    'id': 'impute',
-                    'type': 'htmlfield',
-                    'label': '',
-                    'content': '<button id="profile-impute" class="btn btn-default">Guess fields</button>',
-                },
-                {
-                    'id': 'given_name',
-                    'type': 'textfield',
-                    'label': 'Given name',
-                    'helpText': 'First name; e.g., Stephen',
-                },
-                {
-                    'id': 'middle_names',
-                    'type': 'textfield',
-                    'label': 'Middle name(s)',
-                    'helpText': 'Middle names; e.g., Jay',
-                },
-                {
-                    'id': 'family_name',
-                    'type': 'textfield',
-                    'label': 'Family name',
-                    'required': True,
-                    'helpText': 'Surname; e.g., Gould',
-                },
-                {
-                    'id': 'suffix',
-                    'type': 'textfield',
-                    'label': 'Suffix',
-                    'helpText': 'E.g., Sr., Jr., III',
-                },
-            ]
-        }
-    ]
-}
-
-
-# TODO: Similar to node_setting; refactor
 @must_be_logged_in
-def profile_settings(**kwargs):
-
-    user = kwargs['auth'].user
-
-    rv = {
-        'user_id': user._primary_key,
+def user_profile(auth, **kwargs):
+    user = auth.user
+    return {
+        'user_id': user._id,
         'user_api_url': user.api_url,
-        'names': json.dumps({
-            'fullname': user.fullname,
-            'given_name': user.given_name,
-            'middle_names': user.middle_names,
-            'family_name': user.family_name,
-            'suffix': user.suffix,
-        }),
-        'schema': json.dumps(profile_schema),
     }
+
+
+@must_be_logged_in
+def user_addons(auth, **kwargs):
+
+    user = auth.user
+
+    out = {}
 
     addons_enabled = []
     addon_enabled_settings = []
@@ -188,17 +143,17 @@ def profile_settings(**kwargs):
         if 'user' in addon.config.configs:
             addon_enabled_settings.append(addon.config.short_name)
 
-    rv['addon_categories'] = settings.ADDON_CATEGORIES
-    rv['addons_available'] = [
+    out['addon_categories'] = settings.ADDON_CATEGORIES
+    out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
-        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
     ]
-    rv['addons_enabled'] = addons_enabled
-    rv['addon_enabled_settings'] = addon_enabled_settings
+    out['addons_enabled'] = addons_enabled
+    out['addon_enabled_settings'] = addon_enabled_settings
 
-    return rv
+    return out
 
 
 @must_be_logged_in
@@ -212,7 +167,8 @@ def profile_addons(**kwargs):
 @must_be_logged_in
 def user_choose_addons(**kwargs):
     auth = kwargs['auth']
-    auth.user.config_addons(request.json, auth)
+    json_data = deep_clean(request.get_json())
+    auth.user.config_addons(json_data, auth)
 
 
 @must_be_logged_in
@@ -282,21 +238,184 @@ def user_key_history(**kwargs):
 
 
 @must_be_logged_in
-def parse_names(**kwargs):
-    name = request.json.get('fullname', '')
-    return parse_name(name)
-
-
-NAME_FIELDS = [
-    'fullname', 'given_name', 'middle_names', 'family_name', 'suffix'
-]
-def scrub_html(value):
-    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])
+def impute_names(**kwargs):
+    name = request.args.get('name', '')
+    return auth_utils.impute_names(name)
 
 
 @must_be_logged_in
-def post_names(**kwargs):
+def serialize_names(**kwargs):
     user = kwargs['auth'].user
-    for field in NAME_FIELDS:
-        setattr(user, field, scrub_html(request.json[field]))
+    return {
+        'full': user.fullname,
+        'given': user.given_name,
+        'middle': user.middle_names,
+        'family': user.family_name,
+        'suffix': user.suffix,
+    }
+
+
+def get_target_user(auth, uid=None):
+    target = User.load(uid) if uid else auth.user
+    if target is None:
+        raise HTTPError(http.NOT_FOUND)
+    return target
+
+
+def fmt_date_or_none(date, fmt='%Y-%m-%d'):
+    if date:
+        return date.strftime(fmt)
+    return None
+
+
+def append_editable(data, auth, uid=None):
+    target = get_target_user(auth, uid)
+    data['editable'] = auth.user == target
+
+
+def serialize_social_addons(auth):
+    user = auth.user
+    out = {}
+    for user_settings in user.get_addons():
+        config = user_settings.config
+        if user_settings.public_id:
+            out[config.short_name] = user_settings.public_id
+    return out
+
+
+@collect_auth
+def serialize_social(auth, uid=None, **kwargs):
+    target = get_target_user(auth, uid)
+    out = target.social
+    out['addons'] = serialize_social_addons(auth)
+    append_editable(out, auth, uid)
+    return out
+
+
+def serialize_job(job):
+    return {
+        'institution': job.get('institution'),
+        'department': job.get('department'),
+        'title': job.get('title'),
+        'start': fmt_date_or_none(job.get('start')),
+        'end': fmt_date_or_none(job.get('end')),
+    }
+
+
+def serialize_school(school):
+    return {
+        'institution': school.get('institution'),
+        'department': school.get('department'),
+        'degree': school.get('degree'),
+        'start': fmt_date_or_none(school.get('start')),
+        'end': fmt_date_or_none(school.get('end')),
+    }
+
+
+def serialize_contents(field, func, auth, uid=None):
+    target = get_target_user(auth, uid)
+    out = {
+        'contents': [
+            func(content)
+            for content in getattr(target, field)
+        ]
+    }
+    append_editable(out, auth, uid)
+    return out
+
+
+@collect_auth
+def serialize_jobs(auth, uid=None, **kwargs):
+    out = serialize_contents('jobs', serialize_job, auth, uid)
+    append_editable(out, auth, uid)
+    return out
+
+
+@collect_auth
+def serialize_schools(auth, uid=None, **kwargs):
+    out = serialize_contents('schools', serialize_school, auth, uid)
+    append_editable(out, auth, uid)
+    return out
+
+
+@must_be_logged_in
+def unserialize_names(**kwargs):
+    user = kwargs['auth'].user
+    json_data = deep_clean(request.get_json())
+    user.fullname = json_data.get('full')
+    user.given_name = json_data.get('given')
+    user.middle_names = json_data.get('middle')
+    user.family_name = json_data.get('family')
+    user.suffix = json_data.get('suffix')
     user.save()
+
+
+def verify_user_match(auth, **kwargs):
+    uid = kwargs.get('uid')
+    if uid and uid != auth.user._id:
+        raise HTTPError(http.FORBIDDEN)
+
+
+@must_be_logged_in
+def unserialize_social(auth, **kwargs):
+
+    verify_user_match(auth, **kwargs)
+
+    user = auth.user
+    json_data = deep_clean(request.get_json())
+
+    user.social['personal'] = json_data.get('personal')
+    user.social['orcid'] = json_data.get('orcid')
+    user.social['researcherId'] = json_data.get('researcherId')
+    user.social['twitter'] = json_data.get('twitter')
+    user.social['github'] = json_data.get('github')
+    user.social['scholar'] = json_data.get('scholar')
+    user.social['linkedIn'] = json_data.get('linkedIn')
+
+    user.save()
+
+
+def unserialize_job(job):
+    return {
+        'institution': job.get('institution'),
+        'department': job.get('department'),
+        'title': job.get('title'),
+        'start': date_or_none(job.get('start')),
+        'end': date_or_none(job.get('end')),
+    }
+
+
+def unserialize_school(school):
+    return {
+        'institution': school.get('institution'),
+        'department': school.get('department'),
+        'degree': school.get('degree'),
+        'start': date_or_none(school.get('start')),
+        'end': date_or_none(school.get('end')),
+    }
+
+
+def unserialize_contents(field, func, auth):
+    user = auth.user
+    json_data = deep_clean(request.get_json())
+    setattr(
+        user,
+        field,
+        [
+            func(content)
+            for content in json_data.get('contents', [])
+        ]
+    )
+    user.save()
+
+
+@must_be_logged_in
+def unserialize_jobs(auth, **kwargs):
+    verify_user_match(auth, **kwargs)
+    unserialize_contents('jobs', unserialize_job, auth)
+
+
+@must_be_logged_in
+def unserialize_schools(auth, **kwargs):
+    verify_user_match(auth, **kwargs)
+    unserialize_contents('schools', unserialize_school, auth)

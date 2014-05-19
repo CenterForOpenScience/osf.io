@@ -67,7 +67,7 @@ settings_routes = {
         Rule(
             [
                 '/project/<pid>/github/hook/',
-                '/project/<pid>/node/<nid>github/hook/',
+                '/project/<pid>/node/<nid>/github/hook/',
             ],
             'post',
             views.hooks.github_hook_callback,

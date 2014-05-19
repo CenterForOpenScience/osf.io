@@ -42,7 +42,7 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
-class DbTestCase(unittest.TestCase):
+class OsfTestCase(unittest.TestCase):
     '''Base TestCase for tests that require a temporary MongoDB database.
     '''
     # DB settings
@@ -138,12 +138,12 @@ class URLLookup(object):
     Usage: ::
 
         from website.app import init_app
-        from tests.base import DbTestCase, URLLookup
+        from tests.base import OsfTestCase, URLLookup
 
         app = init_app()
         lookup = URLLookup(app)
 
-        class TestProjectViews(DbTestCase):
+        class TestProjectViews(OsfTestCase):
             ...
             def test_project_endpoint(self):
                 url = lookup('web', 'view_project', pid=self.project._primary_key)

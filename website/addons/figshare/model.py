@@ -1,12 +1,7 @@
-"""
-
-"""
 import os
-import json
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from framework.status import push_status_message
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -49,10 +44,10 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
 
 
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
+
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
     figshare_title = fields.StringField()
-
 
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
@@ -75,6 +70,38 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         return bool(self.user_settings and self.user_settings.has_auth)
 
+    @property
+    def linked_content(self):
+        return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
+
+    def update_fields(self, fields, node, auth):        
+        updated = False
+        if fields.get('id'):
+            updated = updated or (fields['id'] != self.figshare_id)
+            self.figshare_id = fields['id']
+        if fields.get('title'):
+            updated = updated or (fields['title'] != self.figshare_title)
+            self.figshare_title = fields['title']            
+        if fields.get('type'):
+            updated = updated or (fields['type'] != self.figshare_type)
+            self.figshare_type = fields['type']            
+
+        self.save()
+        if updated:
+            node.add_log(
+                action='figshare_content_linked',
+                params={
+                    'project': node.parent_id,
+                    'node': node._id,
+                    'figshare': {
+                        'type': self.figshare_type,
+                        'id': self.figshare_id,
+                        'title': self.figshare_title,
+                        }
+                    },
+                auth=auth,
+                )
+
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
@@ -89,27 +116,19 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_options': [],
             'is_registration': self.owner.is_registration,
         })
-
         if self.has_auth:
             rv.update({
                 'authorized_user': self.user_settings.owner.fullname,
                 'owner_url': self.user_settings.owner.url,
                 'is_owner': user == self.user_settings.owner
             })
-            if user == self.user_settings.owner:
-                options = Figshare.from_settings(self.user_settings).get_options()
-
-                if options == 401 or not isinstance(options, list):
-                    self.user_settings.remove_auth()
-                    push_status_message(messages.OAUTH_INVALID)
-                else:
-                    rv['figshare_options'] = options or []
 
         return rv
 
     #############
     # Callbacks #
     #############
+
     def before_page_load(self, node, user):
         """
 

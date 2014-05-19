@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth.decorators import Auth
-from tests.base import DbTestCase
+
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
-class AddonTestCase(DbTestCase):
+
+class AddonTestCase(OsfTestCase):
     """General Addon TestCase that automatically sets up a user and node with
     an addon.
 
@@ -77,7 +79,6 @@ class AddonTestCase(DbTestCase):
             setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
         self.set_node_settings(self.node_settings)
         self.node_settings.save()
-
 
     def setUp(self):
         self.app = self.create_app()

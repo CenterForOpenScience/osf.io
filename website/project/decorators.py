@@ -152,7 +152,6 @@ def _must_be_contributor_factory(include_public):
 
     """
     def wrapper(func):
-
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             response = None

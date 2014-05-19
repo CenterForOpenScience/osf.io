@@ -56,22 +56,24 @@ def new_node(category, title, user, description=None, project=None):
     return node
 
 
-def new_private_link(label, user):
+def new_private_link(note, user, nodes):
     """Create a new private link.
 
-    :param str label: private link label
+    :param str note: private link note
     :param User user: User object
+    :param list Node node: a list of node object
     :return PrivateLink: Created private link
 
     """
     key = str(uuid.uuid4()).replace("-", "")
-    if label:
-        label = sanitize(label.strip())
+    if note:
+        note = sanitize(note.strip())
 
     private_link = PrivateLink(
         key=key,
-        label=label,
+        note=note,
         creator=user,
+        nodes = nodes
     )
 
     private_link.save()

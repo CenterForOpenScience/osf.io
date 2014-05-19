@@ -45,14 +45,14 @@
     <%include file="footer.mako"/>
 
         %if use_cdn:
-            <div id="fb-root"></div>
-            <script>(function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) {return;}
-              js = d.createElement(s); js.id = id;
-              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));</script>
+##            <div id="fb-root"></div>
+##            <script>(function(d, s, id) {
+##              var js, fjs = d.getElementsByTagName(s)[0];
+##              if (d.getElementById(id)) {return;}
+##              js = d.createElement(s); js.id = id;
+##              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+##              fjs.parentNode.insertBefore(js, fjs);
+##            }(document, 'script', 'facebook-jssdk'));</script>
 
             <script>
             var _prum = [['id', '526076f6abe53d9e35000000'],
@@ -172,6 +172,8 @@
         // Enable knockout punches
         ko.punches.enableAll();
         // Filebrowser dependencies
+        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
+            'zeroclipboard');
         $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
         $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
