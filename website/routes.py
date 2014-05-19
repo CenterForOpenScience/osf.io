@@ -655,10 +655,19 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/project/<pid>/folder/pointer/',
+                '/folder/<pid>/pointer/',
             ],
             'delete',
             project_views.node.remove_pointer_from_folder,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/folder/<pid>',
+            ],
+            'delete',
+            project_views.node.delete_folder,
             json_renderer,
         ),
 

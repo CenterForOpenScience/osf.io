@@ -1176,6 +1176,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.can_edit(auth):
             raise PermissionsError()
 
+        #if this is a folder, remove all the folders that this is pointing at.
+        if self.is_folder:
+            for pointed in self.nodes_pointer:
+                if pointed.node.is_folder:
+                    pointed.node.remove_node(auth=auth)
+
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 

@@ -331,7 +331,7 @@
                     });
 
                     $('#remove-link-'+theItem.node_id).click(function() {
-                        var url = "/api/v1/project/"+theParentNodeID+"/folder/pointer/"; // the script where you handle the form input.
+                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/';
                         var postData = JSON.stringify({pointerNodeId: theItem.node_id});
                         $.ajax({
                             type: "DELETE",
@@ -344,7 +344,25 @@
                             }
                         });
                     });
-
+                    $('#delete-folder-'+theItem.node_id).click(function() {
+                        var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder."
+                        bootbox.confirm(confirmationText, function(result) {
+                            if (result !== null && result) {
+                                var url = '/api/v1/folder/'+theItem.node_id;
+                                var postData = JSON.stringify({});
+                                $.ajax({
+                                    type: "DELETE",
+                                    url: url,
+                                    data: postData,
+                                    contentType: 'application/json',
+                                    dataType: 'json',
+                                    success: function() {
+                                        window.location.reload();
+                                    }
+                                });
+                            }
+                        });
+                    });
                     $('#add-item-'+theItem.node_id).click(function(){
                         $('#buttons'+theItem.node_id).hide();
                         $('#findNode'+theItem.node_id).show();

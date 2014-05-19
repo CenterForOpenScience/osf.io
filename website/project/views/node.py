@@ -509,6 +509,40 @@ def component_remove(**kwargs):
     }
 
 @must_be_valid_project # returns project
+@must_have_permission('admin')
+@must_not_be_registration
+def delete_folder(**kwargs):
+    """Remove folder node
+
+    """
+    node = kwargs['node'] or kwargs['project']
+    if node is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not node.is_folder or node.is_dashboard:
+        raise HTTPError(http.BAD_REQUEST)
+
+    auth = kwargs['auth']
+
+    try:
+        node.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
+        )
+
+    message = 'Folder deleted'
+    status.push_status_message(message)
+    redirect_url = '/dashboard/'
+
+    return {
+        'url': redirect_url,
+    }
+
+@must_be_valid_project # returns project
 @must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
@@ -995,22 +1029,22 @@ def remove_pointer(**kwargs):
 
     node.save()
 
-
+@must_be_valid_project # returns project
 @must_have_permission('write')
 @must_not_be_registration
-def remove_pointer_from_folder(auth, pid, **kwargs):
+def remove_pointer_from_folder(**kwargs):
     """Remove a pointer from a node, raising a 400 if the pointer is not
     in `node.nodes`.
 
     """
-
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
     # TODO: since these a delete request, shouldn't use request body. put pointer
     # id in the URL instead
     pointer_node_id = request.json.get('pointerNodeId')
     if pointer_node_id is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    node = Node.load(pid)
     pointer_id = node.pointing_at(pointer_node_id)
 
     pointer = Pointer.load(pointer_id)
