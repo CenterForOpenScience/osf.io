@@ -69,7 +69,7 @@
             % elif authorized:
                 There was a problem connecting to the Dataverse using your
                 credentials. If they have changed, please go to
-                <a href="/settings/">user settings</a> and update your account
+                <a href="/settings/addons/">user settings</a> and update your account
                 information.
             % elif authorized_dataverse_user:
                 There was a problem connecting to the Dataverse using the
@@ -77,7 +77,7 @@
                 If they have changed, the Dataverse will not be accessible
                 through that account until the information is updated.
             % else:
-                In order to access this feature, please go to <a href="/settings/">
+                In order to access this feature, please go to <a href="/settings/addons/">
                 user settings</a> and link your account to a Dataverse account.
             % endif
         </div>
@@ -141,7 +141,7 @@
                 'Are you sure you want to unlink this Dataverse account? This will ' +
                     'revoke the ability to view, download, modify, and upload files ' +
                     'to studies on the Dataverse from the OSF. This will not remove your ' +
-                    'Dataverse authorization from your <a href="/settings/">user settings</a> ' +
+                    'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
                     'page.',
                 function(result) {
                     if (result) {

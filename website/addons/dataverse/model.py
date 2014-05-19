@@ -92,14 +92,13 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         user_connection = connect(
             dataverse_user.dataverse_username,
             dataverse_user.dataverse_password,
-        )
+        ) if dataverse_user else None
 
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
                 'connected': False,
                 'authorized': authorized,
                 'show_submit': False,
-                'user_dataverse_account': dataverse_user.dataverse_username,
                 'user_dataverse_connected': user_connection,
                 'authorized_dataverse_user': self.dataverse_username,
                 'authorized_user_name': self.user.fullname if self.user else '',
