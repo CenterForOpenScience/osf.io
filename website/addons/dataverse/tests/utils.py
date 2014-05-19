@@ -7,7 +7,7 @@ from website.addons.base.testing import AddonTestCase
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.study import Study
-from website.addons.dataverse.dvn.file import DvnFile
+from website.addons.dataverse.dvn.file import DvnFile, ReleasedFile
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -101,9 +101,15 @@ def create_mock_study(id='DVN/12345'):
     mock_study.title = 'Example ({0})'.format(id)
     mock_study.doi = 'doi:12.3456/{0}'.format(id)
 
-    mock_study.get_files.return_value = [create_mock_dvn_file()]
-    mock_study.get_file.return_value = create_mock_dvn_file()
-    mock_study.get_file_by_id.return_value = create_mock_dvn_file()
+    def _create_file(released):
+        return create_mock_released_file() if released else create_mock_dvn_file()
+
+    def _create_files(released):
+        return [_create_file(released)]
+
+    mock_study.get_files = mock.MagicMock(side_effect=_create_files)
+    mock_study.get_file = mock.MagicMock(side_effect=_create_file)
+    mock_study.get_file_by_id = mock.MagicMock(side_effect=_create_file)
 
     # Fail if not given a valid ID
     if 'DVN' in id:
@@ -113,6 +119,14 @@ def create_mock_dvn_file(id='54321'):
     mock_file = mock.create_autospec(DvnFile)
 
     mock_file.name = 'file.txt'
+    mock_file.id = id
+
+    return mock_file
+
+def create_mock_released_file(id='54321'):
+    mock_file = mock.create_autospec(ReleasedFile)
+
+    mock_file.name = 'released.txt'
     mock_file.id = id
 
     return mock_file

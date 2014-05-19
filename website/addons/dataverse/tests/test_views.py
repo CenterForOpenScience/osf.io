@@ -259,7 +259,7 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_request.referrer.return_value = []
+        mock_request.referrer = 'some_url/files/'
 
         url = lookup('api', 'dataverse_hgrid_data_contents',
                      pid=self.project._primary_key)
@@ -274,7 +274,7 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_no_study(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_request.referrer.return_value = []
+        mock_request.referrer = 'some_url/files/'
 
         # If there is no study, no data are returned
         self.node_settings.study_hdl = None
@@ -283,6 +283,47 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
                      pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    def test_dataverse_data_contents_state_on_file_page(self, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/files/'
+
+        self.project.set_privacy('public')
+        self.project.save()
+
+        url = lookup('api', 'dataverse_hgrid_data_contents',
+                     pid=self.project._primary_key)
+
+        # Creator posts, gets draft version
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json[0]['name'], 'file.txt')
+
+        # Noncontributor posts, gets released version
+        user2 = AuthUserFactory()
+        res = self.app.get(url, auth=user2.auth)
+        assert_equal(res.json[0]['name'], 'released.txt')
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    def test_dataverse_data_contents_state_on_project_page(self, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/'
+
+        self.project.set_privacy('public')
+        self.project.save()
+
+        url = lookup('api', 'dataverse_hgrid_data_contents',
+                     pid=self.project._primary_key)
+
+        # All users get released version
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json[0]['name'], 'released.txt')
+
+        user2 = AuthUserFactory()
+        res = self.app.get(url, auth=user2.auth)
+        assert_equal(res.json[0]['name'], 'released.txt')
 
 
 class TestDataverseViewsCrud(DataverseAddonTestCase):
