@@ -946,6 +946,19 @@ class Node(GuidStoredObject, AddonModelMixin):
     def pointed(self):
         return getattr(self, '_pointed', [])
 
+    def pointing_at(self, pointed_node_id):
+        """This node is pointed at another node.
+
+        :param Node pointed_node_id: The node id of the node being pointed at.
+        :return: pointer_id
+
+        """
+        for node in self.nodes_pointer:
+            node_id = node.node._id
+            if node_id == pointed_node_id:
+                return node._id
+        return None
+
     @property
     def points(self):
         return len(self.pointed)

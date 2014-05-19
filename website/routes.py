@@ -653,6 +653,14 @@ def make_url_map(app):
             project_views.node.remove_pointer,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/folder/pointer/',
+            ],
+            'delete',
+            project_views.node.remove_pointer_from_folder,
+            json_renderer,
+        ),
 
         Rule([
             '/project/<pid>/get_summary/',

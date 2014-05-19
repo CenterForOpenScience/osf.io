@@ -264,6 +264,13 @@
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
+                var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID)
+                if (typeof theParentNode !== 'undefined') {
+                    var theParentNodeID = theParentNode.node_id
+                }
+                else {
+                    theParentNodeID = ""
+                }
                 var parentIsSmartFolder = false;
                 if (theItem.parentID == -1){
                     parentIsSmartFolder = true;
@@ -313,6 +320,21 @@
                         var postData = JSON.stringify({nodeIds: [linkID]});
                         $.ajax({
                             type: "POST",
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    });
+
+                    $('#remove-link-'+theItem.node_id).click(function() {
+                        var url = "/api/v1/project/"+theParentNodeID+"/folder/pointer/"; // the script where you handle the form input.
+                        var postData = JSON.stringify({pointerNodeId: theItem.node_id});
+                        $.ajax({
+                            type: "DELETE",
                             url: url,
                             data: postData,
                             contentType: 'application/json',

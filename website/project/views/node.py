@@ -998,6 +998,36 @@ def remove_pointer(**kwargs):
 
 @must_have_permission('write')
 @must_not_be_registration
+def remove_pointer_from_folder(auth, pid, **kwargs):
+    """Remove a pointer from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+
+    """
+
+    # TODO: since these a delete request, shouldn't use request body. put pointer
+    # id in the URL instead
+    pointer_node_id = request.json.get('pointerNodeId')
+    if pointer_node_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = Node.load(pid)
+    pointer_id = node.pointing_at(pointer_node_id)
+
+    pointer = Pointer.load(pointer_id)
+
+    if pointer is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        node.rm_pointer(pointer, auth=auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node.save()
+
+
+@must_have_permission('write')
+@must_not_be_registration
 def fork_pointer(**kwargs):
     """Fork a pointer. Raises BAD_REQUEST if pointer not provided, not found,
     or not present in `nodes`.
