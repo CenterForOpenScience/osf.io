@@ -312,6 +312,6 @@ def collect_addon_css(node, visited=None):
 
 
 def delta_date(d):
-    diff = datetime.datetime.utcnow() - d
+    diff = d - datetime.datetime.utcnow()
     s = diff.total_seconds()
     return s

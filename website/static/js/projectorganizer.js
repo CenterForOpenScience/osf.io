@@ -75,13 +75,13 @@
             if(row.modifiedDelta == 0){
                 return "";
             }
-            return moment(row.dateModified).fromNow(true)+", "+row.modifiedBy.toString();
+            return moment.utc(row.dateModified).fromNow()+", "+row.modifiedBy.toString();
         },
         folderView: function (row) {
             if(row.modifiedDelta == 0){
                 return "";
             }
-            return moment(row.dateModified).fromNow(true)+", "+row.modifiedBy.toString();
+            return moment.utc(row.dateModified).fromNow()+", "+row.modifiedBy.toString();
         },
         sortable: false,
         selectable: true,
