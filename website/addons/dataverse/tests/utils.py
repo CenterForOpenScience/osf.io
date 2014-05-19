@@ -32,6 +32,7 @@ class DataverseAddonTestCase(AddonTestCase):
         settings.study_hdl = 'DVN/00001'
         settings.study = 'Example (DVN/00001)'
 
+
 def create_mock_connection(username='snowman', password='frosty'):
     """
     Create a mock dataverse connection.
@@ -115,3 +116,17 @@ def create_mock_dvn_file(id='54321'):
     mock_file.id = id
 
     return mock_file
+
+mock_responses = {
+    'contents': {
+        u'kind': u'item',
+        u'name': u'file.txt',
+        u'ext': u'.txt',
+        u'file_id': u'54321',
+        u'urls': {u'download': u'/project/xxxxx/dataverse/file/54321/download/',
+                 u'delete': u'/api/v1/project/xxxxx/dataverse/file/54321/',
+                 u'view': u'/project/xxxxx/dataverse/file/54321/'},
+        u'permissions': {u'edit': False, u'view': True},
+        u'addon': u'dataverse'
+    }
+}

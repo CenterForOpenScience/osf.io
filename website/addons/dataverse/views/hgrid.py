@@ -87,7 +87,7 @@ def dataverse_root_folder_public(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_hgrid_data_contents(state=None, **kwargs):
+def dataverse_hgrid_data_contents(**kwargs):
 
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']

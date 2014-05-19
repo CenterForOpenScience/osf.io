@@ -11,7 +11,7 @@ from webtest import Upload
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.crud import scrape_dataverse
 from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_dvn_file, DataverseAddonTestCase, app
+    create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses
 
 lookup = URLLookup(app)
 
@@ -253,6 +253,38 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
                      'Example (DVN/00001)')
 
 
+class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    def test_dataverse_data_contents(self, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer.return_value = []
+
+        url = lookup('api', 'dataverse_hgrid_data_contents',
+                     pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        contents = mock_responses['contents']
+        first = res.json[0]
+        assert_equal(len(first), len(contents))
+        assert_in('kind', first)
+        assert_equal(first['name'], contents['name'])
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    def test_dataverse_data_contents_no_study(self, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer.return_value = []
+
+        # If there is no study, no data are returned
+        self.node_settings.study_hdl = None
+        self.node_settings.save()
+        url = lookup('api', 'dataverse_hgrid_data_contents',
+                     pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json, [])
+
+
 class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect')
@@ -355,7 +387,6 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             res.headers.get('location'),
             'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
         )
-
 
     @unittest.skip('Finish this')
     def test_render_file(self):
