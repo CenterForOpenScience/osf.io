@@ -512,6 +512,16 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
         )
 
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.release_study')
+    def test_dataverse_release_study(self, mock_release, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = lookup('api', 'dataverse_release_study',
+                     pid=self.project._primary_key)
+        res = self.app.post(url, auth=self.user.auth)
+        assert_true(mock_release.called)
+
     @unittest.skip('Finish this')
     def test_render_file(self):
         assert 0, 'finish me'
