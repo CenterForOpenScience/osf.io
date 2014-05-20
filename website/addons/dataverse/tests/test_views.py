@@ -343,12 +343,14 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
+        assert_false(res.json[0]['permissions']['edit'])
         assert_in('<option value="released" selected>', res.json[0]['extra'])
 
         # Non-contributor gets released version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
+        assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
@@ -369,12 +371,14 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
         assert_in('draft', res.json[0]['urls']['fetch'])
+        assert_true(res.json[0]['permissions']['edit'])
         assert_in('<option value="draft" selected>', res.json[0]['extra'])
 
         # Non-contributor gets released version, no options
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
         assert_in('released', res.json[0]['urls']['fetch'])
+        assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
@@ -395,6 +399,7 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         # Contributor gets draft, no options
         res = self.app.get(url, auth=self.user.auth)
         assert_in('draft', res.json[0]['urls']['fetch'])
+        assert_true(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
         # Non-contributor gets nothing
