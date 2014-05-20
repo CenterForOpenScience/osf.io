@@ -31,6 +31,16 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     if study is None:
         return []
 
+    has_released_files = get_files(study, released=True)
+    authorized = node.can_edit(auth)
+
+    # Produce draft version or quit if no released version is available
+    if not has_released_files:
+        if authorized:
+            state = 'draft'
+        else:
+            return []
+
     study_name = node_settings.study
     if len(study_name) > 23:
         study_name = '{0}...'.format(study_name[:20])
@@ -46,13 +56,6 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         'state': node.api_url_for('dataverse_root_folder_public'),
         'release': node.api_url_for('dataverse_release_study'),
     }
-
-    has_released_files = get_files(study, released=True)
-    authorized = node.can_edit(auth)
-
-    # Return if no files are available
-    if not authorized and not has_released_files:
-        return []
 
     # Determine default state / selection permissions
     state_append = dataverse_state_template.render(
