@@ -2,11 +2,22 @@ from nose.tools import *
 import mock
 
 from website.addons.dataverse.model import AddonDataverseUserSettings, \
-    AddonDataverseNodeSettings
+    AddonDataverseNodeSettings, DataverseFile
 from website.addons.dataverse.tests.utils import create_mock_connection, \
     DataverseAddonTestCase
 
+
 class TestCallbacks(DataverseAddonTestCase):
+
+    def test_dataverse_file_url(self):
+
+        # Create some dataverse file
+        dvf = DataverseFile()
+        dvf.file_id = '12345'
+        dvf.save()
+
+        # Assert url is correct
+        assert_equal('dataverse/file/12345', dvf.file_url)
 
     @mock.patch('website.addons.dataverse.model.connect')
     def test_user_settings(self, mock_connection):
