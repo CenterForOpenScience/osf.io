@@ -331,7 +331,7 @@ def scrape_filename(file_id):
     headers = session.head(url).headers
 
     # Agree to terms if necessary
-    if 'set-cookie' in headers.keys():
+    if 'set-language' in headers.keys():
 
         response = session.get(url)
         parsed = BeautifulSoup(response.content)
