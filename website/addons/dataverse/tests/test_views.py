@@ -7,6 +7,7 @@ import json
 import httplib as http
 from tests.base import URLLookup
 from tests.factories import AuthUserFactory
+from framework.auth.decorators import Auth
 from webtest import Upload
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.crud import scrape_dataverse
@@ -521,6 +522,48 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         # content = scrape_dataverse(2362170)
         # assert_not_in('IQSS', content)
         # assert_in('%esp', content)
+
+
+class TestDataverseRestrictions(DataverseAddonTestCase):
+
+    def setUp(self):
+        super(DataverseAddonTestCase, self).setUp()
+
+        # Nasty contributor who will try to access content that he shouldn't
+        # have access to
+        self.contrib = AuthUserFactory()
+        self.project.add_contributor(self.contrib, auth=Auth(self.user))
+        self.project.save()
+
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_restricted_set_study_not_owner(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        # Contributor has dataverse auth, but is not the node authorizer
+        self.contrib.add_addon('dataverse')
+        self.contrib.save()
+
+        url = lookup('api', 'set_study', pid=self.project._primary_key)
+        params = {'study_hdl': 'DVN/00002'}
+        res = self.app.post_json(url, params, auth=self.contrib.auth,
+                                 expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_restricted_set_dataverse_not_owner(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        # Contributor has dataverse auth, but is not the node authorizer
+        self.contrib.add_addon('dataverse')
+        self.contrib.save()
+
+        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
+        params = {'dataverse_alias': 'ALIAS1'}
+        res = self.app.post_json(url, params, auth=self.contrib.auth,
+                                 expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
 
 if __name__=='__main__':
     nose.run()
