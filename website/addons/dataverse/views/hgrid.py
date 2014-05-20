@@ -2,7 +2,7 @@ import os
 
 from framework import request
 from mako.template import Template
-from website.addons.dataverse.client import connect, get_study
+from website.addons.dataverse.client import connect, get_study, get_files
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -47,7 +47,7 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         'release': node.api_url_for('dataverse_release_study'),
     }
 
-    has_released_files = study.get_released_files()
+    has_released_files = get_files(study, released=True)
     authorized = node.can_edit(auth)
 
     # Return if no files are available
@@ -108,10 +108,14 @@ def dataverse_hgrid_data_contents(**kwargs):
     if node_settings.study_hdl is None or connection is None:
         return []
 
-    info = []
-
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
+
+    # Quit if hdl does not produce a study
+    if study is None:
+        return []
+
+    info = []
 
     for f in study.get_files(released):
 

@@ -98,6 +98,7 @@ def create_mock_study(id='DVN/12345'):
     mock_study = mock.create_autospec(Study)
 
     mock_study.get_id.return_value = id
+    mock_study.get_citation.return_value = 'Example Citation for {0}'.format(id)
     mock_study.title = 'Example ({0})'.format(id)
     mock_study.doi = 'doi:12.3456/{0}'.format(id)
 

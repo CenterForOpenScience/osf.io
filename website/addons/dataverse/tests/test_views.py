@@ -325,6 +325,58 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json[0]['name'], 'released.txt')
 
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    def test_dataverse_root_released(self, mock_files, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/files/'
+        mock_request.args = {'state': 'released'}
+        mock_files.return_value = ['mock_file']     # They just need to exist
+
+        self.project.set_privacy('public')
+        self.project.save()
+
+        url = lookup('api', 'dataverse_root_folder_public',
+                     pid=self.project._primary_key)
+
+        # Contributor can select between states, current state is correct
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('released', res.json[0]['urls']['fetch'])
+        assert_in('<option value="released" selected>', res.json[0]['extra'])
+
+        # Non-contributor gets released version, no options
+        user2 = AuthUserFactory()
+        res = self.app.get(url, auth=user2.auth)
+        assert_in('released', res.json[0]['urls']['fetch'])
+        assert_not_in('select', res.json[0]['extra'])
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    def test_dataverse_root_draft(self, mock_files, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/files/'
+        mock_request.args = {'state': 'draft'}
+        mock_files.return_value = ['mock_file']
+
+        self.project.set_privacy('public')
+        self.project.save()
+
+        url = lookup('api', 'dataverse_root_folder_public',
+                     pid=self.project._primary_key)
+
+        # Contributor can select between states, current state is correct
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('draft', res.json[0]['urls']['fetch'])
+        assert_in('<option value="draft" selected>', res.json[0]['extra'])
+
+        # Non-contributor gets released version, no options
+        user2 = AuthUserFactory()
+        res = self.app.get(url, auth=user2.auth)
+        assert_in('released', res.json[0]['urls']['fetch'])
+        assert_not_in('select', res.json[0]['extra'])
+
 
 class TestDataverseViewsCrud(DataverseAddonTestCase):
 
