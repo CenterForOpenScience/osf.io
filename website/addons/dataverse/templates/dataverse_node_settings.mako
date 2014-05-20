@@ -147,7 +147,7 @@
                     if (result) {
                         $.ajax({
                             url: nodeApiUrl + 'dataverse/deauthorize/',
-                            type: 'POST',
+                            type: 'DELETE',
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {

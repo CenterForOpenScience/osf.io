@@ -46,7 +46,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
     def test_deauthorize(self):
         url = lookup('api', 'deauthorize_dataverse',
                      pid=self.project._primary_key)
-        self.app.post_json(url, auth=self.user.auth)
+        self.app.delete(url, auth=self.user.auth)
 
         self.node_settings.reload()
         assert_false(self.node_settings.dataverse_username)

@@ -24,7 +24,7 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/deauthorize/',
             '/project/<pid>/node/<nid>/dataverse/deauthorize/',
-        ], 'post', views.auth.deauthorize_dataverse, json_renderer),
+        ], 'delete', views.auth.deauthorize_dataverse, json_renderer),
 
         # User Settings
         Rule(
