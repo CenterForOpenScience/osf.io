@@ -51,21 +51,24 @@ class OsfTestCase(unittest.TestCase):
     db_port = int(getattr(settings, 'DB_PORT', '20771'))
 
     @classmethod
-    def setUpClass(klass):
+    def setUpClass(cls):
         '''Before running this TestCase, set up a temporary MongoDB database'''
-        klass._client = MongoClient(host=klass.db_host, port=klass.db_port)
-        klass.db = klass._client[klass.db_name]
+        cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
+        cls.db = cls._client[cls.db_name]
         # Set storage backend to MongoDb
         set_up_storage(
             website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, db=klass.db,
+            addons=settings.ADDONS_AVAILABLE, db=cls.db,
         )
-        klass._client.drop_database(klass.db)
+        cls._client.drop_database(cls.db)
+        cls.context = test_app.test_request_context()
+        cls.context.push()
 
     @classmethod
-    def tearDownClass(klass):
+    def tearDownClass(cls):
         '''Drop the database when all tests finish.'''
-        klass._client.drop_database(klass.db)
+        cls.context.pop()
+        cls._client.drop_database(cls.db)
 
 
 class AppTestCase(unittest.TestCase):
