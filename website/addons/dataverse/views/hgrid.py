@@ -120,7 +120,7 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     info = []
 
-    for f in study.get_files(released):
+    for f in get_files(study, released):
 
         item = {
             'addon': 'dataverse',

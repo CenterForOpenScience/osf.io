@@ -12,7 +12,8 @@ from webtest import Upload
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.crud import scrape_dataverse
 from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses
+    create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses, \
+    create_mock_study
 
 lookup = URLLookup(app)
 
@@ -258,15 +259,18 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    def test_dataverse_data_contents(self, mock_request, mock_connection):
+    @mock.patch('website.addons.dataverse.views.hgrid.get_study')
+    def test_dataverse_data_contents(self, mock_get, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
+        mock_get.return_value = create_mock_study()
 
         url = lookup('api', 'dataverse_hgrid_data_contents',
                      pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         contents = mock_responses['contents']
         first = res.json[0]
+        assert_equal(mock_get.call_args[0][1], self.node_settings.study_hdl)
         assert_equal(len(first), len(contents))
         assert_in('kind', first)
         assert_equal(first['name'], contents['name'])
