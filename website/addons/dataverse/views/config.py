@@ -6,6 +6,7 @@ from framework import request
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, get_study
 from website.project import decorators
+from website.util.sanitize import deep_ensure_clean
 
 
 @decorators.must_have_addon('dataverse', 'user')
@@ -14,6 +15,7 @@ def dataverse_set_user_config(*args, **kwargs):
     user_settings = kwargs['user_addon']
 
     # Log in with DATAVERSE
+    deep_ensure_clean(request.json)
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
     connection = connect(username, password)
@@ -65,6 +67,8 @@ def set_dataverse(*args, **kwargs):
     # Set selected Dataverse
     old_dataverse = connection.get_dataverse(node_settings.dataverse_alias)
     old_study = node_settings.study
+    deep_ensure_clean(request.json)
+    # TODO: Ensure alias is from list of viable aliases
     alias = request.json.get('dataverse_alias')
     node_settings.dataverse_alias = alias if alias != 'None' else None
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
@@ -121,7 +125,9 @@ def set_study(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Get current dataverse and new study
+    deep_ensure_clean(request.json)
     dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    # TODO: Ensure hdl is from list of viable hdls
     hdl = request.json.get('study_hdl')
 
     # Set study
