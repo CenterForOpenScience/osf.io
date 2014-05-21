@@ -1,0 +1,28 @@
+<w:tc>
+	<w:tcPr>
+		<w:tcW w:type="dxa" w:w="4986"/>
+        {% if merge_continue %}
+        <w:vMerge>
+        </w:vMerge>
+        {% endif %}
+        {% if merge %}
+        <w:vMerge val="restart">
+        </w:vMerge>
+        {% endif %}
+		<w:tcBorders>
+			<w:top w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+			<w:left w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+			<w:bottom w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+		</w:tcBorders>
+		<w:shd w:fill="auto" w:val="clear"/>
+		<w:tcMar>
+			<w:top w:type="dxa" w:w="55"/>
+			<w:left w:type="dxa" w:w="55"/>
+			<w:bottom w:type="dxa" w:w="55"/>
+			<w:right w:type="dxa" w:w="55"/>
+		</w:tcMar>
+	</w:tcPr>
+    {% if paragraph %}
+	{{ paragraph }}
+    {% endif %}
+</w:tc>

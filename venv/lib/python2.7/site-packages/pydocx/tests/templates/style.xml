@@ -1,0 +1,15 @@
+<w:style w:styleId="{{ style_id }}">
+	<w:name w:val="{{ value }}"/>
+	<w:basedOn w:val="Normal"/>
+	<w:next w:val="Normal"/>
+	<w:pPr>
+		<w:ind w:hanging="461"/>
+		<w:ind w:left="485"/>
+		<w:spacing w:after="60"/>
+		<w:spacing w:before="61"/>
+	</w:pPr>
+	<w:rPr>
+		<w:sz w:val="24"/>
+		<w:rFonts w:ascii="Times New Roman" w:cs="Times New Roman" w:hAnsi="Times New Roman"/>
+	</w:rPr>
+</w:style>

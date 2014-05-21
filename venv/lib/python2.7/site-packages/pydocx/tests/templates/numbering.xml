@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+	{% for num_id, ilvl_data in numbering_dict.items() %}
+	<w:abstractNum w:abstractNumId="{{ num_id }}">
+		{% for ilvl, format in ilvl_data.items() %}
+		<w:lvl w:ilvl="{{ ilvl }}">
+			<w:start w:val="1"/>
+			<w:numFmt w:val="{{ format }}"/>
+			<w:lvlText w:val="%1."/>
+			<w:lvlJc w:val="start"/>
+			<w:pPr>
+				<w:ind w:hanging="0" w:start="0"/>
+			</w:pPr>
+		</w:lvl>
+		{% endfor %}
+	</w:abstractNum>
+	{% endfor %}
+	{% for num_id in numbering_dict %}
+	<w:num w:numId="{{ num_id }}">
+		<w:abstractNumId w:val="{{ num_id }}"/>
+	</w:num>
+	{% endfor %}
+</w:numbering>

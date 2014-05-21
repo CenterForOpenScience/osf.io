@@ -1,0 +1,18 @@
+<w:tbl>
+	<w:tblPr>
+		<w:tblW w:type="dxa" w:w="9972"/>
+		<w:jc w:val="left"/>
+		<w:tblBorders>
+			<w:top w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+			<w:left w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+			<w:bottom w:color="000000" w:space="0" w:sz="2" w:val="single"/>
+		</w:tblBorders>
+	</w:tblPr>
+	<w:tblGrid>
+		<w:gridCol w:w="4986"/>
+		<w:gridCol w:w="4986"/>
+	</w:tblGrid>
+	{% for table_row in table_rows %}
+		{{ table_row }}
+	{% endfor %}
+</w:tbl>

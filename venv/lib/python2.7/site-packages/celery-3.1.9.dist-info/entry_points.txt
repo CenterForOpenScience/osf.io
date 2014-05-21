@@ -1,0 +1,6 @@
+[console_scripts]
+celery = celery.__main__:main
+celeryd = celery.__main__:_compat_worker
+celeryd-multi = celery.__main__:_compat_multi
+celerybeat = celery.__main__:_compat_beat
+

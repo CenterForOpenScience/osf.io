@@ -1,0 +1,17 @@
+<w:p w:rsidR="00E94BDC" w:rsidRPr="003638EA" w:rsidRDefault="00E94BDC" w:rsidP="00E94BDC">
+    <w:pPr>
+        <w:rPr>
+            <w:color w:val="000000"/>
+        </w:rPr>
+    </w:pPr>
+    <w:r w:rsidR="00360165">
+        <w:rPr>
+            <w:color w:val="000000"/>
+        </w:rPr>
+        <w:pict>
+            <v:shape id="_x0000_i1027" type="#_x0000_t75" {%if width or height %}style="{% if width %}width:{{ width }}pt;{%endif%}{% if height %}height:{{ height }}pt{%endif%}"{% endif %}>
+            {% if r_id %}<v:imagedata r:id="{{ r_id }}" o:title="New Picture"/>{% endif %}
+        </v:shape>
+    </w:pict>
+</w:r>
+        </w:p>

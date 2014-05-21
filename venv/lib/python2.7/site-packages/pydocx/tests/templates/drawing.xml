@@ -1,0 +1,65 @@
+<w:p>
+	<w:pPr>
+		<w:pStyle w:val="style0"/>
+	</w:pPr>
+	<w:r>
+		<w:rPr/>
+		<w:drawing>
+			<wp:anchor allowOverlap="1" behindDoc="0" distB="0" distL="0" distR="0" distT="0" layoutInCell="1" locked="0" relativeHeight="0" simplePos="0">
+				<wp:simplePos x="0" y="0"/>
+				<wp:positionH relativeFrom="column">
+					<wp:posOffset>2397125</wp:posOffset>
+				</wp:positionH>
+				<wp:positionV relativeFrom="paragraph">
+					<wp:posOffset>0</wp:posOffset>
+				</wp:positionV>
+				<wp:extent cx="1537970" cy="354965"/>
+				<wp:effectExtent b="0" l="0" r="0" t="0"/>
+				<wp:wrapSquare wrapText="largest"/>
+				<wp:docPr descr="A description..." id="1" name="Picture"/>
+				<wp:cNvGraphicFramePr>
+					<a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/>
+				</wp:cNvGraphicFramePr>
+				<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+					<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">
+						<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+							<pic:nvPicPr>
+								<pic:cNvPr descr="A description..." id="0" name="Picture"/>
+								<pic:cNvPicPr>
+									<a:picLocks noChangeArrowheads="1" noChangeAspect="1"/>
+								</pic:cNvPicPr>
+							</pic:nvPicPr>
+							<pic:blipFill>
+								<a:blip r:embed="{{ r_id }}"/>
+								<a:srcRect/>
+								<a:stretch>
+									<a:fillRect/>
+								</a:stretch>
+							</pic:blipFill>
+							<pic:spPr bwMode="auto">
+								<a:xfrm>
+									<a:off x="0" y="0"/>
+									<a:ext {% if width != None %}
+                                    cx="{{ width }}" {% endif%}
+                                    {% if height != None %}
+                                    cy="{{ height }}"
+                                    {% endif %}/>
+								</a:xfrm>
+								<a:prstGeom prst="rect">
+									<a:avLst/>
+								</a:prstGeom>
+								<a:noFill/>
+								<a:ln w="9525">
+									<a:noFill/>
+									<a:miter lim="800000"/>
+									<a:headEnd/>
+									<a:tailEnd/>
+								</a:ln>
+							</pic:spPr>
+						</pic:pic>
+					</a:graphicData>
+				</a:graphic>
+			</wp:anchor>
+		</w:drawing>
+	</w:r>
+</w:p>

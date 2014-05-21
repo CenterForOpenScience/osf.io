@@ -1,0 +1,5 @@
+<w:hyperlink r:id="{{ r_id }}">
+	{% for run_tag in run_tags %}
+		{{ run_tag }}
+	{% endfor %}
+</w:hyperlink>

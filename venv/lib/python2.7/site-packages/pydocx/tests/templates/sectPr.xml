@@ -1,0 +1,3 @@
+<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+	{{ p_tag }}
+</w:sectPr>

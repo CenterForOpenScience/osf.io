@@ -1,0 +1,6 @@
+<w:r>
+	{{ rpr }}
+	{% for element in elements %}
+		{{ element }}
+	{% endfor %}
+</w:r>

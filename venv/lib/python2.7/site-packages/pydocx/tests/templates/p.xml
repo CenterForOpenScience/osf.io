@@ -1,0 +1,19 @@
+<w:p>
+	<w:pPr>
+		<w:pStyle{% if style %} w:val="{{ style }}"{% endif %}/>
+		{% if is_list %}
+		<w:numPr>
+			{% if ilvl != None %}
+			<w:ilvl w:val="{{ ilvl }}"/>
+			{% endif %}
+			{% if numId != None %}
+			<w:numId w:val="{{ numId }}"/>
+			{% endif %}
+		</w:numPr>
+		{% endif %}
+		{% if jc %}<w:jc w:val="{{ jc }}"/>{% endif %}
+	</w:pPr>
+	{% for run_tag in run_tags %}
+		{{ run_tag }}
+	{% endfor %}
+</w:p>

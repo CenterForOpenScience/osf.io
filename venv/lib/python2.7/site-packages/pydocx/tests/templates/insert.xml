@@ -1,0 +1,5 @@
+<w:ins>
+	{% for run_tag in run_tags %}
+		{{ run_tag }}
+	{% endfor %}
+</w:ins>

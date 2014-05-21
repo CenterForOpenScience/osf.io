@@ -1,0 +1,5 @@
+<w:smartTag>
+	{% for run_tag in run_tags %}
+		{{ run_tag }}
+	{% endfor %}
+</w:smartTag>

@@ -1,0 +1,8 @@
+<w:tr>
+	<w:trPr>
+		<w:cantSplit w:val="false"/>
+	</w:trPr>
+	{% for table_cell in table_cells %}
+		{{ table_cell }}
+	{% endfor %}
+</w:tr>

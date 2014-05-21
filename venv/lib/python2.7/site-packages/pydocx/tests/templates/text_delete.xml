@@ -1,0 +1,10 @@
+<w:del w:id="12" w:author="mfiem" w:date="2008-02-27T06:48:00Z">
+	{% for deleted_text in deleted_texts %}
+	<w:r w:rsidDel="005D3333">
+		<w:rPr>
+			<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>
+		</w:rPr>
+		<w:delText>{{ deleted_text }}</w:delText>
+	</w:r>
+	{% endfor %}
+</w:del>

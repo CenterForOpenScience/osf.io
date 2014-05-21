@@ -1,0 +1,5 @@
+{% if text %}
+<w:t>{{ text }}</w:t>
+{% else %}
+<w:t />
+{% endif %}

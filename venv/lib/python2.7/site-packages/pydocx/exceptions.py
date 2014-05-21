@@ -1,0 +1,2 @@
+class MalformedDocxException(Exception):
+    pass

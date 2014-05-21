@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<w:styles xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+	{% for style in style_tags %}
+		{{ style }}
+	{% endfor %}
+</w:styles>

@@ -1,0 +1,16 @@
+<w:sdt>
+	<w:sdtPr>
+		<w:rPr>
+			<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>
+			<w:sz w:val="22"/>
+		</w:rPr>
+		<w:alias w:val="PolicyTemplateTitle"/>
+		<w:tag w:val="PolicyTemplateTitle"/>
+		<w:id w:val="95087797"/>
+		<w:lock w:val="sdtLocked"/>
+		<w:text/>
+	</w:sdtPr>
+	<w:sdtContent>
+		{{ p_tag }}
+	</w:sdtContent>
+</w:sdt>

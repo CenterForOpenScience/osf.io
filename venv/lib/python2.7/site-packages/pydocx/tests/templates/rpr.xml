@@ -1,0 +1,5 @@
+	<w:rPr>
+		{% for tag, value in tags.items() %}
+		<w:{{ tag }} {% if value %} w:val="{{ value }}"{% endif %}/>
+		{% endfor %}
+	</w:rPr>
