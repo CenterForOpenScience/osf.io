@@ -92,11 +92,12 @@ def shell():
     return
 
 @task
-def mongo(daemon=False):
-    '''Run the mongod process.
-    '''
+def mongo(daemon=False,
+          logpath="/usr/local/var/log/mongodb/mongo.log"):
+    """Run the mongod process.
+    """
     port = settings.DB_PORT
-    cmd = "mongod --port {0}".format(port)
+    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
     if daemon:
         cmd += " --fork --logpath \"/data/log.txt\""
     run(cmd)
