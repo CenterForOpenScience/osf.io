@@ -12,9 +12,11 @@
         <%include file="projectGridTemplates.html"/>
         <div class = "project-grid-menu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
         <div class="hgrid" id="project-grid"></div>
+        <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+        <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
         <script>
-        $script(['/static/js/slick.cellselectionmodel.js'],'cellselectionmodel');
-        $script(['/static/js/slick.rowselectionmodel.js'],'rowselectionmodel');
+        $script(['/static/js/hgrid.rowselectionmodel.js'],'hgridrowselectionmodel');
+        $script(['/static/vendor/slickgrid/plugins/slick.rowmovemanager.js'],'rowmovemanager');
         $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
         $script(["/static/js/projectorganizer.js"]);
         $script.ready(['projectorganizer'], function() {

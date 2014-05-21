@@ -1,10 +1,10 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap', 'cellselectionmodel',
-            'rowselectionmodel','typeahead', 'handlebars'], factory);
+        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap',
+            'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['dropzone', 'dropzone-patch', 'hgrid', 'cellselectionmodel',
-            'rowselectionmodel', 'typeahead', 'handlebars'], function () {
+        $script.ready(['dropzone', 'dropzone-patch', 'hgrid',
+            'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], function () {
             global.ProjectOrganizer = factory(jQuery, global.HGrid);
             $script.done('projectorganizer');
         });
@@ -69,6 +69,7 @@
     }
 
     var dateModifiedColumn = {
+        id: 'date-modified',
         text: 'Modified',
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
@@ -89,6 +90,7 @@
     };
 
     var contributorsColumn = {
+        id: 'contributors',
         text: 'Contributors',
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
@@ -115,6 +117,7 @@
         },
         sortable: false,
         selectable: true,
+        // behavior: "selectAndMove",
         width: 30
     };
 
@@ -125,19 +128,23 @@
 
         var url = row.urls.fetch;
         var linkString = name;
+        var extraClass = "";
         if (url != null) {
             linkString = '<a href="' + url + '">' + name + '</a>';
         }
 
         var type = "project"
-        if (row.isPointer & !row.parentIsFolder) {
+        if (row.isPointer && !row.parentIsFolder) {
             type = "pointer"
         }
         if (row.isFolder) {
-            type = "folder"
+            type = "folder";
+            if(!row.isSmartFolder) {
+                extraClass = " dropzone";
+            }
         }
-        return '<img src="/static/img/hgrid/' + type + '.png"><span class="proj'
-            + type + '">' + linkString + '</span>';
+        return '<img src="/static/img/hgrid/' + type + '.png"><span class="project-'
+            + type + extraClass + '">' + linkString + '</span>';
     };
     ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
 
@@ -145,13 +152,18 @@
     var baseOptions = {
         width: '550',
         height: '600',
-        columns: [ProjectOrganizer.Col.Name,dateModifiedColumn,contributorsColumn
-
+        columns: [
+            ProjectOrganizer.Col.Name,
+            dateModifiedColumn,
+            contributorsColumn
             ],
         slickgridOptions: {
             editable: true,
+            enableAddRow: false,
             enableCellNavigation: true,
-            multiSelect: false
+            multiSelect: true,
+            forceFitColumns: true,
+            autoEdit: false
         }
     };
 
@@ -166,6 +178,160 @@
     };
 
     //
+    //  Row Move Management
+    //
+
+    function addDragAndDrop(self) {
+        var grid = self.grid.grid;
+        var moveRowsPlugin = new Slick.RowMoveManager({
+            cancelEditOnDrag: true
+        });
+
+        moveRowsPlugin.onBeforeMoveRows.subscribe(function (e, data) {
+            for (var i = 0; i < data.rows.length; i++) {
+              // no point in moving before or after itself
+              if (data.rows[i] == data.insertBefore || data.rows[i] == data.insertBefore - 1) {
+                e.stopPropagation();
+                return false;
+              }
+            }
+            return true;
+        });
+
+        moveRowsPlugin.onMoveRows.subscribe(function (e, args) {
+            var extractedRows = [], left, right;
+            var rows = args.rows;
+            var insertBefore = args.insertBefore;
+            left = self.gridData.slice(0, insertBefore);
+            right = self.gridData.slice(insertBefore, self.gridData.length);
+
+            rows.sort(function(a,b) { return a-b; });
+
+            for (var i = 0; i < rows.length; i++) {
+              extractedRows.push(self.gridData[rows[i]]);
+            }
+
+            rows.reverse();
+
+            for (var i = 0; i < rows.length; i++) {
+              var row = rows[i];
+              if (row < insertBefore) {
+                left.splice(row, 1);
+              } else {
+                right.splice(row - insertBefore, 1);
+              }
+            }
+
+            self.gridData = left.concat(extractedRows.concat(right));
+
+            var selectedRows = [];
+            for (var i = 0; i < rows.length; i++)
+              selectedRows.push(left.length + i);
+
+            grid.resetActiveCell();
+            grid.setData(self.gridData);
+            grid.setSelectedRows(selectedRows);
+            grid.render();
+        });
+
+        grid.registerPlugin(moveRowsPlugin);
+
+        grid.onDragInit.subscribe(function (e, dd) {
+        // prevent the grid from cancelling drag'n'drop by default
+        e.stopImmediatePropagation();
+        });
+
+        grid.onDragStart.subscribe(function (e, dd) {
+            var cell = grid.getCellFromEvent(e);
+            if (!cell) {
+              return;
+            }
+
+            dd.row = cell.row;
+            if (!self.gridData[dd.row]) {
+              //return;
+            }
+
+            if (Slick.GlobalEditorLock.isActive()) {
+              return;
+            }
+
+            e.stopImmediatePropagation();
+            dd.mode = "recycle";
+
+            var selectedRows = grid.getSelectedRows();
+
+            if (!selectedRows.length || $.inArray(dd.row, selectedRows) == -1) {
+              selectedRows = [dd.row];
+              grid.setSelectedRows(selectedRows);
+            }
+
+            dd.rows = selectedRows;
+            dd.count = selectedRows.length;
+
+            var proxy = $("<span></span>")
+                .css({
+                  position: "absolute",
+                  display: "inline-block",
+                  padding: "4px 10px",
+                  background: "#e0e0e0",
+                  border: "1px solid gray",
+                  "border-radius": "5px",
+                  "z-index": 99999,
+                  "-moz-border-radius": "8px",
+                  "-moz-box-shadow": "2px 2px 6px silver"
+                })
+                .text("Move " + dd.count + " item(s)")
+                .appendTo("body");
+
+            dd.helper = proxy;
+
+            $(dd.available).css("background", "green");
+
+            return proxy;
+        });
+
+        grid.onDrag.subscribe(function (e, dd) {
+            if (dd.mode != "recycle") {
+              return;
+            }
+            dd.helper.css({top: e.pageY + 5, left: e.pageX + 5});
+        });
+
+        grid.onDragEnd.subscribe(function (e, dd) {
+            if (dd.mode != "recycle") {
+              return;
+            }
+            dd.helper.remove();
+            $(dd.available).css("background", "blue");
+        });
+
+        $.drop({mode: "mouse"});
+        $(".dropzone")
+        .bind("dropstart", function (e, dd) {
+            if (dd.mode != "recycle") {
+              return;
+            }
+            $(this).css("background", "yellow");
+        })
+        .bind("dropend", function (e, dd) {
+            if (dd.mode != "recycle") {
+              return;
+            }
+            $(dd.available).css("background", "pink");
+        })
+        .bind("drop", function (e, dd) {
+            console.log(e);
+            console.log(dd);
+            self.grid.grid.invalidate();
+            self.grid.grid.setSelectedRows([]);
+        });
+
+
+
+    }
+
+    //
     // Public methods
     //
 
@@ -178,7 +344,10 @@
 
     ProjectOrganizer.prototype.init = function(self) {
         self.grid = new HGrid(this.selector, this.options);
+        self.gridData = self.grid.grid.getData();
         self.myProjects = [];
+
+        // addDragAndDrop(self);
 
         // Expand/collapse All functions
         $(".pg-expand-all").click(function (){
@@ -252,19 +421,25 @@
             self.grid.addData(projects.data);
         });
 
+
+
+
+
         //
         // When the selection changes, create the div that holds the detail information for the project including
         // whichever action buttons will work with that type of node. This is what will be changed by moving
         // to Knockout.js
         //
 
-        this.grid.grid.onSelectedRowsChanged.subscribe(function () {
+        self.grid.grid.onSelectedRowsChanged.subscribe(function () {
+
+
             var selectedRows = self.grid.grid.getSelectedRows();
             if (selectedRows.length == 1 ){
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
-                var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID)
+                var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
                     var theParentNodeID = theParentNode.node_id
                 }
@@ -375,10 +550,13 @@
             } else {
                 $(".project-details").hide();
             }
+
+
+
         }); // end onSelectedRowsChanged
 
 
-    }
+    };
 
     return ProjectOrganizer;
 }));
