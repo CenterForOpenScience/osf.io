@@ -17,7 +17,7 @@ import sword2
 
 # local modules
 from file import DvnFile, ReleasedFile
-from utils import format_term, get_elements, DvnException
+from utils import format_term, get_elements, DvnException, sanitize
 
 
 class Study(object):
@@ -99,9 +99,10 @@ class Study(object):
 
     @property
     def title(self):
-        return get_elements(
+        dirty_title = get_elements(
             self.get_statement(), tag='title', numberOfElements=1
         ).text
+        return sanitize(dirty_title)
 
     def get_statement(self):
         if not self.statementUri:

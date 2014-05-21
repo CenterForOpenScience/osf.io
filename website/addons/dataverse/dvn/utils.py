@@ -2,6 +2,7 @@ __author__="peterbull"
 __date__ ="$Aug 16, 2013 12:07:48 PM$"
 
 from lxml import etree
+import bleach
 
 REPLACEMENT_DICT = {'id': 'identifier', 'author': 'creator', 'producer': 'publisher', 'restriction': 'rights',
                     'keyword': 'subject', 'publication': 'isReferencedBy'}
@@ -70,3 +71,7 @@ def format_term(term):
         return 'dcterms_{}'.format(REPLACEMENT_DICT[term])
     else:
         return 'dcterms_{}'.format(term)
+
+
+def sanitize(value):
+    return bleach.clean(value, strip=True, tags=[], attributes=[], styles=[])

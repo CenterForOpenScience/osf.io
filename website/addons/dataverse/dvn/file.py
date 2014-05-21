@@ -14,7 +14,7 @@ import utils
 
 class DvnFile(object):
     def __init__(self, name, editMediaUri, mimetype, updated, hostStudy):
-        self.name = name
+        self.name = utils.sanitize(name)
         self.editMediaUri = editMediaUri
         self.mimetype = mimetype
         self.updated = updated
@@ -66,7 +66,7 @@ class DvnFile(object):
 
 class ReleasedFile(object):
     def __init__(self, name, uri, hostStudy):
-        self.name = name
+        self.name = utils.sanitize(name)
         self.uri = uri
         self.hostStudy = hostStudy
         self.id = uri.split('=')[-1]

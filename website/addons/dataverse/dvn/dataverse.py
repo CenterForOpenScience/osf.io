@@ -39,7 +39,7 @@ class Dataverse(object):
 
     @property
     def title(self):
-        return self.collection.title
+        return utils.sanitize(self.collection.title)
 
     def add_study(self, study):
         # this creates the study AND generates a deposit receipt
