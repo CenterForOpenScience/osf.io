@@ -158,10 +158,9 @@
 
         self.urls = urls;
         self.modes = modes || ['view'];
+        self.viewable = $.inArray('view', modes) >= 0;
         self.editable = ko.observable(false);
-        self.mode = ko.observable(
-            $.inArray('view', modes) >= 0 ? 'view' : 'edit'
-        );
+        self.mode = ko.observable(self.viewable ? 'view' : 'edit');
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
@@ -219,6 +218,11 @@
         if (this.editable()) {
             this.mode('edit');
         }
+    };
+
+    BaseViewModel.prototype.cancel = function(data, event) {
+        event && event.preventDefault();
+        this.mode('view');
     };
 
     BaseViewModel.prototype.submit = function() {

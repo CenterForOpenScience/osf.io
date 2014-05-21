@@ -51,11 +51,19 @@
             </div>
 
             <div class="padded">
+
                 <button
                         type="submit"
-                        class="btn btn-success"
+                        class="btn btn-default"
+                        data-bind="visible: viewable, click: cancel"
+                    >Cancel</button>
+
+                <button
+                        type="submit"
+                        class="btn btn-primary"
                         data-bind="enable: isValid"
                     >Submit</button>
+
             </div>
 
             <!-- Flashed Messages -->
@@ -107,7 +115,7 @@
 
 
         <div data-bind="if: editable">
-            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
+            <a class="btn btn-default" data-bind="click: edit">Edit</a>
         </div>
 
     </div>
