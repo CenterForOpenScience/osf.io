@@ -63,7 +63,7 @@ def create_mock_connection(username='snowman', password='frosty'):
     )
     mock_connection.get_dataverse.return_value = create_mock_dataverse()
 
-    if username=='snowman' and password=='frosty':
+    if username == 'snowman' and password == 'frosty':
         return mock_connection
 
 
@@ -72,8 +72,10 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     mock_dataverse = mock.create_autospec(Dataverse)
 
     type(mock_dataverse).title = mock.PropertyMock(return_value=title)
+    type(mock_dataverse).is_released = mock.PropertyMock(return_value=True)
     type(mock_dataverse).alias = mock.PropertyMock(
-        return_value='ALIAS{}'.format(title[-1]))
+        return_value='ALIAS{}'.format(title[-1])
+    )
 
     mock_dataverse.get_studies.return_value = [
         create_mock_study('DVN/00001'),
@@ -101,7 +103,7 @@ def create_mock_study(id='DVN/12345'):
     mock_study.get_citation.return_value = 'Example Citation for {0}'.format(id)
     mock_study.title = 'Example ({0})'.format(id)
     mock_study.doi = 'doi:12.3456/{0}'.format(id)
-    mock_study.get_state.return_value == 'DRAFT'
+    mock_study.get_state.return_value = 'DRAFT'
 
     def _create_file(released):
         return create_mock_released_file() if released else create_mock_dvn_file()

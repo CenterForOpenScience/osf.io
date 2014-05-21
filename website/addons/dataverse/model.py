@@ -88,7 +88,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         authorized = (self.dataverse_username is not None and
             dataverse_user.dataverse_username == self.dataverse_username)
 
-        # Check connection
+        # Check user's connection
         user_connection = connect(
             dataverse_user.dataverse_username,
             dataverse_user.dataverse_password,
@@ -136,7 +136,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
             if study is not None:
                 rv.update({
-                    'draft': study.get_state() == 'DRAFT',
                     'dataverse_url': os.path.join(
                         'http://', HOST, 'dvn', 'dv', dataverse.alias
                     ),
