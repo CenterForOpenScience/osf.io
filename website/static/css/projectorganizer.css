@@ -170,7 +170,6 @@ input.typeahead.tt-input {
     height: 30px;
     padding: 8px 12px;
     font-size: 18px;
-    line-height: 30px;
     border: 2px solid #ccc;
     -webkit-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -193,12 +192,12 @@ input.typeahead.tt-input {
 }
 
 .tt-hint {
-    color: #999
+    color: #999;
+	padding-top: 21px;
 }
 
 .tt-dropdown-menu {
     width: 422px;
-    margin-top: 12px;
     padding: 8px 0;
     background-color: #fff;
     border: 1px solid #ccc;
@@ -209,6 +208,7 @@ input.typeahead.tt-input {
     -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+	margin-top: 12px;
 }
 
 .tt-suggestion {
