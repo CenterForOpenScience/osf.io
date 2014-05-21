@@ -526,16 +526,19 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.post(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
-    @unittest.skip('Finish this')
-    def test_render_file(self):
-        assert 0, 'finish me'
+    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.get_cache_content')
+    def test_render_file(self, mock_get_cache, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_get_cache.return_value = 'Mockument (A mock document)'
 
-    @unittest.skip('Finish this')
-    def test_scrape_dataverse(self):
-        assert 0, 'finish me'
-        # content = scrape_dataverse(2362170)
-        # assert_not_in('IQSS', content)
-        # assert_in('%esp', content)
+        file_id = '23456'
+
+        url = lookup('api', 'dataverse_get_rendered_file',
+                     pid=self.project._primary_key, path=file_id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(mock_get_cache.call_args[0][1],
+                     '{0}.html'.format(file_id))
 
 
 class TestDataverseRestrictions(DataverseAddonTestCase):
