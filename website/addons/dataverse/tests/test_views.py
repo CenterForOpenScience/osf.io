@@ -84,6 +84,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user)
+        assert_false(self.node_settings.user_settings)
 
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):

@@ -54,6 +54,7 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user)
+        assert_false(self.node_settings.user_settings)
 
     @mock.patch('website.addons.dataverse.model.connect')
     def test_to_json(self, mock_connection):

@@ -79,6 +79,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.study_hdl = None
         self.study = None
         self.user = None
+        self.user_settings = None
 
     def to_json(self, user):
 
