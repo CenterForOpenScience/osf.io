@@ -6,7 +6,7 @@ from framework.auth.decorators import Auth
 from website.addons.dataverse.model import AddonDataverseUserSettings, \
     AddonDataverseNodeSettings, DataverseFile
 from website.addons.dataverse.tests.utils import create_mock_connection, \
-    DataverseAddonTestCase
+    create_mock_dataverse, DataverseAddonTestCase
 
 
 class TestCallbacks(DataverseAddonTestCase):
@@ -138,3 +138,25 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_not_in('dataverse_url', json)
         assert_not_in('study_url', json)
 
+    @mock.patch('website.addons.dataverse.model.connect')
+    @mock.patch('website.addons.dataverse.model.get_dataverse')
+    def test_to_json_unreleased_dataverse(self, mock_dataverse, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_dataverse.return_value = None #create_mock_dataverse()
+        type(mock_dataverse).is_released = mock.PropertyMock(return_value=False)
+
+        json = self.node_settings.to_json(self.user)
+
+        assert_true(json['authorized'])
+        assert_true(json['connected'])
+        assert_true(json['user_dataverse_connected'])
+
+        assert_equal(self.user_settings.dataverse_username,
+                     json['authorized_dataverse_user'])
+        assert_equal(None, json['dataverse'])
+        assert_equal(None, json['study_hdl'])
+        assert_equal(3, len(json['dataverses']))
+        assert_false(json['study_names'])
+
+        assert_not_in('dataverse_url', json)
+        assert_not_in('study_url', json)

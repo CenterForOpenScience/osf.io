@@ -4,7 +4,8 @@ import httplib as http
 
 from framework import request
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect, get_study
+from website.addons.dataverse.client import connect, get_study, get_dataverses,\
+    get_dataverse
 from website.project import decorators
 from website.util.sanitize import deep_ensure_clean
 
@@ -25,7 +26,7 @@ def dataverse_set_user_config(*args, **kwargs):
         raise HTTPError(http.UNAUTHORIZED)
 
     # Credentials are valid, but there are no dataverses
-    if not connection.get_dataverses():
+    if not get_dataverses(connection):
         raise HTTPError(http.BAD_REQUEST)
 
     user_settings.dataverse_username = username
@@ -65,13 +66,13 @@ def set_dataverse(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Set selected Dataverse
-    old_dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    old_dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     old_study = node_settings.study
     deep_ensure_clean(request.json)
     # TODO: Ensure alias is from list of viable aliases
     alias = request.json.get('dataverse_alias')
     node_settings.dataverse_alias = alias if alias != 'None' else None
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     node_settings.dataverse = dataverse.title if dataverse else None
 
     # Set study to None if there was a study
@@ -126,7 +127,7 @@ def set_study(*args, **kwargs):
 
     # Get current dataverse and new study
     deep_ensure_clean(request.json)
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     # TODO: Ensure hdl is from list of viable hdls
     hdl = request.json.get('study_hdl')
 
