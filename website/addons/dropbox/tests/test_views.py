@@ -11,9 +11,9 @@ from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
 from framework.auth.decorators import Auth
-from website.util import api_url_for
+from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
-from tests.base import OsfTestCase, URLLookup, assert_is_redirect
+from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.dropbox.tests.utils import (
@@ -22,7 +22,6 @@ from website.addons.dropbox.tests.utils import (
 from website.addons.dropbox.views.config import serialize_settings
 from website.addons.dropbox import utils
 
-lookup = URLLookup(app)
 mock_client = MockDropbox()
 
 
@@ -35,15 +34,14 @@ class TestAuthViews(OsfTestCase):
         self.app.authenticate(*self.user.auth)
 
     def test_dropbox_oauth_start(self):
-        url = lookup('api', 'dropbox_oauth_start_user')
+        url = api_url_for('dropbox_oauth_start_user')
         res = self.app.get(url)
         assert_is_redirect(res)
 
     @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
     def test_dropbox_oauth_finish(self, mock_finish):
         mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
-        with app.test_request_context():
-            url = api_url_for('dropbox_oauth_finish')
+        url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
         assert_is_redirect(res)
 
@@ -55,7 +53,7 @@ class TestAuthViews(OsfTestCase):
         settings.save()
         assert_true(settings.has_auth)
         self.user.save()
-        url = lookup('api', 'dropbox_oauth_delete_user')
+        url = api_url_for('dropbox_oauth_delete_user')
         res = self.app.delete(url)
         settings.reload()
         assert_false(settings.has_auth)
@@ -64,7 +62,7 @@ class TestAuthViews(OsfTestCase):
 class TestConfigViews(DropboxAddonTestCase):
 
     def test_dropbox_user_config_get_has_auth_info(self):
-        url = lookup('api', 'dropbox_user_config_get')
+        url = api_url_for('dropbox_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         # The JSON result
@@ -72,50 +70,44 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_true(result['userHasAuth'])
 
     def test_dropbox_user_config_get_returns_correct_urls(self):
-        url = lookup('api', 'dropbox_user_config_get')
+        url = api_url_for('dropbox_user_config_get')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         # The JSONified URLs result
         urls = res.json['result']['urls']
-        assert_equal(urls['delete'], lookup('api', 'dropbox_oauth_delete_user'))
-        assert_equal(urls['create'], lookup('api', 'dropbox_oauth_start_user'))
+        assert_equal(urls['delete'], api_url_for('dropbox_oauth_delete_user'))
+        assert_equal(urls['create'], api_url_for('dropbox_oauth_start_user'))
 
     def test_serialize_settings_helper_returns_correct_urls(self):
-        with self.app.app.test_request_context():
-            result = serialize_settings(self.node_settings, self.user, client=mock_client)
-            urls = result['urls']
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        urls = result['urls']
 
-            assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
-            assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
-            assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
-            assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
-            assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
-            assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
-            # Includes endpoint for fetching folders only
-            # NOTE: Querystring params are in camelCase
-            assert_equal(urls['folders'],
-                self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=1, includeRoot=1))
+        assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
+        assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
+        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+        assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
+        # Includes endpoint for fetching folders only
+        # NOTE: Querystring params are in camelCase
+        assert_equal(urls['folders'],
+            self.project.api_url_for('dropbox_hgrid_data_contents', foldersOnly=1, includeRoot=1))
 
     def test_serialize_settings_helper_returns_correct_auth_info(self):
-        # Need request context because url_for is used by serialize_settings
-        with self.app.app.test_request_context():
-            result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
     def test_serialize_settings_for_user_no_auth(self):
         no_addon_user = AuthUserFactory()
-        with self.app.app.test_request_context():
-            result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
+        result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
-        # Need request context because url_for is used by serialize_settings
-        with self.app.app.test_request_context():
-            result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = serialize_settings(self.node_settings, self.user, client=mock_client)
         folder = result['folder']
         assert_equal(folder['name'], 'Dropbox' + self.node_settings.folder)
         assert_equal(folder['path'], self.node_settings.folder)
@@ -123,7 +115,7 @@ class TestConfigViews(DropboxAddonTestCase):
     def test_dropbox_config_get(self):
         self.user_settings.save()
 
-        url = lookup('api', 'dropbox_config_get', pid=self.project._primary_key)
+        url = api_url_for('dropbox_config_get', pid=self.project._primary_key)
 
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -131,10 +123,10 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(result['ownerName'], self.user_settings.owner.fullname)
 
         assert_equal(result['urls']['config'],
-            lookup('api', 'dropbox_config_put', pid=self.project._primary_key))
+            api_url_for('dropbox_config_put', pid=self.project._primary_key))
 
     def test_dropbox_config_put(self):
-        url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
+        url = api_url_for('dropbox_config_put', pid=self.project._primary_key)
         # Can set folder through API call
         res = self.app.put_json(url, {'selected': {'path': 'My test folder',
             'name': 'Dropbox/My test folder'}},
@@ -152,7 +144,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(params['folder'], 'My test folder')
 
     def test_dropbox_deauthorize(self):
-        url = lookup('api', 'dropbox_deauthorize', pid=self.project._primary_key)
+        url = api_url_for('dropbox_deauthorize', pid=self.project._primary_key)
         saved_folder = self.node_settings.folder
         self.app.delete(url, auth=self.user.auth)
         self.project.reload()
@@ -173,14 +165,12 @@ class TestConfigViews(DropboxAddonTestCase):
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
+        url = api_url_for('dropbox_import_user_auth', pid=self.project._primary_key)
         res = self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
-        # Need request context because serialize_settings uses url_for
-        with self.app.app.test_request_context():
-            expected_result = serialize_settings(self.node_settings,
-                self.user, client=mock_client)
+        expected_result = serialize_settings(self.node_settings, self.user,
+                                             client=mock_client)
         result = res.json['result']
         assert_equal(result, expected_result)
 
@@ -188,7 +178,7 @@ class TestConfigViews(DropboxAddonTestCase):
         # Node does not have user settings
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = lookup('api', 'dropbox_import_user_auth', pid=self.project._primary_key)
+        url = api_url_for('dropbox_import_user_auth', pid=self.project._primary_key)
         self.app.put(url, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
@@ -204,7 +194,7 @@ class TestConfigViews(DropboxAddonTestCase):
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.user))
         self.project.save()
-        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        url = api_url_for('dropbox_get_share_emails', pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         result = res.json['result']
         assert_equal(result['emails'], [u.username for u in self.project.contributors
@@ -217,7 +207,7 @@ class TestConfigViews(DropboxAddonTestCase):
         contrib.save()
         self.project.add_contributor(contrib, auth=Auth(self.user))
         self.project.save()
-        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        url = api_url_for('dropbox_get_share_emails', pid=self.project._primary_key)
         # Non-authorizing contributor sends request
         res = self.app.get(url, auth=contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
@@ -226,7 +216,7 @@ class TestConfigViews(DropboxAddonTestCase):
         # Node doesn't have auth
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = lookup('api', 'dropbox_get_share_emails', pid=self.project._primary_key)
+        url = api_url_for('dropbox_get_share_emails', pid=self.project._primary_key)
         # Non-authorizing contributor sends request
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.BAD_REQUEST)
@@ -236,7 +226,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
 
     def test_dropbox_hgrid_data_contents(self):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = lookup('api', 'dropbox_hgrid_data_contents',
+            url = api_url_for('dropbox_hgrid_data_contents',
                 path=self.node_settings.folder,
                 pid=self.project._primary_key)
             res = self.app.get(url, auth=self.user.auth)
@@ -250,7 +240,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         # If folder is set to none, no data are returned
         self.node_settings.folder = None
         self.node_settings.save()
-        url = lookup('api', 'dropbox_hgrid_data_contents', pid=self.project._primary_key)
+        url = api_url_for('dropbox_hgrid_data_contents', pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'], [])
 
@@ -258,7 +248,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
             self.node_settings.folder = None
             self.node_settings.save()
-            url = lookup('api', 'dropbox_hgrid_data_contents',
+            url = api_url_for('dropbox_hgrid_data_contents',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
@@ -267,7 +257,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
 
     def test_dropbox_hgrid_data_contents_folders_only(self):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = lookup('api', 'dropbox_hgrid_data_contents',
+            url = api_url_for('dropbox_hgrid_data_contents',
                 pid=self.project._primary_key, foldersOnly=True)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
@@ -277,7 +267,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_include_root(self, mock_metadata):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = lookup('api', 'dropbox_hgrid_data_contents',
+            url = api_url_for('dropbox_hgrid_data_contents',
                 pid=self.project._primary_key, includeRoot=1)
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
@@ -307,8 +297,7 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             u'size': u'0 bytes',
             u'thumb_exists': False
         }
-        with self.app.app.test_request_context():
-            url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        url = self.project.api_url_for('dropbox_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
 
@@ -331,7 +320,7 @@ class TestRestrictions(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
     def test_restricted_deletion(self, mock_file_delete):
         # Tries to delete a file in a parent folder of the shared folder (foo bar)
-        url = lookup('api', 'dropbox_delete_file', 'dropbox_delete_file',
+        url = api_url_for('dropbox_delete_file', 'dropbox_delete_file',
             pid=self.project._primary_key, path='foo bar/secret.txt')
         # gets 403 error
         res = self.app.delete(url=url, auth=self.contrib.auth, expect_errors=True)
@@ -341,7 +330,7 @@ class TestRestrictions(DropboxAddonTestCase):
     def test_restricted_uploads(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         # tries to uplaod file to a parent folder of shared folder
-        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key,
+        url = api_url_for('dropbox_upload', pid=self.project._primary_key,
             path='foo bar')
         payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
         res = self.app.post(url, payload, auth=self.contrib.auth, expect_errors=True)
@@ -352,14 +341,13 @@ class TestRestrictions(DropboxAddonTestCase):
         mock_metadata.return_value = mock_responses['metadata_list']
 
         # tries to access a parent folder
-        with self.app.app.test_request_context():
-            url = self.project.api_url_for('dropbox_hgrid_data_contents',
-                path='foo bar')
+        url = self.project.api_url_for('dropbox_hgrid_data_contents',
+            path='foo bar')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
     def test_restricted_view_file(self):
-        url = lookup('web', 'dropbox_view_file',
+        url = web_url_for('dropbox_view_file',
             pid=self.project._primary_key,
             path='foo bar/baz.txt')
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
@@ -367,19 +355,19 @@ class TestRestrictions(DropboxAddonTestCase):
 
     def test_restricted_get_revisions(self):
         path = 'foo bar/baz.rst'
-        url = lookup('api', 'dropbox_get_revisions', path=path,
+        url = api_url_for('dropbox_get_revisions', path=path,
             pid=self.project._primary_key)
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
     def test_restricted_download(self):
         path = 'foo bar/baz.rst'
-        url = lookup('web', 'dropbox_download', path=path, pid=self.project._primary_key)
+        url = web_url_for('dropbox_download', path=path, pid=self.project._primary_key)
         res = self.app.get(url, auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
 
     def test_restricted_config_contrib_no_addon(self):
-        url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
+        url = api_url_for('dropbox_config_put', pid=self.project._primary_key)
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.BAD_REQUEST)
@@ -389,7 +377,7 @@ class TestRestrictions(DropboxAddonTestCase):
         self.contrib.add_addon('dropbox')
         self.contrib.save()
 
-        url = lookup('api', 'dropbox_config_put', pid=self.project._primary_key)
+        url = api_url_for('dropbox_config_put', pid=self.project._primary_key)
         res = self.app.put_json(url, {'selected': {'path': 'foo'}},
             auth=self.contrib.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.FORBIDDEN)
@@ -401,7 +389,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_upload_file_to_folder(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('myfile.rst', b'baz', 'text/x-rst')}
-        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key,
+        url = api_url_for('dropbox_upload', pid=self.project._primary_key,
             path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, httplib.CREATED)
@@ -415,7 +403,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_upload_file_to_root(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('rootfile.rst', b'baz', 'text/x-rst')}
-        url = lookup('api', 'dropbox_upload',
+        url = api_url_for('dropbox_upload',
                 pid=self.project._primary_key,
                 path='')
         res = self.app.post(url, payload, auth=self.user.auth)
@@ -430,7 +418,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_delete_file(self, mock_file_delete):
         path = 'foo'
         res = self.app.delete(
-            url=lookup('api', 'dropbox_delete_file',
+            url=api_url_for('dropbox_delete_file',
                        pid=self.project._primary_key, path=path),
             auth=self.user.auth,
         )
@@ -454,7 +442,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_dropbox_upload_saves_a_log(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
         payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
-        url = lookup('api', 'dropbox_upload', pid=self.project._primary_key, path='foo')
+        url = api_url_for('dropbox_upload', pid=self.project._primary_key, path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
         last_log = self.project.logs[-1]
@@ -466,15 +454,15 @@ class TestCRUDViews(DropboxAddonTestCase):
         path = os.path.join('foo', 'rootfile.rst')
 
         assert_equal(params['path'], path)
-        view_url = lookup('web', 'dropbox_view_file', path=path, pid=self.project._primary_key)
+        view_url = web_url_for('dropbox_view_file', path=path, pid=self.project._primary_key)
         assert_equal(params['urls']['view'], view_url)
-        download_url = lookup('web', 'dropbox_download', path=path, pid=self.project._primary_key)
+        download_url = web_url_for('dropbox_download', path=path, pid=self.project._primary_key)
         assert_equal(params['urls']['download'], download_url)
 
     def test_dropbox_delete_file_adds_log(self):
         with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
             path = 'foo'
-            url = lookup('api', 'dropbox_delete_file', pid=self.project._primary_key,
+            url = api_url_for('dropbox_delete_file', pid=self.project._primary_key,
                 path=path)
             res = self.app.delete(url, auth=self.user.auth)
             self.project.reload()
@@ -488,7 +476,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_get_revisions(self):
         with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
             path = 'foo.rst'
-            url = lookup('api', 'dropbox_get_revisions', path=path,
+            url = api_url_for('dropbox_get_revisions', path=path,
                 pid=self.project._primary_key)
             res = self.app.get(url, auth=self.user.auth)
             json_data = res.json
@@ -497,11 +485,11 @@ class TestCRUDViews(DropboxAddonTestCase):
             assert_equal(len(result), len(expected))
             for each in result:
                 download_link = each['download']
-                assert_equal(download_link, lookup('web', 'dropbox_download',
+                assert_equal(download_link, web_url_for('dropbox_download',
                     pid=self.project._primary_key,
                     path=path, rev=each['rev']))
                 view_link = each['view']
-                assert_equal(view_link, lookup('web', 'dropbox_view_file',
+                assert_equal(view_link, web_url_for('dropbox_view_file',
                     pid=self.project._primary_key,
                     path=path, rev=each['rev']))
 
@@ -511,7 +499,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             {'path': 'foo.txt', 'rev': '123'},
             {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
         ]
-        url = lookup('api', 'dropbox_get_revisions', path='foo.txt',
+        url = api_url_for('dropbox_get_revisions', path='foo.txt',
             pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         res_data = res.json['result']
@@ -528,7 +516,7 @@ class TestCRUDViews(DropboxAddonTestCase):
         self.project.is_registration = True
         self.project.registered_date = datetime.datetime.utcnow()
         self.project.save()
-        url = lookup('api', 'dropbox_get_revisions',
+        url = api_url_for('dropbox_get_revisions',
             path='foo.txt',
             pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
@@ -539,7 +527,7 @@ class TestCRUDViews(DropboxAddonTestCase):
 
 
     def test_dropbox_view_file(self):
-        url = lookup('web', 'dropbox_view_file', pid=self.project._primary_key,
+        url = web_url_for('dropbox_view_file', pid=self.project._primary_key,
             path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
