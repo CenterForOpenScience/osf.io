@@ -27,7 +27,8 @@ class TestNodeLogger(DropboxAddonTestCase):
         df = DropboxFileFactory()
         logger = utils.DropboxNodeLogger(node=self.project,
             auth=Auth(self.user), file_obj=df)
-        logger.log(NodeLog.FILE_ADDED, save=True)
+        with self.app.app.test_request_context():
+            logger.log(NodeLog.FILE_ADDED, save=True)
 
         last_log = self.project.logs[-1]
 
@@ -102,7 +103,8 @@ def test_make_file_response():
         u'thumb_exists': False,
         u'mime_type': u'audio/mpeg',
     }
-    resp = utils.make_file_response(mockfile, metadata)
+    with app.test_request_context():
+        resp = utils.make_file_response(mockfile, metadata)
     # It's a response
     assert_true(isinstance(resp, Response))
     # Headers are correct
@@ -129,14 +131,15 @@ class TestMetadataSerialization(OsfTestCase):
         }
         node = ProjectFactory()
         permissions = {'view': True, 'edit': False}
-        result = utils.metadata_to_hgrid(metadata, node, permissions)
-        assert_equal(result['addon'], 'dropbox')
-        assert_equal(result['permissions'], permissions)
-        filename = utils.get_file_name(metadata['path'])
-        assert_equal(result['name'], filename)
-        assert_equal(result['urls'], utils.build_dropbox_urls(metadata, node))
-        assert_equal(result['path'], metadata['path'])
-        assert_equal(result['ext'], os.path.splitext(filename)[1])
+        with app.test_request_context():
+            result = utils.metadata_to_hgrid(metadata, node, permissions)
+            assert_equal(result['addon'], 'dropbox')
+            assert_equal(result['permissions'], permissions)
+            filename = utils.get_file_name(metadata['path'])
+            assert_equal(result['name'], filename)
+            assert_equal(result['urls'], utils.build_dropbox_urls(metadata, node))
+            assert_equal(result['path'], metadata['path'])
+            assert_equal(result['ext'], os.path.splitext(filename)[1])
 
 
 class TestBuildDropboxUrls(OsfTestCase):
@@ -144,11 +147,12 @@ class TestBuildDropboxUrls(OsfTestCase):
     def test_build_dropbox_urls_file(self):
         node = ProjectFactory()
         fake_metadata = mock_responses['metadata_single']
-        result = utils.build_dropbox_urls(fake_metadata, node)
-        path = utils.clean_path(fake_metadata['path'])
-        assert_equal(result['download'],
-            node.web_url_for('dropbox_download', path=path))
-        assert_equal(result['view'],
-            node.web_url_for('dropbox_view_file', path=path))
-        assert_equal(result['delete'],
-            node.api_url_for('dropbox_delete_file', path=path))
+        with app.test_request_context():
+            result = utils.build_dropbox_urls(fake_metadata, node)
+            path = utils.clean_path(fake_metadata['path'])
+            assert_equal(result['download'],
+                node.web_url_for('dropbox_download', path=path))
+            assert_equal(result['view'],
+                node.web_url_for('dropbox_view_file', path=path))
+            assert_equal(result['delete'],
+                node.api_url_for('dropbox_delete_file', path=path))
