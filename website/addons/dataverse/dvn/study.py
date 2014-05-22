@@ -227,16 +227,17 @@ class Study(object):
 
         self._refresh(deposit_receipt=depositReceipt)
 
-    def update_metadata(self):
-        #todo: consumer has to use the methods on self.entry (from sword2.atom_objects) to update the
-        # metadata before calling this method. that's a little cumbersome...
-        depositReceipt = self.hostDataverse.connection.swordConnection.update(
-            dr=self.lastDepositReceipt,
-            edit_iri=self.editUri,
-            edit_media_iri=self.editMediaUri,
-            metadata_entry=self.entry,
-        )
-        self._refresh(deposit_receipt=depositReceipt)
+    # TODO: DANGEROUS! Will delete all unspecified fields! Deposit receipts only give SOME of the fields
+    # def update_metadata(self):
+    #     #todo: consumer has to use the methods on self.entry (from sword2.atom_objects) to update the
+    #     # metadata before calling this method. that's a little cumbersome...
+    #     depositReceipt = self.hostDataverse.connection.swordConnection.update(
+    #         dr=self.lastDepositReceipt,
+    #         edit_iri=self.editUri,
+    #         edit_media_iri=self.editMediaUri,
+    #         metadata_entry=self.entry,
+    #     )
+    #     self._refresh(deposit_receipt=depositReceipt)
     
     def release(self):
         depositReceipt = self.hostDataverse.connection.swordConnection.complete_deposit(
