@@ -81,11 +81,13 @@
             var originalRowIndex = rows[rows.length - 1];
             var gridData = _grid.getData();
             var originalRow = gridData.getItem(originalRowIndex);
-            var originalParent = originalRow.parentID;
-            for (i = 0; i < rows.length; i++) {
-                var currentItem = gridData.getItem(rows[i]);
-                if(currentItem.parentID == originalParent && currentItem.id != -1){
-                    newRows.push(rows[i]);
+            if(typeof originalRow !== "undefined") {
+                var originalParent = originalRow.parentID;
+                for (i = 0; i < rows.length; i++) {
+                    var currentItem = gridData.getItem(rows[i]);
+                    if(currentItem.parentID == originalParent && currentItem.id != -1){
+                        newRows.push(rows[i]);
+                    }
                 }
             }
             return newRows;
