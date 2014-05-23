@@ -13,6 +13,17 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 # Comment out to use solr in development
 USE_SOLR = True
 
+# Comment out to use celery in development
+USE_CELERY = True
+
+# Which addons are enabled
+ADDONS_REQUESTED = [
+    'wiki', 'osffiles',
+    'github', 's3', 'figshare',
+    'dropbox',
+    # 'badges', 'forward',
+]
+
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
