@@ -59,12 +59,12 @@
         %>
         <li class="project list-group-item list-group-item-node">
             <div class="row">
-                <div class="col-md-9">
+                <div class="col-md-10">
                     <h4 class="list-group-item-heading overflow" style="width:85%">
                         <a href="${node.url}">${node.title}</a>
                     </h4>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     % if metric == 'hits':
                         <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
                             ${ hits[node._id].get('hits') } views (in the past week)
