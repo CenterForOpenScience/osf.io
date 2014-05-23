@@ -1,4 +1,3 @@
-from website.addons.dataverse.dvn.study import Study
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.settings import TEST_CERT, HOST
 
@@ -14,7 +13,8 @@ def connect(username, password, host=HOST):
 
 
 def delete_file(file):
-    Study.delete_file(file.hostStudy, file)
+    study = file.hostStudy
+    study.delete_file(file)
 
 
 def upload_file(study, filename, content):
