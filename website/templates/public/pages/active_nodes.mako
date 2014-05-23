@@ -58,19 +58,24 @@
             )
         %>
         <li class="project list-group-item list-group-item-node">
-            <h4 class="list-group-item-heading overflow" style="width:85%">
-                <a href="${node.url}">${node.title}</a>
-            </h4>
-                % if metric == 'hits':
-                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
-                        ${ hits[node._id].get('hits') } views (in the past week)
-                    </span>
-                % elif metric == 'date_created':
-                    <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
-                        ${node.date_created.date()}
-                    </span>
-                % endif
-
+            <div class="row">
+                <div class="col-md-10">
+                    <h4 class="list-group-item-heading overflow" style="width:85%">
+                        <a href="${node.url}">${node.title}</a>
+                    </h4>
+                </div>
+                <div class="col-md-2">
+                    % if metric == 'hits':
+                        <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='${ hits[node._id].get('hits') } views (${ hits[node._id].get('visits') } visits)'>
+                            ${ hits[node._id].get('hits') } views (in the past week)
+                        </span>
+                    % elif metric == 'date_created':
+                        <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
+                            ${node.date_created.date()}
+                        </span>
+                    % endif
+                </div>
+            </div>
             <!-- Show abbreviated contributors list -->
             <div mod-meta='{
                     "tpl": "util/render_users_abbrev.mako",
