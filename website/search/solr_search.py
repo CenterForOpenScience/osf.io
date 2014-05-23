@@ -5,7 +5,7 @@ import ast
 from website import settings
 
 
-def search_solr(query, start=0):
+def search(query, start=0):
     # here is our query. the default search field is text which maps to tags,
     # description, wiki, and title
     # start is for our pagination

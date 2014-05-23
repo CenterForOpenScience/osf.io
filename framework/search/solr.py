@@ -5,6 +5,7 @@ import sunburnt
 from website import settings
 from .utils import clean_solr_doc
 
+
 logger = logging.getLogger(__name__)
 
 if settings.USE_SOLR:

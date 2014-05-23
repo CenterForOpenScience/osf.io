@@ -4,7 +4,7 @@ from urllib2 import HTTPError
 import logging
 
 from framework import must_be_logged_in, request, status
-from website.search.solr_search import search_solr
+from website.search.search import search
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
@@ -17,7 +17,7 @@ logger = logging.getLogger('search.routes')
 
 def search_search():
     tick = time.time()
-    # solr search results are automatically paginated. on the pages that are
+    # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     if 'pagination' in request.args:
         start = int(request.args.get('pagination'))
@@ -37,7 +37,7 @@ def search_search():
     # the document, highlight,
     # and spellcheck suggestions are returned to us
     try:
-        results, highlights, spellcheck_results = search_solr(query, start)
+        results, highlights, spellcheck_results = search(query, start) #TODO(fabianvf): Need to integrate ElasticSearch into this
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -120,7 +120,7 @@ def search_projects_by_title(**kwargs):
 def create_result(highlights, results):
     """
     :param highlights: highlights are the snippets of highlighted text
-    :param results:  results are the 'documents' that solr returns to us
+    :param results:  results are the 'documents' that search returns to us
     :return: we return the entire search result, which is a list of
     dictionaries
     """
@@ -129,7 +129,7 @@ def create_result(highlights, results):
     for result in results:
         container = {}
         id = result['id']
-        # users are separate documents in our solr database,
+        # users are separate documents in our search database,
         # so the logic for returning
         # those documents is different
         if 'user' in result:
@@ -280,7 +280,7 @@ def _search_contributor(query, exclude=None):
         for token in re.split(r'\s+', query)
     ])
 
-    result, highlight, spellcheck_result = search_solr(q)
+    result, highlight, spellcheck_result = search(q) #TODO(fabianvf)
     docs = result.get('docs', [])
 
     if exclude:
