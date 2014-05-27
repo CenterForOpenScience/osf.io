@@ -28,6 +28,6 @@ deauthorized the Dropbox addon for {{ nodeCategory }}
 
 <script type="text/html" id="dropbox_node_authorized">
 authorized the Dropbox addon for {{ nodeCategory }}
-<a class="log-node-title-link oeverflow"
+<a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

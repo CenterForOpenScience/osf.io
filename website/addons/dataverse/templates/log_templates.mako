@@ -9,9 +9,9 @@ Dataverse study
 </script>
 
 <script type="text/html" id="dataverse_file_removed">
-removed file <span class="overflow" data-bind="text: params.filename"></span> from
+removed file <span class="overflow">{{ params.filename }}</span> from
 Dataverse study
-<span data-bind="text: params.dataverse.dataverse"></span> /
+<span>{{ params.dataverse.dataverse }}</span> /
 <span data-bind="text: params.dataverse.study"></span> from
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -39,4 +39,17 @@ released a new version of Dataverse study
 <span data-bind="text: params.dataverse.study"></span> for
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="dataverse_node_deauthorized">
+deauthorized the Dataverse addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+
+<script type="text/html" id="dataverse_node_authorized">
+authorized the Dataverse addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

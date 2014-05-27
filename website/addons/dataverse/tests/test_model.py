@@ -45,7 +45,7 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
     def test_deauthorize(self):
 
-        self.node_settings.deauthorize()
+        self.node_settings.deauthorize(Auth(self.user))
 
         assert_false(self.node_settings.dataverse_username)
         assert_false(self.node_settings.dataverse_password)

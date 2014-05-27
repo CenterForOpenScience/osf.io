@@ -71,7 +71,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         'addondataverseusersettings', backref='authorized'
     )
 
-    def deauthorize(self):
+    def deauthorize(self, auth):
+        """Remove user authorization from this node and log the event."""
         self.dataverse_username = None
         self.dataverse_password = None
         self.dataverse_alias = None
@@ -79,6 +80,17 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.study_hdl = None
         self.study = None
         self.user_settings = None
+
+        node = self.owner
+        auth
+        self.owner.add_log(
+            action='dataverse_node_deauthorized',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+            },
+            auth=auth,
+        )
 
     def to_json(self, user):
 

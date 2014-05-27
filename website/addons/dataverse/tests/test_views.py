@@ -57,7 +57,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study)
 
     def test_delete_user(self):
-        url = '/api/v1/settings/dataverse/'
+        url = lookup('api', 'dataverse_delete_user')
 
         # Non-authorized user can't delete
         user2 = AuthUserFactory()
@@ -310,9 +310,10 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    def test_dataverse_data_contents_state_on_project_page(self, mock_request, mock_connection):
+    def test_dataverse_data_contents_state_on_dashboard(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/'
+        mock_request.args = {}
 
         self.project.set_privacy('public')
         self.project.save()

@@ -1,7 +1,5 @@
 
-import httplib as http
-
-from framework.exceptions import HTTPError
+from framework.auth.decorators import Auth
 from website.addons.dataverse.client import connect
 from website.project import decorators
 
@@ -40,8 +38,9 @@ def authorize_dataverse(**kwargs):
 def deauthorize_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
+    auth = kwargs['auth']
 
-    node_settings.deauthorize()
+    node_settings.deauthorize(auth)
     node_settings.save()
 
     return {}
@@ -50,16 +49,17 @@ def deauthorize_dataverse(*args, **kwargs):
 @decorators.must_have_addon('dataverse', 'user')
 def dataverse_delete_user(*args, **kwargs):
 
-    dataverse_user = kwargs['user_addon']
+    user_settings = kwargs['user_addon']
+    auth = Auth(user_settings.owner)
 
     # Remove authorization for nodes
-    for node_settings in dataverse_user.addondataversenodesettings__authorized:
-        node_settings.deauthorize()
+    for node_settings in user_settings.addondataversenodesettings__authorized:
+        node_settings.deauthorize(auth)
         node_settings.save()
 
     # Revoke access
-    dataverse_user.dataverse_username = None
-    dataverse_user.dataverse_password = None
-    dataverse_user.save()
+    user_settings.dataverse_username = None
+    user_settings.dataverse_password = None
+    user_settings.save()
 
     return {}
