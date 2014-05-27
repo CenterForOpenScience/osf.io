@@ -13,8 +13,9 @@ from website.util import rubeus
 def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     node = node_settings.owner
-    state = 'released' if 'files' not in request.referrer or not node.can_edit(auth) \
-        else state or 'draft'
+
+    default_state = 'released' if 'files' not in request.referrer else 'draft'
+    state = 'released' if not node.can_edit(auth) else state or default_state
 
     connection = connect(
         node_settings.dataverse_username,
@@ -63,6 +64,7 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         state=state,
         has_released_files=has_released_files,
         authorized=authorized,
+        file_page=('files' in request.referrer),
     )
 
     return [rubeus.build_addon_root(
@@ -96,8 +98,10 @@ def dataverse_hgrid_data_contents(**kwargs):
     node_settings = kwargs['node_addon']
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    state = 'released' if 'files' not in request.referrer or not node.can_edit(auth) \
-        else request.args.get('state') or 'draft'
+
+    state = request.args.get('state')
+    default_state = 'released' if 'files' not in request.referrer else 'draft'
+    state = 'released' if not node.can_edit(auth) else state or default_state
 
     released = state == 'released'
 
@@ -158,7 +162,7 @@ dataverse_state_template = Template('''
         % else:
             [Draft]
         % endif
-        % if state == "draft":
+        % if state == "draft" and file_page:
             <a id="dataverseReleaseStudy">Release Study</a>
         % endif
     % else:
