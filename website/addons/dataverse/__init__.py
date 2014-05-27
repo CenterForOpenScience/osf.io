@@ -14,10 +14,8 @@ FULL_NAME = 'Dataverse'
 
 OWNERS = ['user', 'node']
 
-ADDED_TO = {
-    'user': False,
-    'node': False,
-}
+ADDED_DEFAULT = []
+ADDED_MANDATORY = []
 
 VIEWS = []
 CONFIGS = ['user', 'node']
@@ -26,25 +24,16 @@ CATEGORIES = ['storage']
 
 INCLUDE_JS = {
     'widget': ['dataverse-rubeus-cfg.js'],
-    'page': [
-        '/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js',
-        '/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js',
-        '/static/vendor/dropzone/dropzone.js',
-        '/static/js/slickgrid.custom.min.js',
-        '/static/js/hgrid.js',
-        'hgrid-github.js',
-    ],
-    'files': [
-        'dataverse-rubeus-cfg.js',
-    ]
+    'page': [],
+    'files': ['dataverse-rubeus-cfg.js'],
 }
 
 INCLUDE_CSS = {
     'widget': [],
-    'page': ['/static/css/hgrid-base.css'],
+    'page': [],
 }
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
 
-MAX_FILE_SIZE = 10  # MB
+# MAX_FILE_SIZE = 10  # MB
