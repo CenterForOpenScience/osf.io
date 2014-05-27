@@ -16,7 +16,9 @@
             '<div class="col-md-3"><b>Title: </b></div>' +
                 '<div class="col-md-8">' + item.study + '</div><br>' +
             '<div class="col-md-3"><b>Study Global ID: </b></div>' +
-                '<div class="col-md-8">' + item.doi + '</div><br>' +
+                '<div class="col-md-8">' +
+                '<a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' +
+                item.doi + '</a></div><br>' +
             '<div class="col-md-3"><b>Dataverse: </b></div>' +
                 '<div class="col-md-8">' + item.dataverse + '</div><br>' +
             '<div class="col-md-3" style="padding-top: 10px;"><b>Citation: </b></div>' +
