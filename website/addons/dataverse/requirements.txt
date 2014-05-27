@@ -1,1 +1,1 @@
--e git+https://github.com/pjbull/python-client-sword2.git#egg=sword2
+-e git+https://github.com/rliebz/python-client-sword2.git#egg=sword2As
