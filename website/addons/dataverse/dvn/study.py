@@ -159,7 +159,7 @@ class Study(object):
         download_url = 'https://{0}/dvn/api/metadata/{1}'.format(
             self.hostDataverse.connection.host, self.doi
         )
-        xml = requests.get(download_url).content
+        xml = requests.get(download_url, verify=False).content
         elements = get_elements(xml, tag='otherMat')
 
         files = []

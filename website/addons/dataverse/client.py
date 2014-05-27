@@ -9,6 +9,7 @@ def connect(username, password, host=HOST):
         password=password,
         host=host,
         cert=TEST_CERT,
+        disable_ssl_certificate_validation=True,
     )
     return connection if connection.connected else None
 

@@ -19,7 +19,7 @@ from dataverse import Dataverse
 
 class DvnConnection(object):
     # todo add port number
-    def __init__(self, username, password, host, cert=None, sdUriOverride=None):
+    def __init__(self, username, password, host, cert=None, sdUriOverride=None, disable_ssl_certificate_validation=False):
         # Connection Properties
         self.username = username
         self.password = password
@@ -27,6 +27,7 @@ class DvnConnection(object):
         self.sdUri = "https://{host}/dvn/api/data-deposit/v1/swordv2/service-document".format(host=self.host) \
             if not sdUriOverride else sdUriOverride.format(host=self.host)
         self.cert = cert
+        self.disable_ssl_certificate_validation = disable_ssl_certificate_validation
         
         # Connection Status and SWORD Properties
         self.swordConnection = None
@@ -46,6 +47,7 @@ class DvnConnection(object):
             user_name=self.username,
             user_pass=self.password,
             ca_certs=self.cert,
+            disable_ssl_certificate_validation=self.disable_ssl_certificate_validation,
         )
 
         self.serviceDocument = self.swordConnection.get_service_document()
