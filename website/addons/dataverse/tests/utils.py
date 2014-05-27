@@ -105,11 +105,11 @@ def create_mock_study(id='DVN/12345'):
     mock_study.doi = 'doi:12.3456/{0}'.format(id)
     mock_study.get_state.return_value = 'DRAFT'
 
-    def _create_file(released):
+    def _create_file(name, released=False):
         return create_mock_released_file() if released else create_mock_dvn_file()
 
-    def _create_files(released):
-        return [_create_file(released)]
+    def _create_files(released=False):
+        return [_create_file('name.txt', released)]
 
     mock_study.get_files = mock.MagicMock(side_effect=_create_files)
     mock_study.get_file = mock.MagicMock(side_effect=_create_file)

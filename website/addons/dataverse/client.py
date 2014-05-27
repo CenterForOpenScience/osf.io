@@ -1,4 +1,3 @@
-from website.addons.dataverse.dvn.study import Study
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.settings import TEST_CERT, HOST
 
@@ -15,7 +14,8 @@ def connect(username, password, host=HOST):
 
 
 def delete_file(file):
-    Study.delete_file(file.hostStudy, file)
+    study = file.hostStudy
+    study.delete_file(file)
 
 
 def upload_file(study, filename, content):
@@ -39,11 +39,27 @@ def release_study(study):
 
 
 def get_studies(dataverse):
+    if dataverse is None:
+        return
     studies = dataverse.get_studies()
     acessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
     return acessible_studies
 
 
 def get_study(dataverse, hdl):
+    if dataverse is None:
+        return
     study = dataverse.get_study_by_hdl(hdl)
-    return study if study.get_state() != 'DEACCESSIONED' else None
+    return study if study and study.get_state() != 'DEACCESSIONED' else None
+
+
+def get_dataverses(connection):
+    dataverses = connection.get_dataverses()
+    released_dataverses = [d for d in dataverses if d.is_released]
+    return released_dataverses
+
+
+def get_dataverse(connection, alias):
+    dataverse = connection.get_dataverse(alias)
+    return dataverse if dataverse and dataverse.is_released else None
+

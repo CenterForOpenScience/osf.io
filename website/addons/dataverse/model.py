@@ -6,7 +6,8 @@ from modularodm.exceptions import ModularOdmException
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from website.addons.dataverse.client import connect, get_studies, get_study
+from website.addons.dataverse.client import connect, get_studies, get_study, \
+    get_dataverses, get_dataverse
 from website.addons.dataverse.settings import HOST
 
 
@@ -79,6 +80,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.study_hdl = None
         self.study = None
         self.user = None
+        self.user_settings = None
 
     def to_json(self, user):
 
@@ -115,8 +117,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         if connection is not None:
 
             # Get list of dataverses and studies
-            dataverses = connection.get_dataverses() or []
-            dataverse = connection.get_dataverse(self.dataverse_alias)
+            dataverses = get_dataverses(connection)
+            dataverse = get_dataverse(connection, self.dataverse_alias)
             studies = get_studies(dataverse) if dataverse else []
             study = get_study(dataverse, self.study_hdl) \
                 if self.study_hdl is not None else None
@@ -124,9 +126,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             rv.update({
                 'connected': True,
                 'dataverses': [d.title for d in dataverses],
+                # TODO: Implement dataverse releasing (after Dataverse 4.0)
                 'dv_status': [d.is_released for d in dataverses],
-                'dataverse': self.dataverse or '',
-                'dataverse_alias': self.dataverse_alias,
+                'dataverse': dataverse.title if dataverse else None,
+                'dataverse_alias': dataverse.alias if dataverse else None,
                 'dataverse_aliases': [d.alias for d in dataverses],
                 'studies': [s.get_id() for s in studies],
                 'study_names': [s.title for s in studies],

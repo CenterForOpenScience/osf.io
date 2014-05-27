@@ -8,7 +8,7 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, delete_file, upload_file, \
-    get_file, get_file_by_id, release_study, get_study
+    get_file, get_file_by_id, release_study, get_study, get_dataverse
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -44,7 +44,7 @@ def dataverse_release_study(**kwargs):
         node_settings.dataverse_password,
     )
 
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
 
     if study.get_state() == 'RELEASED':
@@ -167,7 +167,7 @@ def dataverse_upload_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
 
     upload = request.files.get('file')
@@ -253,7 +253,7 @@ def dataverse_delete_file(**kwargs):
         node_settings.dataverse_password
     )
 
-    dataverse = connection.get_dataverse(node_settings.dataverse_alias)
+    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
     file = get_file_by_id(study, file_id)
 
@@ -300,8 +300,8 @@ def scrape_dataverse(file_id):
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
     response = session.get(url)
 
-    # Agree to terms if necessary
-    if 'set-cookie' in response.headers.keys():
+    # Agree to terms if a redirect has occurred
+    if response.history:
 
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
@@ -328,10 +328,11 @@ def scrape_filename(file_id):
 
     # Go to file url
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    headers = session.head(url).headers
+    response = session.head(url, allow_redirects=True)
+    headers = response.headers
 
-    # Agree to terms if necessary
-    if 'set-language' in headers.keys():
+    # Agree to terms if a redirect has occurred
+    if response.history:
 
         response = session.get(url)
         parsed = BeautifulSoup(response.content)
