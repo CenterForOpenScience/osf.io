@@ -300,8 +300,8 @@ def scrape_dataverse(file_id):
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
     response = session.get(url)
 
-    # Agree to terms if necessary
-    if 'set-cookie' in response.headers.keys():
+    # Agree to terms if a redirect has occurred
+    if response.history:
 
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
@@ -328,10 +328,11 @@ def scrape_filename(file_id):
 
     # Go to file url
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    headers = session.head(url).headers
+    response = session.head(url, allow_redirects=True)
+    headers = response.headers
 
-    # Agree to terms if necessary
-    if 'set-language' in headers.keys():
+    # Agree to terms if a redirect has occurred
+    if response.history:
 
         response = session.get(url)
         parsed = BeautifulSoup(response.content)
