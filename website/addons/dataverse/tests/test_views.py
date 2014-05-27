@@ -30,7 +30,6 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
 
         self.node_settings.reload()
 
-        assert_equal(self.node_settings.user, self.user)
         assert_equal(self.node_settings.user_settings, self.user_settings)
         assert_equal(self.node_settings.dataverse_username, 'snowman')
         assert_equal(self.node_settings.dataverse_password, 'frosty')
@@ -56,7 +55,6 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
-        assert_false(self.node_settings.user)
 
     def test_delete_user(self):
         url = '/api/v1/settings/dataverse/'
@@ -83,7 +81,6 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
-        assert_false(self.node_settings.user)
         assert_false(self.node_settings.user_settings)
 
 

@@ -13,7 +13,7 @@ def authorize_dataverse(**kwargs):
     user = kwargs['auth'].user
 
     node_settings = kwargs['node_addon']
-    dataverse_user = user.get_addon('dataverse')
+    user_settings = user.get_addon('dataverse')
 
     username = user.get_addon('dataverse').dataverse_username
     password = user.get_addon('dataverse').dataverse_password
@@ -24,8 +24,7 @@ def authorize_dataverse(**kwargs):
         return {'message': 'Incorrect credentials'}, 400
 
     # Set user for node settings
-    node_settings.user = user
-    node_settings.user_settings = dataverse_user
+    node_settings.user_settings = user_settings
 
     # Set dataverse username/password
     node_settings.dataverse_username = username

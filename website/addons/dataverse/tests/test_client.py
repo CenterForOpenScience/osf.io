@@ -33,7 +33,8 @@ class TestClient(DataverseAddonTestCase):
         c = connect('My user', 'My pw', 'My host')
 
         mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host', cert=TEST_CERT
+            username='My user', password='My pw', host='My host',
+            cert=TEST_CERT, disable_ssl_certificate_validation=True,
         )
 
         assert_true(c)
@@ -47,7 +48,8 @@ class TestClient(DataverseAddonTestCase):
         c = connect('My user', 'My pw', 'My host')
 
         mock_dvn_connection.assert_called_once_with(
-            username='My user', password='My pw', host='My host', cert=TEST_CERT
+            username='My user', password='My pw', host='My host',
+            cert=TEST_CERT, disable_ssl_certificate_validation=True,
         )
 
         assert_equal(c, None)

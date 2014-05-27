@@ -66,7 +66,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     dataverse = fields.StringField()
     study_hdl = fields.StringField()
     study = fields.StringField()
-    user = fields.ForeignField('user')
 
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
@@ -79,7 +78,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.dataverse = None
         self.study_hdl = None
         self.study = None
-        self.user = None
         self.user_settings = None
 
     def to_json(self, user):
@@ -103,8 +101,8 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'show_submit': False,
                 'user_dataverse_connected': user_connection,
                 'authorized_dataverse_user': self.dataverse_username,
-                'authorized_user_name': self.user.fullname if self.user else '',
-                'authorized_user_url': self.user.absolute_url if self.user else '',
+                'authorized_user_name': self.user_settings.owner.fullname,
+                'authorized_user_url': self.user_settings.owner.absolute_url,
                 'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
                 'set_study_url': self.owner.api_url_for('set_study'),
         })
