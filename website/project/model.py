@@ -1054,7 +1054,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     def update_search(self): #TODO(fabianvf)
         search.update_search(self)
 
-    def update_solr(self): #TODO(fabianvf) Need to make index/query building happen in search module
+    def update_solr(self): 
+        raise NotImplementedError #TODO(fabianvf) Deprecated
         """Send the current state of the object to Solr, or delete it from Solr
         as appropriate.
 

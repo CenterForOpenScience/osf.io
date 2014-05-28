@@ -67,5 +67,5 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            self.node.update_solr() #TODO
+            self.node.update_search() #TODO(fabianvf)
         return rv

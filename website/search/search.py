@@ -15,5 +15,8 @@ def search(query, start=0):
 def update_search(node):
    solr_search.update_solr(node)
 
+def update_user(user):
+    solr_search.update_user(user)
+
 def delete_all():
     solr_search.delete_all()

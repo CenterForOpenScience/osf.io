@@ -7,7 +7,7 @@ import logging
 import sunburnt
 
 from website import settings
-from framework.search.utils import clean_solr_doc 
+from .utils import clean_solr_doc 
 
 
 logger = logging.getLogger(__name__)

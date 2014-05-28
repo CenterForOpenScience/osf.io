@@ -4,10 +4,10 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
-from framework.search.solr import solr
-from framework.search.utils import clean_solr_doc
+from website.search.solr_search import solr
+from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
-from website.search.solr_search import search_solr
+import website.search.solr_search as solr_search
 from website.search.views import _search_contributor
 from website import settings
 
@@ -63,12 +63,12 @@ class TestCleanSolr(unittest.TestCase):
 class SolrTestCase(OsfTestCase):
 
     def tearDown(self):
-        solr.delete_all()
-        solr.commit()
+        solr_search.delete_all() #TODO(fabianvf)
+#        solr.commit()
 
 
 def query(term):
-    results, _, _ = search_solr(term)
+    results, _, _ = solr_search.search(term)
     return results.get('docs', [])
 
 
