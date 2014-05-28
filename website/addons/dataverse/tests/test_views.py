@@ -32,6 +32,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_equal(self.node_settings.user_settings, self.user_settings)
 
         # Log states that node was authorized
+        self.project.reload()
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dataverse_node_authorized')
         log_params = last_log.params
@@ -49,6 +50,8 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
                      pid=self.project._primary_key)
         res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+        self.project.reload()
         assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
@@ -64,6 +67,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.user_settings)
 
         # Log states that node was deauthorized
+        self.project.reload()
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dataverse_node_deauthorized')
         log_params = last_log.params

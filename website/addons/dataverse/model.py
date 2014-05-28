@@ -109,6 +109,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.owner.add_log(
             action='dataverse_node_deauthorized',
             params={
+                'addon': 'dataverse',
                 'project': node.parent_id,
                 'node': node._id,
             },
