@@ -30,7 +30,8 @@ from framework.analytics import (
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
-from framework.search.solr import update_solr, delete_solr_doc
+#from framework.search.solr import update_solr, delete_solr_doc
+import website.search.search as search
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -707,7 +708,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
         if need_update:
-            self.update_solr()
+            #self.update_solr()
+            self.update_search()#TODO
 
         # This method checks what has changed.
         if settings.PIWIK_HOST:
@@ -1049,7 +1051,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return None
 
-    def update_solr(self):
+    def update_search(self): #TODO(fabianvf)
+        search.update_search(self)
+
+    def update_solr(self): #TODO(fabianvf) Need to make index/query building happen in search module
         """Send the current state of the object to Solr, or delete it from Solr
         as appropriate.
 

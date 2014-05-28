@@ -4,12 +4,12 @@ from urllib2 import HTTPError
 import logging
 
 from framework import must_be_logged_in, request, status
-from website.search.search import search
+from website.search.search import search #TODO(fabianvf) This is just awful
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery as Q
+from modularodm.storage.mongostorage import RawQuery 
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -35,9 +35,14 @@ def search_search():
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
-    # and spellcheck suggestions are returned to us
+    # and spellcheck suggestions are returned to us TODO(fabianvf) the below is probably only helpful for me
+    # Results::Dict('start'::int, 'numFound'::int, 'docs'::list(
+    #   Dict('24wtk_description'::str, '24wtk_public'::bool '24wtk_title'::str, '24wtk_contributors'::list(str), 
+    #   '24wtk_category'::str, '24wtk_url'::str, '24wtk_registeredproject'::bool, '24wtk_contributors_url'::list(str),
+    #   'id'::str)
+    # )
     try:
-        results, highlights, spellcheck_results = search(query, start) #TODO(fabianvf): Need to integrate ElasticSearch into this
+        results, highlights, spellcheck_results = search(query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -73,20 +78,20 @@ def search_projects_by_title(**kwargs):
     max_results = 10
 
     matching_title = (
-        Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False)  # isn't deleted
+        RawQuery('title', 'icontains', term) &  # search term (case insensitive)
+        RawQuery('category', 'eq', 'project') &  # is a project
+        RawQuery('is_deleted', 'eq', False)  # isn't deleted
     )
 
     my_projects = Node.find(
         matching_title &
-        Q('contributors', 'contains', user._id)  # user is a contributor
+        RawQuery('contributors', 'contains', user._id)  # user is a contributor
     ).limit(max_results)
 
     if my_projects.count() < max_results:
         public_projects = Node.find(
             matching_title &
-            Q('is_public', 'eq', True)  # is public
+            RawQuery('is_public', 'eq', True)  # is public
         ).limit(max_results - my_projects.count())
     else:
         public_projects = []

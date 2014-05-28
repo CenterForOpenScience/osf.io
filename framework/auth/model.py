@@ -17,7 +17,7 @@ from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
-from framework.search import search
+#TODO(fabianvf)from website.search import search
 from framework.addons import AddonModelMixin
 from framework.auth import utils
 from website import settings, filters, security
