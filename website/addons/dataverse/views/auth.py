@@ -13,8 +13,8 @@ def authorize_dataverse(**kwargs):
     node_settings = kwargs['node_addon']
     user_settings = user.get_addon('dataverse')
 
-    username = user.get_addon('dataverse').dataverse_username
-    password = user.get_addon('dataverse').dataverse_password
+    username = user_settings.dataverse_username
+    password = user_settings.dataverse_password
 
     connection = connect(username, password)
 
@@ -29,6 +29,17 @@ def authorize_dataverse(**kwargs):
     node_settings.dataverse_password = password
 
     node_settings.save()
+
+    node = node_settings.owner
+    node.add_log(
+        action='dataverse_node_authorized',
+        auth=Auth(user_settings.owner),
+        params={
+            'addon': 'dataverse',
+            'project': node.parent_id,
+            'node': node._primary_key,
+        }
+    )
 
     return {}
 
