@@ -29,18 +29,27 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         self.app.post_json(url, auth=self.user.auth)
 
         self.node_settings.reload()
-
         assert_equal(self.node_settings.user_settings, self.user_settings)
-        # TODO: Log
+
+        # Log states that node was authorized
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_node_authorized')
+        log_params = last_log.params
+        assert_equal(log_params['addon'], 'dataverse')
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['project'], None)
 
     @mock.patch('website.addons.dataverse.views.auth.connect')
     def test_authorize_fail(self, mock_connection):
         mock_connection.return_value = create_mock_connection('wrong', 'info')
 
+        old_logs = self.project.logs
+
         url = lookup('api', 'authorize_dataverse',
                      pid=self.project._primary_key)
         res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
         url = lookup('api', 'deauthorize_dataverse',
@@ -53,7 +62,15 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user_settings)
-        # TODO: Log
+
+        # Log states that node was deauthorized
+        last_log = self.project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_node_deauthorized')
+        log_params = last_log.params
+        assert_equal(log_params['addon'], 'dataverse')
+        assert_equal(log_params['node'], self.project._primary_key)
+        assert_equal(log_params['project'], None)
+
 
     def test_delete_user(self):
         url = lookup('api', 'dataverse_delete_user')
