@@ -2,6 +2,7 @@ from nose.tools import *
 import mock
 
 from tests.factories import AuthUserFactory
+from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from website.addons.dataverse.model import AddonDataverseUserSettings, \
     AddonDataverseNodeSettings, DataverseFile
@@ -9,7 +10,7 @@ from website.addons.dataverse.tests.utils import create_mock_connection, \
     create_mock_dataverse, DataverseAddonTestCase
 
 
-class TestCallbacks(DataverseAddonTestCase):
+class TestDataverseFile(DataverseAddonTestCase):
 
     def test_dataverse_file_url(self):
 
@@ -206,3 +207,41 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_not_in('dataverse_url', json)
         assert_not_in('study_url', json)
+
+
+class TestNodeSettingsCallbacks(DataverseAddonTestCase):
+
+    def test_after_fork_by_authorized_dataverse_user(self):
+        fork = ProjectFactory()
+        clone, message = self.node_settings.after_fork(
+            node=self.project, fork=fork, user=self.user_settings.owner
+        )
+        assert_equal(clone.user_settings, self.user_settings)
+
+    def test_after_fork_by_unauthorized_dataverse_user(self):
+        fork = ProjectFactory()
+        user = UserFactory()
+        clone, message = self.node_settings.after_fork(
+            node=self.project, fork=fork, user=user,
+            save=True
+        )
+        assert_is(clone.user_settings, None)
+
+    def test_before_fork(self):
+        node = ProjectFactory()
+        message = self.node_settings.before_fork(node, self.user)
+        assert_true(message)
+
+    def test_before_remove_contributor_message(self):
+        message = self.node_settings.before_remove_contributor(
+            self.project, self.user)
+        assert_true(message)
+        assert_in(self.user.fullname, message)
+        assert_in(self.project.project_or_component, message)
+
+    def test_after_remove_authorized_dataverse_user(self):
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.user_settings.owner)
+        self.node_settings.save()
+        assert_is_none(self.node_settings.user_settings)
+        assert_true(message)
