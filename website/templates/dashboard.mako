@@ -9,20 +9,12 @@
             <h3>Projects</h3>
         </div>
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
-        <%include file="projectGridTemplates.html"/>
-        <div class = "project-grid-menu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
-        <div class="hgrid" id="project-grid"></div>
-        <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
-        <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
-        <script>
-        $script(['/static/js/hgrid.rowselectionmodel.js'],'hgridrowselectionmodel');
-        $script(['/static/vendor/slickgrid/plugins/slick.rowmovemanager.js'],'rowmovemanager');
-        $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
-        $script(["/static/js/projectorganizer.js"]);
-        $script.ready(['projectorganizer'], function() {
-            var projectbrowser = new ProjectOrganizer('#project-grid');
-        });
-         </script>
+        <div id="projectOrganizerScope">
+            <%include file="projectGridTemplates.html"/>
+            <div class = "project-grid-menu"><span class="pg-expand-all">Expand All</span> <span class="pg-collapse-all">Collapse All</span></div>
+            <div class="hgrid" id="project-grid"></div>
+        </div>
+
 
     <%include file='log_templates.mako'/>
     </div><div class="project-details"></div>
@@ -77,4 +69,22 @@
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
 </script>
+
+##       Project Organizer
+    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+    <script>
+        $script(['/static/js/hgrid.rowselectionmodel.js'],'hgridrowselectionmodel');
+        $script(['/static/vendor/slickgrid/plugins/slick.rowmovemanager.js'],'rowmovemanager');
+        $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
+        $script(['/static/js/projectorganizer.js']);
+        $script.ready(['projectorganizer'], function() {
+            var projectbrowser = new ProjectOrganizer('#project-grid');
+        });
+##        $script(['/static/js/projectorganizer-ko.js']);
+##        $script.ready(['projectorganizer-ko'], function() {
+##            var projectbrowser = new ProjectOrganizer('#projectOrganizerScope');
+##        });
+
+    </script>
 </%def>

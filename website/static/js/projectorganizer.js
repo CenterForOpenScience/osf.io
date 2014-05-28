@@ -1,17 +1,17 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['jquery', 'hgrid', 'js/dropzone-patch', 'bootstrap',
+        define(['knockout', 'jquery', 'osfutils', 'hgrid', 'js/dropzone-patch', 'bootstrap',
             'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['dropzone', 'dropzone-patch', 'hgrid',
+            $script.ready(['dropzone', 'dropzone-patch', 'hgrid',
             'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], function () {
-            global.ProjectOrganizer = factory(jQuery, global.HGrid);
-            $script.done('projectorganizer');
-        });
+                global.ProjectOrganizer = factory(jQuery, global.HGrid, global.ko);
+                $script.done('projectorganizer');
+            });
     } else {
-        global.ProjectOrganizer = factory(jQuery, global.HGrid);
+        global.ProjectOrganizer = factory(jQuery, global.HGrid, global.ko);
     }
-}(this, function ($, HGrid) {
+}(this, function ($, HGrid, ko) {
     'use strict';
 
     //
@@ -133,7 +133,7 @@
             linkString = '<a href="' + url + '">' + name + '</a>';
         }
 
-        var type = "project"
+        var type = "project";
         if (row.isPointer && !row.parentIsFolder) {
             type = "pointer"
         }
@@ -420,10 +420,6 @@
         $.getJSON("/api/v1/dashboard/get_dashboard/", function (projects) {
             self.grid.addData(projects.data);
         });
-
-
-
-
 
         //
         // When the selection changes, create the div that holds the detail information for the project including
