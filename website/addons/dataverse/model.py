@@ -63,7 +63,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     def delete(self):
         super(AddonDataverseUserSettings, self).delete()
-        self.clear(delete=True)
+        self.clear()
 
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)

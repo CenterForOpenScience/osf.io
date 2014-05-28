@@ -88,7 +88,7 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         self.user_settings.delete()
 
         assert_true(self.user_settings.deleted)
-        mock_clear.assert_called_once_with(delete=True)
+        mock_clear.assert_called_once_with()
 
 
 class TestDataverseNodeSettings(DataverseAddonTestCase):
