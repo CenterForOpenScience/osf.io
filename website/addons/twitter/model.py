@@ -2,7 +2,7 @@
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase
 from website.addons.twitter.settings import POSSIBLE_ACTIONS, DEFAULT_MESSAGES
-from website.addons.twitter.tests.utils import check_tweet
+from website.addons.twitter.utils import check_tweet
 
 
 class AddonTwitterNodeSettings(AddonNodeSettingsBase):
@@ -15,6 +15,7 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
     displayed_tweets = fields.StringField()
     log_actions = fields.ListField(fields.StringField())
     log_messages = fields.DictionaryField(default=dict())
+    tweet_queue = fields.ListField(fields.StringField())
 
 
     def to_json(self, *args, **kwargs):
@@ -28,6 +29,8 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
             'displayed_tweets': self.displayed_tweets or '',
             'log_actions': self.log_actions or '',
             'log_messages': self.log_messages or DEFAULT_MESSAGES,
+            'tweet_queue': self.tweet_queue or '',
+#            'pending_tweet_num': self.pending_tweet_num or 0,
             'POSSIBLE_ACTIONS': POSSIBLE_ACTIONS,
             'DEFAULT_MESSAGES': DEFAULT_MESSAGES,
         })
@@ -65,8 +68,10 @@ class AddonTwitterNodeSettings(AddonNodeSettingsBase):
 
     def before_add_log(self, node, log):
         if log.action in self.log_actions:
-          message = self.parse_message(log)
-          check_tweet(self,message)
+            message = self.parse_message(log)
+            self.tweet_queue.append(message)
+            self.save()
+          #check_tweet(self,message)
         return{}
 
 

@@ -21,8 +21,9 @@
             <input class="form-control" type = "number" id="displayed_tweets" name="displayed_tweets" value="${displayed_tweets}" ${'disabled' if disabled else ''} />
          </div>
         <div class="form-group" id ="twitter_logs" name ="twitter_logs">
-            <p>Select any "events" you want to tweet, and enter a custom message.  When the event occurs,
-               a tweet will automatically be posted with your message.
+            <p>Select any events you want to tweet, and enter a custom message.  When the event occurs,
+               a tweet will automatically be added to your 'tweet queue.'  Access this queue from your dashboard to
+                send, edit, and delete these messages.
             </p>
             % for action in POSSIBLE_ACTIONS:
                 <%   parsed_action_list = action.split('_')%>
@@ -38,7 +39,7 @@
                 if action in log_actions else 'hidden'} >
             </label>
             </br>
-    % endfor
+            % endfor
             <hr>
         </div>
 
@@ -88,6 +89,8 @@
                  $('.'+$message_id).hide();
             }
         });
+
+
 
         $('#twitterDelKey').on('click', function() {
             bootbox.confirm(

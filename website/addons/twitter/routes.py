@@ -48,6 +48,35 @@ page_routes = {
 
         Rule(
             [
+                '/project/<pid>/twitter/remove_queued_tweet/',
+                '/project/<pid>/node/<nid>/twitter/remove_queued_tweet/',
+            ],
+            'post',
+            views.twitter_remove_queued_tweet,
+            json_renderer
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/twitter/send_queued_tweet/',
+                '/project/<pid>/node/<nid>/twitter/send_queued_tweet/',
+            ],
+            'post',
+            views.twitter_send_queued_tweet,
+            json_renderer
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/twitter/tweet_queue/',
+                '/project/<pid>/node/<nid>/twitter/tweet_queue/',
+            ],
+            'get',
+            views.twitter_tweet_queue,
+            json_renderer
+        ),
+        Rule(
+            [
                 '/project/<pid>/twitter/oauth/delete/',
                 '/project/<pid>/node/<nid>/twitter/oauth/delete/',
             ],

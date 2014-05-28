@@ -2,6 +2,7 @@ import mock
 from nose.tools import *
 from webtest_plus import TestApp
 import unittest
+import json
 from framework.auth.decorators import Auth
 import website.app
 from tests.base import DbTestCase
@@ -26,10 +27,10 @@ class TestTwitterViewsConfig(DbTestCase):
         self.node_settings = self.project.get_addon('twitter')
 
         self.node_settings.log_messages= {
-            'tag_added_message': 'Added tag {tag_name} to our project',
-            'edit_title_message': 'Changed project title from {old_title} to {new_title}',
-            'edit_description_message': 'Changed project description to {new_desc}',
-            'file_added_message':'Just added {filename} to our project',
+            'tag_added_message': 'We added tag {tag_name} to our project',
+            'edit_title_message': 'We changed the project title from {old_title} to {new_title}',
+            'edit_description_message': 'We changed the project description to {new_desc}',
+            'file_added_message':'We just added {filename} to our project',
         }
         self.node_settings.save()
 
@@ -37,7 +38,7 @@ class TestTwitterViewsConfig(DbTestCase):
             self.project._id
         )
     @unittest.skip('This test is not working')
-    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
+    @mock.patch('website.addons.twitter.utils.send_tweet')
     def test_revoked_oauth_send_tweet(self, mock_send_tweet):
 
         mock_send_tweet.side_effect = tweepy.TweepError([{'message':'error', 'code':'186'}])
@@ -50,14 +51,14 @@ class TestTwitterViewsConfig(DbTestCase):
         assert_equal(res.status_code, 400)
 
 
-    @mock.patch('website.addons.twitter.tests.utils.send_tweet')
+    @mock.patch('website.addons.twitter.utils.send_tweet')
     def test_send_tweet(self, mock_send_tweet):
 
         mock_send_tweet.side_effect = None
         url = self.project.api_url+'twitter/update_status/'
         res = self.app.post_json(
             url,
-            { 'status':'....'},
+            {'status':'....'},
             auth=self.consolidated_auth
         ).maybe_follow()
         assert_equal(res.status_code, 200)
@@ -122,10 +123,10 @@ class TestTwitterViewsConfig(DbTestCase):
         tag_message = self.node_settings.parse_message(tag_log)
 
         #make sure the parser is working
-        assert_equal(title_message, 'Changed project title from BATMAN ORIGINS to BATMAN BEYOND')
-        assert_equal(description_message, 'Changed project description to a great film')
-        assert_equal(file_message, 'Just added BATMAN.PROJ to our project')
-        assert_equal(tag_message, 'Added tag BATMAN to our project')
+        assert_equal(title_message, 'We changed the project title from BATMAN ORIGINS to BATMAN BEYOND')
+        assert_equal(description_message, 'We changed the project description to a great film')
+        assert_equal(file_message, 'We just added BATMAN.PROJ to our project')
+        assert_equal(tag_message, 'We added tag BATMAN to our project')
 
 
 
@@ -141,7 +142,9 @@ class TestTwitterViewsConfig(DbTestCase):
         ).maybe_follow()
 
         self.node_settings.reload()
-        assert_equal(self.node_settings.log_messages.get('edit_title_message'), DEFAULT_MESSAGES.get('edit_title_message'))
+        assert_equal(self.node_settings.log_messages.get('edit_title_message'),
+                     DEFAULT_MESSAGES.get('edit_title_message')
+        )
 
     def test_lengthy_tweet_after_default_edited(self):
         url = self.project.api_url+'twitter/settings/'
@@ -197,6 +200,36 @@ class TestTwitterViewsConfig(DbTestCase):
         assert_equals(self.node_settings.log_messages, {})
         assert_equals(self.node_settings.log_actions, [])
         assert_equals(res.status_code, 200)
+
+
+    #def test_twitter_tweet_queue(self):
+    #    self.node_settings.tweet_queue = ['This is a random tweet']
+    #    url = self.project.api_url+'twitter/tweet_queue/'
+    #    res = self.app.get(url, auth = self.user.auth)
+    #    assert_equals(res.)
+    @mock.patch('website.addons.twitter.utils.send_tweet')
+    def test_twitter_send_queued_tweet(self, mock_send_tweet):
+        mock_send_tweet.side_effect = None
+        self.node_settings.tweet_queue = ['some random status']
+        self.node_settings.save()
+
+        url = self.project.api_url+'twitter/send_queued_tweet/'
+        res = self.app.post_json(
+            url,
+            {
+                'status': 'some random status',
+                'index': '0',
+            },
+            auth=self.user.auth
+        ).maybe_follow()
+        self.node_settings.reload()
+        assert_equals(res.status_code, 200)
+        assert_false(self.node_settings.tweet_queue)
+
+    #def test_twitter_remove_queued_tweet(self):
+
+
+
 
 
 

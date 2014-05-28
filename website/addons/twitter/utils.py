@@ -3,6 +3,7 @@ from website.addons.twitter.settings import CONSUMER_KEY, CONSUMER_SECRET
 from framework.exceptions import HTTPError
 
 
+
 def send_tweet(twitter_node_settings, message):
     auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET, secure=True)
     auth.set_access_token(twitter_node_settings.oauth_key, twitter_node_settings.oauth_secret)
@@ -26,13 +27,15 @@ def check_tweet(twitter_node_settings, status):
                                         'Visit the settings page to re-authenticate.',
                                         'message_short':'Twitter Error'}
             )
-            twitter.screen_name = None
-            twitter.log_messages = {}
-            twitter.log_actions ={}
-            twitter.oauth_key = None
-            twitter.oauth_secret = None
-            twitter.user_name = None
-            twitter.save()
+
+            #twitter_oauth_delete_node()
+            #twitter.screen_name = None
+            #twitter.log_messages = {}
+            #twitter.log_actions ={}
+            #twitter.oauth_key = None
+            #twitter.oauth_secret = None
+            #twitter.user_name = None
+            #twitter.save()
 
 
 

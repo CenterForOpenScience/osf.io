@@ -254,10 +254,13 @@ def must_have_addon(addon_name, model):
                 if owner is None:
                     raise HTTPError(http.UNAUTHORIZED)
             else:
+                print model
+                print 'bad request 1'
                 raise HTTPError(http.BAD_REQUEST)
 
             addon = owner.get_addon(addon_name)
             if addon is None:
+                print 'bad request 2'
                 raise HTTPError(http.BAD_REQUEST)
             kwargs['{0}_addon'.format(model)] = addon
 

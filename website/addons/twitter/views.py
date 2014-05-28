@@ -1,16 +1,18 @@
-import tweepy
 import httplib as http
 import os
 import json
+
+import tweepy
+
 from framework import request, redirect
-from framework.sessions import session
 from framework.exceptions import HTTPError
 from website import models
 from website.project.decorators import must_have_addon,must_have_permission
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project
 from framework.status import push_status_message
-from website.addons.twitter.tests.utils import check_tweet
+from website.addons.twitter.utils import check_tweet
 from website.addons.twitter.settings import CONSUMER_KEY, CONSUMER_SECRET
+
 
 @must_be_valid_project
 @must_have_addon('twitter', 'node')
@@ -55,7 +57,6 @@ def twitter_oauth_callback(*args, **kwargs):
     #Use request token and verifier to get access token
     auth.set_request_token(twitter.request_token_key, twitter.request_token_secret)
     verifier = request.args.get('oauth_verifier')
-    session.data['verifier'] = request.args.get('oauth_verifier')
     try:
       auth.get_access_token(verifier = verifier)
     except tweepy.TweepError as e:
@@ -66,9 +67,7 @@ def twitter_oauth_callback(*args, **kwargs):
                     'message_short':'Twitter Error!',
                 }
             )
-    #Build access token
     auth.set_access_token(auth.access_token.key, auth.access_token.secret)
-    #Build tweepy object
     api = tweepy.API(auth)
     twitter.oauth_key = auth.access_token.key
     twitter.oauth_secret = auth.access_token.secret
@@ -103,13 +102,13 @@ def twitter_widget(*args, **kwargs):
         #if user is not authorized, clear out node settings
         #TODO: decide which node settings will persist
         except tweepy.TweepError as e:
-            raise HTTPError(400,
-                            data={
-                            'message_long':'Your authentication token has expired.  '
-                                    'Visit the settings page to re-authenticate.',
-                            'message_short':'Twitter Error'
-                            }
-            )
+            #raise HTTPError(400,
+            #                data={
+            #                'message_long':'Your authentication token has expired.  '
+            #                        'Visit the settings page to re-authenticate.',
+            #                'message_short':'Twitter Error'
+            #                }
+            #)
             screen_name = None
             twitter.log_messages = {}
             twitter.log_actions =[]
@@ -126,6 +125,7 @@ def twitter_widget(*args, **kwargs):
             'complete': True,
             'user_name': screen_name,
             'displayed_tweets': config.displayed_tweets,
+            'tweet_queue': config.tweet_queue,
         }
         rv.update(twitter.config.to_json())
         return rv
@@ -147,6 +147,8 @@ def twitter_oauth_delete_node(*args, **kwargs):
      twitter.user_name = None
      twitter.log_messages = {}
      twitter.log_actions = []
+     twitter.tweet_queue = []
+
      twitter.save()
      return {}
 
@@ -210,3 +212,32 @@ def twitter_update_status(*args, **kwargs):
     check_tweet(config, status)
 
 
+
+@must_be_contributor_or_public
+@must_have_addon('twitter', 'node')
+def twitter_remove_queued_tweet(*args, **kwargs):
+    node = kwargs.get('node') or kwargs.get('project')
+    config = node.get_addon('twitter')
+    index = json.loads(request.data).get('index')
+    config.tweet_queue.pop(index)
+
+
+@must_be_contributor_or_public
+@must_have_addon('twitter', 'node')
+def twitter_send_queued_tweet(*args, **kwargs):
+    node = kwargs.get('node') or kwargs.get('project')
+    config = node.get_addon('twitter')
+    status = json.loads(request.data).get('status')
+    if isinstance(status, unicode):
+        status = status.encode("utf-8")
+    index = int(json.loads(request.data).get('index'))
+    config.tweet_queue.pop(index)
+    check_tweet(config, status)
+
+
+@must_be_contributor_or_public
+@must_have_addon('twitter', 'node')
+def twitter_tweet_queue(*args, **kwargs):
+    node = kwargs.get('node') or kwargs.get('project')
+    config = node.get_addon('twitter')
+    return {'key': config.tweet_queue}
