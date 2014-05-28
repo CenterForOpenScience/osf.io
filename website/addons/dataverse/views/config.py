@@ -25,10 +25,6 @@ def dataverse_set_user_config(*args, **kwargs):
     if connection is None:
         raise HTTPError(http.UNAUTHORIZED)
 
-    # Credentials are valid, but there are no dataverses
-    if not get_dataverses(connection):
-        raise HTTPError(http.BAD_REQUEST)
-
     user_settings.dataverse_username = username
     user_settings.dataverse_password = password
 
@@ -43,10 +39,8 @@ def set_dataverse(*args, **kwargs):
     user = auth.user
 
     node_settings = kwargs['node_addon']
-    node = node_settings.owner
     user_settings = node_settings.user_settings
-
-    now = datetime.datetime.utcnow()
+    node = node_settings.owner
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
@@ -60,11 +54,13 @@ def set_dataverse(*args, **kwargs):
     if connection is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Set selected Dataverse
-    old_dataverse = get_dataverse(connection, node_settings.dataverse_alias)
+    old_dataverse = node_settings.dataverse #get_dataverse(connection, node_settings.dataverse_alias)
     old_study = node_settings.study
+
     deep_ensure_clean(request.json)
     alias = request.json.get('dataverse_alias')
+
+    # Set selected Dataverse
     node_settings.dataverse_alias = alias if alias != 'None' else None
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     node_settings.dataverse = dataverse.title if dataverse else None
@@ -84,12 +80,11 @@ def set_dataverse(*args, **kwargs):
                 'project': node.parent_id,
                 'node': node._primary_key,
                 'dataverse': {
-                    'dataverse': old_dataverse.title,
+                    'dataverse': old_dataverse,
                     'study': old_study,
                 }
             },
             auth=auth,
-            log_date=now,
         )
 
     node_settings.save()
@@ -105,10 +100,8 @@ def set_study(*args, **kwargs):
     user = auth.user
 
     node_settings = kwargs['node_addon']
-    node = node_settings.owner
     user_settings = node_settings.user_settings
-
-    now = datetime.datetime.utcnow()
+    node = node_settings.owner
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
@@ -122,9 +115,10 @@ def set_study(*args, **kwargs):
     if connection is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    # Get current dataverse and new study
     deep_ensure_clean(request.json)
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
+
+    # Get current dataverse and new study
     hdl = request.json.get('study_hdl')
 
     # Set study
@@ -147,7 +141,6 @@ def set_study(*args, **kwargs):
         node_settings.study_hdl = None
         node_settings.study = None
 
-
     node.add_log(
         action=log_action,
         params={
@@ -159,7 +152,6 @@ def set_study(*args, **kwargs):
             }
         },
         auth=auth,
-        log_date=now,
     )
 
     node_settings.save()

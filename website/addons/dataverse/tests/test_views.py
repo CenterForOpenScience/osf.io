@@ -71,7 +71,6 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dataverse_node_deauthorized')
         log_params = last_log.params
-        assert_equal(log_params['addon'], 'dataverse')
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(log_params['project'], None)
 

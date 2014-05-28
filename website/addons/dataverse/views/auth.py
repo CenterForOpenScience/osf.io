@@ -16,7 +16,7 @@ def authorize_dataverse(**kwargs):
     connection = connect(
         user_settings.dataverse_username,
         user_settings.dataverse_password,
-        )
+    )
 
     if connection is None:
         return {'message': 'Incorrect credentials'}, 400

@@ -63,25 +63,6 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
         # Authorized node settings were not deleted
         assert_false(self.node_settings.deleted)
 
-    def test_clear_and_delete(self):
-
-        self.user_settings.clear(delete=True)
-
-        # Fields were cleared, but settings were not deleted
-        assert_false(self.user_settings.dataverse_username)
-        assert_false(self.user_settings.dataverse_password)
-        assert_false(self.user_settings.deleted)
-
-        # Authorized node settings were deauthorized
-        assert_false(self.node_settings.dataverse_alias)
-        assert_false(self.node_settings.dataverse)
-        assert_false(self.node_settings.study_hdl)
-        assert_false(self.node_settings.study)
-        assert_false(self.node_settings.user_settings)
-
-        # Authorized node settings were deleted
-        assert_true(self.node_settings.deleted)
-
     @mock.patch('website.addons.dataverse.model.AddonDataverseUserSettings.clear')
     def test_delete(self, mock_clear):
 
@@ -92,6 +73,22 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
 
 
 class TestDataverseNodeSettings(DataverseAddonTestCase):
+
+    @mock.patch('website.addons.dataverse.model.AddonDataverseNodeSettings.deauthorize')
+    def test_delete(self, mock_deauth):
+
+        old_logs = self.project.logs
+
+        self.node_settings.delete()
+
+        assert_true(self.node_settings.deleted)
+        args, kwargs = mock_deauth.call_args
+        assert_is_instance(args[0], Auth)
+        assert_equal(kwargs, {'log_event': False})
+
+        # Log was not generated
+        self.project.reload()
+        assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
 

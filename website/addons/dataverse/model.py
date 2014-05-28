@@ -47,7 +47,11 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.dataverse_username and self.dataverse_password)
 
-    def clear(self, delete=False):
+    def delete(self):
+        self.clear()
+        super(AddonDataverseUserSettings, self).delete()
+
+    def clear(self):
         """Clear settings and deauthorize any associated nodes.
 
         :param bool delete: Indicates if the settings should be deleted.
@@ -55,15 +59,10 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
         self.dataverse_username = None
         self.dataverse_password = None
         for node_settings in self.addondataversenodesettings__authorized:
-            if delete:
-                node_settings.delete(save=False)
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
         return self
 
-    def delete(self):
-        super(AddonDataverseUserSettings, self).delete()
-        self.clear()
 
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)
@@ -97,7 +96,11 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def deauthorize(self, auth):
+    def delete(self):
+        self.deauthorize(Auth(self.user_settings.owner), add_log=False)
+        super(AddonDataverseNodeSettings, self).delete()
+
+    def deauthorize(self, auth, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None
@@ -105,16 +108,16 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.study = None
         self.user_settings = None
 
-        node = self.owner
-        self.owner.add_log(
-            action='dataverse_node_deauthorized',
-            params={
-                'addon': 'dataverse',
-                'project': node.parent_id,
-                'node': node._id,
-            },
-            auth=auth,
-        )
+        if add_log:
+            node = self.owner
+            self.owner.add_log(
+                action='dataverse_node_deauthorized',
+                params={
+                    'project': node.parent_id,
+                    'node': node._id,
+                },
+                auth=auth,
+            )
 
     def to_json(self, user):
 
