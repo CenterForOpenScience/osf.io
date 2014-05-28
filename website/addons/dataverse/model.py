@@ -4,6 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework import fields
+from framework.auth.decorators import Auth
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
 from website.addons.dataverse.client import connect, get_studies, get_study, \
@@ -42,6 +43,24 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
     dataverse_username = fields.StringField()
     dataverse_password = fields.StringField()
 
+    def clear(self, delete=False):
+        """Clear settings and deauthorize any associated nodes.
+
+        :param bool delete: Indicates if the settings should be deleted.
+        """
+        self.dataverse_username = None
+        self.dataverse_password = None
+        for node_settings in self.addondataversenodesettings__authorized:
+            if delete:
+                node_settings.delete(save=False)
+            node_settings.deauthorize(Auth(self.owner))
+            node_settings.save()
+        return self
+
+    def delete(self):
+        super(AddonDataverseUserSettings, self).delete()
+        self.clear(delete=True)
+
     def to_json(self, user):
         rv = super(AddonDataverseUserSettings, self).to_json(user)
 
@@ -60,8 +79,6 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
-    dataverse_username = fields.StringField()
-    dataverse_password = fields.StringField()
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
     study_hdl = fields.StringField()
@@ -73,8 +90,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     def deauthorize(self, auth):
         """Remove user authorization from this node and log the event."""
-        self.dataverse_username = None
-        self.dataverse_password = None
         self.dataverse_alias = None
         self.dataverse = None
         self.study_hdl = None
@@ -82,7 +97,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.user_settings = None
 
         node = self.owner
-        auth
         self.owner.add_log(
             action='dataverse_node_deauthorized',
             params={
@@ -94,34 +108,40 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
 
-        dataverse_user = user.get_addon('dataverse')
+        user_settings = user.get_addon('dataverse')
 
         # Check authorization
-        authorized = (self.dataverse_username is not None and
-            dataverse_user.dataverse_username == self.dataverse_username)
+        authorized = (self.user_settings is not None and
+            user_settings == self.user_settings)
 
         # Check user's connection
         user_connection = connect(
-            dataverse_user.dataverse_username,
-            dataverse_user.dataverse_password,
-        ) if dataverse_user else None
+            user_settings.dataverse_username,
+            user_settings.dataverse_password,
+        ) if user_settings else None
 
         rv = super(AddonDataverseNodeSettings, self).to_json(user)
         rv.update({
-                'connected': False,
-                'authorized': authorized,
-                'show_submit': False,
-                'user_dataverse_connected': user_connection,
-                'authorized_dataverse_user': self.dataverse_username,
-                'authorized_user_name': self.user_settings.owner.fullname,
-                'authorized_user_url': self.user_settings.owner.absolute_url,
-                'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
-                'set_study_url': self.owner.api_url_for('set_study'),
+            'connected': False,
+            'authorized': authorized,
+            'show_submit': False,
+            'user_dataverse_connected': user_connection,
+            'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
+            'set_study_url': self.owner.api_url_for('set_study'),
+        })
+
+        if self.user_settings is None:
+            return rv
+
+        rv.update({
+            'authorized_dataverse_user': self.user_settings.dataverse_username,
+            'authorized_user_name': self.user_settings.owner.fullname,
+            'authorized_user_url': self.user_settings.owner.absolute_url,
         })
 
         connection = connect(
-            self.dataverse_username,
-            self.dataverse_password,
+            self.user_settings.dataverse_username,
+            self.user_settings.dataverse_password,
         )
 
         if connection is not None:

@@ -40,8 +40,8 @@ def dataverse_release_study(**kwargs):
     now = datetime.datetime.utcnow()
 
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password,
+        node_settings.user_settings.dataverse_username,
+        node_settings.user_settings.dataverse_password,
     )
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
@@ -163,8 +163,8 @@ def dataverse_upload_file(**kwargs):
     can_view = node.can_view(auth)
 
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
+        node_settings.user_settings.dataverse_username,
+        node_settings.user_settings.dataverse_password
     )
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
@@ -249,8 +249,8 @@ def dataverse_delete_file(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
+        node_settings.user_settings.dataverse_username,
+        node_settings.user_settings.dataverse_password
     )
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)

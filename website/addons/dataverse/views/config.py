@@ -32,11 +32,6 @@ def dataverse_set_user_config(*args, **kwargs):
     user_settings.dataverse_username = username
     user_settings.dataverse_password = password
 
-    for node_settings in user_settings.addondataversenodesettings__authorized:
-        node_settings.dataverse_username = username
-        node_settings.dataverse_password = password
-        node_settings.save()
-
     user_settings.save()
 
 
@@ -49,17 +44,17 @@ def set_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    dataverse_user = node_settings.user_settings
+    user_settings = node_settings.user_settings
 
     now = datetime.datetime.utcnow()
 
-    if dataverse_user and dataverse_user.owner != user:
+    if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
 
     # Make a connection
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password,
+        user_settings.dataverse_username,
+        user_settings.dataverse_password,
     )
 
     if connection is None:
@@ -109,17 +104,17 @@ def set_study(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    dataverse_user = node_settings.user_settings
+    user_settings = node_settings.user_settings
 
     now = datetime.datetime.utcnow()
 
-    if dataverse_user and dataverse_user.owner != user:
+    if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
 
     # Make a connection
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password,
+        user_settings.dataverse_username,
+        user_settings.dataverse_password,
     )
 
     if connection is None:

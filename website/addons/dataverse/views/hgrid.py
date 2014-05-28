@@ -18,8 +18,8 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     state = 'released' if not node.can_edit(auth) else state or default_state
 
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
+        node_settings.user_settings.dataverse_username,
+        node_settings.user_settings.dataverse_password
     )
 
     # Quit if no study linked
@@ -109,8 +109,8 @@ def dataverse_hgrid_data_contents(**kwargs):
     can_view = node.can_view(auth)
 
     connection = connect(
-        node_settings.dataverse_username,
-        node_settings.dataverse_password
+        node_settings.user_settings.dataverse_username,
+        node_settings.user_settings.dataverse_password
     )
 
     if node_settings.study_hdl is None or connection is None:

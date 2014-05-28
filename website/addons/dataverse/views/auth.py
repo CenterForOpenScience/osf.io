@@ -13,21 +13,16 @@ def authorize_dataverse(**kwargs):
     node_settings = kwargs['node_addon']
     user_settings = user.get_addon('dataverse')
 
-    username = user_settings.dataverse_username
-    password = user_settings.dataverse_password
-
-    connection = connect(username, password)
+    connection = connect(
+        user_settings.dataverse_username,
+        user_settings.dataverse_password,
+        )
 
     if connection is None:
         return {'message': 'Incorrect credentials'}, 400
 
     # Set user for node settings
     node_settings.user_settings = user_settings
-
-    # Set dataverse username/password
-    node_settings.dataverse_username = username
-    node_settings.dataverse_password = password
-
     node_settings.save()
 
     node = node_settings.owner
@@ -61,16 +56,8 @@ def deauthorize_dataverse(*args, **kwargs):
 def dataverse_delete_user(*args, **kwargs):
 
     user_settings = kwargs['user_addon']
-    auth = Auth(user_settings.owner)
 
-    # Remove authorization for nodes
-    for node_settings in user_settings.addondataversenodesettings__authorized:
-        node_settings.deauthorize(auth)
-        node_settings.save()
-
-    # Revoke access
-    user_settings.dataverse_username = None
-    user_settings.dataverse_password = None
+    user_settings.clear()
     user_settings.save()
 
     return {}

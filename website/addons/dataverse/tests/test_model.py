@@ -21,8 +21,11 @@ class TestCallbacks(DataverseAddonTestCase):
         # Assert url is correct
         assert_equal('dataverse/file/12345', dvf.file_url)
 
+
+class TestDataverseUserSettings(DataverseAddonTestCase):
+
     @mock.patch('website.addons.dataverse.model.connect')
-    def test_user_settings(self, mock_connection):
+    def test_fields(self, mock_connection):
 
         # Create user settings
         dataverse = AddonDataverseUserSettings()
@@ -40,6 +43,52 @@ class TestCallbacks(DataverseAddonTestCase):
         assert_equals(dataverse.to_json(creator)['authorized_dataverse_user'],
                       'snowman')
 
+    def test_clear(self):
+
+        self.user_settings.clear()
+
+        # Fields were cleared, but settings were not deleted
+        assert_false(self.user_settings.dataverse_username)
+        assert_false(self.user_settings.dataverse_password)
+        assert_false(self.user_settings.deleted)
+
+        # Authorized node settings were deauthorized
+        assert_false(self.node_settings.dataverse_alias)
+        assert_false(self.node_settings.dataverse)
+        assert_false(self.node_settings.study_hdl)
+        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.user_settings)
+
+        # Authorized node settings were not deleted
+        assert_false(self.node_settings.deleted)
+
+    def test_clear_and_delete(self):
+
+        self.user_settings.clear(delete=True)
+
+        # Fields were cleared, but settings were not deleted
+        assert_false(self.user_settings.dataverse_username)
+        assert_false(self.user_settings.dataverse_password)
+        assert_false(self.user_settings.deleted)
+
+        # Authorized node settings were deauthorized
+        assert_false(self.node_settings.dataverse_alias)
+        assert_false(self.node_settings.dataverse)
+        assert_false(self.node_settings.study_hdl)
+        assert_false(self.node_settings.study)
+        assert_false(self.node_settings.user_settings)
+
+        # Authorized node settings were deleted
+        assert_true(self.node_settings.deleted)
+
+    @mock.patch('website.addons.dataverse.model.AddonDataverseUserSettings.clear')
+    def test_delete(self, mock_clear):
+
+        self.user_settings.delete()
+
+        assert_true(self.user_settings.deleted)
+        mock_clear.assert_called_once_with(delete=True)
+
 
 class TestDataverseNodeSettings(DataverseAddonTestCase):
 
@@ -47,8 +96,6 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         self.node_settings.deauthorize(Auth(self.user))
 
-        assert_false(self.node_settings.dataverse_username)
-        assert_false(self.node_settings.dataverse_password)
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)

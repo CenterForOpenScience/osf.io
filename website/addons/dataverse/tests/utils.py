@@ -25,8 +25,6 @@ class DataverseAddonTestCase(AddonTestCase):
         settings.dataverse_password = 'frosty'
 
     def set_node_settings(self, settings):
-        settings.dataverse_username = 'snowman'
-        settings.dataverse_password = 'frosty'
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
         settings.study_hdl = 'DVN/00001'

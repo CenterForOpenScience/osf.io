@@ -31,8 +31,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         self.node_settings.reload()
 
         assert_equal(self.node_settings.user_settings, self.user_settings)
-        assert_equal(self.node_settings.dataverse_username, 'snowman')
-        assert_equal(self.node_settings.dataverse_password, 'frosty')
+        # TODO: Log
 
     @mock.patch('website.addons.dataverse.views.auth.connect')
     def test_authorize_fail(self, mock_connection):
@@ -49,21 +48,23 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         self.app.delete(url, auth=self.user.auth)
 
         self.node_settings.reload()
-        assert_false(self.node_settings.dataverse_username)
-        assert_false(self.node_settings.dataverse_password)
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
+        assert_false(self.node_settings.user_settings)
+        # TODO: Log
 
     def test_delete_user(self):
         url = lookup('api', 'dataverse_delete_user')
 
-        # Non-authorized user can't delete
+        # User without add-on can't delete
         user2 = AuthUserFactory()
-        self.app.delete_json(url, auth=user2.auth, expect_errors=True)
+        res = self.app.delete_json(url, auth=user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
         self.user_settings.reload()
         assert_true(self.user_settings.dataverse_username)
+        assert_true(self.user_settings.dataverse_password)
 
         # Aurthoized user can delete
         self.app.delete_json(url, auth=self.user.auth)
@@ -75,8 +76,6 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
 
         # User's authorized nodes are now deauthorized
         self.node_settings.reload()
-        assert_false(self.node_settings.dataverse_username)
-        assert_false(self.node_settings.dataverse_password)
         assert_false(self.node_settings.dataverse_alias)
         assert_false(self.node_settings.dataverse)
         assert_false(self.node_settings.study_hdl)
