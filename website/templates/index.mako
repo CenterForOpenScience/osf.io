@@ -102,7 +102,7 @@
             <div class="col-md-4 center connect">
                 <img id="connect" src="/static/img/outlet.gif">
                 <div class="subHeadTwo center">CONNECTIONS</div>
-                <p>with the services you already use</p><br>
+                <p>with the services you already use</p>
                 <div class="featureInfo">Link services to simplify transitions and facilitate interactions; e.g., connect OSF to your Dropbox, GitHub, and Amazon S3 repositories and all four work together!</div>
             </div>
             <div class="col-md-4 center archive">
@@ -115,7 +115,7 @@
             <div class="col-md-4 center integrate">
                 <img id="integrate" src="/static/img/padlock.gif">
                 <div class="subHeadTwo">CONTROL</div>
-                <p>over private and public workflows</p><br>
+                <p>over private and public workflows</p>
                 <div class="featureInfo">Work privately among collaborators and, when you wish, make some or all of your research materials public for others to use and cite.</div>
             </div>
         </div>
