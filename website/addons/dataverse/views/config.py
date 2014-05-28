@@ -135,9 +135,10 @@ def set_study(*args, **kwargs):
         if study is None:
             return HTTPError(http.BAD_REQUEST)
 
+        study_name = study.title
         node_settings.dataverse = dataverse.title
         node_settings.study_hdl = hdl
-        node_settings.study = study.title
+        node_settings.study = study_name
 
     else:
         log_action = 'dataverse_study_unlinked'
