@@ -12,13 +12,13 @@ def test_registration_form_processing():
     form = forms.RegistrationForm(fullname='Freddy Mercury   \t',
         username=' fRed@queen.com  ',
         username2='fRed@queen.com',
-        password='killerqueen ',
-        password2='killerqueen')
+        password='  killerqueen ',
+        password2='  killerqueen ')
     assert_equal(form.fullname.data, 'Freddy Mercury')
     assert_equal(form.username.data, 'fred@queen.com')
     assert_equal(form.username2.data, 'fred@queen.com')
-    assert_equal(form.password.data, 'killerqueen')
-    assert_equal(form.password2.data, 'killerqueen')
+    assert_equal(form.password.data, '  killerqueen ')
+    assert_equal(form.password2.data, '  killerqueen ')
 
 
 def test_merge_account_form_cleaning():
