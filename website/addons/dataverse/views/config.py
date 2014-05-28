@@ -64,11 +64,13 @@ def set_dataverse(*args, **kwargs):
     old_dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     old_study = node_settings.study
     deep_ensure_clean(request.json)
-    # TODO: Ensure alias is from list of viable aliases
     alias = request.json.get('dataverse_alias')
     node_settings.dataverse_alias = alias if alias != 'None' else None
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     node_settings.dataverse = dataverse.title if dataverse else None
+
+    if node_settings.dataverse_alias and dataverse is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Set study to None if there was a study
     if old_study is not None:
@@ -123,17 +125,19 @@ def set_study(*args, **kwargs):
     # Get current dataverse and new study
     deep_ensure_clean(request.json)
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    # TODO: Ensure hdl is from list of viable hdls
     hdl = request.json.get('study_hdl')
 
     # Set study
     if hdl != 'None':
         log_action = 'dataverse_study_linked'
-        study_name = get_study(dataverse, hdl).title
+        study = get_study(dataverse, hdl)
+
+        if study is None:
+            return HTTPError(http.BAD_REQUEST)
 
         node_settings.dataverse = dataverse.title
         node_settings.study_hdl = hdl
-        node_settings.study = study_name
+        node_settings.study = study.title
 
     else:
         log_action = 'dataverse_study_unlinked'
