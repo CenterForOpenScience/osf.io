@@ -203,7 +203,7 @@ ${parent.javascript_bottom()}
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
                 data: nodeApiUrl + 'files/grid/',
-                columns: [HGrid.Col.Name],
+                columns: [Rubeus.Col.Name],
                 uploads: false,
                 width: "100%",
                 height: 600,
