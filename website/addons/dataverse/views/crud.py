@@ -42,7 +42,7 @@ def dataverse_release_study(**kwargs):
     connection = connect(
         node_settings.user_settings.dataverse_username,
         node_settings.user_settings.dataverse_password,
-    )
+    ) if node_settings.user_settings else None
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
@@ -165,7 +165,7 @@ def dataverse_upload_file(**kwargs):
     connection = connect(
         node_settings.user_settings.dataverse_username,
         node_settings.user_settings.dataverse_password
-    )
+    ) if node_settings.user_settings else None
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
@@ -251,7 +251,7 @@ def dataverse_delete_file(**kwargs):
     connection = connect(
         node_settings.user_settings.dataverse_username,
         node_settings.user_settings.dataverse_password
-    )
+    ) if node_settings.user_settings else None
 
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)

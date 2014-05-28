@@ -269,7 +269,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
                      'Example (DVN/00001)')
 
 
-class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
+class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -288,6 +288,20 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         assert_equal(len(first), len(contents))
         assert_in('kind', first)
         assert_equal(first['name'], contents['name'])
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    def test_dataverse_data_contents_no_settings(self, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/files/'
+
+        # If there are no settings, no files are returned
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+        url = lookup('api', 'dataverse_hgrid_data_contents',
+                     pid=self.project._primary_key)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json, [])
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -425,6 +439,25 @@ class TestDataverseViewsFilebrowser(DataverseAddonTestCase):
         # Non-contributor gets nothing
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
+        assert_equal(res.json, [])
+
+
+    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.request')
+    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    def test_dataverse_root_no_settings(self, mock_files, mock_request, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_request.referrer = 'some_url/files/'
+        mock_request.args = {'state': 'released'}
+        mock_files.return_value = ['mock_file']
+
+        url = lookup('api', 'dataverse_root_folder_public',
+                     pid=self.project._primary_key)
+
+        self.node_settings.user_settings = None
+        self.node_settings.save()
+
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
 

@@ -20,7 +20,7 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     connection = connect(
         node_settings.user_settings.dataverse_username,
         node_settings.user_settings.dataverse_password
-    )
+    ) if node_settings.user_settings else None
 
     # Quit if no study linked
     if node_settings.study_hdl is None or connection is None:
@@ -111,7 +111,7 @@ def dataverse_hgrid_data_contents(**kwargs):
     connection = connect(
         node_settings.user_settings.dataverse_username,
         node_settings.user_settings.dataverse_password
-    )
+    ) if node_settings.user_settings else None
 
     if node_settings.study_hdl is None or connection is None:
         return []
