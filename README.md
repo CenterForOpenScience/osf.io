@@ -1,5 +1,8 @@
 # OSF 
 
+<img src="https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master">
+
+
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
 - Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
 - Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
