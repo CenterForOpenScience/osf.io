@@ -113,9 +113,12 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_true(json['connected'])
         assert_true(json['user_dataverse_connected'])
 
-        # TODO: Check authorized user name/url (requires refactor)
         assert_equal(self.user_settings.dataverse_username,
                      json['authorized_dataverse_user'])
+        assert_equal(self.user_settings.owner.fullname,
+                     json['authorized_user_name'])
+        assert_equal(self.user_settings.owner.absolute_url,
+                     json['authorized_user_url'])
         assert_equal(self.node_settings.dataverse, json['dataverse'])
         assert_equal(self.node_settings.dataverse_alias, json['dataverse_alias'])
         assert_equal(self.node_settings.study_hdl, json['study_hdl'])
@@ -144,6 +147,10 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_equal(self.user_settings.dataverse_username,
                      json['authorized_dataverse_user'])
+        assert_equal(self.user_settings.owner.fullname,
+                     json['authorized_user_name'])
+        assert_equal(self.user_settings.owner.absolute_url,
+                     json['authorized_user_url'])
         assert_equal(self.node_settings.dataverse, json['dataverse'])
         assert_equal(self.node_settings.study_hdl, json['study_hdl'])
         assert_equal(3, len(json['dataverses']))
@@ -176,6 +183,10 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_equal(self.user_settings.dataverse_username,
                      json['authorized_dataverse_user'])
+        assert_equal(self.user_settings.owner.fullname,
+                     json['authorized_user_name'])
+        assert_equal(self.user_settings.owner.absolute_url,
+                     json['authorized_user_url'])
         assert_equal(self.node_settings.dataverse, json['dataverse'])
         assert_equal(self.node_settings.dataverse_alias, json['dataverse_alias'])
         assert_equal(None, json['study_hdl'])
@@ -200,6 +211,10 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_equal(self.user_settings.dataverse_username,
                      json['authorized_dataverse_user'])
+        assert_equal(self.user_settings.owner.fullname,
+                     json['authorized_user_name'])
+        assert_equal(self.user_settings.owner.absolute_url,
+                     json['authorized_user_url'])
         assert_equal(None, json['dataverse'])
         assert_equal(None, json['study_hdl'])
         assert_equal(3, len(json['dataverses']))
