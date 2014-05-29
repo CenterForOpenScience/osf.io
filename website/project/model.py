@@ -477,7 +477,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
-    # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
