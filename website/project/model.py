@@ -1052,7 +1052,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self): #TODO(fabianvf)
-        search.update_search(self)
+        search.update_node(self)
 
     def update_solr(self): 
         raise NotImplementedError #TODO(fabianvf) Deprecated

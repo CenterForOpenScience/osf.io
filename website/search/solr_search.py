@@ -5,14 +5,12 @@ import ast
 from website import settings
 import logging
 import sunburnt
-
-from website import settings
 from .utils import clean_solr_doc 
 
 
 logger = logging.getLogger(__name__)
 
-if settings.USE_SOLR:
+if (settings.SEARCH_ENGINE in ['solr', 'all']):
     try:
         solr = sunburnt.SolrInterface(settings.SOLR_URI)
     except Exception as e:
@@ -22,8 +20,10 @@ if settings.USE_SOLR:
         solr = None
 else:
     solr = None
+    logger.warn("Solr is not set to start")
 
-def update_solr(node):
+
+def update_node(node):
     """Send the current state of the object to Solr, or delete it from Solr
     as appropriate.
     """
@@ -33,7 +33,7 @@ def update_solr(node):
         correctly serialize.
         """
         return 'true' if value is True else 'false'
-    if not settings.USE_SOLR:
+    if not (settings.SEARCH_ENGINE in ['solr', 'all']):
         return
 
     from website.addons.wiki.model import NodeWikiPage
@@ -51,7 +51,7 @@ def update_solr(node):
     if node.is_deleted or not node.is_public:
         # If the Node is deleted *or made private*
         # Delete or otherwise ensure the Solr document doesn't exist.
-        delete_solr_doc({
+        delete_doc({
             'doc_id': solr_document_id,
             '_id': node._id,
         })
@@ -120,7 +120,7 @@ def update_user(user):
     solr.commit()
 
 
-def delete_solr_doc(args=None):
+def delete_doc(args=None):
     # if the id we have is for a project, then we
     # just deleted the document
     try:
@@ -171,6 +171,7 @@ def search(query, start=0):
     else:
         spellcheck_result = None
     solrPost.close()
+    logger.warn(str(result))
     return result, highlight, spellcheck_result
 
 def delete_all():

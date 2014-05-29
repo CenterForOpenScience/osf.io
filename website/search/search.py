@@ -1,22 +1,48 @@
 import solr_search
-import elastic_search # TODO may be bad form, because elasticsearch is also a module
+import elastic_search 
 from website import settings
-# TODO
+import logging
+
+
+# TODO(fabianvf)
 # Abstracts search away from solr
+logger = logging.getLogger(__name__)
+SOLR = False
+ELASTIC = False
+
+if settings.SEARCH_ENGINE == 'all':
+    SOLR = True
+    ELASTIC = True
+elif settings.SEARCH_ENGINE == 'solr':
+    SOLR = True
+elif settings.SEARCH_ENGINE == 'elastic':
+    ELASTIC = True
+
 
 def search(query, start=0):
-    if settings.USE_SOLR: #TODO add a specific option in for elastic search as well
+    if SOLR: 
         # solr search
-        return solr_search.search(query, start=0)
-    else:
+        solr_results =solr_search.search(query, start=0)
+    if ELASTIC:
         # elastic search
-        return elastic_search.search(query, start=0)
+        elastic_results = elastic_search.search(query, start=0)
+    return solr_results #TODO(fabianvf)
 
-def update_search(node):
-   solr_search.update_solr(node)
+def update_node(node):
+    if SOLR:
+        solr_search.update_node(node)
+    if ELASTIC:
+        elastic_search.update_node(node)
 
 def update_user(user):
-    solr_search.update_user(user)
+    if SOLR:
+        solr_search.update_user(user)
+    if ELASTIC:
+        elastic_search.update_user(user)
 
 def delete_all():
-    solr_search.delete_all()
+    if SOLR:
+        solr_search.delete_all()
+    if ELASTIC:
+        elastic_search.delete_all()
+
