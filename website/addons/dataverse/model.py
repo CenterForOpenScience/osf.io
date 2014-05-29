@@ -63,23 +63,6 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
             node_settings.save()
         return self
 
-
-    def to_json(self, user):
-        rv = super(AddonDataverseUserSettings, self).to_json(user)
-
-        connection = connect(
-            self.dataverse_username,
-            self.dataverse_password,
-        )
-
-        rv.update({
-            'authorized': connection is not None,
-            'authorized_dataverse_user': self.dataverse_username or '',
-            'show_submit': True,
-        })
-        return rv
-
-
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_alias = fields.StringField()

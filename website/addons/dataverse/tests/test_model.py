@@ -25,24 +25,16 @@ class TestDataverseFile(DataverseAddonTestCase):
 
 class TestDataverseUserSettings(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.model.connect')
-    def test_fields(self, mock_connection):
-
-        # Create user settings
+    def test_has_auth(self):
+        
+        # Dataverse has no auth by default
         dataverse = AddonDataverseUserSettings()
-        creator = self.project.creator
-
-        # Dataverse is not authorized by default
-        mock_connection.return_value = create_mock_connection('wrong', 'info')
-        assert_false(dataverse.to_json(creator)['authorized'])
-        assert_false(dataverse.to_json(creator)['authorized_dataverse_user'])
+        assert_false(dataverse.has_auth)
 
         # With valid credentials, dataverse is authorized
-        mock_connection.return_value = create_mock_connection()
         dataverse.dataverse_username = 'snowman'
-        assert_true(dataverse.to_json(creator)['authorized'])
-        assert_equals(dataverse.to_json(creator)['authorized_dataverse_user'],
-                      'snowman')
+        dataverse.dataverse_password = 'frosty'
+        assert_true(dataverse.has_auth)
 
     def test_clear(self):
 
