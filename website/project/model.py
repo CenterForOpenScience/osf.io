@@ -622,6 +622,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :returns: User has required permission
 
         """
+        if user is None:
+            logger.error('User is ``None``.')
+            return False
         try:
             return permission in self.permissions[user._id]
         except KeyError:
