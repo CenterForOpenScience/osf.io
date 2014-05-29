@@ -191,7 +191,7 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         last_log = node_settings.owner.logs[-1]
         assert_equal(last_log.action, 'dropbox_node_authorized')
         log_params = last_log.params
-        assert_equal(log_params['addon'], 'dropbox')
+        assert_equal(log_params['folder'], node_settings.folder)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 

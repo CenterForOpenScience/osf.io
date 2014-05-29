@@ -179,15 +179,8 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         """
         node = self.owner
         self.user_settings = user_settings
-        node.add_log(
-            action='dropbox_node_authorized',
-            auth=Auth(user_settings.owner),
-            params={
-                'addon': 'dropbox',
-                'project': node.parent_id,
-                'node': node._primary_key,
-            }
-        )
+        nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
+        nodelogger.log(action="node_authorized", save=True)
 
     def delete(self):
         self.deauthorize(Auth(self.user_settings.owner), add_log=False)
@@ -202,15 +195,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         self.user_settings = None
 
         if add_log:
-            node.add_log(
-                action='dropbox_node_deauthorized',
-                params={
-                    'project': node.parent_id,
-                    'node': node._id,
-                    'folder': folder
-                },
-                auth=auth,
-            )
+            extra = {'folder': folder}
+            nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
+            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def __repr__(self):
         return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
