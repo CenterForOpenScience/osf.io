@@ -2021,8 +2021,25 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestDashboardViews(OsfTestCase):
 
+    def setUp(self):
+        self.app = TestApp(app)
 
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
+    def test_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+
+        url = lookup('api', 'get_dashboard_nodes')
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json['nodes']), 1)
 
 
 if __name__ == '__main__':
