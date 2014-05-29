@@ -77,6 +77,23 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings.save()
         assert_false(user_settings.access_token)
         assert_false(user_settings.dropbox_id)
+        assert_true(user_settings.deleted)
+
+    def test_delete_clears_associated_node_settings(self):
+        node_settings = DropboxNodeSettingsFactory.build()
+        user_settings = DropboxUserSettingsFactory()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+
+        old_logs = node_settings.owner.logs
+
+        user_settings.delete()
+        user_settings.save()
+
+        # Node settings no longer associated with user settings
+        assert_is(node_settings.user_settings, None)
+        assert_is(node_settings.folder, None)
+        assert_false(node_settings.deleted)
 
     def test_to_json(self):
         user_settings = DropboxUserSettingsFactory()
@@ -124,6 +141,17 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
         user = UserFactory()
         result = settings.to_json(user)
         assert_equal(result['addon_short_name'], 'dropbox')
+
+    def test_delete(self):
+        assert_true(self.node_settings.user_settings)
+        assert_true(self.node_settings.folder)
+        old_logs = self.project.logs
+        self.node_settings.delete()
+        self.node_settings.save()
+        assert_is(self.node_settings.user_settings, None)
+        assert_is(self.node_settings.folder, None)
+        assert_true(self.node_settings.deleted)
+        assert_equal(self.project.logs, old_logs)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
