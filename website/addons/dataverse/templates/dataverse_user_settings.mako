@@ -1,94 +1,49 @@
-<%inherit file="project/addon/user_settings.mako" />
+## Template for the "Dataverse" section in the "Configure Add-ons" panel
 
-% if authorized:
+<h4 class="addon-title">Dataverse</h4>
 
-    ## You are authorized
 
-    <a id="dataverseDelKey" class="btn btn-danger">Unlink Dataverse Account</a>
-    <div style="padding-top: 10px;">
-        Authorized by Dataverse user ${authorized_dataverse_user}
-    </div>
+<div id='dataverseAddonScope' class='addon-settings scripted'>
 
-% else:
-
-    ## You are not authorized
-
-    ## Your credentials are no longer valid
-    % if authorized_dataverse_user:
-        <div style="padding-bottom: 10px">
-            Warning: Your credentials appear to be incorrect. Please re-enter
-            your password.
+    <!-- Delete Access Token Button -->
+     <div data-bind="if: userHasAuth() && loaded() && connected()">
+        <div class="well well-sm">
+            Authorized by Dataverse user {{ dataverseUsername }}
+            <a data-bind="click: deleteKey" class="text-danger pull-right" style="cursor: pointer">Delete Credentials</a>
         </div>
-    % endif
-
-    ## Show auth fields
-    <div class="form-group">
-        <label for="dataverseUsername">Dataverse Username</label>
-        <input class="form-control" id="dataverseUsername" name="dataverse_username" value="${authorized_dataverse_user}"/>
     </div>
-    <div class="form-group">
-        <label for="dataversePassword">Dataverse Password</label>
-        <input class="form-control" id="dataversePassword" type="password" name="dataverse_password" />
+
+    <!-- Create Access Token Button -->
+    <form data-bind="if: !userHasAuth() && loaded() || !connected()">
+        <div class="text-danger" data-bind="if: userHasAuth() && !connected()">
+            Your dataverse credentials may not be valid. Please re-enter your password.
+        </div>
+
+        <div class="form-group">
+            <label for="dataverseUsername">Dataverse Username</label>
+            <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
+        </div>
+        <div class="form-group">
+            <label for="dataversePassword">Dataverse Password</label>
+            <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
+        </div>
+        <button data-bind="click: sendAuth" class="btn btn-success">
+            Submit
+        </button>
+    </form>
+
+    <!-- Flashed Messages -->
+    <div class="help-block">
+        <p data-bind="html: message, attr: {class: messageClass}"></p>
     </div>
-    <a id="dataverseLinkAccount" class="btn btn-success">Submit</a>
+</div>
 
-% endif
 
-<script type="text/javascript">
-
-    $(document).ready(function() {
-
-        $('#dataverseDelKey').on('click', function() {
-             bootbox.confirm(
-                'Are you sure you want to unlink your Dataverse Account? This will ' +
-                    'revoke access to Dataverse for all projects you have authorized. ' +
-                    'Your OSF collaborators will not be able to access any of the ' +
-                    'Dataverse studies that you have authorized.',
-                function(result) {
-                    if (result) {
-                        $.ajax({
-                            url: '/api/v1/settings/dataverse/',
-                            type: 'DELETE',
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
-                            }
-                        });
-                    }
-                }
-            )
-        });
-
-        $('#dataverseLinkAccount').on('click', function() {
-            var msgElm = $('#addonSettingsDataverse .addon-settings-message');
-            $.ajax({
-                url: '/api/v1/settings/dataverse/',
-                data: JSON.stringify(AddonHelper.formToObj($('#addonSettingsDataverse'))),
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json',
-            }).success(function() {
-                window.location.reload();
-            }).fail(function(args) {
-                var message = args.responseJSON.code == 400 ?
-                        'Error: You do not have any Dataverses on this account'
-                        : 'Error: Username or password is incorrect';
-                msgElm.text(message)
-                    .removeClass('text-success').addClass('text-danger')
-                    .fadeOut(100).fadeIn();
-            });
-        });
-
-        $("#dataversePassword").keyup(function(event){
-            if(event.keyCode == 13){
-                $("#dataverseLinkAccount").click();
-            }
-        });
-
+<script>
+    $script(['/static/addons/dataverse/dataverseUserConfig.js'], function() {
+        // Endpoint for Dataverse user settings
+        var url = '/api/v1/settings/dataverse/';
+        // Start up the DataverseConfig manager
+        var dataverse = new DataverseUserConfig('#dataverseAddonScope', url);
     });
-
 </script>
-
-<%def name="submit_btn()"></%def>
-<%def name="on_submit()"></%def>

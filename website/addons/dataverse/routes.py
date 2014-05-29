@@ -29,6 +29,12 @@ settings_routes = {
         # User Settings
         Rule(
             '/settings/dataverse/',
+            'get',
+            views.auth.dataverse_user_config_get,
+            json_renderer,
+        ),
+        Rule(
+            '/settings/dataverse/',
             'post',
             views.config.dataverse_set_user_config,
             json_renderer,
