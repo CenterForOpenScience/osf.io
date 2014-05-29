@@ -1474,6 +1474,10 @@ button.save {
   height: auto;
 }
 
+.mfr-file > img {
+    max-width:100%
+}
+
 
 .editable {
   cursor: pointer;
