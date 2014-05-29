@@ -89,7 +89,7 @@ ${next.body()}
         var linksModal = $('#showLinks')[0];
         var linksVM = new LinksViewModel(linksModal);
         ko.applyBindings(linksVM, linksModal);
-        
+
     });
 
     $script.ready('pointers', function() {

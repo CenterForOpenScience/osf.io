@@ -1,6 +1,10 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
+
+<%include file="modal_register_project.mako"/>
+<link rel="stylesheet" href="/static/css/typeahead.css">
+
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
@@ -17,12 +21,33 @@
         <div class="col-md-6">
            <div id="watchFeed">
                <div class="page-header">
-                    <h3>Watched Projects</h3>
-                </div>
-                <div id="logScope">
+
+
+########################################################################################################################
+                    <h3>I want to...</h3>
+                        <div id="logScope">
                     <%include file="log_list.mako"/>
                     <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
                 </div><!-- end #logScope -->
+
+                </div>
+                <ul>
+                <div id="file_drop">
+                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
+                    <a class="btn btn-default" href="/project/new">Make a New Project</a>
+                    </li>
+
+                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
+                    <a class="btn btn-default" href="/project/new">Upload a File</a>
+                    </li>
+
+                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
+                    <a class="btn btn-default" data-toggle="modal" data-target="#newRegistration">Register a Project</a>
+                    </li>
+                </ul>
+
+########################################################################################################################
+
             </div><!-- end #watchFeed -->
         </div>
     </div>
@@ -54,6 +79,7 @@
 %endif
 </%def>
 
+
 <%def name="javascript_bottom()">
 <script>
     // Initialize the LogFeed
@@ -61,5 +87,12 @@
     $script.ready('logFeed', function() {
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
+    $script(['/static/js/typeahead.js'],'typeahead');
+    $script(['/static/js/projectSearch.js']);
+    $script.ready('projectSearch', function() {
+        var projectsearch = new ProjectSearch();
+    });
+
+
 </script>
 </%def>
