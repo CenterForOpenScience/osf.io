@@ -65,7 +65,7 @@ def update_node(node):
             # Skip orphaned components
             return
     if node.is_deleted or not node.is_public:
-        delete_doc(elastic_document_id, node._id)
+        delete_doc(elastic_document_id, node)
     else:
         elastic_document = {
             'id': elastic_document_id,
@@ -116,6 +116,9 @@ def delete_all():
     return 
 #    raise NotImplementedError
 
-def delete_doc(elastic_document_id, node_id):
-    return
-    #    raise NotImplementedError
+def delete_doc(elastic_document_id, node):
+    if node.category == 'project':
+        category = 'project'
+    else:
+        category = 'component'
+    elastic.delete('website', category, elastic_document_id) 
