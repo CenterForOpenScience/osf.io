@@ -56,10 +56,11 @@ def update_node(node):
 
     if node.category =='project':
         elastic_document_id = node._id
+        category = node.category
     else:
         try:
             elastic_document_id = node.parent_id
-            index = 'component'
+            category = 'component'
         except IndexError:
             # Skip orphaned components
             return
@@ -102,7 +103,7 @@ def update_node(node):
 #            new.update(clean_solr_doc(solr_document))
 #        solr.add(new)
 #        solr.commit()
-        elastic.index('website', node.category, elastic_document, elastic_document_id)
+        elastic.index('website', category, elastic_document, elastic_document_id)
 
 
 def update_user(user):
