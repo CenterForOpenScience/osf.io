@@ -13,14 +13,12 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, Auth
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm,
                                   SetEmailAndPasswordForm)
-from framework import SelectField
 
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
 from website.project.forms import NewProjectForm, NewFolderForm
 from website.project import model, new_dashboard, new_folder
 from website import settings
-
 
 
 logger = logging.getLogger(__name__)
@@ -171,23 +169,36 @@ def get_all_projects_smart_folder(**kwargs):
     )
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+        # components only
     return return_value
 
 
 @must_be_logged_in
-def get_dashboard_nodes(**kwargs):
+def get_dashboard_nodes(auth, **kwargs):
+    user = auth.user
 
-    user = kwargs['auth'].user
+    contributed = user.node__contributed  # nodes user cotributed to
 
-    nodes = user.node__contributed.find(
+    nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder','eq', False)
     )
 
-    return_value = _render_projects(nodes, **kwargs)
-    return return_value
+    comps = contributed.find(
+        # components only
+        Q('category', 'ne', 'project') &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', False)
+    )
+
+    return _render_nodes(list(nodes) + list(comps))
+
 
 
 @must_be_logged_in
