@@ -122,7 +122,11 @@ def get_dashboard_nodes(auth, **kwargs):
         # components only
         Q('category', 'ne', 'project') &
         # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys())
+        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', False)
     )
 
     return _render_nodes(list(nodes) + list(comps))
