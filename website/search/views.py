@@ -98,6 +98,7 @@ def search_projects_by_title(**kwargs):
     is_folder = request.args.get('isFolder', 'no').lower()
     include_public = request.args.get('includePublic', 'yes').lower()
     include_contributed = request.args.get('includeContributed', 'yes').lower()
+    ignore_nodes = request.args.getlist('ignoreNode')
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
@@ -106,6 +107,10 @@ def search_projects_by_title(**kwargs):
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
     matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
+
+    if len(ignore_nodes) > 0:
+        for node_id in ignore_nodes:
+            matching_title = matching_title & Q('_id', 'ne', node_id)
 
     my_projects = []
     my_project_count = 0
