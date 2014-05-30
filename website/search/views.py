@@ -142,14 +142,18 @@ def create_result(highlights, results):
             container['user_url'] = '/profile/'+result['id']
             result_search.append(container)
         else:
-            container['title'] = result.get(id+'_title', '-- private project --')
-            container['url'] = result.get(id+'_url')
+#            container['title'] = result.get(id+'_title', '-- private project --') #TODO(fabianvf), move this logic into the individual search engine modules
+            container['title'] = result.get('title', '-- private project --')
+#            container['url'] = result.get(id+'_url') #TODO(fabianvf)
+            container['url'] = result.get('url')
             contributors = []
             contributors_url = []
             # we're only going to show contributors on projects, for now
-            for contributor in result.get(id+'_contributors', []):
+#            for contributor in result.get(id+'_contributors', []): #TODO(fabianvf)
+            for contributor in result.get('contributors', []):
                 contributors.append(contributor)
-            for url in result.get(id+'_contributors_url', []):
+#            for url in result.get(id+'_contributors_url', []): #TODO(fabianvf)
+            for url in result.get('contributors_url',[]):
                 contributors_url.append(url)
             container['contributors'] = contributors
             container['contributors_url'] = contributors_url
@@ -247,15 +251,20 @@ def create_result(highlights, results):
             # and our nested information
             container['nest'] = nest
             container['is_registration'] = result.get(
-                id + '_registeredproject',
+#                id + '_registeredproject', #TODO(fabianvf)
+                'registeredproject',
                 False
             )
-            if id + '_tags' in result.keys():
+#            if id + '_tags' in result.keys(): #TODO(fabianvf)
+            if 'tags' in result.keys():
                 # again using sets to create a list without duplicates
-                container['tags'] = result[id+'_tags'] + list(
-                    set(component_tags) - set(result[id+'_tags']))
+#                container['tags'] = result[id+'_tags'] + list( #TODO(fabianvf)
+                container['tags'] = result['tags'] + list(
+#                    set(component_tags) - set(result[id+'_tags'])) #TODO(fabianvf)
+                    set(component_tags) - set(result['tags']))
                 # and were still keeping count of tag occurence
-                for tag in result[id+'_tags']:
+#                for tag in result[id+'_tags']: #TODO(fabianvf)
+                for tag in result['tags']:
                     if tag not in tags.keys():
                         tags[tag] = 1
                     else:

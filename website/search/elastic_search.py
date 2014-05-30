@@ -1,6 +1,7 @@
 from website import settings
 import logging
 import pyelasticsearch
+import collections
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +21,32 @@ else:
     logger.warn("Elastic is not set to start")
         
 
-def search(query, start=0):
-    return False
-    # raise NotImplementedError
+def search(raw_query, start=0):
+    def convert(data):
+        if isinstance(data, basestring):
+            return str(data)
+        elif isinstance(data, collections.Mapping):
+            return dict(map(convert, data.iteritems()))
+        elif isinstance(data, collections.Iterable):
+            return type(data)(map(convert, data))
+        else:
+            return data
+
+    query = {
+        'query': {
+            'match' : {
+                '_all': raw_query    
+            }
+        }
+    }
+    raw_results = convert(elastic.search(query, index='website'))
+    results = {
+            'start':0, 
+            'numFound':raw_results['hits']['total'], 
+            'docs':[hit['_source'] for hit in raw_results['hits']['hits']]
+    }
+    return results
+
 
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
@@ -86,7 +110,6 @@ def update_user(user):
         'id' : user._id, 
         'user' : user.fullname
         })
-#    raise NotImplementedError
 
 def delete_all():
     return 

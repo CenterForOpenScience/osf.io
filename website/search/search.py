@@ -22,11 +22,11 @@ elif settings.SEARCH_ENGINE == 'elastic':
 def search(query, start=0):
     if SOLR: 
         # solr search
-        solr_results =solr_search.search(query, start=0)
+        result, highlight, spellcheck_result  =solr_search.search(query, start=0)
     if ELASTIC:
         # elastic search
-        elastic_results = elastic_search.search(query, start=0)
-    return solr_results #TODO(fabianvf)
+        result2 = elastic_search.search(query, start=0)
+    return result2, highlight, spellcheck_result #TODO(fabianvf)
 
 def update_node(node):
     if SOLR:
