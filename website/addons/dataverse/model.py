@@ -83,6 +83,19 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.deauthorize(Auth(self.user_settings.owner), add_log=False)
         super(AddonDataverseNodeSettings, self).delete()
 
+    def set_user_auth(self, user_settings):
+        node = self.owner
+        self.user_settings = user_settings
+        node.add_log(
+            action='dataverse_node_authorized',
+            auth=Auth(user_settings.owner),
+            params={
+                'addon': 'dropbox',
+                'project': node.parent_id,
+                'node': node._primary_key,
+            }
+        )
+
     def deauthorize(self, auth, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
@@ -102,79 +115,79 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
             )
 
-    def to_json(self, user):
-
-        user_settings = user.get_addon('dataverse')
-
-        # Check authorization
-        authorized = self.has_auth and user_settings == self.user_settings
-
-        # Check user's connection
-        user_connection = connect(
-            user_settings.dataverse_username,
-            user_settings.dataverse_password,
-        ) if user_settings else None
-
-        rv = super(AddonDataverseNodeSettings, self).to_json(user)
-        rv.update({
-            'connected': False,
-            'authorized': authorized,
-            'show_submit': False,
-            'user_dataverse_connected': user_connection,
-            'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
-            'set_study_url': self.owner.api_url_for('set_study'),
-        })
-
-        if self.user_settings is None:
-            return rv
-
-        rv.update({
-            'authorized_dataverse_user': self.user_settings.dataverse_username,
-            'authorized_user_name': self.user_settings.owner.fullname,
-            'authorized_user_url': self.user_settings.owner.absolute_url,
-        })
-
-        connection = connect(
-            self.user_settings.dataverse_username,
-            self.user_settings.dataverse_password,
-        )
-
-        if connection is not None:
-
-            # Get list of dataverses and studies
-            dataverses = get_dataverses(connection)
-            dataverse = get_dataverse(connection, self.dataverse_alias)
-            studies = get_studies(dataverse) if dataverse else []
-            study = get_study(dataverse, self.study_hdl) \
-                if self.study_hdl is not None else None
-
-            rv.update({
-                'connected': True,
-                'dataverses': [d.title for d in dataverses],
-                # TODO: Implement dataverse releasing (after Dataverse 4.0)
-                'dv_status': [d.is_released for d in dataverses],
-                'dataverse': dataverse.title if dataverse else None,
-                'dataverse_alias': dataverse.alias if dataverse else None,
-                'dataverse_aliases': [d.alias for d in dataverses],
-                'studies': [s.get_id() for s in studies],
-                'study_names': [s.title for s in studies],
-                'study': self.study,
-                'study_hdl': self.study_hdl if study is not None else None,
-            })
-
-            if study is not None:
-                rv.update({
-                    'dataverse_url': os.path.join(
-                        'http://', HOST, 'dvn', 'dv', dataverse.alias
-                    ),
-                    'study_url': os.path.join(
-                        'http://', HOST, 'dvn', 'dv', dataverse.alias,
-                        'faces', 'study', 'StudyPage.xhtml?globalId=' +
-                        study.doi
-                    ),
-                })
-
-        return rv
+    # def to_json(self, user):
+    #
+    #     user_settings = user.get_addon('dataverse')
+    #
+    #     # Check authorization
+    #     authorized = self.has_auth and user_settings == self.user_settings
+    #
+    #     # Check user's connection
+    #     user_connection = connect(
+    #         user_settings.dataverse_username,
+    #         user_settings.dataverse_password,
+    #     ) if user_settings else None
+    #
+    #     rv = super(AddonDataverseNodeSettings, self).to_json(user)
+    #     rv.update({
+    #         'connected': False,
+    #         'authorized': authorized,
+    #         'show_submit': False,
+    #         'user_dataverse_connected': user_connection,
+    #         'set_dataverse_url': self.owner.api_url_for('set_dataverse'),
+    #         'set_study_url': self.owner.api_url_for('set_study'),
+    #     })
+    #
+    #     if self.user_settings is None:
+    #         return rv
+    #
+    #     rv.update({
+    #         'authorized_dataverse_user': self.user_settings.dataverse_username,
+    #         'authorized_user_name': self.user_settings.owner.fullname,
+    #         'authorized_user_url': self.user_settings.owner.absolute_url,
+    #     })
+    #
+    #     connection = connect(
+    #         self.user_settings.dataverse_username,
+    #         self.user_settings.dataverse_password,
+    #     )
+    #
+    #     if connection is not None:
+    #
+    #         # Get list of dataverses and studies
+    #         dataverses = get_dataverses(connection)
+    #         dataverse = get_dataverse(connection, self.dataverse_alias)
+    #         studies = get_studies(dataverse) if dataverse else []
+    #         study = get_study(dataverse, self.study_hdl) \
+    #             if self.study_hdl is not None else None
+    #
+    #         rv.update({
+    #             'connected': True,
+    #             'dataverses': [d.title for d in dataverses],
+    #             # TODO: Implement dataverse releasing (after Dataverse 4.0)
+    #             'dv_status': [d.is_released for d in dataverses],
+    #             'dataverse': dataverse.title if dataverse else None,
+    #             'dataverse_alias': dataverse.alias if dataverse else None,
+    #             'dataverse_aliases': [d.alias for d in dataverses],
+    #             'studies': [s.get_id() for s in studies],
+    #             'study_names': [s.title for s in studies],
+    #             'study': self.study,
+    #             'study_hdl': self.study_hdl if study is not None else None,
+    #         })
+    #
+    #         if study is not None:
+    #             rv.update({
+    #                 'dataverse_url': os.path.join(
+    #                     'http://', HOST, 'dvn', 'dv', dataverse.alias
+    #                 ),
+    #                 'study_url': os.path.join(
+    #                     'http://', HOST, 'dvn', 'dv', dataverse.alias,
+    #                     'faces', 'study', 'StudyPage.xhtml?globalId=' +
+    #                     study.doi
+    #                 ),
+    #             })
+    #
+    #     return rv
 
     ##### Callback overrides #####
 

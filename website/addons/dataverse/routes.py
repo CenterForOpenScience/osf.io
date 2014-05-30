@@ -9,13 +9,24 @@ from . import views
 
 settings_routes = {
     'rules': [
+        Rule(
+            ['/project/<pid>/dataverse/config/',
+            '/project/<pid>/node/<nid>/dataverse/config/'],
+            'get',
+            views.config.dataverse_config_get,
+            json_renderer
+        ),
         Rule([
             '/project/<pid>/dataverse/set/',
             '/project/<pid>/node/<nid>/dataverse/set/',
+        ], 'post', views.config.set_dataverse_and_study, json_renderer),
+        Rule([
+            '/project/<pid>/dataverse/set/dataverse/',
+            '/project/<pid>/node/<nid>/dataverse/set/dataverse/',
         ], 'post', views.config.set_dataverse, json_renderer),
         Rule([
             '/project/<pid>/dataverse/set/study/',
-            '/project/<pid>/node/<nid>/dataverse/set/',
+            '/project/<pid>/node/<nid>/dataverse/set/study/',
         ], 'post', views.config.set_study, json_renderer),
         Rule([
             '/project/<pid>/dataverse/authorize/',
@@ -86,6 +97,20 @@ page_routes = {
 
 api_routes = {
     'rules': [
+        Rule(
+            ['/project/<pid>/dataverse/config/get-studies/',
+            '/project/<pid>/node/<nid>/dataverse/config/get-studies/'],
+            'post',
+            views.config.dataverse_get_studies,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/dataverse/config/import-auth/',
+            '/project/<pid>/node/<nid>/dataverse/config/import-auth/'],
+            'put',
+            views.config.dataverse_import_user_auth,
+            json_renderer
+        ),
         Rule(
             [
                 '/project/<pid>/dataverse/hgrid/',

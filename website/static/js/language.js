@@ -16,9 +16,14 @@
                 userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                     'problem persists.',
-                confirmDeauth: 'Are you sure you want to unlink your Dataverse ' +
+                confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
                   'account? This will revoke access to Dataverse for all ' +
                   'projects you have authorized.',
+                confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse account? This will ' +
+                    'revoke the ability to view, download, modify, and upload files ' +
+                    'to studies on the Dataverse from the OSF. This will not remove your ' +
+                    'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
+                    'page.',
                 deauthError: 'Could not unlink Dataverse at this time.',
                 deauthSuccess: 'Unlinked your Dataverse account.',
                 authError: 'There was a problem connecting to the Dataverse.',

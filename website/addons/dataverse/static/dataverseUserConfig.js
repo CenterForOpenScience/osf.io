@@ -73,7 +73,7 @@
         self.deleteKey = function() {
             bootbox.confirm({
                 title: 'Delete Dataverse Token?',
-                message: language.confirmDeauth,
+                message: language.confirmUserDeauth,
                 callback: function(confirmed) {
                     if (confirmed) {
                         sendDeauth();
