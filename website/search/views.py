@@ -89,25 +89,15 @@ def conditionally_add_query_item(query, item, condition):
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
 
-    term = request.args.get('term')
     user = kwargs['auth'].user
 
-    # Search defaults
-    max_results = 10
-    category = 'project'
-    is_deleted = 'no'
-    is_folder = 'no'
-    include_public = 'yes'
-    include_contributed = 'yes'
-
-    # pull in changes to defaults from JSON request
-    if request.json is not None:
-        max_results = request.json.get('maxResults', max_results).lower()
-        category = request.json.get('category', category).lower()
-        is_deleted = request.json.get('isDeleted', is_deleted).lower()
-        is_folder = request.json.get('isFolder', is_folder).lower()
-        include_public = request.json.get('includePublic', include_public).lower()
-        include_contributed = request.json.get('includeContributed', include_contributed).lower()
+    term = request.args.get('term')
+    max_results = int(request.args.get('maxResults', '10'))
+    category = request.args.get('category', 'project').lower()
+    is_deleted = request.args.get('isDeleted', 'no').lower()
+    is_folder = request.args.get('isFolder', 'no').lower()
+    include_public = request.args.get('includePublic', 'yes').lower()
+    include_contributed = request.args.get('includeContributed', 'yes').lower()
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)

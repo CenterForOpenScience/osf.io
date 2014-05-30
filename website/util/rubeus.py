@@ -231,6 +231,7 @@ class NodeProjectCollector(object):
             'isDashboard': node.is_dashboard,
             'contributors': contributors,
             'node_id':node.resolve()._id,
+            'isSmartFolder': False,
         }
 
 

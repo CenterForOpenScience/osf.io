@@ -17,30 +17,6 @@
     //
     // Private Helper Functions
     //
-    var substringMatcher = function(strs) {
-      return function findMatches(q, cb) {
-        var matches, substringRegex;
-
-        // an array that will be populated with substring matches
-        matches = [];
-
-        // regex used to determine if a string contains the substring `q`
-        var substrRegex = new RegExp(q, 'i');
-
-        // iterate through the pool of strings and for any string that
-        // contains the substring `q`, add it to the `matches` array
-        $.each(strs, function(i, str) {
-          if (substrRegex.test(str.name)) {
-            // the typeahead jQuery plugin expects suggestions to a
-            // JavaScript object, refer to typeahead docs for more info
-            matches.push({ value: str });
-          }
-        });
-
-        cb(matches);
-      };
-    };
-
     //
     // HGrid Customization
     //
@@ -163,7 +139,7 @@
         var self = this;
         self.gridData = self.grid.grid.getData();
         self.myProjects = [];
-
+        self.publicProjects = [];
         // addDragAndDrop(self);
 
         // Expand/collapse All functions
@@ -194,19 +170,46 @@
         // Grab the JSON for the contents of the smart folder. Add that data
         // to self.myProjects so that we can use it for the autocomplete
         //
+        // http://127.0.0.1:5000/api/v1/search/projects/?term=amel&maxResults=5&includePublic=no&includeContributed=yes
 
-        $.getJSON("/api/v1/dashboard/get_all_projects/", function (projects) {
-//            self.grid.addData(projects.data, -1);
-            projects.forEach(function(item) {
-                if(!item.isPointer){
-                    self.myProjects.push(
-                        {
-                            name: item.name,
-                            node_id: item.node_id
-                        }
-                    )
+        self.publicProjects = new Bloodhound({
+            datumTokenizer: function (d) {
+                return Bloodhound.tokenizers.whitespace(d.value);
+            },
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            limit: 20,
+            remote: {
+                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=5&includePublic=yes&includeContributed=no',
+                filter: function (projects) {
+                    return $.map(projects, function (project) {
+                        return {
+                            name: project.value,
+                            node_id: project.id,
+                            category: project.category
+                        };
+                    });
                 }
-            });
+            }
+        });
+
+        self.myProjects = new Bloodhound({
+            datumTokenizer: function (d) {
+                return Bloodhound.tokenizers.whitespace(d.value);
+            },
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            limit: 20,
+            remote: {
+                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=5&includePublic=no&includeContributed=yes',
+                filter: function (projects) {
+                    return $.map(projects, function (project) {
+                        return {
+                            name: project.value,
+                            node_id: project.id,
+                            category: project.category
+                        };
+                    });
+                }
+            }
         });
 
         //
@@ -220,6 +223,8 @@
 
             var selectedRows = self.grid.grid.getSelectedRows();
             if (selectedRows.length == 1 ){
+                self.myProjects.initialize();
+                self.publicProjects.initialize();
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
@@ -231,10 +236,10 @@
                     theParentNodeID = ""
                 }
                 var parentIsSmartFolder = false;
-                if (theItem.parentID == -1){
+                if (theItem.isSmartFolder){
                     parentIsSmartFolder = true;
                 }
-                if(theItem.id != -1) {
+                if(!theItem.isSmartFolder) {
                     var detailTemplateSource   = $("#project-detail-template").html();
                     Handlebars.registerHelper('commalist', function(items, options) {
                         var out = '';
@@ -259,20 +264,37 @@
                     {
                       name: 'my-projects',
                       displayKey: function(data){
-                              return data.value.name;
+                              return data.name;
                           },
-                      source: substringMatcher(self.myProjects),
+                      source: self.myProjects.ttAdapter(),
                       templates: {
-                        header: '<h3 class="category">My Projects</h3>',
+                        header: function(data){
+                            return '<h3 class="category">My Projects</h3>'
+                        },
                         suggestion: function(data){
-                              return '<p>'+data.value.name+'</p>';
+                              return '<p>'+data.name+'</p>';
                           }
                       }
-                    });
+                    },
+                    {
+                      name: 'public-projects',
+                      displayKey: function(data){
+                              return data.name;
+                          },
+                      source: self.publicProjects.ttAdapter(),
+                      templates: {
+                        header: function(data){
+                            return '<h3 class="category">Public Projects</h3>'
+                        },
+                        suggestion: function(data){
+                              return '<p>'+data.name+'</p>';
+                          }
+                      }
+                   });
                     $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
                         $('#add-link-'+theItem.node_id).removeAttr('disabled');
-                        linkName = datum.value.name;
-                        linkID = datum.value.node_id;
+                        linkName = datum.name;
+                        linkID = datum.node_id;
                     });
                     $('#add-link-'+theItem.node_id).click(function() {
                         var url = "/api/v1/pointer/"; // the script where you handle the form input.
