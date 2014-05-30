@@ -1,4 +1,4 @@
-import datetime
+import os
 
 import httplib as http
 
@@ -7,6 +7,7 @@ from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, get_studies, get_study, \
     get_dataverses, get_dataverse
+from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import web_url_for
 from website.util.sanitize import deep_ensure_clean
@@ -53,32 +54,35 @@ def serialize_settings(node_settings, current_user, client=None):
         'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         'urls': serialize_urls(node_settings),
     }
+
     if node_settings.has_auth:
-        # Add owner's profile URL
+        # Add owner's profile info
         result['urls']['owner'] = web_url_for('profile_view_id',
             uid=user_settings.owner._primary_key)
         result.update({
             'ownerName': user_settings.owner.fullname,
             'dataverseUsername': user_settings.dataverse_username,
         })
-        # TODO: Dataverse Garbage
+        # Add owner's dataverse settings
         connection = connect(
             user_settings.dataverse_username,
             user_settings.dataverse_password
         )
         dataverses = get_dataverses(connection)
-        result['dataverses'] = [
-            {'title': dataverse.title, 'alias': dataverse.alias}
-            for dataverse in dataverses
-        ]
-        result['savedDataverse'] = {
-            'title': node_settings.dataverse,
-            'alias': node_settings.dataverse_alias
-        } or result['dataverses'][0]
-        result['savedStudy'] = {
-            'title': node_settings.study,
-            'hdl': node_settings.study_hdl
-        }
+        result.update({
+            'dataverses': [
+                {'title': dataverse.title, 'alias': dataverse.alias}
+                for dataverse in dataverses
+            ],
+            'savedDataverse': {
+                'title': node_settings.dataverse,
+                'alias': node_settings.dataverse_alias
+            },
+            'savedStudy': {
+                'title': node_settings.study,
+                'hdl': node_settings.study_hdl
+            }
+        })
     return result
 
 
@@ -90,8 +94,11 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('deauthorize_dataverse'),
         'importAuth': node.api_url_for('dataverse_import_user_auth'),
         'getStudies': node.api_url_for('dataverse_get_studies'),
+        'studyPrefix': 'http://dx.doi.org/',
+        'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
     }
     return urls
+
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
@@ -106,7 +113,7 @@ def dataverse_get_studies(node_addon, **kwargs):
     studies = get_studies(dataverse)
     rv = {}
     rv['studies'] = [
-        {'title': study.title, 'hdl': study.get_id()} for study in studies
+        {'title': study.title, 'hdl': study.doi} for study in studies
     ]
     return rv, http.OK
 
@@ -134,10 +141,16 @@ def dataverse_set_user_config(*args, **kwargs):
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
-def set_dataverse_and_study(*args, **kwargs):
+def set_dataverse_and_study(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
     user_settings = node_settings.user_settings
+    user = get_current_user()
+
+    if user_settings and user_settings.owner != user:
+        raise HTTPError(http.FORBIDDEN)
+
+    deep_ensure_clean(request.json)
 
     alias = request.json.get('dataverse')['alias']
     hdl = request.json.get('study')['hdl']
@@ -151,132 +164,18 @@ def set_dataverse_and_study(*args, **kwargs):
     node_settings.dataverse_alias = dataverse.alias
     node_settings.dataverse = dataverse.title
 
-    node_settings.study_hdl = study.get_id()
+    node_settings.study_hdl = study.doi
     node_settings.study = study.title
 
-    node_settings.save()
-
-    return {}
-
-
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def set_dataverse(*args, **kwargs):
-
-    auth = kwargs['auth']
-    user = auth.user
-
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
     node = node_settings.owner
-
-    if user_settings and user_settings.owner != user:
-        raise HTTPError(http.FORBIDDEN)
-
-    # Make a connection
-    connection = connect(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password,
-    )
-
-    if connection is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    old_dataverse = node_settings.dataverse #get_dataverse(connection, node_settings.dataverse_alias)
-    old_study = node_settings.study
-
-    deep_ensure_clean(request.json)
-    alias = request.json.get('dataverse_alias')
-
-    # Set selected Dataverse
-    node_settings.dataverse_alias = alias if alias != 'None' else None
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    node_settings.dataverse = dataverse.title if dataverse else None
-
-    if node_settings.dataverse_alias and dataverse is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # Set study to None if there was a study
-    if old_study is not None:
-
-        node_settings.study_hdl = None
-        node_settings.study = None
-
-        node.add_log(
-            action='dataverse_study_unlinked',
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-                'dataverse': {
-                    'dataverse': old_dataverse,
-                    'study': old_study,
-                }
-            },
-            auth=auth,
-        )
-
-    node_settings.save()
-
-    return {}
-
-
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
-def set_study(*args, **kwargs):
-
-    auth = kwargs['auth']
-    user = auth.user
-
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
-    node = node_settings.owner
-
-    if user_settings and user_settings.owner != user:
-        raise HTTPError(http.FORBIDDEN)
-
-    # Make a connection
-    connection = connect(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password,
-    )
-
-    if connection is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    deep_ensure_clean(request.json)
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-
-    # Get current dataverse and new study
-    hdl = request.json.get('study_hdl')
-
-    # Set study
-    if hdl != 'None':
-        log_action = 'dataverse_study_linked'
-        study = get_study(dataverse, hdl)
-
-        if study is None:
-            return HTTPError(http.BAD_REQUEST)
-
-        study_name = study.title
-        node_settings.dataverse = dataverse.title
-        node_settings.study_hdl = hdl
-        node_settings.study = study_name
-
-    else:
-        log_action = 'dataverse_study_unlinked'
-        study_name = node_settings.study
-
-        node_settings.study_hdl = None
-        node_settings.study = None
-
     node.add_log(
-        action=log_action,
+        action='dataverse_linked',
         params={
             'project': node.parent_id,
             'node': node._primary_key,
             'dataverse': {
                 'dataverse': dataverse.title,
-                'study': study_name,
+                'study': study.title,
             }
         },
         auth=auth,
@@ -285,3 +184,131 @@ def set_study(*args, **kwargs):
     node_settings.save()
 
     return {}
+#
+#
+# @decorators.must_be_contributor
+# @decorators.must_have_addon('dataverse', 'node')
+# def set_dataverse(*args, **kwargs):
+#
+#     auth = kwargs['auth']
+#     user = auth.user
+#
+#     node_settings = kwargs['node_addon']
+#     user_settings = node_settings.user_settings
+#     node = node_settings.owner
+#
+#     if user_settings and user_settings.owner != user:
+#         raise HTTPError(http.FORBIDDEN)
+#
+#     # Make a connection
+#     connection = connect(
+#         user_settings.dataverse_username,
+#         user_settings.dataverse_password,
+#     )
+#
+#     if connection is None:
+#         raise HTTPError(http.BAD_REQUEST)
+#
+#     old_dataverse = node_settings.dataverse #get_dataverse(connection, node_settings.dataverse_alias)
+#     old_study = node_settings.study
+#
+#     deep_ensure_clean(request.json)
+#     alias = request.json.get('dataverse_alias')
+#
+#     # Set selected Dataverse
+#     node_settings.dataverse_alias = alias if alias != 'None' else None
+#     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
+#     node_settings.dataverse = dataverse.title if dataverse else None
+#
+#     if node_settings.dataverse_alias and dataverse is None:
+#         raise HTTPError(http.BAD_REQUEST)
+#
+#     # Set study to None if there was a study
+#     if old_study is not None:
+#
+#         node_settings.study_hdl = None
+#         node_settings.study = None
+#
+#         node.add_log(
+#             action='dataverse_study_unlinked',
+#             params={
+#                 'project': node.parent_id,
+#                 'node': node._primary_key,
+#                 'dataverse': {
+#                     'dataverse': old_dataverse,
+#                     'study': old_study,
+#                 }
+#             },
+#             auth=auth,
+#         )
+#
+#     node_settings.save()
+#
+#     return {}
+#
+#
+# @decorators.must_be_contributor
+# @decorators.must_have_addon('dataverse', 'node')
+# def set_study(*args, **kwargs):
+#
+#     auth = kwargs['auth']
+#     user = auth.user
+#
+#     node_settings = kwargs['node_addon']
+#     user_settings = node_settings.user_settings
+#     node = node_settings.owner
+#
+#     if user_settings and user_settings.owner != user:
+#         raise HTTPError(http.FORBIDDEN)
+#
+#     # Make a connection
+#     connection = connect(
+#         user_settings.dataverse_username,
+#         user_settings.dataverse_password,
+#     )
+#
+#     if connection is None:
+#         raise HTTPError(http.BAD_REQUEST)
+#
+#     deep_ensure_clean(request.json)
+#     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
+#
+#     # Get current dataverse and new study
+#     hdl = request.json.get('study_hdl')
+#
+#     # Set study
+#     if hdl != 'None':
+#         log_action = 'dataverse_study_linked'
+#         study = get_study(dataverse, hdl)
+#
+#         if study is None:
+#             return HTTPError(http.BAD_REQUEST)
+#
+#         study_name = study.title
+#         node_settings.dataverse = dataverse.title
+#         node_settings.study_hdl = hdl
+#         node_settings.study = study_name
+#
+#     else:
+#         log_action = 'dataverse_study_unlinked'
+#         study_name = node_settings.study
+#
+#         node_settings.study_hdl = None
+#         node_settings.study = None
+#
+#     node.add_log(
+#         action=log_action,
+#         params={
+#             'project': node.parent_id,
+#             'node': node._primary_key,
+#             'dataverse': {
+#                 'dataverse': dataverse.title,
+#                 'study': study_name,
+#             }
+#         },
+#         auth=auth,
+#     )
+#
+#     node_settings.save()
+#
+#     return {}

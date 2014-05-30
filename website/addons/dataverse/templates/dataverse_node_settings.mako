@@ -9,8 +9,6 @@
                 authorized by <a data-bind="attr.href: urls().owner">
                     {{ownerName}}
                 </a>
-            </small>
-            <small>
                 <a data-bind="click: clickDeauth"
                     class="text-danger pull-right">Deauthorize</a>
             </small>
@@ -24,8 +22,8 @@
             <strong>Current Study:</strong>
             <span data-bind="if: showLinkedStudy">
                 This node is linked to
-                {{ savedStudyTitle }} on
-                {{ savedDataverseTitle }}.
+                <a data-bind="attr.href: savedStudyUrl()"> {{ savedStudyTitle }}</a> on
+                <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }}</a>.
             </span>
             <span data-bind="ifnot: showLinkedStudy">
                 None

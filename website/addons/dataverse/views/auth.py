@@ -64,6 +64,7 @@ def dataverse_delete_user(*args, **kwargs):
 
     return {}
 
+
 @must_be_logged_in
 @decorators.must_have_addon('dataverse', 'user')
 def dataverse_user_config_get(user_addon, auth, **kwargs):
