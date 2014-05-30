@@ -354,6 +354,10 @@ a.disabled {
     cursor: default;
 }
 
+a.btn-primary.disabled {
+    color: white;
+}
+
 #addPointer td {
     vertical-align: middle;
 }
