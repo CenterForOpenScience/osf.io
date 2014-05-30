@@ -593,9 +593,14 @@ class User(GuidStoredObject, AddonModelMixin):
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
             node.add_contributor(contributor=self, log=False)
-            node.remove_contributor(
-                contributor=user, auth=Auth(user=self), log=False
-            )
+            try:
+                node.remove_contributor(
+                    contributor=user, auth=Auth(user=self), log=False
+                )
+            except ValueError:
+                logger.error('Contributor {0} not in list on node {1}'.format(
+                    user, node
+                ))
             node.save()
         # Inherits projects the user created
         for node in user.node__created:

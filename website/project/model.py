@@ -477,7 +477,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
-    # TODO: move these to NodeFile
     files_current = fields.DictionaryField()
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
@@ -623,6 +622,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         :returns: User has required permission
 
         """
+        if user is None:
+            logger.error('User is ``None``.')
+            return False
         try:
             return permission in self.permissions[user._id]
         except KeyError:

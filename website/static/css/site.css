@@ -354,6 +354,10 @@ a.disabled {
     cursor: default;
 }
 
+a.btn-primary.disabled {
+    color: white;
+}
+
 #addPointer td {
     vertical-align: middle;
 }
@@ -1472,6 +1476,10 @@ button.save {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+.mfr-file > img {
+    max-width:100%
 }
 
 
