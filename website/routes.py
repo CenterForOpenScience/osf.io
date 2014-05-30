@@ -180,6 +180,7 @@ def make_url_map(app):
                  ],
              'get', website_views.get_dashboard, json_renderer),
         Rule('/dashboard/get_all_projects/', 'get', website_views.get_all_projects_smart_folder, json_renderer),
+        Rule('/dashboard/get_all_registrations/', 'get', website_views.get_all_registrations_smart_folder, json_renderer),
     ], prefix='/api/v1')
 
     ### Meta-data ###

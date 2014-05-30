@@ -144,8 +144,14 @@ class NodeProjectCollector(object):
 
 
     def get_all_projects_smart_folder(self):
-        root = {
-            'name': 'All my projects',
+        return self.make_smart_folder('All my projects', '-amp')
+
+    def get_all_registrations_smart_folder(self):
+        return self.make_smart_folder('All my registrations', '-amr')
+
+    def make_smart_folder(self, title, node_id):
+        return_value = {
+            'name': title,
             'kind': FOLDER,
             'permissions': {
                 'edit': False,
@@ -165,21 +171,21 @@ class NodeProjectCollector(object):
             'parentIsFolder': True,
             'isDashboard': False,
             'contributors': [],
-            'node_id':'-amp',
+            'node_id': node_id,
         }
-        return root
+        return return_value
 
     def get_root(self):
         root = self._serialize_node(self.node, visited=None, parent_is_folder=False)
         return root
 
     def to_hgrid(self):
-        """Return the Rubeus.JS representation of the node's file data, including
-        addons and components
+        """Return the Rubeus.JS representation of the node's children, not including addons
         """
         root = self._collect_components(self.node, visited=None)
         if self.node.is_dashboard:
             root.append(self.get_all_projects_smart_folder())
+            root.append(self.get_all_registrations_smart_folder())
         return root
 
     def _serialize_node(self, node, visited=None, parent_is_folder=False):

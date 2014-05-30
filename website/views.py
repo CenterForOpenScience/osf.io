@@ -62,7 +62,6 @@ def _render_dashboard(nodes, **kwargs):
     :return:
     """
     dashboard_projects = [rubeus.to_project_hgrid(node, **kwargs) for node in nodes]
-    dashboard_project = dashboard_projects[0]
     ret = {'data': dashboard_projects}
     return ret
 
@@ -150,6 +149,8 @@ def get_dashboard(nid=None, **kwargs):
         return_value = {'data': dashboard_projects}
     elif nid == '-amp':
         return_value = get_all_projects_smart_folder(**kwargs)
+    elif nid == '-amr':
+        return_value = get_all_registrations_smart_folder(**kwargs)
     else:
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, **kwargs)
@@ -169,9 +170,22 @@ def get_all_projects_smart_folder(**kwargs):
     )
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
-        # components only
     return return_value
 
+@must_be_logged_in
+def get_all_registrations_smart_folder(**kwargs):
+
+    user = kwargs['auth'].user
+
+    nodes = user.node__contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder','eq', False)
+    )
+
+    return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+    return return_value
 
 @must_be_logged_in
 def get_dashboard_nodes(auth, **kwargs):
