@@ -174,7 +174,11 @@ def make_url_map(app):
 
     process_rules(app, [
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-        Rule('/dashboard/get_dashboard/', 'get', website_views.get_dashboard, json_renderer),
+        Rule([
+                 '/dashboard/get_dashboard/<nid>',
+                 '/dashboard/get_dashboard/',
+                 ],
+             'get', website_views.get_dashboard, json_renderer),
         Rule('/dashboard/get_all_projects/', 'get', website_views.get_all_projects_smart_folder, json_renderer),
     ], prefix='/api/v1')
 
@@ -635,6 +639,22 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.add_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointer,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/pointer/move/',
+            ],
+            'post',
+            project_views.node.move_pointer,
             json_renderer,
         ),
         Rule(

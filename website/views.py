@@ -46,16 +46,14 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-_render_project = rubeus.to_project_hgrid
-
-
 def _render_projects(nodes, **kwargs):
     """
 
     :param nodes:
     :return:
     """
-    ret = {'data': [_render_project(node, **kwargs) for node in nodes]}
+    pass
+    ret = {'data': [rubeus.to_project_hgrid(node, **kwargs) for node in nodes]}
     return ret
 
 
@@ -65,9 +63,9 @@ def _render_dashboard(nodes, **kwargs):
     :param nodes:
     :return:
     """
-    dashboard_projects = [_render_project(node, **kwargs) for node in nodes]
+    dashboard_projects = [rubeus.to_project_hgrid(node, **kwargs) for node in nodes]
     dashboard_project = dashboard_projects[0]
-    ret = {'data': dashboard_project}
+    ret = {'data': dashboard_projects}
     return ret
 
 
@@ -144,11 +142,20 @@ def find_dashboard(user):
         )
     return dashboard_folder
 
+
 @must_be_logged_in
-def get_dashboard(**kwargs):
+def get_dashboard(nid=None, **kwargs):
     user = kwargs['auth'].user
-    dashboard_folder = find_dashboard(user)
-    return_value = _render_dashboard(dashboard_folder, **kwargs)
+    if nid is None:
+        nodes = find_dashboard(user)
+        dashboard_projects = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+        return_value = {'data': dashboard_projects}
+    elif nid == '-amp':
+        return_value = get_all_projects_smart_folder(**kwargs)
+    else:
+        node = Node.load(nid)
+        dashboard_projects = rubeus.to_project_hgrid(node, **kwargs)
+        return_value = {'data': dashboard_projects}
     return return_value
 
 @must_be_logged_in
@@ -163,7 +170,7 @@ def get_all_projects_smart_folder(**kwargs):
         Q('is_folder','eq', False)
     )
 
-    return_value = _render_projects(nodes, **kwargs)
+    return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
     return return_value
 
 

@@ -50,6 +50,9 @@ def to_project_hgrid(node, auth, **data):
     """
     return NodeProjectCollector(node, auth, **data).to_hgrid()
 
+def to_project_root(node, auth, **data):
+    return NodeProjectCollector(node, auth, **data).get_root()
+
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
@@ -135,21 +138,48 @@ class NodeProjectCollector(object):
         rv = []
         for child in node.nodes: #(child.resolve()._id not in visited or node.is_folder) and
             if not child.is_deleted and node.can_view(self.auth):
-                visited.append(child.resolve()._id)
-                rv.append(self._serialize_node(child, visited=visited, parent_is_folder=node.is_folder))
+                # visited.append(child.resolve()._id)
+                rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
         return rv
+
+
+    def get_all_projects_smart_folder(self):
+        root = {
+            'name': 'All my projects',
+            'kind': FOLDER,
+            'permissions': {
+                'edit': False,
+                'view': True,
+            },
+            'urls': {
+                'upload': None,
+                'fetch': None,
+            },
+            'children': [],
+            'isPointer': False,
+            'isFolder': True,
+            'isSmartFolder': True,
+            'dateModified': None,
+            'modifiedDelta': 0,
+            'modifiedBy': None,
+            'parentIsFolder': True,
+            'isDashboard': False,
+            'contributors': [],
+            'node_id':'-amp',
+        }
+        return root
+
+    def get_root(self):
+        root = self._serialize_node(self.node, visited=None, parent_is_folder=False)
+        return root
 
     def to_hgrid(self):
         """Return the Rubeus.JS representation of the node's file data, including
         addons and components
         """
-        root = []
+        root = self._collect_components(self.node, visited=None)
         if self.node.is_dashboard:
-            for child in self.node.nodes:
-                if not child.is_deleted:
-                    root.append(self._serialize_node(child, visited=None, parent_is_folder=True))
-        else:
-            root = self._serialize_node(self.node, visited=None, parent_is_folder=True)
+            root.append(self.get_all_projects_smart_folder())
         return root
 
     def _serialize_node(self, node, visited=None, parent_is_folder=False):
@@ -163,17 +193,18 @@ class NodeProjectCollector(object):
         date_modified = node.date_modified.isoformat()
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
-        if can_view and (node.primary or node.is_folder or parent_is_folder) and not self.just_one_level:
-            children = self._collect_components(node, visited)
+        children_count = len(node.nodes)
+        if can_view and (node.primary or node.is_folder or parent_is_folder) and children_count > 0:
+            children = True
         else:
-            children = []
+            children = False
         return {
             'name': node.title
                 if can_view
                 else u'Private Component',
-            'kind': FILE
-                if children == []
-                else FOLDER,
+            'kind': FOLDER
+                if children
+                else FILE,
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
@@ -184,7 +215,7 @@ class NodeProjectCollector(object):
                     if not node.is_folder
                     else None,
             },
-            'children': children,
+            'children': [],
             'isPointer': not node.primary,
             'isFolder': node.is_folder,
             'dateModified': date_modified,

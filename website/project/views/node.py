@@ -979,6 +979,48 @@ def _add_pointers(node, pointers, auth):
     if added:
         node.save()
 
+@collect_auth
+def move_pointer(auth):
+    """Move pointer from one node to another node.
+
+    """
+
+    from_node_id = request.json.get('fromNodeID')
+    to_node_id = request.json.get('toNodeID')
+    pointer_to_move = request.json.get('pointerID')
+
+    if not (from_node_id and to_node_id and pointer_to_move):
+        raise HTTPError(http.BAD_REQUEST)
+
+    pointer = Node.load(pointer_to_move)
+    from_node = Node.load(from_node_id)
+    to_node = Node.load(to_node_id)
+
+    _add_pointers(to_node, [pointer], auth)
+
+    try:
+        from_node.rm_pointer(pointer, auth=auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    from_node.save()
+
+@collect_auth
+def add_pointer(auth):
+    """Add a single pointer to a node using only JSON parameters
+
+    """
+
+    to_node_id = request.json.get('toNodeID')
+    pointer_to_move = request.json.get('pointerID')
+
+    if not (to_node_id and pointer_to_move):
+        raise HTTPError(http.BAD_REQUEST)
+
+    pointer = Node.load(pointer_to_move)
+    to_node = Node.load(to_node_id)
+
+    _add_pointers(to_node, [pointer], auth)
 
 @must_have_permission('write')
 @must_not_be_registration
