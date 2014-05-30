@@ -177,9 +177,8 @@
                 return Bloodhound.tokenizers.whitespace(d.value);
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
-            limit: 20,
             remote: {
-                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=5&includePublic=yes&includeContributed=no',
+                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=yes&includeContributed=no',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -189,7 +188,8 @@
                         };
                     });
                 }
-            }
+            },
+            limit: 10
         });
 
         self.myProjects = new Bloodhound({
@@ -197,9 +197,8 @@
                 return Bloodhound.tokenizers.whitespace(d.value);
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
-            limit: 20,
             remote: {
-                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=5&includePublic=no&includeContributed=yes',
+                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=no&includeContributed=yes',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -209,7 +208,8 @@
                         };
                     });
                 }
-            }
+            },
+            limit: 10
         });
 
         //
@@ -262,34 +262,34 @@
                       highlight: true
                     },
                     {
-                      name: 'my-projects',
-                      displayKey: function(data){
+                        name: 'my-projects',
+                        displayKey: function(data){
                               return data.name;
                           },
-                      source: self.myProjects.ttAdapter(),
-                      templates: {
+                        source: self.myProjects.ttAdapter(),
+                        templates: {
                         header: function(data){
                             return '<h3 class="category">My Projects</h3>'
                         },
                         suggestion: function(data){
                               return '<p>'+data.name+'</p>';
                           }
-                      }
+                        }
                     },
                     {
-                      name: 'public-projects',
-                      displayKey: function(data){
+                        name: 'public-projects',
+                        displayKey: function(data){
                               return data.name;
                           },
-                      source: self.publicProjects.ttAdapter(),
-                      templates: {
+                        source: self.publicProjects.ttAdapter(),
+                        templates: {
                         header: function(data){
                             return '<h3 class="category">Public Projects</h3>'
                         },
                         suggestion: function(data){
                               return '<p>'+data.name+'</p>';
                           }
-                      }
+                        }
                    });
                     $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
                         $('#add-link-'+theItem.node_id).removeAttr('disabled');

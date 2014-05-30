@@ -106,7 +106,7 @@ div.project-details span.title {
 
 div.project-details {
     width: 450px;
-    height: 300px;
+    height: 500px;
     border: 1px solid silver;
     background-color: white;
     float: right;
@@ -195,7 +195,10 @@ input.typeahead.tt-input {
     color: #999;
 	padding-top: 21px;
 }
-
+h3.category {
+    font-size: 18px;
+    margin-top: 5px;
+}
 .tt-dropdown-menu {
     width: 422px;
     padding: 8px 0;
@@ -208,13 +211,13 @@ input.typeahead.tt-input {
     -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
-	margin-top: 12px;
+	margin-top: 6px;
 }
 
 .tt-suggestion {
-    padding: 3px 20px;
-    font-size: 18px;
-    line-height: 24px;
+    padding: 3px 5px;
+    font-size: 12px;
+    line-height: 14px;
 }
 
 .tt-suggestion.tt-cursor {
