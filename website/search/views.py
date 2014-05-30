@@ -10,6 +10,8 @@ from website.filters import gravatar
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 from modularodm.storage.mongostorage import RawQuery as Q
+from framework.exceptions import HTTPError
+import httplib as http
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -64,33 +66,75 @@ def search_search():
     }
 
 
+def conditionally_add_query_item(query, item, condition):
+    """ Helper for the search_projects_by_title function which will add a condition to a query
+    It will give an error if the proper search term is not used.
+    :param query: The modular ODM query that you want to modify
+    :param item:  the field to query on
+    :param condition: yes, no, or either
+    :return: the modified query
+    """
+
+    condition = condition.lower()
+
+    if condition == "yes":
+        return query & Q(item, 'eq', True)
+    elif condition == "no":
+        return query & Q(item, 'eq', False)
+    elif condition == "either":
+        return query
+
+    raise HTTPError(http.BAD_REQUEST)
+
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
 
     term = request.args.get('term')
     user = kwargs['auth'].user
 
+    # Search defaults
     max_results = 10
+    category = 'project'
+    is_deleted = 'no'
+    is_folder = 'no'
+    include_public = 'yes'
+    include_contributed = 'yes'
+
+    # pull in changes to defaults from JSON request
+    if request.json is not None:
+        max_results = request.json.get('maxResults', max_results).lower()
+        category = request.json.get('category', category).lower()
+        is_deleted = request.json.get('isDeleted', is_deleted).lower()
+        is_folder = request.json.get('isFolder', is_folder).lower()
+        include_public = request.json.get('includePublic', include_public).lower()
+        include_contributed = request.json.get('includeContributed', include_contributed).lower()
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False) &  # isn't deleted
-        Q('is_folder', 'eq', False) # not a folder
+        Q('category', 'eq', category)   # is a project
     )
 
-    my_projects = Node.find(
-        matching_title &
-        Q('contributors', 'contains', user._id)  # user is a contributor
-    ).limit(max_results)
+    matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
+    matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
 
-    if my_projects.count() < max_results:
+    my_projects = []
+    my_project_count = 0
+    public_projects = []
+
+    if include_contributed == "yes":
+        my_projects = Node.find(
+            matching_title &
+            Q('contributors', 'contains', user._id)  # user is a contributor
+        ).limit(max_results)
+        my_project_count = my_project_count
+
+
+    if my_project_count < max_results and include_public == "yes":
         public_projects = Node.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public
-        ).limit(max_results - my_projects.count())
-    else:
-        public_projects = []
+        ).limit(max_results - my_project_count)
+
 
     results = list(my_projects) + list(public_projects)
 
