@@ -88,7 +88,18 @@ def conditionally_add_query_item(query, item, condition):
 
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
+    """ Search for nodes by title. Can pass in arguments from the URL to modify the search
+    :arg term: The substring of the title.
+    :arg category: Category of the project.
+    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg includePublic: yes, no, or either. Whether the projects listed should include public projects.
+    :arg includeContributed: yes, no, or either. Whether the search should include projects the current user has
+        contributed to.
+    :arg ignoreNode: a list of nodes that should not be included in the search.
+    :return: a list of dictionaries of projects
 
+    """
     user = kwargs['auth'].user
 
     term = request.args.get('term')
