@@ -169,14 +169,11 @@ def set_dataverse_and_study(auth, **kwargs):
 
     node = node_settings.owner
     node.add_log(
-        action='dataverse_linked',
+        action='dataverse_study_linked',
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'dataverse': {
-                'dataverse': dataverse.title,
-                'study': study.title,
-            }
+            'study': study.title,
         },
         auth=auth,
     )

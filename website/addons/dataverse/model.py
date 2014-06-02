@@ -90,7 +90,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             action='dataverse_node_authorized',
             auth=Auth(user_settings.owner),
             params={
-                'addon': 'dropbox',
                 'project': node.parent_id,
                 'node': node._primary_key,
             }

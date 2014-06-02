@@ -58,10 +58,7 @@ def dataverse_release_study(**kwargs):
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'dataverse': {
-                'dataverse': dataverse.title,
-                'study': study.title,
-            }
+            'study': study.title,
         },
         auth=auth,
         log_date=now,
@@ -196,10 +193,7 @@ def dataverse_upload_file(**kwargs):
             'node': node._primary_key,
             'filename': filename,
             'path': node.web_url_for('dataverse_view_file', path=file_id),
-            'dataverse': {
-                'dataverse': dataverse.title,
-                'study': study.title,
-            }
+            'study': study.title,
         },
         auth=auth,
         log_date=now,
@@ -269,10 +263,7 @@ def dataverse_delete_file(**kwargs):
             'project': node.parent_id,
             'node': node._primary_key,
             'filename': file.name,
-            'dataverse': {
-                'dataverse': dataverse.title,
-                'study': study.title,
-            }
+            'study': study.title,
         },
         auth=auth,
         log_date=now,

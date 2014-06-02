@@ -27,17 +27,6 @@ def authorize_dataverse(**kwargs):
     node_settings.user_settings = user_settings
     node_settings.save()
 
-    node = node_settings.owner
-    node.add_log(
-        action='dataverse_node_authorized',
-        auth=Auth(user_settings.owner),
-        params={
-            'addon': 'dataverse',
-            'project': node.parent_id,
-            'node': node._primary_key,
-        }
-    )
-
     return {}
 
 
