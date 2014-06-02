@@ -38,7 +38,7 @@ def dataverse_import_user_auth(auth, node_addon, user_addon, **kwargs):
     }, http.OK
 
 
-def serialize_settings(node_settings, current_user, client=None):
+def serialize_settings(node_settings, current_user):
     """View helper that returns a dictionary representation of a
     DataverseNodeSettings record. Provides the return value for the
     dataverse config endpoints.

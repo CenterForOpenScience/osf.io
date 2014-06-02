@@ -40,7 +40,7 @@ def release_study(study):
 
 def get_studies(dataverse):
     if dataverse is None:
-        return
+        return []
     studies = dataverse.get_studies()
     acessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
     return acessible_studies
@@ -54,12 +54,16 @@ def get_study(dataverse, hdl):
 
 
 def get_dataverses(connection):
+    if connection is None:
+        return []
     dataverses = connection.get_dataverses()
     released_dataverses = [d for d in dataverses if d.is_released]
     return released_dataverses
 
 
 def get_dataverse(connection, alias):
+    if connection is None:
+        return
     dataverse = connection.get_dataverse(alias)
     return dataverse if dataverse and dataverse.is_released else None
 

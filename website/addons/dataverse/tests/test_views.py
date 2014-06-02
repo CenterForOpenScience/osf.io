@@ -10,6 +10,7 @@ from framework.auth.decorators import Auth
 from webtest import Upload
 from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
+from website.addons.dataverse.views.config import serialize_settings
 from website.addons.dataverse.tests.utils import create_mock_connection, \
     create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses, \
     create_mock_study
@@ -96,6 +97,77 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
 
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_serialize_settings_helper_returns_correct_auth_info(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        result = serialize_settings(self.node_settings, self.user)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_true(result['userHasAuth'])
+        assert_true(result['userIsOwner'])
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_serialize_settings_helper_non_owner(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        # Non-owner user without add-on
+        stranger = AuthUserFactory()
+        result = serialize_settings(self.node_settings, stranger)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_false(result['userHasAuth'])
+        assert_false(result['userIsOwner'])
+
+        # Non-owner user with add-on
+        stranger.add_addon('dataverse')
+        stranger_settings = stranger.get_addon('dataverse')
+        stranger_settings.dataverse_username = 'foo'
+        stranger_settings.dataverse_password = 'bar'
+        stranger_settings.save()
+        result = serialize_settings(self.node_settings, stranger)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_true(result['userHasAuth'])
+        assert_false(result['userIsOwner'])
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_serialize_settings_helper_returns_correct_urls(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        result = serialize_settings(self.node_settings, self.user)
+        urls = result['urls']
+
+        assert_equal(urls['set'], self.project.api_url_for('set_dataverse_and_study'))
+        assert_equal(urls['importAuth'], self.project.api_url_for('dataverse_import_user_auth'))
+        assert_equal(urls['deauthorize'], self.project.api_url_for('deauthorize_dataverse'))
+        assert_equal(urls['getStudies'], self.project.api_url_for('dataverse_get_studies'))
+        assert_equal(urls['studyPrefix'], 'http://dx.doi.org/')
+        assert_equal(urls['dataversePrefix'], 'http://{0}/dvn/dv/'.format(HOST))
+        assert_equal(urls['owner'], web_url_for('profile_view_id', uid=self.user._primary_key))
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_serialize_settings_helper_returns_dv_info(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        result = serialize_settings(self.node_settings, self.user)
+
+        assert_equal(len(result['dataverses']), 3)
+        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
+        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
+        assert_equal(result['savedStudy']['title'], self.node_settings.study)
+        assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
+
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_serialize_settings_helper_no_connection(self, mock_connection):
+        mock_connection.return_value = None
+
+        result = serialize_settings(self.node_settings, self.user)
+
+        assert_false(result['dataverses'])
+        assert_equal(result['savedDataverse']['title'], self.node_settings.dataverse)
+        assert_equal(result['savedDataverse']['alias'], self.node_settings.dataverse_alias)
+        assert_equal(result['savedStudy']['title'], self.node_settings.study)
+        assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
+
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_user_config(self, mock_connection):

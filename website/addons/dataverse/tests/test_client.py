@@ -101,7 +101,7 @@ class TestClient(DataverseAddonTestCase):
 
     def test_get_studies_no_dataverse(self):
         studies = get_studies(None)
-        assert_equal(studies, None)
+        assert_equal(studies, [])
 
     def test_get_study(self):
         self.mock_study.get_state.return_value = 'DRAFT'
