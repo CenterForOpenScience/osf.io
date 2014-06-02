@@ -63,9 +63,10 @@
             return null;
         });
 
+        self.showStudySelect = ko.observable(false);
         self.showLinkedStudy = ko.computed(function() {
             return self.savedStudyHdl();
-        })
+        });
         self.showLinkDataverse = ko.computed(function() {
             return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
         });
@@ -141,6 +142,7 @@
 
         self.getStudies = function() {
             self.studies([{title: '<<< Retrieving Studies >>>', hdl: ''}])
+            self.showStudySelect(false);
             return $.ajax({
                 url: self.urls().getStudies,
                 type: 'POST',
@@ -149,6 +151,7 @@
                 dataType: 'json',
                 success: function(response) {
                     self.studies(response.studies);
+                    self.showStudySelect(true);
                     self.selectedStudyHdl(self.savedStudyHdl());
                 },
                 error: function() {

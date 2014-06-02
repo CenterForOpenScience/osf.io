@@ -34,12 +34,30 @@
             <div class="row" data-bind="if: showPicker">
                 <div class="col-md-6">
                     Dataverse:
-                    <select class="form-control" data-bind="options: dataverses, optionsValue: 'alias', optionsText: 'title', value: selectedDataverseAlias, event: {change: getStudies}"> </select>
+                    <select class="form-control"
+                            data-bind="options: dataverses,
+                                       optionsValue: 'alias',
+                                       optionsText: 'title',
+                                       value: selectedDataverseAlias,
+                                       event: {change: getStudies}">
+                    </select>
                 </div>
 
                 <div class="col-md-6">
                     Study:
-                    <select class="form-control" data-bind="options: studies, optionsValue: 'hdl', optionsText: 'title', value: selectedStudyHdl"> </select>
+                    <div data-bind="if: showStudySelect">
+                        <select class="form-control"
+                                data-bind="options: studies,
+                                           optionsValue: 'hdl',
+                                           optionsText: 'title',
+                                           value: selectedStudyHdl">
+                        </select>
+                    </div>
+                    <div data-bind="ifnot: showStudySelect">
+                        <i class="icon-spinner icon-large icon-spin"
+                           style="padding-bottom: 8px; padding-top: 8px"></i>
+                        <span class="text-info">Retrieving studies...</span>
+                    </div>
                 </div>
 
             </div>
