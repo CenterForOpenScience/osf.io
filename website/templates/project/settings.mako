@@ -53,7 +53,6 @@
 
         % endif
 
-
         <div id="configureCommenting" class="panel panel-default">
 
             <div class="panel-heading">
