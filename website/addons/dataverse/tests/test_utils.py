@@ -34,17 +34,18 @@ class TestUtils(DataverseAddonTestCase):
         assert_equal(mock_dv.alias, 'ALIAS1')
         assert_equal(len(mock_dv.get_studies()), 3)
         assert_is_instance(mock_dv.get_studies()[0], Study)
-        assert_equal(mock_dv.get_study_by_hdl(mock_dv.get_studies()[1].get_id()),
+        assert_equal(mock_dv.get_study_by_hdl(mock_dv.get_studies()[1].doi),
                      mock_dv.get_studies()[1])
 
     def test_mock_study(self):
-        sid = 'DVN/23456'
-        mock_study = create_mock_study(sid)
-        assert_equal(mock_study.get_id(), sid)
+        study_id = 'DVN/23456'
+        doi = 'doi:12.3456/{0}'.format(study_id)
+        mock_study = create_mock_study(study_id)
+        assert_equal(mock_study.doi, doi)
         assert_equal(mock_study.get_citation(),
-                     'Example Citation for {0}'.format(sid))
-        assert_equal(mock_study.title, 'Example ({0})'.format(sid))
-        assert_equal(mock_study.doi, 'doi:12.3456/{0}'.format(sid))
+                     'Example Citation for {0}'.format(study_id))
+        assert_equal(mock_study.title, 'Example ({0})'.format(study_id))
+        assert_equal(mock_study.doi, doi)
         assert_equal(mock_study.get_state(), 'DRAFT')
         assert_equal(len(mock_study.get_files()), 1)
         assert_is_instance(mock_study.get_files()[0], DvnFile)
