@@ -6,7 +6,7 @@
 <script>
     % if user["is_profile"]:
         $(function() {
-            $('#profile-fullname').editable({
+            $('#profile-fullname > span').editable({
                 type:  'text',
                 pk:    '${profile["id"]}',
                 name:  'fullname',
@@ -14,7 +14,6 @@
                 title: 'Edit Full Name',
                 placement: 'bottom',
                 value: '${profile["fullname"]}',
-                mode: "inline",
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
@@ -49,7 +48,7 @@
         <img id='profile-gravatar' src="${profile['gravatar_url']}"
                  rel="tooltip" title="click to change avatar" />
     </a>
-    <h1 id="profile-fullname">${profile["fullname"]}</h1>
+    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
 </div><!-- end-page-header -->
 
 <div class="row">
