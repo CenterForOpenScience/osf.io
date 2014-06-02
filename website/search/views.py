@@ -93,6 +93,7 @@ def search_projects_by_title(**kwargs):
     :arg category: Category of the project.
     :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
     :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
     :arg includePublic: yes, no, or either. Whether the projects listed should include public projects.
     :arg includeContributed: yes, no, or either. Whether the search should include projects the current user has
         contributed to.
@@ -107,6 +108,7 @@ def search_projects_by_title(**kwargs):
     category = request.args.get('category', 'project').lower()
     is_deleted = request.args.get('isDeleted', 'no').lower()
     is_folder = request.args.get('isFolder', 'no').lower()
+    is_registration = request.args.get('isRegistration', 'no').lower()
     include_public = request.args.get('includePublic', 'yes').lower()
     include_contributed = request.args.get('includeContributed', 'yes').lower()
     ignore_nodes = request.args.getlist('ignoreNode', [])
@@ -118,6 +120,7 @@ def search_projects_by_title(**kwargs):
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
     matching_title = conditionally_add_query_item(matching_title, 'is_folder', is_folder)
+    matching_title = conditionally_add_query_item(matching_title, 'is_registration', is_registration)
 
     if len(ignore_nodes) > 0:
         for node_id in ignore_nodes:
