@@ -228,6 +228,12 @@
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
+
+                var projectDetailData;
+                var projectDetailURL = '/api/v1/project/'+theItem.node_id+'/';
+                $.getJSON(projectDetailURL, function(data){
+                    projectDetailData = data;
+                });
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
                     var theParentNodeID = theParentNode.node_id
@@ -253,7 +259,8 @@
                     var detailTemplateContext = {
                         theItem: theItem,
                         multipleContributors: theItem.contributors.length > 1,
-                        parentIsSmartFolder: parentIsSmartFolder
+                        parentIsSmartFolder: parentIsSmartFolder,
+                        projectDetailData: projectDetailData
                     };
                     var displayHTML    = detailTemplate(detailTemplateContext);
                     $(".project-details").html(displayHTML);
