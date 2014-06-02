@@ -5,7 +5,7 @@
                 <div class="col-md-4">
                     <h4>
                         <div class="input-group">
-                            <a class="btn btn-primary form-control${'' if user_name and (user['is_contributor'] or node['is_public']) else ' disabled'}"
+                            <a class="btn btn-primary form-control disabled"
                                     >${ language.LINK_ACTION }</a>
                             <a class="btn btn-default input-group-addon" href="#showLinks" data-toggle="modal" data-dismiss="modal">
                                 ${ node['points'] }

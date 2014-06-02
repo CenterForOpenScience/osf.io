@@ -132,25 +132,18 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes.
+    def delete(self):
+        self.clear()
+        super(DropboxUserSettings, self).delete()
 
-        :param Auth auth: Auth object for the user performing the "clear" action.
-        """
+    def clear(self):
+        """Clear settings and deauthorize any associated nodes."""
         self.dropbox_id = None
         self.access_token = None
         for node_settings in self.dropboxnodesettings__authorized:
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
         return self
-
-    def delete(self):
-        super(DropboxUserSettings, self).delete()
-        self.clear()
-        for node_settings in self.dropboxnodesettings__authorized:
-            node_settings.delete(save=False)
-            node_settings.user_settings = None
-            node_settings.save()
 
     def __repr__(self):
         return '<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
@@ -186,31 +179,25 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         """
         node = self.owner
         self.user_settings = user_settings
-        node.add_log(
-            action='dropbox_node_authorized',
-            auth=Auth(user_settings.owner),
-            params={
-                'addon': 'dropbox',
-                'project': node.parent_id,
-                'node': node._primary_key,
-            }
-        )
+        nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
+        nodelogger.log(action="node_authorized", save=True)
 
-    def deauthorize(self, auth):
+    def delete(self):
+        self.deauthorize(Auth(self.user_settings.owner), add_log=False)
+        super(DropboxNodeSettings, self).delete()
+
+    def deauthorize(self, auth, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
         folder = self.folder
-        self.user_settings = None
+
         self.folder = None
-        self.owner.add_log(
-            action='dropbox_node_deauthorized',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'folder': folder
-            },
-            auth=auth,
-        )
+        self.user_settings = None
+
+        if add_log:
+            extra = {'folder': folder}
+            nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
+            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def __repr__(self):
         return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
