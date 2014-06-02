@@ -231,9 +231,11 @@
 
                 var projectDetailData;
                 var projectDetailURL = '/api/v1/project/'+theItem.node_id+'/';
-                $.getJSON(projectDetailURL, function(data){
-                    projectDetailData = data;
-                });
+                if(theItem.node_id.indexOf('-') != 0) {
+                    $.getJSON(projectDetailURL, function (data) {
+                        projectDetailData = data;
+                    });
+                }
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
                     var theParentNodeID = theParentNode.node_id
