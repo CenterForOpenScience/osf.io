@@ -187,26 +187,15 @@
             });
         };
 
-        // Callback for when PUT request to import user access token
-        function onImportSuccess(response) {
-            // Update view model based on response
-            self.updateFromData(response.result);
-            self.changeMessage(language.authSuccess, 'text-success', 3000);
-        }
-
-        function onImportError() {
-            self.changeMessage(language.authError, 'text-danger');
-        }
-
         function authorizeNode() {
             return $.ajax({
-                url: self.urls().authorize,
-                type: 'POST',
+                url: self.urls().importAuth,
+                type: 'PUT',
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
-                    return $.osf.putJSON(self.urls().importAuth, {},
-                        onImportSuccess, onImportError);
+                    self.updateFromData(response.result);
+                    self.changeMessage(language.authSuccess, 'text-success', 3000);
                 },
                 error: function() {
                     self.changeMessage(language.authError, 'text-danger');

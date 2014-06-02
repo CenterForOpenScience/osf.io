@@ -90,9 +90,8 @@ def serialize_urls(node_settings):
     node = node_settings.owner
     urls = {
         'set': node.api_url_for('set_dataverse_and_study'),
-        'authorize': node.api_url_for('authorize_dataverse'),
-        'deauthorize': node.api_url_for('deauthorize_dataverse'),
         'importAuth': node.api_url_for('dataverse_import_user_auth'),
+        'deauthorize': node.api_url_for('deauthorize_dataverse'),
         'getStudies': node.api_url_for('dataverse_get_studies'),
         'studyPrefix': 'http://dx.doi.org/',
         'dataversePrefix': 'http://{0}/dvn/dv/'.format(HOST),
@@ -152,8 +151,12 @@ def set_dataverse_and_study(auth, **kwargs):
 
     deep_ensure_clean(request.json)
 
-    alias = request.json.get('dataverse')['alias']
-    hdl = request.json.get('study')['hdl']
+    alias = request.json.get('dataverse').get('alias')
+    hdl = request.json.get('study').get('hdl')
+
+    if hdl is None:
+        return HTTPError(http.BAD_REQUEST)
+
     connection = connect(
         user_settings.dataverse_username,
         user_settings.dataverse_password

@@ -8,30 +8,6 @@ from website.util import api_url_for, web_url_for
 
 @decorators.must_be_contributor
 @decorators.must_have_addon('dataverse', 'node')
-def authorize_dataverse(**kwargs):
-
-    user = kwargs['auth'].user
-
-    node_settings = kwargs['node_addon']
-    user_settings = user.get_addon('dataverse')
-
-    connection = connect(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password,
-    )
-
-    if connection is None:
-        return {'message': 'Incorrect credentials'}, 400
-
-    # Set user for node settings
-    node_settings.user_settings = user_settings
-    node_settings.save()
-
-    return {}
-
-
-@decorators.must_be_contributor
-@decorators.must_have_addon('dataverse', 'node')
 def deauthorize_dataverse(*args, **kwargs):
 
     node_settings = kwargs['node_addon']
@@ -67,7 +43,7 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
 
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
-        'delete': api_url_for('dataverse_delete_user')
+        'delete': api_url_for('dataverse_delete_user'),
     }
     return {
         'result': {

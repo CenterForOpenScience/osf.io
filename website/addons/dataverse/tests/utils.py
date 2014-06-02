@@ -27,7 +27,7 @@ class DataverseAddonTestCase(AddonTestCase):
     def set_node_settings(self, settings):
         settings.dataverse_alias = 'ALIAS2'
         settings.dataverse = 'Example 2'
-        settings.study_hdl = 'DVN/00001'
+        settings.study_hdl = 'doi:12.3456/DVN/00001'
         settings.study = 'Example (DVN/00001)'
 
 
@@ -84,7 +84,7 @@ def create_mock_dataverse(title='Example Dataverse 0'):
     def _get_study_by_hdl(hdl):
         return next((
             study for study in mock_dataverse.get_studies()
-            if study.get_id() == hdl), None
+            if study.doi == hdl), None
         )
 
     mock_dataverse.get_study_by_hdl = mock.MagicMock(
@@ -97,7 +97,6 @@ def create_mock_dataverse(title='Example Dataverse 0'):
 def create_mock_study(id='DVN/12345'):
     mock_study = mock.create_autospec(Study)
 
-    mock_study.get_id.return_value = id
     mock_study.get_citation.return_value = 'Example Citation for {0}'.format(id)
     mock_study.title = 'Example ({0})'.format(id)
     mock_study.doi = 'doi:12.3456/{0}'.format(id)

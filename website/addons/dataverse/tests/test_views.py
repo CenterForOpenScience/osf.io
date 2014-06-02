@@ -5,58 +5,21 @@ import mock
 import json
 
 import httplib as http
-from tests.base import URLLookup
 from tests.factories import AuthUserFactory
 from framework.auth.decorators import Auth
 from webtest import Upload
+from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.views.crud import scrape_dataverse
 from website.addons.dataverse.tests.utils import create_mock_connection, \
     create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses, \
     create_mock_study
 
-lookup = URLLookup(app)
-
 
 class TestDataverseViewsAuth(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.auth.connect')
-    def test_authorize(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        url = lookup('api', 'authorize_dataverse',
-                     pid=self.project._primary_key)
-        self.app.post_json(url, auth=self.user.auth)
-
-        self.node_settings.reload()
-        assert_equal(self.node_settings.user_settings, self.user_settings)
-
-        # Log states that node was authorized
-        self.project.reload()
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dataverse_node_authorized')
-        log_params = last_log.params
-        assert_equal(log_params['addon'], 'dataverse')
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['project'], None)
-
-    @mock.patch('website.addons.dataverse.views.auth.connect')
-    def test_authorize_fail(self, mock_connection):
-        mock_connection.return_value = create_mock_connection('wrong', 'info')
-
-        old_logs = self.project.logs
-
-        url = lookup('api', 'authorize_dataverse',
-                     pid=self.project._primary_key)
-        res = self.app.post_json(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
-
-        self.project.reload()
-        assert_equal(self.project.logs, old_logs)
-
     def test_deauthorize(self):
-        url = lookup('api', 'deauthorize_dataverse',
-                     pid=self.project._primary_key)
+        url = api_url_for('deauthorize_dataverse',
+                          pid=self.project._primary_key)
         self.app.delete(url, auth=self.user.auth)
 
         self.node_settings.reload()
@@ -74,9 +37,8 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(log_params['project'], None)
 
-
     def test_delete_user(self):
-        url = lookup('api', 'dataverse_delete_user')
+        url = api_url_for('dataverse_delete_user')
 
         # User without add-on can't delete
         user2 = AuthUserFactory()
@@ -102,6 +64,36 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user_settings)
 
+    @mock.patch('website.addons.dataverse.views.auth.connect')
+    def test_user_config_get(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = api_url_for('dataverse_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+
+        result = res.json.get('result')
+        assert_true(result['connected'])
+        assert_true(result['userHasAuth'])
+        assert_equal(result['dataverseUsername'],
+                     self.user_settings.dataverse_username)
+        assert_in('create', result['urls'])
+        assert_in('delete', result['urls'])
+
+    @mock.patch('website.addons.dataverse.views.auth.connect')
+    def test_user_config_get_no_connection(self, mock_connection):
+        mock_connection.return_value = None
+
+        url = api_url_for('dataverse_user_config_get')
+        res = self.app.get(url, auth=self.user.auth)
+
+        result = res.json.get('result')
+        assert_false(result['connected'])
+        assert_true(result['userHasAuth'])
+        assert_equal(result['dataverseUsername'],
+                     self.user_settings.dataverse_username)
+        assert_in('create', result['urls'])
+        assert_in('delete', result['urls'])
+
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):
 
@@ -115,7 +107,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         user.add_addon('dataverse')
         user_settings = user.get_addon('dataverse')
 
-        url = '/api/v1/settings/dataverse/'
+        url = api_url_for('dataverse_set_user_config')
         params = {'dataverse_username': 'snowman',
                   'dataverse_password': 'frosty'}
 
@@ -137,7 +129,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         user.add_addon('dataverse')
         user_settings = user.get_addon('dataverse')
 
-        url = '/api/v1/settings/dataverse/'
+        url = api_url_for('dataverse_set_user_config')
         params = {'dataverse_username': 'wrong',
                   'dataverse_password': 'info'}
 
@@ -162,114 +154,60 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(user_settings.dataverse_password, None)
 
     @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_set_dataverse(self, mock_connection):
+    def test_set_dataverse_and_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
-        params = {'dataverse_alias': 'ALIAS1'}
-
-        # Select a different dataverse
-        self.app.post_json(url, params, auth=self.user.auth)
-        self.project.reload()
-        self.node_settings.reload()
-
-        # Dataverse has changed
-        assert_equal(self.node_settings.dataverse_alias, 'ALIAS1')
-        assert_equal(self.node_settings.dataverse, 'Example 1')
-
-        # Study was unselected
-        assert_equal(self.node_settings.study, None)
-        assert_equal(self.node_settings.study_hdl, None)
-
-        # Log states that a study was unselected
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dataverse_study_unlinked')
-        log_params = last_log.params
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
-        assert_equal(log_params['dataverse']['study'],
-                     'Example (DVN/00001)')
-
-    @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_set_dataverse_to_none(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
-        params = {'dataverse_alias': 'None'}
-
-        # Set dataverse to none
-        self.app.post_json(url, params, auth=self.user.auth)
-        self.project.reload()
-        self.node_settings.reload()
-
-        # Dataverse has changed
-        assert_equal(self.node_settings.dataverse_alias, None)
-        assert_equal(self.node_settings.dataverse, None)
-
-        # Study was unselected
-        assert_equal(self.node_settings.study, None)
-        assert_equal(self.node_settings.study_hdl, None)
-
-        # Log states that a study was unselected
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dataverse_study_unlinked')
-        log_params = last_log.params
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
-        assert_equal(log_params['dataverse']['study'],
-                     'Example (DVN/00001)')
-
-    @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_set_study(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        url = lookup('api', 'set_study', pid=self.project._primary_key)
-        params = {'study_hdl': 'DVN/00002'}
+        url = api_url_for('set_dataverse_and_study',
+                          pid=self.project._primary_key)
+        params = {
+            'dataverse': {'alias': 'ALIAS3'},
+            'study': {'hdl': 'doi:12.3456/DVN/00003'},
+        }
 
         # Select a different study
         self.app.post_json(url, params, auth=self.user.auth)
         self.project.reload()
         self.node_settings.reload()
 
-        # New study was selected, dataverse was unchanged
-        assert_equal(self.node_settings.dataverse_alias, 'ALIAS2')
-        assert_equal(self.node_settings.study, 'Example (DVN/00002)')
-        assert_equal(self.node_settings.study_hdl, 'DVN/00002')
+        # New study was selected
+        assert_equal(self.node_settings.dataverse_alias, 'ALIAS3')
+        assert_equal(self.node_settings.study, 'Example (DVN/00003)')
+        assert_equal(self.node_settings.study_hdl, 'doi:12.3456/DVN/00003')
 
         # Log states that a study was selected
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'dataverse_study_linked')
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
-        assert_equal(log_params['dataverse']['study'],
-                     'Example (DVN/00002)')
+        assert_is_none(log_params['project'])
+        assert_equal(log_params['study'], 'Example (DVN/00003)')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_set_study_to_none(self, mock_connection):
+    def test_set_dataverse_no_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
+        num_old_logs = len(self.project.logs)
 
-        url = lookup('api', 'set_study', pid=self.project._primary_key)
-        params = {'study_hdl': 'None'}
+        url = api_url_for('set_dataverse_and_study',
+                          pid=self.project._primary_key)
+        params = {
+            'dataverse': {'alias': 'ALIAS3'},
+            'study': {},    # The dataverse has no studies
+        }
 
-        # Set study to none
-        self.app.post_json(url, params, auth=self.user.auth)
-        self.project.reload()
+        # Select a different study
+        res = self.app.post_json(url, params, auth=self.user.auth,
+                                 expect_errors=True)
         self.node_settings.reload()
 
-        # Study is none, dataverse is unchanged
+        # Old settings did not change
+        assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(self.node_settings.dataverse_alias, 'ALIAS2')
-        assert_equal(self.node_settings.study, None)
-        assert_equal(self.node_settings.study_hdl, None)
+        assert_equal(self.node_settings.study, 'Example (DVN/00001)')
+        assert_equal(self.node_settings.study_hdl, 'doi:12.3456/DVN/00001')
 
-        # Log states that a study was unselected
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'dataverse_study_unlinked')
-        log_params = last_log.params
-        assert_equal(log_params['node'], self.project._primary_key)
-        assert_equal(log_params['dataverse']['dataverse'], 'Example 2')
-        assert_equal(log_params['dataverse']['study'],
-                     'Example (DVN/00001)')
+        # Nothing was logged
+        self.project.reload()
+        assert_equal(len(self.project.logs), num_old_logs)
 
 
 class TestDataverseViewsHgrid(DataverseAddonTestCase):
@@ -282,8 +220,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         mock_request.referrer = 'some_url/files/'
         mock_get.return_value = create_mock_study()
 
-        url = lookup('api', 'dataverse_hgrid_data_contents',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_hgrid_data_contents',
+                          pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         contents = mock_responses['contents']
         first = res.json[0]
@@ -301,8 +239,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         # If there are no settings, no files are returned
         self.node_settings.user_settings = None
         self.node_settings.save()
-        url = lookup('api', 'dataverse_hgrid_data_contents',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_hgrid_data_contents',
+                          pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
@@ -315,8 +253,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         # If there is no study, no data are returned
         self.node_settings.study_hdl = None
         self.node_settings.save()
-        url = lookup('api', 'dataverse_hgrid_data_contents',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_hgrid_data_contents',
+                          pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
@@ -329,8 +267,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
-        url = lookup('api', 'dataverse_hgrid_data_contents',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_hgrid_data_contents',
+                          pid=self.project._primary_key)
 
         # Creator posts, gets draft version
         res = self.app.get(url, auth=self.user.auth)
@@ -351,8 +289,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
-        url = lookup('api', 'dataverse_hgrid_data_contents',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_hgrid_data_contents',
+                          pid=self.project._primary_key)
 
         # All users get released version
         res = self.app.get(url, auth=self.user.auth)
@@ -374,8 +312,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
-        url = lookup('api', 'dataverse_root_folder_public',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_root_folder_public',
+                          pid=self.project._primary_key)
 
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
@@ -402,8 +340,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
-        url = lookup('api', 'dataverse_root_folder_public',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_root_folder_public',
+                          pid=self.project._primary_key)
 
         # Contributor can select between states, current state is correct
         res = self.app.get(url, auth=self.user.auth)
@@ -430,8 +368,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         self.project.set_privacy('public')
         self.project.save()
 
-        url = lookup('api', 'dataverse_root_folder_public',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_root_folder_public',
+                          pid=self.project._primary_key)
 
         # Contributor gets draft, no options
         res = self.app.get(url, auth=self.user.auth)
@@ -454,8 +392,8 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         mock_request.args = {'state': 'released'}
         mock_files.return_value = ['mock_file']
 
-        url = lookup('api', 'dataverse_root_folder_public',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_root_folder_public',
+                          pid=self.project._primary_key)
 
         self.node_settings.user_settings = None
         self.node_settings.save()
@@ -475,8 +413,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         mock_connection.return_value = create_mock_connection()
 
         path = '54321'
-        url = lookup('api', 'dataverse_delete_file',
-                     pid=self.project._primary_key, path=path)
+        url = api_url_for('dataverse_delete_file',
+                          pid=self.project._primary_key, path=path)
 
         res = self.app.delete(url=url, auth=self.user.auth)
 
@@ -498,8 +436,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         payload = {'file': Upload(filename, content,'text/x-rst')}
 
         # Upload the file
-        url = lookup('api', 'dataverse_upload_file',
-                     pid=self.project._primary_key, path=path)
+        url = api_url_for('dataverse_upload_file',
+                          pid=self.project._primary_key, path=path)
         res = self.app.post(url, payload, auth=self.user.auth)
 
         # File was uploaded
@@ -508,7 +446,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         # Parameters are correct
         assert_equal(self.node_settings.study_hdl,
-                     mock_upload.call_args[0][0].get_id())
+                     mock_upload.call_args[0][0].doi)
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
@@ -530,8 +468,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         payload = {'file': Upload(filename, content,'text/x-rst')}
 
         # Attempt to upload the file
-        url = lookup('api', 'dataverse_upload_file',
-                     pid=self.project._primary_key, path=path)
+        url = api_url_for('dataverse_upload_file',
+                          pid=self.project._primary_key, path=path)
         res = self.app.post(url, payload, auth=self.user.auth)
 
         # Old file was deleted
@@ -543,7 +481,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         # Parameters are correct
         assert_equal(self.node_settings.study_hdl,
-                     mock_upload.call_args[0][0].get_id())
+                     mock_upload.call_args[0][0].doi)
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_updated', json.loads(res.body)['actionTaken'])
@@ -552,15 +490,15 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     def test_dataverse_view_file(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = lookup('web', 'dataverse_view_file',
-                     pid=self.project._primary_key, path='foo')
+        url = web_url_for('dataverse_view_file',
+                          pid=self.project._primary_key, path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
     def test_download_file(self):
         path = 'foo'
-        url = lookup('api', 'dataverse_download_file',
-                     pid=self.project._primary_key, path=path)
+        url = api_url_for('dataverse_download_file',
+                          pid=self.project._primary_key, path=path)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(
             res.headers.get('location'),
@@ -572,8 +510,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     def test_dataverse_release_study(self, mock_release, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
-        url = lookup('api', 'dataverse_release_study',
-                     pid=self.project._primary_key)
+        url = api_url_for('dataverse_release_study',
+                          pid=self.project._primary_key)
         res = self.app.post(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
@@ -585,8 +523,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         file_id = '23456'
 
-        url = lookup('api', 'dataverse_get_rendered_file',
-                     pid=self.project._primary_key, path=file_id)
+        url = api_url_for('dataverse_get_rendered_file',
+                          pid=self.project._primary_key, path=file_id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(mock_get_cache.call_args[0][1],
                      '{0}.html'.format(file_id))
@@ -612,22 +550,11 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         self.contrib.add_addon('dataverse')
         self.contrib.save()
 
-        url = lookup('api', 'set_study', pid=self.project._primary_key)
-        params = {'study_hdl': 'DVN/00002'}
-        res = self.app.post_json(url, params, auth=self.contrib.auth,
-                                 expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    @mock.patch('website.addons.dataverse.views.config.connect')
-    def test_restricted_set_dataverse_not_owner(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        # Contributor has dataverse auth, but is not the node authorizer
-        self.contrib.add_addon('dataverse')
-        self.contrib.save()
-
-        url = lookup('api', 'set_dataverse', pid=self.project._primary_key)
-        params = {'dataverse_alias': 'ALIAS1'}
+        url = api_url_for('set_dataverse_and_study', pid=self.project._primary_key)
+        params = {
+            'dataverse': {'alias': 'ALIAS1'},
+            'study': {'hdl': 'doi:12.3456/DVN/00002'},
+        }
         res = self.app.post_json(url, params, auth=self.contrib.auth,
                                  expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
