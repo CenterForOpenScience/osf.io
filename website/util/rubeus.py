@@ -230,8 +230,10 @@ class NodeProjectCollector(object):
             'parentIsFolder': parent_is_folder,
             'isDashboard': node.is_dashboard,
             'contributors': contributors,
-            'node_id':node.resolve()._id,
+            'node_id': node.resolve()._id,
             'isSmartFolder': False,
+            'apiURL': node.api_url,
+            'isRegistration': node.is_registration,
         }
 
 

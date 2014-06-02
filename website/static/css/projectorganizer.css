@@ -18,6 +18,10 @@
     background-color: #fefab4;
 }
 
+span.project-folder.smart-folder{
+    font-style: italic;
+}
+
 /* Preventing folders that are HGrid leaves from showing underlines when hovered over */
 
 .project-folder:hover {
@@ -131,6 +135,7 @@ div.organize-project-controls {
     position: relative;
     width: 100%;
     bottom: 0;
+    margin-top: 10px;
 }
 
 .organize-project-controls .organizeBtn.btn.btn-default {

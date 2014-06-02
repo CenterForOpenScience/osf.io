@@ -119,6 +119,10 @@
                 extraClass = " dropzone";
             }
         }
+        if (row.isSmartFolder) {
+            extraClass += " smart-folder";
+
+        }
         return '<img src="/static/img/hgrid/' + type + '.png"><span class="project-'
             + type + extraClass + '">' + linkString + '</span>';
     };
@@ -230,12 +234,6 @@
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
 
                 var projectDetailData;
-                var projectDetailURL = '/api/v1/project/'+theItem.node_id+'/';
-                if(theItem.node_id.indexOf('-') != 0) {
-                    $.getJSON(projectDetailURL, function (data) {
-                        projectDetailData = data;
-                    });
-                }
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
                     var theParentNodeID = theParentNode.node_id
@@ -258,111 +256,117 @@
                         return out;
                     });
                     var detailTemplate = Handlebars.compile(detailTemplateSource);
-                    var detailTemplateContext = {
-                        theItem: theItem,
-                        multipleContributors: theItem.contributors.length > 1,
-                        parentIsSmartFolder: parentIsSmartFolder,
-                        projectDetailData: projectDetailData
-                    };
-                    var displayHTML    = detailTemplate(detailTemplateContext);
-                    $(".project-details").html(displayHTML);
-                    $('#findNode'+theItem.node_id).hide();
-                    $('#findNode'+theItem.node_id+' .typeahead').typeahead({
-                      highlight: true
-                    },
-                    {
-                        name: 'my-projects',
-                        displayKey: function(data){
-                              return data.name;
-                          },
-                        source: self.myProjects.ttAdapter(),
-                        templates: {
-                        header: function(data){
-                            return '<h3 class="category">My Projects</h3>'
-                        },
-                        suggestion: function(data){
-                              return '<p>'+data.name+'</p>';
-                          }
-                        }
-                    },
-                    {
-                        name: 'public-projects',
-                        displayKey: function(data){
-                              return data.name;
-                          },
-                        source: self.publicProjects.ttAdapter(),
-                        templates: {
-                        header: function(data){
-                            return '<h3 class="category">Public Projects</h3>'
-                        },
-                        suggestion: function(data){
-                              return '<p>'+data.name+'</p>';
-                          }
-                        }
-                   });
-                    $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
-                        $('#add-link-'+theItem.node_id).removeAttr('disabled');
-                        linkName = datum.name;
-                        linkID = datum.node_id;
-                    });
-                    $('#add-link-'+theItem.node_id).click(function() {
-                        var url = "/api/v1/pointer/"; // the script where you handle the form input.
-                        var postData = JSON.stringify(
-                            {
-                                pointerID: linkID,
-                                toNodeID: theItem.node_id
-                            });
-                        $.ajax({
-                            type: "POST",
-                            url: url,
-                            data: postData,
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
-                            }
-                        });
-                    });
 
-                    $('#remove-link-'+theItem.node_id).click(function() {
-                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
-                        var postData = JSON.stringify({});
-                        $.ajax({
-                            type: "DELETE",
-                            url: url,
-                            data: postData,
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
+                    $.getJSON(theItem.apiURL, function (data) {
+                        projectDetailData = data;
+
+
+                        var detailTemplateContext = {
+                            theItem: theItem,
+                            multipleContributors: theItem.contributors.length > 1,
+                            parentIsSmartFolder: parentIsSmartFolder,
+                            projectDetailData: projectDetailData
+                        };
+                        var displayHTML    = detailTemplate(detailTemplateContext);
+                        $(".project-details").html(displayHTML);
+                        $('#findNode'+theItem.node_id).hide();
+                        $('#findNode'+theItem.node_id+' .typeahead').typeahead({
+                          highlight: true
+                        },
+                        {
+                            name: 'my-projects',
+                            displayKey: function(data){
+                                  return data.name;
+                              },
+                            source: self.myProjects.ttAdapter(),
+                            templates: {
+                            header: function(data){
+                                return '<h3 class="category">My Projects</h3>'
+                            },
+                            suggestion: function(data){
+                                  return '<p>'+data.name+'</p>';
+                              }
                             }
+                        },
+                        {
+                            name: 'public-projects',
+                            displayKey: function(data){
+                                  return data.name;
+                              },
+                            source: self.publicProjects.ttAdapter(),
+                            templates: {
+                            header: function(data){
+                                return '<h3 class="category">Public Projects</h3>'
+                            },
+                            suggestion: function(data){
+                                  return '<p>'+data.name+'</p>';
+                              }
+                            }
+                       });
+                        $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
+                            $('#add-link-'+theItem.node_id).removeAttr('disabled');
+                            linkName = datum.name;
+                            linkID = datum.node_id;
                         });
-                    });
-                    $('#delete-folder-'+theItem.node_id).click(function() {
-                        var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder."
-                        bootbox.confirm(confirmationText, function(result) {
-                            if (result !== null && result) {
-                                var url = '/api/v1/folder/'+theItem.node_id;
-                                var postData = JSON.stringify({});
-                                $.ajax({
-                                    type: "DELETE",
-                                    url: url,
-                                    data: postData,
-                                    contentType: 'application/json',
-                                    dataType: 'json',
-                                    success: function() {
-                                        window.location.reload();
-                                    }
+                        $('#add-link-'+theItem.node_id).click(function() {
+                            var url = "/api/v1/pointer/"; // the script where you handle the form input.
+                            var postData = JSON.stringify(
+                                {
+                                    pointerID: linkID,
+                                    toNodeID: theItem.node_id
                                 });
-                            }
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function() {
+                                    window.location.reload();
+                                }
+                            });
                         });
-                    });
-                    $('#add-item-'+theItem.node_id).click(function(){
-                        $('#buttons'+theItem.node_id).hide();
-                        $('#findNode'+theItem.node_id).show();
-                    });
 
-                    $(".project-details").show();
+                        $('#remove-link-'+theItem.node_id).click(function() {
+                            var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
+                            var postData = JSON.stringify({});
+                            $.ajax({
+                                type: "DELETE",
+                                url: url,
+                                data: postData,
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function() {
+                                    window.location.reload();
+                                }
+                            });
+                        });
+                        $('#delete-folder-'+theItem.node_id).click(function() {
+                            var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder."
+                            bootbox.confirm(confirmationText, function(result) {
+                                if (result !== null && result) {
+                                    var url = '/api/v1/folder/'+theItem.node_id;
+                                    var postData = JSON.stringify({});
+                                    $.ajax({
+                                        type: "DELETE",
+                                        url: url,
+                                        data: postData,
+                                        contentType: 'application/json',
+                                        dataType: 'json',
+                                        success: function() {
+                                            window.location.reload();
+                                        }
+                                    });
+                                }
+                            });
+                        });
+                        $('#add-item-'+theItem.node_id).click(function(){
+                            $('#buttons'+theItem.node_id).hide();
+                            $('#findNode'+theItem.node_id).show();
+                        });
+
+                        $(".project-details").show();
+                    });
                 } else {
                     $(".project-details").hide();
                 }
