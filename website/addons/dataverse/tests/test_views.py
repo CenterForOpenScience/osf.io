@@ -168,6 +168,18 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(result['savedStudy']['title'], self.node_settings.study)
         assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
 
+    @mock.patch('website.addons.dataverse.views.config.connect')
+    def test_dataverse_get_studies(self, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+
+        url = api_url_for('dataverse_get_studies', pid=self.project._primary_key)
+        params = {'alias': 'ALIAS1'}
+        res = self.app.post_json(url, params, auth=self.user.auth)
+
+        assert_equal(len(res.json['studies']), 3)
+        first = res.json['studies'][0]
+        assert_equal(first['title'], 'Example (DVN/00001)')
+        assert_equal(first['hdl'], 'doi:12.3456/DVN/00001')
 
     @mock.patch('website.addons.dataverse.views.config.connect')
     def test_set_user_config(self, mock_connection):
