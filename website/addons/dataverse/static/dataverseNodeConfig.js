@@ -76,6 +76,9 @@
         self.showPicker = ko.computed(function() {
            return self.dataverses().length > 0;
         });
+        self.credentialsChanged = ko.computed(function() {
+           return self.nodeHasAuth() && !self.connected();
+        });
         /**
          * Update the view model from data returned from the server.
          */
@@ -94,7 +97,8 @@
                 self.savedDataverseTitle(data.savedDataverse.title);
                 self.selectedDataverseAlias(data.savedDataverse.alias);
                 self.savedStudyHdl(data.savedStudy.hdl);
-                self.savedStudyTitle(data.savedStudy.title)
+                self.savedStudyTitle(data.savedStudy.title);
+                self.connected(data.connected);
                 self.getStudies(); // Sets studies, selectedStudyHdl
             }
         };

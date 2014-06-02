@@ -70,6 +70,7 @@ def serialize_settings(node_settings, current_user):
         )
         dataverses = get_dataverses(connection)
         result.update({
+            'connected': connection is not None,
             'dataverses': [
                 {'title': dataverse.title, 'alias': dataverse.alias}
                 for dataverse in dataverses

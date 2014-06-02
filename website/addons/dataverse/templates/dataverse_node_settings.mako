@@ -15,7 +15,7 @@
         </span>
     </h4>
 
-    <div class="dataverse-settings" data-bind="if: nodeHasAuth">
+    <div class="dataverse-settings" data-bind="if: nodeHasAuth && connected">
 
         <!-- The linked study -->
         <p>
@@ -75,6 +75,19 @@
 
         </div>
 
+    </div>
+
+    <div class="dataverse-settings" data-bind="if: credentialsChanged">
+        <span data-bind="if: userIsOwner">
+            There was a problem connecting to the Dataverse using your
+            credentials. If they have changed, please go to
+            <a href="/settings/addons/">user settings</a> and update your account
+            information.
+        </span>
+        <span data-bind="ifnot: userIsOwner">
+            There was a problem connecting to the Dataverse with the given
+            credentials.
+        </span>
     </div>
 
     <!-- Link Dataverse Button -->
