@@ -1,13 +1,11 @@
 from nose.tools import *
 import mock
 
-from tests.factories import AuthUserFactory
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
 from website.addons.dataverse.model import AddonDataverseUserSettings, \
     AddonDataverseNodeSettings, DataverseFile
-from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_dataverse, DataverseAddonTestCase
+from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 
 
 class TestDataverseFile(DataverseAddonTestCase):
@@ -66,10 +64,44 @@ class TestDataverseUserSettings(DataverseAddonTestCase):
 
 class TestDataverseNodeSettings(DataverseAddonTestCase):
 
+    def test_fields(self):
+        node_settings = AddonDataverseNodeSettings(user_settings=self.user_settings)
+        node_settings.save()
+        assert_true(node_settings.user_settings)
+        assert_equal(node_settings.user_settings.owner, self.user)
+        assert_true(hasattr(node_settings, 'dataverse'))
+        assert_true(hasattr(node_settings, 'dataverse_alias'))
+        assert_true(hasattr(node_settings, 'study'))
+        assert_true(hasattr(node_settings, 'study_hdl'))
+
+    def test_defaults(self):
+        node_settings = AddonDataverseNodeSettings(user_settings=self.user_settings)
+        node_settings.save()
+        assert_is_none(node_settings.dataverse)
+        assert_is_none(node_settings.dataverse_alias)
+        assert_is_none(node_settings.study)
+        assert_is_none(node_settings.study_hdl)
+
+    def test_has_auth(self):
+        node_settings = AddonDataverseNodeSettings()
+        node_settings.save()
+        assert_false(node_settings.has_auth)
+
+        user_settings = AddonDataverseUserSettings()
+        user_settings.save()
+        node_settings.user_settings = user_settings
+        node_settings.save()
+        assert_false(node_settings.has_auth)
+
+        user_settings.dataverse_username = 'foo'
+        user_settings.dataverse_password = 'bar'
+        user_settings.save()
+        assert_true(node_settings.has_auth)
+
     @mock.patch('website.addons.dataverse.model.AddonDataverseNodeSettings.deauthorize')
     def test_delete(self, mock_deauth):
 
-        old_logs = self.project.logs
+        num_old_logs = len(self.project.logs)
 
         self.node_settings.delete()
 
@@ -80,7 +112,26 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         # Log was not generated
         self.project.reload()
-        assert_equal(self.project.logs, old_logs)
+        assert_equal(len(self.project.logs), num_old_logs)
+
+    def test_set_user_auth(self):
+        project = ProjectFactory()
+        project.add_addon('dataverse', auth=Auth(self.user))
+        node_settings = project.get_addon('dataverse')
+        num_old_logs = len(project.logs)
+
+        assert_false(node_settings.user_settings)
+        node_settings.set_user_auth(self.user_settings)
+        node_settings.save()
+        assert_equal(node_settings.user_settings, self.user_settings)
+
+        # Test log
+        project.reload()
+        assert_equal(len(project.logs), num_old_logs + 1)
+        last_log = project.logs[-1]
+        assert_equal(last_log.action, 'dataverse_node_authorized')
+        assert_equal(last_log.params['node'], project._primary_key)
+        assert_is_none(last_log.params['project'])
 
     def test_deauthorize(self):
 
@@ -91,126 +142,6 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
         assert_false(self.node_settings.study_hdl)
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user_settings)
-
-    @mock.patch('website.addons.dataverse.model.connect')
-    def test_to_json(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        json = self.node_settings.to_json(self.user)
-
-        assert_true(json['authorized'])
-        assert_true(json['connected'])
-        assert_true(json['user_dataverse_connected'])
-
-        assert_equal(self.user_settings.dataverse_username,
-                     json['authorized_dataverse_user'])
-        assert_equal(self.user_settings.owner.fullname,
-                     json['authorized_user_name'])
-        assert_equal(self.user_settings.owner.absolute_url,
-                     json['authorized_user_url'])
-        assert_equal(self.node_settings.dataverse, json['dataverse'])
-        assert_equal(self.node_settings.dataverse_alias, json['dataverse_alias'])
-        assert_equal(self.node_settings.study_hdl, json['study_hdl'])
-        assert_equal(3, len(json['dataverses']))
-        assert_equal(3, len(json['study_names']))
-
-        assert_true(json['dataverse_url'])
-        assert_true(json['dataverse_url'])
-
-
-    @mock.patch('website.addons.dataverse.model.connect')
-    def test_to_json_unauthorized(self, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-
-        user2 = AuthUserFactory()
-        user2.add_addon('dataverse', override=True)
-        user2_settings = user2.get_addon('dataverse')
-        user2_settings.dataverse_username = 'Different'
-        user2_settings.save()
-
-        json = self.node_settings.to_json(user2)
-
-        assert_false(json['authorized'])
-        assert_true(json['connected'])
-        assert_true(json['user_dataverse_connected'])
-
-        assert_equal(self.user_settings.dataverse_username,
-                     json['authorized_dataverse_user'])
-        assert_equal(self.user_settings.owner.fullname,
-                     json['authorized_user_name'])
-        assert_equal(self.user_settings.owner.absolute_url,
-                     json['authorized_user_url'])
-        assert_equal(self.node_settings.dataverse, json['dataverse'])
-        assert_equal(self.node_settings.study_hdl, json['study_hdl'])
-        assert_equal(3, len(json['dataverses']))
-        assert_equal(3, len(json['study_names']))
-
-        assert_true(json['dataverse_url'])
-        assert_true(json['dataverse_url'])
-
-    @mock.patch('website.addons.dataverse.model.connect')
-    def test_to_json_bad_connection(self, mock_connection):
-        mock_connection.return_value = None
-
-        json = self.node_settings.to_json(self.user)
-
-        assert_true(json['authorized'])
-        assert_false(json['connected'])
-        assert_false(json['user_dataverse_connected'])
-
-    @mock.patch('website.addons.dataverse.model.connect')
-    @mock.patch('website.addons.dataverse.model.get_study')
-    def test_to_json_no_study(self, mock_study, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-        mock_study.return_value = None
-
-        json = self.node_settings.to_json(self.user)
-
-        assert_true(json['authorized'])
-        assert_true(json['connected'])
-        assert_true(json['user_dataverse_connected'])
-
-        assert_equal(self.user_settings.dataverse_username,
-                     json['authorized_dataverse_user'])
-        assert_equal(self.user_settings.owner.fullname,
-                     json['authorized_user_name'])
-        assert_equal(self.user_settings.owner.absolute_url,
-                     json['authorized_user_url'])
-        assert_equal(self.node_settings.dataverse, json['dataverse'])
-        assert_equal(self.node_settings.dataverse_alias, json['dataverse_alias'])
-        assert_equal(None, json['study_hdl'])
-        assert_equal(3, len(json['dataverses']))
-        assert_equal(3, len(json['study_names']))
-
-        assert_not_in('dataverse_url', json)
-        assert_not_in('study_url', json)
-
-    @mock.patch('website.addons.dataverse.model.connect')
-    @mock.patch('website.addons.dataverse.model.get_dataverse')
-    def test_to_json_unreleased_dataverse(self, mock_dataverse, mock_connection):
-        mock_connection.return_value = create_mock_connection()
-        mock_dataverse.return_value = None #create_mock_dataverse()
-        type(mock_dataverse).is_released = mock.PropertyMock(return_value=False)
-
-        json = self.node_settings.to_json(self.user)
-
-        assert_true(json['authorized'])
-        assert_true(json['connected'])
-        assert_true(json['user_dataverse_connected'])
-
-        assert_equal(self.user_settings.dataverse_username,
-                     json['authorized_dataverse_user'])
-        assert_equal(self.user_settings.owner.fullname,
-                     json['authorized_user_name'])
-        assert_equal(self.user_settings.owner.absolute_url,
-                     json['authorized_user_url'])
-        assert_equal(None, json['dataverse'])
-        assert_equal(None, json['study_hdl'])
-        assert_equal(3, len(json['dataverses']))
-        assert_false(json['study_names'])
-
-        assert_not_in('dataverse_url', json)
-        assert_not_in('study_url', json)
 
 
 class TestNodeSettingsCallbacks(DataverseAddonTestCase):
@@ -229,7 +160,7 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
             node=self.project, fork=fork, user=user,
             save=True
         )
-        assert_is(clone.user_settings, None)
+        assert_is_none(clone.user_settings)
 
     def test_before_fork(self):
         node = ProjectFactory()
