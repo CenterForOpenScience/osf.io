@@ -102,14 +102,14 @@ def search_projects_by_title(**kwargs):
     """
     user = kwargs['auth'].user
 
-    term = request.args.get('term')
+    term = request.args.get('term', '')
     max_results = int(request.args.get('maxResults', '10'))
     category = request.args.get('category', 'project').lower()
     is_deleted = request.args.get('isDeleted', 'no').lower()
     is_folder = request.args.get('isFolder', 'no').lower()
     include_public = request.args.get('includePublic', 'yes').lower()
     include_contributed = request.args.get('includeContributed', 'yes').lower()
-    ignore_nodes = request.args.getlist('ignoreNode')
+    ignore_nodes = request.args.getlist('ignoreNode',[])
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
