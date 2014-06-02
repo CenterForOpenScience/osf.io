@@ -15,17 +15,19 @@
                     <form class='form'>
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
-                                    <input class='form-control' style="margin-bottom: 8px;"
+                                <div class="input-group">
+                                    <input class='form-control'
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
+                                    <span class="input-group-btn">
+                                        <button type='submit' class="btn btn-default" data-bind="click:search">Search</button>
+                                    </span>
                                 </div>
-                                <div><button type='submit' class="btn btn-default" data-bind="click:search">Search</button></div>
-                            </div>
-                            <div class="col-md-6" data-bind="if:parentId">
-                                <a data-bind="click:importFromParent, text:'Import contributors from ' + parentTitle"></a>
                             </div>
                             <div class="col-md-6">
+                                <!-- ko if:parentId -->
+                                    <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                <!-- /ko -->
                                 <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
                             </div>
                         </div>

@@ -1374,6 +1374,19 @@ div#logScope a.moreLogs{
 
 /* Contributor page */
 
+#addContributors form .col-md-6 > a {
+    border-top: 1px solid #eee;
+    margin-top: 5px;
+    padding-top: 5px;
+    display: block;
+}
+
+#addContributors form .col-md-6 > a:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
+
 .contributor-self {
     font-weight: bold;
 }
