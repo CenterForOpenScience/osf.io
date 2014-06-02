@@ -41,7 +41,7 @@
             return (self.urls()) ? self.urls().studyPrefix + self.savedStudyHdl() : null;
         });
         self.savedDataverseUrl = ko.computed(function() {
-            return (self.urls()) ? self.urls().dataversePrefix + '/' + self.savedDataverseAlias() : null;
+            return (self.urls()) ? self.urls().dataversePrefix + self.savedDataverseAlias() : null;
         });
 
         self.selectedDataverseAlias = ko.observable();
