@@ -41,7 +41,9 @@
                                 <span class="modal-subheader">Results</span>
                                 <a data-bind="click:addAll">Add all</a>
                             </div>
-                            <div class="error">{{ errorMsg }}</div>
+                            <!-- ko if: notification -->
+                            <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
+                            <!-- /ko -->
                             <table>
                                 <thead data-bind="visible: foundResults">
                                     <th></th>
