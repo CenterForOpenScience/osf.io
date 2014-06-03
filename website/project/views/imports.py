@@ -5,7 +5,6 @@ import json
 import uuid
 import hashlib
 import logging
-import urlparse
 import httplib as http
 from nameparser import HumanName
 import functools
@@ -19,32 +18,42 @@ from framework.auth.decorators import Auth
 
 from website import settings, security
 from website.util import web_url_for
-from website.models import User, Node, MailRecord
+from website.models import User, Node
 from website.project import new_node
 from website.project.views.file import prepare_file
 from website.util.sanitize import deep_clean
-
+from website.project.decorators import must_be_valid_project
 from website import settings
 
 logger = logging.getLogger(__name__)
-
+   
 def must_have_valid_signature(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
-    
-        sent_signature = request.json.get('signature')
-        payload = request.json.get('project')        
-        payload = OrderedDict(sorted(payload.items(), key=lambda t: t[0]))
+        auth = request.headers.get('Authorization')
+        if not auth:
+            return {
+                "error": "No Authorization header present"
+            }
+        sent_signature= auth.split(' ')[1]
+        payload = None
+        if len(request.files) > 0:
+            f = request.files['file']
+            payload = f.read()
+            f.seek(0)
+        else:
+            payload = request.data
+            
         signature_is_valid = None
 
         signature = hmac.new(
             key=settings.OSF_API_KEY,
-            msg=json.dumps(payload),
+            msg=payload,
             digestmod=hashlib.sha256,
         ).hexdigest()
 
         signature_is_valid = (sent_signature == signature)
-       
+
         if signature_is_valid:
             return func(*args, **kwargs)
         else:
@@ -72,10 +81,8 @@ def get_or_create_user(fullname, address, sys_tags=[]):
     return user, user_created
 
 @must_have_valid_signature
-def import_project():
-    errors = []    
-
-    project_data = request.json.get('project')
+def import_project(**kwargs):
+    project_data = deep_clean(request.json.get('project'))
     if not project_data:
         return {'error': 'No project data submitted'}
 
@@ -107,15 +114,17 @@ def import_project():
     for tag in tags:           
         project.add_tag(tag, auth=auth)
     
-    system_tags = [project_data['source'],'imported']
+    system_tags = [project_data['imported_from'],'imported']
     for tag in system_tags:
         if tag not in project.system_tags:
             project.system_tags.append(tag)
     
     # add components        
     components = project_data.get('components') or []
-    for component in components:
+    for i in range(len(components)):
+        component = components[i]
         comp = new_node('component', component['title'], contributors[0], description=component['description'], project=project)
+        components[i] = comp
         nodes.append(comp)
     
     for contributor in contributors:
@@ -123,4 +132,37 @@ def import_project():
             node.add_contributor(contributor[0], auth=auth)
             node.save()
             
-    return {"status": "Successfully created project: '{project}' with components: {components}".format(project=title, components=', '.join(["'"+c['title']+"'" for c in components]))}
+    return {
+        "project": {
+            "title": project.title,
+            "id": project._id,
+            "components": [
+                {
+                    "title": c.title,
+                    "id": c._id,
+                } for c in components]
+        }
+    }
+
+@must_be_valid_project
+@must_have_valid_signature
+def add_file_to_node(**kwargs):
+    upload = request.files.get('file')
+    if not upload:
+        return {"error": "No file in request"}
+    
+    name, content, content_type, size = prepare_file(upload)
+    import pdb;pdb.set_trace()
+    
+    project = kwargs['project']
+    auth = Auth(user=project.contributors[0])
+    
+    node = kwargs['node']    
+    node.add_file(
+        auth=auth,
+        file_name=name,
+        content=content,
+        size=size,
+        content_type=content_type,
+    )
+    node.save()
