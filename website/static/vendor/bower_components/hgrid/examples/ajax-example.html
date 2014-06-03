@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../src/hgrid.css" type="text/css" />
+    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./examples.css">
+    <title>HGrid: Getting Data From a Server</title>
+</head>
+<body>
+<div class="box">
+<h1>HGrid: Getting Data From A Server</h1>
+<p>To get data from a server, just pass a URL to the <code>data</code> option for HGrid.</p>
+<div class="hgrid" id="myGrid"></div>
+</div>
+
+<script src="../lib/jquery-1.10.2.js"></script>
+<script src='./jquery.mockjax.js'></script>
+<script src='./mockserver.js'></script>
+<script src="../dist/hgrid.js"></script>
+
+<script>
+var grid = new HGrid('#myGrid', {data: '/get/data', width: 500, height: 200});
+</script>
+</body>
+</html>
