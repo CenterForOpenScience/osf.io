@@ -98,7 +98,7 @@ def mongo(daemon=False):
     port = settings.DB_PORT
     cmd = "mongod --port {0}".format(port)
     if daemon:
-        cmd += " --fork --logpath \"/data/log.txt\""
+        cmd += " --fork"
     run(cmd)
 
 
