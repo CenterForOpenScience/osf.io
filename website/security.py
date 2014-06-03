@@ -20,7 +20,7 @@ class Encryption(object):
 
     gpg = gnupg.GPG()
 
-    if FINGERPRINT not in gpg.list_keys()[0].values():
+    if not gpg.list_keys() or FINGERPRINT not in gpg.list_keys()[0].values():
         gpg.import_keys(PRIVATE_KEY)
 
     def encrypt(self, value):
