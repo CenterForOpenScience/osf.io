@@ -173,7 +173,8 @@ def search(query, start=0):
     solrPost.close()
     logger.warn(str(result))
     #return result, highlight, spellcheck_result
-    return create_result(highlight, result['docs']), result['numFound']#, highlight, spellcheck_result TODO(fabianvf)
+    results, tags = create_result(highlight, result['docs'])
+    return results, tags, result['numFound']#, highlight, spellcheck_result TODO(fabianvf)
 
 def delete_all():
     solr.delete_all()

@@ -23,11 +23,11 @@ def search(query, start=0):
     if SOLR: 
         # solr search
 #        result, highlight, spellcheck_result  =solr_search.search(query, start=0)
-        result, total = solr_search.search(query, start=0)
+        result,tags, total = solr_search.search(query, start=0)
     if ELASTIC:
         # elastic search
-        result, total = elastic_search.search(query, start=0)
-    return result[0], result[1], total#, highlight, spellcheck_result #TODO(fabianvf)
+        result,tags, total = elastic_search.search(query, start=0)
+    return result, tags, total#TODO(fabianvf)
 
 def update_node(node):
     if SOLR:

@@ -33,12 +33,6 @@ def search(raw_query, start=0):
             return type(data)(map(convert, data))
         else:
             return data
-#    raw_query = raw_query.split(":")
-#    raw_query_dict = dict()
-#    i = 0
-#    while i < len(raw_query)-1:
-#        raw_query_dict[raw_query[i]] = raw_query[i+1]
-#        i+=1
 
     query = {
         'query': {
@@ -47,14 +41,13 @@ def search(raw_query, start=0):
             }
         }
     }
+
     raw_results = convert(elastic.search(query, index='website'))
-    results = {
-            'start':0, 
-            'numFound':raw_results['hits']['total'], 
-            'docs':[hit['_source'] for hit in raw_results['hits']['hits']]
-    }
-#    return results, [], []
-    return create_result(results['docs']), results['numFound']#TODO(fabianvf)
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    numFound = raw_results['hits']['total']
+    formatted_results, tags = create_result(results)
+
+    return formatted_results, tags, numFound
 
 
 def update_node(node):
@@ -103,23 +96,7 @@ def update_node(node):
                 '__'.join((node._id, wiki.page_name, 'wiki')): wiki.raw_text
             })
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text
-        # check to see if the document is in the solr database
-#        try: #TODO(fabianvf)
-#            new = solr.query(id=solr_document['id']).execute()[0]
-#            new = elastic.search(query={
-#                "query":{
-#                    "match" : {
-#                        "id": elastic_document['id']
-#                        }
-#                    }
-#                })
-#            logger.warn(new)
-#            x = raw_input()
-#        except IndexError:
-#           new = dict()
 
-#        if elastic_document:
-#            new.update(clean_solr_doc(solr_document))
         try:
             query = {'query': { 
                 'match': {
@@ -131,14 +108,22 @@ def update_node(node):
             else:
                 raise pyelasticsearch.exceptions.ElasticHttpNotFoundError
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document, elastic_document_id,overwrite_existing=True)
+            elastic.index('website', category, elastic_document,\
+                    id=elastic_document_id,overwrite_existing=True)
 
 
 def update_user(user):
-    elastic.index("website", "user",{
-        'id' : user._id, 
-        'user' : user.fullname
-        })
+
+    user_doc = {
+        'id':user._id,
+        'user':user.fullname
+    }
+
+    try: 
+        elastic.get('website', 'user', user._id)
+        elastic.update('website', 'user', doc=user_doc, id=user._id)
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+        elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True)
 
 def delete_all():
     try:
@@ -149,10 +134,10 @@ def delete_all():
         logger.error(e)
 
 def delete_doc(elastic_document_id, node):
-    if node.category == 'project':
-        category = 'project'
-    else:
+    if node.category == '':
         category = 'component'
+    else:
+        category = node.category
     try:
         elastic.delete('website', category, elastic_document_id) 
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
