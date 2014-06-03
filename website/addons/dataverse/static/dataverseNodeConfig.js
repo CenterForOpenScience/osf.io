@@ -28,6 +28,7 @@
         self.userIsOwner = ko.observable(false);
         self.connected = ko.observable(false);
         self.loadedSettings = ko.observable(false);
+        self.loadedStudies = ko.observable(false);
 
         self.dataverses = ko.observableArray([]);
         self.studies = ko.observableArray([]);
@@ -62,8 +63,16 @@
             }
             return null;
         });
+        self.dataverseHasStudies = ko.computed(function() {
+            return self.studies().length > 0;
+        });
 
-        self.showStudySelect = ko.observable(false);
+        self.showStudySelect = ko.computed(function() {
+            return self.loadedStudies() && self.dataverseHasStudies();
+        });
+        self.showNoStudies = ko.computed(function() {
+            return self.loadedStudies() && !self.dataverseHasStudies();
+        });
         self.showLinkedStudy = ko.computed(function() {
             return self.savedStudyHdl();
         });
@@ -145,8 +154,8 @@
         }
 
         self.getStudies = function() {
-            self.studies([{title: '<<< Retrieving Studies >>>', hdl: ''}])
-            self.showStudySelect(false);
+            self.studies([])
+            self.loadedStudies(false);
             return $.ajax({
                 url: self.urls().getStudies,
                 type: 'POST',
@@ -155,7 +164,7 @@
                 dataType: 'json',
                 success: function(response) {
                     self.studies(response.studies);
-                    self.showStudySelect(true);
+                    self.loadedStudies(true);
                     self.selectedStudyHdl(self.savedStudyHdl());
                 },
                 error: function() {
