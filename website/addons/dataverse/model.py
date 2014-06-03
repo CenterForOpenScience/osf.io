@@ -7,9 +7,7 @@ from framework import fields
 from framework.auth.decorators import Auth
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from website.addons.dataverse.client import connect, get_studies, get_study, \
-    get_dataverses, get_dataverse
-from website.addons.dataverse.settings import HOST
+from website.security import Encryption
 
 
 class DataverseFile(GuidFile):
@@ -41,11 +39,28 @@ class DataverseFile(GuidFile):
 class AddonDataverseUserSettings(AddonUserSettingsBase):
 
     dataverse_username = fields.StringField()
-    dataverse_password = fields.StringField()
+    encrypted_password = fields.StringField()
+
+    encryption = Encryption()
 
     @property
     def has_auth(self):
-        return bool(self.dataverse_username and self.dataverse_password)
+        return bool(self.dataverse_username and self.encrypted_password)
+
+    @property
+    def dataverse_password(self):
+        if self.encrypted_password is None:
+            return None
+
+        return self.encryption.decrypt(self.encrypted_password)
+
+    @dataverse_password.setter
+    def dataverse_password(self, value):
+        if value is None:
+            self.encrypted_password = None
+            return
+
+        self.encrypted_password = self.encryption.encrypt(value)
 
     def delete(self):
         self.clear()
