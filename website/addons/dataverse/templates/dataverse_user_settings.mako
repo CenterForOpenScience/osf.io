@@ -6,7 +6,7 @@
 <div id='dataverseAddonScope' class='addon-settings scripted'>
 
     <!-- Delete Access Token Button -->
-     <div data-bind="if: userHasAuth() && loaded() && connected()">
+     <div data-bind="if: showDeleteAuth">
         <div class="well well-sm">
             Authorized by Dataverse user {{ dataverseUsername }}
             <a data-bind="click: deleteKey" class="text-danger pull-right" style="cursor: pointer">Delete Credentials</a>
@@ -14,8 +14,8 @@
     </div>
 
     <!-- Create Access Token Button -->
-    <form data-bind="if: !userHasAuth() && loaded() || !connected()">
-        <div class="text-danger" data-bind="if: userHasAuth() && !connected()">
+    <form data-bind="if: showInputCredentials">
+        <div class="text-danger" style="padding-bottom: 10px" data-bind="if: credentialsChanged">
             Your dataverse credentials may not be valid. Please re-enter your password.
         </div>
 

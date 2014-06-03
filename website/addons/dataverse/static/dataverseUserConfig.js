@@ -26,6 +26,16 @@
         // Whether the initial data has been loaded
         self.loaded = ko.observable(false);
 
+        self.showDeleteAuth = ko.computed(function() {
+            return self.loaded() && self.userHasAuth();
+        });
+        self.showInputCredentials = ko.computed(function() {
+            return self.loaded() && (!self.userHasAuth() || !self.connected());
+        });
+        self.credentialsChanged = ko.computed(function() {
+           return self.userHasAuth() && !self.connected();
+        });
+
         // Update above observables with data from the server
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
