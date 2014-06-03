@@ -709,7 +709,7 @@ def make_url_map(app):
             json_renderer,
         ),
 
-        #Private Link
+        # Private Link
         Rule([
             '/project/<pid>/private_link/',
             '/project/<pid>/node/<nid>/private_link/',
