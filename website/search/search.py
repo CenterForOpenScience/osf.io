@@ -26,8 +26,8 @@ def search(query, start=0):
         result, total = solr_search.search(query, start=0)
     if ELASTIC:
         # elastic search
-        result2, total2 = elastic_search.search(query, start=0)
-    return result2[0], result2[1], total2#, highlight, spellcheck_result #TODO(fabianvf)
+        result, total = elastic_search.search(query, start=0)
+    return result[0], result[1], total#, highlight, spellcheck_result #TODO(fabianvf)
 
 def update_node(node):
     if SOLR:
@@ -47,8 +47,8 @@ def delete_all():
     if ELASTIC:
         elastic_search.delete_all()
 
-def search_contributer():
+def search_contributor(query, exclude):
     if SOLR:
-        solr_search.search_contributer()
+        solr_search.search_contributor(query, exclude)
     if ELASTIC:
-        solr_search.search_contributer()
+        solr_search.search_contributor(query, exclude)

@@ -485,7 +485,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return rv
 
     def update_search(self):
-        if not settings.USE_SEARCH:
+        if settings.SEARCH_ENGINE == 'none':
             return
         search.update_user(self)
 

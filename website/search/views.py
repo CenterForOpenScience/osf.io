@@ -135,13 +135,15 @@ def _search_contributor(query, exclude=None):
     # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
     # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
     # so must search for (Barack OR Barack*).
-    q = ' AND '.join([
+    q = ' AND '.join([ #TODO(fabianvf) This logic needs to be moved to the search engine-specific files
         u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
         for token in re.split(r'\s+', query)
     ])
 
-    result = search(q) #TODO(fabianvf) This whole block will probably need a rewrite
-    docs = result.get('docs', [])
+#    result = search(q) #TODO(fabianvf) This whole block will probably need a rewrite
+    docs = search.search(q)[0]
+
+#    docs = result.get('docs', [])
 
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
@@ -172,8 +174,8 @@ def _search_contributor(query, exclude=None):
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
-
-    return _search_contributor(
-        query=request.args.get('query', ''),
-        exclude=exclude,
-    )
+    return search.search_contributor(request.args.get('query',''), exclude)
+    #return _search_contributor( #TODO(fabianvf)
+    #    query=request.args.get('query', ''),
+    #    exclude=exclude,
+    #)

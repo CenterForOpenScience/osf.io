@@ -4,15 +4,15 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
-from website.search.solr_search import solr
+from website.search import search as search#TODO(fabianvf)
 from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
-import website.search.solr_search as solr_search
-from website.search.views import _search_contributor
+#import website.search.solr_search as solr_search
+#from website.search.views import _search_contributor
 from website import settings
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestCleanSolr(unittest.TestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class TestCleanSolr(unittest.TestCase): #TODO(fabianvf)
     """Ensure that invalid XML characters are appropriately removed from
     Solr data documents.
 
@@ -59,28 +59,27 @@ class TestCleanSolr(unittest.TestCase):
             }
         )
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class SolrTestCase(OsfTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
-        solr_search.delete_all() #TODO(fabianvf)
-#        solr.commit()
+        search.delete_all() #TODO(fabianvf)
 
 
 def query(term):
-    results, _, _ = solr_search.search(term)
-    return results.get('docs', [])
+    results, _, _ = search.search(term)
+    return results
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name)
+    term = 'user:"{}"'.format(name) #TODO(fabianvf) this syntax is not yet specified for elastic
     return query(term)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestUserUpdate(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class TestUserUpdate(SearchTestCase):
 
     def test_new_user(self):
-        """Add a user, then verify that user is present in Solr.
+        """Add a user, then verify that user is present in search
 
         """
         # Create user
@@ -92,7 +91,7 @@ class TestUserUpdate(SolrTestCase):
 
     def test_change_name(self):
         """Add a user, change her name, and verify that only the new name is
-        found in Solr.
+        found in search.
 
         """
         user = UserFactory()
@@ -106,8 +105,8 @@ class TestUserUpdate(SolrTestCase):
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestProject(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class TestProject(SearchTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -126,8 +125,8 @@ class TestProject(SolrTestCase):
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestPublicProject(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class TestPublicProject(SearchTestCase):
 
     def setUp(self):
         self.user = UserFactory()
@@ -140,7 +139,7 @@ class TestPublicProject(SolrTestCase):
 
     def test_make_private(self):
         """Make project public, then private, and verify that it is not present
-        in Solr.
+        in search.
         """
         self.project.set_privacy('private')
         docs = query(self.project.title)
@@ -247,8 +246,8 @@ class TestPublicProject(SolrTestCase):
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestAddContributor(SolrTestCase):
+@unittest.skipIf(True, 'The _search_contributor helper method has been deleted')#settings.SEARCH_ENGINE == 'none', 'Search disabled')
+class TestAddContributor(SearchTestCase): #TODO(fabianvf) This is deprecated (the _search_contributor helper method has been deleted)
     """Tests of the _search_contributor helper.
 
     """

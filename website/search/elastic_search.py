@@ -93,6 +93,7 @@ def update_node(node):
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
+            'wikis': {}
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -101,7 +102,8 @@ def update_node(node):
             elastic_document.update({
                 '__'.join((node._id, wiki.page_name, 'wiki')): wiki.raw_text
             })
-        # check to see if the document is in the elasticsearch database
+            elastic_document['wikis'][wiki.page_name] = wiki.raw_text
+        # check to see if the document is in the solr database
 #        try: #TODO(fabianvf)
 #            new = solr.query(id=solr_document['id']).execute()[0]
 #            new = elastic.search(query={
@@ -118,8 +120,18 @@ def update_node(node):
 
 #        if elastic_document:
 #            new.update(clean_solr_doc(solr_document))
-
-        elastic.index('website', category, elastic_document, elastic_document_id)
+        try:
+            query = {'query': { 
+                'match': {
+                    'id': elastic_document_id
+                }
+            }}
+            if elastic.search(query, index='website', doc_type=category):
+                elastic.update('website', category, elastic_document_id, doc=elastic_document)
+            else:
+                raise pyelasticsearch.exceptions.ElasticHttpNotFoundError
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+            elastic.index('website', category, elastic_document, elastic_document_id,overwrite_existing=True)
 
 
 def update_user(user):
@@ -129,9 +141,12 @@ def update_user(user):
         })
 
 def delete_all():
-    elastic.delete_all('website', 'project')
-    elastic.delete_all('website', 'user')
-    elastic.delete_all('website', 'component')
+    try:
+        elastic.delete_all('website', 'project')
+        elastic.delete_all('website', 'user')
+        elastic.delete_all('website', 'component')
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+        logger.error(e)
 
 def delete_doc(elastic_document_id, node):
     if node.category == 'project':
@@ -281,5 +296,5 @@ def create_result(results):
     return result_search, tags
 
 
-def search_contributor():
+def search_contributor(query, exclude):
     raise NotImplementedError

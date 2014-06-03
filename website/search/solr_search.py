@@ -315,7 +315,7 @@ def create_result(highlights, results):
     return result_search, tags
 
 
-def search_contributor():
+def search_contributor(query, exclude):
     raise NotImplementedError
 
 def _encoded_dict(in_dict):
