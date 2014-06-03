@@ -19,7 +19,7 @@ css = Bundle(
             'vendor/pygments.css',
             'vendor/bootstrap3-editable/css/bootstrap-editable.css',
             'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
-            'vendor/hgrid/hgrid.css',
+            'vendor/bower_components/hgrid/dist/hgrid.css',
             filters='cssmin'),
         # Site-specific CSS
         Bundle(

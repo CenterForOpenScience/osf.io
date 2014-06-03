@@ -1,0 +1,36 @@
+{
+  "name": "hgrid-draggable",
+  "version": "0.1.0",
+  "homepage": "https://github.com/CenterForOpenScience/hgrid-draggable.git",
+  "authors": [
+    "Brian Geiger <bgeiger@pobox.com",
+    "Steven Loria <sloria1@gmail.com>"
+  ],
+  "description": "Drag and drop support for hgrid.js",
+  "main": "hgrid-draggable.js",
+  "keywords": [
+    "grid",
+    "file",
+    "files",
+    "folder",
+    "folders",
+    "filebrowser",
+    "management",
+    "upload",
+    "uploading"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "hgrid": "~0.1.1"
+  },
+  "devDependencies": {
+    "qunit": "~1.14.0"
+  }
+}

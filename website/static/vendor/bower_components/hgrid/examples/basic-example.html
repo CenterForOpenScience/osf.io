@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../src/hgrid.css" type="text/css" />
+    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./examples.css">
+    <title>HGrid: Basic Example With Minimal Configuration</title>
+</head>
+<body>
+<div class="box">
+<h1>Basic Example With Minimal Configuration</h1>
+<div class="hgrid" id="myGrid"></div>
+</div>
+
+<script src="../lib/jquery-1.10.2.js"></script>
+<script src="../dist/hgrid.js"></script>
+
+<script>
+var myData = {
+  data: [{
+      name: 'My Computer',
+      kind: 'folder',
+      children: [{
+        name: 'My Documents',
+        kind: 'folder',
+        children: [{
+          name: 'Scripts',
+          kind: 'folder',
+          children: [{
+            name: 'foo.py',
+            kind: 'item'
+          },
+          {name: 'Empty Folder', kind: 'folder'}]
+        }, ]
+      }, {
+        name: 'My Music',
+        kind: 'folder',
+        children: [{
+          name: 'bar.mp3',
+          kind: 'item',
+          children: []
+        }]
+      },
+      {name: 'config.ini', kind: 'item'}]
+    },
+    {name: 'baz.txt', kind: 'item'},
+    {name: 'Your Computer', kind: 'folder', children: [
+      {name: 'quux', kind: 'item'}
+    ]}]
+};
+
+var grid = new HGrid('#myGrid', {data: myData, width: 500});
+
+</script>
+</body>
+</html>
