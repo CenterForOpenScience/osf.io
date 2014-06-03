@@ -40,7 +40,7 @@ def request_to_data():
 MEETING_DATA = {
     'spsp2014': {
         'name': 'SPSP 2014',
-        'info_url': 'http://cos.io/spsp/',
+        'info_url': None,
         'active': False,
     },
     'asb2014': {
@@ -55,7 +55,7 @@ MEETING_DATA = {
     },
     'annopeer2014': {
         'name': '#annopeer',
-        'info_url': '',
+        'info_url': None,
         'active': True,
     },
 }

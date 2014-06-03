@@ -92,11 +92,12 @@ def shell():
     return
 
 @task
-def mongo(daemon=False):
-    '''Run the mongod process.
-    '''
+def mongo(daemon=False,
+          logpath="/usr/local/var/log/mongodb/mongo.log"):
+    """Run the mongod process.
+    """
     port = settings.DB_PORT
-    cmd = "mongod --port {0}".format(port)
+    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
     if daemon:
         cmd += " --fork"
     run(cmd)
@@ -199,26 +200,6 @@ def test():
 def test_all():
     test_osf()
     test_addons()
-
-
-# TODO: user bower once hgrid is released
-@task
-def get_hgrid():
-    """Get the latest development version of hgrid and put it in the static
-    directory.
-    """
-    target = 'website/static/vendor/hgrid'
-    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
-    print('Removing old version')
-    run('rm -rf {0}'.format(target))
-    print('Replacing with fresh version')
-    run('mkdir {0}'.format(target))
-    run('mv hgrid/dist/hgrid.js {0}'.format(target))
-    run('mv hgrid/dist/hgrid.css {0}'.format(target))
-    run('mv hgrid/dist/images {0}'.format(target))
-    run('rm -rf hgrid/')
-    print('Finished')
-
 
 @task
 def addon_requirements(mfr=1):
