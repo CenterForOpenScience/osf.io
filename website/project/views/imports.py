@@ -37,7 +37,6 @@ def must_have_valid_signature(func):
         payload = OrderedDict(sorted(payload.items(), key=lambda t: t[0]))
         signature_is_valid = None
 
-        import pdb; pdb.set_trace()
         signature = hmac.new(
             key=settings.OSF_API_KEY,
             msg=json.dumps(payload),
@@ -51,7 +50,9 @@ def must_have_valid_signature(func):
         else:
             print signature
             print sent_signature
-            raise HTTPError(http.NOT_ACCEPTABLE)         
+            return {
+                "error": "Invalid signature"
+            }
     return wrapped
 
 def get_or_create_user(fullname, address, sys_tags=[]):
