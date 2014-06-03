@@ -20,7 +20,7 @@ class TestCallbacks(OsfTestCase):
         super(TestCallbacks, self).setUp()
 
         self.app = TestApp(app)
-        self.user = AuthUserFactory()
+
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.project = ProjectFactory(creator=self.user)

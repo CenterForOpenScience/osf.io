@@ -47,6 +47,9 @@ MAIL_PASSWORD = ''  # Set this in local.py
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 
+# TODO: Override in local.py
+OSF_API_KEY = "secret"
+
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
 MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')

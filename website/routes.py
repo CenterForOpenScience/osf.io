@@ -708,7 +708,14 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/project/import/'
+            ],
+            'post',
+            project_views.imports.import_project,
+            json_renderer,
+        ),
         # Private Link
         Rule([
             '/project/<pid>/private_link/',
