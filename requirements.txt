@@ -15,6 +15,7 @@ nameparser==0.2.8
 py-bcrypt==0.3
 pymongo==2.5.1
 python-dateutil==2.1
+python-gnupg==0.3.6
 pytz==2013b
 sunburnt==0.6
 wtforms-recaptcha==0.2.0
