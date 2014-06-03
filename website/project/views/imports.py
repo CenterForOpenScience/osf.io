@@ -48,10 +48,8 @@ def must_have_valid_signature(func):
         if signature_is_valid:
             return func(*args, **kwargs)
         else:
-            print signature
-            print sent_signature
             return {
-                "error": "Invalid signature"
+                "error": "Invalid HMAC signature"
             }
     return wrapped
 
@@ -65,7 +63,6 @@ def get_or_create_user(fullname, address, sys_tags=[]):
         password = str(uuid.uuid4())
         user = User.create_confirmed(address, password, fullname)
         user.verification_key = security.random_string(20)
-        # Flag as potential spam account if Mailgun detected spam
         if sys_tags and len(sys_tags) > 0:
             for tag in sys_tags:
                 user.system_tags.append(tag)
@@ -80,7 +77,7 @@ def import_project():
 
     project_data = request.json.get('project')
     if not project_data:
-        errors.append({'error': 'No project data submitted'})
+        return {'error': 'No project data submitted'}
 
     contributors = project_data['contributors']
     for i in range(len(contributors)):        
@@ -109,20 +106,21 @@ def import_project():
     tags = project_data['tags'] or []
     for tag in tags:           
         project.add_tag(tag, auth=auth)
-    '''
+    
     system_tags = [project_data['source'],'imported']
     for tag in system_tags:
-        if tag not in project['system_tags']:
-            project['system_tags'].append(tag)
-    '''
+        if tag not in project.system_tags:
+            project.system_tags.append(tag)
+    
     # add components        
     components = project_data.get('components') or []
     for component in components:
         comp = new_node('component', component['title'], contributors[0], description=component['description'], project=project)
         nodes.append(comp)
-
+    
     for contributor in contributors:
         for node in nodes:
             node.add_contributor(contributor[0], auth=auth)
             node.save()
-
+            
+    return {"status": "Successfully created project: '{project}' with components: {components}".format(project=title, components=', '.join(["'"+c['title']+"'" for c in components]))}
