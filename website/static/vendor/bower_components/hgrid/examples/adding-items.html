@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../src/hgrid.css" type="text/css" />
+    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./examples.css">
+    <title>HGrid: Dynamically Adding Items</title>
+</head>
+<body>
+
+<div class="box">
+<h1>Adding Items</h1>
+<div class='hgrid' id="myGrid"></div>
+</div>
+
+<script src="../lib/jquery-1.10.2.js"></script>
+<script src="../dist/hgrid.js"></script>
+
+<script>
+var N_ITEMS = 100;
+
+
+$(function() {
+  var grid = new HGrid('#myGrid');
+
+  var randData = [];
+  for (var i = 0; i < N_ITEMS; i++) {
+    var datum = {name: 'Item ' + i, kind: 'folder'};
+    if (Math.random() > 0.5 && i > 0) {
+      datum.parentID = i - 1;
+    } else if (Math.random() < 0.2) {
+      datum.parentID = i - 2;
+    }else {
+      datum.parentID = null;
+    }
+    randData.push(datum);
+  }
+
+  grid.addItems(randData);
+
+});
+
+</script>
+</body>
+</html>
