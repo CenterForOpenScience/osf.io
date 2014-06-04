@@ -1,15 +1,27 @@
 # OSF Dataverse Add-on
 
-A couple notes before beginning:
- - The add-on uses a modified version of the dataverse python client.
- - The add-on is currently configured to use the test server. This can be changed in settings/defaults.py
+Enabling the addon for development
+
+ - Import a private key into your GnuPG keyring.
+```sh
+$ invoke encryption
+```
+ - In `website/settings/local.py` add, `"dataverse"` to `ADDONS_REQUESTED`.
+
+Creating a Dataverse study on the test server
+
+1. Go to http://dvn-demo.iq.harvard.edu/ and create an account
+2. On the homepage, click the "Create Dataverse" button to create a Dataverse
+3. Click the options icon on the Dataverse page
+4. On the Settings tab, set "Dataverse Release Settings" to "Released" and save changes.
+5. On the Studies tab, click "Create Study + Upload Data" and create a study (only title is required)
 
 To link a Dataverse study to a node (project or component):
- 1. Go to user settings. Under "Add-ons", select "Dataverse" and click submit.
- 2. Under "Configure Add-ons", Enter valid Dataverse credentials and click submit.
- 3. Go to the the node settings page. Under "Select Add-ons", select "Dataverse" and click submit.
- 4. Under "Configure Add-ons", select a Dataverse. Only released Dataverses are selectable.
- 5. Once the page refreshes, select a study. Your Dataverse study will be linked.
+
+1. Go to user settings. Under "Add-ons", select "Dataverse" and click submit.
+2. Under "Configure Add-ons", enter your Dataverse credentials and click submit.
+3. Go to the the node settings page. Under "Select Add-ons", select "Dataverse" and click submit.
+4. Under "Configure Add-ons", select a Dataverse and study and click submit.
 
 Notes on privacy settings:
  - Only the user that linked his or her Dataverse account can change the Dataverse or study linked from that account. Other contributors can still deauthorize the node.
