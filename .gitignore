@@ -55,6 +55,7 @@ website/cache/*
 website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
+website/gpg/*
 # Local settings
 */settings/local.py
 
