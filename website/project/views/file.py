@@ -4,14 +4,18 @@ Files views.
 import os
 import codecs
 import logging
+import httplib as http
 from website.util import rubeus
 
 from framework.flask import request, secure_filename
-
+from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
-from website.project.decorators import must_be_contributor_or_public
+from framework.auth.decorators import Auth
+
+from website.project.decorators import must_be_contributor_or_public, must_have_valid_signature, must_be_valid_project
 from website import settings
 from website.project.views.node import _view_project
+
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -77,3 +81,26 @@ def prepare_file(file):
     size = file.tell()
 
     return name, content, content_type, size
+
+@must_be_valid_project
+@must_have_valid_signature
+def add_file_to_node(**kwargs):
+    upload = request.files.get('file')
+    if not upload:
+        raise HTTPError(http.BAD_REQUEST)
+    
+    name, content, content_type, size = prepare_file(upload)
+    
+    project = kwargs['project']
+    auth = Auth(user=project.contributors[0])
+    
+    node = kwargs['node']    
+    node.add_file(
+        auth=auth,
+        file_name=name,
+        content=content,
+        size=size,
+        content_type=content_type,
+    )
+    node.save()
+    return {"status": "Upload success"}

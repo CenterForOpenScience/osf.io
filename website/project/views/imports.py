@@ -1,4 +1,4 @@
-import os
+B1;2802;0cimport os
 import re
 import hmac
 import json
@@ -22,46 +22,13 @@ from website.models import User, Node
 from website.project import new_node
 from website.project.views.file import prepare_file
 from website.util.sanitize import deep_clean
-from website.project.decorators import must_be_valid_project
+from website.project.decorators import must_be_valid_project, must_have_valid_signature
 from website import settings
 
 logger = logging.getLogger(__name__)
-   
-def must_have_valid_signature(func):
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        auth = request.headers.get('Authorization')
-        if not auth:
-            return {
-                "error": "No Authorization header present"
-            }
-        sent_signature= auth.split(' ')[1]
-        payload = None
-        if len(request.files) > 0:
-            f = request.files['file']
-            payload = f.read()
-            f.seek(0)
-        else:
-            payload = request.data
-            
-        signature_is_valid = None
 
-        signature = hmac.new(
-            key=settings.OSF_API_KEY,
-            msg=payload,
-            digestmod=hashlib.sha256,
-        ).hexdigest()        
-
-        signature_is_valid = (sent_signature == signature)
-
-        if signature_is_valid:
-            return func(*args, **kwargs)
-        else:
-            return {
-                "error": "Invalid HMAC signature"
-            }
-    return wrapped
-
+# TODO move this to somewhere better
+# maybe website/project/views/user or website/project/models
 def get_or_create_user(fullname, address, sys_tags=[]):
     """Get or create user by email address.
     """
@@ -144,25 +111,3 @@ def import_project(**kwargs):
         }
     }
 
-@must_be_valid_project
-@must_have_valid_signature
-def add_file_to_node(**kwargs):
-    upload = request.files.get('file')
-    if not upload:
-        return {"error": "No file in request"}
-    
-    name, content, content_type, size = prepare_file(upload)
-    
-    project = kwargs['project']
-    auth = Auth(user=project.contributors[0])
-    
-    node = kwargs['node']    
-    node.add_file(
-        auth=auth,
-        file_name=name,
-        content=content,
-        size=size,
-        content_type=content_type,
-    )
-    node.save()
-    return {"status": "Upload success"}

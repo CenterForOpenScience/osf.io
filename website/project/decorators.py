@@ -1,6 +1,8 @@
 import httplib as http
 import functools
 import logging
+import hmac
+import hashlib
 
 from furl import furl
 from framework import request, redirect, status
@@ -9,6 +11,7 @@ from framework.auth import get_current_user, get_api_key
 from framework.auth.decorators import Auth
 from framework.sessions import add_key_to_url
 from website.models import Node
+from website.settings import OSF_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -301,3 +304,42 @@ def must_have_permission(permission):
 
     # Return decorator
     return wrapper
+
+def must_have_valid_signature(func):
+    '''
+    A decorator to check for HMAC signature in the
+    Authorization header.
+
+    :returns: Decorator function for checking permissions
+    :raises: HTTPError(http.UNAUTHORIZED) if signature mismatch
+    :raises: HTTPError(http.BAD_REQUEST) if missing header
+    '''
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        auth = request.headers.get('Authorization')
+        if not auth:
+            raise HTTPError(http.BAD_REQUEST)
+        sent_signature= auth.split(' ')[1]
+        payload = None
+        if len(request.files) > 0:
+            f = request.files['file']
+            payload = f.read()
+            f.seek(0)
+        else:
+            payload = request.data
+            
+        signature_is_valid = None
+
+        signature = hmac.new(
+            key=OSF_API_KEY,
+            msg=payload,
+            digestmod=hashlib.sha256,
+        ).hexdigest()        
+
+        signature_is_valid = (sent_signature == signature)
+
+        if signature_is_valid:
+            return func(*args, **kwargs)
+        else:
+            raise HTTPError(http.UNAUTHORIZED)
+    return wrapped

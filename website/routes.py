@@ -722,7 +722,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/upload/'
             ],
             'put',
-            project_views.imports.add_file_to_node,
+            project_views.file.add_file_to_node,
             json_renderer
         ),
         # Private Link
