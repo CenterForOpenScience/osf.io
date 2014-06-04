@@ -11,5 +11,6 @@ install:
     - pip install invoke
     - invoke requirements
     - invoke addon_requirements --mfr 0
+    - invoke encryption
 
 script: invoke test_all
