@@ -5,7 +5,7 @@ import string
 import gnupg
 from random import SystemRandom
 
-from website.settings import FINGERPRINT
+from website import settings
 
 random = SystemRandom()
 
@@ -18,15 +18,15 @@ def random_string(length=8, chars=string.letters+string.digits):
 
 class Encryption(object):
 
-    gpg = gnupg.GPG()
+    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
 
-    if not gpg.list_keys() or FINGERPRINT not in gpg.list_keys()[0].values():
+    if not gpg.list_keys() or settings.FINGERPRINT not in gpg.list_keys()[0].values():
         raise ImportError(
             "No GnuPG keyring found. Did you remember to 'invoke encryption'?"
         )
 
     def encrypt(self, value):
-        return str(self.gpg.encrypt(value, FINGERPRINT, always_trust=True))
+        return str(self.gpg.encrypt(value, settings.FINGERPRINT, always_trust=True))
 
     def decrypt(self, encrypted_data):
         return str(self.gpg.decrypt(encrypted_data, always_trust=True))
