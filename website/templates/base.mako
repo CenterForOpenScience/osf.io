@@ -173,7 +173,7 @@
         ko.punches.enableAll();
         // Filebrowser dependencies
         $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
-        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
