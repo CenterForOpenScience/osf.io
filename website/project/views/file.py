@@ -93,8 +93,10 @@ def add_file_to_node(**kwargs):
     
     project = kwargs['project']
     auth = Auth(user=project.contributors[0])
-    
-    node = kwargs['node']    
+
+    node = kwargs.get('node')
+    if not node:
+        pass
     node.add_file(
         auth=auth,
         file_name=name,

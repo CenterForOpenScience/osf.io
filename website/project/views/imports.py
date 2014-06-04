@@ -52,7 +52,8 @@ def import_projects(**kwargs):
     project_data = deep_clean(request.json)
     if not project_data:
         return {'error': 'No project data submitted'}
-    
+
+    projects = []
     if not isinstance(project_data, list):
         project_data = [project_data]
     for entry in project_data:                    
@@ -94,7 +95,8 @@ def import_projects(**kwargs):
                 project.system_tags.append(tag)
 
         project.save()
-        # add components        
+        projects.append(project)
+        # add components   
         components = entry.get('components') or []
         for i in range(len(components)):
             component = components[i]
@@ -108,15 +110,13 @@ def import_projects(**kwargs):
                 node.add_contributor(contributor, auth=auth)
                 node.save()
 
-        return {
-            "project": {
-                "title": project.title,
-                "id": project._id,
-                "components": [
-                    {
-                        "title": c.title,
-                        "id": c._id,
-                    } for c in components]
-            }
+    rv = {}
+    for p in projects:
+        rv[p.title] = {
+            "id": p._id,
+            "components": {}
         }
+        for c in components:
+            rv[p.title]["components"][c.title] = {"id": c._id} 
+    return rv
 
