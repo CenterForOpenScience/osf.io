@@ -23,7 +23,7 @@ CONFIGS = ['user', 'node']
 CATEGORIES = ['storage']
 
 INCLUDE_JS = {
-    'widget': ['dataverse-rubeus-cfg.js'],
+    'widget': [],
     'page': [],
     'files': ['dataverse-rubeus-cfg.js'],
 }
@@ -36,4 +36,4 @@ INCLUDE_CSS = {
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.dataverse_hgrid_root
 
-# MAX_FILE_SIZE = 10  # MB
+MAX_FILE_SIZE = 1024 * 2  # MB
