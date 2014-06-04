@@ -34,19 +34,47 @@ def search(raw_query, start=0):
         else:
             return data
 
+    # Type filter for normal searches
+    type_filter = {
+        'or' : [
+            {
+            'type' : {'value': 'project'}
+            },
+            {
+            'type' : {'value': 'component'}
+            }
+        ]
+    }
+
+    if 'user:' in raw_query:
+        doc_type = ['user']
+        raw_query = raw_query.replace('user:', '')
+        raw_query = raw_query.replace('"', '')
+        raw_query = raw_query.replace('\\"','')
+        raw_query = raw_query.replace("'", '')
+        type_filter = {
+            'type' : {
+                'value' : 'user'
+            }
+        }
+
     query = {
-        'query': {
-            'match' : {
-                '_all': raw_query
+        'query':{
+            'filtered' : {
+                'filter': type_filter,
+                'query': {
+                    'match' : {
+                        '_all' : raw_query
+                    }
+                }   
             }
         }
     }
-
     raw_results = convert(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     numFound = raw_results['hits']['total']
     formatted_results, tags = create_result(results)
-
+#    logger.warn(str(formatted_results))
     return formatted_results, tags, numFound
 
 
@@ -92,24 +120,14 @@ def update_node(node):
             NodeWikiPage.load(x)
             for x in node.wiki_pages_current.values()
         ]:
-            elastic_document.update({
-                '__'.join((node._id, wiki.page_name, 'wiki')): wiki.raw_text
-            })
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text
 
         try:
-            query = {'query': { 
-                'match': {
-                    'id': elastic_document_id
-                }
-            }}
-            if elastic.search(query, index='website', doc_type=category):
-                elastic.update('website', category, elastic_document_id, doc=elastic_document)
-            else:
-                raise pyelasticsearch.exceptions.ElasticHttpNotFoundError
+            elastic.update('website', category, id=elastic_document_id, \
+                    doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document,\
-                    id=elastic_document_id,overwrite_existing=True)
+            elastic.index('website', category, elastic_document, id=elastic_document_id,\
+                    overwrite_existing=True, refresh=True)
 
 
 def update_user(user):
@@ -120,31 +138,43 @@ def update_user(user):
     }
 
     try: 
-        elastic.get('website', 'user', user._id)
-        elastic.update('website', 'user', doc=user_doc, id=user._id)
+        elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True)
+        elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
 def delete_all():
     try:
-        elastic.delete_all('website', 'project')
-        elastic.delete_all('website', 'user')
-        elastic.delete_all('website', 'component')
+        elastic.delete_all('website', 'project', refresh=True)
+        elastic.delete_all('website', 'user', refresh=True)
+        elastic.delete_all('website', 'component', refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
 
 def delete_doc(elastic_document_id, node):
-    if node.category == '':
-        category = 'component'
+    if node.category == 'project':
+        category = 'project'
     else:
-        category = node.category
+        category = 'component'
     try:
-        elastic.delete('website', category, elastic_document_id) 
+        elastic.delete('website', category, elastic_document_id, refresh=True) 
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 def create_result(results):
-    logger.warn(str(results))
+    ''' Returns : 
+    {
+        'contributors': [{LIST OF CONTRIBUTORS}], 
+        'wiki_link': '{LINK TO WIKIS}', 
+        'title': '{TITLE TEXT}', 
+        'url': '{URL FOR NODE}', 
+        'nest': {NO IDEA}, 
+        'tags': [{LIST OF TAGS}], 
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
+        'is_registration': {TRUE OR FALSE}, 
+        'highlight': [{NO IDEA}]
+    }
+    ''' 
+#    logger.warn(str(results))
     result_search = []
     tags = {}
     for result in results:
@@ -154,6 +184,7 @@ def create_result(results):
         # so the logic for returning
         # those documents is different
         if 'user' in result:
+            container['id'] = result['id']
             container['user'] = result['user']
             container['user_url'] = '/profile/'+result['id']
             result_search.append(container)
@@ -278,8 +309,9 @@ def create_result(results):
                     else:
                         tags[tag] += 1
             result_search.append(container)
+#    logger.warn(str(result_search))
     return result_search, tags
 
 
-def search_contributor(query, exclude):
+def search_contributor(query, exclude=None):
     raise NotImplementedError
