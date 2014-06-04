@@ -27,7 +27,7 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
-# TODO move this to somewhere better
+# TODO move this somewhere better
 # maybe website/project/views/user or website/project/models
 def get_or_create_user(fullname, address, sys_tags=[]):
     """Get or create user by email address.
@@ -113,4 +113,4 @@ def import_project(**kwargs):
                 } for c in components]
         }
     }
-
+<

@@ -8,8 +8,6 @@ import datetime as dt
 import mock
 import httplib as http
 
-
-
 from nose.tools import *  # PEP8 asserts
 from tests.test_features import requires_solr
 from webtest_plus import TestApp
