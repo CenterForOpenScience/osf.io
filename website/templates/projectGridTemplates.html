@@ -1,7 +1,7 @@
 <script id="project-detail-template" type="text/x-handlebars-template">
   <span class = "title">
       {{#if theItem.isFolder}}{{ theItem.name }}{{/if}}
-      {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{ theItem.name }}</a>{{#if projectDetailData.node.is_registration}} (Registration){{/if}}{{/unless}}
+      {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{ theItem.name }}</a>{{#if theItem.isRegistration}} (Registration){{/if}}{{/unless}}
     </span>
     <br /><span class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a>{{/commalist}}</span>
     {{#if projectDetailData.node.description}}<br /><span class="description">Description: {{ projectDetailData.node.description }}</span>{{/if}}
@@ -10,7 +10,9 @@
         <div id = "buttons{{theItem.node_id}}">
         <div class = "organizeBtn btn btn-default" id="add-item-{{theItem.node_id}}">Add Project</div>
         <div id="add_folder_{{theItem.node_id}}"><a class = "organizeBtn btn btn-default" href="/folder/new/{{theItem.node_id}}">Add a Folder</a></div>
-         <div class = "organizeBtn btn btn-default" id="delete-folder-{{theItem.node_id}}">Remove Folder</div>
+            {{#unless theItem.isDashboard}}
+                <div class = "organizeBtn btn btn-default" id="delete-folder-{{theItem.node_id}}">Remove Folder</div>
+            {{/unless}}
         </div>
         <div id="findNode{{theItem.node_id}}">
         <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Project Name">

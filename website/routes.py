@@ -480,8 +480,6 @@ def make_url_map(app):
 
         Rule('/search/', 'get', search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-        Rule('/search/projects/my/', 'get', search_views.search_my_projects_by_title, json_renderer),
-        Rule('/search/projects/public/', 'get', search_views.search_public_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')
 

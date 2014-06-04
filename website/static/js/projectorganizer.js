@@ -144,7 +144,8 @@
         self.gridData = self.grid.grid.getData();
         self.myProjects = [];
         self.publicProjects = [];
-        // addDragAndDrop(self);
+
+        expandAllInHGrid(self.grid);
 
         // Expand/collapse All functions
         $(".pg-expand-all").click(function (){
@@ -174,15 +175,15 @@
         // Grab the JSON for the contents of the smart folder. Add that data
         // to self.myProjects so that we can use it for the autocomplete
         //
-        // http://127.0.0.1:5000/api/v1/search/projects/?term=amel&maxResults=5&includePublic=no&includeContributed=yes
+        // /api/v1/search/projects/?term=amel&maxResults=5&includePublic=no&includeContributed=yes
 
         self.publicProjects = new Bloodhound({
             datumTokenizer: function (d) {
-                return Bloodhound.tokenizers.whitespace(d.value);
+                return Bloodhound.tokenizers.whitespace(d.name);
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             remote: {
-                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=yes&includeContributed=no',
+                url: '/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=yes&includeContributed=no',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -191,18 +192,19 @@
                             category: project.category
                         };
                     });
-                }
-            },
-            limit: 10
+                },
+                limit: 10
+            }
+
         });
 
         self.myProjects = new Bloodhound({
             datumTokenizer: function (d) {
-                return Bloodhound.tokenizers.whitespace(d.value);
+                return Bloodhound.tokenizers.whitespace(d.name);
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             remote: {
-                url: 'http://127.0.0.1:5000/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=no&includeContributed=yes',
+                url: '/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=no&includeContributed=yes',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -211,9 +213,9 @@
                             category: project.category
                         };
                     });
-                }
-            },
-            limit: 10
+                },
+                limit: 10
+            }
         });
 
         //
@@ -223,8 +225,6 @@
         //
 
         self.grid.grid.onSelectedRowsChanged.subscribe(function () {
-
-
             var selectedRows = self.grid.grid.getSelectedRows();
             if (selectedRows.length == 1 ){
                 self.myProjects.initialize();
@@ -233,140 +233,116 @@
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
 
-                var projectDetailData;
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
-                    var theParentNodeID = theParentNode.node_id
+                    var theParentNodeID = theParentNode.node_id;
+                     theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
                 }
                 else {
-                    theParentNodeID = ""
+                    theParentNodeID = "";
+                    theItem.parentIsSmartFolder = true;
                 }
-                var parentIsSmartFolder = false;
-                if (theItem.isSmartFolder){
-                    parentIsSmartFolder = true;
-                }
+
                 if(!theItem.isSmartFolder) {
-                    var detailTemplateSource   = $("#project-detail-template").html();
-                    Handlebars.registerHelper('commalist', function(items, options) {
-                        var out = '';
-
-                        for(var i=0, l=items.length; i<l; i++) {
-                        out = out + options.fn(items[i]) + (i!==(l-1) ? ", ":"");
+                    createProjectDetailHTMLFromTemplate(theItem);
+                    $('#findNode'+theItem.node_id).hide();
+                    $('#findNode'+theItem.node_id+' .typeahead').typeahead({
+                      highlight: true
+                    },
+                    {
+                        name: 'my-projects',
+                        displayKey: function(data){
+                              return data.name;
+                          },
+                        source: self.myProjects.ttAdapter(),
+                        templates: {
+                        header: function(){
+                            return '<h3 class="category">My Projects</h3>'
+                        },
+                        suggestion: function(data){
+                              return '<p>'+data.name+'</p>';
+                          }
                         }
-                        return out;
+                    },
+                    {
+                        name: 'public-projects',
+                        displayKey: function(data){
+                              return data.name;
+                          },
+                        source: self.publicProjects.ttAdapter(),
+                        templates: {
+                        header: function(){
+                            return '<h3 class="category">Public Projects</h3>'
+                        },
+                        suggestion: function(data){
+                              return '<p>'+data.name+'</p>';
+                          }
+                        }
+                   });
+
+                    $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
+                        $('#add-link-'+theItem.node_id).removeAttr('disabled');
+                        linkName = datum.name;
+                        linkID = datum.node_id;
                     });
-                    var detailTemplate = Handlebars.compile(detailTemplateSource);
-
-                    $.getJSON(theItem.apiURL, function (data) {
-                        projectDetailData = data;
-
-
-                        var detailTemplateContext = {
-                            theItem: theItem,
-                            multipleContributors: theItem.contributors.length > 1,
-                            parentIsSmartFolder: parentIsSmartFolder,
-                            projectDetailData: projectDetailData
-                        };
-                        var displayHTML    = detailTemplate(detailTemplateContext);
-                        $(".project-details").html(displayHTML);
-                        $('#findNode'+theItem.node_id).hide();
-                        $('#findNode'+theItem.node_id+' .typeahead').typeahead({
-                          highlight: true
-                        },
-                        {
-                            name: 'my-projects',
-                            displayKey: function(data){
-                                  return data.name;
-                              },
-                            source: self.myProjects.ttAdapter(),
-                            templates: {
-                            header: function(data){
-                                return '<h3 class="category">My Projects</h3>'
-                            },
-                            suggestion: function(data){
-                                  return '<p>'+data.name+'</p>';
-                              }
+                    $('#add-link-'+theItem.node_id).click(function() {
+                        var url = "/api/v1/pointer/"; // the script where you handle the form input.
+                        var postData = JSON.stringify(
+                            {
+                                pointerID: linkID,
+                                toNodeID: theItem.node_id
+                            });
+                        $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                               reloadFolder(self, theItem);
                             }
-                        },
-                        {
-                            name: 'public-projects',
-                            displayKey: function(data){
-                                  return data.name;
-                              },
-                            source: self.publicProjects.ttAdapter(),
-                            templates: {
-                            header: function(data){
-                                return '<h3 class="category">Public Projects</h3>'
-                            },
-                            suggestion: function(data){
-                                  return '<p>'+data.name+'</p>';
-                              }
-                            }
-                       });
-                        $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
-                            $('#add-link-'+theItem.node_id).removeAttr('disabled');
-                            linkName = datum.name;
-                            linkID = datum.node_id;
                         });
-                        $('#add-link-'+theItem.node_id).click(function() {
-                            var url = "/api/v1/pointer/"; // the script where you handle the form input.
-                            var postData = JSON.stringify(
-                                {
-                                    pointerID: linkID,
-                                    toNodeID: theItem.node_id
+                    });
+
+                    $('#remove-link-'+theItem.node_id).click(function() {
+                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
+                        var postData = JSON.stringify({});
+                        $.ajax({
+                            type: "DELETE",
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                reloadFolder(self, theItem);
+                            }
+                        });
+                    });
+                    $('#delete-folder-'+theItem.node_id).click(function() {
+                        var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.";
+                        bootbox.confirm(confirmationText, function(result) {
+                            if (result !== null && result) {
+                                var url = '/api/v1/folder/'+theItem.node_id;
+                                var postData = JSON.stringify({});
+                                $.ajax({
+                                    type: "DELETE",
+                                    url: url,
+                                    data: postData,
+                                    contentType: 'application/json',
+                                    dataType: 'json',
+                                    success: function() {
+                                        reloadFolder(self, theParentNode);
+                                    }
                                 });
-                            $.ajax({
-                                type: "POST",
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                success: function() {
-                                    window.location.reload();
-                                }
-                            });
+                            }
                         });
-
-                        $('#remove-link-'+theItem.node_id).click(function() {
-                            var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
-                            var postData = JSON.stringify({});
-                            $.ajax({
-                                type: "DELETE",
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                success: function() {
-                                    window.location.reload();
-                                }
-                            });
-                        });
-                        $('#delete-folder-'+theItem.node_id).click(function() {
-                            var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder."
-                            bootbox.confirm(confirmationText, function(result) {
-                                if (result !== null && result) {
-                                    var url = '/api/v1/folder/'+theItem.node_id;
-                                    var postData = JSON.stringify({});
-                                    $.ajax({
-                                        type: "DELETE",
-                                        url: url,
-                                        data: postData,
-                                        contentType: 'application/json',
-                                        dataType: 'json',
-                                        success: function() {
-                                            window.location.reload();
-                                        }
-                                    });
-                                }
-                            });
-                        });
-                        $('#add-item-'+theItem.node_id).click(function(){
-                            $('#buttons'+theItem.node_id).hide();
-                            $('#findNode'+theItem.node_id).show();
-                        });
-
-                        $(".project-details").show();
                     });
+                    $('#add-item-'+theItem.node_id).click(function(){
+                        $('#buttons'+theItem.node_id).hide();
+                        $('#findNode'+theItem.node_id).show();
+                    });
+
+                    $(".project-details").show();
                 } else {
                     $(".project-details").hide();
                 }
@@ -378,6 +354,32 @@
 
         }); // end onSelectedRowsChanged
     };
+
+    function reloadFolder(self, theItem){
+        self.grid.reloadFolder(theItem);
+        self.grid.grid.setSelectedRows([]);
+        self.grid.grid.resetActiveCell();
+    }
+
+    function createProjectDetailHTMLFromTemplate(theItem){
+        var detailTemplateSource   = $("#project-detail-template").html();
+        Handlebars.registerHelper('commalist', function(items, options) {
+            var out = '';
+
+            for(var i=0, l=items.length; i<l; i++) {
+                out = out + options.fn(items[i]) + (i!==(l-1) ? ", ":"");
+            }
+            return out;
+        });
+        var detailTemplate = Handlebars.compile(detailTemplateSource);
+        var detailTemplateContext = {
+            theItem: theItem,
+            multipleContributors: theItem.contributors.length > 1,
+            parentIsSmartFolder: theItem.parentIsSmartFolder
+        };
+        var displayHTML    = detailTemplate(detailTemplateContext);
+        $(".project-details").html(displayHTML);
+    }
 
     //
     // Public methods

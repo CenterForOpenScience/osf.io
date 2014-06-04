@@ -137,75 +137,14 @@ def search_projects_by_title(**kwargs):
         ).limit(max_results)
         my_project_count = my_project_count
 
-
     if my_project_count < max_results and include_public == "yes":
         public_projects = Node.find(
             matching_title &
             Q('is_public', 'eq', True)  # is public
         ).limit(max_results - my_project_count)
 
-
     results = list(my_projects) + list(public_projects)
-
     out = process_project_search_results(results, **kwargs)
-
-    return out
-
-
-@must_be_logged_in
-def search_my_projects_by_title(**kwargs):
-
-    term = request.args.get('q')
-    if term is not None:
-        user = kwargs['auth'].user
-
-        max_results = 10
-
-        matching_title = (
-            Q('title', 'icontains', term) &  # search term (case insensitive)
-            Q('category', 'eq', 'project') &  # is a project
-            Q('is_deleted', 'eq', False) &  # isn't deleted
-            Q('is_folder', 'eq', False) # not a folder
-        )
-
-        my_projects = Node.find(
-            matching_title &
-            Q('contributors', 'contains', user._id)  # user is a contributor
-        ).limit(max_results)
-
-        results = list(my_projects)
-
-        out = process_project_search_results(results, **kwargs)
-    else:
-        out = []
-    return out
-
-
-@must_be_logged_in
-def search_public_projects_by_title(**kwargs):
-
-    term = request.args.get('q')
-    if term is not None:
-
-        max_results = 10
-
-        matching_title = (
-            Q('title', 'icontains', term) &  # search term (case insensitive)
-            Q('category', 'eq', 'project') &  # is a project
-            Q('is_deleted', 'eq', False) &  # isn't deleted
-            Q('is_folder', 'eq', False) # not a folder
-        )
-
-        public_projects = Node.find(
-            matching_title &
-            Q('is_public', 'eq', True)  # is public
-        ).limit(max_results)
-
-        results = list(public_projects)
-
-        out = process_project_search_results(results, **kwargs)
-    else:
-        out = []
     return out
 
 
