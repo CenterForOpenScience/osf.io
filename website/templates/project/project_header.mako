@@ -164,20 +164,19 @@
     </header>
 
 <script>
-$(function () {
-    setNavigationActive();
-});
+    ##   TODO: Take this out of the mako file. This was a quick fix and likely not to live for very long, but it's not
+    ##      the proper way to do it.
 
-function setNavigationActive() {
-    var path = window.location.pathname;
-//    path = path.replace(/\/$/, "");
-//    path = decodeURIComponent(path);
+    $(function () {
+        var path = window.location.pathname;
 
-    $(".project-nav a").each(function () {
-        var href = $(this).attr('href');
-        if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
-            $(this).closest('li').addClass('active');
-        }
+        $(".project-nav a").each(function () {
+            var href = $(this).attr('href');
+            if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                $(this).closest('li').addClass('active');
+            }
+        });
     });
-}</script>
+</script>
+
 </div><!-- end projectScope -->
