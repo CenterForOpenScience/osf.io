@@ -31,7 +31,7 @@
         </p>
 
         <div data-bind="if: userIsOwner">
-            <div class="row" data-bind="if: showPicker">
+            <div class="row" data-bind="if: hasDataverses">
                 <div class="col-md-6">
                     Dataverse:
                     <select class="form-control"
@@ -67,16 +67,17 @@
 
             </div>
 
-            <div data-bind="if: showPicker" class="padded">
-                <button data-bind="enable: dataverseHasStudies, click: setInfo" class="btn btn-primary pull-right">
-                        Submit
-                </button>
+            <div data-bind="if: hasDataverses">
+                <div class="padded">
+                    <button data-bind="enable: dataverseHasStudies, click: setInfo" class="btn btn-primary pull-right">
+                            Submit
+                    </button>
+                </div>
             </div>
 
-            <div data-bind="if: !showPicker">
+            <div class="text-info" data-bind="ifnot: hasDataverses">
                 Dataverse user {{ dataverseUsername }} does not currently have any released Dataverses.
             </div>
-
 
         </div>
 

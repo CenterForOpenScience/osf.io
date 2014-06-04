@@ -82,7 +82,7 @@
         self.showCreateButton = ko.computed(function() {
             return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
         });
-        self.showPicker = ko.computed(function() {
+        self.hasDataverses = ko.computed(function() {
            return self.dataverses().length > 0;
         });
         self.credentialsChanged = ko.computed(function() {
