@@ -56,8 +56,9 @@ def import_project(**kwargs):
     contributors = project_data['contributors']
     for i in range(len(contributors)):        
         contributor = contributors[i]
-        name = contributor['full_name'] or contributor['last_name'] or contributor['email'].split('@')[0]
-        contributors[i] = get_or_create_user(name, contributor['email']) #TODO add sys_tags
+        name = contributor['full_name'] or contributor['last_name'] or contributor.get('email').split('@')[0]
+        email = contributor.get('email') or ''
+        contributors[i] = get_or_create_user(name, email) #TODO add sys_tags
 
     auth = Auth(user=contributors[0][0])
 
@@ -85,7 +86,8 @@ def import_project(**kwargs):
     for tag in system_tags:
         if tag not in project.system_tags:
             project.system_tags.append(tag)
-    
+
+    project.save()
     # add components        
     components = project_data.get('components') or []
     for i in range(len(components)):
