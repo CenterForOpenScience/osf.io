@@ -229,12 +229,21 @@ def mfr_requirements():
 
 
 @task
-def encryption():
-    """Import private key for GnuPG."""
+def encryption(owner=None):
+    """Import private key for GnuPG.
+    
+    For local development:
+    > invoke encryption
+    On Linode:
+    > sudo env/bin/invoke encryption --owner www-data
+
+    """
     import gnupg
-    gpg = gnupg.GPG()
+    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
     print 'Importing GnuPG key into keyring'
     gpg.import_keys(settings.PRIVATE_KEY)
+    if owner:
+        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
 
 
 @task
