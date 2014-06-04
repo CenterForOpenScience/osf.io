@@ -3,9 +3,9 @@ import urllib2
 import ast
 
 from website import settings
-from framework.auth.model import User
+#from framework.auth.model import User
 from website.filters import gravatar
-#from website.models import User, Node
+from website.models import User, Node
 import logging
 import sunburnt
 from .utils import clean_solr_doc 
@@ -344,7 +344,7 @@ def search_contributor(query, exclude=None):
 
 #    result = search(q)[0] #TODO(fabianvf) This whole block will probably need a rewrite
     docs = search(q)[0]
-    logger.warn(docs)
+    logger.warn(q)
 #    docs = result.get('docs', [])
 
     if exclude:
