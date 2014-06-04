@@ -6,7 +6,6 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
-import platform
 
 from invoke import task, run
 
