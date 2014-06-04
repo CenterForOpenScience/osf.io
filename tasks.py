@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import platform
 
 from invoke import task, run
 
@@ -225,3 +226,21 @@ def mfr_requirements():
     mfr = 'mfr'
     print 'Installing mfr requirements'
     run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+
+
+@task
+def encryption():
+    """Import private key for GnuPG."""
+    import gnupg
+    gpg = gnupg.GPG()
+    print 'Importing GnuPG key into keyring'
+    gpg.import_keys(settings.PRIVATE_KEY)
+
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and imports encryption key"""
+    if not os.path.isfile('website/settings/local.py'):
+        run('cp website/settings/local-dist.py website/settings/local.py')
+    requirements(all=True)
+    encryption()
