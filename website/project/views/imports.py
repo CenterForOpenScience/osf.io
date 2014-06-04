@@ -50,7 +50,7 @@ def must_have_valid_signature(func):
             key=settings.OSF_API_KEY,
             msg=payload,
             digestmod=hashlib.sha256,
-        ).hexdigest()
+        ).hexdigest()        
 
         signature_is_valid = (sent_signature == signature)
 
@@ -82,7 +82,7 @@ def get_or_create_user(fullname, address, sys_tags=[]):
 
 @must_have_valid_signature
 def import_project(**kwargs):
-    project_data = deep_clean(request.json.get('project'))
+    project_data = deep_clean(request.json)
     if not project_data:
         return {'error': 'No project data submitted'}
 
@@ -152,7 +152,6 @@ def add_file_to_node(**kwargs):
         return {"error": "No file in request"}
     
     name, content, content_type, size = prepare_file(upload)
-    import pdb;pdb.set_trace()
     
     project = kwargs['project']
     auth = Auth(user=project.contributors[0])
@@ -166,3 +165,4 @@ def add_file_to_node(**kwargs):
         content_type=content_type,
     )
     node.save()
+    return {"status": "Upload success"}
