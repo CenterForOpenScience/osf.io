@@ -337,6 +337,65 @@
                             }
                         });
                     });
+                    $('#add-folder-'+theItem.node_id).click(function(){
+                        $('#afc-'+theItem.node_id).show();
+                    });
+                    $('#add-folder-input'+theItem.node_id).bind('keyup',function() {
+                        var contents = $.trim($(this).val());
+                        if(contents === ''){
+                            $('#add-folder-button'+theItem.node_id).attr("disabled", "disabled");
+                        } else {
+                            $('#add-folder-button'+theItem.node_id).removeAttr("disabled");
+                        }
+                    });
+
+                     $('#add-folder-button'+theItem.node_id).click(function(){
+                         var url = '/api/v1/folder/';
+                         var postData = JSON.stringify({
+                             node_id: theItem.node_id,
+                             title: $.trim($('#add-folder-input'+theItem.node_id).val())
+                         });
+                         $.ajax({
+                            type: "PUT",
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                               reloadFolder(self, theItem);
+                            }
+                        });
+                     });
+                    $('#rename-node-'+theItem.node_id).click(function(){
+                        $('#rnc-'+theItem.node_id).show();
+                    });
+                     $('#rename-node-input'+theItem.node_id).bind('keyup',function() {
+                        var contents = $.trim($(this).val());
+                        if(contents === '' || contents === theItem.name){
+                            $('#rename-node-button'+theItem.node_id).attr("disabled", "disabled");
+                        } else {
+                            $('#rename-node-button'+theItem.node_id).removeAttr("disabled");
+                        }
+                    });
+
+                     $('#rename-node-button'+theItem.node_id).click(function(){
+                         var url = theItem.apiURL+'edit/';
+                         var postData = JSON.stringify({
+                             name: 'title',
+                             value: $.trim($('#rename-node-input'+theItem.node_id).val())
+                         });
+                         $.ajax({
+                            type: "POST",
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                               reloadFolder(self, theItem);
+                            }
+                        });
+                     });
+
                     $('#add-item-'+theItem.node_id).click(function(){
                         $('#buttons'+theItem.node_id).hide();
                         $('#findNode'+theItem.node_id).show();

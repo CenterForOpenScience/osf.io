@@ -133,13 +133,14 @@ def folder_new_post(auth, nid, **kwargs):
         push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST)
 
+def rename_folder(**kwargs):
+    pass
 
-@must_have_permission('write')
-@must_not_be_registration
+@collect_auth
 def add_folder(**kwargs):
     auth = kwargs['auth']
     user = auth.user
-    title = request.json.get('title')
+    title = sanitize(request.json.get('title'))
     node_id = request.json.get('node_id')
     node = Node.load(node_id)
     if node.is_deleted or node.is_registration or not node.is_folder:
@@ -150,7 +151,7 @@ def add_folder(**kwargs):
     )
     folders = [folder]
     _add_pointers(node, folders, auth)
-    return {}, 201, None, "/dashboard/"
+    return {}, 201, None
 
 ##############################################################################
 # New Node

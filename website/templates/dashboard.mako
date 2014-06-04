@@ -4,7 +4,6 @@
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
-            <div class="pull-right"><a class="btn btn-default" href="/folder/new/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <div class="pull-right"><a class="btn btn-default" href="/project/new/">New Project</a></div>
             <h3>Projects</h3>
         </div>
