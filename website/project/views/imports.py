@@ -48,69 +48,73 @@ def get_or_create_user(fullname, address, sys_tags=[]):
     return user, user_created
 
 @must_have_valid_signature
-def import_project(**kwargs):
+def import_projects(**kwargs):
     project_data = deep_clean(request.json)
     if not project_data:
         return {'error': 'No project data submitted'}
-
-    contributors = project_data['contributors']
-    for i in range(len(contributors)):        
-        contributor = contributors[i]
-        name = contributor['full_name'] or contributor['last_name'] or contributor.get('email').split('@')[0]
-        email = contributor.get('email') or ''
-        contributors[i], created = get_or_create_user(name, email) #TODO add sys_tags
-
-    auth = Auth(user=contributors[0])
-
-    title = project_data['title']
-    nodes = []
     
-    project = new_node('project', title, contributors[0])
-    nodes = [project]
-    project.set_privacy('public', auth=auth)
+    if not isinstance(project_data, list):
+        project_data = [project_data]
+    for entry in project_data:                    
+        contributors = entry['contributors']
+        
+        for i in range(len(contributors)):        
+            contributor = contributors[i]
+            name = contributor['full_name'] or contributor['last_name'] or contributor.get('email').split('@')[0]
+            email = contributor.get('email') or ''
+            contributors[i], created = get_or_create_user(name, email) #TODO add sys_tags
 
-    # update project description
-    description = project_data['description']
-    project.update_node_wiki(
-        page='home',
-        content=sanitize(description),
-        auth=auth,            
-    )
+        auth = Auth(user=contributors[0])
 
-    # add tags
-    tags = project_data['tags'] or []
-    for tag in tags:           
-        project.add_tag(tag, auth=auth)
-    
-    system_tags = [project_data['imported_from'],'imported']
-    for tag in system_tags:
-        if tag not in project.system_tags:
-            project.system_tags.append(tag)
-   
-    project.save()
-    # add components        
-    components = project_data.get('components') or []
-    for i in range(len(components)):
-        component = components[i]
-        comp = new_node('component', component['title'], contributors[0], description=component['description'], project=project)
-        components[i] = comp
-        nodes.append(comp)
-    
-    for contributor in contributors[1:]:
-        for node in nodes:
-            import pdb;pdb.set_trace()
-            node.add_contributor(contributor, auth=auth)
-            node.save()
-            
-    return {
-        "project": {
-            "title": project.title,
-            "id": project._id,
-            "components": [
-                {
-                    "title": c.title,
-                    "id": c._id,
-                } for c in components]
+        title = entry['title']
+        nodes = []
+
+        project = new_node('project', title, contributors[0])
+        nodes = [project]
+        project.set_privacy('public', auth=auth)
+
+        # update project description
+        description = entry['description']
+        project.update_node_wiki(
+            page='home',
+            content=sanitize(description),
+            auth=auth,            
+        )
+
+        # add tags
+        tags = entry['tags'] or []
+        for tag in tags:           
+            project.add_tag(tag, auth=auth)
+
+        system_tags = [entry['imported_from'],'imported']
+        for tag in system_tags:
+            if tag not in project.system_tags:
+                project.system_tags.append(tag)
+
+        project.save()
+        # add components        
+        components = entry.get('components') or []
+        for i in range(len(components)):
+            component = components[i]
+            comp = new_node('component', component['title'], contributors[0], description=component['description'], project=project)
+            components[i] = comp
+            nodes.append(comp)
+
+        for contributor in contributors[1:]:
+            for node in nodes:
+                import pdb;pdb.set_trace()
+                node.add_contributor(contributor, auth=auth)
+                node.save()
+
+        return {
+            "project": {
+                "title": project.title,
+                "id": project._id,
+                "components": [
+                    {
+                        "title": c.title,
+                        "id": c._id,
+                    } for c in components]
+            }
         }
-    }
-<
+

@@ -714,7 +714,7 @@ def make_url_map(app):
                 '/project/import/'
             ],
             'post',
-            project_views.imports.import_project,
+            project_views.imports.import_projects,
             json_renderer,
         ),        
         Rule( # TODO generalize this method
