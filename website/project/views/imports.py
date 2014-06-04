@@ -58,9 +58,9 @@ def import_project(**kwargs):
         contributor = contributors[i]
         name = contributor['full_name'] or contributor['last_name'] or contributor.get('email').split('@')[0]
         email = contributor.get('email') or ''
-        contributors[i] = get_or_create_user(name, email) #TODO add sys_tags
+        contributors[i], created = get_or_create_user(name, email) #TODO add sys_tags
 
-    auth = Auth(user=contributors[0][0])
+    auth = Auth(user=contributors[0])
 
     title = project_data['title']
     nodes = []
@@ -86,7 +86,7 @@ def import_project(**kwargs):
     for tag in system_tags:
         if tag not in project.system_tags:
             project.system_tags.append(tag)
-
+   
     project.save()
     # add components        
     components = project_data.get('components') or []
@@ -96,9 +96,10 @@ def import_project(**kwargs):
         components[i] = comp
         nodes.append(comp)
     
-    for contributor in contributors:
+    for contributor in contributors[1:]:
         for node in nodes:
-            node.add_contributor(contributor[0], auth=auth)
+            import pdb;pdb.set_trace()
+            node.add_contributor(contributor, auth=auth)
             node.save()
             
     return {
