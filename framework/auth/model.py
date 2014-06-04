@@ -17,7 +17,6 @@ from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
-from website.search import search #TODO(fabianvf)
 from framework.addons import AddonModelMixin
 from framework.auth import utils
 from website import settings, filters, security
@@ -487,6 +486,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def update_search(self):
         if settings.SEARCH_ENGINE == 'none':
             return
+
+        from website.search import search #TODO(fabianvf)
         search.update_user(self)
 
     @classmethod

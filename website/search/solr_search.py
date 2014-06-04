@@ -3,6 +3,9 @@ import urllib2
 import ast
 
 from website import settings
+from framework.auth.model import User
+from website.filters import gravatar
+#from website.models import User, Node
 import logging
 import sunburnt
 from .utils import clean_solr_doc 
@@ -190,6 +193,7 @@ def create_result(highlights, results):
         # so the logic for returning
         # those documents is different
         if 'user' in result:
+            container['id'] = result['id']
             container['user'] = result['user']
             container['user_url'] = '/profile/'+result['id']
             result_search.append(container)
@@ -316,8 +320,59 @@ def create_result(highlights, results):
     return result_search, tags
 
 
-def search_contributor(query, exclude):
-    raise NotImplementedError
+def search_contributor(query, exclude=None):
+    """Search for contributors to add to a project using Solr. Request must
+    include JSON data with a "query" field.
+
+    :param: Search query
+    :return: List of dictionaries, each containing the ID, full name, and
+        gravatar URL of an OSF user
+
+    """
+    import re
+    # Prepare query
+    query = re.sub(r'[\-\+]', ' ', query)
+
+    # Prepend "user:" to each token in the query; else Solr will search for
+    # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
+    # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
+    # so must search for (Barack OR Barack*).
+    q = ' AND '.join([ #TODO(fabianvf) This logic needs to be moved to the search engine-specific files
+        u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
+        for token in re.split(r'\s+', query)
+    ])
+
+#    result = search(q)[0] #TODO(fabianvf) This whole block will probably need a rewrite
+    docs = search(q)[0]
+    logger.warn(docs)
+#    docs = result.get('docs', [])
+
+    if exclude:
+        docs = (x for x in docs if x.get('id') not in exclude)
+
+    users = []
+    for doc in docs:
+        # TODO: use utils.serialize_user
+        user = User.load(doc['id'])
+        if user is None:
+            logger.error('Could not load user {0}'.format(doc['id']))
+            continue
+        if user.is_active():  # exclude merged, unregistered, etc.
+            users.append({
+                'fullname': doc['user'],
+                'email': user.username,
+                'id': doc['id'],
+                'gravatar_url': gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+                ),
+                'registered': user.is_registered,
+                'active': user.is_active()
+            })
+
+    return {'users': users}
+
 
 def _encoded_dict(in_dict):
     out_dict = {}

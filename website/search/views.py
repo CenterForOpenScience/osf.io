@@ -7,7 +7,7 @@ from framework import must_be_logged_in, request, status
 import website.search.search as search #TODO(fabianvf) This is just awful
 from website import settings
 from website.filters import gravatar
-from website.models import User, Node
+#from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 from modularodm.storage.mongostorage import RawQuery 
 

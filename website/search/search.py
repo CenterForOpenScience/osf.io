@@ -47,8 +47,8 @@ def delete_all():
     if ELASTIC:
         elastic_search.delete_all()
 
-def search_contributor(query, exclude):
+def search_contributor(query, exclude=None):
     if SOLR:
-        solr_search.search_contributor(query, exclude)
+        return solr_search.search_contributor(query, exclude)
     if ELASTIC:
-        solr_search.search_contributor(query, exclude)
+        return elastic_search.search_contributor(query, exclude)

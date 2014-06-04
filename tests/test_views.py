@@ -11,7 +11,7 @@ import httplib as http
 
 
 from nose.tools import *  # PEP8 asserts
-from tests.test_features import requires_solr
+from tests.test_features import requires_search
 from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
@@ -1959,7 +1959,7 @@ class TestTagViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@requires_solr
+@requires_search
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):

@@ -7,8 +7,6 @@ from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 from website.search import search as search#TODO(fabianvf)
 from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
-#import website.search.solr_search as solr_search
-#from website.search.views import _search_contributor
 from website import settings
 
 @unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
@@ -83,8 +81,9 @@ class TestUserUpdate(SearchTestCase):
 
         """
         # Create user
-        user = UserFactory()
-
+        user = UserFactory(fullname='David Bowie')
+#        import time
+#        time.sleep(2)
         # Verify that user has been added to Solr
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
@@ -94,10 +93,12 @@ class TestUserUpdate(SearchTestCase):
         found in search.
 
         """
-        user = UserFactory()
+        user = UserFactory(fullname='Barry Mitchell')
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
         user.save()
+#        import time
+#        time.sleep(2)
 
         docs_original = query_user(fullname_original)
         assert_equal(len(docs_original), 0)
@@ -129,7 +130,7 @@ class TestProject(SearchTestCase):
 class TestPublicProject(SearchTestCase):
 
     def setUp(self):
-        self.user = UserFactory()
+        self.user = UserFactory(usename='Doug Bogie')
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(
             title='Red Special',
@@ -223,7 +224,7 @@ class TestPublicProject(SearchTestCase):
         for contributor.
 
         """
-        user2 = UserFactory()
+        user2 = UserFactory(fullname='Roger Taylor')
 
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
@@ -238,7 +239,7 @@ class TestPublicProject(SearchTestCase):
         when searching for contributor.
 
         """
-        user2 = UserFactory()
+        user2 = UserFactory(fullname='Brian May')
 
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
@@ -246,7 +247,7 @@ class TestPublicProject(SearchTestCase):
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-@unittest.skipIf(True, 'The _search_contributor helper method has been deleted')#settings.SEARCH_ENGINE == 'none', 'Search disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
 class TestAddContributor(SearchTestCase): #TODO(fabianvf) This is deprecated (the _search_contributor helper method has been deleted)
     """Tests of the _search_contributor helper.
 
@@ -260,27 +261,27 @@ class TestAddContributor(SearchTestCase): #TODO(fabianvf) This is deprecated (th
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
-        contribs = _search_contributor(unreg.fullname)
+        contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.
 
         """
-        contribs = _search_contributor(self.name1)
+        contribs = search.search_contributor(self.name1)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2)
+        contribs = search.search_contributor(self.name2)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
         """Verify that searching for first name yields exactly one result.
 
         """
-        contribs = _search_contributor(self.name1.split(' ')[0])
+        contribs = search.search_contributor(self.name1.split(' ')[0])
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2.split(' ')[0])
+        contribs = search.search_contributor(self.name2.split(' ')[0])
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
@@ -288,8 +289,8 @@ class TestAddContributor(SearchTestCase): #TODO(fabianvf) This is deprecated (th
         result.
 
         """
-        contribs = _search_contributor(self.name1.split(' ')[0][:-1])
+        contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2.split(' ')[0][:-1])
+        contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)
