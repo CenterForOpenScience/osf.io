@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../src/hgrid.css" type="text/css" />
+    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./examples.css">    <title>HGrid: Uploads Example</title>
+</head>
+<body>
+<div class="box">
+<h1>HGrid Uploads Example</h1>
+<p>Drag and drop onto the folders or click an "Upload" button</p>
+<div class='hgrid' id="myGrid"></div>
+<p>NOTE: Uploads are not actually saved</p>
+</div>
+
+<script src="../lib/jquery-1.10.2.js"></script>
+<script src="../lib/dropzone.js"></script>
+<script src="../dist/hgrid.js"></script>
+
+<script>
+// Initial data
+var folderData = {
+  data: [{name: 'Uploads', kind: 'folder', permissions: ['upload']},
+        {name: 'Forbidden', kind: 'folder', permissions: []},
+        {name: 'PUT stuff', kind: 'folder', permissions: ['upload']}]
+};
+
+// Overriding the download action
+HGrid.Actions.download = {
+  on: 'click',
+  callback: function(evt, row) {
+    alert( row.name + ' would download...');
+  }
+};
+
+var grid = new HGrid('#myGrid', {
+  data: folderData,
+  columns: [HGrid.Columns.Name,
+            HGrid.Columns.ActionButtons],  // Default buttons
+  uploads: true,
+  maxFilesize: 20, // Mb
+  uploadError: function(file, message, item) {
+    alert(message);
+  },
+  uploadMethod: function(row) { // Dynamically compute the upload method for an item
+    if (row.name === 'PUT stuff') {
+      return 'PUT';
+    }
+    return 'POST';
+  },
+  onClickDelete: function(evt, item) {
+    this.removeItem(item.id);
+  },
+  uploadUrl: 'http://www.torrentplease.com/dropzone.php',
+  canUpload: function(item) {
+    return item.permissions.indexOf('upload') > -1;
+  },
+  uploadDenied: function(item) {
+    alert('Cannot upload to folder: ' + item.name);
+  }
+});
+</script>
+</body>
+</html>
