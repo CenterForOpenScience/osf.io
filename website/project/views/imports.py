@@ -56,11 +56,12 @@ def import_projects(**kwargs):
     if not isinstance(project_data, list):
         project_data = [project_data]
     for entry in project_data:                    
-        contributors = entry['contributors']
-        
+        contributors = entry.get('contributors')
+        if not contributors or len(contributors) == 0:
+            return {"error": "No contributors listed"}
         for i in range(len(contributors)):        
             contributor = contributors[i]
-            name = contributor['full_name'] or contributor['last_name'] or contributor.get('email').split('@')[0]
+            name = contributor.get('full_name') or contributor.get('last_name') or contributor.get('email').split('@')[0]  
             email = contributor.get('email') or ''
             contributors[i], created = get_or_create_user(name, email) #TODO add sys_tags
 
@@ -74,18 +75,19 @@ def import_projects(**kwargs):
         project.set_privacy('public', auth=auth)
 
         # update project description
-        description = entry['description']
-        project.update_node_wiki(
-            page='home',
-            content=sanitize(description),
-            auth=auth,            
-        )
+        description = entry.get('description')
+        if description:
+            project.update_node_wiki(
+                page='home',
+                content=sanitize(description),
+                auth=auth,            
+            )
 
         # add tags
-        tags = entry['tags'] or []
+        tags = entry.get('tags') or []
         for tag in tags:           
             project.add_tag(tag, auth=auth)
-
+        
         system_tags = [entry['imported_from'],'imported']
         for tag in system_tags:
             if tag not in project.system_tags:
@@ -97,12 +99,12 @@ def import_projects(**kwargs):
         for i in range(len(components)):
             component = components[i]
             comp = new_node('component', component['title'], contributors[0], description=component['description'], project=project)
+            comp.set_privacy('public', auth=auth)
             components[i] = comp
             nodes.append(comp)
 
         for contributor in contributors[1:]:
             for node in nodes:
-                import pdb;pdb.set_trace()
                 node.add_contributor(contributor, auth=auth)
                 node.save()
 
