@@ -31,7 +31,6 @@ from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
 #from framework.search.solr import update_solr, delete_solr_doc
-import website.search.search as search
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -1054,6 +1053,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
+        import website.search.search as search #TODO(fabianvf)
         search.update_node(self)
 
     def remove_node(self, auth, date=None):
