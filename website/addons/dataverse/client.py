@@ -42,8 +42,8 @@ def get_studies(dataverse):
     if dataverse is None:
         return []
     studies = dataverse.get_studies()
-    acessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
-    return acessible_studies
+    accessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
+    return accessible_studies
 
 
 def get_study(dataverse, hdl):
