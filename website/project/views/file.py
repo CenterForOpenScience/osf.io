@@ -4,6 +4,7 @@ Files views.
 import os
 import codecs
 import logging
+from website.addons import osffiles
 from website.util import rubeus
 
 from framework.flask import request, secure_filename
@@ -45,7 +46,8 @@ def file_with_name(**kwargs):
     auth = kwargs['auth']
 
     data = request.args.to_dict()
-    rv = rubeus.to_hgrid(node, auth, **data)[0]['children'][0]['urls']['download']
+    # rv = rubeus.to_hgrid(node, auth, **data)[0]['children'][0]['urls']['download']
+    rv = osffiles.views.view_file(name='preprint.pdf')
     return {'data': rv}
 
 # File rendering
