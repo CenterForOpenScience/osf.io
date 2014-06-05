@@ -27,13 +27,16 @@
 
         self.downloadCurrent = ko.observable('');
         self.versions        = ko.observable([]);
-        self.showPreprint  = ko.observable(false);
-        self.response = ko.observable({});
+        self.showPreprint    = ko.observable(false);
+        self.canEdit         = ko.observable(false);
+        self.response = ko.observable({}); // for debugging only
 
         self.updateFromData = function(data) {
             self.downloadCurrent(data.downloadCurrent);
             self.versions(data.pdf.versions);
             self.response(data);
+            self.canEdit(data.pdf.permissions.edit)
+            self.showPreprint(true);
         };
 
         self.fetchFromServer = function() {
@@ -41,7 +44,6 @@
                 url: url, type: 'GET', dataType: 'json',
                 success: function(response) {
                     self.updateFromData(response);
-                    self.showPreprint(true);
                 },
                 error: function(xhr, textStatus, error) {
                     console.error(textStatus); console.error(error);

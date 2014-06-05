@@ -172,18 +172,15 @@
     <%include file="project/modal_show_links.mako"/>
 
 
-    <div class="row" id="preprintScope">
+    <div class="row scripted" id="preprintScope">
 
 
-        <div class="col-md-12">
+        <div class="col-md-12" data-bind="visible: showPreprint">
 
-            <p><a data-bind="attr: { href: downloadCurrent }">Download Current Version</a></p>
+##            <p><a data-bind="attr: { href: downloadCurrent }">Download Current Version</a></p>
 
-            <p>option to upload another version for authors</p>
+            <p><input type="file"/></p>
 
-            <ul data-bind="foreach: versions">
-                <li><a data-bind="attr: { href: url }">v{{version}}</a></li>
-            </ul>
             <div class="col-md-4">
                 <table class="table table-striped" id="file-version-history">
                     ## TODO this stuff copied from osffiles_view_file.mako
@@ -215,7 +212,7 @@
 
 
         </div>
-        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+##        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
     </div>
 
     <div class="col-md-12">
