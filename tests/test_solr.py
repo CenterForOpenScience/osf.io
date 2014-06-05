@@ -110,7 +110,7 @@ class TestUserUpdate(SearchTestCase):
 class TestProject(SearchTestCase):
 
     def setUp(self):
-        self.user = UserFactory()
+        self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
@@ -224,7 +224,7 @@ class TestPublicProject(SearchTestCase):
         for contributor.
 
         """
-        user2 = UserFactory(fullname='Roger Taylor')
+        user2 = UserFactory(fullname='Adam Lambert')
 
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
@@ -248,8 +248,8 @@ class TestPublicProject(SearchTestCase):
         assert_equal(len(docs), 0)
 
 @unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Search disabled')
-class TestAddContributor(SearchTestCase): #TODO(fabianvf) This is deprecated (the _search_contributor helper method has been deleted)
-    """Tests of the _search_contributor helper.
+class TestAddContributor(SearchTestCase):
+    """Tests of the search.search_contributor method
 
     """
 

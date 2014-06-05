@@ -2,6 +2,8 @@ from website import settings
 import logging
 import pyelasticsearch
 import collections
+from website.filters import gravatar
+from website.models import User, Node
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +25,7 @@ else:
 
 def search(raw_query, start=0):
 
-    # Converts unicode dictionary to utf-8 dictionary
-    def convert(data):
-        if isinstance(data, basestring):
-            return str(data)
-        elif isinstance(data, collections.Mapping):
-            return dict(map(convert, data.iteritems()))
-        elif isinstance(data, collections.Iterable):
-            return type(data)(map(convert, data))
-        else:
-            return data
-
-    # Type filter for normal searches
+        # Type filter for normal searches
     type_filter = {
         'or' : [
             {
@@ -70,7 +61,7 @@ def search(raw_query, start=0):
             }
         }
     }
-    raw_results = convert(elastic.search(query, index='website'))
+    raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     numFound = raw_results['hits']['total']
     formatted_results, tags = create_result(results)
@@ -86,10 +77,14 @@ def update_node(node):
 
     if node.category =='project':
         elastic_document_id = node._id
+        parent_id = None
+        parent_title =''
         category = node.category
     else:
         try:
-            elastic_document_id = node.parent_id
+            elastic_document_id = node._id
+            parent_id = node.parent_id
+            parent_title = node.node__parent[0].title
             category = 'component'
         except IndexError:
             # Skip orphaned components
@@ -114,7 +109,9 @@ def update_node(node):
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
-            'wikis': {}
+            'wikis': {},
+            'parent_id':parent_id,
+            'parent_title':parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -144,11 +141,10 @@ def update_user(user):
 
 def delete_all():
     try:
-        elastic.delete_all('website', 'project', refresh=True)
-        elastic.delete_all('website', 'user', refresh=True)
-        elastic.delete_all('website', 'component', refresh=True)
+        elastic.delete_index('website')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
+        logger.error("The index 'website' was not deleted from elasticsearch")
 
 def delete_doc(elastic_document_id, node):
     if node.category == 'project':
@@ -161,7 +157,24 @@ def delete_doc(elastic_document_id, node):
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 def create_result(results):
-    ''' Returns : 
+    ''' Takes list of dicts of the following structure:
+    {
+        'category': {NODE CATEGORY},
+        'description': {NODE DESCRIPTION},
+        'contributors': [{LIST OF CONTRIBUTORS}],
+        'title': {TITLE TEXT},
+        'url': {URL FOR NODE},
+        'tags': {LIST OF TAGS},
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
+        'id': {NODE ID},
+        'parent_id': {PARENT NODE ID},
+        'parent_title': {TITLE TEXT OF PARENT NODE},
+        'wikis': {LIST OF WIKIS AND THEIR TEXT},
+        'public': {TRUE OR FALSE},
+        'registeredproject': {TRUE OR FALSE}
+    }
+
+    Returns list of dicts of the following structure: 
     {
         'contributors': [{LIST OF CONTRIBUTORS}], 
         'wiki_link': '{LINK TO WIKIS}', 
@@ -174,7 +187,7 @@ def create_result(results):
         'highlight': [{NO IDEA}]
     }
     ''' 
-#    logger.warn(str(results))
+
     result_search = []
     tags = {}
     for result in results:
@@ -314,4 +327,87 @@ def create_result(results):
 
 
 def search_contributor(query, exclude=None):
-    raise NotImplementedError
+    """Search for contributors to add to a project using elastic search. Request must
+    include JSON data with a "query" field.
+
+    :param: Search query
+    :return: List of dictionaries, each containing the ID, full name, and
+        gravatar URL of an OSF user
+
+    """
+    import re
+    logger.warn(query)
+    query.replace(" ", "_")
+    query = re.sub(r'[\-\+]', '', query)
+    logger.warn(query)
+    query = re.split(r'\s+', query)
+
+    if len(query) > 1:
+        logger.warn(str(query))
+        and_filter = {'and':[]}
+        for item in query:
+            and_filter['and'].append({
+                'prefix':{
+                    'user': item.lower()
+                }
+            })
+    else:
+        and_filter = {
+            'prefix':{
+                'user':query[0].lower()
+            }
+        }
+
+    query = {
+        'query': {
+            'filtered' :{
+                'filter': and_filter
+            }
+        }
+    }
+
+    results = _convert_to_utf8(elastic.search(query, index='website'))
+    docs = [hit['_source'] for hit in results['hits']['hits']]
+
+    logger.warn(docs)
+    if exclude:
+        docs = (x for x in docs if x.get('id') not in exclude)
+
+    users = []
+    for doc in docs:
+        # TODO: use utils.serialize_user
+        user = User.load(doc['id'])
+        if user is None:
+            logger.error('Could not load user {0}'.format(doc['id']))
+            continue
+        if user.is_active():  # exclude merged, unregistered, etc.
+            users.append({
+                'fullname': doc['user'],
+                'email': user.username,
+                'id': doc['id'],
+                'gravatar_url': gravatar(
+                    user,
+                    use_ssl=True,
+                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+                ),
+                'registered': user.is_registered,
+                'active': user.is_active()
+            })
+
+    return {'users': users}
+
+    # Converts unicode dictionary to utf-8 dictionary
+def _convert_to_utf8(data):
+    '''
+    Converts a Unicode dictionary to utf8
+    '''
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(_convert_to_utf8, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(_convert_to_utf8, data))
+    else:
+        return data
+
+
