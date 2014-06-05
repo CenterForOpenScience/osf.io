@@ -121,7 +121,9 @@
         }
         if (row.isSmartFolder) {
             extraClass += " smart-folder";
-
+        }
+        if (row.isComponent){
+            type = "component"
         }
         return '<img src="/static/img/hgrid/' + type + '.png"><span class="project-'
             + type + extraClass + '">' + linkString + '</span>';

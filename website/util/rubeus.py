@@ -207,7 +207,7 @@ class NodeProjectCollector(object):
             is_project = True
         else:
             is_project = False
-        is_pointer = not (is_project or node.primary)
+        is_pointer = not (node.primary)
         is_component = node.primary and not is_project
 
         if can_view and (node.primary or node.is_folder or parent_is_folder) and children_count > 0:
