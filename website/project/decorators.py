@@ -56,7 +56,6 @@ def must_be_valid_project(func):
 
     return wrapped
 
-
 def must_not_be_registration(func):
 
     @functools.wraps(func)
