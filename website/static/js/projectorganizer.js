@@ -299,7 +299,7 @@
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
-                               reloadFolder(self, theItem);
+                               reloadFolder(self, theItem, theParentNode);
                             }
                         });
                     });
@@ -314,7 +314,7 @@
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
-                                reloadFolder(self, theItem);
+                                reloadFolder(self, theItem, theParentNode);
                             }
                         });
                     });
@@ -331,7 +331,7 @@
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     success: function() {
-                                        reloadFolder(self, theParentNode);
+                                        reloadFolder(self, theItem, theParentNode);
                                     }
                                 });
                             }
@@ -362,7 +362,7 @@
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
-                               reloadFolder(self, theItem);
+                               reloadFolder(self, theItem, theParentNode);
                             }
                         });
                      });
@@ -391,7 +391,7 @@
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function() {
-                               reloadFolder(self, theItem);
+                               reloadFolder(self, theParentNode, theParentNode);
                             }
                         });
                      });
@@ -414,8 +414,12 @@
         }); // end onSelectedRowsChanged
     };
 
-    function reloadFolder(self, theItem){
-        self.grid.reloadFolder(theItem);
+    function reloadFolder(self, theItem, theParentNode){
+        var toReload = theParentNode;
+        if (theItem.kind == 'folder') {
+            toReload = theItem;
+        }
+        self.grid.reloadFolder(toReload);
         self.grid.grid.setSelectedRows([]);
         self.grid.grid.resetActiveCell();
     }
