@@ -5,9 +5,9 @@ import requests
 from bs4 import BeautifulSoup
 
 from framework import request, make_response
-from framework.flask import secure_filename, redirect, send_file
+from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect, delete_file, upload_file, \
+from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings
 

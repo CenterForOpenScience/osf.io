@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import platform
 
 from invoke import task, run
 
@@ -254,6 +255,15 @@ def encryption(owner=None):
 def setup():
     """Creates local settings, installs requirements, and imports encryption key"""
     if not os.path.isfile('website/settings/local.py'):
+        print 'Creating local.py file'
         run('cp website/settings/local-dist.py website/settings/local.py')
+    if platform.system() == 'Darwin':
+        print 'Running brew bundle'
+        run('brew bundle')
+    elif platform.system() == 'Linux':
+        # TODO: Write a script similar to brew bundle for Ubuntu
+        # run('sudo apt-get install [list of packages]')
+        pass
+    print 'Installing requirements'
     requirements(all=True)
     encryption()

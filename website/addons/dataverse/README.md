@@ -2,6 +2,10 @@
 
 Enabling the addon for development
 
+ - Install gpg.
+ ```sh
+ $ brew install gpg
+ ```
  - Import a private key into your GnuPG keyring.
 ```sh
 $ invoke encryption
