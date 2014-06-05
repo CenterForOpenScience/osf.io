@@ -156,6 +156,9 @@ class NodeProjectCollector(object):
             'permissions': {
                 'edit': False,
                 'view': True,
+                'copyable': False,
+                'movable': False,
+                'acceptsDrops': False,
             },
             'urls': {
                 'upload': None,
@@ -200,6 +203,13 @@ class NodeProjectCollector(object):
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         children_count = len(node.nodes)
+        if node.parent_id is None:
+            is_project = True
+        else:
+            is_project = False
+        is_pointer = not (is_project or node.primary)
+        is_component = node.primary and not is_project
+
         if can_view and (node.primary or node.is_folder or parent_is_folder) and children_count > 0:
             children = True
         else:
@@ -214,6 +224,24 @@ class NodeProjectCollector(object):
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
+                'copyable': False
+                    if node.is_dashboard
+                    else True,
+                'movable': True
+                    if parent_is_folder and can_edit
+                    else False,
+                'acceptsFolders': True
+                    if node.is_folder
+                    else False,
+                'acceptsMoves': True
+                    if node.is_folder
+                    else False,
+                'acceptsCopies': True
+                    if node.is_folder or is_project
+                    else False,
+                'acceptsComponents': True
+                    if node.is_folder
+                    else False,
             },
             'urls': {
                 'upload': None,
@@ -222,7 +250,9 @@ class NodeProjectCollector(object):
                     else None,
             },
             'children': [],
-            'isPointer': not node.primary,
+            'isProject': is_project,
+            'isPointer': is_pointer,
+            'isComponent': is_component,
             'isFolder': node.is_folder,
             'dateModified': date_modified,
             'modifiedDelta': modified_delta,
