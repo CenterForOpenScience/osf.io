@@ -91,12 +91,11 @@ def add_file_to_node(**kwargs):
     
     name, content, content_type, size = prepare_file(upload)
     
-    project = kwargs['project']
-    auth = Auth(user=project.contributors[0])
-
     node = kwargs.get('node')
     if not node:
-        pass
+        raise HTTPError(http.BAD_REQUEST)
+    auth = Auth(user=node.contributors[0])
+
     node.add_file(
         auth=auth,
         file_name=name,
