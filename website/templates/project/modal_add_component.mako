@@ -15,7 +15,7 @@
                     <div class='form-group'>
                         <select id="category" name="category" class='form-control'>
                             <option disabled selected value=''>-- Category--</option>
-                            %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
+                            %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Preprint", "Other"]:
                             <option>${i}</option>
                             %endfor
                         </select>
