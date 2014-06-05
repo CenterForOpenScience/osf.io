@@ -296,7 +296,6 @@ def _search_contributor(query, exclude=None):
         if user.is_active():  # exclude merged, unregistered, etc.
             users.append({
                 'fullname': doc['user'],
-                'email': user.username,
                 'id': doc['id'],
                 'gravatar_url': gravatar(
                     user,
@@ -308,6 +307,7 @@ def _search_contributor(query, exclude=None):
             })
 
     return {'users': users}
+
 
 def search_contributor():
     nid = request.args.get('excludeNode')
