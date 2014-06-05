@@ -306,6 +306,19 @@ def view_file(**kwargs):
     rv.update(_view_project(node, auth))
     return rv
 
+@must_be_contributor_or_public
+def preprint_files(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    files = rubeus.to_hgrid(node, auth, **data)[0]['children']
+    rv = {'supplements': []}
+    for f in files:
+        if f['name'] == 'preprint.pdf':
+            rv['pdf'] = f
+        else:
+            rv['supplements'].append(f)
+    return rv
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project

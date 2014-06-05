@@ -172,57 +172,99 @@
     <%include file="project/modal_show_links.mako"/>
 
 
-    <div class="row">
+    <div class="row" id="preprintScope">
+
 
         <div class="col-md-12">
 
-            <p>Download Current Version</p>
+            <p><a data-bind="attr: { href: downloadCurrent }">Download Current Version</a></p>
 
             <p>option to upload another version for authors</p>
 
-            <p>version history here     </p>
+            <ul data-bind="foreach: versions">
+                <li><a data-bind="attr: { href: url }">v{{version}}</a></li>
+            </ul>
+            <div class="col-md-4">
+                <table class="table table-striped" id="file-version-history">
+                    ## TODO this stuff copied from osffiles_view_file.mako
 
-        </div>
+                    <thead>
+                    <tr>
+                        <th>Version</th>
+                        <!-- <th>Date</th> --> <!-- TODO: add this data to api -->
+                        <!-- <th>User</th> <!-- TODO: add this data to api -->
+                        <th colspan=2>Download</th><!-- TODO: add download count to api -->
+                    </tr>
+                    </thead>
 
-        <div class="col-md-12">
-            <!-- Citations -->
-            <div class="citations">
-                <span class="citation-label">Citation:</span>
-                <span>${node['display_absolute_url']}</span>
-                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-                <dl class="citation-list">
-                    <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                    <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                    <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-                </dl>
+                    <tbody data-bind="foreach: versions">
+                    <tr>
+                        <td>
+                            {{version}}
+                        </td>
+                        <td>
+                            <a href="{{url}}" download="{{version}}">
+                                <i class="icon-download-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    </tbody>
+
+                </table>
             </div>
 
-            <hr />
-
-            <div class="tags">
-                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-            </div>
-
-            <hr />
-
-            <div class="logs">
-                <div id='logScope'>
-                    <%include file="log_list.mako"/>
-                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-                </div><!-- end #logScope -->
-                ## Hide More widget until paging for logs is implemented
-                ##<div class="paginate pull-right">more</div>
-        </div>
 
         </div>
+        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+    </div>
+
+    <div class="col-md-12">
+        <!-- Citations -->
+        <div class="citations">
+            <span class="citation-label">Citation:</span>
+            <span>${node['display_absolute_url']}</span>
+            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+            <dl class="citation-list">
+                <dt>APA</dt>
+                <dd class="citation-text">${node['citations']['apa']}</dd>
+                <dt>MLA</dt>
+                <dd class="citation-text">${node['citations']['mla']}</dd>
+                <dt>Chicago</dt>
+                <dd class="citation-text">${node['citations']['chicago']}</dd>
+            </dl>
+        </div>
+
+        <hr />
+
+        <div class="tags">
+            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+        </div>
+
+        <hr />
+
+        <div class="logs">
+            <div id='logScope'>
+                <%include file="log_list.mako"/>
+                <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
+            </div><!-- end #logScope -->
+        </div>
+
     </div>
 
 </%def>
 
 
+
+
+<%def name="javascript()">
+    % if rendered is None:
+        <script type="text/javascript">
+            $script(['/static/js/filerenderer.js'], function() {
+                FileRenderer.start('${render_url}', '#fileRendered');
+            });
+        </script>
+    % endif
+</%def>
 
 
 <%def name="stylesheets()">
@@ -248,6 +290,7 @@
         $script(['/static/js/logFeed.js'], 'logFeed');
         $script(['/static/js/contribAdder.js'], 'contribAdder');
         $script(['/static/js/pointers.js'], 'pointers');
+        $script(['/static/js/preprint.js']);
 
         var $comments = $('#comments');
         var userName = '${user_full_name}';
@@ -320,7 +363,6 @@
 
                     }
             );
-
             var linksModal = $('#showLinks')[0];
             var linksVM = new LinksViewModel(linksModal);
             ko.applyBindings(linksVM, linksModal);
@@ -376,6 +418,13 @@
                     });
                 }
             });
+        });
+    </script>
+
+    <script>
+        $script.ready('preprint', function() {
+            var url = '${node["api_url"]}' + "preprint/";
+            var koPreprint = new PreprintViewModel('#preprintScope', url);
         });
     </script>
 </%def>

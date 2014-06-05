@@ -4,7 +4,7 @@ Files views.
 import os
 import codecs
 import logging
-from website.addons import osffiles
+import website
 from website.util import rubeus
 
 from framework.flask import request, secure_filename
@@ -13,6 +13,8 @@ from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project
+
+import re
 
 logger = logging.getLogger(__name__)
 debug = logger.debug
@@ -40,15 +42,38 @@ def grid_data(**kwargs):
     data = request.args.to_dict()
     return {'data': rubeus.to_hgrid(node, auth, **data)}
 
+# TODO: this function is deeply stupid. obviate with api endpoint that gives versions of a file
+def file_url_to_versions(current_url):
+    versions = []
+
+    m = re.match(r'(.*version/)(\d)(.*)', current_url)
+    prefix = m.group(1)
+    current_version = int(m.group(2))
+    postfix = m.group(3)
+
+    for v in range(current_version,0,-1):
+        url = prefix + str(v) + postfix
+        versions.append({ 'version': v, 'url': url})
+
+    return versions
+
 @must_be_contributor_or_public
-def file_with_name(**kwargs):
+def preprint_files(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
     data = request.args.to_dict()
-    # rv = rubeus.to_hgrid(node, auth, **data)[0]['children'][0]['urls']['download']
-    rv = osffiles.views.view_file(name='preprint.pdf')
-    return {'data': rv}
+    files = rubeus.to_hgrid(node, auth, **data)[0]['children']
+    rv = {'supplements': []}
+    for f in files:
+        if f['name'] == 'preprint.pdf':
+            rv['pdf'] = f
+        else:
+            rv['supplements'].append(f)
+
+    rv['downloadCurrent'] = rv['pdf']['urls']['download']
+    rv['pdf']['versions'] = file_url_to_versions(rv['downloadCurrent'])
+    return rv
 
 # File rendering
 def get_cache_path(node_settings):

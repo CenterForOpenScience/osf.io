@@ -940,14 +940,16 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/preprint/',
             '/project/<pid>/node/<nid>/preprint/',
-        ], 'get', project_views.node.view_project_as_preprint, OsfWebRenderer('preprints/preprint.mako')),
+        ], 'get', project_views.node.view_project_as_preprint,
+             OsfWebRenderer('preprints/preprint.mako')),
 
         Rule([
-            '/project/<pid>/preprint/pdf/',
-            '/project/<pid>/node/<nid>/preprint/pdf/'
+            '/api/v1/project/<pid>/preprint/',
+            '/api/v1/project/<pid>/node/<nid>/preprint/'
         ],
              'get',
-             project_views.file.file_with_name,
+             project_views.file.preprint_files,
              json_renderer
         )
+
     ])
