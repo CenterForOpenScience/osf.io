@@ -287,11 +287,13 @@
                           }
                         }
                    });
+
                     $('#input'+theItem.node_id).bind('keyup', function(event){
                         var key = event.keyCode || event.which;
                         var buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== "undefined");
-                        if (key === 13 ) {
-                            if(buttonEnabled) {
+
+                        if ( key === 13 ) {
+                            if( buttonEnabled ) {
                                 $('#add-link-' + theItem.node_id).click(); //submits if the control is active
                             }
                         }
