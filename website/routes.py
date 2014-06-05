@@ -719,8 +719,8 @@ def make_url_map(app):
         ),        
         Rule( # TODO generalize this method
             [
-                'project/<pid>/upload/',
-                'project/<pid>/node/<nid>/upload/'
+                '/project/<pid>/upload/',
+                '/project/<pid>/node/<nid>/upload/'
             ],
             'put',
             project_views.file.add_file_to_node,
