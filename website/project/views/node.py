@@ -525,6 +525,7 @@ def delete_folder(**kwargs):
 
     auth = kwargs['auth']
 
+
     try:
         node.remove_node(auth)
     except NodeStateError as e:
@@ -542,6 +543,35 @@ def delete_folder(**kwargs):
     return {
         'url': redirect_url,
     }
+
+@collect_auth
+def delete_folder_quietly(**kwargs):
+    """Remove folder node without notification
+
+    """
+    node_id = request.json.get('node_id')
+    if node_id is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = Node.load(node_id)
+
+    if not node.is_folder or node.is_dashboard:
+        raise HTTPError(http.BAD_REQUEST)
+
+    auth = kwargs['auth']
+
+    try:
+        node.remove_node(auth)
+    except NodeStateError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_long': 'Could not delete component: ' + e.message
+            },
+        )
+
+    return {}
+
 
 @must_be_valid_project # returns project
 @must_have_permission("admin")
@@ -864,6 +894,16 @@ def get_children(**kwargs):
         if not node.is_deleted
     ])
 
+@must_be_contributor_or_public
+def get_folder_pointers(**kwargs):
+    node_to_use = kwargs['node'] or kwargs['project']
+    if not node_to_use.is_folder:
+        return []
+    return [
+        node.resolve()._id
+        for node in node_to_use.nodes
+        if not node.is_deleted and not node.primary
+    ]
 
 @must_be_contributor_or_public
 def get_forks(**kwargs):

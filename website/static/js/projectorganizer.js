@@ -183,7 +183,7 @@
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             remote: {
-                url: '/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=yes&includeContributed=no',
+                url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=yes&includeContributed=no',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -204,7 +204,7 @@
             },
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             remote: {
-                url: '/api/v1/search/projects/?term=%QUERY&maxResults=10&includePublic=no&includeContributed=yes',
+                url: '/api/v1/search/projects/?term=%QUERY&maxResults=20&includePublic=no&includeContributed=yes',
                 filter: function (projects) {
                     return $.map(projects, function (project) {
                         return {
@@ -232,7 +232,13 @@
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
-
+                if (theItem.isFolder && !theItem.isSmartFolder) {
+                    var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
+                    var children;
+                    $.getJSON(getChildrenURL, function (data) {
+                        children = data;
+                    });
+                }
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode !== 'undefined') {
                     var theParentNodeID = theParentNode.node_id;
@@ -279,11 +285,29 @@
                           }
                         }
                    });
-
+                    $('#input'+theItem.node_id).bind('keyup', function(event){
+                        var key = event.keyCode || event.which;
+                        var buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== "undefined");
+                        if (key === 13 ) {
+                            if(buttonEnabled) {
+                                $('#add-link-' + theItem.node_id).click(); //submits if the control is active
+                            }
+                        }
+                        else {
+                            $('#add-link-warn-' + theItem.node_id).text("");
+                            $('#add-link-' + theItem.node_id).attr("disabled", "disabled");
+                            linkName = "";
+                            linkID = "";
+                        }
+                    });
                     $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
-                        $('#add-link-'+theItem.node_id).removeAttr('disabled');
-                        linkName = datum.name;
-                        linkID = datum.node_id;
+                        if( children.indexOf(datum.node_id) == -1 ) {
+                            $('#add-link-' + theItem.node_id).removeAttr('disabled');
+                            linkName = datum.name;
+                            linkID = datum.node_id;
+                        } else  {
+                            $('#add-link-warn-' + theItem.node_id).text("This project is already in the folder")
+                        }
                     });
                     $('#add-link-'+theItem.node_id).click(function() {
                         var url = "/api/v1/pointer/"; // the script where you handle the form input.
@@ -322,8 +346,8 @@
                         var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.";
                         bootbox.confirm(confirmationText, function(result) {
                             if (result !== null && result) {
-                                var url = '/api/v1/folder/'+theItem.node_id;
-                                var postData = JSON.stringify({});
+                                var url = '/api/v1/folder/';
+                                var postData = JSON.stringify({ 'node_id': theItem.node_id });
                                 $.ajax({
                                     type: "DELETE",
                                     url: url,
@@ -331,7 +355,7 @@
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     success: function() {
-                                        reloadFolder(self, theItem, theParentNode);
+                                        reloadFolder(self, theParentNode, theParentNode);
                                     }
                                 });
                             }

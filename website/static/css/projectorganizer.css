@@ -64,6 +64,11 @@ span.project-details {
     visibility: hidden;
 }
 
+span.add-link-warning {
+    color: #808080;
+    margin-left: 5px;
+}
+
 div.add-folder-container {
     display: none;
 
