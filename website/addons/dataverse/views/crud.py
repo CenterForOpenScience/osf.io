@@ -87,7 +87,7 @@ def dataverse_download_file_proxy(**kwargs):
     # Build response
     resp = make_response(content)
     resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
-        file_id
+        filename
     )
 
     resp.headers['Content-Type'] = 'application/octet-stream'
@@ -120,13 +120,12 @@ def dataverse_view_file(**kwargs):
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
-        _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
-            file_path=file_id + ext, file_content=content,
+            file_path=filename, file_content=content,
             download_path=download_url,
         )
     else:
