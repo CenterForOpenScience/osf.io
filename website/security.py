@@ -19,14 +19,17 @@ def random_string(length=8, chars=string.letters+string.digits):
 class Encryption(object):
 
     gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    keys = gpg.list_keys()
 
-    if not gpg.list_keys() or settings.FINGERPRINT not in gpg.list_keys()[0].values():
+    if not keys:
         raise ImportError(
-            "No GnuPG keyring found. Did you remember to 'invoke encryption'?"
+            "No GnuPG key found. Did you remember to 'invoke encryption'?"
         )
 
+    fingerprint = keys[0]['fingerprint']
+
     def encrypt(self, value):
-        return str(self.gpg.encrypt(value, settings.FINGERPRINT, always_trust=True))
+        return str(self.gpg.encrypt(value, self.fingerprint, always_trust=True))
 
     def decrypt(self, encrypted_data):
         return str(self.gpg.decrypt(encrypted_data, always_trust=True))

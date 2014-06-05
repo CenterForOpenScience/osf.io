@@ -229,7 +229,7 @@ def mfr_requirements():
 
 @task
 def encryption(owner=None):
-    """Import private key for GnuPG.
+    """Generate GnuPG key.
     
     For local development:
     > invoke encryption
@@ -239,8 +239,13 @@ def encryption(owner=None):
     """
     import gnupg
     gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
-    print 'Importing GnuPG key into keyring'
-    gpg.import_keys(settings.PRIVATE_KEY)
+    keys = gpg.list_keys()
+    if keys:
+        print 'Existing GnuPG key found'
+        return
+    print 'Generating GnuPG key'
+    input_data = gpg.gen_key_input(name_real='OSF Generated Key')
+    gpg.gen_key(input_data)
     if owner:
         run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
 
