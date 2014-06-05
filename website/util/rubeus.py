@@ -209,7 +209,7 @@ class NodeProjectCollector(object):
                 if can_view
                 else u'Private Component',
             'kind': FOLDER
-                if children
+                if (children or node.is_folder)
                 else FILE,
             'permissions': {
                 'edit': can_edit,
