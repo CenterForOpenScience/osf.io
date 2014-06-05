@@ -58,6 +58,8 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     }
 
     # Determine default state / selection permissions
+    template_file = 'website/addons/dataverse/templates/dataverse_state_template.mako'
+    dataverse_state_template = Template(filename=template_file)
     state_append = dataverse_state_template.render(
         state=state,
         has_released_files=has_released_files,
@@ -145,23 +147,3 @@ def dataverse_hgrid_data_contents(**kwargs):
         info.append(item)
 
     return info
-
-
-dataverse_state_template = Template('''
-    <i id="dataverseGetCitation" class="icon-info-sign"></i>
-    % if authorized:
-        % if has_released_files:
-            <select class="dataverse-state-select">
-                <option value="draft" ${"selected" if state == "draft" else ""}>Draft</option>
-                <option value="released" ${"selected" if state == "released" else ""}>Released</option>
-            </select>
-        % else:
-            [Draft]
-        % endif
-        % if state == "draft" and file_page:
-            <a id="dataverseReleaseStudy">Release Study</a>
-        % endif
-    % else:
-        [Released]
-    % endif
-''')
