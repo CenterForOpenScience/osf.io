@@ -2,11 +2,12 @@ import os
 
 from framework import request
 from mako.template import Template
-from website.addons.dataverse.client import connect, get_study, get_files, \
+from website.addons.dataverse.client import get_study, get_files, \
     get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
+from website.settings import BASE_PATH
 from website.util import rubeus
 
 
@@ -58,7 +59,9 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     }
 
     # Determine default state / selection permissions
-    template_file = 'website/addons/dataverse/templates/dataverse_state_template.mako'
+    template_file = os.path.join(
+        BASE_PATH, 'addons/dataverse/templates/dataverse_state_template.mako'
+    )
     dataverse_state_template = Template(filename=template_file)
     state_append = dataverse_state_template.render(
         state=state,

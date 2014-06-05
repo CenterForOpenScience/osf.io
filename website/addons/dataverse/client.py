@@ -1,5 +1,5 @@
 from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.settings import TEST_CERT, HOST
+from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.settings import DISABLE_SSL_CERTIFICATE_VALIDATION
 
 
@@ -8,7 +8,6 @@ def connect(username, password, host=HOST):
         username=username,
         password=password,
         host=host,
-        cert=TEST_CERT,
         disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
     )
     return connection if connection.connected else None

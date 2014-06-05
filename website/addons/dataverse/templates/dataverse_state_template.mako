@@ -1,4 +1,4 @@
-<i id="dataverseGetCitation" class="icon-info-sign"></i>
+ <i id="dataverseGetCitation" class="icon-info-sign"></i>
 % if authorized:
     % if has_released_files:
         <select class="dataverse-state-select">
