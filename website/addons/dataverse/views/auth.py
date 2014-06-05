@@ -1,9 +1,9 @@
 import httplib as http
 
-from framework.auth.decorators import Auth, must_be_logged_in
-from website.addons.dataverse.client import connect
+from framework.auth.decorators import must_be_logged_in
+from website.addons.dataverse.client import connect_from_settings
 from website.project import decorators
-from website.util import api_url_for, web_url_for
+from website.util import api_url_for
 
 
 @decorators.must_be_contributor
@@ -36,10 +36,7 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dataverse user settings.
     """
-    connection = connect(
-        user_addon.dataverse_username,
-        user_addon.dataverse_password
-    )
+    connection = connect_from_settings(user_addon)
 
     urls = {
         'create': api_url_for('dataverse_set_user_config'),

@@ -14,6 +14,13 @@ def connect(username, password, host=HOST):
     return connection if connection.connected else None
 
 
+def connect_from_settings(user_settings):
+    return connect(
+        user_settings.dataverse_username,
+        user_settings.dataverse_password
+    ) if user_settings else None
+
+
 def delete_file(file):
     study = file.hostStudy
     study.delete_file(file)

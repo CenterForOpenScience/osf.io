@@ -8,7 +8,8 @@ from framework import request, make_response
 from framework.flask import secure_filename, redirect, send_file
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import connect, delete_file, upload_file, \
-    get_file, get_file_by_id, release_study, get_study, get_dataverse
+    get_file, get_file_by_id, release_study, get_study, get_dataverse, \
+    connect_from_settings
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -36,14 +37,11 @@ def dataverse_release_study(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
+    user_settings = node_settings.user_settings
 
     now = datetime.datetime.utcnow()
 
-    connection = connect(
-        node_settings.user_settings.dataverse_username,
-        node_settings.user_settings.dataverse_password,
-    ) if node_settings.user_settings else None
-
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
 
@@ -153,17 +151,14 @@ def dataverse_upload_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
+    user_settings = node_settings.user_settings
 
     now = datetime.datetime.utcnow()
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
 
-    connection = connect(
-        node_settings.user_settings.dataverse_username,
-        node_settings.user_settings.dataverse_password
-    ) if node_settings.user_settings else None
-
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
 
@@ -235,6 +230,7 @@ def dataverse_delete_file(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_settings = kwargs['node_addon']
+    user_settings = node_settings.user_settings
 
     now = datetime.datetime.utcnow()
 
@@ -242,11 +238,7 @@ def dataverse_delete_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = connect(
-        node_settings.user_settings.dataverse_username,
-        node_settings.user_settings.dataverse_password
-    ) if node_settings.user_settings else None
-
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, node_settings.dataverse_alias)
     study = get_study(dataverse, node_settings.study_hdl)
     file = get_file_by_id(study, file_id)

@@ -65,7 +65,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user_settings)
 
-    @mock.patch('website.addons.dataverse.views.auth.connect')
+    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings')
     def test_user_config_get(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -80,7 +80,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_in('create', result['urls'])
         assert_in('delete', result['urls'])
 
-    @mock.patch('website.addons.dataverse.views.auth.connect')
+    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings')
     def test_user_config_get_no_connection(self, mock_connection):
         mock_connection.return_value = None
 
@@ -98,7 +98,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
 
 class TestDataverseViewsConfig(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_serialize_settings_helper_returns_correct_auth_info(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -107,7 +107,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_true(result['userHasAuth'])
         assert_true(result['userIsOwner'])
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_serialize_settings_helper_non_owner(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -129,7 +129,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_true(result['userHasAuth'])
         assert_false(result['userIsOwner'])
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_serialize_settings_helper_returns_correct_urls(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -144,7 +144,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(urls['dataversePrefix'], 'http://{0}/dvn/dv/'.format(HOST))
         assert_equal(urls['owner'], web_url_for('profile_view_id', uid=self.user._primary_key))
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_serialize_settings_helper_returns_dv_info(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -156,7 +156,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(result['savedStudy']['title'], self.node_settings.study)
         assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_serialize_settings_helper_no_connection(self, mock_connection):
         mock_connection.return_value = None
 
@@ -168,7 +168,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(result['savedStudy']['title'], self.node_settings.study)
         assert_equal(result['savedStudy']['hdl'], self.node_settings.study_hdl)
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_dataverse_get_studies(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -237,7 +237,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_equal(user_settings.dataverse_username, None)
         assert_equal(user_settings.dataverse_password, None)
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_set_dataverse_and_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -266,7 +266,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
         assert_is_none(log_params['project'])
         assert_equal(log_params['study'], 'Example (DVN/00003)')
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_set_dataverse_no_study(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
         num_old_logs = len(self.project.logs)
@@ -296,7 +296,7 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
 
 class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_study')
     def test_dataverse_data_contents(self, mock_get, mock_request, mock_connection):
@@ -314,21 +314,20 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_in('kind', first)
         assert_equal(first['name'], contents['name'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    def test_dataverse_data_contents_no_settings(self, mock_request, mock_connection):
+    def test_dataverse_data_contents_no_connection(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
 
-        # If there are no settings, no files are returned
-        self.node_settings.user_settings = None
-        self.node_settings.save()
+        # If there is no connection, no files are returned
+        mock_connection.return_value = None
         url = api_url_for('dataverse_hgrid_data_contents',
                           pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_no_study(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -342,7 +341,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_state_on_file_page(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -363,7 +362,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json[0]['name'], 'released.txt')
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_state_on_dashboard(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -384,7 +383,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json[0]['name'], 'released.txt')
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
     def test_dataverse_root_released(self, mock_files, mock_request, mock_connection):
@@ -412,7 +411,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
     def test_dataverse_root_draft(self, mock_files, mock_request, mock_connection):
@@ -440,7 +439,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
     def test_dataverse_root_not_released(self, mock_files, mock_request, mock_connection):
@@ -467,10 +466,10 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_equal(res.json, [])
 
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect')
+    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     @mock.patch('website.addons.dataverse.views.hgrid.get_files')
-    def test_dataverse_root_no_settings(self, mock_files, mock_request, mock_connection):
+    def test_dataverse_root_no_connection(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
         mock_request.args = {'state': 'released'}
@@ -479,16 +478,14 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         url = api_url_for('dataverse_root_folder_public',
                           pid=self.project._primary_key)
 
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-
+        mock_connection.return_value = None
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
 
 class TestDataverseViewsCrud(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file_by_id',
                 side_effect=[create_mock_dvn_file('54321'), None])
@@ -505,7 +502,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         mock_delete.assert_called_once
         assert_equal(path, mock_delete.call_args[0][0].id)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file',
                 side_effect=[None, create_mock_dvn_file()])
@@ -535,7 +532,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file')
@@ -570,7 +567,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_updated', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     def test_dataverse_view_file(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -589,7 +586,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
         )
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.release_study')
     def test_dataverse_release_study(self, mock_release, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -599,7 +596,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.post(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.get_cache_content')
     def test_render_file(self, mock_get_cache, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -626,7 +623,7 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         self.project.save()
 
 
-    @mock.patch('website.addons.dataverse.views.config.connect')
+    @mock.patch('website.addons.dataverse.views.config.connect_from_settings')
     def test_restricted_set_study_not_owner(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 

@@ -3,7 +3,7 @@ import os
 from framework import request
 from mako.template import Template
 from website.addons.dataverse.client import connect, get_study, get_files, \
-    get_dataverse
+    get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -13,14 +13,12 @@ from website.util import rubeus
 def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
     node = node_settings.owner
+    user_settings = node_settings.user_settings
 
     default_state = 'released' if 'files' not in request.referrer else 'draft'
     state = 'released' if not node.can_edit(auth) else state or default_state
 
-    connection = connect(
-        node_settings.user_settings.dataverse_username,
-        node_settings.user_settings.dataverse_password
-    ) if node_settings.user_settings else None
+    connection = connect_from_settings(user_settings)
 
     # Quit if no study linked
     if node_settings.study_hdl is None or connection is None:
@@ -96,6 +94,7 @@ def dataverse_root_folder_public(**kwargs):
 def dataverse_hgrid_data_contents(**kwargs):
 
     node_settings = kwargs['node_addon']
+    user_settings = node_settings.user_settings
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
@@ -108,10 +107,7 @@ def dataverse_hgrid_data_contents(**kwargs):
     can_edit = node.can_edit(auth) and not node.is_registration and not released
     can_view = node.can_view(auth)
 
-    connection = connect(
-        node_settings.user_settings.dataverse_username,
-        node_settings.user_settings.dataverse_password
-    ) if node_settings.user_settings else None
+    connection = connect_from_settings(user_settings)
 
     if node_settings.study_hdl is None or connection is None:
         return []

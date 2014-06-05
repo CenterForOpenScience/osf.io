@@ -5,8 +5,8 @@ import httplib as http
 from framework import request
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect, get_studies, get_study, \
-    get_dataverses, get_dataverse
+from website.addons.dataverse.client import connect, connect_from_settings, \
+    get_studies, get_study, get_dataverses, get_dataverse
 from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import web_url_for
@@ -64,10 +64,7 @@ def serialize_settings(node_settings, current_user):
             'dataverseUsername': user_settings.dataverse_username,
         })
         # Add owner's dataverse settings
-        connection = connect(
-            user_settings.dataverse_username,
-            user_settings.dataverse_password
-        )
+        connection = connect_from_settings(user_settings)
         dataverses = get_dataverses(connection)
         result.update({
             'connected': connection is not None,
@@ -105,10 +102,9 @@ def serialize_urls(node_settings):
 @decorators.must_have_addon('dataverse', 'node')
 def dataverse_get_studies(node_addon, **kwargs):
     alias = request.json.get('alias')
-    connection = connect(
-        node_addon.user_settings.dataverse_username,
-        node_addon.user_settings.dataverse_password
-    )
+    user_settings = node_addon.user_settings
+
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, alias)
     studies = get_studies(dataverse)
     rv = {}
@@ -158,10 +154,7 @@ def set_dataverse_and_study(auth, **kwargs):
     if hdl is None:
         return HTTPError(http.BAD_REQUEST)
 
-    connection = connect(
-        user_settings.dataverse_username,
-        user_settings.dataverse_password
-    )
+    connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, alias)
     study = get_study(dataverse, hdl)
 

@@ -4,12 +4,13 @@ import mock
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.client import (connect, delete_file, upload_file,
     get_file, get_file_by_id, get_files, release_study, get_studies, get_study,
-    get_dataverses, get_dataverse)
+    get_dataverses, get_dataverse, connect_from_settings)
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.file import DvnFile
 from website.addons.dataverse.dvn.study import Study
-from website.addons.dataverse.settings import TEST_CERT
+from website.addons.dataverse.model import AddonDataverseUserSettings
+from website.addons.dataverse.settings import TEST_CERT, HOST
 
 
 class TestClient(DataverseAddonTestCase):
@@ -34,7 +35,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            cert=TEST_CERT, disable_ssl_certificate_validation=True,
+            cert=TEST_CERT, disable_ssl_certificate_validation=False,
         )
 
         assert_true(c)
@@ -49,10 +50,26 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            cert=TEST_CERT, disable_ssl_certificate_validation=True,
+            cert=TEST_CERT, disable_ssl_certificate_validation=False,
         )
 
         assert_equal(c, None)
+
+    @mock.patch('website.addons.dataverse.client.connect')
+    def test_connect_from_settings(self, mock_connect):
+        user_settings = AddonDataverseUserSettings()
+        user_settings.dataverse_username = 'Something ridiculous'
+        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+
+        connection = connect_from_settings(None)
+        assert_is_none(connection)
+
+        connection = connect_from_settings(user_settings)
+        assert_true(connection)
+        mock_connect.assert_called_once_with(
+            user_settings.dataverse_username,
+            user_settings.dataverse_password,
+        )
 
     def test_delete_file(self):
         delete_file(self.mock_file)
