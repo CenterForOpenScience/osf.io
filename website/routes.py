@@ -935,3 +935,19 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    process_rules(app, [
+        Rule([
+            '/project/<pid>/preprint/',
+            '/project/<pid>/node/<nid>/preprint/',
+        ], 'get', project_views.node.view_project_as_preprint, OsfWebRenderer('preprints/preprint.mako')),
+
+        Rule([
+            '/project/<pid>/preprint/pdf/',
+            '/project/<pid>/node/<nid>/preprint/pdf/'
+        ],
+             'get',
+             project_views.file.file_with_name,
+             json_renderer
+        )
+    ])

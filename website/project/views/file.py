@@ -39,6 +39,15 @@ def grid_data(**kwargs):
     data = request.args.to_dict()
     return {'data': rubeus.to_hgrid(node, auth, **data)}
 
+@must_be_contributor_or_public
+def file_with_name(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    data = request.args.to_dict()
+    rv = rubeus.to_hgrid(node, auth, **data)[0]['children'][0]['urls']['download']
+    return {'data': rv}
+
 # File rendering
 def get_cache_path(node_settings):
     return os.path.join(
