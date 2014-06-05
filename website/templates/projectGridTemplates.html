@@ -9,7 +9,7 @@
 
     </span>
     <br /><span class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a>{{/commalist}}</span>
-    {{#if projectDetailData.node.description}}<br /><span class="description">Description: {{ projectDetailData.node.description }}</span>{{/if}}
+    {{#if theItem.description}}<br /><span class="description">Description: {{ theItem.description }}</span>{{/if}}
     {{#if theItem.isFolder}}
     <div class = "organize-project-controls">
         <div id = "buttons{{theItem.node_id}}">

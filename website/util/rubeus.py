@@ -234,6 +234,8 @@ class NodeProjectCollector(object):
             'isSmartFolder': False,
             'apiURL': node.api_url,
             'isRegistration': node.is_registration,
+            'description': node.description,
+            'registeredMeta': node.registered_meta,
         }
 
 
