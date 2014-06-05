@@ -35,7 +35,7 @@
         self.query = ko.observable();
         self.results = ko.observableArray([]);
         self.selection = ko.observableArray();
-        self.errorMsg = ko.observable('');
+        self.notification = ko.observable('');
         self.inviteError = ko.observable('');
 
         self.nodes = ko.observableArray([]);
@@ -81,7 +81,7 @@
         };
 
         self.search = function() {
-            self.errorMsg('');
+            self.notification(false);
             if (self.query()) {
                 $.getJSON(
                     '/api/v1/user/search/',
@@ -99,13 +99,16 @@
         };
 
         self.importFromParent = function() {
-            self.errorMsg('');
+            self.notification(false);
             $.getJSON(
                 nodeApiUrl + 'get_contributors_from_parent/',
                 {},
                 function(result) {
                     if (!result.contributors.length) {
-                        self.errorMsg('All contributors from parent already included.');
+                        self.notification({
+                            'message': 'All contributors from parent already included.',
+                            'level': 'info'
+                        });
                     }
                     self.results(result['contributors']);
                 }
@@ -113,13 +116,16 @@
         };
 
         self.recentlyAdded = function() {
-            self.errorMsg('');
+            self.notification(false);
             $.getJSON(
                 nodeApiUrl + 'get_recently_added_contributors/',
                 {},
                 function(result) {
                     if (!result.contributors.length) {
-                        self.errorMsg('All recently added contributors already included.');
+                        self.notification({
+                            'message': 'No recently added contributors not already included.',
+                            'level': 'info'
+                        });
                     }
                     self.results(result['contributors']);
                 }
@@ -306,7 +312,7 @@
             self.results([]);
             self.selection([]);
             self.nodesToChange([]);
-            self.errorMsg('');
+            self.notification(false);
         };
 
     };

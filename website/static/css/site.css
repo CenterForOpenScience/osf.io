@@ -857,12 +857,17 @@ ul#projects-list{
 }
 
 input.ui-autocomplete-input{
-    border: 0px solid;
+    /*Typically "!important" is not something we like to use, however
+    in this case it was the simplest way to deal with a JavaScript-related
+    issue regarding the order of specificity in CSS. */
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+    border: 1px solid;
+    border-color: #ccc;
     outline:0;
     background-color:#ffffff;
     color:#404040;
     text-shadow:none;
-    border:0;
     padding:5px 10px;
     -webkit-box-shadow:none;
     -moz-box-shadow:none;
@@ -1373,6 +1378,19 @@ div#logScope a.moreLogs{
 }
 
 /* Contributor page */
+
+#addContributors form .col-md-6 > a {
+    border-top: 1px solid #eee;
+    margin-top: 5px;
+    padding-top: 5px;
+    display: block;
+}
+
+#addContributors form .col-md-6 > a:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
 
 .contributor-self {
     font-weight: bold;
