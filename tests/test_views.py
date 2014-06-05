@@ -8,8 +8,6 @@ import datetime as dt
 import mock
 import httplib as http
 
-
-
 from nose.tools import *  # PEP8 asserts
 from tests.test_features import requires_solr
 from webtest_plus import TestApp
@@ -683,8 +681,7 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(rec['email'], email)
 
     @mock.patch('website.project.views.contributor.send_claim_email')
-    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,
-        mock_send_claim_email):
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,mock_send_claim_email):
         # Project has components
         comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)

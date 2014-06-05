@@ -708,7 +708,24 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
-
+        # imports API, added by shc7pw        
+        Rule(
+            [
+                '/project/import/'
+            ],
+            'post',
+            project_views.imports.import_projects,
+            json_renderer,
+        ),        
+        Rule( # TODO generalize this method
+            [
+                '/project/<pid>/upload/',
+                '/project/<pid>/node/<nid>/upload/'
+            ],
+            'put',
+            project_views.file.add_file_to_node,
+            json_renderer
+        ),
         # Private Link
         Rule([
             '/project/<pid>/private_link/',
