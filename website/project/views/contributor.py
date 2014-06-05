@@ -221,7 +221,7 @@ def deserialize_contributors(node, user_dicts, auth):
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
-        email = contrib_dict['email']
+        email = contrib_dict.get('email')
         fullname = contrib_dict['fullname']
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
