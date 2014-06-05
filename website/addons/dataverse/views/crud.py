@@ -82,7 +82,7 @@ def dataverse_download_file_proxy(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    content, filename = scrape_dataverse(file_id)
+    filename, content = scrape_dataverse(file_id)
 
     # Build response
     resp = make_response(content)
@@ -117,22 +117,23 @@ def dataverse_view_file(**kwargs):
     # Get or create rendered file
     cache_file = '{0}.html'.format(file_id)
     rendered = get_cache_content(node_settings, cache_file)
-    filename = None
 
     if rendered is None:
-        data, filename = scrape_dataverse(file_id)
+        filename, content = scrape_dataverse(file_id)
         _, ext = os.path.splitext(filename)
         download_url = node.api_url_for(
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
             node_settings, cache_file, start_render=True,
-            file_path=file_id + ext, file_content=data,
+            file_path=file_id + ext, file_content=content,
             download_path=download_url,
         )
+    else:
+        filename, _ = scrape_dataverse(file_id, name_only=True)
 
     rv = {
-        'file_name': filename or scrape_filename(file_id),
+        'file_name': filename,
         'rendered': rendered,
         'render_url': node.api_url_for('dataverse_get_rendered_file',
                                        path=file_id),
@@ -277,15 +278,15 @@ def dataverse_get_rendered_file(**kwargs):
     return get_cache_content(node_settings, cache_file)
 
 
-def scrape_dataverse(file_id):
+def scrape_dataverse(file_id, name_only=False):
 
     # Go to file url
     url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    response = session.get(url)
+    response = session.head(url, allow_redirects=True) if name_only else session.get(url)
 
     # Agree to terms if a redirect has occurred
     if response.history:
-
+        response = session.get(url) if name_only else response
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
         data = {
@@ -296,42 +297,11 @@ def scrape_dataverse(file_id):
         }
         terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
-        response = session.get(url)
+        response = session.head(url) if name_only else session.get(url)
 
     if 'content-disposition' not in response.headers.keys():
         raise HTTPError(http.NOT_FOUND)
 
     filename = response.headers['content-disposition'].split('"')[1]
 
-    # return file and name
-    return response.content, filename
-
-
-def scrape_filename(file_id):
-
-    # Go to file url
-    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
-    response = session.head(url, allow_redirects=True)
-    headers = response.headers
-
-    # Agree to terms if a redirect has occurred
-    if response.history:
-
-        response = session.get(url)
-        parsed = BeautifulSoup(response.content)
-        view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
-        data = {
-            'form1':'form1',
-            'javax.faces.ViewState': view_state,
-            'form1:termsAccepted':'on',
-            'form1:termsButton':'Continue',
-        }
-        terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
-        session.post(terms_url, data=data)
-        headers = session.head(url).headers
-
-    if 'content-disposition' not in headers.keys():
-        raise HTTPError(http.NOT_FOUND)
-
-    # return file and name
-    return headers['content-disposition'].split('"')[1]
+    return filename, response.content
