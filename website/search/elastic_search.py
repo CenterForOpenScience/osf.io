@@ -49,9 +49,10 @@ def search(raw_query, start=0):
             }
         }
 
+    logger.warn(start)
     query = {
         'query':{
-            'filtered' : {
+           'filtered' : {
                 'filter': type_filter,
                 'query': {
                     'match' : {
@@ -59,13 +60,17 @@ def search(raw_query, start=0):
                     }
                 }   
             }
-        }
+        },
+        'from':start,
+        'size':10,
     }
+
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
     numFound = raw_results['hits']['total']
     formatted_results, tags = create_result(results, highlights)
+
     return formatted_results, tags, numFound
 
 
