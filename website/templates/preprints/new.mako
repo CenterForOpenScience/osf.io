@@ -8,22 +8,6 @@
 
 
         <form action="" method="post" enctype="multipart/form-data">
-##            <div
-##                    class="form-group"
-##                    data-bind="css: {'has-error': paperName() && !paperName.isValid()}">
-##                <input
-##                        class="form-control"
-##                        placeholder="Paper Name"
-##                        data-bind="value: paperName,
-##                                       valueUpdate: 'input',
-##                                       disable: submitted(),
-##                                       event: {
-##                                           focus: hideValidation,
-##                                           blur: trim.bind($data, paperName)
-##                                       }"
-##                        />
-##            </div>
-
             <input type="file" name="file" />
             <input type="submit" class="btn" value="Upload File"/>
         </form>
