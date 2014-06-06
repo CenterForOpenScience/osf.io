@@ -8,10 +8,10 @@ from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
 from website import settings
 
-if settings.SEARCH_ENGINE != 'none':
-    settings.SEARCH_ENGINE = 'solr'
+#if settings.SEARCH_ENGINE != 'none': Uncomment to force solr to load for testing
+#    settings.SEARCH_ENGINE = 'solr'
 import website.search.search as search
-reload(search)
+#reload(search)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
 class TestCleanSolr(unittest.TestCase): #TODO(fabianvf)

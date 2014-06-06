@@ -8,10 +8,10 @@ from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
 from website import settings
 
-if settings.SEARCH_ENGINE != 'none':
-    settings.SEARCH_ENGINE = 'elastic'
+#if settings.SEARCH_ENGINE != 'none': Uncomment to force elasticsearch to load for testing
+#    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-reload(search)
+#reload(search)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
