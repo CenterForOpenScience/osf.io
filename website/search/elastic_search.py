@@ -158,7 +158,6 @@ def delete_doc(elastic_document_id, node):
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 def create_result(results, highlights):
-    logger.error(results)
     ''' Takes list of dicts of the following structure:
     {
         'category': {NODE CATEGORY},
@@ -202,164 +201,59 @@ def create_result(results, highlights):
         else:
             # Build up word cloud
             for tag in result['tags']:
-                word_cloud[tag] = 1 \
-                        if word_cloud.get(tag, None) is None else word_cloud[tag]+1
- 
+                word_cloud[tag] = 1 if word_cloud.get(tag, None) is None \
+                        else word_cloud[tag]+1
+             
+            # Ensures that information from private projects is never returned
+            parent = Node.load(result['parent_id'])
+            if parent is not None:
+                if  parent.is_public:
+                    parent_title = parent.title
+                    parent_url = parent.url
+                    parent_wiki_url = parent.url + 'wiki/'
+                    parent_contributors = parent.contributors
+                    parent_tags = parent.tags
+                    parent_contributors_url = ['/profile/'+contributor for contributor in parent_contributors]
+                    parent_is_registration = parent.is_registration
+                else:
+                    parent_title = '-- private project --'
+                    parent_url = ''
+                    parent_wiki_url = ''
+                    parent_contributors = []
+                    parent_tags = []
+                    parent_contributors_url = []
+                    parent_is_registration = None
+
+
             # Format dictionary for output
             formatted_results.append({
-                'contributors': result['contributors']
-                ,'wiki_link': '' if result['wikis'].get('home',None) is None \
-                        else '/' + result['id'] + '/wiki/home/'
-                ,'title': result['parent_title'] if result.get('parent_title', None) is not '' \
-                        else result['title']
-                ,'url': result['url']
-                ,'nest':{}
+                'contributors': result['contributors'] if parent is None \
+                        else parent_contributors
+                ,'wiki_link': result['url']+'wiki/' if parent is None\
+                        else parent_wiki_url
+                ,'title': result['title'] if parent is None \
+                        else parent_title
+                ,'url': result['url'] if result['category'] == 'project'\
+                        else parent_url
+                ,'nest':{
+                    result['id']:{#Nested components have all their own attributes
+                        'title': result['title']
+                        ,'url': result['url']
+                        ,'wiki_link': result['url'] + 'wiki/'
+                        ,'contributors': result['contributors'] 
+                        ,'contributors_url': result['contributors_url']
+                        ,'highlight':[]#TODO(fabianvf)
+                    }
+                } if parent is not None else {}
                 ,'tags':result['tags']
-                ,'contributors_url': result['contributors_url']
-                ,'is_registration': result['registeredproject']
+                ,'contributors_url': result['contributors_url'] if parent is None \
+                        else parent_contributors_url
+                ,'is_registration': result['registeredproject'] if parent is None\
+                        else parent_is_registration
                 ,'highlight': []#TODO(fabianvf)
             })
 
     return formatted_results, word_cloud
-
-    ''' Old method below
-    result_search = []
-    tags = {} 
-    for result in results:
-        container = {}
-        doc_id = result['id']
-        # users are separate documents in our search database,
-        # so the logic for returning
-        # those documents is different
-        if 'user' in result:
-            container['id'] = result['id']
-            container['user'] = result['user']
-            container['user_url'] = '/profile/'+result['id']
-            result_search.append(container)
-        else:
-            container['title'] = result.get('title', '-- private project --')
-            container['url'] = result.get('url')
-            contributors = []
-            contributors_url = []
-            # we're only going to show contributors on projects, for now
-            for contributor in result.get('contributors', []):
-                contributors.append(contributor)
-            for url in result.get('contributors_url',[]):
-                contributors_url.append(url)
-            container['contributors'] = contributors
-            container['contributors_url'] = contributors_url
-            # highlights will be returned as liss
-            main_lit = []
-            # we will create the wiki links
-            main_wiki_link = ''
-            # nest is for our nested nodes; i.e, materials, procedure ects
-            nest = {}
-            component_tags = []
-            # need to keep track of visisted nodes for our tag cloud so we dont
-            # miscount our fx of tags
-            visited_nests = []
-#            for key, value in highlights[id].iteritems(): #TODO(fabianvf)
-#                if id in key:
-                    # if wiki is in the key,
-                    # we have to split on __ to build the url for the wik
-#                    if '__wiki' in key:
-#                        main_wiki_link = result[id+'_url'] + (
-#                           '/wiki/' + key.split('__')[1])
-                    # we're only going to show
-                    # the highlight if its wiki or description. title or
-                    # tags is redundant information
-#                    if '__wiki' in key or '_description' in key:
-#                        main_lit = value
-                # if id is not in key, we know that we have some
-                # nested information to display
-#                elif id not in key:
-#                    if key == 'id':
-#                        continue
-                    # our first step is to get id of the
-                    # node by splitting the key
-                    # wiki keys are set up to include page name as well.
-                    # so splitting to find
-                    # the node id is different
-#                    if '__wiki' in key:
-#                        splits = key.split('__')
-#                        split_id = splits[0]
-#                        pagename = splits[1]
-#                    else:
-#                        split_id = key.split('_')[0]
-                    # nodes can have contributors
-#                    contributors = []
-#                    contributors_url = []
-#                    lit = []
-#                    wiki_link = ''
-                    # build our wiki link
-#                    if '__wiki' in key:
-#                        wiki_link = result[split_id+'_url'] + '/wiki/'+pagename
-                    # again title and tags are
-                    # redundant so only show highlight if the
-                    # wiki or description are in the key
-#                    if '__wiki' in key or '_description' in key:
-#                        if value[0] != 'None':
-#                            lit = value
-                    # build our contributor list and our contributor url list
-#                    for contributor in result.get(split_id+'_contributors', []):
-#                        contributors.append(contributor)
-#                    for url in result.get(split_id+'_contributors_url', []):
-#                        contributors_url.append(url)
-#                    if result[split_id+'_public']:
-#                        nest[split_id] = {
-#                            'title': result[split_id+'_title'],
-#                            'url': result[split_id+'_url'],
-#                            'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
-#                            'wiki_link': wiki_link,
-#                            'contributors': contributors,
-#                            'contributors_url': contributors_url
-#                        }
-#                        if split_id+'_tags' in result:
-#                            if split_id not in visited_nests:
-                                # we've visted the node so
-                                # append to our visited nests lists
-#                                visited_nests.append(split_id)
-                                # we're going to have a
-                                # list of all tags for each project.
-                                # we're creating a list with no
-                                # duplicates using sets
-#                                component_tags = component_tags + list(
-#                                    set(result[split_id+'_tags']) - set(
-#                                        component_tags))
-                                # count the occurence of each tag
-#                                for tag in result[split_id+'_tags']:
-#                                    if tag not in tags.keys():
-#                                        tags[tag] = 1
-#                                    else:
-#                                        tags[tag] += 1
-            # add the highlight to our dictionary
-            container['highlight'] = []
-            if main_lit:
-                container['highlight'] = main_lit
-#            else:
-                container['highlight'] = None
-            # and the link to the wiki
-            container['wiki_link'] = main_wiki_link
-            # and our nested information
-            container['nest'] = nest
-            container['is_registration'] = result.get(
-                'registeredproject',
-                False
-            )
-            if 'tags' in result.keys():
-                # again using sets to create a list without duplicates
-                container['tags'] = result['tags'] + list(
-                    set(component_tags) - set(result['tags']))
-                # and were still keeping count of tag occurence
-                for tag in result['tags']:
-                    if tag not in tags.keys():
-                        tags[tag] = 1
-                    else:
-                        tags[tag] += 1
-            result_search.append(container)
-    '''
-#    logger.warn(str(result_search))
-    return result_search, tags
 
 
 def search_contributor(query, exclude=None):
@@ -372,14 +266,11 @@ def search_contributor(query, exclude=None):
 
     """
     import re
-    logger.warn(query)
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
-    logger.warn(query)
     query = re.split(r'\s+', query)
 
     if len(query) > 1:
-        logger.warn(str(query))
         and_filter = {'and':[]}
         for item in query:
             and_filter['and'].append({
@@ -405,7 +296,6 @@ def search_contributor(query, exclude=None):
     results = _convert_to_utf8(elastic.search(query, index='website'))
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
-    logger.warn(docs)
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
 
@@ -413,7 +303,6 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
-        logger.warn(doc['id'])
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue

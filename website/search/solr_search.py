@@ -162,7 +162,6 @@ def search(query, start=0):
         if 'spellcheck' in result else None
     # highlight
     highlight = result['highlighting']
-    logger.warn(highlight)
     # and the list of documents
     result = result['response']
     # look for specllcheck,
@@ -172,7 +171,6 @@ def search(query, start=0):
     else:
         spellcheck_result = None
     solrPost.close()
-    logger.warn(str(result))
     #return result, highlight, spellcheck_result
     results, tags = create_result(highlight, result['docs'])
     return results, tags, result['numFound']#, highlight, spellcheck_result TODO(fabianvf)
@@ -342,7 +340,6 @@ def search_contributor(query, exclude=None):
 
 #    result = search(q)[0] #TODO(fabianvf) This whole block will probably need a rewrite
     docs = search(q)[0]
-    logger.warn(q)
 #    docs = result.get('docs', [])
 
     if exclude:
