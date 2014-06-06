@@ -5,7 +5,7 @@ from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from website.project import new_node
 from website.project.decorators import must_be_contributor
-from os.path import basename
+from os.path import splitext
 from website.project.views.file import prepare_file
 
 
@@ -20,7 +20,7 @@ def upload_preprint_new(**kwargs):
     # todo: validation that file is pdf
     auth = kwargs['auth']
     file = request.files.get('file')
-    title = basename(file.filename)
+    title = splitext(file.filename)[0]
     file.filename = u'preprint.pdf'
 
     description = 'Automatically generated as a preprint for ' + title

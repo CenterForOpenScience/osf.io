@@ -36,7 +36,7 @@
             self.downloadCurrent(data.downloadCurrent);
             self.versions(data.pdf.versions);
             self.response(data);
-            self.canEdit(data.pdf.permissions.edit)
+            self.canEdit(data.pdf.permissions.edit);
             self.showPreprint(true);
         };
 

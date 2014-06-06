@@ -3,7 +3,7 @@
 <%def name="content()">
     <h2 class="page-title text-center">Create New Preprint Project</h2>
     <div id="newPreprintScope" class="img-rounded centered col-md-6 scripted">
-        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+##        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> ## for debugging
 
 
 

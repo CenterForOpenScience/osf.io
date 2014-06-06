@@ -177,11 +177,12 @@
 
         <div class="col-md-12" data-bind="visible: showPreprint">
             ## TODO: Asynchronous upload, reload table on page rather than redirecting
-            <form data-bind="attr: { action: uploadUrl }" method="post" enctype="multipart/form-data">
-                <input type="file" name="file" />
-                <input type="submit" class="btn" value="Upload New Version"/>
-            </form>
-
+            <div data-bind="visible: canEdit">
+                <form data-bind="attr: { action: uploadUrl }" method="post" enctype="multipart/form-data">
+                    <input type="file" name="file" />
+                    <input type="submit" class="btn" value="Upload New Version"/>
+                </form>
+            </div>
             <div class="col-md-4">
                 <table class="table table-striped" id="file-version-history">
                     ## TODO this stuff copied from osffiles_view_file.mako
