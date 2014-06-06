@@ -68,6 +68,8 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         has_released_files=has_released_files,
         authorized=authorized,
     )
+    buttons = [rubeus.build_addon_button('Release Study', 'releaseStudy')] \
+        if state == 'draft' else None
 
     return [rubeus.build_addon_root(
         node_settings,
@@ -75,10 +77,7 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
         urls=urls,
         permissions=permissions,
         extra=state_append,
-        button={
-            'text': 'Release Study',
-            'action': 'releaseStudy',
-        } if state == 'draft' else None,
+        buttons=buttons,
         study=study_name,
         doi=study.doi,
         dataverse=dataverse.title,

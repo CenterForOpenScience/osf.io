@@ -41,11 +41,11 @@
         });
     }
 
-    // Register configuration
-    Rubeus.cfg.dataverse = {
-        // Handle events
-        releaseStudy: function (evt, row) {
-            var url = row.urls.release
+    // Define HGrid Button Actions
+    HGrid.Actions['releaseStudy'] = {
+        on: 'click',
+        callback: function (evt, row) {
+            var url = row.urls.release;
             bootbox.confirm(
                 'By releasing this study, all content will be ' +
                     'made available through the Harvard Dataverse using their ' +
@@ -56,8 +56,7 @@
                         $.ajax({
                             url: url,
                             type: 'POST',
-                            contentType: 'application/json',
-                            dataType: 'json',
+                            dataType: 'json'
                         }).success(function() {
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
@@ -72,7 +71,12 @@
                     }
                 }
             )
-        },
+        }
+    }
+
+    // Register configuration
+    Rubeus.cfg.dataverse = {
+        // Handle events
         listeners: [
             {
                 on: 'change',
