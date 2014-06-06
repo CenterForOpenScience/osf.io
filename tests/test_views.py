@@ -43,7 +43,7 @@ from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, DashboardFactory
 )
 
 
@@ -210,6 +210,28 @@ class TestProjectViews(OsfTestCase):
         assert_in('watched_count', data['node'])
         assert_in('registered_from_url', data['node'])
         # TODO: Test "parent" and "user" output
+
+    def test_api_get_folder_pointers(self):
+        dashboard = DashboardFactory(creator=self.user1)
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = dashboard.api_url + "get_folder_pointers/"
+        dashboard.add_pointer(project_one, auth=self.consolidate_auth1)
+        dashboard.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_in(project_one._id, pointers)
+        assert_in(project_two._id, pointers)
+        assert_equal(len(pointers), 2)
+
+    def test_api_get_folder_pointers_from_non_folder(self):
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = project_one.api_url + "get_folder_pointers/"
+        project_one.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_equal(len(pointers), 0)
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
