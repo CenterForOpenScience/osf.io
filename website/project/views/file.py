@@ -47,7 +47,7 @@ def grid_data(**kwargs):
 def file_url_to_versions(current_url):
     versions = []
 
-    m = re.match(r'(.*version/)(\d)(.*)', current_url)
+    m = re.match(r'(.*version/)(\d+)(.*)', current_url)
     prefix = m.group(1)
     current_version = int(m.group(2))
     postfix = m.group(3)
