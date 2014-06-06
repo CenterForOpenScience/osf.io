@@ -97,7 +97,7 @@ def mongo(daemon=False,
     """Run the mongod process.
     """
     port = settings.DB_PORT
-    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
+    cmd = "mongod --port {0}".format(port)
     if daemon:
         cmd += " --fork"
     run(cmd)

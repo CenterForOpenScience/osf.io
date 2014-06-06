@@ -1,7 +1,9 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
-services: mongodb
+services: 
+    - mongodb
+    - elasticsearch
 
 python:
   - "2.7"

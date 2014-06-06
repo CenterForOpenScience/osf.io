@@ -4,12 +4,12 @@ from urllib2 import HTTPError
 import logging
 
 from framework import must_be_logged_in, request, status
-from website.search.solr_search import search_solr
+import website.search.search as search #TODO(fabianvf) This is just awful
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery as Q
+from modularodm.storage.mongostorage import RawQuery 
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -17,7 +17,7 @@ logger = logging.getLogger('search.routes')
 
 def search_search():
     tick = time.time()
-    # solr search results are automatically paginated. on the pages that are
+    # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     if 'pagination' in request.args:
         start = int(request.args.get('pagination'))
@@ -35,9 +35,11 @@ def search_search():
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
-    # and spellcheck suggestions are returned to us
+    # and spellcheck suggestions are returned to us     
     try:
-        results, highlights, spellcheck_results = search_solr(query, start)
+#        results, highlights, spellcheck_results = search(query, start) #TODO(fabianvf)
+        results_search, tags, total = search.search(query, start)
+        logger.warn(str(results_search))
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -47,16 +49,16 @@ def search_search():
         }
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to display
-    result_search, tags = create_result(highlights, results['docs'])
-    total = results['numFound']
+#    result_search, tags = create_result(highlights, results['docs']) #TODO(fabianvf)
+#    total = results_search['numFound']
     # Whether or not the user is searching for users
     searching_users = query.startswith("user:")
     return {
-        'highlight': highlights,
-        'results': result_search,
-        'total': total,
+        'highlight': [], #TODO(fabianvf)
+        'results': results_search,
+        'total': total, #TODO(fabianvf)
         'query': query,
-        'spellcheck': spellcheck_results,
+        'spellcheck': [], #TODO(fabianvf)
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
@@ -73,20 +75,20 @@ def search_projects_by_title(**kwargs):
     max_results = 10
 
     matching_title = (
-        Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', 'project') &  # is a project
-        Q('is_deleted', 'eq', False)  # isn't deleted
+        RawQuery('title', 'icontains', term) &  # search term (case insensitive)
+        RawQuery('category', 'eq', 'project') &  # is a project
+        RawQuery('is_deleted', 'eq', False)  # isn't deleted
     )
 
     my_projects = Node.find(
         matching_title &
-        Q('contributors', 'contains', user._id)  # user is a contributor
+        RawQuery('contributors', 'contains', user._id)  # user is a contributor
     ).limit(max_results)
 
     if my_projects.count() < max_results:
         public_projects = Node.find(
             matching_title &
-            Q('is_public', 'eq', True)  # is public
+            RawQuery('is_public', 'eq', True)  # is public
         ).limit(max_results - my_projects.count())
     else:
         public_projects = []
@@ -312,8 +314,5 @@ def _search_contributor(query, exclude=None):
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
-
-    return _search_contributor(
-        query=request.args.get('query', ''),
-        exclude=exclude,
-    )
+    return search.search_contributor(request.args.get('query',''), exclude)
+   

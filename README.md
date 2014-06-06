@@ -153,10 +153,10 @@ $ invoke solr
 $ invoke solr_migrate
 ```
 
-- In your `website/settings/local.py` file, set `USE_SOLR` to True.
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
 
 ```python
-USE_SOLR = True
+SEARCH_ENGINE = 'solr'
 ```
 
 ### Starting A Local Solr Server
