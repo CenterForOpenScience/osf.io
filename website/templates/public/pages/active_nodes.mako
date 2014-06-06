@@ -68,7 +68,7 @@
             <div class="row">
                 <div class="col-md-10">
                     <h4 class="list-group-item-heading overflow" style="width:85%">
-                        <a href="${node.url+url_suffix}∞">${node.title}</a>
+                        <a href="${node.url+url_suffix}">${node.title}</a>
                     </h4>
                 </div>
                 <div class="col-md-2">
