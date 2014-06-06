@@ -38,7 +38,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory
+    AuthUserFactory, DashboardFactory
 )
 
 app = init_app(set_backends=False, routes=True)
@@ -1041,6 +1041,29 @@ class TestRemoveNode(OsfTestCase):
 
         # target node shouldn't be deleted
         assert_false(target.is_deleted)
+
+
+class TestDashboard(OsfTestCase):
+
+    def setUp(self):
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = DashboardFactory(creator=self.user)
+
+    def test_dashboard_is_dashboard(self):
+        assert_equal(self.project.is_dashboard, True)
+
+    def test_dashboard_is_folder(self):
+        assert_equal(self.project.is_folder, True)
+
+    def test_cannot_remove_dashboard(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.consolidate_auth)
+
+    def test_cannot_have_two_dashboards(self):
+        with assert_raises(NodeStateError):
+            DashboardFactory(creator=self.user)
 
 
 class TestAddonCallbacks(OsfTestCase):

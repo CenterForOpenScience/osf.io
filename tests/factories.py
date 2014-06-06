@@ -120,6 +120,9 @@ class AbstractNodeFactory(ModularOdmFactory):
 class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
+class DashboardFactory(ProjectFactory):
+    is_dashboard = True
+    is_folder = True
 
 class NodeFactory(AbstractNodeFactory):
     category = 'hypothesis'
