@@ -1,17 +1,17 @@
 ## Template for the "Dataverse" section in the "Configure Add-ons" panel
 
-<h4 class="addon-title">Dataverse</h4>
-
-
 <div id='dataverseAddonScope' class='addon-settings scripted'>
 
-    <!-- Delete Access Token Button -->
-     <div data-bind="if: showDeleteAuth">
-        <div class="well well-sm">
-            Authorized by Dataverse user {{ dataverseUsername }}
-            <a data-bind="click: deleteKey" class="text-danger pull-right" style="cursor: pointer">Delete Credentials</a>
-        </div>
-    </div>
+    <h4 class="addon-title">
+        Dataverse
+        <span data-bind="if: showDeleteAuth">
+            <small class="authorized-by">
+                authorized by {{ dataverseUsername }}
+                <a data-bind="click: deleteKey"
+                   class="btn btn-danger pull-right">Delete Credentials</a>
+            </small>
+        </span>
+    </h4>
 
     <!-- Create Access Token Button -->
     <form data-bind="if: showInputCredentials">
