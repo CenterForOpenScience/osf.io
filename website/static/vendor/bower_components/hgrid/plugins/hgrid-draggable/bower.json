@@ -28,7 +28,7 @@
     "tests"
   ],
   "dependencies": {
-    "hgrid": "~0.1.1"
+    "hgrid": ">=0.1.2"
   },
   "devDependencies": {
     "qunit": "~1.14.0"
