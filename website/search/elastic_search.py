@@ -59,11 +59,6 @@ def search(raw_query, start=0):
                     }
                 }   
             }
-        },
-        'highlight':{
-            'fields':{
-                'wikis':{}
-            }
         }
     }
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
@@ -163,6 +158,7 @@ def delete_doc(elastic_document_id, node):
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 def create_result(results, highlights):
+    logger.error(results)
     ''' Takes list of dicts of the following structure:
     {
         'category': {NODE CATEGORY},
@@ -192,10 +188,43 @@ def create_result(results, highlights):
         'is_registration': {TRUE OR FALSE}, 
         'highlight': [{NO IDEA}]
     }
-    ''' 
+    '''
+    formatted_results = []
+    word_cloud = {}
+    for result in results:
+        # User results are handled specially
+        if 'user' in result:
+            formatted_results.append({
+                'id':result['id']
+                ,'user':result['user']
+                ,'user_url':'/profile/'+result['id']
+            })
+        else:
+            # Build up word cloud
+            for tag in result['tags']:
+                word_cloud[tag] = 1 \
+                        if word_cloud.get(tag, None) is None else word_cloud[tag]+1
+ 
+            # Format dictionary for output
+            formatted_results.append({
+                'contributors': result['contributors']
+                ,'wiki_link': '' if result['wikis'].get('home',None) is None \
+                        else '/' + result['id'] + '/wiki/home/'
+                ,'title': result['parent_title'] if result.get('parent_title', None) is not '' \
+                        else result['title']
+                ,'url': result['url']
+                ,'nest':{}
+                ,'tags':result['tags']
+                ,'contributors_url': result['contributors_url']
+                ,'is_registration': result['registeredproject']
+                ,'highlight': []#TODO(fabianvf)
+            })
 
+    return formatted_results, word_cloud
+
+    ''' Old method below
     result_search = []
-    tags = {}
+    tags = {} 
     for result in results:
         container = {}
         doc_id = result['id']
@@ -328,6 +357,7 @@ def create_result(results, highlights):
                     else:
                         tags[tag] += 1
             result_search.append(container)
+    '''
 #    logger.warn(str(result_search))
     return result_search, tags
 
