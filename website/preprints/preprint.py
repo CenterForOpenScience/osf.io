@@ -1,9 +1,13 @@
 import httplib as http
 from flask import request
-from framework import must_be_logged_in
+from framework import must_be_logged_in, redirect
+from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
 from website.project import new_node
-from website.project.utils import prepare_file
+from website.project.decorators import must_be_contributor
 from os.path import basename
+from website.project.views.file import prepare_file
+
 
 @must_be_logged_in
 def preprint_new(**kwargs):
@@ -39,4 +43,34 @@ def upload_preprint_new(**kwargs):
         content_type=file_content_type,
     )
 
-    return {"url": preprint_component.url+'preprint/'}, 201, None, preprint_component.url+'preprint/'
+    return redirect(preprint_component.url+'preprint/')
+
+
+@must_be_contributor
+def upload_preprint(**kwargs):
+    #todo: This is wholesale copied from add_file_to_node with different permissions stuff. fix that.
+    upload = request.files.get('file')
+    upload.filename = u'preprint.pdf'
+    if not upload:
+        raise HTTPError(http.BAD_REQUEST)
+
+    name, content, content_type, size = prepare_file(upload)
+    project = kwargs.get('project')
+    if not project:
+        raise HTTPError(http.BAD_REQUEST)
+
+    auth = Auth(user=project.contributors[0])
+
+    node = kwargs.get('node')
+    if not node:
+        node = project
+
+    node.add_file(
+        auth=auth,
+        file_name=name,
+        content=content,
+        size=size,
+        content_type=content_type,
+    )
+    node.save()
+    return redirect(node.url + 'preprint/')

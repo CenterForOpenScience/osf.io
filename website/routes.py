@@ -15,7 +15,7 @@ from framework.auth import get_current_user
 from website import settings, language, util
 from website import views as website_views
 from website.addons.base import views as addon_views
-from website.preprints.preprint import preprint_new, upload_preprint_new
+from website.preprints.preprint import preprint_new, upload_preprint_new, upload_preprint
 from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
@@ -975,7 +975,7 @@ def make_url_map(app):
             '/api/v1/project/<pid>/node/<nid>/preprint/upload/'
         ],
              'post',
-             project_views.file.upload_preprint,
+             upload_preprint,
              json_renderer
         ),
 
