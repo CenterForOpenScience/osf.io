@@ -1,0 +1,25 @@
+{
+  "name": "hgrid",
+  "title": "HGrid",
+  "description": "A Javascript-based hierarchical grid that can be used to manage and organize files and folders",
+  "version": "0.1.2",
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-cli": "~0.1.7",
+    "grunt-contrib-jshint": "~0.8.0",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.4",
+    "grunt-contrib-cssmin": "~0.6.1",
+    "grunt-contrib-qunit": ">=0.3.0",
+    "grunt-contrib-copy": "~0.5.0",
+    "grunt-contrib-watch": "~0.5.3",
+    "coffee-script": "~1.7.1"
+  },
+  "scripts": {
+    "test": "grunt travis --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/CenterForOpenScience/hgrid.git"
+  }
+}

@@ -201,26 +201,6 @@ def test_all():
     test_osf()
     test_addons()
 
-
-# TODO: user bower once hgrid is released
-@task
-def get_hgrid():
-    """Get the latest development version of hgrid and put it in the static
-    directory.
-    """
-    target = 'website/static/vendor/hgrid'
-    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
-    print('Removing old version')
-    run('rm -rf {0}'.format(target))
-    print('Replacing with fresh version')
-    run('mkdir {0}'.format(target))
-    run('mv hgrid/dist/hgrid.js {0}'.format(target))
-    run('mv hgrid/dist/hgrid.css {0}'.format(target))
-    run('mv hgrid/dist/images {0}'.format(target))
-    run('rm -rf hgrid/')
-    print('Finished')
-
-
 @task
 def addon_requirements(mfr=1):
     """Install all addon requirements."""

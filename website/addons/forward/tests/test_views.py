@@ -2,12 +2,12 @@ from nose.tools import *
 
 from website.addons.forward.tests.utils import ForwardAddonTestCase
 
+
 class TestForwardLogs(ForwardAddonTestCase):
 
     def setUp(self):
         super(TestForwardLogs, self).setUp()
         self.app.authenticate(*self.user.auth)
-        self.app.app.test_request_context().push()
 
     def test_change_url_log_added(self):
         log_count = len(self.project.logs)

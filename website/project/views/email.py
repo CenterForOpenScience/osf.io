@@ -41,21 +41,25 @@ MEETING_DATA = {
     'spsp2014': {
         'name': 'SPSP 2014',
         'info_url': None,
+        'logo_url': None,
         'active': False,
     },
     'asb2014': {
         'name': 'ASB 2014',
         'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
+        'logo_url': None,
         'active': True,
     },
     'aps2014': {
         'name': 'APS 2014',
         'info_url': 'http://centerforopenscience.org/aps/',
+        'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
         'active': True,
     },
     'annopeer2014': {
         'name': '#annopeer',
         'info_url': None,
+        'logo_url': None,
         'active': True,
     },
 }

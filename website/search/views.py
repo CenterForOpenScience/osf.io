@@ -9,7 +9,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery 
+from modularodm.storage.mongostorage import RawQuery as Q
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -35,7 +35,7 @@ def search_search():
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
-    # and spellcheck suggestions are returned to us     
+    # and spellcheck suggestions are returned to us
     try:
         results_search, tags, total = search.search(query, start)
     except HTTPError:
@@ -73,20 +73,20 @@ def search_projects_by_title(**kwargs):
     max_results = 10
 
     matching_title = (
-        RawQuery('title', 'icontains', term) &  # search term (case insensitive)
-        RawQuery('category', 'eq', 'project') &  # is a project
-        RawQuery('is_deleted', 'eq', False)  # isn't deleted
+        Q('title', 'icontains', term) &  # search term (case insensitive)
+        Q('category', 'eq', 'project') &  # is a project
+        Q('is_deleted', 'eq', False)  # isn't deleted
     )
 
     my_projects = Node.find(
         matching_title &
-        RawQuery('contributors', 'contains', user._id)  # user is a contributor
+        Q('contributors', 'contains', user._id)  # user is a contributor
     ).limit(max_results)
 
     if my_projects.count() < max_results:
         public_projects = Node.find(
             matching_title &
-            RawQuery('is_public', 'eq', True)  # is public
+            Q('is_public', 'eq', True)  # is public
         ).limit(max_results - my_projects.count())
     else:
         public_projects = []
