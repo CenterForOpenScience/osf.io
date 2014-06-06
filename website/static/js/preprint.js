@@ -16,13 +16,13 @@
     } else {
         global.PreprintViewModel  = factory(ko, jQuery);
     }
-}(this, function(ko, $, FolderPicker, ZeroClipboard) {
+}(this, function(ko, $) {
     'use strict';
     ko.punches.attributeInterpolationMarkup.enable();
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
-    var ViewModel = function(url, folderPicker) {
+    var ViewModel = function(url) {
         var self = this;
 
         self.downloadCurrent = ko.observable('');
@@ -63,11 +63,10 @@
     };
 
     // Public API
-    function PreprintViewModel(selector, url, folderPicker) {
+    function PreprintViewModel(selector, url) {
         var self = this;
         self.url = url;
-        self.folderPicker = folderPicker;
-        self.viewModel = new ViewModel(url, folderPicker);
+        self.viewModel = new ViewModel(url);
         $.osf.applyBindings(self.viewModel, selector);
     }
 

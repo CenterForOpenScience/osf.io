@@ -992,3 +992,9 @@ def get_pointed(**kwargs):
         for each in node.pointed
     ]}
 
+@must_be_logged_in
+def preprint_new(**kwargs):
+    user = kwargs['auth'].user
+    # else:
+    #     push_errors_to_status(form.errors)
+    return {}, http.BAD_REQUEST

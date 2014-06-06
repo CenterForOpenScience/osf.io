@@ -708,7 +708,7 @@ def make_url_map(app):
             project_views.node.project_new_node,
             json_renderer,
         ),
-        # imports API, added by shc7pw        
+        # imports API, added by shc7pw
         Rule(
             [
                 '/project/import/'
@@ -716,7 +716,7 @@ def make_url_map(app):
             'post',
             project_views.imports.import_projects,
             json_renderer,
-        ),        
+        ),
         Rule( # TODO generalize this method
             [
                 '/project/<pid>/upload/',
@@ -979,10 +979,27 @@ def make_url_map(app):
         ),
 
         # Rule([
-        #     '/explore/preprints/'
+        #     '/preprint/'
         # ],
         #      'get',
-        #      project_views.
-        # )
+        #      project_views.preprints,
+        #      OsfWebRenderer('preprints/explore.mako')
+        # ),
+        #
+        Rule([
+            '/preprint/new/'
+        ],
+             'get',
+             project_views.node.preprint_new,
+             OsfWebRenderer('preprints/new.mako')
+        ),
+
+        Rule([
+            '/api/v1/preprint/new/'
+        ],
+             'post',
+             project_views.node.preprint_new,
+             json_renderer
+        ),
 
     ])
