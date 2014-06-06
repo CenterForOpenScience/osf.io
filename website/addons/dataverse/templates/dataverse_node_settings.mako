@@ -21,7 +21,6 @@
         <p>
             <strong>Current Study:</strong>
             <span data-bind="if: showLinkedStudy">
-                This node is linked to
                 <a data-bind="attr.href: savedStudyUrl()"> {{ savedStudyTitle }}</a> on
                 <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }}</a>.
             </span>
