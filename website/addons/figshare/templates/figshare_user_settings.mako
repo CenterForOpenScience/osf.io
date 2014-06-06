@@ -1,14 +1,20 @@
-<%inherit file="project/addon/settings.mako" />
-
 <!-- Authorization -->
 <div>
-    % if authorized:
-        <a id="figshareDelKey" class="btn btn-danger">Delete Access Token</a>
-    % else:
-        <a id="figshareAddKey" class="btn btn-primary">
-            Create Access Token
-        </a>
-    % endif
+    <h4 class="addon-title">
+        FigShare
+        % if authorized:
+            <small class="authorized-by">
+                authorized
+            </small>
+            <a id="figshareDelKey" class="btn btn-danger pull-right">
+                Delete Access Token
+            </a>
+        % else:
+            <a id="figshareAddKey" class="btn btn-primary pull-right">
+                Create Access Token
+            </a>
+        % endif
+    </h4>
 </div>
 
 <script type="text/javascript">
