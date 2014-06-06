@@ -8,6 +8,9 @@ services:
 python:
   - "2.7"
 
+before_install:
+    - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.1.1.deb && sudo dpkg -i elasticsearch-1.1.1.deb && sudo service elasticsearch restart
+
 install:
     - cp website/settings/local-travis.py website/settings/local.py
     - pip install invoke
