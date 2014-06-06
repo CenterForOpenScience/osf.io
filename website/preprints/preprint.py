@@ -3,7 +3,7 @@ from flask import request
 from framework import must_be_logged_in
 from website.project import new_node
 from website.project.utils import prepare_file
-
+from os.path import basename
 
 @must_be_logged_in
 def preprint_new(**kwargs):
@@ -16,7 +16,7 @@ def upload_preprint_new(**kwargs):
     # todo: validation that file is pdf
     auth = kwargs['auth']
     file = request.files.get('file')
-    title = file.filename
+    title = basename(file.filename)
     file.filename = u'preprint.pdf'
 
     description = 'Automatically generated as a preprint for ' + title
