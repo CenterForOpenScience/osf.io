@@ -233,6 +233,16 @@ class TestProjectViews(OsfTestCase):
         pointers = res.json
         assert_equal(len(pointers), 0)
 
+    def test_new_user_gets_dashboard_on_dashboard_path(self):
+        my_user = AuthUserFactory()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard','eq', True))
+        assert_equal(dashboard.count(), 0)
+        url = '/api/v1/dashboard/get_dashboard/'
+        self.app.get(url, auth=my_user.auth)
+        my_user.reload()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard','eq', True))
+        assert_equal(dashboard.count(), 1)
+
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
