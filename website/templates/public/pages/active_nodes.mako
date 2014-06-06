@@ -11,6 +11,7 @@
             <ul class="nav nav-stacked nav-pills">
                 <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
                 <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
+                <li><a href="#newPreprints">Newest Preprints</a></li>
                 <li><a href='#popularPublicProjects'>Popular Public Projects</a></li>
                 <li><a href='#popularPublicRegistrations'>Popular Public Registrations</a></li>
             </ul>
@@ -31,6 +32,12 @@
                 ${node_list(recent_public_registrations, prefix='newest_public', metric='date_created')}
             </ul>
         </section>
+        <section id='newPreprints'>
+            <h3>Newest Preprints</h3>
+            <ul class='project-list list-group'>
+                ${node_list(recent_preprints, prefix='newest_public', metric='date_created', url_suffix='preprint/')}
+            </ul>
+        </section>
         <section id='popularPublicProjects'>
             <h3>Popular Public Projects</h3>
             <ul class='project-list list-group'>
@@ -47,7 +54,7 @@
   </div><!-- /.row -->
 
 
-    <%def name="node_list(nodes, default=0, prefix='', metric='hits')">
+    <%def name="node_list(nodes, default=0, prefix='', metric='hits', url_suffix='')">
     %for node in nodes:
         <%
             #import locale
@@ -61,7 +68,7 @@
             <div class="row">
                 <div class="col-md-10">
                     <h4 class="list-group-item-heading overflow" style="width:85%">
-                        <a href="${node.url}">${node.title}</a>
+                        <a href="${node.url+url_suffix}∞">${node.title}</a>
                     </h4>
                 </div>
                 <div class="col-md-2">

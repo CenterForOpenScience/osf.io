@@ -71,9 +71,23 @@ def activity():
         '-date_created'
     ).limit(10)
 
+    recent_preprints_query = (
+        Q('category', 'eq', 'preprint') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+    recent_preprints_query = recent_preprints_query & Q('contributors', 'ne', [])
+
+    recent_preprints = Node.find(
+        recent_preprints_query
+    ).sort(
+        '-date_created'
+    ).limit(10)
+
     return {
         'recent_public_projects': recent_public_projects,
         'recent_public_registrations': recent_public_registrations,
+        'recent_preprints': recent_preprints,
         'popular_public_projects': popular_public_projects,
         'popular_public_registrations': popular_public_registrations,
         'hits': hits,
