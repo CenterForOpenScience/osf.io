@@ -967,6 +967,22 @@ def make_url_map(app):
              'get',
              project_views.file.preprint_files,
              json_renderer
-        )
+        ),
+
+        Rule([
+            '/api/v1/project/<pid>/preprint/upload/',
+            '/api/v1/project/<pid>/node/<nid>/preprint/upload/'
+        ],
+             'post',
+             project_views.file.upload_preprint,
+             json_renderer
+        ),
+
+        # Rule([
+        #     '/explore/preprints/'
+        # ],
+        #      'get',
+        #      project_views.
+        # )
 
     ])

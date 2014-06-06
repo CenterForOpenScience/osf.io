@@ -12,7 +12,7 @@ from framework.exceptions import HTTPError
 from framework.render.tasks import build_rendered_html
 from framework.auth.decorators import Auth
 
-from website.project.decorators import must_be_contributor_or_public, must_have_valid_signature, must_be_valid_project
+from website.project.decorators import must_be_contributor_or_public, must_have_valid_signature, must_be_valid_project, must_be_contributor
 from website import settings
 from website.project.views.node import _view_project
 
@@ -129,7 +129,35 @@ def add_file_to_node(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     auth = Auth(user=project.contributors[0])
-        
+
+    node = kwargs.get('node')
+    if not node:
+        node = project
+
+    node.add_file(
+        auth=auth,
+        file_name= name,
+        content=content,
+        size=size,
+        content_type=content_type,
+    )
+    node.save()
+    return {"status": "Upload success"}
+
+@must_be_contributor
+def upload_preprint(**kwargs):
+    upload = request.files.get('file')
+    upload.filename = u'preprint.pdf'
+    if not upload:
+        raise HTTPError(http.BAD_REQUEST)
+
+    name, content, content_type, size = prepare_file(upload)
+    project = kwargs.get('project')
+    if not project:
+        raise HTTPError(http.BAD_REQUEST)
+
+    auth = Auth(user=project.contributors[0])
+
     node = kwargs.get('node')
     if not node:
         node = project

@@ -30,6 +30,7 @@
         self.showPreprint    = ko.observable(false);
         self.canEdit         = ko.observable(false);
         self.response = ko.observable({}); // for debugging only
+        self.uploadUrl = ko.observable(url + "upload/");
 
         self.updateFromData = function(data) {
             self.downloadCurrent(data.downloadCurrent);

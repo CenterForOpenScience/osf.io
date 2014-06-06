@@ -179,7 +179,26 @@
 
 ##            <p><a data-bind="attr: { href: downloadCurrent }">Download Current Version</a></p>
 
-            <p><input type="file"/></p>
+            <form action="/api/v1/project/7incv/node/7beip/preprint/upload/" method="post" enctype="multipart/form-data">
+##            <form data-bind="attr: { action: uploadUrl }" method="post" enctype="multipart/form-data">
+                <input type="file" name="file" />
+                <input type="submit" class="btn" value="Upload New Version"/>
+            </form>
+
+            <script>
+                $('.formrelright').submit(function (event) {
+                    event.preventDefault();
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: $(this).serialize(),
+                        success: function (data) {
+                            // Whatever you want
+                        }
+                    });
+                });
+            </script>
 
             <div class="col-md-4">
                 <table class="table table-striped" id="file-version-history">
