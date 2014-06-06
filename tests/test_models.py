@@ -1616,7 +1616,7 @@ class TestTemplateNode(OsfTestCase):
         # check that all children were copied
         assert_equal(
             [x.title for x in new.nodes],
-            [self._default_title(x) for x in self.project.nodes],
+            [x.title for x in self.project.nodes],
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -1724,8 +1724,8 @@ class TestTemplateNode(OsfTestCase):
 
         # check that all children were copied
         assert_equal(
-            [x.title for x in new.nodes],
-            [self._default_title(x) for x in visible_nodes]
+            set(x.template_node._id for x in new.nodes),
+            set(x._id for x in visible_nodes),
         )
         # ensure all child nodes were actually copied, instead of moved
         assert_true({x._primary_key for x in new.nodes}.isdisjoint(

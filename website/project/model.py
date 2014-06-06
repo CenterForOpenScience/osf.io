@@ -400,7 +400,7 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
-    def use_as_template(self, auth, changes=None):
+    def use_as_template(self, auth, changes=None, top_level=False):
         return self._clone()
 
     def resolve(self):
@@ -722,7 +722,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Methods that return a new instance #
     ######################################
 
-    def use_as_template(self, auth, changes=None):
+    def use_as_template(self, auth, changes=None, top_level=True):
         """Create a new project, using an existing project as a template.
 
         :param auth: The user to be assigned as creator
@@ -770,8 +770,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.is_registration = False
 
         # If that title hasn't been changed, apply the default prefix (once)
-        if (new.title == self.title and
-                language.TEMPLATED_FROM_PREFIX not in new.title):
+        if (new.title == self.title
+                and top_level
+                and language.TEMPLATED_FROM_PREFIX not in new.title):
             new.title = ''.join((language.TEMPLATED_FROM_PREFIX, new.title, ))
 
         # Slight hack - date_created is a read-only field.
@@ -806,7 +807,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # deal with the children of the node, if any
         new.nodes = [
-            x.use_as_template(auth, changes)
+            x.use_as_template(auth, changes, top_level=False)
             for x in self.nodes
             if x.can_view(auth)
         ]
