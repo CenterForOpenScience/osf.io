@@ -2,7 +2,7 @@ var gulp = require('gulp');
 
 var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
-var qunit = require('gulp-qunit');
+var qunit = require('node-qunit-phantomjs');
 var concat = require('gulp-concat');
 
 var RELEASE_NAME = 'hgrid-draggable.js';
@@ -13,8 +13,7 @@ var WATCH_ACTIONS = ['concat', 'test'];
 var DEFAULT_ACTIONS = ['concat', 'compress', 'test'];
 
 gulp.task('test', function() {
-  gulp.src('./tests/index.html')
-    .pipe(qunit());
+  qunit('./tests/index.html', {verbose: true});
 });
 
 // Concatenate files
