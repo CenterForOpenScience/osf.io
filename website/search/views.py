@@ -37,9 +37,7 @@ def search_search():
     # the document, highlight,
     # and spellcheck suggestions are returned to us     
     try:
-#        results, highlights, spellcheck_results = search(query, start) #TODO(fabianvf)
         results_search, tags, total = search.search(query, start)
-        logger.warn(str(results_search))
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
