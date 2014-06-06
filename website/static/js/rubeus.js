@@ -105,6 +105,20 @@
             });
         }
     }
+    if (item.button) {
+        var button = item.button;
+        buttonDefs.push({
+            text: button.text,
+            action: button.action,
+            cssClass: 'btn btn-primary btn-mini'
+        });
+        HGrid.Actions[button.action] = {
+            on: 'click',
+            callback: function (evt, item) {
+                resolveCfgOption(item, button.action, [evt, item])
+            }
+        }
+    }
     return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
@@ -126,6 +140,20 @@
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
             });
+        }
+        if (row.button) {
+            var button = row.button;
+            buttonDefs.push({
+                text: button.text,
+                action: button.action,
+                cssClass: 'btn btn-primary btn-mini'
+            });
+            HGrid.Actions[button.action] = {
+                on: 'click',
+                callback: function (evt, item) {
+                    resolveCfgOption(row, button.action, [evt, item])
+                }
+            }
         }
         if (buttonDefs) {
             return ['<span class="' + Rubeus.buttonContainer + '">', HGrid.Fmt.buttons(buttonDefs),

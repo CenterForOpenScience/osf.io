@@ -1,4 +1,4 @@
- <i id="dataverseGetCitation" class="icon-info-sign"></i>
+## State selector
 % if authorized:
     % if has_released_files:
         <select class="dataverse-state-select">
@@ -8,9 +8,8 @@
     % else:
         [Draft]
     % endif
-    % if state == "draft" and file_page:
-        <a id="dataverseReleaseStudy">Release Study</a>
-    % endif
 % else:
     [Released]
 % endif
+## Metadata
+<i id="dataverseGetCitation" class="icon-info-sign"></i>
