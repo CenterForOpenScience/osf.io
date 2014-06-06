@@ -23,7 +23,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 ALLOW_CLAIMING = True
 
-USE_SOLR = False
+SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', 'both', or 'none'
 SOLR_URI = 'http://localhost:8983/solr/'
 
 # Sessions

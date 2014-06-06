@@ -12,7 +12,7 @@ DB_PORT = 27017
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
-USE_SOLR = False
+SEARCH_ENGINE = 'elastic'
 USE_EMAIL = False
 USE_CELERY = False
 
