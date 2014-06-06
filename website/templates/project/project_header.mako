@@ -133,7 +133,7 @@
             </button>
             <div class="container-fluid">
                 <div class="row">
-                    <ul class="nav navbar-nav project-nav collapse navbar-collapse">
+                    <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
                         <li><a href="${node['url']}">Dashboard</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>
@@ -169,4 +169,21 @@
 
         </nav>
     </header>
+
+    <script>
+        ##   TODO: Take this out of the mako file. This was a quick fix and likely not to live for very long, but it's not
+        ##      the proper way to do it.
+
+        $(function () {
+            var path = window.location.pathname;
+
+            $(".project-nav a").each(function () {
+                var href = $(this).attr('href');
+                if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                    $(this).closest('li').addClass('active');
+                }
+            });
+        });
+    </script>
+
 </div><!-- end projectScope -->

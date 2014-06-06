@@ -132,8 +132,8 @@ ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
     'dropbox',
-    # 'badges', 'forward',
-    'dataverse',
+    # 'badges',
+    'forward',
 ]
 
 ADDON_CATEGORIES = [
