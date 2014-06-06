@@ -3,18 +3,16 @@ import logging
 import httplib as http
 
 from modularodm.exceptions import ModularOdmException
+
 from framework.flask import request
 from framework import push_errors_to_status, Q
-
 from framework import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
-
 from website import language
-
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -29,8 +27,8 @@ from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
 from website.profile import utils
-
 from .log import _get_logs
+
 
 logger = logging.getLogger(__name__)
 
@@ -992,9 +990,5 @@ def get_pointed(**kwargs):
         for each in node.pointed
     ]}
 
-@must_be_logged_in
-def preprint_new(**kwargs):
-    user = kwargs['auth'].user
-    # else:
-    #     push_errors_to_status(form.errors)
-    return {}, http.BAD_REQUEST
+
+

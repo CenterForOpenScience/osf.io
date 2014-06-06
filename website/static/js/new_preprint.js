@@ -20,7 +20,7 @@
             required: true,
             minLength: 3
         });
-        self.file = ko.observable();
+        self.submitUrl = ko.observable(submitUrl);
 
         // Preserve object of validated fields for use in `submit`
         var validatedFields = {
@@ -100,10 +100,11 @@
                 return;
             }
             // Else submit
+            var formData = $(form).serialize()
             $.ajax({
                 type: 'POST',
                 url: submitUrl,
-                data: ko.toJSON(self),
+                data: formData,
                 contentType: 'application/json',
                 dataType: 'json',
                 success: self.submitSuccess,

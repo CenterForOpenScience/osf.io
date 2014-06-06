@@ -15,6 +15,7 @@ from framework.auth import get_current_user
 from website import settings, language, util
 from website import views as website_views
 from website.addons.base import views as addon_views
+from website.preprints.preprint import preprint_new, upload_preprint_new
 from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
@@ -990,15 +991,15 @@ def make_url_map(app):
             '/preprint/new/'
         ],
              'get',
-             project_views.node.preprint_new,
+             preprint_new,
              OsfWebRenderer('preprints/new.mako')
         ),
 
         Rule([
-            '/api/v1/preprint/new/'
+            '/preprint/new/'
         ],
              'post',
-             project_views.node.preprint_new,
+             upload_preprint_new,
              json_renderer
         ),
 

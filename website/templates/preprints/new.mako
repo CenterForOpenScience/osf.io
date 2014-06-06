@@ -5,50 +5,30 @@
     <div id="newPreprintScope" class="img-rounded centered col-md-6 scripted">
         <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
 
-        <form data-bind="submit: submit, css: {hideValidation: !showValidation()}">
-
-            <div
-                    class="form-group"
-                    data-bind="css: {'has-error': paperName() && !paperName.isValid()}">
-                <input
-                        class="form-control"
-                        placeholder="Paper Name"
-                        data-bind="value: paperName,
-                                       valueUpdate: 'input',
-                                       disable: submitted(),
-                                       event: {
-                                           focus: hideValidation,
-                                           blur: trim.bind($data, paperName)
-                                       }"
-                        />
-            </div>
-
-            <div
-                    class="form-group">
-                <input
-                        class="form-control"
-                        type="file"
-                        data-bind="value: file"
-                        />
-            </div>
 
 
-            <!-- Flashed Messages -->
-            <div class="help-block">
-                <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
-            </div>
+        <form action="" method="post" enctype="multipart/form-data">
+##            <div
+##                    class="form-group"
+##                    data-bind="css: {'has-error': paperName() && !paperName.isValid()}">
+##                <input
+##                        class="form-control"
+##                        placeholder="Paper Name"
+##                        data-bind="value: paperName,
+##                                       valueUpdate: 'input',
+##                                       disable: submitted(),
+##                                       event: {
+##                                           focus: hideValidation,
+##                                           blur: trim.bind($data, paperName)
+##                                       }"
+##                        />
+##            </div>
 
-            <div>
-                <button
-                        type="submit"
-                        class="btn btn-danger"
-                        data-bind="visible: !submitted()"
-                        >Create Preprint Project</button>
-            </div>
-
+            <input type="file" name="file" />
+            <input type="submit" class="btn" value="Upload File"/>
         </form>
 
-    </div><!-- end #signUpScope -->
+    </div>
 </%def>
 
 <%def name="stylesheets()">
@@ -61,7 +41,7 @@
         $script.ready('newPreprint', function() {
             var newPreprint = new NewPreprint(
                     '#newPreprintScope',
-                    '${api_url_for('preprint_new')}'
+                    '${api_url_for('upload_preprint_new')}'
             );
         });
     </script>

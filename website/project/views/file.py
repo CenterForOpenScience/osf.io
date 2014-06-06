@@ -17,7 +17,7 @@ from website import settings
 from website.project.views.node import _view_project
 
 import re
-  
+
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
@@ -122,7 +122,7 @@ def add_file_to_node(**kwargs):
     upload = request.files.get('file')
     if not upload:
         raise HTTPError(http.BAD_REQUEST)
-    
+
     name, content, content_type, size = prepare_file(upload)
     project = kwargs.get('project')
     if not project:
@@ -146,6 +146,7 @@ def add_file_to_node(**kwargs):
 
 @must_be_contributor
 def upload_preprint(**kwargs):
+    #todo: This is wholesale copied from add_file_to_node with different permissions stuff. fix that.
     upload = request.files.get('file')
     upload.filename = u'preprint.pdf'
     if not upload:
