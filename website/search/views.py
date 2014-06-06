@@ -118,64 +118,8 @@ def search_projects_by_title(**kwargs):
 
     return out
 
-def _search_contributor(query, exclude=None):
-    """Search for contributors to add to a project using Solr. Request must
-    include JSON data with a "query" field.
-
-    :param: Search query
-    :return: List of dictionaries, each containing the ID, full name, and
-        gravatar URL of an OSF user
-
-    """
-    
-    # Prepare query
-    query = re.sub(r'[\-\+]', ' ', query)
-
-    # Prepend "user:" to each token in the query; else Solr will search for
-    # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
-    # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
-    # so must search for (Barack OR Barack*).
-    q = ' AND '.join([ #TODO(fabianvf) This logic needs to be moved to the search engine-specific files
-        u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
-        for token in re.split(r'\s+', query)
-    ])
-
-#    result = search(q) #TODO(fabianvf) This whole block will probably need a rewrite
-    docs = search.search(q)[0]
-
-#    docs = result.get('docs', [])
-
-    if exclude:
-        docs = (x for x in docs if x.get('id') not in exclude)
-
-    users = []
-    for doc in docs:
-        # TODO: use utils.serialize_user
-        user = User.load(doc['id'])
-        if user is None:
-            logger.error('Could not load user {0}'.format(doc['id']))
-            continue
-        if user.is_active():  # exclude merged, unregistered, etc.
-            users.append({
-                'fullname': doc['user'],
-                'email': user.username,
-                'id': doc['id'],
-                'gravatar_url': gravatar(
-                    user,
-                    use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
-                ),
-                'registered': user.is_registered,
-                'active': user.is_active()
-            })
-
-    return {'users': users}
-
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
     return search.search_contributor(request.args.get('query',''), exclude)
-    #return _search_contributor( #TODO(fabianvf)
-    #    query=request.args.get('query', ''),
-    #    exclude=exclude,
-    #)
+   

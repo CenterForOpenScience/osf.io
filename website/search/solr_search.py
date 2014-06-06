@@ -9,18 +9,17 @@ from website.models import User, Node
 import logging
 import sunburnt
 from .utils import clean_solr_doc 
+import socket
 
-
+logging.basicConfig() #TODO
 logger = logging.getLogger(__name__)
 
-if (settings.SEARCH_ENGINE in ['solr', 'all']):
+if (settings.SEARCH_ENGINE == 'solr'):
     try:
         solr = sunburnt.SolrInterface(settings.SOLR_URI)
-    except Exception as e:
+    except socket.error as e:
         logger.error(e)
-        logger.warn("The USE_SOLR setting is enabled but there was a problem "
-                    "starting the Solr interface. Is the Solr server running?")
-        solr = None
+        logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
 else:
     solr = None
     logger.warn("Solr is not set to start")
@@ -150,8 +149,6 @@ def search(query, start=0):
         'spellcheck': 'true', 'spellcheck.collate': 'true',
         'start': start, 'rows': 10}
     import logging
-#    logger = logging.getLogger(__name__)
-#    logger.warn(query_args)
     encoded_args = urllib.urlencode(_encoded_dict(query_args))
     url = '{}spell?{}&wt=python'.format(settings.SOLR_URI, encoded_args)
     # post to the url
@@ -165,6 +162,7 @@ def search(query, start=0):
         if 'spellcheck' in result else None
     # highlight
     highlight = result['highlighting']
+    logger.warn(highlight)
     # and the list of documents
     result = result['response']
     # look for specllcheck,
@@ -354,6 +352,7 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+#        import pdb;pdb.set_trace()
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue

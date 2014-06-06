@@ -9,60 +9,14 @@ from framework.auth.decorators import Auth
 from website import settings
 
 if settings.SEARCH_ENGINE != 'none':
-    settings.SEARCH_ENGINE = 'solr'
+    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
 reload(search)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
-class TestCleanSolr(unittest.TestCase): #TODO(fabianvf)
-    """Ensure that invalid XML characters are appropriately removed from
-    Solr data documents.
-
-    """
-
-    def test_clean_string(self):
-        dirty_string = u'roger\x0btaylor'
-        assert_equal(
-            clean_solr_doc(dirty_string),
-            'rogertaylor'
-        )
-
-    def test_clean_list(self):
-        dirty_strings = [
-            u'slightly\x0bmad',
-            [
-                u'banana\x0ctree',
-            ]
-        ]
-        assert_equal(
-            clean_solr_doc(dirty_strings),
-            [
-                'slightlymad',
-                [
-                    'bananatree',
-                ]
-            ]
-        )
-
-    def test_clean_dict(self):
-        dirty_strings = {
-            'bass': u'john\x0bdeacon',
-            'guitar' : {
-                'brian': u'may\x0b',
-            },
-        }
-        assert_equal(
-            clean_solr_doc(dirty_strings),
-            {
-                'bass': 'johndeacon',
-                'guitar': {
-                    'brian': 'may',
-                }
-            }
-        )
-
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
+
+        
     def tearDown(self):
         search.delete_all() #TODO(fabianvf)
 
@@ -76,7 +30,7 @@ def query_user(name):
     term = 'user:"{}"'.format(name) #TODO(fabianvf) this syntax is not yet specified for elastic
     return query(term)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestUserUpdate(SearchTestCase):
 
     def test_new_user(self):
@@ -85,6 +39,8 @@ class TestUserUpdate(SearchTestCase):
         """
         # Create user
         user = UserFactory(fullname='David Bowie')
+#        import time
+#        time.sleep(2)
         # Verify that user has been added to Solr
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
@@ -98,13 +54,16 @@ class TestUserUpdate(SearchTestCase):
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
         user.save()
+#        import time
+#        time.sleep(2)
+
         docs_original = query_user(fullname_original)
         assert_equal(len(docs_original), 0)
 
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestProject(SearchTestCase):
 
     def setUp(self):
@@ -124,7 +83,7 @@ class TestProject(SearchTestCase):
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestPublicProject(SearchTestCase):
 
     def setUp(self):
@@ -245,7 +204,7 @@ class TestPublicProject(SearchTestCase):
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestAddContributor(SearchTestCase):
     """Tests of the search.search_contributor method
 

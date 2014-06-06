@@ -59,13 +59,18 @@ def search(raw_query, start=0):
                     }
                 }   
             }
+        },
+        'highlight':{
+            'fields':{
+                'wikis':{}
+            }
         }
     }
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    highlights = []
     numFound = raw_results['hits']['total']
-    formatted_results, tags = create_result(results)
-#    logger.warn(str(formatted_results))
+    formatted_results, tags = create_result(results, highlights)
     return formatted_results, tags, numFound
 
 
@@ -141,6 +146,7 @@ def update_user(user):
 
 def delete_all():
     try:
+        elastic.delete_by_query('website', ['user','project','component'], {'query':{'match_all':{}}})
         elastic.delete_index('website')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
@@ -156,7 +162,7 @@ def delete_doc(elastic_document_id, node):
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
-def create_result(results):
+def create_result(results, highlights):
     ''' Takes list of dicts of the following structure:
     {
         'category': {NODE CATEGORY},
@@ -377,13 +383,13 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+        logger.warn(doc['id'])
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
         if user.is_active():  # exclude merged, unregistered, etc.
             users.append({
                 'fullname': doc['user'],
-                'email': user.username,
                 'id': doc['id'],
                 'gravatar_url': gravatar(
                     user,
