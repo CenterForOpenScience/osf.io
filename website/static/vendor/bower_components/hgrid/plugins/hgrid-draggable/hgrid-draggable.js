@@ -29,7 +29,7 @@ this.Draggable = (function($, HGrid) {
   var defaults = {
     /*jshint unused: false */
 
-    onDrop: function(event, movedItems, folder) {},
+    onDrop: function(event, items, folder) {},
     onDrag: function(event, items) {},
     acceptDrop: function(item, folder, done) {},
     canDrag: function(item) {
@@ -39,8 +39,10 @@ this.Draggable = (function($, HGrid) {
       return true;
     },
 
-    // Additional options passed to the Slick.RowMoveManager constructor
-    rowMoveManagerOptions: {}
+    // Additional options passed to the HGrid.RowMoveManager constructor
+    rowMoveManagerOptions: {},
+    // Additional options passed to the HGrid.RowSelectionModel constructor
+    rowSelectionModelOptions: {}
   };
 
   /** Public interface **/
@@ -59,6 +61,9 @@ this.Draggable = (function($, HGrid) {
     self._folderTarget = null;
   }
 
+  Draggable.prototype.setTarget = function(folder) {
+    this._folderTarget = folder;
+  };
 
   // Initialization function called by HGrid#registerPlugin
   Draggable.prototype.init = function(grid) {
@@ -68,8 +73,8 @@ this.Draggable = (function($, HGrid) {
     var slickgrid = grid.grid;
 
     // Set selection model
-    slickgrid.setSelectionModel(new HGrid.RowSelectionModel());
-
+    var rowSelectionModelOptions = self.options.rowSelectionModelOptions;
+    slickgrid.setSelectionModel(new HGrid.RowSelectionModel(rowSelectionModelOptions));
 
     // Configure the RowMoveManager
     var rowMoveManagerOptions = $.extend(
@@ -105,10 +110,7 @@ this.Draggable = (function($, HGrid) {
       // indices of the rows to move
       var indices = args.rows;
 
-      var movedItems = indices.map(function(rowIdx) {
-        return dataView.getItemByIdx(rowIdx);
-      });
-
+      var movedItems = args.items;
       var errorFunc = function(error){
         if (error) {
           throw new HGrid.Error(error);
@@ -147,7 +149,6 @@ this.Draggable = (function($, HGrid) {
       self.options.onDrop.call(self, event, movedItems, self._folderTarget);
     };
 
-    // TODO: Is this callback necessary?
     var onDragStart = function(event, dd) {
       var cell = slickgrid.getCellFromEvent(event);
       if (!cell) {
@@ -165,11 +166,11 @@ this.Draggable = (function($, HGrid) {
 
       event.stopImmediatePropagation();
 
-      var selectedRows = grid.getSelectedRows();
+      var selectedRows = slickgrid.getSelectedRows();
 
       if (!selectedRows.length || $.inArray(dd.row, selectedRows) === -1) {
         selectedRows = [dd.row];
-        grid.setSelectedRows(selectedRows);
+        slickgrid.setSelectedRows(selectedRows);
       }
 
       dd.rows = selectedRows;
@@ -202,13 +203,14 @@ this.Draggable = (function($, HGrid) {
       if (args.insertBefore) {
         parent = getParent(args.insertBefore);
         if (parent) {
-          self._folderTarget = parent;
+          self.setTarget(parent);
           grid.addHighlight(self._folderTarget);
         }
       }
       self.options.onDrag.call(self, event, args.items, parent);
     };
 
+    // TODO: test that this works
     var canDrag = function(item) {
       // invoke user-defined function
       return self.options.canDrag.call(this, item);
@@ -229,6 +231,7 @@ this.Draggable = (function($, HGrid) {
 
     slickgrid.onDragStart.subscribe(onDragStart);
   };
+
 
   Draggable.prototype.destroy = function() {
     this.rowMoveManager.destroy();
@@ -348,12 +351,13 @@ this.Draggable = (function($, HGrid) {
       var movedItems = dd.selectedRows.map(function(rowIdx) {
         return _grid.getData().getItemByIdx(rowIdx);
       });
+      dd.movedItems = movedItems;
 
       if (insertBefore !== dd.insertBefore) {
         var eventData = {
           rows: dd.selectedRows,
           insertBefore: insertBefore,
-          items: movedItems
+          items: dd.movedItems
         };
 
         if (_self.onBeforeMoveRows.notify(eventData) === false) {
@@ -386,8 +390,9 @@ this.Draggable = (function($, HGrid) {
 
       if (dd.canMove) {
         var eventData = {
-          "rows": dd.selectedRows,
-          "insertBefore": dd.insertBefore
+          'rows': dd.selectedRows,
+          'items': dd.movedItems,
+          'insertBefore': dd.insertBefore
         };
         // TODO:  _grid.remapCellCssClasses ?
         _self.onMoveRows.notify(eventData);

@@ -49,8 +49,9 @@ grid.registerPlugin(draggable);
 - `onDrag(event, items)`: Fired while items are being dragged
 - `onDrop(event, items, folder)`: Fired when items are dropped into a folder.
 - `canDrag(item)`: Returns whether an item can be dragged.
-- `rowMoveManagerOptions`: Additional options passed to the `Slick.RowMoveManager` constructor
 - `acceptDrop(item, folder, done)`: Validation function that is invoked when an item is dropped into a folder. `done` is a function that, if called with a string argument, raises the error message and prevents the drop from proceeding.
+- `rowMoveManagerOptions`: Additional options passed to the `Slick.RowMoveManager` constructor
+- `rowSelectionModelOptions`: Additional options passed to the `HGrid.RowSelectionModel` constructor
 
 
 ## TODO
