@@ -999,6 +999,12 @@ class TestNode(OsfTestCase):
         #todo Add file series of tests
         pass
 
+    def test_not_a_folder(self):
+        assert_equal(self.node.is_folder, False)
+
+    def test_not_a_dashboard(self):
+        assert_equal(self.node.is_dashboard, False)
+
 
 class TestRemoveNode(OsfTestCase):
 
