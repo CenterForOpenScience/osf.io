@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE in ["elastic", "all"]:
     try:
-        elastic = pyelasticsearch.ElasticSearch("http://localhost:9201")
+        elastic = pyelasticsearch.ElasticSearch()
         logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
         logging.getLogger('requests').setLevel(logging.DEBUG)
     except Exception as e:
