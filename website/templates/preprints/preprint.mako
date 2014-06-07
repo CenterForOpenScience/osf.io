@@ -197,8 +197,9 @@
                         acceptedFiles: 'application/pdf',
                         init: function() {
                             this.on("complete", function(file) { koPreprint.viewModel.fetchFromServer(); });
-                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
-                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
+##                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
+##                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
+                            this.on("queuecomplete", function(file) { koPreprint.viewModel.fetchFromServer(); });
                         }
                     };
                 });
@@ -217,7 +218,8 @@
                     </tr>
                     </thead>
 
-                    <tbody data-bind="foreach: versions">
+                    <tbody>
+                    <!-- ko foreach: versions -->
                     <tr>
                         <td>
                             {{version}}
@@ -228,6 +230,7 @@
                             </a>
                         </td>
                     </tr>
+                    <!-- /ko -->
                     </tbody>
 
                 </table>
