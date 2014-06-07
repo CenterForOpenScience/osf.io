@@ -177,15 +177,34 @@
 
         <div class="col-md-12" data-bind="visible: showPreprint">
             ## TODO: Asynchronous upload, reload table on page rather than redirecting
+##            <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
             <div data-bind="visible: canEdit">
-                <form data-bind="attr: { action: uploadUrl }"
-                      method="post"
-                      enctype="multipart/form-data"
-                      class="dropzone"
-                      id="preprint-upload-dz">
-                </form>
-            </div>
+##            <form data-bind="attr: { action: uploadUrl }"
+            <form action='${node["api_url"]+"preprint/upload/"}'
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="dropzone"
+                  id="preprint-upload-dz">
+                      <span class="dz-message">
+                          Click or Drag Here to Upload Files
+                        </span>
+            </form>
+        </div>
+            <script>
+                $script.ready(['dropzone','preprint'], function() {
+                    Dropzone.options.preprintUploadDz = {
+                        paramname: 'file',
+                        acceptedFiles: 'application/pdf',
+                        init: function() {
+                            this.on("complete", function(file) { koPreprint.viewModel.fetchFromServer(); });
+                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
+                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
+                        }
+                    };
+                });
+            </script>
             <div class="col-md-4">
+                <div data-bind="visible: uploading">Uploading!</div>
                 <table class="table table-striped" id="file-version-history">
                     ## TODO this stuff copied from osffiles_view_file.mako
 
@@ -214,19 +233,11 @@
                 </table>
             </div>
 
-            <script>
-                $script.ready('dropzone', function() {
-                    Dropzone.options.preprintUploadDz = {
-                        paramname: 'file',
-                        acceptedFiles: 'application/pdf'
-                    };
-                });
-            </script>
 
 
         </div>
-##        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
-    </div>
+        ##        <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+            </div>
 
     <div class="col-md-12">
         <!-- Citations -->
@@ -434,7 +445,9 @@
     <script>
         $script.ready('preprint', function() {
             var url = '${node["api_url"]}' + "preprint/";
-            var koPreprint = new PreprintViewModel('#preprintScope', url);
+            // TODO: Not sure this is great
+            // Adds koPreprint to the global namespace so we can ask it to update the viewmodel
+            koPreprint = new PreprintViewModel('#preprintScope', url);
         });
     </script>
 </%def>

@@ -19,18 +19,22 @@
 }(this, function(ko, $) {
     'use strict';
     ko.punches.attributeInterpolationMarkup.enable();
+    ko.punches.enableAll();
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
     var ViewModel = function(url) {
         var self = this;
 
-        self.downloadCurrent = ko.observable('');
-        self.versions        = ko.observable([]);
-        self.showPreprint    = ko.observable(false);
-        self.canEdit         = ko.observable(false);
-        self.response = ko.observable({}); // for debugging only
-        self.uploadUrl = ko.observable(url + "upload/");
+        self.downloadCurrent  = ko.observable('');
+        self.showPreprint     = ko.observable(false);
+        self.versions = ko.observable([]);
+        self.canEdit          = ko.observable(false);
+        self.response         = ko.observable({}); // for debugging only
+        self.uploadUrl        = ko.observable(url + "upload/");
+
+        self.uploading = ko.observable(false);
+
 
         self.updateFromData = function(data) {
             self.downloadCurrent(data.downloadCurrent);
@@ -72,3 +76,4 @@
 
     return PreprintViewModel;
 }));
+
