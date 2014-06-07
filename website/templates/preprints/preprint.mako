@@ -195,9 +195,11 @@
                     console.debug('huh.');
                     Dropzone.options.preprintUploadDz = {
                         init: function() {
-                            this.on("complete", function(file) { koPreprint.viewModel.fetchFromServer(); });
+                            this.on("complete", function(file) {
+                                koPreprint.viewModel.uploading(false);
+                                koPreprint.viewModel.fetchFromServer();
+                            });
                             this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
-                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
 ##                            this.on("complete", function(file) { console.debug("complete"); });
 ##                            this.on("addedfile", function(file) { console.debug("addedfile"); });
 ##                            this.on("queuecomplete", function(file) { console.debug("queuecomplete"); });
@@ -208,7 +210,6 @@
                 });
             </script>
             <div class="col-md-4">
-                <div data-bind="visible: uploading">Uploading!</div>
                 <table class="table table-striped" id="file-version-history">
                     ## TODO this stuff copied from osffiles_view_file.mako
 
@@ -221,7 +222,15 @@
                     </tr>
                     </thead>
 
-                    <tbody data-bind="foreach: versions">
+                    <tbody>
+                        <!-- ko if: uploading-->
+                            <tr>
+                                <td>...</td>
+                                <td>...</td>
+                            </tr>
+                        <!-- /ko -->
+
+                        <!-- ko foreach: versions -->
                     <tr>
                         <td>
                             {{version}}
@@ -232,6 +241,7 @@
                             </a>
                         </td>
                     </tr>
+                        <!-- /ko -->
                     </tbody>
 
                 </table>
