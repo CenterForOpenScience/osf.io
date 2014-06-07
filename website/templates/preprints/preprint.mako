@@ -192,15 +192,18 @@
         </div>
             <script>
                 $script.ready(['dropzone','preprint'], function() {
+                    console.debug('huh.');
                     Dropzone.options.preprintUploadDz = {
-                        paramname: 'file',
-                        acceptedFiles: 'application/pdf',
                         init: function() {
                             this.on("complete", function(file) { koPreprint.viewModel.fetchFromServer(); });
-##                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
-##                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
-                            this.on("queuecomplete", function(file) { koPreprint.viewModel.fetchFromServer(); });
-                        }
+                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
+                            this.on("queuecomplete", function(file) { koPreprint.viewModel.uploading(false) });
+##                            this.on("complete", function(file) { console.debug("complete"); });
+##                            this.on("addedfile", function(file) { console.debug("addedfile"); });
+##                            this.on("queuecomplete", function(file) { console.debug("queuecomplete"); });
+                        },
+                        paramname: 'file',
+                        acceptedFiles: 'application/pdf',
                     };
                 });
             </script>
@@ -218,8 +221,7 @@
                     </tr>
                     </thead>
 
-                    <tbody>
-                    <!-- ko foreach: versions -->
+                    <tbody data-bind="foreach: versions">
                     <tr>
                         <td>
                             {{version}}
@@ -230,7 +232,6 @@
                             </a>
                         </td>
                     </tr>
-                    <!-- /ko -->
                     </tbody>
 
                 </table>
