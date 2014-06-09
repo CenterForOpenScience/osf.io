@@ -1,6 +1,6 @@
 # OSF 
 
-<img src="https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master">
+[![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=develop)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
 
 
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/

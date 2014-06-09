@@ -3,6 +3,6 @@
 nose
 factory-boy==2.2.1
 webtest-plus
-invoke
+invoke==0.7.0
 mock
 fake-factory
