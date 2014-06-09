@@ -38,7 +38,8 @@ def search(raw_query, start=0):
             }
         ]
     }
-    raw_query.replace('AND', ' ')
+    raw_query = raw_query.replace('AND', ' ')
+    raw_query = raw_query.replace('and', ' ')
     if 'user:' in raw_query:
         doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
