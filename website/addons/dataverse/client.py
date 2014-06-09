@@ -13,13 +13,30 @@ def connect(username, password, host=HOST):
         host=host,
         disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
     )
-    if connection.status == http.FORBIDDEN:
-        raise HTTPError(http.FORBIDDEN)
     return connection if connection.connected else None
 
 
 def connect_from_settings(user_settings):
     return connect(
+        user_settings.dataverse_username,
+        user_settings.dataverse_password
+    ) if user_settings else None
+
+
+def connect_or_403(username, password, host=HOST):
+    connection = DvnConnection(
+        username=username,
+        password=password,
+        host=host,
+        disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+    )
+    if connection.status == http.FORBIDDEN:
+        raise HTTPError(http.FORBIDDEN)
+    return connection if connection.connected else None
+
+
+def connect_from_settings_or_403(user_settings):
+    return connect_or_403(
         user_settings.dataverse_username,
         user_settings.dataverse_password
     ) if user_settings else None

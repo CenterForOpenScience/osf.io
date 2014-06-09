@@ -7,8 +7,10 @@
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
                 authorized by {{ dataverseUsername }}
-                <a data-bind="click: deleteKey"
-                   class="btn btn-danger pull-right">Delete Credentials</a>
+                <span data-bind="ifnot: showInputCredentials">
+                    <a data-bind="click: deleteKey"
+                        class="btn btn-danger pull-right">Delete Credentials</a>
+                </span>
             </small>
         </span>
     </h4>
@@ -30,6 +32,10 @@
         <button data-bind="click: sendAuth" class="btn btn-success">
             Submit
         </button>
+        <span data-bind="if: showDeleteAuth">
+            <a data-bind="click: deleteKey"
+                class="btn btn-danger pull-right">Delete Credentials</a>
+        </span>
     </form>
 
     <!-- Flashed Messages -->

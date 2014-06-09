@@ -1,7 +1,8 @@
 import httplib as http
 
+from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
-from website.addons.dataverse.client import connect_from_settings
+from website.addons.dataverse.client import connect_from_settings_or_403
 from website.project import decorators
 from website.util import api_url_for
 
@@ -36,7 +37,13 @@ def dataverse_user_config_get(user_addon, auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dataverse user settings.
     """
-    connection = connect_from_settings(user_addon)
+    try:
+        connection = connect_from_settings_or_403(user_addon)
+    except HTTPError as error:
+        if error.code == 403:
+            connection = None
+        else:
+            raise
 
     urls = {
         'create': api_url_for('dataverse_set_user_config'),
