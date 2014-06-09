@@ -140,9 +140,23 @@ def solr():
     run("java -jar start.jar", pty=True)
 
 @task
-def solr_migrate():
-    '''Migrate the solr-enabled models.'''
-    run("python -m website.solr_migration.migrate")
+def elasticsearch():
+    '''Start a local elasticsearch server
+
+    NOTE: Requires that elasticsearch is installed. See README for instructions
+    '''
+    import platform
+    if platform.linux_distribution()[0] == 'Ubuntu':
+        run("sudo service elasticsearch start")
+    elif platform.system() == 'Darwin': # Mac OSX
+        run('elasticsearch')
+    else:
+        print("Your system is not recognized, you will have to start elasticsearch manually")
+
+@task
+def migrate_search():
+    '''Migrate the search-enabled models.'''
+    run("python -m website.search_migration.migrate")
 
 @task
 def mailserver(port=1025):
