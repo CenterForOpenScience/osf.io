@@ -1,0 +1,44 @@
+{
+  "name": "hgrid",
+  "version": "0.1.2",
+  "homepage": "https://github.com/CenterForOpenScience/hgrid.git",
+  "authors": [
+    "Jake Rosenberg <jakerose27@gmail.com>",
+    "Alex Ferguson",
+    "Steven Loria <sloria1@gmail.com>"
+  ],
+  "description": "A Javascript-based hierarchical grid that can be used to manage and organize files and folders",
+  "main": "src/hgrid.js",
+  "keywords": [
+    "grid",
+    "file",
+    "files",
+    "folder",
+    "folders",
+    "filebrowser",
+    "management",
+    "upload",
+    "uploading"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jQuery": ">=1.9.0"
+  },
+  "_release": "0.1.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.2",
+    "commit": "be918a4e345164cfab882f553ee1a1a2b198e31a"
+  },
+  "_source": "git://github.com/CenterForOpenScience/hgrid.git",
+  "_target": "~0.1.2",
+  "_originalSource": "hgrid",
+  "_direct": true
+}

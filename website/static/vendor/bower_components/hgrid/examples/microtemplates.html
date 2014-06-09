@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../src/hgrid.css" type="text/css" />
+    <link rel="stylesheet" href="./normalize.css">
+    <link rel="stylesheet" href="./examples.css">
+    <title>HGrid: Microtemplating example</title>
+</head>
+<body>
+
+<div class="box">
+<h1>HGrid Supports Microtemplates for Views</h1>
+<div class='hgrid' id="myGrid"></div>
+</div>
+
+<script src="../lib/jquery-1.10.2.js"></script>
+<script src="../dist/hgrid.js"></script>
+
+<script>
+var myData = {
+  data: [{
+      name: 'My Computer',
+      kind: 'folder',
+      children: [{
+        name: 'My Documents',
+        kind: 'folder',
+        children: [{
+          name: 'Scripts',
+          kind: 'folder',
+          children: [{
+            name: 'foo.py',
+            kind: 'file',
+            size: 123
+          },
+          {name: 'Empty Folder', kind: 'folder'}]
+        }, ]
+      }, {
+        name: 'My Music',
+        kind: 'folder',
+        children: [{
+          name: 'bar.mp3',
+          kind: 'file',
+          size: 456
+        }]
+      }]
+    }]
+};
+
+var grid = new HGrid('#myGrid', {data: myData,
+                      columns: [
+                        HGrid.Columns.Name,
+                        {name: 'File size',
+                          sortable: true, key: 'size',
+                          itemView: '<em>{{ size }} KB</em>'}
+                      ],
+                      width: 500, height: 200});
+
+</script>
+</body>
+</html>
