@@ -94,7 +94,6 @@ class NodeFile(GuidStoredObject):
     def download_url(self, node):
         # Catch KeyError if file is in `files_current` but not in
         # `files_versions`
-
         try:
             return '{}osffiles/{}/version/{}/download/'.format(
                 node.url, self.filename, self.version_number(node)
