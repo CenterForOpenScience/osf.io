@@ -200,6 +200,37 @@ def upload_file_public(**kwargs):
 
     return file_info, 201
 
+
+def file_versions(file_name, node):
+    versions = []
+
+    file_name_clean = file_name.replace('.', '_')
+
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+    for idx, version in enumerate(list(reversed(files_versions))):
+        node_file = NodeFile.load(version)
+        number = len(files_versions) - idx
+        unique, total = get_basic_counters('download:{}:{}:{}'.format(
+            node._primary_key,
+            file_name_clean,
+            number,
+        ))
+        versions.append({
+            'file_name': file_name,
+            'download_url': node_file.download_url(node),
+            'number': number,
+            'display_number': number if idx > 0 else 'current',
+            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            'total': total if total else 0, # todo: not a very descriptive name
+            'committer_name': node_file.uploader.fullname,
+            'committer_url': node_file.uploader.url,
+        })
+    return versions
+
+
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
@@ -211,7 +242,7 @@ def view_file(**kwargs):
 
 
     file_name = kwargs['fid']
-    file_name_clean = file_name.replace('.', '_')
+    file_name_clean = file_name.replace('.', '_') # TODO: this is confusing -- there's a function for cleaning file names in this module with different behavior
 
     try:
         guid = OsfGuidFile.find_one(
@@ -258,31 +289,7 @@ def view_file(**kwargs):
         logger.error('File {} not found on disk.'.format(file_path))
         raise HTTPError(http.NOT_FOUND)
 
-    versions = []
-
-    try:
-        files_versions = node.files_versions[file_name_clean]
-    except KeyError:
-        raise HTTPError(http.NOT_FOUND)
-
-    for idx, version in enumerate(list(reversed(files_versions))):
-        node_file = NodeFile.load(version)
-        number = len(files_versions) - idx
-        unique, total = get_basic_counters('download:{}:{}:{}'.format(
-            node._primary_key,
-            file_name_clean,
-            number,
-        ))
-        versions.append({
-            'file_name': file_name,
-            'download_url': node_file.download_url(node),
-            'number': number,
-            'display_number': number if idx > 0 else 'current',
-            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            'total': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
-        })
+    versions = file_versions(file_name, node)
 
     _, file_ext = os.path.splitext(file_path.lower())
 
@@ -311,11 +318,12 @@ def preprint_files(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
 
-    files = rubeus.to_hgrid(node, auth, **data)[0]['children']
+    files = rubeus.to_hgrid(node, auth)[0]['children']
     rv = {'supplements': []}
     for f in files:
         if f['name'] == 'preprint.pdf':
             rv['pdf'] = f
+            rv['pdf']['versions'] = file_versions('preprint.pdf', node)
         else:
             rv['supplements'].append(f)
     return rv
