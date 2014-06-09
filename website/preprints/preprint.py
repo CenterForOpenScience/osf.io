@@ -31,6 +31,7 @@ def upload_preprint_new(**kwargs):
     project.save()
 
     preprint_component = new_node('preprint', title + " Preprint", auth.user, project=project)
+    preprint_component.set_privacy('public', auth=auth)
     preprint_component.save()
 
 
