@@ -92,6 +92,7 @@ api_routes = {
 
         Rule(
             '/project/<pid>/osffiles/',
+            '/project/<pid>/node/<nid>/osffiles/',
             'get',
             views.get_osffiles,
             json_renderer,

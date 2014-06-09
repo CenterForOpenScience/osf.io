@@ -221,9 +221,9 @@
                     <thead>
                     <tr>
                         <th>Version</th>
-                        <!-- <th>Date</th> --> <!-- TODO: add this data to api -->
-                        <!-- <th>User</th> <!-- TODO: add this data to api -->
-                        <th colspan=2>Download</th><!-- TODO: add download count to api -->
+                        <th>Date</th> <!-- TODO: add this data to api -->
+                        <th>User</th> <!-- TODO: add this data to api -->
+                        <th colspan=2>Downloads</th><!-- TODO: add download count to api -->
                     </tr>
                     </thead>
 
@@ -232,16 +232,21 @@
                             <tr>
                                 <td>...</td>
                                 <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
+                                <td>...</td>
                             </tr>
                         <!-- /ko -->
 
                         <!-- ko foreach: versions -->
                     <tr>
+                        <td>{{number}}</td>
+                        <td>{{date_uploaded}}</td>
+                        <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                        ## download count; 'Downloads' column 1
+                        <td>{{total}}</td>
                         <td>
-                            {{version}}
-                        </td>
-                        <td>
-                            <a href="{{url}}" download="{{version}}">
+                            <a href="{{download_url}}" download="{{number}}">
                                 <i class="icon-download-alt"></i>
                             </a>
                         </td>

@@ -13,6 +13,7 @@ from framework.auth import views as auth_views
 from framework.auth import get_current_user
 from website import settings, language, util
 from website import views as website_views
+from website.addons.osffiles import views as osffiles_views
 from website.addons.base import views as addon_views
 from website.osf_web_renderer import OsfWebRenderer
 from website.preprints.preprint import preprint_new, upload_preprint_new, upload_preprint
@@ -929,7 +930,7 @@ def make_url_map(app):
             '/api/v1/project/<pid>/node/<nid>/preprint/'
         ],
              'get',
-             project_views.file.preprint_files,
+             osffiles_views.preprint_files,
              json_renderer
         ),
 
