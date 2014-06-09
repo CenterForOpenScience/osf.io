@@ -1,5 +1,4 @@
 import nose
-import unittest
 from nose.tools import *
 import mock
 import json
@@ -65,7 +64,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_false(self.node_settings.study)
         assert_false(self.node_settings.user_settings)
 
-    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings_or_403')
     def test_user_config_get(self, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -80,7 +79,7 @@ class TestDataverseViewsAuth(DataverseAddonTestCase):
         assert_in('create', result['urls'])
         assert_in('delete', result['urls'])
 
-    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.auth.connect_from_settings_or_403')
     def test_user_config_get_no_connection(self, mock_connection):
         mock_connection.return_value = None
 

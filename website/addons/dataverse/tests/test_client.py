@@ -5,13 +5,15 @@ from framework.exceptions import HTTPError
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.client import (connect, delete_file, upload_file,
     get_file, get_file_by_id, get_files, release_study, get_studies, get_study,
-    get_dataverses, get_dataverse, connect_from_settings)
+    get_dataverses, get_dataverse, connect_from_settings, connect_or_403,
+    connect_from_settings_or_403)
 from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.file import DvnFile
 from website.addons.dataverse.dvn.study import Study
 from website.addons.dataverse.model import AddonDataverseUserSettings
-from website.addons.dataverse.settings import DISABLE_SSL_CERTIFICATE_VALIDATION
+from website.addons.dataverse.settings import HOST, \
+    DISABLE_SSL_CERTIFICATE_VALIDATION
 
 
 class TestClient(DataverseAddonTestCase):
@@ -59,14 +61,30 @@ class TestClient(DataverseAddonTestCase):
         assert_equal(c, None)
 
     @mock.patch('website.addons.dataverse.client.DvnConnection')
-    def test_connect_forbidden(self, mock_dvn_connection):
+    def test_connect_or_403(self, mock_dvn_connection):
+        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj.connected = True
+        mock_obj.status = 200
+        mock_dvn_connection.return_value = mock_obj
+
+        c = connect_or_403('My user', 'My pw', 'My host')
+
+        mock_dvn_connection.assert_called_once_with(
+            username='My user', password='My pw', host='My host',
+            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+        )
+
+        assert_true(c)
+
+    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    def test_connect_or_403_forbidden(self, mock_dvn_connection):
         mock_obj = mock.create_autospec(DvnConnection)
         mock_obj.connected = False
         mock_obj.status = 403
         mock_dvn_connection.return_value = mock_obj
 
         with assert_raises(HTTPError) as cm:
-            connect('My user', 'My pw', 'My host')
+            connect_or_403('My user', 'My pw', 'My host')
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
@@ -90,6 +108,45 @@ class TestClient(DataverseAddonTestCase):
             user_settings.dataverse_username,
             user_settings.dataverse_password,
         )
+
+    @mock.patch('website.addons.dataverse.client.connect_or_403')
+    def test_connect_from_settings_or_403(self, mock_connect):
+        user_settings = AddonDataverseUserSettings()
+        user_settings.dataverse_username = 'Something ridiculous'
+        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+
+        connection = connect_from_settings_or_403(None)
+        assert_is_none(connection)
+
+        connection = connect_from_settings_or_403(user_settings)
+        assert_true(connection)
+        mock_connect.assert_called_once_with(
+            user_settings.dataverse_username,
+            user_settings.dataverse_password,
+        )
+
+    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    def test_connect_from_settings_or_403_forbidden(self, mock_dvn_connection):
+        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj.connected = False
+        mock_obj.status = 403
+        mock_dvn_connection.return_value = mock_obj
+
+        user_settings = AddonDataverseUserSettings()
+        user_settings.dataverse_username = 'Something ridiculous'
+        user_settings.dataverse_password = 'm04rR1d1cul0u$'
+
+        with assert_raises(HTTPError) as cm:
+            connect_from_settings_or_403(user_settings)
+
+        mock_dvn_connection.assert_called_once_with(
+            username=user_settings.dataverse_username,
+            password=user_settings.dataverse_password,
+            host=HOST,
+            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+        )
+
+        assert_equal(cm.exception.code, 403)
 
     def test_delete_file(self):
         delete_file(self.mock_file)
