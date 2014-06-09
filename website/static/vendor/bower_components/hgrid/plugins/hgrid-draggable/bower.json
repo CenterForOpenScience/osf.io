@@ -28,9 +28,11 @@
     "tests"
   ],
   "dependencies": {
-    "hgrid": "~0.1.1"
+    "hgrid": ">=0.1.2"
   },
   "devDependencies": {
-    "qunit": "~1.14.0"
+    "qunit": "~1.14.0",
+    "sinon-qunit": "http://sinonjs.org/releases/sinon-qunit-1.0.0.js",
+    "sinon": "http://sinonjs.org/releases/sinon-1.10.2.js"
   }
 }
