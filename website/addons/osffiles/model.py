@@ -72,10 +72,11 @@ class NodeFile(GuidStoredObject):
 
     # TODO: Test me
     def version_number(self, node):
-        file_entry = node.files_versions[self.clean_filename]
-        version_index = file_entry.index(self._id)
-        version_number = version_index + 1 # accounting for 0-indexing
-        return version_number
+        file_versions = node.files_versions[self.clean_filename]
+        version_index = file_versions.index(self._id)
+
+        # index + 1 to account for 1-indexing of file version numbers
+        return version_index + 1
 
     # URL methods. Note: since NodeFile objects aren't cloned on forking or
     # registration, the `node` field doesn't necessarily refer to the project
