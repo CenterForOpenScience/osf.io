@@ -3,7 +3,8 @@
 from framework.routing import Rule, json_renderer
 
 from website.addons.dropbox import views
-from website.routes import OsfWebRenderer, notemplate
+from website.osf_web_renderer import OsfWebRenderer
+from website.routes import notemplate
 
 
 auth_routes = {

@@ -3,7 +3,8 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer, render_mako_string
+from website.osf_web_renderer import OsfWebRenderer
+from website.routes import render_mako_string
 
 from . import views
 

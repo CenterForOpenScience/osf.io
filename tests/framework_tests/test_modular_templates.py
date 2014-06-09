@@ -20,7 +20,7 @@ from framework.routing import (
 from tests.base import AppTestCase, OsfTestCase
 
 # Need to use OsfWebRenderer to get global variables
-from website.routes import OsfWebRenderer
+from website.osf_web_renderer import OsfWebRenderer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')

@@ -5,7 +5,7 @@
 import os
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from website.osf_web_renderer import OsfWebRenderer
 
 from . import views
 
@@ -100,9 +100,9 @@ page_routes = {
 }
 
 api_routes = {
-    
+
     'rules': [
-        
+
         # View
         Rule([
             '/project/<pid>/wiki/<wid>/',
@@ -126,9 +126,9 @@ api_routes = {
             '/project/<pid>/wiki/<wid>/version/<vid>/',
             '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
         ], 'get', views.project_wiki_version, json_renderer),
-        
+
     ],
-    
+
     'prefix': '/api/v1',
-    
+
 }

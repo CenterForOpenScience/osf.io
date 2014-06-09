@@ -3,7 +3,8 @@ import unittest
 from flask import Flask
 
 from framework.routing import Rule, json_renderer
-from website.routes import process_rules, OsfWebRenderer
+from website.osf_web_renderer import OsfWebRenderer
+from website.routes import process_rules
 from website.util import web_url_for, api_url_for
 
 
