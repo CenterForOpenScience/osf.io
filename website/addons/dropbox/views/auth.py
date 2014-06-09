@@ -94,10 +94,10 @@ def dropbox_oauth_finish(**kwargs):
     user.add_addon('dropbox')
     user.save()
     user_settings = user.get_addon('dropbox')
-    client = get_client_from_user_settings(user_settings)
     user_settings.owner = user
     user_settings.access_token = result.access_token
     user_settings.dropbox_id = result.dropbox_id
+    client = get_client_from_user_settings(user_settings)
     user_settings.dropbox_info = client.account_info()
     user_settings.save()
 
