@@ -60,7 +60,7 @@ def upload_preprint(**kwargs):
     if not project:
         raise HTTPError(http.BAD_REQUEST)
 
-    auth = Auth(user=project.contributors[0])
+    auth = kwargs['auth']
 
     node = kwargs.get('node')
     if not node:
