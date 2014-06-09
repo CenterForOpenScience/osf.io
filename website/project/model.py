@@ -48,6 +48,7 @@ html_parser = HTMLParser()
 
 logger = logging.getLogger(__name__)
 
+
 def utc_datetime_to_timestamp(dt):
     return float(
         str(calendar.timegm(dt.utcnow().utctimetuple())) + '.' + str(dt.microsecond)
@@ -97,6 +98,17 @@ def ensure_schemas(clear=True):
             schema['name'] = schema['name'].replace(' ', '_')
             schema_obj = MetaSchema(**schema)
             schema_obj.save()
+
+
+class MetaData(GuidStoredObject):
+
+    _id = fields.StringField(primary=True)
+
+    target = fields.AbstractForeignField(backref='metadata')
+    data = fields.DictionaryField()
+
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
 def validate_comment_reports(value, *args, **kwargs):
@@ -489,7 +501,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     # Tags for internal use
-    system_tags = fields.StringField(list=True)
+    system_tags = fields.StringField(list=True, index=True)
 
     nodes = fields.AbstractForeignField(list=True, backref='parent')
     forked_from = fields.ForeignField('node', backref='forked')
