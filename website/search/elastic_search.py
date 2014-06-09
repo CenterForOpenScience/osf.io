@@ -38,7 +38,7 @@ def search(raw_query, start=0):
             }
         ]
     }
-
+    raw_query.replace('AND', ' ')
     if 'user:' in raw_query:
         doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
@@ -188,6 +188,7 @@ def create_result(results, highlights):
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
         'is_registration': {TRUE OR FALSE}, 
         'highlight': [{No longer used, need to phase out}]
+        'description': {PROJECT DESCRIPTION}
     }
     '''
     formatted_results = []
