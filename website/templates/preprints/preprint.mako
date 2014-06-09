@@ -176,33 +176,38 @@
 
 
         <div class="col-md-12" data-bind="visible: showPreprint">
-            ## TODO: Asynchronous upload, reload table on page rather than redirecting
-##            <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
+                ## TODO: Asynchronous upload, reload table on page rather than redirecting
+                ## <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
             <div data-bind="visible: canEdit">
-##            <form data-bind="attr: { action: uploadUrl }"
-            <form action='${node["api_url"]+"preprint/upload/"}'
-                  method="post"
-                  enctype="multipart/form-data"
-                  class="dropzone"
-                  id="preprint-upload-dz">
-                      <span class="dz-message">
-                          Click or Drag Here to Upload Files
-                        </span>
-            </form>
+            <div action='${node["api_url"]+"preprint/upload/"}'
+                 method="post"
+                 enctype="multipart/form-data"
+                 class="dropzone"
+                 id="preprint-upload-dz">
+                <button class="btn dz-message">
+                    Click or Drag Here to Upload Files
+                </button>
+            </div>
+
         </div>
             <script>
                 $script.ready(['dropzone','preprint'], function() {
-                    console.debug('huh.');
                     Dropzone.options.preprintUploadDz = {
+                        previewTemplate: "<span data-dz-name></span>" +
+                                "<p data-dz-name></p>" +
+                                "<img data-dz-thumbnail></img>" +
+                                "<div class='hg-progress' data-dz-uploadprogress></div>" +
+                                "<span data-dz-errormessage></span>",
+                        ## todo: in-progress upload display and error handling
                         init: function() {
                             this.on("complete", function(file) {
+##                                this.removeFile(file);
                                 koPreprint.viewModel.uploading(false);
                                 koPreprint.viewModel.fetchFromServer();
                             });
-                            this.on("addedfile", function(file) { koPreprint.viewModel.uploading(true); });
-##                            this.on("complete", function(file) { console.debug("complete"); });
-##                            this.on("addedfile", function(file) { console.debug("addedfile"); });
-##                            this.on("queuecomplete", function(file) { console.debug("queuecomplete"); });
+                            this.on("addedfile", function(file) {
+                                koPreprint.viewModel.uploading(true);
+                            });
                         },
                         paramname: 'file',
                         acceptedFiles: 'application/pdf',
