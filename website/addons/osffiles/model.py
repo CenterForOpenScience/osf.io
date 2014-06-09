@@ -70,6 +70,13 @@ class NodeFile(GuidStoredObject):
         )
         return total or 0
 
+    # TODO: Test me
+    def version_number(self, node):
+        file_entry = node.files_versions[self.clean_filename]
+        version_index = file_entry.index(self._id)
+        version_number = version_index + 1 # accounting for 0-indexing
+        return version_number
+
     # URL methods. Note: since NodeFile objects aren't cloned on forking or
     # registration, the `node` field doesn't necessarily refer to the project
     # to which a given file is attached. These methods must take a `node`
@@ -87,9 +94,10 @@ class NodeFile(GuidStoredObject):
     def download_url(self, node):
         # Catch KeyError if file is in `files_current` but not in
         # `files_versions`
+
         try:
             return '{}osffiles/{}/version/{}/download/'.format(
-                node.url, self.filename, self.latest_version_number(node)
+                node.url, self.filename, self.version_number(node)
             )
         except KeyError:
             logger.error('File not found in `files_versions`')
