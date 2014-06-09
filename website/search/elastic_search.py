@@ -5,13 +5,15 @@ import collections
 from website.filters import gravatar
 from website.models import User, Node
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE in ["elastic", "all"]:
     try:
-        elastic = pyelasticsearch.ElasticSearch('http://localhost:9200')
+        elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
         logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
         logging.getLogger('requests').setLevel(logging.DEBUG)
+        logger.warn("ELASTIC")
     except Exception as e:
         logger.error(e)
         logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there"
@@ -125,11 +127,9 @@ def update_node(node):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text
 
         try:
-            elastic.update('website', category, id=elastic_document_id, \
-                    doc=elastic_document, upsert=elastic_document, refresh=True)
+            elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document, id=elastic_document_id,\
-                    overwrite_existing=True, refresh=True)
+            elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
 def update_user(user):
@@ -153,10 +153,7 @@ def delete_all():
         logger.error("The index 'website' was not deleted from elasticsearch")
 
 def delete_doc(elastic_document_id, node):
-    if node.category == 'project':
-        category = 'project'
-    else:
-        category = 'component'
+    category = node.project_or_component
     try:
         elastic.delete('website', category, elastic_document_id, refresh=True) 
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
@@ -186,11 +183,11 @@ def create_result(results, highlights):
         'wiki_link': '{LINK TO WIKIS}', 
         'title': '{TITLE TEXT}', 
         'url': '{URL FOR NODE}', 
-        'nest': {NO IDEA}, 
+        'nest': {Nested node attributes}, 
         'tags': [{LIST OF TAGS}], 
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
         'is_registration': {TRUE OR FALSE}, 
-        'highlight': [{NO IDEA}]
+        'highlight': [{No longer used, need to phase out}]
     }
     '''
     formatted_results = []
@@ -247,7 +244,7 @@ def create_result(results, highlights):
                         ,'wiki_link': result['url'] + 'wiki/'
                         ,'contributors': result['contributors'] 
                         ,'contributors_url': result['contributors_url']
-                        ,'highlight':[]#TODO(fabianvf)
+                        ,'highlight':[]
                     }
                 } if parent is not None else {}
                 ,'tags':result['tags']
@@ -255,7 +252,7 @@ def create_result(results, highlights):
                         else parent_contributors_url
                 ,'is_registration': result['registeredproject'] if parent is None\
                         else parent_is_registration
-                ,'highlight': []#TODO(fabianvf)
+                ,'highlight': []
             })
 
     return formatted_results, word_cloud

@@ -14,7 +14,7 @@ import website.search.search as search
 #reload(search)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
-class TestCleanSolr(unittest.TestCase): #TODO(fabianvf)
+class TestCleanSolr(unittest.TestCase):
     """Ensure that invalid XML characters are appropriately removed from
     Solr data documents.
 
@@ -64,16 +64,14 @@ class TestCleanSolr(unittest.TestCase): #TODO(fabianvf)
 @unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
 class SearchTestCase(OsfTestCase):
     def tearDown(self):
-        search.delete_all() #TODO(fabianvf)
-
-
+        search.delete_all()
 def query(term):
     results, _, _ = search.search(term)
     return results
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name) #TODO(fabianvf) this syntax is not yet specified for elastic
+    term = 'user:"{}"'.format(name) 
     return query(term)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')

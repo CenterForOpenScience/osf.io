@@ -534,7 +534,7 @@ class TestMergingAccounts(OsfTestCase):
 
 # FIXME: These affect search in development environment. So need to migrate solr after running.
 # # Remove this side effect.
-@unittest.skipIf(settings.SEARCH_ENGINE == 'none', 'Skipping because search is disabled')
+@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
 class TestSearching(OsfTestCase):
 
     '''Test searching using the search bar. NOTE: These may affect the

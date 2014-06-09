@@ -30,7 +30,6 @@ from framework.analytics import (
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
-#from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -709,8 +708,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
         if need_update:
-            #self.update_solr()
-            self.update_search()#TODO
+            self.update_search()
 
         # This method checks what has changed.
         if settings.PIWIK_HOST:
@@ -1053,7 +1051,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search #TODO(fabianvf)
+        import website.search.search as search
         search.update_node(self)
 
     def remove_node(self, auth, date=None):

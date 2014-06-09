@@ -4,7 +4,7 @@ from urllib2 import HTTPError
 import logging
 
 from framework import must_be_logged_in, request, status
-import website.search.search as search #TODO(fabianvf) This is just awful
+import website.search.search as search 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
@@ -47,16 +47,14 @@ def search_search():
         }
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to display
-#    result_search, tags = create_result(highlights, results['docs']) #TODO(fabianvf)
-#    total = results_search['numFound']
     # Whether or not the user is searching for users
     searching_users = query.startswith("user:")
     return {
-        'highlight': [], #TODO(fabianvf)
+        'highlight': [], 
         'results': results_search,
-        'total': total, #TODO(fabianvf)
+        'total': total, 
         'query': query,
-        'spellcheck': [], #TODO(fabianvf)
+        'spellcheck': [], 
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
@@ -64,8 +62,9 @@ def search_search():
     }
 
 
-@must_be_logged_in
-def search_projects_by_title(**kwargs):
+@must_be_logged_in 
+def search_projects_by_title(**kwargs): 
+    #TODO(fabianvf): At some point, it would be nice to do this with elastic search
 
     term = request.args.get('term')
     user = kwargs['auth'].user

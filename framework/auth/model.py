@@ -484,10 +484,10 @@ class User(GuidStoredObject, AddonModelMixin):
         return rv
 
     def update_search(self):
-        if settings.SEARCH_ENGINE == 'none':
+        if not settings.SEARCH_ENGINE:
             return
 
-        from website.search import search #TODO(fabianvf)
+        from website.search import search
         search.update_user(self)
 
     @classmethod
