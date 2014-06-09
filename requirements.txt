@@ -31,3 +31,4 @@ jsmin>=2.0.7
 cssmin>=0.2.0
 requests==2.0.1
 requests-oauthlib==0.4.0
+raven==5.0.0
