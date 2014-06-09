@@ -25,6 +25,7 @@ ADDONS_REQUESTED = [
 ]
 
 # Email
+USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
