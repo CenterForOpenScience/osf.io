@@ -1977,8 +1977,6 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 1)
         freddie = result[0]
         assert_equal(freddie['fullname'], self.contrib1.fullname)
-        #TODO Should I be passing?
-        assert_equal(freddie['email'], self.contrib1.username)
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
