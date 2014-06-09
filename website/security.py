@@ -22,7 +22,7 @@ class Encryption(object):
     keys = gpg.list_keys()
 
     if not keys:
-        raise ImportError(
+        raise RuntimeError(
             "No GnuPG key found. Did you remember to 'invoke encryption'?"
         )
 
