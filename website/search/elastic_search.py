@@ -38,7 +38,8 @@ def search(raw_query, start=0):
             }
         ]
     }
-
+    raw_query = raw_query.replace('AND', ' ')
+    raw_query = raw_query.replace('and', ' ')
     if 'user:' in raw_query:
         doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
@@ -188,6 +189,7 @@ def create_result(results, highlights):
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
         'is_registration': {TRUE OR FALSE}, 
         'highlight': [{No longer used, need to phase out}]
+        'description': {PROJECT DESCRIPTION}
     }
     '''
     formatted_results = []
@@ -217,6 +219,7 @@ def create_result(results, highlights):
                     parent_tags = parent.tags
                     parent_contributors_url = ['/profile/'+contributor for contributor in parent_contributors]
                     parent_is_registration = parent.is_registration
+                    parent_description = parent.description
                 else:
                     parent_title = '-- private project --'
                     parent_url = ''
@@ -225,6 +228,8 @@ def create_result(results, highlights):
                     parent_tags = []
                     parent_contributors_url = []
                     parent_is_registration = None
+                    parent_description = ''
+
 
 
             # Format dictionary for output
@@ -245,6 +250,7 @@ def create_result(results, highlights):
                         ,'contributors': result['contributors'] 
                         ,'contributors_url': result['contributors_url']
                         ,'highlight':[]
+                        ,'description':result['description']
                     }
                 } if parent is not None else {}
                 ,'tags':result['tags']
@@ -253,6 +259,8 @@ def create_result(results, highlights):
                 ,'is_registration': result['registeredproject'] if parent is None\
                         else parent_is_registration
                 ,'highlight': []
+                ,'description':result['description'] if parent is None\
+                        else parent_description
             })
 
     return formatted_results, word_cloud
