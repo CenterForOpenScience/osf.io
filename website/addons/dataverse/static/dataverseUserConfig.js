@@ -73,8 +73,9 @@
                     self.connected(true);
                     self.changeMessage(language.authSuccess, 'text-info', 5000);
                 },
-                error: function() {
-                    self.changeMessage(language.authError, 'text-danger');
+                error: function(xhr, textStatus, error) {
+                    var errorMessage = (xhr.status==403) ? language.authInvalid : language.authError;
+                    self.changeMessage(errorMessage, 'text-danger');
                 }
             });
         }

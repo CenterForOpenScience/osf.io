@@ -1,6 +1,7 @@
 from nose.tools import *
 import mock
 
+from framework.exceptions import HTTPError
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.client import (connect, delete_file, upload_file,
     get_file, get_file_by_id, get_files, release_study, get_studies, get_study,
@@ -29,6 +30,7 @@ class TestClient(DataverseAddonTestCase):
     def test_connect(self, mock_dvn_connection):
         mock_obj = mock.create_autospec(DvnConnection)
         mock_obj.connected = True
+        mock_obj.status = 200
         mock_dvn_connection.return_value = mock_obj
 
         c = connect('My user', 'My pw', 'My host')
@@ -44,6 +46,7 @@ class TestClient(DataverseAddonTestCase):
     def test_connect_fail(self, mock_dvn_connection):
         mock_obj = mock.create_autospec(DvnConnection)
         mock_obj.connected = False
+        mock_obj.status = 400
         mock_dvn_connection.return_value = mock_obj
 
         c = connect('My user', 'My pw', 'My host')
@@ -54,6 +57,23 @@ class TestClient(DataverseAddonTestCase):
         )
 
         assert_equal(c, None)
+
+    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    def test_connect_forbidden(self, mock_dvn_connection):
+        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj.connected = False
+        mock_obj.status = 403
+        mock_dvn_connection.return_value = mock_obj
+
+        with assert_raises(HTTPError) as cm:
+            connect('My user', 'My pw', 'My host')
+
+        mock_dvn_connection.assert_called_once_with(
+            username='My user', password='My pw', host='My host',
+            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+        )
+
+        assert_equal(cm.exception.code, 403)
 
     @mock.patch('website.addons.dataverse.client.connect')
     def test_connect_from_settings(self, mock_connect):

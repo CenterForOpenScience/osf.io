@@ -43,6 +43,7 @@ def create_mock_connection(username='snowman', password='frosty'):
 
     mock_connection.username = username
     mock_connection.password = password
+    mock_connection.status = 200
 
     mock_connection.get_dataverses.return_value = [
         create_mock_dataverse('Example 1'),

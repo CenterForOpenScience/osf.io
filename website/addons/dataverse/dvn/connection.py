@@ -31,6 +31,7 @@ class DvnConnection(object):
         
         # Connection Status and SWORD Properties
         self.swordConnection = None
+        self.status = None
         self.connected = False
         self.serviceDocument = None
         
@@ -51,6 +52,7 @@ class DvnConnection(object):
         )
 
         self.serviceDocument = self.swordConnection.get_service_document()
+        self.status = self.swordConnection.history[1]['payload']['response']['status']
         self.connected = True if hasattr(self.swordConnection, 'workspaces') else False
         
     def get_dataverses(self):

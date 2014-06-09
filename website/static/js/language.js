@@ -27,6 +27,7 @@
                 deauthError: 'Could not unlink Dataverse at this time.',
                 deauthSuccess: 'Unlinked your Dataverse account.',
                 authError: 'There was a problem connecting to the Dataverse.',
+                authInvalid: 'Your Dataverse username or password is invalid.',
                 authSuccess: 'Your dataverse account was linked.'
             },
             dropbox: {
