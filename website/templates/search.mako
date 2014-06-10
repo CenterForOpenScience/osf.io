@@ -6,7 +6,7 @@
         % if query:
 ##            split on and, so we will be able to remove tags
             <%
-                cleaned_query = 'AND'.join(query.split('and'))
+                cleaned_query = 'AND'.join(query.split('AND'))
                 components = cleaned_query.split('AND')
             %>
         <h1>Search <small> for
@@ -75,9 +75,15 @@
                                     %else:
                                         <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
                                     % endif
-
                                 </h4>
                             </div><!-- end title -->
+            
+                            <div class="description">
+                                <h5>
+                                ${result['description']}
+                                </h5>
+                            </div>
+                            
     ##                            jeff's nice logic for displaying users
                             <div class="contributors">
                                 % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):
@@ -187,22 +193,30 @@
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
+                    <ul class="pagination">
                     % if total > 10:
+                        <li> <a href="?q=${query | h}&pagination=${0}">First</a></li>
+##                        <a href="?q=${query | h}&pagination=${0}">First</a>
                         % if current_page >= 10:
-                            <a href="?q=${query | h}&pagination=${(current_page)-10}">Previous</a>
+                              <li><a href="?q=${query | h}&pagination=${(current_page)-10}">&laquo;</a></li>
+                        % else:
+                            <li><a href="#">&laquo;</a></li>
                         % endif
                             % for i, page in enumerate(range(0, total, 10)):
                                 % if i == current_page/10:
-                                   ${i+1}
-                                % else:
-                                    <a href="?q=${query | h}&pagination=${page}">${i+1}</a>
+                                  <li><a href="#">${i+1}</a></li>
+                                % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
+                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % endif
                             % endfor
                         % if current_page < (total-10):
-                            <a href="?q=${query | h}&pagination=${(current_page)+10}">Next</a>
+                            <li><a href="?q=${query | h}&pagination=${(current_page)+10}">&raquo;</a></li>
+                        % else:
+                            <li><a href="#">&raquo;</a></li>
                         % endif
+                        <li><a href="?q=${query | h}&pagination=${total/10 * 10}">Last</a></li>
                     % endif
-
+                    </ul>
                 </div><!-- end navigate -->
             % else:
                 No results found. <br />
