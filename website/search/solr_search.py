@@ -4,7 +4,7 @@ import ast
 
 from website import settings
 from website.filters import gravatar
-from website.models import User, Node
+from website.models import User
 import logging
 import sunburnt
 from .utils import clean_solr_doc 
@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 try:
     solr = sunburnt.SolrInterface(settings.SOLR_URI)
-    logger.warn("JUST TESTING FOR HANDLERS")
 except socket.error as e:
     logger.error(e)
     logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
