@@ -4,30 +4,28 @@ import pyelasticsearch
 import collections
 from website.filters import gravatar
 from website.models import User, Node
+import requests
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-if settings.SEARCH_ENGINE in ["elastic", "all"]:
-    try:
-        elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
-        logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
-        logging.getLogger('requests').setLevel(logging.DEBUG)
-        logger.warn("ELASTIC")
-    except Exception as e:
-        logger.error(e)
-        logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there"
-                "was a problem starting the elasticsearch interface. Is "
-                "elasticsearch running?")
-        elastic=None
-else:
-    elastic=None
-    logger.warn("Elastic is not set to start")
-        
+try:
+    elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
+    logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
+    logging.getLogger('requests').setLevel(logging.DEBUG)
+    logger.warn("ELASTIC")
+    elastic.health()
+except requests.exceptions.ConnectionError as e:
+    logger.error(e)
+    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there"
+                    "was a problem starting the elasticsearch interface. Is "
+                    "elasticsearch running?")
+    elastic=None 
+       
 
 def search(raw_query, start=0):
 
-        # Type filter for normal searches
+    # Type filter for normal searches
     type_filter = {
         'or' : [
             {
@@ -39,7 +37,6 @@ def search(raw_query, start=0):
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
-    raw_query = raw_query.replace('and', ' ')
     if 'user:' in raw_query:
         doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
@@ -67,7 +64,15 @@ def search(raw_query, start=0):
         'from':start,
         'size':10,
     }
-
+    
+    if raw_query == '*':
+        query = {
+            'query': {
+                'match_all': {}
+            },
+            'from':start,
+            'size':10,
+        }
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
@@ -79,9 +84,6 @@ def search(raw_query, start=0):
 
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
-
-    if not (settings.SEARCH_ENGINE in ['elastic', 'all']):
-        return
 
     if node.category =='project':
         elastic_document_id = node._id
@@ -147,7 +149,7 @@ def update_user(user):
 
 def delete_all():
     try:
-        elastic.delete_by_query('website', ['user','project','component'], {'query':{'match_all':{}}})
+        #elastic.delete_by_query('website', ['user','project','component'], {'query':{'match_all':{}}})
         elastic.delete_index('website')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)

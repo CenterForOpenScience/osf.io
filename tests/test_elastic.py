@@ -8,7 +8,7 @@ from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
 from website import settings
 
-#if settings.SEARCH_ENGINE != 'none': Uncomment to force elasticsearch to load for testing
+#if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
 #    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
 #reload(search)

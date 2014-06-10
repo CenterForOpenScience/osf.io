@@ -13,16 +13,12 @@ import socket
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-if (settings.SEARCH_ENGINE == 'solr'):
-    try:
-        solr = sunburnt.SolrInterface(settings.SOLR_URI)
-        logger.warn("JUST TESTING FOR HANDLERS")
-    except socket.error as e:
-        logger.error(e)
-        logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
-else:
-    solr = None
-    logger.warn("Solr is not set to start")
+try:
+    solr = sunburnt.SolrInterface(settings.SOLR_URI)
+    logger.warn("JUST TESTING FOR HANDLERS")
+except socket.error as e:
+    logger.error(e)
+    logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
 
 
 def update_node(node):
@@ -35,8 +31,6 @@ def update_node(node):
         correctly serialize.
         """
         return 'true' if value is True else 'false'
-    if not (settings.SEARCH_ENGINE in ['solr', 'all']):
-        return
 
     from website.addons.wiki.model import NodeWikiPage
 
