@@ -16,19 +16,20 @@
             </a>
         % endif
     </h4>
-    <table class="table table-hover">
-        <thead>Authorized Projects:</thead>
-        % for node in nodes_authorized:
-            <tr style="">
-                <th><a href="${node.absolute_url}">${node.title}</a></th>
-                <th><a
-                        class="text-danger github-remove-token pull-right"
-                        style="cursor: pointer"
-                        data-node-api-url="${node.api_url}"
-                    >Deauthorize</a></th>
-            </tr>
-        % endfor
-    </table>
+    <div>Authorized Projects:</div>
+    <div class="scrolling-table">
+        <table class="table table-hover">
+            % for node in nodes_authorized:
+                <tr style="">
+                    <td><a href="${node.absolute_url}">${node.title}</a></td>
+                    <td><a
+                            class="text-danger github-remove-token pull-right"
+                            data-node-api-url="${node.api_url}"
+                        >Deauthorize</a></td>
+                </tr>
+            % endfor
+        </table>
+    </div>
 </div>
 
 
