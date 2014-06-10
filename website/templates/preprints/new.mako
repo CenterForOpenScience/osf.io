@@ -25,7 +25,7 @@
         $script.ready('newPreprint', function() {
             var newPreprint = new NewPreprint(
                     '#newPreprintScope',
-                    '${api_url_for('upload_preprint_new')}'
+                    '${api_url_for('post_preprint_new')}'
             );
         });
     </script>

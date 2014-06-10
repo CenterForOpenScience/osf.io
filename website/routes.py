@@ -16,7 +16,7 @@ from website import views as website_views
 from website.addons.osffiles import views as osffiles_views
 from website.addons.base import views as addon_views
 from website.osf_web_renderer import OsfWebRenderer
-from website.preprints.preprint import preprint_new, upload_preprint_new, upload_preprint
+from website.preprints.preprint import preprint_new, post_preprint_new, upload_preprint
 from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
@@ -963,7 +963,7 @@ def make_url_map(app):
             '/preprint/new/'
         ],
              'post',
-             upload_preprint_new,
+             post_preprint_new,
              json_renderer
         ),
 

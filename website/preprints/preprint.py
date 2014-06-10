@@ -16,7 +16,7 @@ def preprint_new(**kwargs):
 
 
 @must_be_logged_in
-def upload_preprint_new(**kwargs):
+def post_preprint_new(**kwargs):
     # todo: lots of duplication from upload_preprint here
     # todo: validation that file is pdf
     auth = kwargs['auth']
