@@ -9,7 +9,8 @@
                 authorized by {{ dataverseUsername }}
                 <span data-bind="ifnot: showInputCredentials">
                     <a data-bind="click: deleteKey"
-                        class="btn btn-danger pull-right">Delete Credentials</a>
+                        class="text-danger pull-right"
+                            style="margin-top: 4.8px">Delete Credentials</a>
                 </span>
             </small>
         </span>

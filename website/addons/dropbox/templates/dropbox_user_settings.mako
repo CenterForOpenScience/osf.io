@@ -7,22 +7,22 @@
     <h4 class="addon-title">
         Dropbox
         <!-- Delete Access Token Button -->
-        <span data-bind="if: userHasAuth() && loaded()">
-            <small class="authorized-by">
-                authorized
-                <span data-bind="if: dropboxName()">by {{ dropboxName }}</span>
-                <button data-bind="click: deleteKey"
-                   class="btn btn-danger pull-right">Delete Access Token</button>
-            </small>
-        </span>
+        <small class="authorized-by">
+            <span data-bind="if: userHasAuth() && loaded()">
+                    authorized
+                    <span data-bind="if: dropboxName()">by {{ dropboxName }}</span>
+                    <a data-bind="click: deleteKey"
+                       class="text-danger pull-right"
+                       style="margin-top: 4.8px">Delete Access Token</a>
+            </span>
 
-        <!-- Create Access Token Button -->
-        <span data-bind="if: !userHasAuth() && loaded()">
-            <small class="authorized-by">
+            <!-- Create Access Token Button -->
+            <span data-bind="if: !userHasAuth() && loaded()">
                 <a data-bind="attr: {href: urls().create}"
-                   class="btn btn-primary pull-right">Create Access Token</a>
-            </small>
-        </span>
+                   class="text-primary pull-right"
+                   style="margin-top: 4.8px">Create Access Token</a>
+            </span>
+        </small>
     </h4>
 
     <!-- Flashed Messages -->

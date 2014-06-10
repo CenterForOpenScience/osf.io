@@ -2,18 +2,18 @@
 <div>
     <h4 class="addon-title">
         FigShare
-        % if authorized:
-            <small class="authorized-by">
-                authorized
-            </small>
-            <a id="figshareDelKey" class="btn btn-danger pull-right">
-                Delete Access Token
-            </a>
-        % else:
-            <a id="figshareAddKey" class="btn btn-primary pull-right">
-                Create Access Token
-            </a>
-        % endif
+        <small class="authorized-by">
+            % if authorized:
+                    authorized
+                <a id="figshareDelKey" class="text-danger pull-right" style="margin-top: 4.8px">
+                    Delete Access Token
+                </a>
+            % else:
+                <a id="figshareAddKey" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Create Access Token
+                </a>
+            % endif
+        </small>
     </h4>
 </div>
 
