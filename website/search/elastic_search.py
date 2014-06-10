@@ -79,7 +79,7 @@ def search(raw_query, start=0):
         'projects': elastic.count(raw_query, index='website', doc_type='project')['count'],
         'components': elastic.count(raw_query, index='website', doc_type='component')['count']
     }
-    raw_results = _elastic.search(query, index='website')
+    raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 #    num_found = raw_results['hits']['total']
     formatted_results, tags = create_result(results, counts)
