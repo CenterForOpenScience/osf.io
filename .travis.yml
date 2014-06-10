@@ -8,8 +8,8 @@ python:
 
 install:
     - cp website/settings/local-travis.py website/settings/local.py
-    - pip install invoke==0.7.0
-    - invoke requirements
-    - invoke addon_requirements --mfr 0
+    - travis_retry pip install invoke==0.8.1
+    - travis_retry invoke requirements
+    - travis_retry invoke addon_requirements --mfr 0
 
 script: invoke test_all
