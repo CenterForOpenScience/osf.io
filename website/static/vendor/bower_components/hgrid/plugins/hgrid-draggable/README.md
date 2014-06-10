@@ -16,9 +16,24 @@ Drag-and-drop support for hgrid.js.
 
 ```js
 var draggable = new HGrid.Draggable({
-    onDragStart: function(event, source, target) {
-        #...
-    },
+  onDrag: function(event, items) {
+    # ... 
+  },
+  onDrop: function(event, items, folder) {
+    # ...
+  }
+  canDrag: function(item) {
+    if (item.name === "Don't drag me") {
+        return false;
+    }
+    return true;
+  },
+  acceptDrop: function(item, folder, done) {
+    if (folder.name === 'Forbidden') {
+      done('Cannot drop here');
+    }
+    done();
+  }
 });
 
 var grid = new HGrid({
@@ -31,20 +46,19 @@ grid.registerPlugin(draggable);
 
 ## Available Options
 
+- `onDrag(event, items)`: Fired while items are being dragged
+- `onDrop(event, items, folder)`: Fired when items are dropped into a folder.
+- `canDrag(item)`: Returns whether an item can be dragged.
+- `acceptDrop(item, folder, done)`: Validation function that is invoked when an item is dropped into a folder. `done` is a function that, if called with a string argument, raises the error message and prevents the drop from proceeding.
 - `rowMoveManagerOptions`: Additional options passed to the `Slick.RowMoveManager` constructor
-- `onMoved(event, items, folder)`
+- `rowSelectionModelOptions`: Additional options passed to the `HGrid.RowSelectionModel` constructor
 
 
-## TODO and notes
+## TODO
 
-Event callbacks that receive `(event, source, destination)`
-
-- onDrop
-- onDragStart
-- onDragEnd
-- onDragEnter
-- onDrag
-- onDragLeave
+- Fix drop position
+- Make folders draggable
+- Multiple selection
 
 
 ## Development
