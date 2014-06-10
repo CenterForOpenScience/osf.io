@@ -230,7 +230,8 @@
         },
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
-        }
+        },
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
     };
 
     var statusType = {
@@ -243,7 +244,8 @@
         DELETING: 'DELETING',
         DELETED: 'DELETED',
         UPLOAD_ERROR: 'UPLOAD_ERROR',
-        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
+        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS',
+        RELEASING_STUDY: 'RELEASING_STUDY'
     };
 
     Rubeus.Status = statusType;

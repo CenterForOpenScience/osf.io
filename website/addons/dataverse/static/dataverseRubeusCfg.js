@@ -45,6 +45,7 @@
     HGrid.Actions['releaseStudy'] = {
         on: 'click',
         callback: function (evt, row) {
+            var self = this;
             var url = row.urls.release;
             bootbox.confirm(
                 'By releasing this study, all content will be ' +
@@ -53,6 +54,7 @@
                     'settings. Are you sure you want to release this study?',
                 function(result) {
                     if (result) {
+                        self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
                         $.ajax({
                             url: url,
                             type: 'PUT',
@@ -61,12 +63,14 @@
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
+                            self.updateItem(row);
                         }).fail( function(args) {
                             var message = args.responseJSON.code === 400 ?
                                 'Error: Something went wrong when attempting to ' +
                                 'release your study.' :
                                 'Error: This version has already been released.'
                             bootbox.alert(message);
+                            self.updateItem(row);
                         });
                     }
                 }
