@@ -249,7 +249,7 @@ def create_result(results, counts):
                         else parent_wiki_url
                 ,'title': result['title'] if parent is None \
                         else parent_title
-                ,'url': result['url'] if result['category'] == 'project'\
+                ,'url': result['url'] if parent is None\
                         else parent_url
                 ,'nest':{
                     result['id']:{#Nested components have all their own attributes

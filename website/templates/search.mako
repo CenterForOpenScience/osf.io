@@ -205,6 +205,15 @@
                             % for i, page in enumerate(range(0, total, 10)):
                                 % if i == current_page/10:
                                   <li class="active"><a href="#">${i+1}</a></li>
+                                ## The following conditionals force the page to display at least 5 pages in the navigation bar
+                                % elif (current_page/10 == 0) and (i in range(1,5)):
+                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                                % elif (current_page/10 == 1) and (i in range(2,5)):
+                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                                % elif (current_page/10 == total/10) and (i in range((total/10 - 4), total)):
+                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((total/10 -4), total)):
+                                   <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % endif
