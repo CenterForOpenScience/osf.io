@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+from website.util.sanitize import deep_clean
 import logging
 import collections
 import pyelasticsearch
@@ -27,7 +27,8 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 
 def search(raw_query, start=0):
-
+    orig_query = raw_query
+    raw_query = deep_clean(raw_query)
     # Type filter for normal searches
     type_filter = {
         'or': [
@@ -40,8 +41,32 @@ def search(raw_query, start=0):
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
-    if 'user:' in raw_query:
+    #TODO(fabianvf): The type filter should be programmatically built
+   
+    if 'project:' in raw_query:
         raw_query = raw_query.replace('user:', '')
+        raw_query = raw_query.replace('project:','')
+        raw_query = raw_query.replace('component:','')
+        raw_query = raw_query.replace('(', '')
+        raw_query = raw_query.replace(')', '')
+        type_filter = {
+            'type': {
+                'value': 'project'
+            }
+        }
+    elif 'component:' in raw_query:
+        raw_query = raw_query.replace('user:', '')
+        raw_query = raw_query.replace('project:','')
+        raw_query = raw_query.replace('component:','')
+        type_filter = {
+            'type': {
+                'value': 'component'
+            }
+        }
+    elif 'user:' in raw_query:
+        raw_query = raw_query.replace('user:', '')
+        raw_query = raw_query.replace('project:','')
+        raw_query = raw_query.replace('component:','')
         raw_query = raw_query.replace('"', '')
         raw_query = raw_query.replace('\\"', '')
         raw_query = raw_query.replace("'", '')
@@ -50,38 +75,52 @@ def search(raw_query, start=0):
                 'value': 'user'
             }
         }
+    if '*' in raw_query:
+        raw_query.replace('*', '\\*')
+        inner_query = {
+            'query_string': {
+                'default_field': '_all',
+                'query': raw_query,
+                'analyze_wildcard': True,
+            }
+        }
+    else:
+        inner_query = {
+            'match': {
+                '_all': raw_query
+            }
+        }
 
     query = {
         'query': {
             'filtered': {
                 'filter': type_filter,
-                'query': {
-                    'match': {
-                        '_all': raw_query
-                    }
-                }
+                'query': inner_query
             }
         },
         'from': start,
         'size': 10,
     }
 
-    if raw_query == '*':
-        query = {
-            'query': {
-                'match_all': {}
-            },
-            'from': start,
-            'size': 10,
-        }
+    logger.warn(orig_query)
+    logger.warn(raw_query)
+    logger.warn(query)
     counts = {
         'users': elastic.count(raw_query, index='website', doc_type='user')['count'],
         'projects': elastic.count(raw_query, index='website', doc_type='project')['count'],
         'components': elastic.count(raw_query, index='website', doc_type='component')['count']
     }
+    if 'user:' in orig_query:
+        counts['total'] = counts['users']
+    elif 'project:' in orig_query:
+        counts['total'] = counts['projects']
+    elif 'component:' in orig_query:
+        counts['total'] = counts['projects']
+    else:
+        counts['total'] = sum([x for x in counts.values()])
+
     raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-#    num_found = raw_results['hits']['total']
     formatted_results, tags = create_result(results, counts)
 
     return formatted_results, tags, counts

@@ -31,13 +31,20 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        % if query and not searching_users:
-        <h3>
-##            our search users query
-            % if 'user:' not in query:
-                <a href="/search/?q=user:(${query|h})"> Search users </a>
+        % if query:
+            % if isinstance(counts, dict):
+        <h4>
+                <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','') | h})">Users: ${counts['users']}</a>
+        </h4><h4>
+                <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Projects: ${counts['projects']}</a>
+        </h4><h4>
+                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Components: ${counts['components']}</a> 
+        </h4>
             % endif
-        </h3>
+##            our search users query
+##            % if 'user:' not in query:
+##                <a href="/search/?q=user:(${query|h})"> Search users </a>
+##            % endif
         % else:
         <h3>Searching users</h3>
         % endif
@@ -194,7 +201,7 @@
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
                     <ul class="pagination">
-                    % if total > 10:
+                    % if counts['total'] > 10:
                         <li> <a href="?q=${query | h}&pagination=${0}">First</a></li>
 ##                        <a href="?q=${query | h}&pagination=${0}">First</a>
                         % if current_page >= 10:
@@ -202,7 +209,7 @@
                         % else:
                             <li><a href="#">&laquo;</a></li>
                         % endif
-                            % for i, page in enumerate(range(0, total, 10)):
+                            % for i, page in enumerate(range(0, counts['total'], 10)):
                                 % if i == current_page/10:
                                   <li class="active"><a href="#">${i+1}</a></li>
                                 ## The following conditionals force the page to display at least 5 pages in the navigation bar
@@ -210,15 +217,15 @@
                                      <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % elif (current_page/10 == 1) and (i in range(2,5)):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == total/10) and (i in range((total/10 - 4), total)):
+                                % elif (current_page/10 == total/10) and (i in range((counts['total']/10 - 4), counts['total'])):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((total/10 -4), total)):
+                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((counts['total/10'] -4), counts['total'])):
                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % endif
                             % endfor
-                        % if current_page < (total-10):
+                        % if current_page < (counts['total']-10):
                             <li><a href="?q=${query | h}&pagination=${(current_page)+10}">&raquo;</a></li>
                         % else:
                             <li><a href="#">&raquo;</a></li>

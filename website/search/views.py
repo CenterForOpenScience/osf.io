@@ -49,7 +49,7 @@ def search_search():
     # results so that it is easier for us to display
     # Whether or not the user is searching for users
     searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else sum([x for x in counts.values()])
+    total = counts if not isinstance(counts, dict) else sum([counts['users'], counts['projects'], counts['components']])
     return {
         'highlight': [], 
         'results': results_search,
