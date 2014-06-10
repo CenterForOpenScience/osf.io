@@ -8,7 +8,7 @@ python:
 
 install:
     - cp website/settings/local-travis.py website/settings/local.py
-    - pip install invoke==0.7.0
+    - pip install invoke==0.8.1
     - invoke requirements
     - invoke addon_requirements --mfr 0
 
