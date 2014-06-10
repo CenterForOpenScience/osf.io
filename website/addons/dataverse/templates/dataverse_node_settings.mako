@@ -98,14 +98,14 @@
     <!-- Link Dataverse Button -->
     <div data-bind="if: showLinkDataverse">
         <a data-bind="click: importAuth" class="btn btn-primary">
-            Authorize: Link to Dataverse Account
+            Authorize: Import Credentials from Profile
         </a>
     </div>
 
     <!-- Create Dataverse Button -->
     <div data-bind="if: showCreateButton">
         <a data-bind="attr.href: '/settings/addons/'" class="btn btn-primary">
-            Authorize: Set Dataverse Account
+            Authorize: Set Dataverse Credentials
         </a>
     </div>
 
