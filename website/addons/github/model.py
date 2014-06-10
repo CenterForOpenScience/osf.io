@@ -49,7 +49,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     @property
     def nodes(self):
-        # TODO: Generalize me
+        # TODO(asmacdo): Generalize me
         return [
             node_settings.owner for node_settings in
             self.addongithubnodesettings__authorized
