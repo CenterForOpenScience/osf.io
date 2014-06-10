@@ -132,14 +132,19 @@ def list_file_paths(**kwargs):
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(**kwargs):
+def upload_file_public(filename=None,**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
-    name, content, content_type, size = prepare_file(request.files['file'])
+
+    file = request.files['file']
+    if filename:
+        file.filename = unicode(filename)
+
+    name, content, content_type, size = prepare_file(file)
 
     try:
         fobj = node.add_file(

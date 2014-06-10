@@ -3,8 +3,9 @@ from flask import request
 from framework import must_be_logged_in, redirect
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
+import website.addons.osffiles.views as osffiles_views
 from website.project import new_node
-from website.project.decorators import must_be_contributor
+from website.project.decorators import must_be_contributor, must_be_valid_project
 from os.path import splitext
 from website.project.views.file import prepare_file
 
@@ -46,32 +47,9 @@ def upload_preprint_new(**kwargs):
 
     return redirect(preprint_component.url+'preprint/')
 
-
-@must_be_contributor
+@must_be_valid_project
 def upload_preprint(**kwargs):
     #todo: This is wholesale copied from add_file_to_node with different permissions stuff. fix that.
-    upload = request.files.get('file')
-    upload.filename = u'preprint.pdf'
-    if not upload:
-        raise HTTPError(http.BAD_REQUEST)
-
-    name, content, content_type, size = prepare_file(upload)
-    project = kwargs.get('project')
-    if not project:
-        raise HTTPError(http.BAD_REQUEST)
-
-    auth = kwargs['auth']
-
-    node = kwargs.get('node')
-    if not node:
-        node = project
-
-    node.add_file(
-        auth=auth,
-        file_name=name,
-        content=content,
-        size=size,
-        content_type=content_type,
-    )
-    node.save()
-    return redirect(node.url + 'preprint/')
+    rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
+    kwargs['node'].save()
+    return rv
