@@ -11,10 +11,10 @@ from website.settings import BASE_PATH
 from website.util import rubeus
 
 
-def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
+def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
 
-    node = node_settings.owner
-    user_settings = node_settings.user_settings
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     default_state = 'released' if 'files' not in request.referrer else 'draft'
     state = 'released' if not node.can_edit(auth) else state or default_state
@@ -22,27 +22,27 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     connection = connect_from_settings(user_settings)
 
     # Quit if no study linked
-    if node_settings.study_hdl is None or connection is None:
+    if node_addon.study_hdl is None or connection is None:
         return []
 
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    study = get_study(dataverse, node_settings.study_hdl)
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
 
     # Quit if hdl does not produce a study
     if study is None:
         return []
 
-    has_released_files = get_files(study, released=True)
+    released_files = get_files(study, released=True)
     authorized = node.can_edit(auth)
 
     # Produce draft version or quit if no released version is available
-    if not has_released_files:
+    if not released_files:
         if authorized:
             state = 'draft'
         else:
             return []
 
-    study_name = node_settings.study
+    study_name = node_addon.study
     if len(study_name) > 23:
         study_name = '{0}...'.format(study_name[:20])
 
@@ -65,14 +65,14 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
     dataverse_state_template = Template(filename=template_file)
     state_append = dataverse_state_template.render(
         state=state,
-        has_released_files=has_released_files,
+        has_released_files=bool(released_files),
         authorized=authorized,
     )
     buttons = [rubeus.build_addon_button('Release Study', 'releaseStudy')] \
         if state == 'draft' else None
 
     return [rubeus.build_addon_root(
-        node_settings,
+        node_addon,
         study_name,
         urls=urls,
         permissions=permissions,
@@ -87,23 +87,19 @@ def dataverse_hgrid_root(node_settings, auth, state=None, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_root_folder_public(**kwargs):
+def dataverse_root_folder_public(node_addon, auth, **kwargs):
 
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
     state = request.args['state']
 
-    return dataverse_hgrid_root(node_settings, auth=auth, state=state)
+    return dataverse_hgrid_root(node_addon, auth=auth, state=state)
 
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_hgrid_data_contents(**kwargs):
+def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
 
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     state = request.args.get('state')
     default_state = 'released' if 'files' not in request.referrer else 'draft'
@@ -116,11 +112,11 @@ def dataverse_hgrid_data_contents(**kwargs):
 
     connection = connect_from_settings(user_settings)
 
-    if node_settings.study_hdl is None or connection is None:
+    if node_addon.study_hdl is None or connection is None:
         return []
 
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    study = get_study(dataverse, node_settings.study_hdl)
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
 
     # Quit if hdl does not produce a study
     if study is None:
