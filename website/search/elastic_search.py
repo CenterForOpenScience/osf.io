@@ -74,7 +74,7 @@ def search(raw_query, start=0):
             'from': start,
             'size': 10,
         }
-    raw_results = _convert_to_utf8(elastic.search(query, index='website'))
+    raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
     num_found = raw_results['hits']['total']
@@ -308,7 +308,7 @@ def search_contributor(query, exclude=None):
         }
     }
 
-    results = _convert_to_utf8(elastic.search(query, index='website'))
+    results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
     if exclude:
@@ -335,17 +335,3 @@ def search_contributor(query, exclude=None):
             })
 
     return {'users': users}
-
-
-def _convert_to_utf8(data):
-    '''
-    Converts a Unicode dictionary to utf8
-    '''
-    if isinstance(data, basestring):
-        return str(data)
-    elif isinstance(data, collections.Mapping):
-        return dict(map(_convert_to_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(_convert_to_utf8, data))
-    else:
-        return data
