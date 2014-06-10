@@ -216,13 +216,19 @@ def create_result(results, highlights):
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             if parent is not None:
-                if  parent.is_public:
+                if parent.is_public:
                     parent_title = parent.title
                     parent_url = parent.url
                     parent_wiki_url = parent.url + 'wiki/'
-                    parent_contributors = parent.contributors
-                    parent_tags = parent.tags
-                    parent_contributors_url = ['/profile/'+contributor for contributor in parent_contributors]
+                    parent_contributors = [
+                        contributor.fullname
+                        for contributor in parent.contributors
+                    ]
+                    parent_tags = [tag._id for tag in parent.tags]
+                    parent_contributors_url = [
+                        contributor.url
+                        for contributor in parent.contributors
+                    ]
                     parent_is_registration = parent.is_registration
                     parent_description = parent.description
                 else:
@@ -234,8 +240,6 @@ def create_result(results, highlights):
                     parent_contributors_url = []
                     parent_is_registration = None
                     parent_description = ''
-
-
 
             # Format dictionary for output
             formatted_results.append({
