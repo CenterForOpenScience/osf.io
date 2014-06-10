@@ -203,15 +203,15 @@ def create_result(results, highlights):
         # User results are handled specially
         if 'user' in result:
             formatted_results.append({
-                'id':result['id']
-                ,'user':result['user']
-                ,'user_url':'/profile/'+result['id']
+                'id': result['id'],
+                'user': result['user'],
+                'user_url': '/profile/'+result['id'],
             })
         else:
             # Build up word cloud
             for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag, None) is None \
-                        else word_cloud[tag]+1
+                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                    else word_cloud[tag] + 1
              
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
@@ -243,33 +243,32 @@ def create_result(results, highlights):
 
             # Format dictionary for output
             formatted_results.append({
-                'contributors': result['contributors'] if parent is None \
-                        else parent_contributors
-                ,'wiki_link': result['url']+'wiki/' if parent is None\
-                        else parent_wiki_url
-                ,'title': result['title'] if parent is None \
-                        else parent_title
-                ,'url': result['url'] if result['category'] == 'project'\
-                        else parent_url
-                ,'nest':{
+                'contributors': result['contributors'] if parent is None
+                    else parent_contributors,
+                'wiki_link': result['url']+'wiki/' if parent is None
+                    else parent_wiki_url,
+                'title': result['title'] if parent is None
+                    else parent_title,
+                'url': result['url'] if parent is None else parent_url,
+                'nest': {
                     result['id']:{#Nested components have all their own attributes
-                        'title': result['title']
-                        ,'url': result['url']
-                        ,'wiki_link': result['url'] + 'wiki/'
-                        ,'contributors': result['contributors'] 
-                        ,'contributors_url': result['contributors_url']
-                        ,'highlight':[]
-                        ,'description':result['description']
+                        'title': result['title'],
+                        'url': result['url'],
+                        'wiki_link': result['url'] + 'wiki/',
+                        'contributors': result['contributors'],
+                        'contributors_url': result['contributors_url'],
+                        'highlight': [],
+                        'description': result['description'],
                     }
-                } if parent is not None else {}
-                ,'tags':result['tags'] if parent is None else parent_tags
-                ,'contributors_url': result['contributors_url'] if parent is None \
-                        else parent_contributors_url
-                ,'is_registration': result['registeredproject'] if parent is None\
-                        else parent_is_registration
-                ,'highlight': []
-                ,'description':result['description'] if parent is None\
-                        else parent_description
+                } if parent is not None else {},
+                'tags': result['tags'] if parent is None else parent_tags,
+                'contributors_url': result['contributors_url'] if parent is None
+                    else parent_contributors_url,
+                'is_registration': result['registeredproject'] if parent is None
+                    else parent_is_registration,
+                'highlight': [],
+                'description': result['description'] if parent is None
+                    else parent_description,
             })
 
     return formatted_results, word_cloud
