@@ -1,21 +1,36 @@
-<%inherit file="project/addon/user_settings.mako" />
-
 <!-- Authorization -->
 <div>
-    % if authorized:
-        <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
-        <div style="padding-top: 10px;">
-            Authorized by GitHub user
-            <a href="https://github.com/${authorized_github_user}" target="_blank">
-                ${authorized_github_user}
+    <h4 class="addon-title">
+        GitHub
+        % if authorized:
+            <small class="authorized-by">
+                authorized by
+                <a href="https://github.com/${authorized_github_user}" target="_blank">
+                    ${authorized_github_user}
+                </a>
+            </small>
+            <a id="githubDelKey" class="btn btn-danger pull-right">Delete Access Token</a>
+        % else:
+            <a id="githubAddKey" class="btn btn-primary pull-right">
+                Create Access Token
             </a>
-        </div>
-    % else:
-        <a id="githubAddKey" class="btn btn-primary">
-            Create Access Token
-        </a>
-    % endif
+        % endif
+    </h4>
+    <table class="table table-hover">
+        <thead>Authorized Projects:</thead>
+        % for node in nodes_authorized:
+            <tr style="">
+                <th><a href="${node.absolute_url}">${node.title}</a></th>
+                <th><a
+                        class="text-danger github-remove-token pull-right"
+                        style="cursor: pointer"
+                        data-node-api-url="${node.api_url}"
+                    >Deauthorize</a></th>
+            </tr>
+        % endfor
+    </table>
 </div>
+
 
 <script type="text/javascript">
 
@@ -56,6 +71,22 @@
                     }
                 }
             )
+        });
+
+        $('.github-remove-token').on('click', function(event) {
+            var $elm = $(event.target);
+            var nodeApiUrl = $elm.attr('data-node-api-url');
+            bootbox.confirm('Are you sure you want to remove the GitHub authorization from this project?', function(confirm) {
+                if (confirm) {
+                    $.ajax({
+                        type: 'DELETE',
+                        url: nodeApiUrl + 'github/oauth/',
+                        success: function(response) {
+                            window.location.reload();
+                        }
+                    });
+                }
+            });
         });
     });
 

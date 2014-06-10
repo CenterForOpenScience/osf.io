@@ -142,7 +142,7 @@
                 <div id="configureAddons" class="panel panel-default">
 
                     <div class="panel-heading">
-                        <h3 class="panel-title">Configure Add-ons</h3>
+                        <h3 class="panel-title">Configure Add-on</h3>
                     </div>
 
                     <div class="panel-body">
@@ -155,7 +155,6 @@
                             % endif
 
                         % endfor
-
                     </div>
                 </div>
 
