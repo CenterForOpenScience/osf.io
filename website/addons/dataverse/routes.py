@@ -142,7 +142,7 @@ api_routes = {
                 '/project/<pid>/dataverse/release/',
                 '/project/<pid>/node/<nid>/dataverse/release/',
             ],
-            'post',
+            'put',
             views.crud.dataverse_release_study,
             json_renderer,
         ),

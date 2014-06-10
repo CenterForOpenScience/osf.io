@@ -55,7 +55,7 @@
                     if (result) {
                         $.ajax({
                             url: url,
-                            type: 'POST',
+                            type: 'PUT',
                             dataType: 'json'
                         }).success(function() {
                             bootbox.alert('Your study has been released. Please ' +
