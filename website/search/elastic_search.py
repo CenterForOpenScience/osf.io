@@ -1,68 +1,69 @@
-from website import settings
+# -*- coding: utf-8 -*-
+
 import logging
-import pyelasticsearch
 import collections
+import pyelasticsearch
+
+from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-import requests
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 try:
     elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
     logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
     logging.getLogger('requests').setLevel(logging.DEBUG)
-    logger.warn("ELASTIC")
     elastic.health()
-except requests.exceptions.ConnectionError as e:
+except pyelasticsearch.exceptions.ConnectionError as e:
     logger.error(e)
-    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there"
-                    "was a problem starting the elasticsearch interface. Is "
-                    "elasticsearch running?")
-    elastic=None 
+    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there "
+                "was a problem starting the elasticsearch interface. Is "
+                "elasticsearch running?")
+    elastic = None
        
 
 def search(raw_query, start=0):
 
     # Type filter for normal searches
     type_filter = {
-        'or' : [
+        'or': [
             {
-            'type' : {'value': 'project'}
+                'type': {'value': 'project'}
             },
             {
-            'type' : {'value': 'component'}
+                'type': {'value': 'component'}
             }
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
     if 'user:' in raw_query:
-        doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('"', '')
-        raw_query = raw_query.replace('\\"','')
+        raw_query = raw_query.replace('\\"', '')
         raw_query = raw_query.replace("'", '')
         type_filter = {
-            'type' : {
-                'value' : 'user'
+            'type': {
+                'value': 'user'
             }
         }
 
-    logger.warn(start)
     query = {
-        'query':{
-           'filtered' : {
+        'query': {
+            'filtered': {
                 'filter': type_filter,
                 'query': {
-                    'match' : {
-                        '_all' : raw_query
+                    'match': {
+                        '_all': raw_query
                     }
                 }   
             }
         },
-        'from':start,
-        'size':10,
+        'from': start,
+        'size': 10,
     }
     
     if raw_query == '*':
@@ -70,25 +71,25 @@ def search(raw_query, start=0):
             'query': {
                 'match_all': {}
             },
-            'from':start,
-            'size':10,
+            'from': start,
+            'size': 10,
         }
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
-    numFound = raw_results['hits']['total']
+    num_found = raw_results['hits']['total']
     formatted_results, tags = create_result(results, highlights)
 
-    return formatted_results, tags, numFound
+    return formatted_results, tags, num_found
 
 
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
-    if node.category =='project':
+    if node.category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        parent_title =''
+        parent_title = ''
         category = node.category
     else:
         try:
@@ -138,8 +139,8 @@ def update_node(node):
 def update_user(user):
 
     user_doc = {
-        'id':user._id,
-        'user':user.fullname
+        'id': user._id,
+        'user': user.fullname
     }
 
     try: 
@@ -147,13 +148,14 @@ def update_user(user):
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
+
 def delete_all():
     try:
-        #elastic.delete_by_query('website', ['user','project','component'], {'query':{'match_all':{}}})
         elastic.delete_index('website')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
         logger.error("The index 'website' was not deleted from elasticsearch")
+
 
 def delete_doc(elastic_document_id, node):
     category = node.project_or_component
@@ -161,6 +163,7 @@ def delete_doc(elastic_document_id, node):
         elastic.delete('website', category, elastic_document_id, refresh=True) 
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
+
 
 def create_result(results, highlights):
     ''' Takes list of dicts of the following structure:
@@ -255,7 +258,7 @@ def create_result(results, highlights):
                         ,'description':result['description']
                     }
                 } if parent is not None else {}
-                ,'tags':result['tags']
+                ,'tags':result['tags'] if parent is None else parent_tags
                 ,'contributors_url': result['contributors_url'] if parent is None \
                         else parent_contributors_url
                 ,'is_registration': result['registeredproject'] if parent is None\
@@ -333,7 +336,7 @@ def search_contributor(query, exclude=None):
 
     return {'users': users}
 
-    # Converts unicode dictionary to utf-8 dictionary
+
 def _convert_to_utf8(data):
     '''
     Converts a Unicode dictionary to utf8
@@ -346,5 +349,3 @@ def _convert_to_utf8(data):
         return type(data)(map(_convert_to_utf8, data))
     else:
         return data
-
-
