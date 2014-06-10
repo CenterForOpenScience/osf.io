@@ -105,60 +105,6 @@
                 | Last Updated:
             <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}"
                   class="date node-last-modified-date"></span>
-                ##                % if parent_node['id']:
-                ##                    <br />Category: <span class="node-category">${node['category']}</span>
-            ##                % elif node['description'] or 'write' in user['permissions']:
-            ##                    <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
-            ##                % endif
-                        </p>
-
-            ##            <nav id="projectSubnav" class="navbar navbar-default ">
-            ##                <a class="navbar-brand collapse visible-xs">
-        ##                    ${'Project' if node['category'] == 'project' else 'Component'} Navigation
-        ##                </a>
-        ##                <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
-        ##                    <span class="sr-only">Toggle navigation</span>
-        ##                    <span class="icon-bar"></span>
-        ##                    <span class="icon-bar"></span>
-        ##                    <span class="icon-bar"></span>
-        ##                </button>
-        ##                <div class="container-fluid">
-        ##                    <div class="row">
-        ##                        <ul class="nav navbar-nav project-nav collapse navbar-collapse">
-        ##                            <li><a href="${node['url']}">Dashboard</a></li>
-        ##
-        ##                            <li><a href="${node['url']}files/">Files</a></li>
-        ##                            <!-- Add-on tabs -->
-        ##                            % for addon in addons_enabled:
-        ##                                % if addons[addon]['has_page']:
-        ##                                    <li>
-        ##                                        <a href="${node['url']}${addons[addon]['short_name']}">
-        ##                                            % if addons[addon]['icon']:
-        ##                                                <img src="${addons[addon]['icon']}" class="addon-logo"/>
-        ##                                            % endif
-        ##                                            ${addons[addon]['full_name']}
-        ##                                        </a>
-        ##                                    </li>
-        ##                                % endif
-        ##                            % endfor
-        ##                            % if node['is_public'] or user['is_contributor']:
-        ##                                <li><a href="${node['url']}statistics/">Statistics</a></li>
-        ##                            % endif
-        ##                            % if not node['is_registration']:
-        ##                                <li><a href="${node['url']}registrations/">Registrations</a></li>
-        ##                            % endif
-        ##                            <li><a href="${node['url']}forks/">Forks</a></li>
-        ##                            % if user['is_contributor']:
-        ##                                <li><a href="${node['url']}contributors/">Contributors</a></li>
-        ##                            %endif
-        ##                            % if 'write' in user['permissions']:
-        ##                                <li><a href="${node['url']}settings/">Settings</a></li>
-        ##                            % endif
-        ##                        </ul>
-        ##                    </div><!-- end row -->
-        ##                </div><!-- end container-fluid -->
-        ##
-        ##            </nav>
                 </header>
     </div><!-- end projectScope -->
 
@@ -190,40 +136,16 @@
             </div>
 
         </div>
-            <script>
-                $script.ready(['dropzone','preprint'], function() {
-                    Dropzone.options.preprintUploadDz = {
-                        previewTemplate: "<span data-dz-name></span>" +
-                                "<p data-dz-name></p>" +
-                                "<img data-dz-thumbnail></img>" +
-                                "<div class='hg-progress' data-dz-uploadprogress></div>" +
-                                "<span data-dz-errormessage></span>",
-                        ## todo: in-progress upload display and error handling
-                        init: function() {
-                            this.on("complete", function(file) {
-##                                this.removeFile(file);
-                                koPreprint.viewModel.uploading(false);
-                                koPreprint.viewModel.fetchFromServer();
-                            });
-                            this.on("addedfile", function(file) {
-                                koPreprint.viewModel.uploading(true);
-                            });
-                        },
-                        paramname: 'file',
-                        acceptedFiles: 'application/pdf',
-                    };
-                });
-            </script>
             <div class="col-md-4">
                 <table class="table table-striped" id="file-version-history">
-                    ## TODO this stuff copied from osffiles_view_file.mako
+                    ## TODO integrate into osffiles_view_file.mako and replace with a reference to that
 
                     <thead>
                     <tr>
                         <th>Version</th>
-                        <th>Date</th> <!-- TODO: add this data to api -->
-                        <th>User</th> <!-- TODO: add this data to api -->
-                        <th colspan=2>Downloads</th><!-- TODO: add download count to api -->
+                        <th>Date</th>
+                        <th>User</th>
+                        <th colspan=2>Downloads</th>
                     </tr>
                     </thead>
 
@@ -469,9 +391,30 @@
     <script>
         $script.ready('preprint', function() {
             var url = '${node["api_url"]}' + "preprint/";
-            // TODO: Not sure this is great
-            // Adds koPreprint to the global namespace so we can ask it to update the viewmodel
+            ## TODO: Not sure this is great: adds to global scope to give dropzone access to it
             koPreprint = new PreprintViewModel('#preprintScope', url);
+        });
+        $script.ready(['dropzone','preprint'], function() {
+            ## TODO: move to its own external file
+            Dropzone.options.preprintUploadDz = {
+                previewTemplate: "<span data-dz-name></span>" +
+                        "<p data-dz-name></p>" +
+                        "<img data-dz-thumbnail></img>" +
+                        "<div class='hg-progress' data-dz-uploadprogress></div>" +
+                        "<span data-dz-errormessage></span>",
+                ## todo: in-progress upload display and error handling
+                        init: function() {
+                    this.on("complete", function(file) {
+                        koPreprint.viewModel.uploading(false);
+                        koPreprint.viewModel.fetchFromServer();
+                    });
+                    this.on("addedfile", function(file) {
+                        koPreprint.viewModel.uploading(true);
+                    });
+                },
+                paramname: 'file',
+                acceptedFiles: 'application/pdf',
+            };
         });
     </script>
 </%def>

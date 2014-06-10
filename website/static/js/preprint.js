@@ -1,5 +1,5 @@
 /**
- * Module that controls the Dropbox node settings. Includes Knockout view-model
+ * Knockout view-model for viewing preprint file
  * for syncing data, and HGrid-folderpicker for selecting a folder.
  */
 
@@ -9,7 +9,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'knockoutpunches'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['folderPicker', 'zeroclipboard'], function() {
+        $script.ready(['folderPicker'], function() {
             global.PreprintViewModel  = factory(ko, jQuery);
             $script.done('preprint');
         });
@@ -76,4 +76,3 @@
 
     return PreprintViewModel;
 }));
-
