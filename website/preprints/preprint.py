@@ -21,17 +21,22 @@ def upload_preprint_new(**kwargs):
     # todo: validation that file is pdf
     auth = kwargs['auth']
     file = request.files.get('file')
-    title = splitext(file.filename)[0]
+    node_title = str(splitext(file.filename)[0])
     file.filename = u'preprint.pdf'
 
-    description = 'Automatically generated as a preprint for ' + title
-    project = new_node('project', title, auth.user, description=description)
+    # creates private project to house the preprint component
+    project = new_node('project',
+                       node_title,
+                       auth.user,
+                       description='Automatically generated as a preprint for ' + node_title)
     project.set_privacy('private', auth=auth)
-
-
     project.save()
 
-    preprint_component = new_node('preprint', title + " Preprint", auth.user, project=project)
+    # creates public component to house the preprint file
+    preprint_component = new_node('preprint',
+                                  node_title + " Preprint",
+                                  auth.user,
+                                  project=project)
     preprint_component.set_privacy('public', auth=auth)
     preprint_component.save()
 
