@@ -50,7 +50,7 @@
         self.selectedDataverseTitle = ko.computed(function() {
             for (var i=0; i < self.dataverses().length; i++) {
                 var data = self.dataverses()[i];
-                if (data.alias == self.selectedDataverseAlias())
+                if (data.alias === self.selectedDataverseAlias())
                     return data.title;
             }
             return null;
@@ -58,7 +58,7 @@
         self.selectedStudyTitle = ko.computed(function() {
             for (var i=0; i < self.studies().length; i++) {
                 var data = self.studies()[i];
-                if (data.hdl == self.selectedStudyHdl())
+                if (data.hdl === self.selectedStudyHdl())
                     return data.title;
             }
             return null;

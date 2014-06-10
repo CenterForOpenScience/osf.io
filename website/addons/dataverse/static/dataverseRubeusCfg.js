@@ -62,7 +62,7 @@
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
                         }).fail( function(args) {
-                            var message = args.responseJSON.code == 400 ?
+                            var message = args.responseJSON.code === 400 ?
                                 'Error: Something went wrong when attempting to ' +
                                 'release your study.' :
                                 'Error: This version has already been released.'
