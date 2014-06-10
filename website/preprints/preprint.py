@@ -32,7 +32,6 @@ def post_preprint_new(**kwargs):
                        auth.user,
                        description='Automatically generated as a preprint for ' + node_title)
     project.set_privacy('private', auth=auth)
-    project.save()
 
     # creates public component to house the preprint file
     preprint_component = new_node('preprint',
@@ -40,15 +39,23 @@ def post_preprint_new(**kwargs):
                                   auth.user,
                                   project=project)
     preprint_component.set_privacy('public', auth=auth)
-    preprint_component.save()
 
-    upload_preprint(project=project,node=preprint_component,**kwargs)
+    # adds file to new component
+    upload_preprint(project=project,
+                    node=preprint_component,
+                    # save=False, # for now, saving upon creation. rewrite to save at the end
+                    **kwargs)
+
+    # commits to database upon successful creation of everything
+    project.save()
+    preprint_component.save()
 
     return redirect(preprint_component.url+'preprint/')
 
 @must_be_valid_project
-def upload_preprint(**kwargs):
+def upload_preprint(save=True, **kwargs):
     #todo: This is wholesale copied from add_file_to_node with different permissions stuff. fix that.
     rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
-    kwargs['node'].save()
+    if save:
+        kwargs['node'].save()
     return rv
