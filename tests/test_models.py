@@ -38,7 +38,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory
+    AuthUserFactory, DashboardFactory, FolderFactory
 )
 
 app = init_app(set_backends=False, routes=True)
@@ -1005,6 +1005,12 @@ class TestNode(OsfTestCase):
     def test_not_a_dashboard(self):
         assert_equal(self.node.is_dashboard, False)
 
+    def test_cannot_link_to_folder_more_than_once(self):
+        folder = FolderFactory(creator=self.user)
+        node_two = ProjectFactory(creator=self.user)
+        self.node.add_pointer(folder, auth=self.consolidate_auth)
+        with assert_raises(ValueError):
+            node_two.add_pointer(folder, auth=self.consolidate_auth)
 
 class TestRemoveNode(OsfTestCase):
 
@@ -1070,6 +1076,12 @@ class TestDashboard(OsfTestCase):
     def test_cannot_have_two_dashboards(self):
         with assert_raises(NodeStateError):
             DashboardFactory(creator=self.user)
+
+    def test_cannot_link_to_dashboard(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(ValueError):
+            new_node.add_pointer(self.project, auth=self.consolidate_auth)
+
 
 
 class TestAddonCallbacks(OsfTestCase):

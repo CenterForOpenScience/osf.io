@@ -43,7 +43,7 @@ from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory, DashboardFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, DashboardFactory, FolderFactory
 )
 
 
@@ -2020,6 +2020,135 @@ class TestSearchViews(OsfTestCase):
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+
+
+class TestODMTitleSearch(OsfTestCase):
+    """ Docs from original method:
+    :arg term: The substring of the title.
+    :arg category: Category of the node.
+    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg includePublic: yes or no. Whether the projects listed should include public projects.
+    :arg includeContributed: yes or no. Whether the search should include projects the current user has
+        contributed to.
+    :arg ignoreNode: a list of nodes that should not be included in the search.
+    :return: a list of dictionaries of projects
+    """
+    def setUp(self):
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, title="foo")
+        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
+        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
+        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
+        self.folder = FolderFactory(creator=self.user, title="quux")
+        self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
+        with app.test_request_context():
+            self.url = api_url_for('search_projects_by_title')
+
+    def test_search_projects_by_title(self):
+        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 2)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
 
 class TestReorderComponents(OsfTestCase):
 
