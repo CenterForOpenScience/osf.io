@@ -75,11 +75,11 @@ def search(raw_query, start=0):
             'size': 10,
         }
     counts = {
-        'users': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='user'))['count'],
-        'projects': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='project'))['count'],
-        'components': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='component'))['count']
+        'users': elastic.count(raw_query, index='website', doc_type='user')['count'],
+        'projects': elastic.count(raw_query, index='website', doc_type='project')['count'],
+        'components': elastic.count(raw_query, index='website', doc_type='component')['count']
     }
-    raw_results = _convert_to_utf8(elastic.search(query, index='website'))
+    raw_results = _elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 #    num_found = raw_results['hits']['total']
     formatted_results, tags = create_result(results, counts)
@@ -312,7 +312,7 @@ def search_contributor(query, exclude=None):
         }
     }
 
-    results = _convert_to_utf8(elastic.search(query, index='website'))
+    results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
     if exclude:
@@ -341,15 +341,3 @@ def search_contributor(query, exclude=None):
     return {'users': users}
 
 
-def _convert_to_utf8(data):
-    '''
-    Converts a Unicode dictionary to utf8
-    '''
-    if isinstance(data, basestring):
-        return str(data)
-    elif isinstance(data, collections.Mapping):
-        return dict(map(_convert_to_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(_convert_to_utf8, data))
-    else:
-        return data
