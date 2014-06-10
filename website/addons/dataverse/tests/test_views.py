@@ -6,10 +6,12 @@ import json
 import httplib as http
 from tests.factories import AuthUserFactory
 from framework.auth.decorators import Auth
+from framework.exceptions import HTTPError
 from webtest import Upload
 from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
+from website.addons.dataverse.views.crud import fail_if_unauthorized
 from website.addons.dataverse.tests.utils import create_mock_connection, \
     create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses, \
     create_mock_study
@@ -484,7 +486,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
 class TestDataverseViewsCrud(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file_by_id',
                 side_effect=[create_mock_dvn_file('54321'), None])
@@ -501,7 +503,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         mock_delete.assert_called_once
         assert_equal(path, mock_delete.call_args[0][0].id)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file',
                 side_effect=[None, create_mock_dvn_file()])
@@ -531,7 +533,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file')
@@ -566,16 +568,23 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_updated', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
-    def test_dataverse_view_file(self, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_dataverse_view_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
+        mock_get_files.return_value = [create_mock_dvn_file('foo')]
 
         url = web_url_for('dataverse_view_file',
                           pid=self.project._primary_key, path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    def test_download_file(self):
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_download_file(self, mock_get_files, mock_connection):
+        mock_connection.return_value = create_mock_connection()
+        mock_get_files.return_value = [create_mock_dvn_file('foo')]
+
         path = 'foo'
         url = api_url_for('dataverse_download_file',
                           pid=self.project._primary_key, path=path)
@@ -585,7 +594,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
         )
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.release_study')
     def test_dataverse_release_study(self, mock_release, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -595,10 +604,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.post(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.crud.get_cache_content')
-    def test_render_file(self, mock_get_cache, mock_connection):
-        mock_connection.return_value = create_mock_connection()
+    def test_render_file(self, mock_get_cache):
         mock_get_cache.return_value = 'Mockument (A mock document)'
 
         file_id = '23456'
@@ -608,6 +615,28 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(mock_get_cache.call_args[0][1],
                      '{0}.html'.format(file_id))
+
+    def test_fail_if_unauthorized_not_found(self):
+
+        with assert_raises(HTTPError) as error:
+            fail_if_unauthorized(self.node_settings, self.user.auth, None)
+            assert_equal(error.code, http.NOT_FOUND)
+
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_fail_if_unauthorized_forbidden(self, mock_get_files):
+        mock_get_files.return_value = [create_mock_dvn_file('foo')]
+        with assert_raises(HTTPError) as error:
+            fail_if_unauthorized(self.node_settings, self.user.auth, 'bar')
+            assert_equal(error.code, http.FORBIDDEN)
+
+    @mock.patch('website.addons.dataverse.views.crud.get_files',
+                side_effect=[[create_mock_dvn_file('released')],
+                             [create_mock_dvn_file('draft')]])
+    def test_fail_if_unauthorized_unauthorized(self, mock_get_files):
+        with assert_raises(HTTPError) as error:
+            user2 = AuthUserFactory()
+            fail_if_unauthorized(self.node_settings, Auth(user2), 'draft')
+            assert_equal(error.code, http.UNAUTHORIZED)
 
 
 class TestDataverseRestrictions(DataverseAddonTestCase):

@@ -9,7 +9,7 @@ from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
-    connect_from_settings
+    connect_from_settings_or_403, get_files
 
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -32,18 +32,23 @@ session = requests.Session()
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
-def dataverse_release_study(**kwargs):
+def dataverse_release_study(node_addon, auth, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     now = datetime.datetime.utcnow()
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    study = get_study(dataverse, node_settings.study_hdl)
+    try:
+        connection = connect_from_settings_or_403(user_settings)
+    except HTTPError as error:
+        if error.code == 403:
+            connection = None
+        else:
+            raise
+
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
 
     if study.get_state() == 'RELEASED':
         raise HTTPError(http.CONFLICT)
@@ -62,25 +67,27 @@ def dataverse_release_study(**kwargs):
         log_date=now,
     )
 
+    return {'study': study.title}, http.OK
+
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_download_file(**kwargs):
+def dataverse_download_file(node_addon, auth, **kwargs):
 
     file_id = kwargs.get('path')
-    if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+
+    fail_if_unauthorized(node_addon, auth, file_id)
 
     return redirect('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
 
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_download_file_proxy(**kwargs):
+def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 
     file_id = kwargs.get('path')
-    if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+
+    fail_if_unauthorized(node_addon, auth, file_id)
 
     filename, content = scrape_dataverse(file_id)
 
@@ -97,15 +104,13 @@ def dataverse_download_file_proxy(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
-def dataverse_view_file(**kwargs):
+def dataverse_view_file(node_addon, auth, **kwargs):
 
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
+    node = node_addon.owner
 
     file_id = kwargs.get('path')
-    if file_id is None:
-        raise HTTPError(http.NOT_FOUND)
+
+    fail_if_unauthorized(node_addon, auth, file_id)
 
     # lazily create a file GUID record
     file_obj, created = DataverseFile.get_or_create(node=node, path=file_id)
@@ -116,7 +121,7 @@ def dataverse_view_file(**kwargs):
 
     # Get or create rendered file
     cache_file = '{0}.html'.format(file_id)
-    rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_addon, cache_file)
 
     if rendered is None:
         filename, content = scrape_dataverse(file_id)
@@ -124,7 +129,7 @@ def dataverse_view_file(**kwargs):
             'dataverse_download_file_proxy', path=file_id
         )
         rendered = get_cache_content(
-            node_settings, cache_file, start_render=True,
+            node_addon, cache_file, start_render=True,
             file_path=filename, file_content=content,
             download_path=download_url,
         )
@@ -146,21 +151,26 @@ def dataverse_view_file(**kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
-def dataverse_upload_file(**kwargs):
+def dataverse_upload_file(node_addon, auth, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     now = datetime.datetime.utcnow()
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    study = get_study(dataverse, node_settings.study_hdl)
+    try:
+        connection = connect_from_settings_or_403(user_settings)
+    except HTTPError as error:
+        if error.code == 403:
+            connection = None
+        else:
+            raise
+
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -225,12 +235,10 @@ def dataverse_upload_file(**kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('dataverse', 'node')
-def dataverse_delete_file(**kwargs):
+def dataverse_delete_file(node_addon, auth, **kwargs):
 
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
 
     now = datetime.datetime.utcnow()
 
@@ -238,9 +246,16 @@ def dataverse_delete_file(**kwargs):
     if file_id is None:
         raise HTTPError(http.NOT_FOUND)
 
-    connection = connect_from_settings(user_settings)
-    dataverse = get_dataverse(connection, node_settings.dataverse_alias)
-    study = get_study(dataverse, node_settings.study_hdl)
+    try:
+        connection = connect_from_settings_or_403(user_settings)
+    except HTTPError as error:
+        if error.code == 403:
+            connection = None
+        else:
+            raise
+
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
     file = get_file_by_id(study, file_id)
 
     delete_file(file)
@@ -304,3 +319,30 @@ def scrape_dataverse(file_id, name_only=False):
     filename = response.headers['content-disposition'].split('"')[1]
 
     return filename, response.content
+
+
+def fail_if_unauthorized(node_addon, auth, file_id):
+
+    node = node_addon.owner
+    user_settings = node_addon.user_settings
+
+    if file_id is None:
+        raise HTTPError(http.NOT_FOUND)
+
+    try:
+        connection = connect_from_settings_or_403(user_settings)
+    except HTTPError as error:
+        if error.code == 403:
+            connection = None
+        else:
+            raise
+
+    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
+    study = get_study(dataverse, node_addon.study_hdl)
+    released_file_ids = [f.id for f in get_files(study, released=True)]
+    all_file_ids = [f.id for f in get_files(study)] + released_file_ids
+
+    if file_id not in all_file_ids:
+        raise HTTPError(http.FORBIDDEN)
+    elif not node.can_edit(auth) and file_id not in released_file_ids:
+        raise HTTPError(http.UNAUTHORIZED)
