@@ -204,7 +204,7 @@
                         % endif
                             % for i, page in enumerate(range(0, total, 10)):
                                 % if i == current_page/10:
-                                  <li><a href="#">${i+1}</a></li>
+                                  <li class="active"><a href="#">${i+1}</a></li>
                                 % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % endif

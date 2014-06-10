@@ -24,7 +24,7 @@ except pyelasticsearch.exceptions.ConnectionError as e:
                 "was a problem starting the elasticsearch interface. Is "
                 "elasticsearch running?")
     elastic = None
-       
+
 
 def search(raw_query, start=0):
 
@@ -59,13 +59,13 @@ def search(raw_query, start=0):
                     'match': {
                         '_all': raw_query
                     }
-                }   
+                }
             }
         },
         'from': start,
         'size': 10,
     }
-    
+
     if raw_query == '*':
         query = {
             'query': {
@@ -74,13 +74,17 @@ def search(raw_query, start=0):
             'from': start,
             'size': 10,
         }
+    counts = {
+        'users': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='user'))['count'],
+        'projects': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='project'))['count'],
+        'components': _convert_to_utf8(elastic.count(raw_query, index='website', doc_type='component'))['count']
+    }
     raw_results = _convert_to_utf8(elastic.search(query, index='website'))
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    highlights = []
-    num_found = raw_results['hits']['total']
-    formatted_results, tags = create_result(results, highlights)
+#    num_found = raw_results['hits']['total']
+    formatted_results, tags = create_result(results, counts)
 
-    return formatted_results, tags, num_found
+    return formatted_results, tags, counts
 
 
 def update_node(node):
@@ -121,8 +125,8 @@ def update_node(node):
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
-            'parent_id':parent_id,
-            'parent_title':parent_title
+            'parent_id': parent_id,
+#            'parent_title': parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -143,7 +147,7 @@ def update_user(user):
         'user': user.fullname
     }
 
-    try: 
+    try:
         elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
@@ -160,13 +164,13 @@ def delete_all():
 def delete_doc(elastic_document_id, node):
     category = node.project_or_component
     try:
-        elastic.delete('website', category, elastic_document_id, refresh=True) 
+        elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 
-def create_result(results, highlights):
-    ''' Takes list of dicts of the following structure:
+def create_result(results, counts):
+    ''' Takes a dict of counts by type, and a list of dicts of the following structure:
     {
         'category': {NODE CATEGORY},
         'description': {NODE DESCRIPTION},
@@ -183,16 +187,16 @@ def create_result(results, highlights):
         'registeredproject': {TRUE OR FALSE}
     }
 
-    Returns list of dicts of the following structure: 
+    Returns list of dicts of the following structure:
     {
-        'contributors': [{LIST OF CONTRIBUTORS}], 
-        'wiki_link': '{LINK TO WIKIS}', 
-        'title': '{TITLE TEXT}', 
-        'url': '{URL FOR NODE}', 
-        'nest': {Nested node attributes}, 
-        'tags': [{LIST OF TAGS}], 
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
-        'is_registration': {TRUE OR FALSE}, 
+        'contributors': [{LIST OF CONTRIBUTORS}],
+        'wiki_link': '{LINK TO WIKIS}',
+        'title': '{TITLE TEXT}',
+        'url': '{URL FOR NODE}',
+        'nest': {Nested node attributes},
+        'tags': [{LIST OF TAGS}],
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
+        'is_registration': {TRUE OR FALSE},
         'highlight': [{No longer used, need to phase out}]
         'description': {PROJECT DESCRIPTION}
     }
