@@ -17,10 +17,12 @@ def preprint_new(**kwargs):
 
 @must_be_logged_in
 def post_preprint_new(**kwargs):
-    # todo: lots of duplication from upload_preprint here
     # todo: validation that file is pdf
+    # todo: add error handling
+
     auth = kwargs['auth']
     file = request.files.get('file')
+    # todo: should this leave it as unicode? Thinking about, e.g. mathematical symbols in titles
     node_title = str(splitext(file.filename)[0])
     file.filename = u'preprint.pdf'
 
@@ -34,21 +36,13 @@ def post_preprint_new(**kwargs):
 
     # creates public component to house the preprint file
     preprint_component = new_node('preprint',
-                                  node_title + " Preprint",
+                                  node_title + " (Preprint)",
                                   auth.user,
                                   project=project)
     preprint_component.set_privacy('public', auth=auth)
     preprint_component.save()
 
-
-    file_name, file_content, file_content_type, file_size = prepare_file(file)
-    preprint_component.add_file(
-        auth=auth,
-        file_name=file_name,
-        content=file_content,
-        size=file_size,
-        content_type=file_content_type,
-    )
+    upload_preprint(project=project,node=preprint_component,**kwargs)
 
     return redirect(preprint_component.url+'preprint/')
 
