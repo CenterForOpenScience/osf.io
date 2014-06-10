@@ -11,7 +11,7 @@ import httplib as http
 
 
 from nose.tools import *  # PEP8 asserts
-from tests.test_features import requires_solr
+from tests.test_features import requires_search
 from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
@@ -1959,12 +1959,14 @@ class TestTagViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@requires_solr
+@requires_search
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
-        self.project = ProjectFactory()
+        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
         self.contrib1 = UserFactory(fullname='Freddie Mercury')
         self.contrib2 = UserFactory(fullname='Brian May')
 
@@ -1980,12 +1982,15 @@ class TestSearchViews(OsfTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-
+       
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+    def tearDown(self):
+        import website.search.search as search
+        search.delete_all()
 
 class TestReorderComponents(OsfTestCase):
 

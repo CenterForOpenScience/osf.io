@@ -150,16 +150,16 @@ class TestUser(OsfTestCase):
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
-    @mock.patch('framework.auth.model.User.update_solr')
-    def test_solr_not_updated_for_unreg_users(self, update_solr):
+    @mock.patch('framework.auth.model.User.update_search')
+    def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert_false(update_solr.called)
+        assert_false(update_search.called)
 
-    @mock.patch('framework.auth.model.User.update_solr')
-    def test_solr_updated_for_registered_users(self, update_solr):
+    @mock.patch('framework.auth.model.User.update_search')
+    def test_search_updated_for_registered_users(self, update_search):
         u = UserFactory(is_registered=True)
-        assert_true(update_solr.called)
+        assert_true(update_search.called)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()

@@ -11,7 +11,7 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Comment out to use solr in development
-USE_SOLR = True
+SEARCH_ENGINE = 'elastic'
 
 # Comment out to use celery in development
 USE_CELERY = True
