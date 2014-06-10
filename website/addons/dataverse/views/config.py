@@ -115,12 +115,14 @@ def dataverse_get_studies(node_addon, **kwargs):
 
 
 @decorators.must_have_addon('dataverse', 'user')
-def dataverse_set_user_config(*args, **kwargs):
+def dataverse_set_user_config(user_addon, **kwargs):
 
-    user_settings = kwargs['user_addon']
+    try:
+        deep_ensure_clean(request.json)
+    except ValueError:
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
     # Log in with DATAVERSE
-    deep_ensure_clean(request.json)
     username = request.json.get('dataverse_username')
     password = request.json.get('dataverse_password')
     connection = connect(username, password)
@@ -129,24 +131,27 @@ def dataverse_set_user_config(*args, **kwargs):
     if connection is None:
         raise HTTPError(http.UNAUTHORIZED)
 
-    user_settings.dataverse_username = username
-    user_settings.dataverse_password = password
+    user_addon.dataverse_username = username
+    user_addon.dataverse_password = password
+    user_addon.save()
 
-    user_settings.save()
+    return {'username': username}, http.OK
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
 @decorators.must_have_addon('dataverse', 'node')
-def set_dataverse_and_study(auth, **kwargs):
+def set_dataverse_and_study(node_addon, auth, **kwargs):
 
-    node_settings = kwargs['node_addon']
-    user_settings = node_settings.user_settings
+    user_settings = node_addon.user_settings
     user = get_current_user()
 
     if user_settings and user_settings.owner != user:
         raise HTTPError(http.FORBIDDEN)
 
-    deep_ensure_clean(request.json)
+    try:
+        deep_ensure_clean(request.json)
+    except ValueError:
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse').get('alias')
     hdl = request.json.get('study').get('hdl')
@@ -158,13 +163,13 @@ def set_dataverse_and_study(auth, **kwargs):
     dataverse = get_dataverse(connection, alias)
     study = get_study(dataverse, hdl)
 
-    node_settings.dataverse_alias = dataverse.alias
-    node_settings.dataverse = dataverse.title
+    node_addon.dataverse_alias = dataverse.alias
+    node_addon.dataverse = dataverse.title
 
-    node_settings.study_hdl = study.doi
-    node_settings.study = study.title
+    node_addon.study_hdl = study.doi
+    node_addon.study = study.title
 
-    node = node_settings.owner
+    node = node_addon.owner
     node.add_log(
         action='dataverse_study_linked',
         params={
@@ -175,6 +180,6 @@ def set_dataverse_and_study(auth, **kwargs):
         auth=auth,
     )
 
-    node_settings.save()
+    node_addon.save()
 
-    return {}
+    return {'dataverse': dataverse.title, 'study': study.title}, http.OK
