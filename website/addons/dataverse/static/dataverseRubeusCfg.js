@@ -13,16 +13,21 @@
 
     function getCitation(item) {
         bootbox.alert(
-            '<div class="col-md-3"><b>Title: </b></div>' +
-                '<div class="col-md-8">' + item.study + '</div><br>' +
-            '<div class="col-md-3"><b>Study Global ID: </b></div>' +
-                '<div class="col-md-8">' +
-                '<a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' +
-                item.doi + '</a></div><br>' +
-            '<div class="col-md-3"><b>Dataverse: </b></div>' +
-                '<div class="col-md-8">' + item.dataverse + '</div><br>' +
-            '<div class="col-md-3" style="padding-top: 10px;"><b>Citation: </b></div>' +
-                '<div class="col-md-8" style="padding-top: 10px;">' + item.citation + '</div><br>'
+            '<table>' +
+                '<tr>'+
+                    '<td><b>Title: </b></td> <td>' + item.study + '</td>' +
+                '</tr>' +
+                '<tr>'+
+                    '<td><b>Study Global ID: &nbsp&nbsp&nbsp</b></td> <td><a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' + item.doi + '</a></td>' +
+                '</tr>' +
+                '<tr>'+
+                    '<td><b>Dataverse: </b></td> <td>' + item.dataverse + '</td>' +
+                '</tr>' +
+                '<tr><td>&nbsp</td></tr>' +
+                '<tr>'+
+                    '<td><b>Citation: </b></td> <td>' + item.citation + '</td>' +
+                '</tr>' +
+            '</table>'
         )
     }
 
