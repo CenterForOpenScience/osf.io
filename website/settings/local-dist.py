@@ -11,7 +11,7 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Comment out to use solr in development
-USE_SOLR = True
+SEARCH_ENGINE = 'elastic'
 
 # Comment out to use celery in development
 USE_CELERY = True
@@ -25,6 +25,7 @@ ADDONS_REQUESTED = [
 ]
 
 # Email
+USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
@@ -50,3 +51,5 @@ USE_CDN_FOR_CLIENT_LIBS = False
 # PIWIK_HOST = 'http://162.243.104.66/piwik/'
 # PIWIK_ADMIN_TOKEN = '6e9b2daf6c9dacd2eddbba5083b058fa'
 # PIWIK_SITE_ID = 1
+
+SENTRY_DSN = "<INSERT DSN HERE>"

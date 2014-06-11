@@ -1,15 +1,20 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
-services: mongodb
+services: 
+    - mongodb
+    - elasticsearch
 
 python:
-  - "2.7"
+    - "2.7"
+
+before_install:
+    - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i elasticsearch-1.2.1.deb && sudo service elasticsearch restart
 
 install:
     - cp website/settings/local-travis.py website/settings/local.py
-    - pip install invoke
-    - invoke requirements
-    - invoke addon_requirements --mfr 0
+    - travis_retry pip install invoke==0.8.1
+    - travis_retry invoke requirements
+    - travis_retry invoke addon_requirements --mfr 0
 
 script: invoke test_all

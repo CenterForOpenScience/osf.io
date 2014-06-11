@@ -16,6 +16,7 @@ from mako.lookup import TemplateLookup
 from framework import session, request, make_response
 from framework.exceptions import HTTPError
 from framework.flask import app, redirect
+from framework import sentry
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -78,6 +79,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
+
         session_error_code = session.data.get('auth_error_code')
         if session_error_code:
             raise HTTPError(session_error_code)
@@ -89,6 +91,8 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
             data = error
         except Exception as error:
             logger.exception(error)
+            if settings.SENTRY_DSN:
+                sentry.log_exception()
             if debug_mode:
                 raise
             data = HTTPError(
