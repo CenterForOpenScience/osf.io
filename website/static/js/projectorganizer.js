@@ -538,7 +538,6 @@
         },
         onDrop: function (event, items, folder) {
             var theFolderID = folder.node_id;
-            var theFolderParent = folder.parentNode;
             var sampleItem = items[0];
             var itemParentID = sampleItem.parentID;
             var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
@@ -574,12 +573,15 @@
                     complete: function () {
                         if (copyMode == "move") {
                             itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                            reloadedFolder = reloadFolder(draggable.grid, itemParent, itemParent);
+                            var nextFolder = draggable.grid.grid.getData().getItemById(folder.id);
+                            setReloadNextFolder(itemParent, nextFolder);
+                            draggable.grid.reloadFolder(itemParent);
+
+                        } else {
+                                draggable.grid.reloadFolder(folder);
                         }
                         copyMode = "none";
-                        if(reloadedFolder !== folder && reloadedFolder !== theFolderParent) {
-                            reloadFolder(draggable.grid, folder, theFolderParent);
-                        }
+
                     }
                 });
             }
@@ -630,6 +632,16 @@
         enableMove: false,
         rowMoveManagerOptions: {proxyClass: 'project-organizer-dand'}
     });
+    // ReloadNextFolder semaphores
+    var reloadNewFolder = false;
+    var rnfPrevItem = "";
+    var rnfToReload = "";
+
+    function setReloadNextFolder(prevItem, toReload){
+        reloadNewFolder = true;
+        rnfPrevItem = prevItem;
+        rnfToReload = toReload;
+    }
 
     //
     // Public methods
@@ -656,6 +668,14 @@
             data: '/api/v1/dashboard/get_dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
                 return '/api/v1/dashboard/get_dashboard/' + folder.node_id;
+            },
+            fetchSuccess: function(newData, item){
+                if(reloadNewFolder) {
+                    reloadNewFolder = false;
+                    if (rnfPrevItem !== rnfToReload) {
+                        self.grid.reloadFolder(rnfToReload);
+                    }
+                }
             },
             init: hgridInit.bind(self)
         };
