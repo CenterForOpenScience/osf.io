@@ -44,7 +44,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
 
     study_name = node_addon.study
     if len(study_name) > 23:
-        study_name = '{0}...'.format(study_name[:20])
+        study_name = u'{0}...'.format(study_name[:20])
 
     permissions = {
         'edit': node.can_edit(auth) and not node.is_registration and state == 'draft',

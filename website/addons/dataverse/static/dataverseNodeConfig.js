@@ -32,6 +32,7 @@
 
         self.dataverses = ko.observableArray([]);
         self.studies = ko.observableArray([]);
+        self.badStudies = ko.observableArray([]);
 
         self.savedStudyHdl = ko.observable();
         self.savedStudyTitle = ko.observable();
@@ -87,6 +88,9 @@
         });
         self.credentialsChanged = ko.computed(function() {
            return self.nodeHasAuth() && !self.connected();
+        });
+        self.hasBadStudies = ko.computed(function() {
+            return self.badStudies().length > 0;
         });
         /**
          * Update the view model from data returned from the server.
@@ -154,7 +158,8 @@
         }
 
         self.getStudies = function() {
-            self.studies([])
+            self.studies([]);
+            self.badStudies([]);
             self.loadedStudies(false);
             return $.ajax({
                 url: self.urls().getStudies,
@@ -164,6 +169,7 @@
                 dataType: 'json',
                 success: function(response) {
                     self.studies(response.studies);
+                    self.badStudies(response.badStudies);
                     self.loadedStudies(true);
                     self.selectedStudyHdl(self.savedStudyHdl());
                 },

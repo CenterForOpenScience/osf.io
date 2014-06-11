@@ -66,13 +66,25 @@
 
             </div>
 
-            <div data-bind="if: hasDataverses">
+            <span data-bind="if: hasDataverses">
+
                 <div class="padded">
-                    <button data-bind="enable: dataverseHasStudies, click: setInfo" class="btn btn-primary pull-right">
-                            Submit
+                    <span data-bind="if: hasBadStudies" class="text-danger">
+                        The following studies could not be loaded:
+                        <ul data-bind="foreach: badStudies">
+                            <li>
+                                <a data-bind="text: hdl, attr.href: url" ></a>
+                            </li>
+                        </ul>
+                    </span>
+
+                    <button data-bind="enable: dataverseHasStudies, click: setInfo"
+                            class="btn btn-primary pull-right">
+                        Submit
                     </button>
                 </div>
-            </div>
+
+            </span>
 
             <div class="text-info" data-bind="ifnot: hasDataverses">
                 Dataverse user {{ dataverseUsername }} does not currently have any released Dataverses.

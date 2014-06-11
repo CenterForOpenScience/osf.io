@@ -106,13 +106,13 @@ def dataverse_get_studies(node_addon, **kwargs):
 
     connection = connect_from_settings(user_settings)
     dataverse = get_dataverse(connection, alias)
-    studies = get_studies(dataverse)
-    rv = {}
-    rv['studies'] = [
-        {'title': study.title, 'hdl': study.doi} for study in studies
-    ]
-    return rv, http.OK
-
+    studies, bad_studies = get_studies(dataverse)
+    rv = {
+        'studies': [{'title': study.title, 'hdl': study.doi} for study in studies],
+        'badStudies': [{'hdl': bad_study.doi, 'url': 'http://dx.doi.org/' + bad_study.doi} for bad_study in bad_studies],
+    }
+    code = http.PARTIAL_CONTENT if bad_studies else http.OK
+    return rv, code
 
 @decorators.must_have_addon('dataverse', 'user')
 def dataverse_set_user_config(user_addon, **kwargs):

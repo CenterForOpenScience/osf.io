@@ -53,7 +53,7 @@ class DvnConnection(object):
 
         self.serviceDocument = self.swordConnection.get_service_document()
         self.status = self.swordConnection.history[1]['payload']['response']['status']
-        self.connected = True if hasattr(self.swordConnection, 'workspaces') else False
+        self.connected = True if self.status == 200 else False
         
     def get_dataverses(self):
         # TODO peterbull: Do we need to call the API again to make sure

@@ -70,16 +70,27 @@ def release_study(study):
 def get_studies(dataverse):
     if dataverse is None:
         return []
-    studies = dataverse.get_studies()
-    accessible_studies = [s for s in studies if s.get_state() != 'DEACCESSIONED']
-    return accessible_studies
+    accessible_studies = []
+    bad_studies = []
+    for s in dataverse.get_studies():
+        try:
+            if s.get_state() != 'DEACCESSIONED':
+                accessible_studies.append(s)
+        except UnicodeDecodeError:
+            bad_studies.append(s)
+    return accessible_studies, bad_studies
 
 
 def get_study(dataverse, hdl):
     if dataverse is None:
         return
     study = dataverse.get_study_by_hdl(hdl)
-    return study if study and study.get_state() != 'DEACCESSIONED' else None
+    try:
+        if study and study.get_state() != 'DEACCESSIONED':
+            return study
+    except UnicodeDecodeError:
+        # TODO: Handle error?
+        return None
 
 
 def get_dataverses(connection):
