@@ -31,24 +31,23 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        <div class="btn-group-vertical">
-            % if query:
-                % if isinstance(counts, dict):
-            <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','') | h})">
-                <button type="button" class="btn btn-default"> Users: ${counts['users']}</button>
-            </a>
-
-            <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">
-                <button type="button" class="btn btn-default"> Projects: ${counts['projects']}</button>
-            </a>
-
-            <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">
-                <button type="button" class="btn btn-default"> Components: ${counts['components']}</button>
-            </a>
-                % endif
+        % if query:
+            % if isinstance(counts, dict):
+        <h4>
+                <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','') | h})">Users: ${counts['users']}</a>
+        </h4><h4>
+                <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Projects: ${counts['projects']}</a>
+        </h4><h4>
+                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Components: ${counts['components']}</a> 
+        </h4>
             % endif
-        </div><!-- end btn-group-vertical -->
-
+##            our search users query
+##            % if 'user:' not in query:
+##                <a href="/search/?q=user:(${query|h})"> Search users </a>
+##            % endif
+        % else:
+        <h3>Searching users</h3>
+        % endif
 ##        our tag cloud!
         % if tags:
         <h3> Improve Your Search:</h3>
