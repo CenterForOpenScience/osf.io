@@ -601,7 +601,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         url = api_url_for('dataverse_release_study',
                           pid=self.project._primary_key)
-        res = self.app.post(url, auth=self.user.auth)
+        res = self.app.put(url, auth=self.user.auth)
         assert_true(mock_release.called)
 
     @mock.patch('website.addons.dataverse.views.crud.get_cache_content')

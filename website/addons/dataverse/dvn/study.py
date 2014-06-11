@@ -217,15 +217,17 @@ class Study(object):
             zipFile.close()
             content = s.getvalue()
 
-        depositReceipt = self.hostDataverse.connection.swordConnection.add_file_to_resource(
-            edit_media_iri=self.editMediaUri,
-            payload=content,
-            mimetype='application/zip',
-            filename=filename,
-            packaging='http://purl.org/net/sword/package/SimpleZip'
-        )
+        headers = {
+            'Content-Disposition': 'filename={0}'.format(filename),
+            'Content-Type': 'application/zip',
+            'Packaging': 'http://purl.org/net/sword/package/SimpleZip',
+        }
 
-        self._refresh(deposit_receipt=depositReceipt)
+        requests.post(self.editMediaUri, data=content, headers=headers,
+                      auth=(self.hostDataverse.connection.username,
+                            self.hostDataverse.connection.password))
+
+        self._refresh()
 
     # TODO: DANGEROUS! Will delete all unspecified fields! Deposit receipts only give SOME of the fields
     # def update_metadata(self):

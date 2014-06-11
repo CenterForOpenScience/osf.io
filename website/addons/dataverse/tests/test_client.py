@@ -187,7 +187,7 @@ class TestClient(DataverseAddonTestCase):
             mock_study1, mock_study2, mock_study3
         ]
 
-        studies = get_studies(self.mock_dataverse)
+        studies, bad_studies = get_studies(self.mock_dataverse)
         self.mock_dataverse.get_studies.assert_called_once_with()
         assert_in(mock_study1, studies)
         assert_in(mock_study2, studies)
