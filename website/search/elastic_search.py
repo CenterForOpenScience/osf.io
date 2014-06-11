@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from website.util.sanitize import deep_clean
+
 import logging
 import collections
 import pyelasticsearch
@@ -27,8 +27,7 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 
 def search(raw_query, start=0):
-    orig_query = raw_query
-    raw_query = deep_clean(raw_query)
+
     # Type filter for normal searches
     type_filter = {
         'or': [
@@ -102,9 +101,6 @@ def search(raw_query, start=0):
         'size': 10,
     }
 
-    logger.warn(orig_query)
-    logger.warn(raw_query)
-    logger.warn(query)
     counts = {
         'users': elastic.count(raw_query, index='website', doc_type='user')['count'],
         'projects': elastic.count(raw_query, index='website', doc_type='project')['count'],
@@ -165,7 +161,6 @@ def update_node(node):
             'registeredproject': node.is_registration,
             'wikis': {},
             'parent_id': parent_id,
-#            'parent_title': parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -278,37 +273,34 @@ def create_result(results, counts):
                     parent_is_registration = None
                     parent_description = ''
 
-
-
             # Format dictionary for output
             formatted_results.append({
-                'contributors': result['contributors'] if parent is None \
-                        else parent_contributors
-                ,'wiki_link': result['url']+'wiki/' if parent is None\
-                        else parent_wiki_url
-                ,'title': result['title'] if parent is None \
-                        else parent_title
-                ,'url': result['url'] if parent is None\
-                        else parent_url
-                ,'nest':{
+                'contributors': result['contributors'] if parent is None
+                    else parent_contributors,
+                'wiki_link': result['url']+'wiki/' if parent is None
+                    else parent_wiki_url,
+                'title': result['title'] if parent is None
+                    else parent_title,
+                'url': result['url'] if parent is None else parent_url,
+                'nest': {
                     result['id']:{#Nested components have all their own attributes
-                        'title': result['title']
-                        ,'url': result['url']
-                        ,'wiki_link': result['url'] + 'wiki/'
-                        ,'contributors': result['contributors'] 
-                        ,'contributors_url': result['contributors_url']
-                        ,'highlight':[]
-                        ,'description':result['description']
+                        'title': result['title'],
+                        'url': result['url'],
+                        'wiki_link': result['url'] + 'wiki/',
+                        'contributors': result['contributors'],
+                        'contributors_url': result['contributors_url'],
+                        'highlight': [],
+                        'description': result['description'],
                     }
-                } if parent is not None else {}
-                ,'tags':result['tags'] if parent is None else parent_tags
-                ,'contributors_url': result['contributors_url'] if parent is None \
-                        else parent_contributors_url
-                ,'is_registration': result['registeredproject'] if parent is None\
-                        else parent_is_registration
-                ,'highlight': []
-                ,'description':result['description'] if parent is None\
-                        else parent_description
+                } if parent is not None else {},
+                'tags': result['tags'] if parent is None else parent_tags,
+                'contributors_url': result['contributors_url'] if parent is None
+                    else parent_contributors_url,
+                'is_registration': result['registeredproject'] if parent is None
+                    else parent_is_registration,
+                'highlight': [],
+                'description': result['description'] if parent is None
+                    else parent_description,
             })
 
     return formatted_results, word_cloud
@@ -378,5 +370,3 @@ def search_contributor(query, exclude=None):
             })
 
     return {'users': users}
-
-
