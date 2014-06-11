@@ -6,7 +6,6 @@ import pyelasticsearch
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-import bleach
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

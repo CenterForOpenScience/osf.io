@@ -1,13 +1,18 @@
+# -*- coding: utf-8 -*-
+
 import time
-from urllib2 import HTTPError
+import bleach
 import logging
+from urllib2 import HTTPError
+from modularodm.storage.mongostorage import RawQuery as Q
 
 from framework import must_be_logged_in, request, status
+
 import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery as Q
-import bleach
+
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
 
@@ -16,9 +21,11 @@ def search_search():
     tick = time.time()
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
-    if 'pagination' in request.args:
-        start = int(request.args.get('pagination'))
-    else:
+    start = request.args.get('pagination', 0)
+    try:
+        start = int(start)
+    except (TypeError, ValueError):
+        logger.error(u'Invalid pagination value: {0}'.format(start))
         start = 0
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
