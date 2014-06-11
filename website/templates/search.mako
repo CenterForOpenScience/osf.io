@@ -86,9 +86,11 @@
                             </div><!-- end title -->
             
                             <div class="description">
-                                <h5>
-                                ${result['description']}
-                                </h5>
+                                % if result['description']:
+                                    <h5>
+                                        ${result['description']}
+                                    </h5>
+                                % endif
                             </div>
                             
     ##                            jeff's nice logic for displaying users
@@ -230,7 +232,7 @@
                         % else:
                             <li><a href="#">&raquo;</a></li>
                         % endif
-                        <li><a href="?q=${query | h}&pagination=${total/10 * 10}">Last</a></li>
+                        <li><a href="?q=${query | h}&pagination=${counts['total']/10 * 10}">Last</a></li>
                     % endif
                     </ul>
                 </div><!-- end navigate -->

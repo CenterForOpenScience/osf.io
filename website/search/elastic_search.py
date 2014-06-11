@@ -115,7 +115,7 @@ def search(raw_query, start=0):
     elif 'project:' in orig_query:
         counts['total'] = counts['projects']
     elif 'component:' in orig_query:
-        counts['total'] = counts['projects']
+        counts['total'] = counts['components']
     else:
         counts['total'] = sum([x for x in counts.values()])
 
