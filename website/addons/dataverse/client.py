@@ -89,7 +89,6 @@ def get_study(dataverse, hdl):
         if study and study.get_state() != 'DEACCESSIONED':
             return study
     except UnicodeDecodeError:
-        # TODO: Handle error?
         return None
 
 

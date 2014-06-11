@@ -216,7 +216,6 @@ class TestClient(DataverseAddonTestCase):
         assert_equal([mock_study1], studies)
         assert_equal([mock_study2], bad_studies)
 
-
     def test_get_study(self):
         self.mock_study.get_state.return_value = 'DRAFT'
         self.mock_dataverse.get_study_by_hdl.return_value = self.mock_study
@@ -233,7 +232,17 @@ class TestClient(DataverseAddonTestCase):
         s = get_study(self.mock_dataverse, 'My hdl')
         self.mock_dataverse.get_study_by_hdl.assert_called_once_with('My hdl')
 
-        assert_equal(s, None)
+        assert_is_none(s)
+
+    def test_get_bad_study(self):
+        error = UnicodeDecodeError('utf-8', b'', 1, 2, 'jeepers')
+        self.mock_study.get_state.side_effect = error
+        self.mock_dataverse.get_study_by_hdl.return_value = self.mock_study
+
+        s = get_study(self.mock_dataverse, 'My hdl')
+        self.mock_dataverse.get_study_by_hdl.assert_called_once_with('My hdl')
+
+        assert_is_none(s)
 
     def test_get_dataverses(self):
         released_dv = mock.create_autospec(Dataverse)
