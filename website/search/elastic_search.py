@@ -28,7 +28,33 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 def search(raw_query, start=0):
     orig_query = raw_query
-    # Type filter for normal searches
+    query, filtered_query = _build_query(raw_query, start)
+
+    counts = {
+        'users': elastic.count(filtered_query, index='website', doc_type='user')['count'],
+        'projects': elastic.count(filtered_query, index='website', doc_type='project')['count'],
+        'components': elastic.count(filtered_query, index='website', doc_type='component')['count']
+    }
+
+    if 'user:' in orig_query:
+        counts['total'] = counts['users']
+    elif 'project:' in orig_query:
+        counts['total'] = counts['projects']
+    elif 'component:' in orig_query:
+        counts['total'] = counts['components']
+    else:
+        counts['total'] = sum([x for x in counts.values()])
+
+    raw_results = elastic.search(query, index='website')
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    formatted_results, tags = create_result(results, counts)
+
+    return formatted_results, tags, counts
+
+
+def _build_query(raw_query, start=0):
+
+    # Default to searching all types
     type_filter = {
         'or': [
             {
@@ -36,12 +62,15 @@ def search(raw_query, start=0):
             },
             {
                 'type': {'value': 'component'}
+            },
+            {
+                'type': {'value': 'user'}
             }
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
     # TODO(fabianvf): The type filter should be programmatically built
-
+    
     if 'project:' in raw_query:
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('project:', '')
@@ -74,6 +103,7 @@ def search(raw_query, start=0):
                 'value': 'user'
             }
         }
+    # If the search contains wildcards, make them mean something
     if '*' in raw_query:
         raw_query.replace('*', '\\*')
         inner_query = {
@@ -90,36 +120,29 @@ def search(raw_query, start=0):
             }
         }
 
+    # This is the complete query
     query = {
         'query': {
-            'filtered': {
-                'filter': type_filter,
-                'query': inner_query
+            'function_score': {
+                'query': {
+                    'filtered': {
+                        'filter': type_filter,
+                        'query': inner_query
+                    }
+                },
+                'functions': [{
+                    'field_value_factor': {
+                        'field': 'boost'
+                    }
+                }],
+                'score_mode': 'multiply'
             }
         },
         'from': start,
         'size': 10,
     }
 
-    counts = {
-        'users': elastic.count(raw_query, index='website', doc_type='user')['count'],
-        'projects': elastic.count(raw_query, index='website', doc_type='project')['count'],
-        'components': elastic.count(raw_query, index='website', doc_type='component')['count']
-    }
-    if 'user:' in orig_query:
-        counts['total'] = counts['users']
-    elif 'project:' in orig_query:
-        counts['total'] = counts['projects']
-    elif 'component:' in orig_query:
-        counts['total'] = counts['components']
-    else:
-        counts['total'] = sum([x for x in counts.values()])
-
-    raw_results = elastic.search(query, index='website')
-    results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results, tags = create_result(results, counts)
-
-    return formatted_results, tags, counts
+    return query, raw_query
 
 
 def update_node(node):
@@ -159,6 +182,7 @@ def update_node(node):
             'registeredproject': node.is_registration,
             'wikis': {},
             'parent_id': parent_id,
+            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -176,7 +200,8 @@ def update_user(user):
 
     user_doc = {
         'id': user._id,
-        'user': user.fullname
+        'user': user.fullname,
+        'boost': 2,  # TODO(fabianvf) this is a temporary workaround (AKA ugly hack)
     }
 
     try:

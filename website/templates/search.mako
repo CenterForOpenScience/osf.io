@@ -221,7 +221,7 @@
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % elif (current_page/10 == total/10) and (i in range((counts['total']/10 - 4), counts['total'])):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((counts['total/10'] -4), counts['total'])):
+                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((counts['total']/10 -4), counts['total'])):
                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
                                 % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
