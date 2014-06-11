@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import collections
 import pyelasticsearch
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -24,10 +22,9 @@ except pyelasticsearch.exceptions.ConnectionError as e:
                 "was a problem starting the elasticsearch interface. Is "
                 "elasticsearch running?")
     elastic = None
-       
+
 
 def search(raw_query, start=0):
-
     # Type filter for normal searches
     type_filter = {
         'or': [
@@ -39,7 +36,6 @@ def search(raw_query, start=0):
             }
         ]
     }
-    raw_query = raw_query.replace('AND', ' ')
     if 'user:' in raw_query:
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('"', '')
@@ -59,13 +55,13 @@ def search(raw_query, start=0):
                     'match': {
                         '_all': raw_query
                     }
-                }   
+                }
             }
         },
         'from': start,
         'size': 10,
     }
-    
+
     if raw_query == '*':
         query = {
             'query': {
@@ -121,8 +117,8 @@ def update_node(node):
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
-            'parent_id':parent_id,
-            'parent_title':parent_title
+            'parent_id': parent_id,
+            'parent_title': parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -143,7 +139,7 @@ def update_user(user):
         'user': user.fullname
     }
 
-    try: 
+    try:
         elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
@@ -160,7 +156,7 @@ def delete_all():
 def delete_doc(elastic_document_id, node):
     category = node.project_or_component
     try:
-        elastic.delete('website', category, elastic_document_id, refresh=True) 
+        elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
@@ -183,16 +179,16 @@ def create_result(results, highlights):
         'registeredproject': {TRUE OR FALSE}
     }
 
-    Returns list of dicts of the following structure: 
+    Returns list of dicts of the following structure:
     {
-        'contributors': [{LIST OF CONTRIBUTORS}], 
-        'wiki_link': '{LINK TO WIKIS}', 
-        'title': '{TITLE TEXT}', 
-        'url': '{URL FOR NODE}', 
-        'nest': {Nested node attributes}, 
-        'tags': [{LIST OF TAGS}], 
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
-        'is_registration': {TRUE OR FALSE}, 
+        'contributors': [{LIST OF CONTRIBUTORS}],
+        'wiki_link': '{LINK TO WIKIS}',
+        'title': '{TITLE TEXT}',
+        'url': '{URL FOR NODE}',
+        'nest': {Nested node attributes},
+        'tags': [{LIST OF TAGS}],
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
+        'is_registration': {TRUE OR FALSE},
         'highlight': [{No longer used, need to phase out}]
         'description': {PROJECT DESCRIPTION}
     }
@@ -205,14 +201,14 @@ def create_result(results, highlights):
             formatted_results.append({
                 'id': result['id'],
                 'user': result['user'],
-                'user_url': '/profile/'+result['id'],
+                'user_url': '/profile/' + result['id'],
             })
         else:
             # Build up word cloud
             for tag in result['tags']:
                 word_cloud[tag] = 1 if word_cloud.get(tag) is None \
                     else word_cloud[tag] + 1
-             
+
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             if parent is not None:
@@ -245,7 +241,7 @@ def create_result(results, highlights):
             formatted_results.append({
                 'contributors': result['contributors'] if parent is None
                     else parent_contributors,
-                'wiki_link': result['url']+'wiki/' if parent is None
+                'wiki_link': result['url'] + 'wiki/' if parent is None
                     else parent_wiki_url,
                 'title': result['title'] if parent is None
                     else parent_title,
@@ -287,25 +283,24 @@ def search_contributor(query, exclude=None):
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
-
     if len(query) > 1:
-        and_filter = {'and':[]}
+        and_filter = {'and': []}
         for item in query:
             and_filter['and'].append({
-                'prefix':{
+                'prefix': {
                     'user': item.lower()
                 }
             })
     else:
         and_filter = {
-            'prefix':{
-                'user':query[0].lower()
+            'prefix': {
+                'user': query[0].lower()
             }
         }
 
     query = {
         'query': {
-            'filtered' :{
+            'filtered': {
                 'filter': and_filter
             }
         }
