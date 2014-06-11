@@ -147,4 +147,4 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
         }
         info.append(item)
 
-    return info
+    return {'data': info}
