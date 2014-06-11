@@ -27,7 +27,7 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 
 def search(raw_query, start=0):
-
+    orig_query = raw_query
     # Type filter for normal searches
     type_filter = {
         'or': [
