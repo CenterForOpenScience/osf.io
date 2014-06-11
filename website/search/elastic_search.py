@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import collections
 import pyelasticsearch
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -207,7 +205,7 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
-        'boost': 2,  # TODO(fabianvf) this is a temporary workaround (AKA ugly hack)
+        'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
     try:
@@ -272,12 +270,12 @@ def create_result(results, counts):
             formatted_results.append({
                 'id': result['id'],
                 'user': result['user'],
-                'user_url': '/profile/' + result['id']
+                'user_url': '/profile/' + result['id'],
             })
         else:
             # Build up word cloud
             for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag, None) is None \
+                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
                     else word_cloud[tag] + 1
 
             # Ensures that information from private projects is never returned
@@ -287,9 +285,15 @@ def create_result(results, counts):
                     parent_title = parent.title
                     parent_url = parent.url
                     parent_wiki_url = parent.url + 'wiki/'
-                    parent_contributors = parent.contributors
-                    parent_tags = parent.tags
-                    parent_contributors_url = ['/profile/' + contributor for contributor in parent_contributors]
+                    parent_contributors = [
+                        contributor.fullname
+                        for contributor in parent.contributors
+                    ]
+                    parent_tags = [tag._id for tag in parent.tags]
+                    parent_contributors_url = [
+                        contributor.url
+                        for contributor in parent.contributors
+                    ]
                     parent_is_registration = parent.is_registration
                     parent_description = parent.description
                 else:
@@ -306,7 +310,7 @@ def create_result(results, counts):
             formatted_results.append({
                 'contributors': result['contributors'] if parent is None
                     else parent_contributors,
-                'wiki_link': result['url']+'wiki/' if parent is None
+                'wiki_link': result['url'] + 'wiki/' if parent is None
                     else parent_wiki_url,
                 'title': result['title'] if parent is None
                     else parent_title,
@@ -350,23 +354,23 @@ def search_contributor(query, exclude=None):
     query = re.split(r'\s+', query)
 
     if len(query) > 1:
-        and_filter = {'and':[]}
+        and_filter = {'and': []}
         for item in query:
             and_filter['and'].append({
-                'prefix':{
+                'prefix': {
                     'user': item.lower()
                 }
             })
     else:
         and_filter = {
-            'prefix':{
-                'user':query[0].lower()
+            'prefix': {
+                'user': query[0].lower()
             }
         }
 
     query = {
         'query': {
-            'filtered' :{
+            'filtered': {
                 'filter': and_filter
             }
         }

@@ -1,15 +1,17 @@
-import re
+# -*- coding: utf-8 -*-
+
 import time
-from urllib2 import HTTPError
+import bleach
 import logging
+from urllib2 import HTTPError
+from modularodm.storage.mongostorage import RawQuery as Q
 
 from framework import must_be_logged_in, request, status
-import website.search.search as search 
-from website import settings
-from website.filters import gravatar
+
+import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery as Q
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
@@ -19,12 +21,15 @@ def search_search():
     tick = time.time()
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
-    if 'pagination' in request.args:
-        start = int(request.args.get('pagination'))
-    else:
+    start = request.args.get('pagination', 0)
+    try:
+        start = int(start)
+    except (TypeError, ValueError):
+        logger.error(u'Invalid pagination value: {0}'.format(start))
         start = 0
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
+    query = bleach.clean(query, tags=[], strip=True)
     if query == '':
         status.push_status_message('No search query', 'info')
         return {
@@ -64,9 +69,9 @@ def search_search():
     }
 
 
-@must_be_logged_in 
-def search_projects_by_title(**kwargs): 
-    #TODO(fabianvf): At some point, it would be nice to do this with elastic search
+@must_be_logged_in
+def search_projects_by_title(**kwargs):
+    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
 
     term = request.args.get('term')
     user = kwargs['auth'].user
@@ -117,8 +122,9 @@ def search_projects_by_title(**kwargs):
 
     return out
 
+
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
-    return search.search_contributor(request.args.get('query',''), exclude)
-   
+    query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
+    return search.search_contributor(query, exclude)
