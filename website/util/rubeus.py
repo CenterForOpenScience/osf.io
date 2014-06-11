@@ -136,7 +136,7 @@ class NodeProjectCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
-        for child in node.nodes: #(child.resolve()._id not in visited or node.is_folder) and
+        for child in reversed(node.nodes): #(child.resolve()._id not in visited or node.is_folder) and
             if not child.is_deleted and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
@@ -203,12 +203,12 @@ class NodeProjectCollector(object):
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         children_count = len(node.nodes)
-        if node.parent_id is None:
+        if node.resolve().parent_id is None:
             is_project = True
         else:
             is_project = False
-        is_pointer = not (node.primary)
-        is_component = node.primary and not is_project
+        is_pointer = not node.primary
+        is_component = node.resolve().primary and not is_project
 
         if can_view and (node.primary or node.is_folder or parent_is_folder) and children_count > 0:
             children = True
@@ -225,10 +225,10 @@ class NodeProjectCollector(object):
                 'edit': can_edit,
                 'view': can_view,
                 'copyable': False
-                    if node.is_dashboard
+                    if node.is_folder
                     else True,
                 'movable': True
-                    if parent_is_folder and can_edit
+                    if parent_is_folder
                     else False,
                 'acceptsFolders': True
                     if node.is_folder

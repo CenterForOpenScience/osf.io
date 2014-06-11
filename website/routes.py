@@ -620,6 +620,18 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/expanded/',
+            '/project/<pid>/node/<nid>/expanded/',
+        ], 'get', project_views.node.is_expanded, json_renderer),
+        Rule([
+            '/project/<pid>/expand/',
+            '/project/<pid>/node/<nid>/expand/',
+        ], 'post', project_views.node.expand, json_renderer),
+        Rule([
+            '/project/<pid>/collapse/',
+            '/project/<pid>/node/<nid>/collapse/',
+        ], 'post', project_views.node.collapse, json_renderer),
 
         Rule(
             [
@@ -649,10 +661,10 @@ def make_url_map(app):
         ),
         Rule(
             [
-                '/pointer/move/',
+                '/pointers/move/',
             ],
             'post',
-            project_views.node.move_pointer,
+            project_views.node.move_pointers,
             json_renderer,
         ),
         Rule(

@@ -1,10 +1,11 @@
-;(function (global, factory) {
+;
+(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils', 'hgrid', 'js/dropzone-patch', 'bootstrap',
-            'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], factory);
+        define(['knockout', 'jquery', 'osfutils', 'hgrid', 'bootstrap', 'hgrid-draggable',
+            'typeahead', 'handlebars'], factory);
     } else if (typeof $script === 'function') {
-            $script.ready(['dropzone', 'dropzone-patch', 'hgrid',
-            'hgridrowselectionmodel', 'rowmovemanager', 'typeahead', 'handlebars'], function () {
+        $script.ready(['hgrid', 'typeahead', 'handlebars', 'hgrid-draggable'],
+            function () {
                 global.ProjectOrganizer = factory(jQuery, global.HGrid, global.ko);
                 $script.done('projectorganizer');
             });
@@ -17,6 +18,7 @@
     //
     // Private Helper Functions
     //
+
     //
     // HGrid Customization
     //
@@ -49,19 +51,20 @@
         text: 'Modified',
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
-            if(row.modifiedDelta == 0){
+            if (row.modifiedDelta == 0) {
                 return "";
             }
-            return moment.utc(row.dateModified).fromNow()+", "+row.modifiedBy.toString();
+            return moment.utc(row.dateModified).fromNow() + ", " + row.modifiedBy.toString();
         },
         folderView: function (row) {
-            if(row.modifiedDelta == 0){
+            if (row.modifiedDelta == 0) {
                 return "";
             }
-            return moment.utc(row.dateModified).fromNow()+", "+row.modifiedBy.toString();
+            return moment.utc(row.dateModified).fromNow() + ", " + row.modifiedBy.toString();
         },
         sortable: false,
         selectable: true,
+        behavior: "move",
         width: 40
     };
 
@@ -71,34 +74,35 @@
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
             var contributorCount = row.contributors.length;
-            if(contributorCount == 0){
+            if (contributorCount == 0) {
                 return "";
             }
             var contributorString = row.contributors[0].name.toString();
-            if(contributorCount > 1) {
+            if (contributorCount > 1) {
                 contributorString += " +" + (contributorCount - 1);
             }
             return contributorString;
         },
         folderView: function (row) {
             var contributorCount = row.contributors.length;
-            if(contributorCount == 0){
+            if (contributorCount == 0) {
                 return "";
             }
             var contributorString = row.contributors[0].name.toString();
-            if(contributorCount > 1) {
+            if (contributorCount > 1) {
                 contributorString += " +" + (contributorCount - 1);
             }
             return contributorString;
         },
         sortable: false,
         selectable: true,
-        // behavior: "selectAndMove",
+        behavior: "move",
         width: 30
     };
 
     ProjectOrganizer.Col.Name.selectable = true;
     ProjectOrganizer.Col.Name.sortable = false;
+    ProjectOrganizer.Col.Name.behavior = "move";
     ProjectOrganizer.Col.Name.itemView = function (row) {
         var name = row.name.toString();
 
@@ -115,14 +119,14 @@
         }
         if (row.isFolder) {
             type = "folder";
-            if(!row.isSmartFolder) {
+            if (!row.isSmartFolder) {
                 extraClass = " dropzone";
             }
         }
         if (row.isSmartFolder) {
             extraClass += " smart-folder";
         }
-        if (row.isComponent){
+        if (row.isComponent) {
             type = "component"
         }
         return '<img src="/static/img/hgrid/' + type + '.png"><span class="project-'
@@ -131,29 +135,29 @@
     ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
 
 
-    var collapseAllInHGrid = function(grid) {
+    var collapseAllInHGrid = function (grid) {
         grid.collapseAll();
     };
 
-    var expandAllInHGrid = function(grid) {
-        grid.getData().forEach(function(item) {
-           grid.expandItem(item);
+    var expandAllInHGrid = function (grid) {
+        grid.getData().forEach(function (item) {
+            grid.expandItem(item);
         });
     };
 
-    var hgridInit = function(){
+    var hgridInit = function () {
         var self = this;
         self.gridData = self.grid.grid.getData();
         self.myProjects = [];
         self.publicProjects = [];
-
+        self.grid.registerPlugin(draggable);
         expandAllInHGrid(self.grid);
 
         // Expand/collapse All functions
-        $(".pg-expand-all").click(function (){
+        $(".pg-expand-all").click(function () {
             expandAllInHGrid(self.grid);
         });
-        $(".pg-collapse-all").click(function (){
+        $(".pg-collapse-all").click(function () {
             collapseAllInHGrid(self.grid);
         });
 
@@ -172,7 +176,7 @@
         });
 
 
-        self.grid.grid.setSelectionModel(new Slick.RowSelectionModel());
+        //self.grid.grid.setSelectionModel(new Slick.RowSelectionModel());
         //
         // Grab the JSON for the contents of the smart folder. Add that data
         // to self.myProjects so that we can use it for the autocomplete
@@ -228,7 +232,7 @@
 
         self.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
-            if (selectedRows.length == 1 ){
+            if (selectedRows.length == 1) {
                 self.myProjects.initialize();
                 self.publicProjects.initialize();
                 var linkName;
@@ -242,58 +246,60 @@
                     });
                 }
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
-                if (typeof theParentNode !== 'undefined') {
-                    var theParentNodeID = theParentNode.node_id;
-                     theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
-                }
-                else {
-                    theParentNodeID = "";
+                if (typeof theParentNode === 'undefined') {
+                    theParentNode = theItem;
                     theItem.parentIsSmartFolder = true;
                 }
+                theItem.parentNode = theParentNode;
 
-                if(!theItem.isSmartFolder) {
+                    var theParentNodeID = theParentNode.node_id;
+                    theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
+                    theItem.parentNodeID = theParentNodeID;
+
+
+                if (!theItem.isSmartFolder) {
                     createProjectDetailHTMLFromTemplate(theItem);
-                    $('#findNode'+theItem.node_id).hide();
-                    $('#findNode'+theItem.node_id+' .typeahead').typeahead({
-                      highlight: true
-                    },
-                    {
-                        name: 'my-projects',
-                        displayKey: function(data){
-                              return data.name;
-                          },
-                        source: self.myProjects.ttAdapter(),
-                        templates: {
-                        header: function(){
-                            return '<h3 class="category">My Projects</h3>'
+                    $('#findNode' + theItem.node_id).hide();
+                    $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
+                            highlight: true
                         },
-                        suggestion: function(data){
-                              return '<p>'+data.name+'</p>';
-                          }
-                        }
-                    },
-                    {
-                        name: 'public-projects',
-                        displayKey: function(data){
-                              return data.name;
-                          },
-                        source: self.publicProjects.ttAdapter(),
-                        templates: {
-                        header: function(){
-                            return '<h3 class="category">Public Projects</h3>'
+                        {
+                            name: 'my-projects',
+                            displayKey: function (data) {
+                                return data.name;
+                            },
+                            source: self.myProjects.ttAdapter(),
+                            templates: {
+                                header: function () {
+                                    return '<h3 class="category">My Projects</h3>'
+                                },
+                                suggestion: function (data) {
+                                    return '<p>' + data.name + '</p>';
+                                }
+                            }
                         },
-                        suggestion: function(data){
-                              return '<p>'+data.name+'</p>';
-                          }
-                        }
-                   });
+                        {
+                            name: 'public-projects',
+                            displayKey: function (data) {
+                                return data.name;
+                            },
+                            source: self.publicProjects.ttAdapter(),
+                            templates: {
+                                header: function () {
+                                    return '<h3 class="category">Public Projects</h3>'
+                                },
+                                suggestion: function (data) {
+                                    return '<p>' + data.name + '</p>';
+                                }
+                            }
+                        });
 
-                    $('#input'+theItem.node_id).bind('keyup', function(event){
+                    $('#input' + theItem.node_id).bind('keyup', function (event) {
                         var key = event.keyCode || event.which;
                         var buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== "undefined");
 
-                        if ( key === 13 ) {
-                            if( buttonEnabled ) {
+                        if (key === 13) {
+                            if (buttonEnabled) {
                                 $('#add-link-' + theItem.node_id).click(); //submits if the control is active
                             }
                         }
@@ -304,17 +310,17 @@
                             linkID = "";
                         }
                     });
-                    $('#input'+theItem.node_id).bind('typeahead:selected', function(obj, datum, name) {
-                        if( children.indexOf(datum.node_id) == -1 ) {
+                    $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
+                        if (children.indexOf(datum.node_id) == -1) {
                             $('#add-link-' + theItem.node_id).removeAttr('disabled');
                             linkName = datum.name;
                             linkID = datum.node_id;
-                        } else  {
+                        } else {
                             $('#add-link-warn-' + theItem.node_id).text("This project is already in the folder")
                         }
                     });
-                    $('#add-link-'+theItem.node_id).click(function() {
-                        var url = "/api/v1/pointer/"; // the script where you handle the form input.
+                    $('#add-link-' + theItem.node_id).click(function () {
+                        var url = "/api/v1/pointer/";
                         var postData = JSON.stringify(
                             {
                                 pointerID: linkID,
@@ -326,14 +332,14 @@
                             data: postData,
                             contentType: 'application/json',
                             dataType: 'json',
-                            success: function() {
-                               reloadFolder(self, theItem, theParentNode);
+                            success: function () {
+                                reloadFolder(self.grid, theItem, theParentNode);
                             }
                         });
                     });
 
-                    $('#remove-link-'+theItem.node_id).click(function() {
-                        var url = '/api/v1/folder/'+theParentNodeID+'/pointer/'+theItem.node_id;
+                    $('#remove-link-' + theItem.node_id).click(function () {
+                        var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
                         var postData = JSON.stringify({});
                         $.ajax({
                             type: "DELETE",
@@ -341,14 +347,14 @@
                             data: postData,
                             contentType: 'application/json',
                             dataType: 'json',
-                            success: function() {
-                                reloadFolder(self, theItem, theParentNode);
+                            success: function () {
+                                reloadFolder(self.grid, theItem, theParentNode);
                             }
                         });
                     });
-                    $('#delete-folder-'+theItem.node_id).click(function() {
+                    $('#delete-folder-' + theItem.node_id).click(function () {
                         var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.";
-                        bootbox.confirm(confirmationText, function(result) {
+                        bootbox.confirm(confirmationText, function (result) {
                             if (result !== null && result) {
                                 var url = '/api/v1/folder/';
                                 var postData = JSON.stringify({ 'node_id': theItem.node_id });
@@ -358,75 +364,75 @@
                                     data: postData,
                                     contentType: 'application/json',
                                     dataType: 'json',
-                                    success: function() {
-                                        reloadFolder(self, theParentNode, theParentNode);
+                                    success: function () {
+                                        reloadFolder(self.grid, theParentNode, theParentNode);
                                     }
                                 });
                             }
                         });
                     });
-                    $('#add-folder-'+theItem.node_id).click(function(){
-                        $('#afc-'+theItem.node_id).show();
+                    $('#add-folder-' + theItem.node_id).click(function () {
+                        $('#afc-' + theItem.node_id).show();
                     });
-                    $('#add-folder-input'+theItem.node_id).bind('keyup',function() {
+                    $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
                         var contents = $.trim($(this).val());
-                        if(contents === ''){
-                            $('#add-folder-button'+theItem.node_id).attr("disabled", "disabled");
+                        if (contents === '') {
+                            $('#add-folder-button' + theItem.node_id).attr("disabled", "disabled");
                         } else {
-                            $('#add-folder-button'+theItem.node_id).removeAttr("disabled");
+                            $('#add-folder-button' + theItem.node_id).removeAttr("disabled");
                         }
                     });
 
-                     $('#add-folder-button'+theItem.node_id).click(function(){
-                         var url = '/api/v1/folder/';
-                         var postData = JSON.stringify({
-                             node_id: theItem.node_id,
-                             title: $.trim($('#add-folder-input'+theItem.node_id).val())
-                         });
-                         $.ajax({
+                    $('#add-folder-button' + theItem.node_id).click(function () {
+                        var url = '/api/v1/folder/';
+                        var postData = JSON.stringify({
+                            node_id: theItem.node_id,
+                            title: $.trim($('#add-folder-input' + theItem.node_id).val())
+                        });
+                        $.ajax({
                             type: "PUT",
                             url: url,
                             data: postData,
                             contentType: 'application/json',
                             dataType: 'json',
-                            success: function() {
-                               reloadFolder(self, theItem, theParentNode);
+                            success: function () {
+                                reloadFolder(self.grid, theItem, theParentNode);
                             }
                         });
-                     });
-                    $('#rename-node-'+theItem.node_id).click(function(){
-                        $('#rnc-'+theItem.node_id).show();
                     });
-                     $('#rename-node-input'+theItem.node_id).bind('keyup',function() {
+                    $('#rename-node-' + theItem.node_id).click(function () {
+                        $('#rnc-' + theItem.node_id).show();
+                    });
+                    $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
                         var contents = $.trim($(this).val());
-                        if(contents === '' || contents === theItem.name){
-                            $('#rename-node-button'+theItem.node_id).attr("disabled", "disabled");
+                        if (contents === '' || contents === theItem.name) {
+                            $('#rename-node-button' + theItem.node_id).attr("disabled", "disabled");
                         } else {
-                            $('#rename-node-button'+theItem.node_id).removeAttr("disabled");
+                            $('#rename-node-button' + theItem.node_id).removeAttr("disabled");
                         }
                     });
 
-                     $('#rename-node-button'+theItem.node_id).click(function(){
-                         var url = theItem.apiURL+'edit/';
-                         var postData = JSON.stringify({
-                             name: 'title',
-                             value: $.trim($('#rename-node-input'+theItem.node_id).val())
-                         });
-                         $.ajax({
+                    $('#rename-node-button' + theItem.node_id).click(function () {
+                        var url = theItem.apiURL + 'edit/';
+                        var postData = JSON.stringify({
+                            name: 'title',
+                            value: $.trim($('#rename-node-input' + theItem.node_id).val())
+                        });
+                        $.ajax({
                             type: "POST",
                             url: url,
                             data: postData,
                             contentType: 'application/json',
                             dataType: 'json',
-                            success: function() {
-                               reloadFolder(self, theParentNode, theParentNode);
+                            success: function () {
+                                reloadFolder(self.grid, theParentNode, theParentNode);
                             }
                         });
-                     });
+                    });
 
-                    $('#add-item-'+theItem.node_id).click(function(){
-                        $('#buttons'+theItem.node_id).hide();
-                        $('#findNode'+theItem.node_id).show();
+                    $('#add-item-' + theItem.node_id).click(function () {
+                        $('#buttons' + theItem.node_id).hide();
+                        $('#findNode' + theItem.node_id).show();
                     });
 
                     $(".project-details").show();
@@ -438,27 +444,27 @@
             }
 
 
-
         }); // end onSelectedRowsChanged
     };
 
-    function reloadFolder(self, theItem, theParentNode){
+    function reloadFolder(hgrid, theItem, theParentNode) {
         var toReload = theParentNode;
         if (theItem.kind == 'folder') {
             toReload = theItem;
         }
-        self.grid.reloadFolder(toReload);
-        self.grid.grid.setSelectedRows([]);
-        self.grid.grid.resetActiveCell();
+        hgrid.reloadFolder(toReload);
+        hgrid.grid.setSelectedRows([]);
+        hgrid.grid.resetActiveCell();
+        return toReload;
     }
 
-    function createProjectDetailHTMLFromTemplate(theItem){
-        var detailTemplateSource   = $("#project-detail-template").html();
-        Handlebars.registerHelper('commalist', function(items, options) {
+    function createProjectDetailHTMLFromTemplate(theItem) {
+        var detailTemplateSource = $("#project-detail-template").html();
+        Handlebars.registerHelper('commalist', function (items, options) {
             var out = '';
 
-            for(var i=0, l=items.length; i<l; i++) {
-                out = out + options.fn(items[i]) + (i!==(l-1) ? ", ":"");
+            for (var i = 0, l = items.length; i < l; i++) {
+                out = out + options.fn(items[i]) + (i !== (l - 1) ? ", " : "");
             }
             return out;
         });
@@ -468,9 +474,162 @@
             multipleContributors: theItem.contributors.length > 1,
             parentIsSmartFolder: theItem.parentIsSmartFolder
         };
-        var displayHTML    = detailTemplate(detailTemplateContext);
+        var displayHTML = detailTemplate(detailTemplateContext);
         $(".project-details").html(displayHTML);
     }
+
+    var altKey = false;
+    $(document).keydown(function (e) {
+        if (e.altKey) {
+            altKey = true;
+        }
+    });
+    $(document).keyup(function (e) {
+        if (!e.altKey) {
+            altKey = false;
+        }
+    });
+
+    // copyMode can be "copy", "move", "forbidden", or "none".
+    var copyMode = "none";
+
+    var draggable = new HGrid.Draggable({
+        onDrag: function (event, items) {
+            var canCopy = true;
+            var canMove = true;
+
+            items.forEach(function (item) {
+                canCopy = canCopy && item.permissions.copyable;
+                canMove = canMove && item.permissions.movable;
+            });
+
+            // Check through possible move and copy options, and set the copyMode appropriately.
+            if (!(canMove || canCopy)) {
+                copyMode = "forbidden"
+            }
+            else if (canMove && canCopy) {
+                if (altKey) {
+                    copyMode = "copy";
+                } else {
+                    copyMode = "move";
+                }
+            }
+            if (!canMove && canCopy) {
+                copyMode = "copy";
+            }
+            if (!canCopy && canMove) {
+                copyMode = "move";
+            }
+
+            // Set the cursor to match the appropriate copy mode
+            switch (copyMode) {
+                case "forbidden":
+                    $('.project-organizer-dand').css('cursor', 'not-allowed');
+                    break;
+                case "copy":
+                    $('.project-organizer-dand').css('cursor', 'copy');
+                    break;
+                case "move":
+                    $('.project-organizer-dand').css('cursor', 'move');
+                    break;
+                default:
+                    $('.project-organizer-dand').css('cursor', 'default');
+            }
+        },
+        onDrop: function (event, items, folder) {
+            var theFolderID = folder.node_id;
+            var theFolderParent = folder.parentNode;
+            var sampleItem = items[0];
+            var itemParentID = sampleItem.parentID;
+            var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+            var itemParentNodeID = itemParent.node_id;
+            var itemIds = $.map(items, function (item) {
+                return item.node_id;
+            });
+
+            if (copyMode === "copy") {
+                var url = "/api/v1/project/"+theFolderID+"/pointer/";
+
+                var postData = JSON.stringify(
+                    {
+                        nodeIds: itemIds
+                    });
+            } else if (copyMode === "move") {
+                url = "/api/v1/pointers/move/";
+                postData = JSON.stringify(
+                    {
+                        pointerIds: itemIds,
+                        toNodeId: theFolderID,
+                        fromNodeId: itemParentNodeID
+                    });
+            }
+            if(copyMode === "copy" || copyMode === "move") {
+                var reloadedFolder = "";
+                $.ajax({
+                    type: "POST",
+                    url: url,
+                    data: postData,
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    complete: function () {
+                        if (copyMode == "move") {
+                            itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                            reloadedFolder = reloadFolder(draggable.grid, itemParent, itemParent);
+                        }
+                        copyMode = "none";
+                        if(reloadedFolder !== folder && reloadedFolder !== theFolderParent) {
+                            reloadFolder(draggable.grid, folder, theFolderParent);
+                        }
+                    }
+                });
+            }
+            $('.project-organizer-dand').css('cursor', 'default');
+        },
+        canDrag: function (item) {
+            return item.permissions.copyable || item.permissions.movable
+        },
+        acceptDrop: function (item, folder, done) {
+            if (folder.name === 'Forbidden') {
+                done('Cannot drop here');
+            }
+            done();
+        },
+        canAcceptDrop: function(items, folder) {
+            if (folder.isSmartFolder){
+                return false;
+            }
+            var hasComponents = false;
+            var hasFolders = false;
+            var copyable = true;
+            var movable = true;
+            var canDrop = true;
+
+            items.forEach(function(item){
+                hasComponents = hasComponents || item.isComponent;
+                hasFolders = hasFolders || item.isFolder;
+                copyable = copyable && item.permissions.copyable;
+                movable = movable && item.permissions.movable;
+            });
+
+
+            if(hasComponents){
+                canDrop = canDrop && folder.permissions.acceptsComponents;
+            }
+            if(hasFolders){
+                canDrop = canDrop && folder.permissions.acceptsFolders;
+            }
+            if(copyMode === "move"){
+                canDrop = canDrop && folder.permissions.acceptsMoves && movable;
+            }
+            if(copyMode === "copy"){
+                canDrop = canDrop && folder.permissions.acceptsCopies && copyable;
+            }
+            return canDrop;
+
+        },
+        enableMove: false,
+        rowMoveManagerOptions: {proxyClass: 'project-organizer-dand'}
+    });
 
     //
     // Public methods
@@ -485,7 +644,7 @@
                 ProjectOrganizer.Col.Name,
                 dateModifiedColumn,
                 contributorsColumn
-                ],
+            ],
             slickgridOptions: {
                 editable: true,
                 enableAddRow: false,
@@ -495,7 +654,7 @@
                 autoEdit: false
             },
             data: '/api/v1/dashboard/get_dashboard/',  // Where to get the initial data
-            fetchUrl: function(folder) {
+            fetchUrl: function (folder) {
                 return '/api/v1/dashboard/get_dashboard/' + folder.node_id;
             },
             init: hgridInit.bind(self)
@@ -504,12 +663,12 @@
         self.selector = selector;
         self.options = $.extend({}, baseOptions, options);
         self.init(self);
+        self.altKey = false;
     }
 
-    ProjectOrganizer.prototype.init = function() {
+    ProjectOrganizer.prototype.init = function () {
         var self = this;
         self.grid = new HGrid(self.selector, self.options);
-
     };
 
     return ProjectOrganizer;

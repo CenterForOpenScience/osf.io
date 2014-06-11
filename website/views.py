@@ -167,7 +167,7 @@ def get_all_projects_smart_folder(**kwargs):
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
         Q('is_folder','eq', False)
-    )
+    ).sort('-title')
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
     return return_value
@@ -182,7 +182,7 @@ def get_all_registrations_smart_folder(**kwargs):
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
         Q('is_folder','eq', False)
-    )
+    ).sort('-title')
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
     return return_value

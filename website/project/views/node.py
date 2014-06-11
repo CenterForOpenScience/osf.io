@@ -328,6 +328,29 @@ def view_project(**kwargs):
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
+#### Expand/Collapse
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def is_expanded(**kwargs):
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
+    return node_to_use.is_expanded(auth=auth)
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def expand(**kwargs):
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.expand(auth=auth)
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def collapse(**kwargs):
+    auth = kwargs['auth']
+    node_to_use = kwargs['node'] or kwargs['project']
+    node_to_use.collapse(auth=auth)
+
 #### Reorder components
 
 @must_be_valid_project
@@ -1021,30 +1044,36 @@ def _add_pointers(node, pointers, auth):
         node.save()
 
 @collect_auth
-def move_pointer(auth):
+def move_pointers(auth):
     """Move pointer from one node to another node.
 
     """
 
-    from_node_id = request.json.get('fromNodeID')
-    to_node_id = request.json.get('toNodeID')
-    pointer_to_move = request.json.get('pointerID')
+    from_node_id = request.json.get('fromNodeId')
+    to_node_id = request.json.get('toNodeId')
+    pointers_to_move = request.json.get('pointerIds')
 
-    if not (from_node_id and to_node_id and pointer_to_move):
+    if not (from_node_id and to_node_id and pointers_to_move):
         raise HTTPError(http.BAD_REQUEST)
 
-    pointer = Node.load(pointer_to_move)
     from_node = Node.load(from_node_id)
     to_node = Node.load(to_node_id)
 
-    _add_pointers(to_node, [pointer], auth)
+    for pointer_to_move in pointers_to_move:
+        pointer_id = from_node.pointing_at(pointer_to_move)
+        pointer_node = Node.load(pointer_to_move)
 
-    try:
-        from_node.rm_pointer(pointer, auth=auth)
-    except ValueError:
-        raise HTTPError(http.BAD_REQUEST)
+        pointer = Pointer.load(pointer_id)
+        if pointer is None:
+            raise HTTPError(http.BAD_REQUEST)
 
-    from_node.save()
+        try:
+            from_node.rm_pointer(pointer, auth=auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
+
+        from_node.save()
+        _add_pointers(to_node, [pointer_node], auth)
 
 @collect_auth
 def add_pointer(auth):

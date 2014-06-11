@@ -1012,6 +1012,36 @@ class TestNode(OsfTestCase):
         with assert_raises(ValueError):
             node_two.add_pointer(folder, auth=self.consolidate_auth)
 
+    def test_is_expanded_default_false_with_user(self):
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
+    def test_expand_sets_true_with_user(self):
+        self.node.expand(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), True)
+
+    def test_collapse_sets_false_with_user(self):
+        self.node.expand(user=self.user)
+        self.node.collapse(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
+    def test_is_expanded_default_false_with_auth(self):
+        assert_equal(self.node.is_expanded(auth=self.consolidate_auth), False)
+
+    def test_expand_sets_true_with_auth(self):
+        self.node.expand(auth=self.consolidate_auth)
+        assert_equal(self.node.is_expanded(auth=self.consolidate_auth), True)
+
+    def test_collapse_sets_false_with_auth(self):
+        self.node.expand(auth=self.consolidate_auth)
+        self.node.collapse(auth=self.consolidate_auth)
+        assert_equal(self.node.is_expanded(auth=self.consolidate_auth), False)
+
+    def test_collapse_sets_false_with_mixed(self):
+        self.node.expand(auth=self.consolidate_auth)
+        self.node.collapse(user=self.user)
+        assert_equal(self.node.is_expanded(auth=self.consolidate_auth), False)
+
+
 class TestRemoveNode(OsfTestCase):
 
     def setUp(self):

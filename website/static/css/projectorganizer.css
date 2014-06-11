@@ -181,6 +181,7 @@ h3.category {
 }
 .tt-dropdown-menu {
     width: 422px;
+    height: 2000px;
     padding: 8px 0;
     background-color: #fff;
     border: 1px solid #ccc;
