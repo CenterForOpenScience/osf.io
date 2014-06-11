@@ -1,16 +1,13 @@
-import re
 import time
 from urllib2 import HTTPError
 import logging
 
 from framework import must_be_logged_in, request, status
-import website.search.search as search 
-from website import settings
-from website.filters import gravatar
+import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 from modularodm.storage.mongostorage import RawQuery as Q
-
+import bleach
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('search.routes')
 
@@ -25,6 +22,7 @@ def search_search():
         start = 0
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
+    query = bleach.clean(query, strip=True)
     if query == '':
         status.push_status_message('No search query', 'info')
         return {
@@ -50,11 +48,11 @@ def search_search():
     # Whether or not the user is searching for users
     searching_users = query.startswith("user:")
     return {
-        'highlight': [], 
+        'highlight': [],
         'results': results_search,
-        'total': total, 
+        'total': total,
         'query': query,
-        'spellcheck': [], 
+        'spellcheck': [],
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
@@ -62,9 +60,9 @@ def search_search():
     }
 
 
-@must_be_logged_in 
-def search_projects_by_title(**kwargs): 
-    #TODO(fabianvf): At some point, it would be nice to do this with elastic search
+@must_be_logged_in
+def search_projects_by_title(**kwargs):
+    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
 
     term = request.args.get('term')
     user = kwargs['auth'].user
@@ -115,8 +113,9 @@ def search_projects_by_title(**kwargs):
 
     return out
 
+
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
-    return search.search_contributor(request.args.get('query',''), exclude)
-   
+    query = bleach.clean(request.args.get('query', ''))
+    return search.search_contributor(query, exclude)
