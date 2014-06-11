@@ -214,6 +214,30 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def public_id(self):
         return None
 
+    def get_backref(self, schema, backref_name):
+        return schema + "__" + backref_name
+
+
+    @property
+    def nodes(self):
+        #backref name
+        schema = self.config.settings_models['node']._name
+        ret = []
+        github_nodes = self.get_backref(schema, "authorized")
+
+        for node in getattr(self, github_nodes):
+            ret.append(node.owner)
+
+        return ret
+
+
+    def to_json(self, user):
+        ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret.update({
+            'nodes': self.nodes
+        })
+        return ret
+
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 

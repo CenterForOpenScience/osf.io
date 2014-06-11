@@ -47,21 +47,12 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     def public_id(self):
         return self.github_user
 
-    @property
-    def nodes(self):
-        # TODO(asmacdo): Generalize me
-        return [
-            node_settings.owner for node_settings in
-            self.addongithubnodesettings__authorized
-        ]
-
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
             'authorized_github_user': self.github_user if self.github_user else '',
             'show_submit': False,
-            'nodes_authorized': self.nodes
         })
         return rv
 

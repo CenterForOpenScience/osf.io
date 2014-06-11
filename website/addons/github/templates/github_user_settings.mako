@@ -19,7 +19,7 @@
     <div>Authorized Projects:</div>
     <div class="scrolling-table">
         <table class="table table-hover">
-            % for node in nodes_authorized:
+            % for node in nodes:
                 <tr style="">
                     <td><a href="${node.absolute_url}">${node.title}</a></td>
                     <td><a
