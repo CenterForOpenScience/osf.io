@@ -377,7 +377,7 @@ def _render_conference_node(node, idx):
 
 def conference_results(meeting):
 
-    if meeting not in MEETING_DATA or not MEETING_DATA[meeting]['active']:
+    if meeting not in MEETING_DATA:
         raise HTTPError(http.NOT_FOUND)
 
     nodes = Node.find(
