@@ -107,6 +107,8 @@ def _build_query(raw_query, start=0):
     raw_query = raw_query.replace('registration:', '')
     raw_query = raw_query.replace('(', '')
     raw_query = raw_query.replace(')', '')
+    raw_query = raw_query.replace('\\', '')
+    raw_query = raw_query.replace('"', '')
 
     # If the search contains wildcards, make them mean something
     if '*' in raw_query:
