@@ -40,12 +40,12 @@ def search(raw_query, start=0):
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
-    #TODO(fabianvf): The type filter should be programmatically built
-   
+    # TODO(fabianvf): The type filter should be programmatically built
+
     if 'project:' in raw_query:
         raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:','')
-        raw_query = raw_query.replace('component:','')
+        raw_query = raw_query.replace('project:', '')
+        raw_query = raw_query.replace('component:', '')
         raw_query = raw_query.replace('(', '')
         raw_query = raw_query.replace(')', '')
         type_filter = {
@@ -55,8 +55,8 @@ def search(raw_query, start=0):
         }
     elif 'component:' in raw_query:
         raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:','')
-        raw_query = raw_query.replace('component:','')
+        raw_query = raw_query.replace('project:', '')
+        raw_query = raw_query.replace('component:', '')
         type_filter = {
             'type': {
                 'value': 'component'
@@ -64,8 +64,8 @@ def search(raw_query, start=0):
         }
     elif 'user:' in raw_query:
         raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:','')
-        raw_query = raw_query.replace('component:','')
+        raw_query = raw_query.replace('project:', '')
+        raw_query = raw_query.replace('component:', '')
         raw_query = raw_query.replace('"', '')
         raw_query = raw_query.replace('\\"', '')
         raw_query = raw_query.replace("'", '')
@@ -128,13 +128,11 @@ def update_node(node):
     if node.category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        parent_title = ''
         category = node.category
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            parent_title = node.node__parent[0].title
             category = 'component'
         except IndexError:
             # Skip orphaned components
@@ -241,26 +239,26 @@ def create_result(results, counts):
         # User results are handled specially
         if 'user' in result:
             formatted_results.append({
-                'id':result['id']
-                ,'user':result['user']
-                ,'user_url':'/profile/'+result['id']
+                'id': result['id'],
+                'user': result['user'],
+                'user_url': '/profile/' + result['id']
             })
         else:
             # Build up word cloud
             for tag in result['tags']:
                 word_cloud[tag] = 1 if word_cloud.get(tag, None) is None \
-                        else word_cloud[tag]+1
-             
+                    else word_cloud[tag] + 1
+
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             if parent is not None:
-                if  parent.is_public:
+                if parent.is_public:
                     parent_title = parent.title
                     parent_url = parent.url
                     parent_wiki_url = parent.url + 'wiki/'
                     parent_contributors = parent.contributors
                     parent_tags = parent.tags
-                    parent_contributors_url = ['/profile/'+contributor for contributor in parent_contributors]
+                    parent_contributors_url = ['/profile/' + contributor for contributor in parent_contributors]
                     parent_is_registration = parent.is_registration
                     parent_description = parent.description
                 else:
