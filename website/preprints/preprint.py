@@ -23,8 +23,8 @@ def post_preprint_new(**kwargs):
     auth = kwargs['auth']
     file = request.files.get('file')
     # todo: should this leave it as unicode? Thinking about, e.g. mathematical symbols in titles
-    node_title = str(splitext(file.filename)[0])
-    file.filename = u'preprint.pdf'
+    node_title = splitext(file.filename)[0]
+    # node_title = str(splitext(file.filename)[0])
 
     # creates private project to house the preprint component
     project = new_node('project',
@@ -40,22 +40,18 @@ def post_preprint_new(**kwargs):
                                   project=project)
     preprint_component.set_privacy('public', auth=auth)
 
+    # commits to database upon successful creation of project and component
+    project.save()
+    preprint_component.save()
+
     # adds file to new component
     upload_preprint(project=project,
                     node=preprint_component,
-                    # save=False, # for now, saving upon creation. rewrite to save at the end
                     **kwargs)
-
-    # commits to database upon successful creation of everything
-    project.save()
-    preprint_component.save()
 
     return redirect(preprint_component.url+'preprint/')
 
 @must_be_valid_project
-def upload_preprint(save=True, **kwargs):
-    #todo: This is wholesale copied from add_file_to_node with different permissions stuff. fix that.
+def upload_preprint(**kwargs):
     rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
-    if save:
-        kwargs['node'].save()
     return rv
