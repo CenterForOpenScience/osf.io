@@ -29,8 +29,10 @@ this.Draggable = (function($, HGrid) {
   var defaults = {
     /*jshint unused: false */
 
-    onDrop: function(event, items, folder) {},
-    onDrag: function(event, items) {},
+    onDrop: function(event, items, folder, insertBefore) {},
+    onDrag: function(event, items, insertBefore) {},
+    onBeforeDrag: function(event, items, insertBefore) {},
+    onBeforeDrop: function(event, items, insertBefore) {},
     acceptDrop: function(item, folder, done) {},
     canDrag: function(item) {
       if (item.kind === HGrid.FOLDER) {
@@ -38,6 +40,9 @@ this.Draggable = (function($, HGrid) {
       }
       return true;
     },
+
+    canAcceptDrop: function(folder) {},
+    enableMove: true,
 
     // Additional options passed to the HGrid.RowMoveManager constructor
     rowMoveManagerOptions: {},
@@ -55,6 +60,7 @@ this.Draggable = (function($, HGrid) {
    */
   function Draggable(options) {
     var self = this;
+    self.grid = null;  // set upon calling Draggable.init
     self.options = $.extend({}, defaults, options);
     self.rowMoveManager = null;  // Initialized in init
     // The current drag target
@@ -65,9 +71,15 @@ this.Draggable = (function($, HGrid) {
     this._folderTarget = folder;
   };
 
+
+  Draggable.prototype.clearTarget = function() {
+    this._folderTarget = null;
+  };
+
   // Initialization function called by HGrid#registerPlugin
   Draggable.prototype.init = function(grid) {
     var self = this;
+    self.grid = grid;
     var data = grid.getData();
     var dataView = grid.getDataView();
     var slickgrid = grid.grid;
@@ -84,18 +96,11 @@ this.Draggable = (function($, HGrid) {
 
     /** Callbacks **/
 
-    var onBeforeMoveRows = function(event, data) {
-      // Prevent moving row before or after itself
-      for (var i = 0; i < data.rows.length; i++) {
-        if (data.rows[i] === data.insertBefore || data.rows[i] === data.insertBefore - 1) {
-          event.stopPropagation();
-          grid.removeHighlight();
-          return false;
-        }
-      }
+    var onBeforeDragRows = function(event, data) {
+      var movedItems = data.items;
+      var insertBefore = data.insertBefore;
+      return self.options.onBeforeDrag.call(self, event, movedItems, insertBefore);
     };
-
-    // TODO(sloria): Test me
 
     /**
      * Callback executed when rows are moved and dropped into a new location
@@ -109,6 +114,7 @@ this.Draggable = (function($, HGrid) {
       var extractedRows = [];
       // indices of the rows to move
       var indices = args.rows;
+      var insertBefore = args.insertBefore;
 
       var movedItems = args.items;
       var errorFunc = function(error){
@@ -117,8 +123,16 @@ this.Draggable = (function($, HGrid) {
         }
       };
 
-      for (var i = 0, item; item = movedItems[i]; i++) {
+      var i, item;
+      for (i = 0, item = null; item = movedItems[i]; i++) {
         self.options.acceptDrop.call(self, item, self._folderTarget, errorFunc);
+      }
+
+
+      var beforeDrop = self.options.onBeforeDrop.call(self, event, movedItems, self._folderTarget, insertBefore);
+      // If user-defined callback returns false, return early
+      if (beforeDrop === false) {
+        return false;
       }
 
       // ID of the folder to transfer the items to
@@ -134,19 +148,20 @@ this.Draggable = (function($, HGrid) {
         return newItem;
       });
 
-      // Remove dragged items from grid
-      for (var i = 0, item; item = movedItems[i]; i++) {
-        grid.removeItem(item.id);
-      }
-      // Add items at new location
-      grid.addItems(newItems);
+      if (self.options.enableMove) {
+        // Remove dragged items from grid
+        for (i = 0, item = null; item = movedItems[i]; i++) {
+          grid.removeItem(item.id);
+        }
+        // Add items at new location
+        grid.addItems(newItems);
 
-      slickgrid.resetActiveCell();
-      slickgrid.setSelectedRows([]);
-      slickgrid.render();
+        slickgrid.resetActiveCell();
+        slickgrid.setSelectedRows([]);
+        slickgrid.render();
+      }
       // invoke user-defined callback
-      // TODO(sloria): add target folder as an argument
-      self.options.onDrop.call(self, event, movedItems, self._folderTarget);
+      self.options.onDrop.call(self, event, movedItems, self._folderTarget, insertBefore);
     };
 
     var onDragStart = function(event, dd) {
@@ -198,25 +213,33 @@ this.Draggable = (function($, HGrid) {
     var onDragRows = function(event, args) {
       // set the current drag target
       var movedItems = args.items;
+      var insertBefore = args.insertBefore;
       // get the parent of the current item being dragged over
       var parent;
       if (args.insertBefore) {
         parent = getParent(args.insertBefore);
+        // Check if folder can accep drop
+        // NOTE: canAccept must return false to disallow dropping, not just a falsy value
+        if (self.options.canAcceptDrop.call(self, movedItems, parent) === false) {
+          self.clearTarget();
+          return false;
+        }
+        // set the folder target
         if (parent) {
           self.setTarget(parent);
           grid.addHighlight(self._folderTarget);
         }
       }
-      self.options.onDrag.call(self, event, args.items, parent);
+      self.options.onDrag.call(self, event, args.items, parent, insertBefore);
     };
 
     // TODO: test that this works
     var canDrag = function(item) {
       // invoke user-defined function
-      return self.options.canDrag.call(this, item);
+      return self.options.canDrag.call(self, item);
     };
 
-    self.rowMoveManager.onBeforeMoveRows.subscribe(onBeforeMoveRows);
+    self.rowMoveManager.onBeforeDragRows.subscribe(onBeforeDragRows);
     self.rowMoveManager.onMoveRows.subscribe(onMoveRows);
     self.rowMoveManager.onDragRows.subscribe(onDragRows);
     self.rowMoveManager.canDrag = canDrag;
@@ -247,7 +270,7 @@ this.Draggable = (function($, HGrid) {
  * https://github.com/mleibman/SlickGrid/blob/master/plugins/slick.rowmovemanager.js
  */
 (function ($, HGrid) {
-
+  'use strict';
   function RowMoveManager(options) {
     var _grid;
     var _canvas;
@@ -255,7 +278,11 @@ this.Draggable = (function($, HGrid) {
     var _self = this;
     var _handler = new Slick.EventHandler();
     var _defaults = {
-      cancelEditOnDrag: false
+      cancelEditOnDrag: false,
+      enableReorder: false, // TODO(sloria): reordering not implemented yet.
+                            // Setting to false will disable the reorder guide.
+      proxyClass: 'slick-reorder-proxy',
+      guideClass: 'slick-reorder-guide'
     };
 
     function init(grid) {
@@ -273,7 +300,7 @@ this.Draggable = (function($, HGrid) {
       _handler.unsubscribeAll();
     }
 
-    function handleDragInit(e, dd) {
+    function handleDragInit(e) {
       // prevent the grid from cancelling drag'n'drop by default
       e.stopImmediatePropagation();
     }
@@ -294,7 +321,7 @@ this.Draggable = (function($, HGrid) {
 
       var selectedRows = _grid.getSelectedRows();
 
-      if (selectedRows.length == 0 || $.inArray(cell.row, selectedRows) == -1) {
+      if (selectedRows.length === 0 || $.inArray(cell.row, selectedRows) === -1) {
         selectedRows = [cell.row];
         _grid.setSelectedRows(selectedRows);
       }
@@ -313,19 +340,21 @@ this.Draggable = (function($, HGrid) {
         }
       }
 
-      dd.selectionProxy = $("<div class='slick-reorder-proxy'/>")
-          .css("position", "absolute")
-          .css("zIndex", "99999")
-          .css("width", $(_canvas).innerWidth())
-          .css("height", rowHeight * selectedRows.length)
+      dd.selectionProxy = $('<div class="' + options.proxyClass + '"/>')
+          .css('position', 'absolute')
+          .css('zIndex', '99999')
+          .css('width', $(_canvas).innerWidth())
+          .css('height', rowHeight * selectedRows.length)
           .appendTo(_canvas);
 
-      dd.guide = $("<div class='slick-reorder-guide'/>")
-          .css("position", "absolute")
-          .css("zIndex", "99998")
-          .css("width", $(_canvas).innerWidth())
-          .css("top", -1000)
-          .appendTo(_canvas);
+      if (options.enableReorder) {
+        dd.guide = $('<div class="' + options.guideClass + '"/>')
+            .css('position', 'absolute')
+            .css('zIndex', '99998')
+            .css('width', $(_canvas).innerWidth())
+            .css('top', -1000)
+            .appendTo(_canvas);
+      }
 
       dd.insertBefore = -1;
 
@@ -343,7 +372,7 @@ this.Draggable = (function($, HGrid) {
       e.stopImmediatePropagation();
 
       var top = e.pageY - $(_canvas).offset().top;
-      dd.selectionProxy.css("top", top - 5);
+      dd.selectionProxy.css('top', top - 5);
 
       var insertBefore = Math.max(0, Math.min(Math.round(top / _grid.getOptions().rowHeight), _grid.getDataLength()));
 
@@ -360,11 +389,15 @@ this.Draggable = (function($, HGrid) {
           items: dd.movedItems
         };
 
-        if (_self.onBeforeMoveRows.notify(eventData) === false) {
-          dd.guide.css("top", -1000);
+        if (_self.onBeforeDragRows.notify(eventData) === false) {
+          if (options.enableReorder) {
+            dd.guide.css('top', -1000);
+          }
           dd.canMove = false;
         } else {
-          dd.guide.css("top", insertBefore * _grid.getOptions().rowHeight);
+          if (options.enableReorder) {
+            dd.guide.css('top', insertBefore * _grid.getOptions().rowHeight);
+          }
           dd.canMove = true;
         }
 
@@ -385,7 +418,9 @@ this.Draggable = (function($, HGrid) {
       _dragging = false;
       e.stopImmediatePropagation();
 
-      dd.guide.remove();
+      if (options.enableReorder) {
+        dd.guide.remove();
+      }
       dd.selectionProxy.remove();
 
       if (dd.canMove) {
@@ -401,7 +436,7 @@ this.Draggable = (function($, HGrid) {
 
     $.extend(this, {
       'onDragRowsStart': new Slick.Event(),
-      'onBeforeMoveRows': new Slick.Event(),
+      'onBeforeDragRows': new Slick.Event(),
       'onMoveRows': new Slick.Event(),
       'onDragRows': new Slick.Event(),
       /*jshint unused:false */
@@ -419,8 +454,7 @@ this.Draggable = (function($, HGrid) {
  * https://github.com/mleibman/SlickGrid/blob/master/plugins/slick.rowselectionmodel.js
  */
 (function ($, HGrid) {
-
-
+    'use strict';
     function RowSelectionModel(options) {
       var _grid;
       var _ranges = [];
@@ -500,7 +534,7 @@ this.Draggable = (function($, HGrid) {
           var originalParent = originalRow.parentID;
           for (i = 0; i < rows.length; i++) {
             var currentItem = gridData.getItem(rows[i]);
-            if(currentItem.parentID == originalParent){
+            if(currentItem.parentID === originalParent){
               newRows.push(rows[i]);
             }
           }
@@ -529,10 +563,11 @@ this.Draggable = (function($, HGrid) {
 
       function handleKeyDown(e) {
         var activeRow = _grid.getActiveCell();
-        if (activeRow && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey && (e.which == 38 || e.which == 40)) {
+        if (activeRow && e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey &&
+           (e.which === 38 || e.which === 40)) {
           var selectedRows = getSelectedRows();
           selectedRows.sort(function (x, y) {
-            return x - y
+            return x - y;
           });
 
           if (!selectedRows.length) {
@@ -543,8 +578,8 @@ this.Draggable = (function($, HGrid) {
           var bottom = selectedRows[selectedRows.length - 1];
           var active;
 
-          if (e.which == 40) {
-            active = activeRow.row < bottom || top == bottom ? ++bottom : ++top;
+          if (e.which === 40) {
+            active = activeRow.row < bottom || top === bottom ? ++bottom : ++top;
           } else {
             active = activeRow.row < bottom ? --bottom : --top;
           }
@@ -578,7 +613,7 @@ this.Draggable = (function($, HGrid) {
         selection.push(cell.row);
         _grid.setActiveCell(cell.row, cell.cell);
       } else if (idx !== -1 && (e.ctrlKey || e.metaKey)) {
-        selection = $.grep(selection, function (o, i) {
+        selection = $.grep(selection, function (o) {
           return (o !== cell.row);
         });
         _grid.setActiveCell(cell.row, cell.cell);

@@ -32,12 +32,12 @@
   "dependencies": {
     "jQuery": ">=1.9.0"
   },
-  "_release": "958ab661b8",
+  "_release": "eb16acfbfd",
   "_resolution": {
     "type": "commit",
-    "commit": "958ab661b80b39b2be7c67672572be9f4651ed16"
+    "commit": "eb16acfbfd9cbc2ad6b9d9fe065bcb348405fbd1"
   },
-  "_source": "git@github.com:CenterForOpenScience/hgrid.git",
-  "_target": "958ab661b80b39b2be7c67672572be9f4651ed16",
-  "_originalSource": "git@github.com:CenterForOpenScience/hgrid.git"
+  "_source": "https://github.com/CenterForOpenScience/hgrid.git",
+  "_target": "eb16acfbfd9cbc2ad6b9d9fe065bcb348405fbd1",
+  "_originalSource": "https://github.com/CenterForOpenScience/hgrid.git"
 }
