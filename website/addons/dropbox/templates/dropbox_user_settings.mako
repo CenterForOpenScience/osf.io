@@ -9,6 +9,22 @@
         <button data-bind='click: deleteKey' class="btn btn-danger">
             Delete Access Token
         </button>
+
+        <div class="scrolling-table">
+            <table class="table table-hover">
+                <thead>Authorized Projects:</thead>
+                <tbody data-bind="foreach: nodes">
+                    <tr>
+                        <td>
+                            <a data-bind="attr: { href: url, title: title }, text: title"></a>
+                        </td>
+                        <td>
+                            <a data-bind="click: removeNodeAuth" class="text-danger pull-right">Deauthorize</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Create Access Token Button -->
