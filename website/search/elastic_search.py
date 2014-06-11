@@ -28,12 +28,14 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 def search(raw_query, start=0):
     orig_query = raw_query
+
     query, filtered_query = _build_query(raw_query, start)
 
     counts = {
         'users': elastic.count(filtered_query, index='website', doc_type='user')['count'],
         'projects': elastic.count(filtered_query, index='website', doc_type='project')['count'],
-        'components': elastic.count(filtered_query, index='website', doc_type='component')['count']
+        'components': elastic.count(filtered_query, index='website', doc_type='component')['count'],
+        'registrations': elastic.count(filtered_query, index='website', doc_type='registration')['count']
     }
 
     if 'user:' in orig_query:
@@ -42,6 +44,8 @@ def search(raw_query, start=0):
         counts['total'] = counts['projects']
     elif 'component:' in orig_query:
         counts['total'] = counts['components']
+    elif 'registration:' in orig_query:
+        counts['total'] = counts['registrations']
     else:
         counts['total'] = sum([x for x in counts.values()])
 
@@ -65,47 +69,49 @@ def _build_query(raw_query, start=0):
             },
             {
                 'type': {'value': 'user'}
+            },
+            {
+                'type': {'value': 'registration'}
             }
         ]
     }
     raw_query = raw_query.replace('AND', ' ')
-    # TODO(fabianvf): The type filter should be programmatically built
-    
+
+    # TODO(fabianvf): Definitely a more elegant way to do this
     if 'project:' in raw_query:
-        raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:', '')
-        raw_query = raw_query.replace('component:', '')
-        raw_query = raw_query.replace('(', '')
-        raw_query = raw_query.replace(')', '')
         type_filter = {
             'type': {
                 'value': 'project'
             }
         }
     elif 'component:' in raw_query:
-        raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:', '')
-        raw_query = raw_query.replace('component:', '')
         type_filter = {
             'type': {
                 'value': 'component'
             }
         }
     elif 'user:' in raw_query:
-        raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('project:', '')
-        raw_query = raw_query.replace('component:', '')
-        raw_query = raw_query.replace('"', '')
-        raw_query = raw_query.replace('\\"', '')
-        raw_query = raw_query.replace("'", '')
         type_filter = {
             'type': {
                 'value': 'user'
             }
         }
+    elif 'registration:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'registration'
+            }
+        }
+
+    raw_query = raw_query.replace('user:', '')
+    raw_query = raw_query.replace('project:', '')
+    raw_query = raw_query.replace('component:', '')
+    raw_query = raw_query.replace('registration:', '')
+    raw_query = raw_query.replace('(', '')
+    raw_query = raw_query.replace(')', '')
+
     # If the search contains wildcards, make them mean something
     if '*' in raw_query:
-        raw_query.replace('*', '\\*')
         inner_query = {
             'query_string': {
                 'default_field': '_all',
@@ -151,12 +157,12 @@ def update_node(node):
     if node.category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        category = node.category
+        category = 'registration' if node.is_registration else 'project'
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            category = 'component'
+            category = 'registration' if node.is_registration else 'component'
         except IndexError:
             # Skip orphaned components
             return

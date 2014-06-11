@@ -34,12 +34,15 @@
         % if query:
             % if isinstance(counts, dict):
         <h4>
-                <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','') | h})">Users: ${counts['users']}</a>
+                <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Users: ${counts['users']}</a>
         </h4><h4>
-                <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Projects: ${counts['projects']}</a>
+                <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '')})">Projects: ${counts['projects']}</a>
         </h4><h4>
-                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','')})">Components: ${counts['components']}</a> 
+                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '')})">Components: ${counts['components']}</a> 
+        </h4><h4>
+                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '')})">Registrations: ${counts['registrations']}</a> 
         </h4>
+
             % endif
 ##            our search users query
 ##            % if 'user:' not in query:
