@@ -29,7 +29,7 @@ def search_search():
         start = 0
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
-    query = bleach.clean(query, strip=True)
+    query = bleach.clean(query, tags=[], strip=True)
     if query == '':
         status.push_status_message('No search query', 'info')
         return {
@@ -124,5 +124,5 @@ def search_projects_by_title(**kwargs):
 def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
-    query = bleach.clean(request.args.get('query', ''))
+    query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     return search.search_contributor(query, exclude)
