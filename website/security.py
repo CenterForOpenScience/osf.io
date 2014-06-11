@@ -3,11 +3,14 @@
 # TODO: put in website/utils/ when rubeus circular import issue is resolved
 import string
 import gnupg
+import logging
 from random import SystemRandom
 
 from website import settings
 
 random = SystemRandom()
+
+logging.getLogger('gnupg').setLevel(logging.WARNING)
 
 
 def random_string(length=8, chars=string.letters+string.digits):
@@ -33,3 +36,9 @@ class Encryption(object):
 
     def decrypt(self, encrypted_data):
         return str(self.gpg.decrypt(encrypted_data, always_trust=True))
+
+
+encryptor = Encryption()
+
+encrypt = encryptor.encrypt
+decrypt = encryptor.decrypt
