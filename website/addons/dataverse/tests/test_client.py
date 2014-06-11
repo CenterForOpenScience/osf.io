@@ -192,10 +192,30 @@ class TestClient(DataverseAddonTestCase):
         assert_in(mock_study1, studies)
         assert_in(mock_study2, studies)
         assert_not_in(mock_study3, studies)
+        assert_equal(bad_studies, [])
 
     def test_get_studies_no_dataverse(self):
-        studies = get_studies(None)
+        studies, bad_studies = get_studies(None)
         assert_equal(studies, [])
+        assert_equal(bad_studies, [])
+
+    def test_get_studies_some_bad(self):
+        mock_study1 = mock.create_autospec(Study)
+        mock_study2 = mock.create_autospec(Study)
+        mock_study3 = mock.create_autospec(Study)
+        error = UnicodeDecodeError('utf-8', b'', 1, 2, 'jeepers')
+        mock_study1.get_state.return_value = 'DRAFT'
+        mock_study2.get_state.side_effect = error
+        mock_study3.get_state.return_value = 'DEACCESSIONED'
+        self.mock_dataverse.get_studies.return_value = [
+            mock_study1, mock_study2, mock_study3
+        ]
+
+        studies, bad_studies = get_studies(self.mock_dataverse)
+        self.mock_dataverse.get_studies.assert_called_once_with()
+        assert_equal([mock_study1], studies)
+        assert_equal([mock_study2], bad_studies)
+
 
     def test_get_study(self):
         self.mock_study.get_state.return_value = 'DRAFT'

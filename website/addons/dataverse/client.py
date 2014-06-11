@@ -69,7 +69,7 @@ def release_study(study):
 
 def get_studies(dataverse):
     if dataverse is None:
-        return []
+        return [], []
     accessible_studies = []
     bad_studies = []
     for s in dataverse.get_studies():
