@@ -7,7 +7,7 @@ import pyelasticsearch
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
+import bleach
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -24,10 +24,10 @@ except pyelasticsearch.exceptions.ConnectionError as e:
                 "was a problem starting the elasticsearch interface. Is "
                 "elasticsearch running?")
     elastic = None
-       
+
 
 def search(raw_query, start=0):
-
+    raw_query = bleach.clean(raw_query, strip=True)
     # Type filter for normal searches
     type_filter = {
         'or': [
@@ -39,7 +39,6 @@ def search(raw_query, start=0):
             }
         ]
     }
-    raw_query = raw_query.replace('AND', ' ')
     if 'user:' in raw_query:
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('"', '')
