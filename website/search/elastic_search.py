@@ -33,7 +33,9 @@ def search(raw_query, start=0):
         'users': elastic.count(filtered_query, index='website', doc_type='user')['count'],
         'projects': elastic.count(filtered_query, index='website', doc_type='project')['count'],
         'components': elastic.count(filtered_query, index='website', doc_type='component')['count'],
-        'registrations': elastic.count(filtered_query, index='website', doc_type='registration')['count']
+        'registrations': elastic.count(filtered_query, index='website', doc_type='registration')['count'],
+        'preprints': elastic.count(filtered_query, index='website', doc_type='preprint')['count']
+
     }
 
     if 'user:' in orig_query:
@@ -44,6 +46,8 @@ def search(raw_query, start=0):
         counts['total'] = counts['components']
     elif 'registration:' in orig_query:
         counts['total'] = counts['registrations']
+    elif 'preprints:' in orig_query:
+        counts['total'] = counts['preprints']
     else:
         counts['total'] = sum([x for x in counts.values()])
 
@@ -100,11 +104,18 @@ def _build_query(raw_query, start=0):
                 'value': 'registration'
             }
         }
+    elif 'preprint:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'preprint'
+            }
+        }
 
     raw_query = raw_query.replace('user:', '')
     raw_query = raw_query.replace('project:', '')
     raw_query = raw_query.replace('component:', '')
     raw_query = raw_query.replace('registration:', '')
+    raw_query = raw_query.replace('preprint:', '')
     raw_query = raw_query.replace('(', '')
     raw_query = raw_query.replace(')', '')
     raw_query = raw_query.replace('\\', '')
@@ -162,7 +173,7 @@ def update_node(node):
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            category = 'registration' if node.is_registration else 'component'
+            category = 'preprint' if node.category == 'preprint' else ('registration' if node.is_registration else 'component')
         except IndexError:
             # Skip orphaned components
             return
