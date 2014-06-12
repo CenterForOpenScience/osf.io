@@ -177,18 +177,25 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
     action = 'file_uploaded'
     old_id = None
 
+    # Fail if file is too small (Dataverse issue)
+    content = upload.read()
+    if len(content) < 5:
+        raise HTTPError(http.UNSUPPORTED_MEDIA_TYPE)
+
     # Replace file if old version exists
-    if get_file(study, filename) is not None:
+    old_file = get_file(study, filename)
+    if old_file is not None:
         action = 'file_updated'
-        old_file = get_file(study, filename)
         old_id = old_file.id
         delete_file(old_file)
+        # Check if file was deleted
+        if get_file_by_id(study, old_id) is not None:
+            raise HTTPError(http.BAD_REQUEST)
 
-    content = upload.read()
     upload_file(study, filename, content)
-    file_id = get_file(study, filename).id
+    file = get_file(study, filename)
 
-    if file_id is None:
+    if file is None:
         raise HTTPError(http.BAD_REQUEST)
 
     node.add_log(
@@ -197,7 +204,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
             'project': node.parent_id,
             'node': node._primary_key,
             'filename': filename,
-            'path': node.web_url_for('dataverse_view_file', path=file_id),
+            'path': node.web_url_for('dataverse_view_file', path=file.id),
             'study': study.title,
         },
         auth=auth,
@@ -206,7 +213,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
 
     info = {
         'addon': 'dataverse',
-        'file_id': file_id,
+        'file_id': file.id,
         'old_id': old_id,
         'name': filename,
         'size': [
@@ -216,11 +223,11 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         rubeus.KIND: rubeus.FILE,
         'urls': {
                 'view': node.web_url_for('dataverse_view_file',
-                                         path=file_id),
+                                         path=file.id),
                 'download': node.api_url_for('dataverse_download_file',
-                                             path=file_id),
+                                             path=file.id),
                 'delete': node.api_url_for('dataverse_delete_file',
-                                           path=file_id),
+                                           path=file.id),
         },
         'permissions': {
             'view': can_view,

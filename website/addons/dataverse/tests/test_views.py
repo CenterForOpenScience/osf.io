@@ -309,7 +309,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
                           pid=self.project._primary_key)
         res = self.app.get(url, auth=self.user.auth)
         contents = mock_responses['contents']
-        first = res.json[0]
+        first = res.json['data'][0]
         assert_equal(mock_get.call_args[0][1], self.node_settings.study_hdl)
         assert_equal(len(first), len(contents))
         assert_in('kind', first)
@@ -356,12 +356,12 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
         # Creator posts, gets draft version
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json[0]['name'], 'file.txt')
+        assert_equal(res.json['data'][0]['name'], 'file.txt')
 
         # Noncontributor posts, gets released version
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
-        assert_equal(res.json[0]['name'], 'released.txt')
+        assert_equal(res.json['data'][0]['name'], 'released.txt')
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -378,11 +378,11 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
         # All users get released version
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json[0]['name'], 'released.txt')
+        assert_equal(res.json['data'][0]['name'], 'released.txt')
 
         user2 = AuthUserFactory()
         res = self.app.get(url, auth=user2.auth)
-        assert_equal(res.json[0]['name'], 'released.txt')
+        assert_equal(res.json['data'][0]['name'], 'released.txt')
 
     @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
@@ -513,7 +513,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         # Define payload
         filename = 'myfile.rst'
-        content = b'baz'
+        content = 'bazbaz'
         path = '54321'
         payload = {'file': Upload(filename, content,'text/x-rst')}
 
@@ -537,15 +537,17 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file')
-    def test_upload_existing(self, mock_get, mock_delete, mock_upload,
-                             mock_connection):
-        mock_get.return_value = create_mock_dvn_file() # File already exists
+    @mock.patch('website.addons.dataverse.views.crud.get_file_by_id')
+    def test_upload_existing(self, mock_get_by_id, mock_get, mock_delete,
+                             mock_upload, mock_connection):
+        mock_get.return_value = create_mock_dvn_file()  # File already exists
+        mock_get_by_id.return_value = None  # To confirm deletion happened
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
 
         # Define payload
         filename = 'myfile.rst'
-        content = b'baz'
+        content = 'bazbaz'
         path = '54321'
         payload = {'file': Upload(filename, content,'text/x-rst')}
 
@@ -567,6 +569,35 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(filename, mock_upload.call_args[0][1])
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_updated', json.loads(res.body)['actionTaken'])
+
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.delete_file')
+    @mock.patch('website.addons.dataverse.views.crud.get_file')
+    def test_upload_too_small(self, mock_get, mock_delete, mock_upload,
+                             mock_connection):
+        mock_get.return_value = create_mock_dvn_file() # File already exists
+        mock_upload.return_value = {}
+        mock_connection.return_value = create_mock_connection()
+
+        # Define payload
+        filename = 'myfile.rst'
+        content = 'baz'
+        path = '54321'
+        payload = {'file': Upload(filename, content,'text/x-rst')}
+
+        # Attempt to upload the file
+        url = api_url_for('dataverse_upload_file',
+                          pid=self.project._primary_key, path=path)
+        res = self.app.post(url, payload, auth=self.user.auth,
+                            expect_errors=True)
+
+        # Old file was not deleted
+        assert_false(mock_delete.call_count)
+
+        # Bad request
+        assert_equal(res.status_code, http.UNSUPPORTED_MEDIA_TYPE)
+        assert_false(mock_upload.call_count)
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
