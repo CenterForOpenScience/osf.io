@@ -195,6 +195,9 @@ def create_result(results, highlights):
     '''
     formatted_results = []
     word_cloud = {}
+    visited_nodes = {}  # For making sure projects are only returned once
+    num_deleted = 0  # For making deleting projects from the list faster
+    index = 0  # For keeping track of what index a project is stored
     for result in results:
         # User results are handled specially
         if 'user' in result:
@@ -203,6 +206,7 @@ def create_result(results, highlights):
                 'user': result['user'],
                 'user_url': '/profile/' + result['id'],
             })
+            index += 1
         else:
             # Build up word cloud
             for tag in result['tags']:
@@ -211,31 +215,51 @@ def create_result(results, highlights):
 
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
-            if parent is not None:
-                if parent.is_public:
-                    parent_title = parent.title
-                    parent_url = parent.url
-                    parent_wiki_url = parent.url + 'wiki/'
-                    parent_contributors = [
-                        contributor.fullname
-                        for contributor in parent.contributors
-                    ]
-                    parent_tags = [tag._id for tag in parent.tags]
-                    parent_contributors_url = [
-                        contributor.url
-                        for contributor in parent.contributors
-                    ]
-                    parent_is_registration = parent.is_registration
-                    parent_description = parent.description
+            if parent is not None and parent.is_public:
+                parent_title = parent.title
+                parent_url = parent.url
+                parent_wiki_url = parent.url + 'wiki/'
+                parent_contributors = [
+                    contributor.fullname
+                    for contributor in parent.contributors
+                ]
+                parent_tags = [tag._id for tag in parent.tags]
+                parent_contributors_url = [
+                    contributor.url
+                    for contributor in parent.contributors
+                ]
+                parent_is_registration = parent.is_registration
+                parent_description = parent.description
+                parent_id = parent._id
+            else:
+                parent_title = '-- private project --'
+                parent_url = ''
+                parent_wiki_url = ''
+                parent_contributors = []
+                parent_tags = []
+                parent_contributors_url = []
+                parent_is_registration = None
+                parent_description = ''
+                parent_id = None
+
+            # Check if parent has already been visited, if so, delete it
+            if parent is not None and parent_id is not None and visited_nodes.get(parent_id) is not None:
+                logger.warn("DEVASTATION")
+                for i in range(visited_nodes.get(parent_id) - num_deleted, len(formatted_results)):
+                    if formatted_results[i]['url'] == parent_url:
+                        del formatted_results[i]
+                        num_deleted += 1
+                        break
+                visited_nodes[parent_id] = index
+            elif visited_nodes.get(result['id']) is not None:
+                continue
+            else:
+                logger.warn('Node id: ' + result['id'])
+                if parent_id:
+                    logger.warn('Parent id: ' + parent_id)
+                    visited_nodes[parent_id] = index
                 else:
-                    parent_title = '-- private project --'
-                    parent_url = ''
-                    parent_wiki_url = ''
-                    parent_contributors = []
-                    parent_tags = []
-                    parent_contributors_url = []
-                    parent_is_registration = None
-                    parent_description = ''
+                    visited_nodes[result['id']] = index
 
             # Format dictionary for output
             formatted_results.append({
@@ -266,6 +290,7 @@ def create_result(results, highlights):
                 'description': result['description'] if parent is None
                     else parent_description,
             })
+            index += 1
 
     return formatted_results, word_cloud
 
