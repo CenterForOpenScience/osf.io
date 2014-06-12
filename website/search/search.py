@@ -14,7 +14,7 @@ else:
 
 
 def search(query, start=0):
-    result, tags, total = search_engine.search(query, start=0)
+    result, tags, total = search_engine.search(query, start)
     return result, tags, total
 
 def update_node(node):

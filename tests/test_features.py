@@ -2,7 +2,7 @@ import unittest
 from website import settings
 
 requires_search = unittest.skipIf( 
-    settings.SEARCH_ENGINE == 'none',
+    not settings.SEARCH_ENGINE,
     'search disabled'
 )
 requires_piwik = unittest.skipIf(

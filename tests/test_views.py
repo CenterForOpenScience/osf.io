@@ -8,6 +8,8 @@ import datetime as dt
 import mock
 import httplib as http
 
+
+
 from nose.tools import *  # PEP8 asserts
 from tests.test_features import requires_search
 from webtest_plus import TestApp
@@ -681,7 +683,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert_equal(rec['email'], email)
 
     @mock.patch('website.project.views.contributor.send_claim_email')
-    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,mock_send_claim_email):
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self,
+        mock_send_claim_email):
         # Project has components
         comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)
@@ -1976,21 +1979,18 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 1)
         freddie = result[0]
         assert_equal(freddie['fullname'], self.contrib1.fullname)
-        #TODO Should I be passing?
-        # Yes, I think you should be (now that emails are removed)
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-
+       
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
-
     def tearDown(self):
-      import website.search.search as search
-      search.delete_all()
+        import website.search.search as search
+        search.delete_all()
 
 class TestReorderComponents(OsfTestCase):
 

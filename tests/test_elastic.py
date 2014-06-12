@@ -8,17 +8,17 @@ from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
 from website import settings
 
-if settings.SEARCH_ENGINE != 'none':
-    settings.SEARCH_ENGINE = 'elastic'
+#if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
+#    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-reload(search)
+#reload(search)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
 
         
     def tearDown(self):
-        search.delete_all() #TODO(fabianvf)
+        search.delete_all() 
 
 
 def query(term):
@@ -27,7 +27,7 @@ def query(term):
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name) #TODO(fabianvf) this syntax is not yet specified for elastic
+    term = 'user:"{}"'.format(name)
     return query(term)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
@@ -39,8 +39,6 @@ class TestUserUpdate(SearchTestCase):
         """
         # Create user
         user = UserFactory(fullname='David Bowie')
-#        import time
-#        time.sleep(2)
         # Verify that user has been added to Solr
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
@@ -54,8 +52,6 @@ class TestUserUpdate(SearchTestCase):
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
         user.save()
-#        import time
-#        time.sleep(2)
 
         docs_original = query_user(fullname_original)
         assert_equal(len(docs_original), 0)

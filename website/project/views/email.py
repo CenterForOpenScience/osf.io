@@ -48,7 +48,7 @@ MEETING_DATA = {
         'name': 'ASB 2014',
         'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
         'logo_url': None,
-        'active': True,
+        'active': False,
     },
     'aps2014': {
         'name': 'APS 2014',
@@ -58,6 +58,12 @@ MEETING_DATA = {
     },
     'annopeer2014': {
         'name': '#annopeer',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+    },
+    'cpa2014': {
+        'name': 'CPA 2014',
         'info_url': None,
         'logo_url': None,
         'active': True,
@@ -387,5 +393,6 @@ def conference_results(meeting):
 
     return {
         'data': json.dumps(data),
+        'label': meeting,
         'meeting': MEETING_DATA[meeting],
     }

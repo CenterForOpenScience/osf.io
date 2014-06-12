@@ -3,26 +3,21 @@ import urllib2
 import ast
 
 from website import settings
-#from framework.auth.model import User
 from website.filters import gravatar
-from website.models import User, Node
+from website.models import User
 import logging
 import sunburnt
 from .utils import clean_solr_doc 
 import socket
 
-logging.basicConfig() #TODO
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-if (settings.SEARCH_ENGINE == 'solr'):
-    try:
-        solr = sunburnt.SolrInterface(settings.SOLR_URI)
-    except socket.error as e:
-        logger.error(e)
-        logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
-else:
-    solr = None
-    logger.warn("Solr is not set to start")
+try:
+    solr = sunburnt.SolrInterface(settings.SOLR_URI)
+except socket.error as e:
+    logger.error(e)
+    logger.warn("The SEARCH_ENGINE setting is set to 'solr' but there was a problem ")
 
 
 def update_node(node):
@@ -35,8 +30,6 @@ def update_node(node):
         correctly serialize.
         """
         return 'true' if value is True else 'false'
-    if not (settings.SEARCH_ENGINE in ['solr', 'all']):
-        return
 
     from website.addons.wiki.model import NodeWikiPage
 
@@ -86,7 +79,6 @@ def update_node(node):
             solr_document.update({
                 '__'.join((node._id, wiki.page_name, 'wiki')): wiki.raw_text
             })
-        #update_solr(solr_document)#TODO turn this to update_search
         # check to see if the document is in the solr database
         try:
             new = solr.query(id=solr_document['id']).execute()[0]
@@ -162,7 +154,6 @@ def search(query, start=0):
         if 'spellcheck' in result else None
     # highlight
     highlight = result['highlighting']
-    logger.warn(highlight)
     # and the list of documents
     result = result['response']
     # look for specllcheck,
@@ -172,10 +163,9 @@ def search(query, start=0):
     else:
         spellcheck_result = None
     solrPost.close()
-    logger.warn(str(result))
     #return result, highlight, spellcheck_result
     results, tags = create_result(highlight, result['docs'])
-    return results, tags, result['numFound']#, highlight, spellcheck_result TODO(fabianvf)
+    return results, tags, result['numFound']
 
 def delete_all():
     solr.delete_all()
@@ -197,13 +187,13 @@ def create_result(highlights, results):
             result_search.append(container)
         else:
             container['title'] = result.get(id+'_title', '-- private project --')
-            container['url'] = result.get(id+'_url') #TODO(fabianvf)
+            container['url'] = result.get(id+'_url') 
             contributors = []
             contributors_url = []
             # we're only going to show contributors on projects, for now
-            for contributor in result.get(id+'_contributors', []): #TODO(fabianvf)
+            for contributor in result.get(id+'_contributors', []): 
                 contributors.append(contributor)
-            for url in result.get(id+'_contributors_url', []): #TODO(fabianvf)
+            for url in result.get(id+'_contributors_url', []): 
                 contributors_url.append(url)
             container['contributors'] = contributors
             container['contributors_url'] = contributors_url
@@ -301,15 +291,15 @@ def create_result(highlights, results):
             # and our nested information
             container['nest'] = nest
             container['is_registration'] = result.get(
-                id + '_registeredproject', #TODO(fabianvf)
+                id + '_registeredproject', 
                 False
             )
-            if id + '_tags' in result.keys(): #TODO(fabianvf)
+            if id + '_tags' in result.keys(): 
                 # again using sets to create a list without duplicates
-                container['tags'] = result[id+'_tags'] + list( #TODO(fabianvf)
-                    set(component_tags) - set(result[id+'_tags'])) #TODO(fabianvf)
+                container['tags'] = result[id+'_tags'] + list( 
+                    set(component_tags) - set(result[id+'_tags'])) 
                 # and were still keeping count of tag occurence
-                for tag in result[id+'_tags']: #TODO(fabianvf)
+                for tag in result[id+'_tags']: 
                     if tag not in tags.keys():
                         tags[tag] = 1
                     else:
@@ -335,15 +325,12 @@ def search_contributor(query, exclude=None):
     # e.g. user:Barack AND Obama. Also search for tokens plus wildcard so that
     # Bar will match Barack. Note: in Solr, Barack* does not match Barack,
     # so must search for (Barack OR Barack*).
-    q = ' AND '.join([ #TODO(fabianvf) This logic needs to be moved to the search engine-specific files
+    q = ' AND '.join([ 
         u'user:({token} OR {token}*)'.format(token=token).encode('utf-8')
         for token in re.split(r'\s+', query)
     ])
 
-#    result = search(q)[0] #TODO(fabianvf) This whole block will probably need a rewrite
     docs = search(q)[0]
-    logger.warn(q)
-#    docs = result.get('docs', [])
 
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
@@ -352,7 +339,6 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
-#        import pdb;pdb.set_trace()
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue

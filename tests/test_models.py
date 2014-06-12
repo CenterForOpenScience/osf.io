@@ -150,7 +150,7 @@ class TestUser(OsfTestCase):
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
-    @mock.patch('framework.auth.model.User.update_search')#TODO(fabian)
+    @mock.patch('framework.auth.model.User.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()

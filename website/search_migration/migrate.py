@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Migration script for Solr-enabled Models.'''
+'''Migration script for Search-enabled Models.'''
 from __future__ import absolute_import
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from website.models import Node
 from framework.auth import User
-#from framework.search.solr import solr
 import website.search.search as search
 
 from website.app import init_app
@@ -20,9 +19,6 @@ def main():
     def migrate_nodes():
         # Projects
         # our first step is to delete all projects
-        #solr.delete_all()#TODO(fabianvf)
-        # and then commit that delete
-        #solr.commit()
         # find all public projects that are not deleted,
         # are public
         search.delete_all()

@@ -30,7 +30,6 @@ from framework.analytics import (
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
-#from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -721,8 +720,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
         if need_update:
-            #self.update_solr()
-            self.update_search()#TODO
+            self.update_search()
 
         # This method checks what has changed.
         if settings.PIWIK_HOST:
@@ -1065,7 +1063,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         return None
 
     def update_search(self):
-        import website.search.search as search #TODO(fabianvf)
+        import website.search.search as search
         search.update_node(self)
 
     def remove_node(self, auth, date=None):
@@ -1667,29 +1665,32 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='&'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property
     def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property
     def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property

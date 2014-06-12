@@ -1,89 +1,91 @@
-from website import settings
+# -*- coding: utf-8 -*-
+
 import logging
 import pyelasticsearch
-import collections
+
+from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-if settings.SEARCH_ENGINE in ["elastic", "all"]:
-    try:
-        elastic = pyelasticsearch.ElasticSearch("http://localhost:9201")
-        logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
-        logging.getLogger('requests').setLevel(logging.DEBUG)
-    except Exception as e:
-        logger.error(e)
-        logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there"
+
+try:
+    elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
+    logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
+    logging.getLogger('requests').setLevel(logging.DEBUG)
+    elastic.health()
+except pyelasticsearch.exceptions.ConnectionError as e:
+    logger.error(e)
+    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there "
                 "was a problem starting the elasticsearch interface. Is "
                 "elasticsearch running?")
-        elastic=None
-else:
-    elastic=None
-    logger.warn("Elastic is not set to start")
-        
+    elastic = None
+
 
 def search(raw_query, start=0):
-
-        # Type filter for normal searches
+    # Type filter for normal searches
     type_filter = {
-        'or' : [
+        'or': [
             {
-            'type' : {'value': 'project'}
+                'type': {'value': 'project'}
             },
             {
-            'type' : {'value': 'component'}
+                'type': {'value': 'component'}
             }
         ]
     }
-
     if 'user:' in raw_query:
-        doc_type = ['user']
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('"', '')
-        raw_query = raw_query.replace('\\"','')
+        raw_query = raw_query.replace('\\"', '')
         raw_query = raw_query.replace("'", '')
         type_filter = {
-            'type' : {
-                'value' : 'user'
+            'type': {
+                'value': 'user'
             }
         }
 
     query = {
-        'query':{
-            'filtered' : {
+        'query': {
+            'filtered': {
                 'filter': type_filter,
                 'query': {
-                    'match' : {
-                        '_all' : raw_query
+                    'match': {
+                        '_all': raw_query
                     }
-                }   
+                }
             }
         },
-        'highlight':{
-            'fields':{
-                'wikis':{}
-            }
-        }
+        'from': start,
+        'size': 10,
     }
-    raw_results = _convert_to_utf8(elastic.search(query, index='website'))
+
+    if raw_query == '*':
+        query = {
+            'query': {
+                'match_all': {}
+            },
+            'from': start,
+            'size': 10,
+        }
+    raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
-    numFound = raw_results['hits']['total']
+    num_found = raw_results['hits']['total']
     formatted_results, tags = create_result(results, highlights)
-    return formatted_results, tags, numFound
+
+    return formatted_results, tags, num_found
 
 
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
-    if not (settings.SEARCH_ENGINE in ['elastic', 'all']):
-        return
-
-    if node.category =='project':
+    if node.category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        parent_title =''
+        parent_title = ''
         category = node.category
     else:
         try:
@@ -115,8 +117,8 @@ def update_node(node):
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
-            'parent_id':parent_id,
-            'parent_title':parent_title
+            'parent_id': parent_id,
+            'parent_title': parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -125,42 +127,39 @@ def update_node(node):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text
 
         try:
-            elastic.update('website', category, id=elastic_document_id, \
-                    doc=elastic_document, upsert=elastic_document, refresh=True)
+            elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document, id=elastic_document_id,\
-                    overwrite_existing=True, refresh=True)
+            elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
 def update_user(user):
 
     user_doc = {
-        'id':user._id,
-        'user':user.fullname
+        'id': user._id,
+        'user': user.fullname
     }
 
-    try: 
+    try:
         elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
+
 def delete_all():
     try:
-        elastic.delete_by_query('website', ['user','project','component'], {'query':{'match_all':{}}})
         elastic.delete_index('website')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
         logger.error("The index 'website' was not deleted from elasticsearch")
 
+
 def delete_doc(elastic_document_id, node):
-    if node.category == 'project':
-        category = 'project'
-    else:
-        category = 'component'
+    category = node.project_or_component
     try:
-        elastic.delete('website', category, elastic_document_id, refresh=True) 
+        elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
+
 
 def create_result(results, highlights):
     ''' Takes list of dicts of the following structure:
@@ -180,156 +179,95 @@ def create_result(results, highlights):
         'registeredproject': {TRUE OR FALSE}
     }
 
-    Returns list of dicts of the following structure: 
+    Returns list of dicts of the following structure:
     {
-        'contributors': [{LIST OF CONTRIBUTORS}], 
-        'wiki_link': '{LINK TO WIKIS}', 
-        'title': '{TITLE TEXT}', 
-        'url': '{URL FOR NODE}', 
-        'nest': {NO IDEA}, 
-        'tags': [{LIST OF TAGS}], 
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
-        'is_registration': {TRUE OR FALSE}, 
-        'highlight': [{NO IDEA}]
+        'contributors': [{LIST OF CONTRIBUTORS}],
+        'wiki_link': '{LINK TO WIKIS}',
+        'title': '{TITLE TEXT}',
+        'url': '{URL FOR NODE}',
+        'nest': {Nested node attributes},
+        'tags': [{LIST OF TAGS}],
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
+        'is_registration': {TRUE OR FALSE},
+        'highlight': [{No longer used, need to phase out}]
+        'description': {PROJECT DESCRIPTION}
     }
-    ''' 
-
-    result_search = []
-    tags = {}
+    '''
+    formatted_results = []
+    word_cloud = {}
     for result in results:
-        container = {}
-        doc_id = result['id']
-        # users are separate documents in our search database,
-        # so the logic for returning
-        # those documents is different
+        # User results are handled specially
         if 'user' in result:
-            container['id'] = result['id']
-            container['user'] = result['user']
-            container['user_url'] = '/profile/'+result['id']
-            result_search.append(container)
+            formatted_results.append({
+                'id': result['id'],
+                'user': result['user'],
+                'user_url': '/profile/' + result['id'],
+            })
         else:
-            container['title'] = result.get('title', '-- private project --')
-            container['url'] = result.get('url')
-            contributors = []
-            contributors_url = []
-            # we're only going to show contributors on projects, for now
-            for contributor in result.get('contributors', []):
-                contributors.append(contributor)
-            for url in result.get('contributors_url',[]):
-                contributors_url.append(url)
-            container['contributors'] = contributors
-            container['contributors_url'] = contributors_url
-            # highlights will be returned as liss
-            main_lit = []
-            # we will create the wiki links
-            main_wiki_link = ''
-            # nest is for our nested nodes; i.e, materials, procedure ects
-            nest = {}
-            component_tags = []
-            # need to keep track of visisted nodes for our tag cloud so we dont
-            # miscount our fx of tags
-            visited_nests = []
-#            for key, value in highlights[id].iteritems(): #TODO(fabianvf)
-#                if id in key:
-                    # if wiki is in the key,
-                    # we have to split on __ to build the url for the wik
-#                    if '__wiki' in key:
-#                        main_wiki_link = result[id+'_url'] + (
-#                           '/wiki/' + key.split('__')[1])
-                    # we're only going to show
-                    # the highlight if its wiki or description. title or
-                    # tags is redundant information
-#                    if '__wiki' in key or '_description' in key:
-#                        main_lit = value
-                # if id is not in key, we know that we have some
-                # nested information to display
-#                elif id not in key:
-#                    if key == 'id':
-#                        continue
-                    # our first step is to get id of the
-                    # node by splitting the key
-                    # wiki keys are set up to include page name as well.
-                    # so splitting to find
-                    # the node id is different
-#                    if '__wiki' in key:
-#                        splits = key.split('__')
-#                        split_id = splits[0]
-#                        pagename = splits[1]
-#                    else:
-#                        split_id = key.split('_')[0]
-                    # nodes can have contributors
-#                    contributors = []
-#                    contributors_url = []
-#                    lit = []
-#                    wiki_link = ''
-                    # build our wiki link
-#                    if '__wiki' in key:
-#                        wiki_link = result[split_id+'_url'] + '/wiki/'+pagename
-                    # again title and tags are
-                    # redundant so only show highlight if the
-                    # wiki or description are in the key
-#                    if '__wiki' in key or '_description' in key:
-#                        if value[0] != 'None':
-#                            lit = value
-                    # build our contributor list and our contributor url list
-#                    for contributor in result.get(split_id+'_contributors', []):
-#                        contributors.append(contributor)
-#                    for url in result.get(split_id+'_contributors_url', []):
-#                        contributors_url.append(url)
-#                    if result[split_id+'_public']:
-#                        nest[split_id] = {
-#                            'title': result[split_id+'_title'],
-#                            'url': result[split_id+'_url'],
-#                            'highlight': lit or nest.get(split_id)['highlight'] if nest.get(split_id) else None,
-#                            'wiki_link': wiki_link,
-#                            'contributors': contributors,
-#                            'contributors_url': contributors_url
-#                        }
-#                        if split_id+'_tags' in result:
-#                            if split_id not in visited_nests:
-                                # we've visted the node so
-                                # append to our visited nests lists
-#                                visited_nests.append(split_id)
-                                # we're going to have a
-                                # list of all tags for each project.
-                                # we're creating a list with no
-                                # duplicates using sets
-#                                component_tags = component_tags + list(
-#                                    set(result[split_id+'_tags']) - set(
-#                                        component_tags))
-                                # count the occurence of each tag
-#                                for tag in result[split_id+'_tags']:
-#                                    if tag not in tags.keys():
-#                                        tags[tag] = 1
-#                                    else:
-#                                        tags[tag] += 1
-            # add the highlight to our dictionary
-            container['highlight'] = []
-            if main_lit:
-                container['highlight'] = main_lit
-#            else:
-                container['highlight'] = None
-            # and the link to the wiki
-            container['wiki_link'] = main_wiki_link
-            # and our nested information
-            container['nest'] = nest
-            container['is_registration'] = result.get(
-                'registeredproject',
-                False
-            )
-            if 'tags' in result.keys():
-                # again using sets to create a list without duplicates
-                container['tags'] = result['tags'] + list(
-                    set(component_tags) - set(result['tags']))
-                # and were still keeping count of tag occurence
-                for tag in result['tags']:
-                    if tag not in tags.keys():
-                        tags[tag] = 1
-                    else:
-                        tags[tag] += 1
-            result_search.append(container)
-#    logger.warn(str(result_search))
-    return result_search, tags
+            # Build up word cloud
+            for tag in result['tags']:
+                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                    else word_cloud[tag] + 1
+
+            # Ensures that information from private projects is never returned
+            parent = Node.load(result['parent_id'])
+            if parent is not None:
+                if parent.is_public:
+                    parent_title = parent.title
+                    parent_url = parent.url
+                    parent_wiki_url = parent.url + 'wiki/'
+                    parent_contributors = [
+                        contributor.fullname
+                        for contributor in parent.contributors
+                    ]
+                    parent_tags = [tag._id for tag in parent.tags]
+                    parent_contributors_url = [
+                        contributor.url
+                        for contributor in parent.contributors
+                    ]
+                    parent_is_registration = parent.is_registration
+                    parent_description = parent.description
+                else:
+                    parent_title = '-- private project --'
+                    parent_url = ''
+                    parent_wiki_url = ''
+                    parent_contributors = []
+                    parent_tags = []
+                    parent_contributors_url = []
+                    parent_is_registration = None
+                    parent_description = ''
+
+            # Format dictionary for output
+            formatted_results.append({
+                'contributors': result['contributors'] if parent is None
+                    else parent_contributors,
+                'wiki_link': result['url'] + 'wiki/' if parent is None
+                    else parent_wiki_url,
+                'title': result['title'] if parent is None
+                    else parent_title,
+                'url': result['url'] if parent is None else parent_url,
+                'nest': {
+                    result['id']:{#Nested components have all their own attributes
+                        'title': result['title'],
+                        'url': result['url'],
+                        'wiki_link': result['url'] + 'wiki/',
+                        'contributors': result['contributors'],
+                        'contributors_url': result['contributors_url'],
+                        'highlight': [],
+                        'description': result['description'],
+                    }
+                } if parent is not None else {},
+                'tags': result['tags'] if parent is None else parent_tags,
+                'contributors_url': result['contributors_url'] if parent is None
+                    else parent_contributors_url,
+                'is_registration': result['registeredproject'] if parent is None
+                    else parent_is_registration,
+                'highlight': [],
+                'description': result['description'] if parent is None
+                    else parent_description,
+            })
+
+    return formatted_results, word_cloud
 
 
 def search_contributor(query, exclude=None):
@@ -342,40 +280,35 @@ def search_contributor(query, exclude=None):
 
     """
     import re
-    logger.warn(query)
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
-    logger.warn(query)
     query = re.split(r'\s+', query)
-
     if len(query) > 1:
-        logger.warn(str(query))
-        and_filter = {'and':[]}
+        and_filter = {'and': []}
         for item in query:
             and_filter['and'].append({
-                'prefix':{
+                'prefix': {
                     'user': item.lower()
                 }
             })
     else:
         and_filter = {
-            'prefix':{
-                'user':query[0].lower()
+            'prefix': {
+                'user': query[0].lower()
             }
         }
 
     query = {
         'query': {
-            'filtered' :{
+            'filtered': {
                 'filter': and_filter
             }
         }
     }
 
-    results = _convert_to_utf8(elastic.search(query, index='website'))
+    results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
-    logger.warn(docs)
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
 
@@ -383,7 +316,6 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
-        logger.warn(doc['id'])
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
@@ -401,19 +333,3 @@ def search_contributor(query, exclude=None):
             })
 
     return {'users': users}
-
-    # Converts unicode dictionary to utf-8 dictionary
-def _convert_to_utf8(data):
-    '''
-    Converts a Unicode dictionary to utf8
-    '''
-    if isinstance(data, basestring):
-        return str(data)
-    elif isinstance(data, collections.Mapping):
-        return dict(map(_convert_to_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(_convert_to_utf8, data))
-    else:
-        return data
-
-
