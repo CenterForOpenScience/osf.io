@@ -14,5 +14,5 @@ def flask_endpoint_overwrite(error):
     human_message = ' '.join(["You're trying to overwrite an existing",
                     "Flask endpoint with a renderer named `{}`".format(clobbered_renderer),
                     "and a view function named `{}`.".format(clobbered_function),
-                    "You can't do that. Rename your view function or add a postfix."])
+                    "You can't do that. Rename your view function or add a suffix."])
     return human_message
