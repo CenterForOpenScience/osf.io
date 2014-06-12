@@ -354,6 +354,9 @@
                         });
                     });
                     $('#add-folder-' + theItem.node_id).click(function () {
+                        $('#buttons' + theItem.node_id).hide();
+                        $('#rnc-' + theItem.node_id).hide();
+                        $('#findNode' + theItem.node_id).hide();
                         $('#afc-' + theItem.node_id).show();
                     });
                     $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
@@ -383,6 +386,9 @@
                         });
                     });
                     $('#rename-node-' + theItem.node_id).click(function () {
+                        $('#buttons' + theItem.node_id).hide();
+                        $('#afc-' + theItem.node_id).hide();
+                        $('#findNode' + theItem.node_id).hide();
                         $('#rnc-' + theItem.node_id).show();
                     });
                     $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
@@ -411,9 +417,18 @@
                             }
                         });
                     });
+                    $('.cancel-button' + theItem.node_id).click(function() {
+                        $('#afc-' + theItem.node_id).hide();
+                        $('#rnc-' + theItem.node_id).hide();
+                        $('#findNode' + theItem.node_id).hide();
+                        $('#buttons' + theItem.node_id).show();
+
+                    });
 
                     $('#add-item-' + theItem.node_id).click(function () {
                         $('#buttons' + theItem.node_id).hide();
+                        $('#afc-' + theItem.node_id).hide();
+                        $('#rnc-' + theItem.node_id).hide();
                         $('#findNode' + theItem.node_id).show();
                     });
 
@@ -446,7 +461,7 @@
                     $(".project-details").html(displayHTML);
                     $(".project-details").show();
                     $('#remove-links-multiple').click(function(){
-                        deleteMultiplePointersFromFolder(self.grid, theParentNodeID, pointerIds, theParentNode);
+                        deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
                     });
 
                 } else {

@@ -24,11 +24,14 @@
             </div>
             <div id="findNode{{theItem.node_id}}">
             <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Project Name">
-            <span class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled">Add the project</span><span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
+            <span class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled">Add the project</span>
+            <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
+                <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
             </div>
             <div class="add-folder-container" id="afc-{{theItem.node_id}}">
-                <input id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name">
+                <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name">
                 <span class = "addFolderBtn btn btn-default" id="add-folder-button{{theItem.node_id}}" disabled="disabled">Add the folder</span>
+                <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
             </div>
 
 
@@ -36,8 +39,9 @@
 
         {{/if}}
             <div class="rename-container" id="rnc-{{theItem.node_id}}">
-                <input id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}">
+                <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}">
                 <span class = "renameNodeBtn btn btn-default" id="rename-node-button{{theItem.node_id}}" disabled="disabled">Rename</span>
+                <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
             </div>
         {{#unless theItem.isFolder}}
             {{#if theItem.parentIsFolder}}
@@ -54,6 +58,6 @@
 </script>
 
 <script id="project-detail-multi-item-template" type="text/x-handlebars-template">
-        <span class="title">Selection of {{ itemsCount }} project links.</span>
+        <span class="title">Selection of {{ itemsCount }} pointers.</span>
         <p><div class="organizeBtn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
 </script>

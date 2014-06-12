@@ -85,7 +85,6 @@ div.project-details span.title {
 
 div.project-details {
     width: 450px;
-    height: 500px;
     border: 1px solid silver;
     background-color: white;
     float: right;
@@ -95,7 +94,7 @@ div.project-details {
     position: fixed;
     z-index: 10;
     display: none;
-    overflow: auto;
+    overflow: visible;
     border-radius: 5px;
     padding: 8px;
     box-shadow: 10px 10px 5px #888888;
@@ -124,7 +123,7 @@ div.organize-project-controls {
 
 input.typeahead.tt-input {
     width: 100%;
-    height: 110%;
+    margin-bottom: 5px;
 }
 
 .organize-project-controls span.twitter-typeahead {
@@ -181,7 +180,6 @@ h3.category {
 }
 .tt-dropdown-menu {
     width: 422px;
-    height: 2000px;
     padding: 8px 0;
     background-color: #fff;
     border: 1px solid #ccc;
