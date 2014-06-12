@@ -9,7 +9,7 @@ from framework.sentry import sentry
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
-from website.util.errors import flask_endpoint_overwrite
+import website.util.errors as errors
 
 
 logger = logging.getLogger(__name__)
@@ -47,9 +47,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         init_addons(settings, routes)
     except AssertionError as error:  # Addon Route map has already been created
         logger.error(error)
-        message = flask_endpoint_overwrite(error)
+        message = errors.flask_endpoint_overwrite(error)
         if message:
-            logger.debug(flask_endpoint_overwrite(error))
+            logger.debug(errors.flask_endpoint_overwrite(error))
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
@@ -62,7 +62,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         try:
             make_url_map(app)
         except AssertionError as error:  # Route map has already been created
-            message = flask_endpoint_overwrite(error)
+            message = errors.flask_endpoint_overwrite(error)
             if message:
                 logger.debug(message)
 
