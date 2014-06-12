@@ -244,7 +244,6 @@ def create_result(results, highlights):
 
             # Check if parent has already been visited, if so, delete it
             if parent is not None and parent_id is not None and visited_nodes.get(parent_id) is not None:
-                logger.warn("DEVASTATION")
                 for i in range(visited_nodes.get(parent_id) - num_deleted, len(formatted_results)):
                     if formatted_results[i]['url'] == parent_url:
                         del formatted_results[i]
@@ -254,9 +253,7 @@ def create_result(results, highlights):
             elif visited_nodes.get(result['id']) is not None:
                 continue
             else:
-                logger.warn('Node id: ' + result['id'])
                 if parent_id:
-                    logger.warn('Parent id: ' + parent_id)
                     visited_nodes[parent_id] = index
                 else:
                     visited_nodes[result['id']] = index
