@@ -925,6 +925,7 @@ def make_url_map(app):
         ], 'get', project_views.node.view_project_as_preprint,
              OsfWebRenderer('preprints/preprint.mako')),
 
+        # TODO: put API endpoints in their own process_rules call
         Rule([
             '/api/v1/project/<pid>/preprint/',
             '/api/v1/project/<pid>/node/<nid>/preprint/'
@@ -933,7 +934,7 @@ def make_url_map(app):
              osffiles_views.preprint_files,
              json_renderer
         ),
-
+        # TODO: put API endpoints in their own process_rules call
         Rule([
             '/api/v1/project/<pid>/preprint/upload/',
             '/api/v1/project/<pid>/node/<nid>/preprint/upload/'
@@ -960,6 +961,7 @@ def make_url_map(app):
              OsfWebRenderer('preprints/new.mako')
         ),
 
+        # TODO: define this as an API endpoint, not normal one
         Rule([
             '/preprint/new/'
         ],
