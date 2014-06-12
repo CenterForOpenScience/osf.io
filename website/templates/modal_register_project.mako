@@ -1,5 +1,5 @@
 <!-- New Component Modal -->
-<div class="modal fade" id="newRegistration">
+<div class="modal fade" id="newObRegistration">
   <div class="modal-dialog">
       <div class="modal-content">
       <form class="form" role="form" action="this" method="post">
@@ -10,14 +10,15 @@
 
           <!-- <div class="modal-body" id="registerableProjects"> -->
           <div>
-            <div id="project-search">
-              <input class="typeahead" type="text" placeholder="Search projects" style="margin:20px;" id='input_project'>
+            <div id="project-search_register_project">
+              <input class="typeahead" type="text" placeholder="Search projects" style="margin:20px;" 
+                    id = 'input_project_register_project'>
             </div>
           </div>
               
       <!-- </div>end modal-body -->
           <div class="modal-footer">
-          <span class = "findBtn btn btn-default" id="add_link" disabled="disabled">Go to registration page</span>
+          <span class = "findBtn btn btn-default" id="add_link_register_project" disabled="disabled">Go to registration page</span>
               <a id='confirm' href="#" class="btn btn-default" data-dismiss="modal">Close</a>
 
           </div><!-- end modal-footer -->

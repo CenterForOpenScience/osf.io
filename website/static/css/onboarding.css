@@ -1,0 +1,68 @@
+/* @override 
+	http://localhost:5000/static/css/onboarding.css */
+
+.onboard_heading {
+	font-family: inherit;
+	font-weight: 500;
+	line-height: 1.1;
+	font-size: 18px;
+	margin:5px;
+}
+
+#input_project_register_project{
+	margin:20px;
+}
+
+#input_project_register_project{
+	margin:20px;
+}
+
+
+#obDropzone{
+	height: 150px; 
+	width: 150px; 
+	border-style: dashed; 
+	margin: 10px; 
+	float:left;
+	padding:5px;
+	font-size: 14px;
+	background-repeat:no-repeat;
+	/*background-attachment:fixed;*/
+	background-position:center; 
+	/*background-image: url('/static/img/file-icon.png')*/
+	/*style='width:50px; display:block; margin-left:auto; margin-right:auto;  margin-top:20px;'*/
+}
+
+.obReveal {
+	display:none;
+}
+
+#obArrowRight{
+	width:50px;
+	height:50px;
+	margin: 60px 0px 60px 0px;
+	display:inline;
+}
+
+#project-search_add_file{
+	text-align:center; 
+	height:170px;
+}
+
+#obProjectSearchContainer{
+	float: right; 
+	margin: 61px 10px 0px 10px;"
+	/*display: block;*/
+	
+}
+
+#add_link_add_file{
+	disabled="disabled";
+	margin-top: 5px;
+	float: right;
+}
+
+#add_link_register_project {
+	float:right;
+	margin:20px;
+}
