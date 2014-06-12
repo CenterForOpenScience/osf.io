@@ -179,12 +179,12 @@ class TestPublicProject(SearchTestCase):
         """
         user2 = UserFactory(fullname='Adam Lambert')
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('"project:{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -197,7 +197,7 @@ class TestPublicProject(SearchTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')

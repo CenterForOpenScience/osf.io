@@ -25,7 +25,42 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 
 def search(raw_query, start=0):
-    # Type filter for normal searches
+    orig_query = raw_query
+
+    query, filtered_query = _build_query(raw_query, start)
+
+    counts = {
+        'users': elastic.count(filtered_query, index='website', doc_type='user')['count'],
+        'projects': elastic.count(filtered_query, index='website', doc_type='project')['count'],
+        'components': elastic.count(filtered_query, index='website', doc_type='component')['count'],
+        'registrations': elastic.count(filtered_query, index='website', doc_type='registration')['count'],
+        'preprints': elastic.count(filtered_query, index='website', doc_type='preprint')['count']
+
+    }
+
+    if 'user:' in orig_query:
+        counts['total'] = counts['users']
+    elif 'project:' in orig_query:
+        counts['total'] = counts['projects']
+    elif 'component:' in orig_query:
+        counts['total'] = counts['components']
+    elif 'registration:' in orig_query:
+        counts['total'] = counts['registrations']
+    elif 'preprints:' in orig_query:
+        counts['total'] = counts['preprints']
+    else:
+        counts['total'] = sum([x for x in counts.values()])
+
+    raw_results = elastic.search(query, index='website')
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    formatted_results, tags = create_result(results, counts)
+
+    return formatted_results, tags, counts
+
+
+def _build_query(raw_query, start=0):
+
+    # Default to searching all types
     type_filter = {
         'or': [
             {
@@ -33,50 +68,98 @@ def search(raw_query, start=0):
             },
             {
                 'type': {'value': 'component'}
+            },
+            {
+                'type': {'value': 'user'}
+            },
+            {
+                'type': {'value': 'registration'}
             }
         ]
     }
-    if 'user:' in raw_query:
-        raw_query = raw_query.replace('user:', '')
-        raw_query = raw_query.replace('"', '')
-        raw_query = raw_query.replace('\\"', '')
-        raw_query = raw_query.replace("'", '')
+    raw_query = raw_query.replace('AND', ' ')
+
+    # TODO(fabianvf): Definitely a more elegant way to do this
+    if 'project:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'project'
+            }
+        }
+    elif 'component:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'component'
+            }
+        }
+    elif 'user:' in raw_query:
         type_filter = {
             'type': {
                 'value': 'user'
             }
         }
+    elif 'registration:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'registration'
+            }
+        }
+    elif 'preprint:' in raw_query:
+        type_filter = {
+            'type': {
+                'value': 'preprint'
+            }
+        }
 
+    raw_query = raw_query.replace('user:', '')
+    raw_query = raw_query.replace('project:', '')
+    raw_query = raw_query.replace('component:', '')
+    raw_query = raw_query.replace('registration:', '')
+    raw_query = raw_query.replace('preprint:', '')
+    raw_query = raw_query.replace('(', '')
+    raw_query = raw_query.replace(')', '')
+    raw_query = raw_query.replace('\\', '')
+    raw_query = raw_query.replace('"', '')
+
+    # If the search contains wildcards, make them mean something
+    if '*' in raw_query:
+        inner_query = {
+            'query_string': {
+                'default_field': '_all',
+                'query': raw_query,
+                'analyze_wildcard': True,
+            }
+        }
+    else:
+        inner_query = {
+            'match': {
+                '_all': raw_query
+            }
+        }
+
+    # This is the complete query
     query = {
         'query': {
-            'filtered': {
-                'filter': type_filter,
+            'function_score': {
                 'query': {
-                    'match': {
-                        '_all': raw_query
+                    'filtered': {
+                        'filter': type_filter,
+                        'query': inner_query
                     }
-                }
+                },
+                'functions': [{
+                    'field_value_factor': {
+                        'field': 'boost'
+                    }
+                }],
+                'score_mode': 'multiply'
             }
         },
         'from': start,
         'size': 10,
     }
 
-    if raw_query == '*':
-        query = {
-            'query': {
-                'match_all': {}
-            },
-            'from': start,
-            'size': 10,
-        }
-    raw_results = elastic.search(query, index='website')
-    results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    highlights = []
-    num_found = raw_results['hits']['total']
-    formatted_results, tags = create_result(results, highlights)
-
-    return formatted_results, tags, num_found
+    return query, raw_query
 
 
 def update_node(node):
@@ -85,14 +168,12 @@ def update_node(node):
     if node.category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        parent_title = ''
-        category = node.category
+        category = 'registration' if node.is_registration else 'project'
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            parent_title = node.node__parent[0].title
-            category = 'component'
+            category = 'preprint' if node.category == 'preprint' else ('registration' if node.is_registration else 'component')
         except IndexError:
             # Skip orphaned components
             return
@@ -118,7 +199,7 @@ def update_node(node):
             'registeredproject': node.is_registration,
             'wikis': {},
             'parent_id': parent_id,
-            'parent_title': parent_title
+            'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -136,7 +217,8 @@ def update_user(user):
 
     user_doc = {
         'id': user._id,
-        'user': user.fullname
+        'user': user.fullname,
+        'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
     try:
@@ -161,8 +243,8 @@ def delete_doc(elastic_document_id, node):
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
 
-def create_result(results, highlights):
-    ''' Takes list of dicts of the following structure:
+def create_result(results, counts):
+    ''' Takes a dict of counts by type, and a list of dicts of the following structure:
     {
         'category': {NODE CATEGORY},
         'description': {NODE DESCRIPTION},
@@ -195,6 +277,9 @@ def create_result(results, highlights):
     '''
     formatted_results = []
     word_cloud = {}
+    visited_nodes = {}  # For making sure projects are only returned once
+    num_deleted = 0  # For making deleting projects from the list faster
+    index = 0  # For keeping track of what index a project is stored
     for result in results:
         # User results are handled specially
         if 'user' in result:
@@ -203,6 +288,7 @@ def create_result(results, highlights):
                 'user': result['user'],
                 'user_url': '/profile/' + result['id'],
             })
+            index += 1
         else:
             # Build up word cloud
             for tag in result['tags']:
@@ -211,31 +297,48 @@ def create_result(results, highlights):
 
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
-            if parent is not None:
-                if parent.is_public:
-                    parent_title = parent.title
-                    parent_url = parent.url
-                    parent_wiki_url = parent.url + 'wiki/'
-                    parent_contributors = [
-                        contributor.fullname
-                        for contributor in parent.contributors
-                    ]
-                    parent_tags = [tag._id for tag in parent.tags]
-                    parent_contributors_url = [
-                        contributor.url
-                        for contributor in parent.contributors
-                    ]
-                    parent_is_registration = parent.is_registration
-                    parent_description = parent.description
+            if parent is not None and parent.is_public:
+                parent_title = parent.title
+                parent_url = parent.url
+                parent_wiki_url = parent.url + 'wiki/'
+                parent_contributors = [
+                    contributor.fullname
+                    for contributor in parent.contributors
+                ]
+                parent_tags = [tag._id for tag in parent.tags]
+                parent_contributors_url = [
+                    contributor.url
+                    for contributor in parent.contributors
+                ]
+                parent_is_registration = parent.is_registration
+                parent_description = parent.description
+                parent_id = parent._id
+            else:
+                parent_title = '-- private project --'
+                parent_url = ''
+                parent_wiki_url = ''
+                parent_contributors = []
+                parent_tags = []
+                parent_contributors_url = []
+                parent_is_registration = None
+                parent_description = ''
+                parent_id = None
+
+            # Check if parent has already been visited, if so, delete it
+            if parent is not None and parent_id is not None and visited_nodes.get(parent_id) is not None:
+                for i in range(visited_nodes.get(parent_id) - num_deleted, len(formatted_results)):
+                    if formatted_results[i]['url'] == parent_url:
+                        del formatted_results[i]
+                        num_deleted += 1
+                        break
+                visited_nodes[parent_id] = index
+            elif visited_nodes.get(result['id']) is not None:
+                continue
+            else:
+                if parent_id:
+                    visited_nodes[parent_id] = index
                 else:
-                    parent_title = '-- private project --'
-                    parent_url = ''
-                    parent_wiki_url = ''
-                    parent_contributors = []
-                    parent_tags = []
-                    parent_contributors_url = []
-                    parent_is_registration = None
-                    parent_description = ''
+                    visited_nodes[result['id']] = index
 
             # Format dictionary for output
             formatted_results.append({
@@ -266,6 +369,7 @@ def create_result(results, highlights):
                 'description': result['description'] if parent is None
                     else parent_description,
             })
+            index += 1
 
     return formatted_results, word_cloud
 
@@ -283,6 +387,7 @@ def search_contributor(query, exclude=None):
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
+
     if len(query) > 1:
         and_filter = {'and': []}
         for item in query:

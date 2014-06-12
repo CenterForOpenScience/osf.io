@@ -542,6 +542,8 @@ class TestSearching(OsfTestCase):
     '''
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -559,7 +561,8 @@ class TestSearching(OsfTestCase):
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
-        res = res.click('Search users')
+
+        res = res.click('Users: 2')
         # The username shows as a search result
         assert_in(user.fullname, res)
 
