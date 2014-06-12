@@ -945,11 +945,11 @@ def make_url_map(app):
         ),
 
         Rule([
-            '/preprint/',
             '/explore/activity/preprint/',
+            '/preprint/',
         ],
              'get',
-             discovery_views.activity,
+             preprint_views.preprint_activity,
              OsfWebRenderer('preprints/explore.mako')
         ),
 
@@ -963,7 +963,7 @@ def make_url_map(app):
 
         # TODO: define this as an API endpoint, not normal one
         Rule([
-            '/preprint/new/'
+            '/api/v1/preprint/new/'
         ],
              'post',
              preprint_views.post_preprint_new,

@@ -4,13 +4,17 @@ from framework import must_be_logged_in, redirect
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 import website.addons.osffiles.views as osffiles_views
+import website.discovery.views as discovery_views
 from website.project import new_node
 from website.project.decorators import must_be_contributor, must_be_valid_project
 from os.path import splitext
 from website.project.views.file import prepare_file
 
-def explore(**kwargs):
-    return {}, http.OK
+def activity(**kwargs):
+    return discovery_views.activity(**kwargs)
+
+def preprint_activity(**kwargs):
+    return discovery_views.activity(**kwargs)
 
 @must_be_logged_in
 def preprint_new(**kwargs):
