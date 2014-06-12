@@ -1041,6 +1041,10 @@ class TestNode(OsfTestCase):
         self.node.collapse(user=self.user)
         assert_equal(self.node.is_expanded(auth=self.consolidate_auth), False)
 
+    def test_collapse_sets_true_with_mixed(self):
+        self.node.collapse(auth=self.consolidate_auth)
+        self.node.expand(user=self.user)
+        assert_equal(self.node.is_expanded(auth=self.consolidate_auth), True)
 
 class TestRemoveNode(OsfTestCase):
 

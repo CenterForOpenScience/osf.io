@@ -197,6 +197,7 @@ class NodeProjectCollector(object):
         visited = visited or []
         visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
+        expanded = node.is_expanded(auth=self.auth)
         can_view = True # node.can_view(auth=self.auth)
         modified_delta = delta_date(node.date_modified)
         date_modified = node.date_modified.isoformat()
@@ -250,6 +251,7 @@ class NodeProjectCollector(object):
                     else None,
             },
             'children': [],
+            'expanded': expanded,
             'isProject': is_project,
             'isPointer': is_pointer,
             'isComponent': is_component,

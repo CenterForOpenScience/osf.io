@@ -11,7 +11,7 @@
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
         <div id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
-            <div class = "project-grid-menu"><span class="pg-expand-all">Expand All Visible Folders</span> <span class="pg-collapse-all">Collapse All Folders</span></div>
+
             <div class="hgrid" id="project-grid"></div>
         </div>
 

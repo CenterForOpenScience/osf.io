@@ -389,6 +389,7 @@
                         $('#buttons' + theItem.node_id).hide();
                         $('#afc-' + theItem.node_id).hide();
                         $('#findNode' + theItem.node_id).hide();
+                        $('#nc-' + theItem.node_id).hide();
                         $('#rnc-' + theItem.node_id).show();
                     });
                     $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
@@ -421,6 +422,7 @@
                         $('#afc-' + theItem.node_id).hide();
                         $('#rnc-' + theItem.node_id).hide();
                         $('#findNode' + theItem.node_id).hide();
+                        $('#nc-' + theItem.node_id).show();
                         $('#buttons' + theItem.node_id).show();
 
                     });
@@ -751,6 +753,29 @@
                     draggable.grid.grid.resetActiveCell();
                 }
             },
+            onExpand: function(event, item) {
+                var expandUrl = item.apiURL+ 'expand/';
+                var postData = JSON.stringify({});
+                $.ajax({
+                    type: "POST",
+                    url: expandUrl,
+                    data: postData,
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            },
+            onCollapse: function(event, item) {
+                var collapseUrl = item.apiURL + 'collapse/';
+                var postData = JSON.stringify({});
+                $.ajax({
+                    type: "POST",
+                    url: collapseUrl,
+                    data: postData,
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            },
+
             init: hgridInit.bind(self)
         };
 

@@ -540,44 +540,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
 
-    def is_expanded(self, auth=None, user=None):
-        """Return if a user is has expanded the folder in the dashboard view.
-        Must specify one of (`auth`, `user`).
-
-        :param Auth auth: Auth object to check
-        :param User user: User object to check
-        :returns: Boolean if the folder is expanded.
-
-        """
-        if not auth and not user:
-            raise ValueError('Must pass either `auth` or `user`')
-        if auth and user:
-            raise ValueError('Cannot pass both `auth` and `user`')
-        user = user or auth.user
-
-        if user._id in self.expanded:
-            return self.expanded[user._id]
-        else:
-            return False
-
-    def expand(self, auth=None, user=None):
-        if not auth and not user:
-            raise ValueError('Must pass either `auth` or `user`')
-        if auth and user:
-            raise ValueError('Cannot pass both `auth` and `user`')
-        user = user or auth.user
-
-        self.expanded[user._id] = True
-
-    def collapse(self, auth=None, user=None):
-        if not auth and not user:
-            raise ValueError('Must pass either `auth` or `user`')
-        if auth and user:
-            raise ValueError('Cannot pass both `auth` and `user`')
-        user = user or auth.user
-
-        self.expanded[user._id] = False
-
     @property
     def private_links(self):
         return self.privatelink__shared
@@ -628,6 +590,45 @@ class Node(GuidStoredObject, AddonModelMixin):
                 and self.has_permission(auth.user, 'read') \
                 or auth.private_key in self.private_link_keys_active
 
+    def is_expanded(self, auth=None, user=None):
+        """Return if a user is has expanded the folder in the dashboard view.
+        Must specify one of (`auth`, `user`).
+
+        :param Auth auth: Auth object to check
+        :param User user: User object to check
+        :returns: Boolean if the folder is expanded.
+
+        """
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+
+        if user._id in self.expanded:
+            return self.expanded[user._id]
+        else:
+            return False
+
+    def expand(self, auth=None, user=None):
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+
+        self.expanded[user._id] = True
+        self.save()
+
+    def collapse(self, auth=None, user=None):
+        if not auth and not user:
+            raise ValueError('Must pass either `auth` or `user`')
+        if auth and user:
+            raise ValueError('Cannot pass both `auth` and `user`')
+        user = user or auth.user
+
+        self.expanded[user._id] = False
+        self.save()
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
