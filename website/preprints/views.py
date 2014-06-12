@@ -9,11 +9,12 @@ from website.project.decorators import must_be_contributor, must_be_valid_projec
 from os.path import splitext
 from website.project.views.file import prepare_file
 
+def explore(**kwargs):
+    return {}, http.OK
 
 @must_be_logged_in
 def preprint_new(**kwargs):
     return {}, http.OK
-
 
 @must_be_logged_in
 def post_preprint_new(**kwargs):
@@ -54,4 +55,5 @@ def post_preprint_new(**kwargs):
 @must_be_valid_project
 def upload_preprint(**kwargs):
     rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
+    node = kwargs['node'] or kwargs['project']
     return rv

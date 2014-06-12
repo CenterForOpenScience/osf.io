@@ -16,7 +16,7 @@ from website import views as website_views
 from website.addons.osffiles import views as osffiles_views
 from website.addons.base import views as addon_views
 from website.osf_web_renderer import OsfWebRenderer
-from website.preprints.preprint import preprint_new, post_preprint_new, upload_preprint
+from website.preprints import views as preprint_views
 from website.search import views as search_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
@@ -939,23 +939,24 @@ def make_url_map(app):
             '/api/v1/project/<pid>/node/<nid>/preprint/upload/'
         ],
              'post',
-             upload_preprint,
+             preprint_views.upload_preprint,
              json_renderer
         ),
 
-        # Rule([
-        #     '/preprint/'
-        # ],
-        #      'get',
-        #      project_views.preprints,
-        #      OsfWebRenderer('preprints/explore.mako')
-        # ),
-        #
+        Rule([
+            '/preprint/',
+            '/explore/activity/preprint/',
+        ],
+             'get',
+             discovery_views.activity,
+             OsfWebRenderer('preprints/explore.mako')
+        ),
+
         Rule([
             '/preprint/new/'
         ],
              'get',
-             preprint_new,
+             preprint_views.preprint_new,
              OsfWebRenderer('preprints/new.mako')
         ),
 
@@ -963,7 +964,7 @@ def make_url_map(app):
             '/preprint/new/'
         ],
              'post',
-             post_preprint_new,
+             preprint_views.post_preprint_new,
              json_renderer
         ),
 
