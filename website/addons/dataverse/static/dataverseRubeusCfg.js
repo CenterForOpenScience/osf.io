@@ -118,10 +118,8 @@
                 }
             }
         },
-
-        FETCH_ERROR: '<span class="text-danger">This Dropbox folder may ' +
-                        'have been renamed or deleted. ' +
-                        'Please select a folder at the settings page.</span>'
+        UPLOAD_ERROR: '<span class="text-danger">The Dataverse could ' +
+                        'not accept your file at this time. </span>'
     };
 
 }));

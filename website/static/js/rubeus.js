@@ -398,7 +398,8 @@
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            bootbox.alert(message);
+            var cfgOption = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            bootbox.alert(cfgOption || message);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
