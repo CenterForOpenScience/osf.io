@@ -22,6 +22,7 @@ from website.util import web_url_for
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
+from website.util.sanitize import deep_clean
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 logger = logging.getLogger(__name__)
@@ -35,9 +36,38 @@ def request_to_data():
     }
 
 
-CONFERENCE_NAMES = {
-    # 'spsp2014': 'SPSP 2014',
-    'asb2014': 'ASB 2014',
+# TODO: Move me to database
+MEETING_DATA = {
+    'spsp2014': {
+        'name': 'SPSP 2014',
+        'info_url': None,
+        'logo_url': None,
+        'active': False,
+    },
+    'asb2014': {
+        'name': 'ASB 2014',
+        'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
+        'logo_url': None,
+        'active': False,
+    },
+    'aps2014': {
+        'name': 'APS 2014',
+        'info_url': 'http://centerforopenscience.org/aps/',
+        'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
+        'active': True,
+    },
+    'annopeer2014': {
+        'name': '#annopeer',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+    },
+    'cpa2014': {
+        'name': 'CPA 2014',
+        'info_url': None,
+        'logo_url': None,
+        'active': True,
+    },
 }
 
 
@@ -162,7 +192,7 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     send_mail(
         address,
         CONFERENCE_SUBMITTED,
-        conf_full_name=CONFERENCE_NAMES[conf_id],
+        conf_full_name=MEETING_DATA[conf_id]['name'],
         conf_view_url=urlparse.urljoin(
             settings.DOMAIN, os.path.join('view', conf_id)
         ),
@@ -177,8 +207,8 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     )
 
 
-def get_mailgun_subject():
-    subject = request.form['subject']
+def get_mailgun_subject(form):
+    subject = form['subject']
     subject = re.sub(r'^re:', '', subject, flags=re.I)
     subject = re.sub(r'^fwd:', '', subject, flags=re.I)
     subject = subject.strip()
@@ -212,6 +242,7 @@ def check_mailgun_headers():
     http://documentation.mailgun.com/user_manual.html#webhooks
 
     """
+    # TODO: Cap request payload at 25MB
     signature = hmac.new(
         key=settings.MAILGUN_API_KEY,
         msg='{}{}'.format(
@@ -223,7 +254,7 @@ def check_mailgun_headers():
 
     if signature != request.form['signature']:
         logger.warn('Invalid headers on incoming mail')
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
 
 SSCORE_MAX_VALUE = 5
@@ -254,23 +285,66 @@ def check_mailgun_spam():
     )
 
 
-def poster_hook(tag):
+def parse_mailgun_receiver(form):
+    """Check Mailgun recipient and extract test status, meeting name, and
+    content category. Crash if test status does not match development mode in
+    settings.
+
+    :returns: Tuple of (meeting, category)
+
+    """
+    match = re.search(
+        r'''^
+            (?P<test>test-)?
+            (?P<meeting>\w*?)
+            -
+            (?P<category>poster|talk)
+            @osf\.io
+            $''',
+        form['recipient'],
+        flags=re.IGNORECASE | re.VERBOSE,
+    )
+
+    if not match:
+        raise HTTPError(http.NOT_ACCEPTABLE)
+
+    data = match.groupdict()
+
+    if bool(settings.DEV_MODE) != bool(data):
+        raise HTTPError(http.NOT_ACCEPTABLE)
+
+    return data['meeting'], data['category']
+
+
+def meeting_hook():
 
     # Fail if not from Mailgun
     check_mailgun_headers()
+
+    form = deep_clean(request.form.to_dict())
+    meeting, category = parse_mailgun_receiver(form)
+
+    # Fail if not found or inactive
+    # Note: Throw 406 to disable Mailgun retries
+    try:
+        if not MEETING_DATA[meeting]['active']:
+            raise HTTPError(http.NOT_ACCEPTABLE)
+    except KeyError:
+        raise HTTPError(http.NOT_ACCEPTABLE)
+
     name, address = get_mailgun_from()
 
     # Add poster
     add_poster_by_email(
-        conf_id=tag,
-        recipient=request.form['recipient'],
+        conf_id=meeting,
+        recipient=form['recipient'],
         address=address,
         fullname=name,
-        subject=get_mailgun_subject(),
-        message=request.form['stripped-text'],
+        subject=get_mailgun_subject(form),
+        message=form['stripped-text'],
         attachments=get_mailgun_attachments(),
-        tags=[tag],
-        system_tags=[tag],
+        tags=[meeting],
+        system_tags=[meeting],
         is_spam=check_mailgun_spam(),
     )
 
@@ -301,10 +375,13 @@ def _render_conference_node(node, idx):
     }
 
 
-def conference_results(tag):
+def conference_results(meeting):
+
+    if meeting not in MEETING_DATA:
+        raise HTTPError(http.NOT_FOUND)
 
     nodes = Node.find(
-        Q('tags', 'eq', tag) &
+        Q('tags', 'eq', meeting) &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
     )
@@ -314,4 +391,8 @@ def conference_results(tag):
         for idx, each in enumerate(nodes)
     ]
 
-    return {'data': json.dumps(data)}
+    return {
+        'data': json.dumps(data),
+        'label': meeting,
+        'meeting': MEETING_DATA[meeting],
+    }

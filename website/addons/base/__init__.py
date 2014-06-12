@@ -146,6 +146,10 @@ class AddonConfig(object):
             'has_widget': 'widget' in self.views,
         }
 
+    @property
+    def path(self):
+        return os.path.join(settings.BASE_PATH, self.short_name)
+
 
 class GuidFile(GuidStoredObject):
 
@@ -205,6 +209,10 @@ class AddonUserSettingsBase(AddonSettingsBase):
     _meta = {
         'abstract': True,
     }
+
+    @property
+    def public_id(self):
+        return None
 
 
 class AddonNodeSettingsBase(AddonSettingsBase):

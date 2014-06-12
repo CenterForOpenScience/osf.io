@@ -43,6 +43,10 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return self.oauth_access_token is not None
 
+    @property
+    def public_id(self):
+        return self.github_user
+
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({

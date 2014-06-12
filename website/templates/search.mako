@@ -6,7 +6,7 @@
         % if query:
 ##            split on and, so we will be able to remove tags
             <%
-                cleaned_query = 'AND'.join(query.split('and'))
+                cleaned_query = 'AND'.join(query.split('AND'))
                 components = cleaned_query.split('AND')
             %>
         <h1>Search <small> for

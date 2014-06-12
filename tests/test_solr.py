@@ -4,14 +4,16 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
-from framework.search.solr import solr
-from framework.search.utils import clean_solr_doc
+from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
-from website.search.solr_search import search_solr
-from website.search.views import _search_contributor
 from website import settings
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
+#if settings.SEARCH_ENGINE is not None: #Uncomment to force solr to load for testing
+#    settings.SEARCH_ENGINE = 'solr'
+import website.search.search as search
+#reload(search)
+
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
 class TestCleanSolr(unittest.TestCase):
     """Ensure that invalid XML characters are appropriately removed from
     Solr data documents.
@@ -59,58 +61,52 @@ class TestCleanSolr(unittest.TestCase):
             }
         )
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class SolrTestCase(OsfTestCase):
-
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+class SearchTestCase(OsfTestCase):
     def tearDown(self):
-        solr.delete_all()
-        solr.commit()
-
-
+        search.delete_all()
 def query(term):
-    results, _, _ = search_solr(term)
-    return results.get('docs', [])
+    results, _, _ = search.search(term)
+    return results
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name)
+    term = 'user:"{}"'.format(name) 
     return query(term)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestUserUpdate(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+class TestUserUpdate(SearchTestCase):
 
     def test_new_user(self):
-        """Add a user, then verify that user is present in Solr.
+        """Add a user, then verify that user is present in search
 
         """
         # Create user
-        user = UserFactory()
-
+        user = UserFactory(fullname='David Bowie')
         # Verify that user has been added to Solr
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
 
     def test_change_name(self):
         """Add a user, change her name, and verify that only the new name is
-        found in Solr.
+        found in search.
 
         """
-        user = UserFactory()
+        user = UserFactory(fullname='Barry Mitchell')
         fullname_original = user.fullname
         user.fullname = user.fullname[::-1]
         user.save()
-
         docs_original = query_user(fullname_original)
         assert_equal(len(docs_original), 0)
 
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestProject(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+class TestProject(SearchTestCase):
 
     def setUp(self):
-        self.user = UserFactory()
+        self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
@@ -126,11 +122,11 @@ class TestProject(SolrTestCase):
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestPublicProject(SolrTestCase):
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+class TestPublicProject(SearchTestCase):
 
     def setUp(self):
-        self.user = UserFactory()
+        self.user = UserFactory(usename='Doug Bogie')
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(
             title='Red Special',
@@ -140,7 +136,7 @@ class TestPublicProject(SolrTestCase):
 
     def test_make_private(self):
         """Make project public, then private, and verify that it is not present
-        in Solr.
+        in search.
         """
         self.project.set_privacy('private')
         docs = query(self.project.title)
@@ -224,7 +220,7 @@ class TestPublicProject(SolrTestCase):
         for contributor.
 
         """
-        user2 = UserFactory()
+        user2 = UserFactory(fullname='Adam Lambert')
 
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
@@ -239,7 +235,7 @@ class TestPublicProject(SolrTestCase):
         when searching for contributor.
 
         """
-        user2 = UserFactory()
+        user2 = UserFactory(fullname='Brian May')
 
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
@@ -247,9 +243,9 @@ class TestPublicProject(SolrTestCase):
         docs = query('"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-@unittest.skipIf(not settings.USE_SOLR, 'Solr disabled')
-class TestAddContributor(SolrTestCase):
-    """Tests of the _search_contributor helper.
+@unittest.skipIf(settings.SEARCH_ENGINE != 'solr', 'Solr disabled')
+class TestAddContributor(SearchTestCase):
+    """Tests of the search.search_contributor method
 
     """
 
@@ -261,27 +257,27 @@ class TestAddContributor(SolrTestCase):
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()
-        contribs = _search_contributor(unreg.fullname)
+        contribs = search.search_contributor(unreg.fullname)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_fullname(self):
         """Verify that searching for full name yields exactly one result.
 
         """
-        contribs = _search_contributor(self.name1)
+        contribs = search.search_contributor(self.name1)
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2)
+        contribs = search.search_contributor(self.name2)
         assert_equal(len(contribs['users']), 0)
 
     def test_search_firstname(self):
         """Verify that searching for first name yields exactly one result.
 
         """
-        contribs = _search_contributor(self.name1.split(' ')[0])
+        contribs = search.search_contributor(self.name1.split(' ')[0])
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2.split(' ')[0])
+        contribs = search.search_contributor(self.name2.split(' ')[0])
         assert_equal(len(contribs['users']), 0)
 
     def test_search_partial(self):
@@ -289,8 +285,8 @@ class TestAddContributor(SolrTestCase):
         result.
 
         """
-        contribs = _search_contributor(self.name1.split(' ')[0][:-1])
+        contribs = search.search_contributor(self.name1.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 1)
 
-        contribs = _search_contributor(self.name2.split(' ')[0][:-1])
+        contribs = search.search_contributor(self.name2.split(' ')[0][:-1])
         assert_equal(len(contribs['users']), 0)

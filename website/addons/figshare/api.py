@@ -16,6 +16,7 @@ from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
 from website.util.sanitize import deep_clean
 
+
 class Figshare(object):
 
     def __init__(self, client_token, client_secret, owner_token, owner_secret):

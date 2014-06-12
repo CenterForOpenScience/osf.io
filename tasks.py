@@ -92,11 +92,15 @@ def shell():
     return
 
 @task
-def mongo(daemon=False):
-    '''Run the mongod process.
-    '''
+def mongo(daemon=False,
+          logpath="/usr/local/var/log/mongodb/mongo.log",
+          logappend=True):
+    """Run the mongod process.
+    """
     port = settings.DB_PORT
-    cmd = "mongod --port {0}".format(port)
+    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
+    if logappend:
+        cmd += " --logappend"
     if daemon:
         cmd += " --fork"
     run(cmd)
@@ -136,9 +140,23 @@ def solr():
     run("java -jar start.jar", pty=True)
 
 @task
-def solr_migrate():
-    '''Migrate the solr-enabled models.'''
-    run("python -m website.solr_migration.migrate")
+def elasticsearch():
+    '''Start a local elasticsearch server
+
+    NOTE: Requires that elasticsearch is installed. See README for instructions
+    '''
+    import platform
+    if platform.linux_distribution()[0] == 'Ubuntu':
+        run("sudo service elasticsearch start")
+    elif platform.system() == 'Darwin': # Mac OSX
+        run('elasticsearch')
+    else:
+        print("Your system is not recognized, you will have to start elasticsearch manually")
+
+@task
+def migrate_search():
+    '''Migrate the search-enabled models.'''
+    run("python -m website.search_migration.migrate")
 
 @task
 def mailserver(port=1025):
@@ -165,7 +183,8 @@ def test_module(module=None, verbosity=2):
     """
     test_cmd = 'nosetests'
     # Allow selecting specific submodule
-    args = " --verbosity={0} -s {1}".format(verbosity, module)
+    module_fmt = ' '.join(module) if isinstance(module, list) else module
+    args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
     run(test_cmd + args, pty=True)
 
@@ -180,7 +199,11 @@ def test_osf():
 def test_addons():
     """Run all the tests in the addons directory.
     """
-    test_module(module="website/addons/")
+    modules = []
+    for addon in settings.ADDONS_REQUESTED:
+        module = os.path.join(settings.BASE_PATH, 'addons', addon)
+        modules.append(module)
+    test_module(module=modules)
 
 
 @task
@@ -194,26 +217,6 @@ def test():
 def test_all():
     test_osf()
     test_addons()
-
-
-# TODO: user bower once hgrid is released
-@task
-def get_hgrid():
-    """Get the latest development version of hgrid and put it in the static
-    directory.
-    """
-    target = 'website/static/vendor/hgrid'
-    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
-    print('Removing old version')
-    run('rm -rf {0}'.format(target))
-    print('Replacing with fresh version')
-    run('mkdir {0}'.format(target))
-    run('mv hgrid/dist/hgrid.js {0}'.format(target))
-    run('mv hgrid/dist/hgrid.css {0}'.format(target))
-    run('mv hgrid/dist/images {0}'.format(target))
-    run('rm -rf hgrid/')
-    print('Finished')
-
 
 @task
 def addon_requirements(mfr=1):

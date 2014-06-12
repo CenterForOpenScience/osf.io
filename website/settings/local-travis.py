@@ -12,7 +12,7 @@ DB_PORT = 27017
 DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
-USE_SOLR = False
+SEARCH_ENGINE = 'elastic'
 USE_EMAIL = False
 USE_CELERY = False
 
@@ -33,3 +33,5 @@ BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'amqp://'
 
 USE_CDN_FOR_CLIENT_LIBS = False
+
+SENTRY_DSN = None

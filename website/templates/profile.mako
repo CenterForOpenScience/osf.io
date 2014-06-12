@@ -6,7 +6,7 @@
 <script>
     % if user["is_profile"]:
         $(function() {
-            $('#profile-fullname').editable({
+            $('#profile-fullname > span').editable({
                 type:  'text',
                 pk:    '${profile["id"]}',
                 name:  'fullname',
@@ -14,7 +14,6 @@
                 title: 'Edit Full Name',
                 placement: 'bottom',
                 value: '${profile["fullname"]}',
-                mode: "inline",
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
@@ -49,7 +48,7 @@
         <img id='profile-gravatar' src="${profile['gravatar_url']}"
                  rel="tooltip" title="click to change avatar" />
     </a>
-    <h1 id="profile-fullname">${profile["fullname"]}</h1>
+    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
 </div><!-- end-page-header -->
 
 <div class="row">
@@ -95,98 +94,15 @@
         <div class="tab-content">
 
             <div class="tab-pane active" id="social">
-
-                <dl class="dl-horizontal" data-bind="foreach: values">
-
-                    <dt>{{ key }}</dt>
-                    <dd>{{ value || '&nbsp;' }}</dd>
-
-                </dl>
-
+                <div data-bind="template: {name: 'profileSocial'}"></div>
             </div>
 
             <div class="tab-pane" id="jobs">
-
-                <div data-bind="ifnot: contents().length">
-
-                    Missing
-
-                </div>
-
-                <div data-bind="if: contents().length">
-
-                    <table class="table">
-
-                        <thead>
-                            <tr>
-                                <th>Institution</th>
-                                <th>Department</th>
-                                <th>Title</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-
-                        <tbody data-bind="foreach: contents">
-
-                            <tr>
-
-                                <td>{{ institution }}</td>
-                                <td>{{ department }}</td>
-                                <td>{{ title }}</td>
-                                <td>{{ start }}</td>
-                                <td>{{ end }}</td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                <div data-bind="template: {name: 'profileJobs'}"></div>
             </div>
 
             <div class="tab-pane" id="schools">
-
-                <div data-bind="ifnot: contents().length">
-
-                    Missing
-
-                </div>
-
-                <div data-bind="if: contents().length">
-
-                    <table class="table">
-
-                        <thead>
-                            <tr>
-                                <th>Institution</th>
-                                <th>Department</th>
-                                <th>Title</th>
-                                <th>Start Date</th>
-                                <th>End Date</th>
-                            </tr>
-                        </thead>
-
-                        <tbody data-bind="foreach: contents">
-
-                            <tr>
-
-                                <td>{{ institution }}</td>
-                                <td>{{ department }}</td>
-                                <td>{{ degree }}</td>
-                                <td>{{ start }}</td>
-                                <td>{{ end }}</td>
-
-                            </tr>
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
+                <div data-bind="template: {name: 'profileSchools'}"></div>
             </div>
 
         </div>
@@ -195,45 +111,48 @@
 
 </div>
 
-<hr />
-
-<div class="row">
-%if badges:
-    <div class="col-md-6">
-        <h3>Badges Endorsed by This User</h3>
-        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
-            %for badge in badges:
-                <div class="media">
-                    <img src="${badge.image}"  width="64px" height="64px" class="open-badge badge-popover media-object pull-left"/>
-                    <div class="media-body">
-                        <h4 class="media-heading">${badge.name}<small> ${badge.description}</small></h4>
-                        ${badge.criteria_list}
-                    </div>
-                </div>
-            %endfor
-        </div>
-    </div>
-    <div class="col-md-6">
-%else:
-    <div class="col-md-12">
-%endif
-        <h3>"Sash"</h3>
-        <div class="profile-badge-list">
-            %for assertion in reversed(assertions):
-            <div>
-                <img src="${assertion.badge.image}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/badge/assertion/json/${assertion._id}/" data-content="${assertion.badge.description_short}" data-toggle="popover" data-title="<a href=&quot;/${assertion.badge._id}/&quot;>${assertion.badge.name}</a>
-                %if not assertion.badge.is_system_badge:
-                    - <a href=&quot;${assertion.badge.creator.owner.profile_url}&quot;>${assertion.badge.creator.owner.fullname}</a>"/>
-                %else:
-                    "/>
-                %endif
-                <br/>
-                <span class="badge">${assertion.amount}<span>
-            </div>
-            %endfor
-        </div>
-    </div>
-</div>
+## TODO: Review and un-comment
+## TODO: Render badges w/ Knockout
+## TODO: Add profile hooks to add-on core
+##<hr />
+##
+##<div class="row">
+##%if badges:
+##    <div class="col-md-6">
+##        <h3>Badges Endorsed by This User</h3>
+##        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
+##            %for badge in badges:
+##                <div class="media">
+##                    <img src="${badge.image}"  width="64px" height="64px" class="open-badge badge-popover media-object pull-left"/>
+##                    <div class="media-body">
+##                        <h4 class="media-heading">${badge.name}<small> ${badge.description}</small></h4>
+##                        ${badge.criteria_list}
+##                    </div>
+##                </div>
+##            %endfor
+##        </div>
+##    </div>
+##    <div class="col-md-6">
+##%else:
+##    <div class="col-md-12">
+##%endif
+##        <h3>"Sash"</h3>
+##        <div class="profile-badge-list">
+##            %for assertion in reversed(assertions):
+##            <div>
+##                <img src="${assertion.badge.image}" width="64px" height="64px" class="open-badge badge-popover" badge-url="/badge/assertion/json/${assertion._id}/" data-content="${assertion.badge.description_short}" data-toggle="popover" data-title="<a href=&quot;/${assertion.badge._id}/&quot;>${assertion.badge.name}</a>
+##                %if not assertion.badge.is_system_badge:
+##                    - <a href=&quot;${assertion.badge.creator.owner.profile_url}&quot;>${assertion.badge.creator.owner.fullname}</a>"/>
+##                %else:
+##                    "/>
+##                %endif
+##                <br/>
+##                <span class="badge">${assertion.amount}<span>
+##            </div>
+##            %endfor
+##        </div>
+##    </div>
+##</div>
 
 <hr />
 <div class="row">
@@ -258,7 +177,9 @@
 </div><!-- end row -->
 
 <%include file="log_templates.mako"/>
-
+<%include file="include/profile/social.mako" />
+<%include file="include/profile/jobs.mako" />
+<%include file="include/profile/schools.mako" />
 
 <script type="text/javascript">
 
@@ -273,9 +194,9 @@
         var schoolsUrls = {
             crud: '${ api_url_for('serialize_schools', uid=profile['id']) }'
         };
-        var social = new profile.Social('#social', socialUrls);
-        var jobs = new profile.Jobs('#jobs', jobsUrls);
-        var schools = new profile.Schools('#schools', schoolsUrls);
+        var social = new profile.Social('#social', socialUrls, ['edit', 'view']);
+        var jobs = new profile.Jobs('#jobs', jobsUrls, ['edit', 'view']);
+        var schools = new profile.Schools('#schools', schoolsUrls, ['edit', 'view']);;
     });
 
 </script>

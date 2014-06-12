@@ -1,15 +1,28 @@
-[This repository has moved; click here.](http://github.com/CenterForOpenScience/openscienceframework/)
-===========================
+# OSF 
+
+
+- `master` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
+- `develop` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=develop)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
+- Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
+- Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
+- Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
+- Wiki: https://osf.io/a92ji/wiki/home/
 
 ## Help
 
-Solutions to many common issues may be found in the [Troubleshooting Guide](docs/troubleshooting.rst).
+Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
 
 ## Quickstart
 
 These instructions should work on Mac OSX >= 10.7
 
 - Create your virtualenv.
+- Copy `website/settings/local-dist.py` to `website/settings/local.py`. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+
+```sh
+$ cp website/settings/local-dist.py website/settings/local.py
+```
+
 - Install MongoDB. On MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
@@ -27,16 +40,9 @@ $ brew install libxslt
 - Install requirements.
 
 ```bash
-$ pip install -r dev-requirements.txt
+$ pip install invoke
+$ invoke requirements --all
 ```
-
-- Create your local settings file.
-
-```bash
-$ cp website/settings/local-dist.py website/settings/local.py
-```
-
-`local.py` will override settings in `base.py`. It will not be added to source control, so change it as you wish.
 
 ## Starting Up
 
@@ -136,30 +142,67 @@ $ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
 invoke celery_worker
 ```
 
-## Using Solr
+## Using Search
 
+### Solr
 - Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
+
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
+
+```python
+SEARCH_ENGINE = 'solr'
+```
 
 - Start the Solr server and migrate the models.
 
 ```bash
 $ invoke solr
-$ invoke solr_migrate
+$ invoke migrate_search
 ```
 
-- In your `website/settings/local.py` file, set `USE_SOLR` to True.
-
-```python
-USE_SOLR = True
-```
-
-### Starting A Local Solr Server
+#### Starting A Local Solr Server
 
 ```bash
 $ invoke solr
 ```
 
 This will start a Solr server on port 8983.
+
+### Elasticsearch
+
+- Install Elasticsearch
+
+#### Mac OSX
+
+```bash
+$ brew install elasticsearch
+```
+
+#### Ubuntu 
+
+````bash
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
+$ sudo dpkg -i elasticsearch-1.2.1.deb
+```
+
+#### Using Elasticsearch
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'elastic'.
+
+```python
+SEARCH_ENGINE = 'elastic'
+```
+- Start the Elasticsearch server and migrate the models.
+
+```bash
+$ invoke elasticsearch
+$ invoke migrate_search
+```
+#### Starting a local Elasticsearch server
+
+```bash
+$ invoke elasticsearch
+```
+
 
 ## Using Bower for front-end dependencies
 

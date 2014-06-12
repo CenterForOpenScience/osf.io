@@ -11,7 +11,7 @@ import httplib as http
 
 
 from nose.tools import *  # PEP8 asserts
-from tests.test_features import requires_solr
+from tests.test_features import requires_search
 from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
@@ -1959,12 +1959,14 @@ class TestTagViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@requires_solr
+@requires_search
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
-        self.project = ProjectFactory()
+        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
         self.contrib1 = UserFactory(fullname='Freddie Mercury')
         self.contrib2 = UserFactory(fullname='Brian May')
 
@@ -1977,17 +1979,18 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 1)
         freddie = result[0]
         assert_equal(freddie['fullname'], self.contrib1.fullname)
-        #TODO Should I be passing?
-        assert_equal(freddie['email'], self.contrib1.username)
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-
+       
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+    def tearDown(self):
+        import website.search.search as search
+        search.delete_all()
 
 class TestReorderComponents(OsfTestCase):
 
@@ -2021,8 +2024,25 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestDashboardViews(OsfTestCase):
 
+    def setUp(self):
+        self.app = TestApp(app)
 
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
+    def test_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+
+        url = lookup('api', 'get_dashboard_nodes')
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json['nodes']), 1)
 
 
 if __name__ == '__main__':

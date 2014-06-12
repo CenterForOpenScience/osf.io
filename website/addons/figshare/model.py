@@ -1,16 +1,12 @@
-"""
-
-"""
 import os
-import json
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from framework.status import push_status_message
 
 from .api import Figshare
 from . import settings as figshare_settings
 from . import messages
+
 
 class FigShareGuidFile(GuidFile):
 
@@ -22,6 +18,7 @@ class FigShareGuidFile(GuidFile):
         if self.article_id is None or self.file_id is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('figshare', 'article', self.article_id, 'file', self.file_id)
+
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
 
@@ -47,10 +44,10 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
 
 
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
+
     figshare_id = fields.StringField()
     figshare_type = fields.StringField()
     figshare_title = fields.StringField()
-
 
     user_settings = fields.ForeignField(
         'addonfigshareusersettings', backref='authorized'
@@ -105,7 +102,6 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                 auth=auth,
                 )
 
-
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
 
@@ -132,6 +128,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     #############
     # Callbacks #
     #############
+
     def before_page_load(self, node, user):
         """
 

@@ -41,62 +41,64 @@
 
 
     % if 'admin' in user['permissions']:
-        <h2>Sharing Private Project</h2>
-            <div class="scripted" id="linkScope" >
+        <h2>Sharing</h2>
+        <div class="scripted" id="linkScope">
 
-                    <table id="privateLinkTable" class="table">
-                        <thead>
-                            <tr>
-                            <th class="col-sm-3 link-name">Links</th>
-                            <th class="col-sm-1 link-nodes">Shared Project
-                            </th>
-                            <th class="col-sm-2 link-note">Note</th>
-                            <th class="col-sm-3 link-date">Created Date</th>
-                            <th class="col-sm-2 link-creator">Created By</th>
-                            <th class="col-sm-1"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            <table id="privateLinkTable" class="table">
 
-                            <tr>
-                                <td colspan="3"  >
-                                    <a href="#private-link" data-toggle="modal">
-                                        Click to create a link to share this project so those
-                                        who have the link can view but not edit the project
-                                    </a>
-                                </td>
-                            </tr>
+                <thead>
+                    <tr>
+                    <th class="col-sm-3 link-name">Links</th>
+                    <th class="col-sm-1 link-nodes">Shared Project(s)</th>
+                    <th class="col-sm-2 link-note">Note</th>
+                    <th class="col-sm-3 link-date">Created Date</th>
+                    <th class="col-sm-2 link-creator">Created By</th>
+                    <th class="col-sm-1"></th>
+                    </tr>
+                </thead>
 
-                        </tbody>
-                        <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
-                                <tr>
-                                <td class="col-sm-3 link-name">
-                                    <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
-                                            data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                        <span class="icon-copy" ></span>
-                                    </button>
-                                    <span class="key-name" data-bind="text: linkUrl"></span>
-                                </td>
-                                <td class="col-sm-1 link-nodes" data-bind="foreach:nodes">
-                                       <ul class="narrow-list">
-                                           <li >
-                                              {{$data}}
-                                           </li>
-                                       </ul>
-                                </td>
-                                <td class="col-sm-2 link-note" data-bind="text: note"></td>
-                                <td class="col-sm-3 link-date">
-                                    <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
-                                </td>
-                                <td class="col-sm-2 link-creator" data-bind="text: creator"></td>
-                                <td class="col-sm-1">
-                                    <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
-                                </td>
-                                </tr>
-                        </tbody>
-                        </table>
+                <tbody>
 
-            </div>
+                    <tr>
+                        <td colspan="3">
+                            <a href="#addPrivateLink" data-toggle="modal">
+                                Click to create a link to share this project so those
+                                who have the link can view but not edit the project
+                            </a>
+                        </td>
+                    </tr>
+
+                </tbody>
+                <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
+                        <tr>
+                        <td class="col-sm-3 link-name">
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                <span class="icon-copy" ></span>
+                            </button>
+                            <span class="key-name" data-bind="text: linkUrl"></span>
+                        </td>
+                        <td class="col-sm-1 link-nodes" data-bind="foreach:nodes">
+                               <ul class="narrow-list">
+                                   <li >
+                                      {{$data}}
+                                   </li>
+                               </ul>
+                        </td>
+                        <td class="col-sm-2 link-note" data-bind="text: note"></td>
+                        <td class="col-sm-3 link-date">
+                            <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
+                        </td>
+                        <td class="col-sm-2 link-creator" data-bind="text: creator"></td>
+                        <td class="col-sm-1">
+                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
+                        </td>
+                        </tr>
+                </tbody>
+
+            </table>
+
+        </div>
     % endif
 
     </div><!-- end col-md -->
@@ -174,17 +176,15 @@
     });
 
     $script(['/static/js/privateLinkManager.js',
-            '/static/js/privateLinkTable.js']);
+             '/static/js/privateLinkTable.js']);
 
-    $script.ready(['privateLinkManager',
-        'privateLinkTable'], function (){
+    $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
         // Controls the modal
         var configUrl = nodeApiUrl + 'private_link/config/';
-        var privateLinkManager = new PrivateLinkManager('#private-link', configUrl);
+        var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
         var tableUrl = nodeApiUrl + 'private_link/table/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-
     });
     </script>
 </%def>
