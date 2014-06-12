@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import importlib
 import logging
+import re
 
 from framework import storage, db, app
 from framework.mongo import set_up_storage
@@ -31,6 +32,23 @@ def init_addons(settings, routes=True):
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
 
+def human_message(error):
+    m = re.match(
+        'View function mapping is overwriting an existing endpoint function: (.*)__(.*)',
+        error.message)
+    if not m:
+        return None
+
+    clobbered_renderer = m.group(1)
+    clobbered_function = m.group(2)
+
+    human_message = ' '.join(["You're trying to overwrite an existing",
+                    "Flask endpoint with a renderer named `{}`".format(clobbered_renderer),
+                    "and a view function named `{}`.".format(clobbered_function),
+                    "You can't do that. Rename your view function or add a postfix."])
+    return human_message
+
+
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
@@ -46,6 +64,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         init_addons(settings, routes)
     except AssertionError as error:  # Addon Route map has already been created
         logger.error(error)
+        message = human_message(error)
+        if message:
+            logger.debug(human_message(error))
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
@@ -57,8 +78,10 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     if routes:
         try:
             make_url_map(app)
-        except AssertionError:  # Route map has already been created
-            pass
+        except AssertionError as error:  # Route map has already been created
+            message = human_message(error)
+            if message:
+                logger.debug(message)
 
 
 
