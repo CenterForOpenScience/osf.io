@@ -1169,6 +1169,36 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
 
     node.save()
 
+@must_be_valid_project # returns project
+@must_have_permission('write')
+@must_not_be_registration
+def remove_pointers_from_folder(**kwargs):
+    """Remove multiple pointers from a node, raising a 400 if the pointer is not
+    in `node.nodes`.
+    """
+    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
+    pointer_ids = request.json.get('pointerIds')
+
+    if pointer_ids is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    for pointer_id in pointer_ids:
+        pointer_id = node.pointing_at(pointer_id)
+
+        pointer = Pointer.load(pointer_id)
+
+        if pointer is None:
+            raise HTTPError(http.BAD_REQUEST)
+
+        try:
+            node.rm_pointer(pointer, auth=auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
+
+    node.save()
+
+
 
 @must_have_permission('write')
 @must_not_be_registration

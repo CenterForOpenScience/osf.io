@@ -1041,10 +1041,11 @@ this.HGrid = (function($) {
    * @constructor
    */
   HGrid.Error = function(message) {
+    Error.call(this, message);
     this.name = 'HGrid.Error';
     this.message = message || '';
   };
-  HGrid.Error.prototype = new Error();
+  HGrid.Error.prototype = Object.create(Error.prototype);
 
   /**
    * Construct an HGrid.
@@ -1301,11 +1302,17 @@ this.HGrid = (function($) {
   HGrid.prototype.addHighlight = function(item, highlightClass) {
     var cssClass = highlightClass || this.options.highlightClass;
     this.removeHighlight();
-    var $rowElement;
+    var idToHighlight;
     if (item && item.kind === FOLDER) {
-      $rowElement = $(this.getRowElement(item.id));
+      idToHighlight = item.id;
     } else {
-      $rowElement = $(this.getRowElement(item.parentID));
+      idToHighlight = item.parentID;
+    }
+    var $rowElement;
+    try{
+      $rowElement = $(this.getRowElement(idToHighlight));
+    } catch (err) { // Element to highlight is not in the DOM
+      return this;
     }
     if ($rowElement) {
       $rowElement.addClass(cssClass);

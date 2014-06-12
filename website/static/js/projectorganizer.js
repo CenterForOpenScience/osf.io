@@ -28,23 +28,6 @@
     ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
 
 
-    function nameRowView(row) {
-        var name = row.name.toString();
-
-        var url = row.urls.fetch;
-        var linkString = name;
-        if (url != null) {
-            linkString = '<a href="' + url.toString() + '">' + name + '</a>';
-        }
-
-        var type = "project";
-        if (row.isPointer) {
-            type = "pointer";
-        }
-        return '<img src="/static/img/hgrid/' + type + '.png"><span class="'
-            + type + '">' + linkString + '</span>';
-
-    }
 
     var dateModifiedColumn = {
         id: 'date-modified',
@@ -129,7 +112,12 @@
         if (row.isComponent) {
             type = "component"
         }
-        return '<img src="/static/img/hgrid/' + type + '.png"><span class="project-'
+        var regType = "";
+        if(row.isRegistration){
+            regType = "reg-";
+            extraClass += " registration";
+        }
+        return '<img src="/static/img/hgrid/' + regType + type + '.png"><span class="project-'
             + type + extraClass + '">' + linkString + '</span>';
     };
     ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
@@ -175,13 +163,6 @@
             }
         });
 
-
-        //self.grid.grid.setSelectionModel(new Slick.RowSelectionModel());
-        //
-        // Grab the JSON for the contents of the smart folder. Add that data
-        // to self.myProjects so that we can use it for the autocomplete
-        //
-        // /api/v1/search/projects/?term=amel&maxResults=5&includePublic=no&includeContributed=yes
 
         self.publicProjects = new Bloodhound({
             datumTokenizer: function (d) {
@@ -232,6 +213,7 @@
 
         self.grid.grid.onSelectedRowsChanged.subscribe(function () {
             var selectedRows = self.grid.grid.getSelectedRows();
+            var multipleItems = false;
             if (selectedRows.length == 1) {
                 self.myProjects.initialize();
                 self.publicProjects.initialize();
@@ -348,7 +330,7 @@
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function () {
-                                reloadFolder(self.grid, theItem, theParentNode);
+                                reloadFolder(self.grid, theParentNode, theParentNode);
                             }
                         });
                     });
@@ -439,13 +421,64 @@
                 } else {
                     $(".project-details").hide();
                 }
+            } else if(selectedRows.length > 1) {
+                var someItemsAreFolders = false;
+                var pointerIds = [];
+
+                selectedRows.forEach(function(item){
+                    var thisItem = self.grid.grid.getDataItem(item);
+                    someItemsAreFolders = someItemsAreFolders || thisItem.isFolder || thisItem.isSmartFolder
+                        || thisItem.parentIsSmartFolder;
+                    pointerIds.push(thisItem.node_id);
+                });
+
+                if(!someItemsAreFolders) {
+                    var multiItemDetailTemplateSource = $("#project-detail-multi-item-template").html();
+                    var detailTemplate = Handlebars.compile(multiItemDetailTemplateSource);
+                    var detailTemplateContext = {
+                        multipleItems: true,
+                        itemsCount: selectedRows.length
+                    };
+                    var sampleItem = self.grid.grid.getDataItem(selectedRows[0]);
+                    theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
+                    theParentNodeID = theParentNode.node_id;
+                    var displayHTML = detailTemplate(detailTemplateContext);
+                    $(".project-details").html(displayHTML);
+                    $(".project-details").show();
+                    $('#remove-links-multiple').click(function(){
+                        deleteMultiplePointersFromFolder(self.grid, theParentNodeID, pointerIds, theParentNode);
+                    });
+
+                } else {
+                    $(".project-details").hide();
+                }
             } else {
-                $(".project-details").hide();
-            }
+                    $(".project-details").hide();
+                }
 
 
         }); // end onSelectedRowsChanged
     };
+
+    function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
+        if(pointerIds.length > 0) {
+            var folderNodeId = folderToDeleteFrom.node_id;
+            var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
+            var postData = JSON.stringify({pointerIds: pointerIds});
+            $.ajax({
+                type: "DELETE",
+                url: url,
+                data: postData,
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function () {
+                    if (theHgrid !== null) {
+                        reloadFolder(theHgrid, folderToDeleteFrom, folderToDeleteFrom);
+                    }
+                }
+            });
+        }
+    }
 
     function reloadFolder(hgrid, theItem, theParentNode) {
         var toReload = theParentNode;
@@ -537,51 +570,77 @@
             }
         },
         onDrop: function (event, items, folder) {
-            var theFolderID = folder.node_id;
-            var sampleItem = items[0];
-            var itemParentID = sampleItem.parentID;
-            var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-            var itemParentNodeID = itemParent.node_id;
-            var itemIds = $.map(items, function (item) {
-                return item.node_id;
-            });
-
-            if (copyMode === "copy") {
-                var url = "/api/v1/project/"+theFolderID+"/pointer/";
-
-                var postData = JSON.stringify(
-                    {
-                        nodeIds: itemIds
-                    });
-            } else if (copyMode === "move") {
-                url = "/api/v1/pointers/move/";
-                postData = JSON.stringify(
-                    {
-                        pointerIds: itemIds,
-                        toNodeId: theFolderID,
-                        fromNodeId: itemParentNodeID
-                    });
-            }
-            if(copyMode === "copy" || copyMode === "move") {
-                var reloadedFolder = "";
-                $.ajax({
-                    type: "POST",
-                    url: url,
-                    data: postData,
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    complete: function () {
-                        if (copyMode == "move") {
-                            itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                            var nextFolder = draggable.grid.grid.getData().getItemById(folder.id);
-                            setReloadNextFolder(itemParent, nextFolder);
-                            draggable.grid.reloadFolder(itemParent);
-
-                        } else {
-                                draggable.grid.reloadFolder(folder);
+            if(typeof folder !== "undefined" && folder !== null) {
+                var theFolderID = folder.node_id;
+                var getChildrenURL = folder.apiURL + 'get_folder_pointers/';
+                var folderChildren;
+                $.getJSON(getChildrenURL, function (data) {
+                    // We can't add a pointer to a folder that already has those pointers, so cull those away
+                    folderChildren = data;
+                    var itemsToMove = [];
+                    var itemsNotToMove = [];
+                    items.forEach(function (item){
+                        if($.inArray(item.node_id, folderChildren) === -1 ){ // pointer not in folder to be moved to
+                            itemsToMove.push(item.node_id);
+                        }else { // Pointer is already in the folder
+                            itemsNotToMove.push(item.node_id);
                         }
-                        copyMode = "none";
+                    });
+                    var sampleItem = items[0];
+                    var itemParentID = sampleItem.parentID;
+                    var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                    var itemParentNodeID = itemParent.node_id;
 
+
+                    if (copyMode === "copy") {
+                        // Set the url and post data for the items being added to the new folder
+                        var url = "/api/v1/project/" + theFolderID + "/pointer/";
+                        var postData = JSON.stringify(
+                            {
+                                nodeIds: itemsToMove
+                            });
+                    } else if (copyMode === "move") {
+                        // First, remove all the duplicated pointers
+                        deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
+                        // Then set the url for the items being moved
+                        url = "/api/v1/pointers/move/";
+                        postData = JSON.stringify(
+                            {
+                                pointerIds: itemsToMove,
+                                toNodeId: theFolderID,
+                                fromNodeId: itemParentNodeID
+                            });
+                    }
+                    if (copyMode === "copy" || copyMode === "move") {
+                        if(itemsToMove.length > 0) {
+                            var reloadedFolder = "";
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                complete: function () {
+                                    if (copyMode == "move") {
+                                        itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                                        setReloadNextFolder(itemParentID, folder.id);
+                                        draggable.grid.reloadFolder(itemParent);
+
+                                    } else {
+                                        draggable.grid.reloadFolder(folder);
+                                        draggable.grid.grid.setSelectedRows([]);
+                                        draggable.grid.grid.resetActiveCell();
+
+                                    }
+                                    copyMode = "none";
+
+                                }
+                            });
+                        } else {
+                            draggable.grid.reloadFolder(itemParent);
+                            draggable.grid.grid.setSelectedRows([]);
+                            draggable.grid.grid.resetActiveCell();
+                        }
                     }
                 });
             }
@@ -591,13 +650,10 @@
             return item.permissions.copyable || item.permissions.movable
         },
         acceptDrop: function (item, folder, done) {
-            if (folder.name === 'Forbidden') {
-                done('Cannot drop here');
-            }
             done();
         },
         canAcceptDrop: function(items, folder) {
-            if (folder.isSmartFolder){
+            if (folder.isSmartFolder || !folder.isFolder){
                 return false;
             }
             var hasComponents = false;
@@ -672,9 +728,12 @@
             fetchSuccess: function(newData, item){
                 if(reloadNewFolder) {
                     reloadNewFolder = false;
-                    if (rnfPrevItem !== rnfToReload) {
-                        self.grid.reloadFolder(rnfToReload);
+                    var toReloadItem = draggable.grid.grid.getData().getItemById(rnfToReload);
+                    if (rnfPrevItem !== rnfToReload && typeof toReloadItem !== "undefined") {
+                        draggable.grid.reloadFolder(toReloadItem);
                     }
+                    draggable.grid.grid.setSelectedRows([]);
+                    draggable.grid.grid.resetActiveCell();
                 }
             },
             init: hgridInit.bind(self)

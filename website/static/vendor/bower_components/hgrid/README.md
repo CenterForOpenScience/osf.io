@@ -235,6 +235,11 @@ var grid = new HGrid('#myGrid', {
 - `onExpand: function(event, item)`
 - `onCollapse: function(event, item)`
 
+### Asynchronous Loading of Data
+
+- `fetchSuccess: function(newData, item)`: With lazy-loading enabled, called when data are successfully loaded from a server.
+- `fetchError: function(error, item)`
+
 ### Upload-related Callbacks 
 
 - `uploadAdded: function(file, item, folder)`
