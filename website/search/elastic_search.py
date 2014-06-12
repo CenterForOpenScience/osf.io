@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import collections
 import pyelasticsearch
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -24,10 +22,9 @@ except pyelasticsearch.exceptions.ConnectionError as e:
                 "was a problem starting the elasticsearch interface. Is "
                 "elasticsearch running?")
     elastic = None
-       
+
 
 def search(raw_query, start=0):
-
     # Type filter for normal searches
     type_filter = {
         'or': [
@@ -39,7 +36,6 @@ def search(raw_query, start=0):
             }
         ]
     }
-    raw_query = raw_query.replace('AND', ' ')
     if 'user:' in raw_query:
         raw_query = raw_query.replace('user:', '')
         raw_query = raw_query.replace('"', '')
@@ -59,13 +55,13 @@ def search(raw_query, start=0):
                     'match': {
                         '_all': raw_query
                     }
-                }   
+                }
             }
         },
         'from': start,
         'size': 10,
     }
-    
+
     if raw_query == '*':
         query = {
             'query': {
@@ -74,7 +70,7 @@ def search(raw_query, start=0):
             'from': start,
             'size': 10,
         }
-    raw_results = _convert_to_utf8(elastic.search(query, index='website'))
+    raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     highlights = []
     num_found = raw_results['hits']['total']
@@ -121,8 +117,8 @@ def update_node(node):
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
-            'parent_id':parent_id,
-            'parent_title':parent_title
+            'parent_id': parent_id,
+            'parent_title': parent_title
         }
         for wiki in [
             NodeWikiPage.load(x)
@@ -143,7 +139,7 @@ def update_user(user):
         'user': user.fullname
     }
 
-    try: 
+    try:
         elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
@@ -160,7 +156,7 @@ def delete_all():
 def delete_doc(elastic_document_id, node):
     category = node.project_or_component
     try:
-        elastic.delete('website', category, elastic_document_id, refresh=True) 
+        elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
@@ -183,16 +179,16 @@ def create_result(results, highlights):
         'registeredproject': {TRUE OR FALSE}
     }
 
-    Returns list of dicts of the following structure: 
+    Returns list of dicts of the following structure:
     {
-        'contributors': [{LIST OF CONTRIBUTORS}], 
-        'wiki_link': '{LINK TO WIKIS}', 
-        'title': '{TITLE TEXT}', 
-        'url': '{URL FOR NODE}', 
-        'nest': {Nested node attributes}, 
-        'tags': [{LIST OF TAGS}], 
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}], 
-        'is_registration': {TRUE OR FALSE}, 
+        'contributors': [{LIST OF CONTRIBUTORS}],
+        'wiki_link': '{LINK TO WIKIS}',
+        'title': '{TITLE TEXT}',
+        'url': '{URL FOR NODE}',
+        'nest': {Nested node attributes},
+        'tags': [{LIST OF TAGS}],
+        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
+        'is_registration': {TRUE OR FALSE},
         'highlight': [{No longer used, need to phase out}]
         'description': {PROJECT DESCRIPTION}
     }
@@ -203,26 +199,32 @@ def create_result(results, highlights):
         # User results are handled specially
         if 'user' in result:
             formatted_results.append({
-                'id':result['id']
-                ,'user':result['user']
-                ,'user_url':'/profile/'+result['id']
+                'id': result['id'],
+                'user': result['user'],
+                'user_url': '/profile/' + result['id'],
             })
         else:
             # Build up word cloud
             for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag, None) is None \
-                        else word_cloud[tag]+1
-             
+                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                    else word_cloud[tag] + 1
+
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             if parent is not None:
-                if  parent.is_public:
+                if parent.is_public:
                     parent_title = parent.title
                     parent_url = parent.url
                     parent_wiki_url = parent.url + 'wiki/'
-                    parent_contributors = parent.contributors
-                    parent_tags = parent.tags
-                    parent_contributors_url = ['/profile/'+contributor for contributor in parent_contributors]
+                    parent_contributors = [
+                        contributor.fullname
+                        for contributor in parent.contributors
+                    ]
+                    parent_tags = [tag._id for tag in parent.tags]
+                    parent_contributors_url = [
+                        contributor.url
+                        for contributor in parent.contributors
+                    ]
                     parent_is_registration = parent.is_registration
                     parent_description = parent.description
                 else:
@@ -235,37 +237,34 @@ def create_result(results, highlights):
                     parent_is_registration = None
                     parent_description = ''
 
-
-
             # Format dictionary for output
             formatted_results.append({
-                'contributors': result['contributors'] if parent is None \
-                        else parent_contributors
-                ,'wiki_link': result['url']+'wiki/' if parent is None\
-                        else parent_wiki_url
-                ,'title': result['title'] if parent is None \
-                        else parent_title
-                ,'url': result['url'] if result['category'] == 'project'\
-                        else parent_url
-                ,'nest':{
+                'contributors': result['contributors'] if parent is None
+                    else parent_contributors,
+                'wiki_link': result['url'] + 'wiki/' if parent is None
+                    else parent_wiki_url,
+                'title': result['title'] if parent is None
+                    else parent_title,
+                'url': result['url'] if parent is None else parent_url,
+                'nest': {
                     result['id']:{#Nested components have all their own attributes
-                        'title': result['title']
-                        ,'url': result['url']
-                        ,'wiki_link': result['url'] + 'wiki/'
-                        ,'contributors': result['contributors'] 
-                        ,'contributors_url': result['contributors_url']
-                        ,'highlight':[]
-                        ,'description':result['description']
+                        'title': result['title'],
+                        'url': result['url'],
+                        'wiki_link': result['url'] + 'wiki/',
+                        'contributors': result['contributors'],
+                        'contributors_url': result['contributors_url'],
+                        'highlight': [],
+                        'description': result['description'],
                     }
-                } if parent is not None else {}
-                ,'tags':result['tags'] if parent is None else parent_tags
-                ,'contributors_url': result['contributors_url'] if parent is None \
-                        else parent_contributors_url
-                ,'is_registration': result['registeredproject'] if parent is None\
-                        else parent_is_registration
-                ,'highlight': []
-                ,'description':result['description'] if parent is None\
-                        else parent_description
+                } if parent is not None else {},
+                'tags': result['tags'] if parent is None else parent_tags,
+                'contributors_url': result['contributors_url'] if parent is None
+                    else parent_contributors_url,
+                'is_registration': result['registeredproject'] if parent is None
+                    else parent_is_registration,
+                'highlight': [],
+                'description': result['description'] if parent is None
+                    else parent_description,
             })
 
     return formatted_results, word_cloud
@@ -284,31 +283,30 @@ def search_contributor(query, exclude=None):
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
-
     if len(query) > 1:
-        and_filter = {'and':[]}
+        and_filter = {'and': []}
         for item in query:
             and_filter['and'].append({
-                'prefix':{
+                'prefix': {
                     'user': item.lower()
                 }
             })
     else:
         and_filter = {
-            'prefix':{
-                'user':query[0].lower()
+            'prefix': {
+                'user': query[0].lower()
             }
         }
 
     query = {
         'query': {
-            'filtered' :{
+            'filtered': {
                 'filter': and_filter
             }
         }
     }
 
-    results = _convert_to_utf8(elastic.search(query, index='website'))
+    results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
     if exclude:
@@ -335,17 +333,3 @@ def search_contributor(query, exclude=None):
             })
 
     return {'users': users}
-
-
-def _convert_to_utf8(data):
-    '''
-    Converts a Unicode dictionary to utf8
-    '''
-    if isinstance(data, basestring):
-        return str(data)
-    elif isinstance(data, collections.Mapping):
-        return dict(map(_convert_to_utf8, data.iteritems()))
-    elif isinstance(data, collections.Iterable):
-        return type(data)(map(_convert_to_utf8, data))
-    else:
-        return data
