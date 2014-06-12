@@ -11,45 +11,24 @@
     <div class="col-md-3">
         <div data-spy="affix" class="sidebar affix hidden-print" role="complementary">
             <ul class="nav nav-stacked nav-pills">
-                <li><a href='#newPublicProjects'>Newest Public Projects</a></li>
-                <li><a href='#newPublicRegistrations'>Newest Public Registrations</a></li>
                 <li><a href="#newPreprints">Newest Preprints</a></li>
-                <li><a href='#popularPublicProjects'>Popular Public Projects</a></li>
-                <li><a href='#popularPublicRegistrations'>Popular Public Registrations</a></li>
+                <li><a href='#popularPreprints'>Popular Preprints</a></li>
             </ul>
         </div><!-- end sidebar -->
     </div>
 
     <div class="col-md-9" role="main">
       <h1 class="page-header">Public Activity</h1>
-        <section id='newPublicProjects'>
-            <h3>Newest Public Projects</h3>
-            <ul class='project-list list-group'>
-                ${node_list(recent_public_projects, prefix='newest_public', metric='date_created')}
-            </ul>
-        </section>
-        <section id='newPublicRegistrations'>
-            <h3>Newest Public Registrations</h3>
-            <ul class='project-list list-group'>
-                ${node_list(recent_public_registrations, prefix='newest_public', metric='date_created')}
-            </ul>
-        </section>
         <section id='newPreprints'>
             <h3>Newest Preprints</h3>
             <ul class='project-list list-group'>
                 ${node_list(recent_preprints, prefix='newest_public', metric='date_created', url_suffix='preprint/')}
             </ul>
         </section>
-        <section id='popularPublicProjects'>
-            <h3>Popular Public Projects</h3>
+        <section id="popularPreprints">
+            <h3>Popular Preprints</h3>
             <ul class='project-list list-group'>
-                ${node_list(popular_public_projects, prefix='most_viewed', metric='hits')}
-            </ul>
-        </section>
-        <section id='popularPublicRegistrations'>
-            <h3>Popular Public Registrations</h3>
-            <ul class='project-list list-group'>
-                ${node_list(popular_public_registrations, prefix='most_viewed', metric='hits')}
+                ${node_list(popular_preprints, prefix='most_viewed', metric='hits')}
             </ul>
         </section>
     </div>

@@ -1,20 +1,88 @@
 import httplib as http
 from flask import request
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework import must_be_logged_in, redirect
+from framework.analytics.piwik import PiwikClient
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
+from website import settings
 import website.addons.osffiles.views as osffiles_views
 import website.discovery.views as discovery_views
-from website.project import new_node
+from website.project import new_node, Node
 from website.project.decorators import must_be_contributor, must_be_valid_project
 from os.path import splitext
 from website.project.views.file import prepare_file
 
-def activity(**kwargs):
-    return discovery_views.activity(**kwargs)
 
-def preprint_activity(**kwargs):
-    return discovery_views.activity(**kwargs)
+# TODO: this is mostly duplicated code from discovery/views.py
+def preprint_activity():
+
+    popular_preprints = []
+    hits = {}
+
+    if settings.PIWIK_HOST:
+        client = PiwikClient(
+            url=settings.PIWIK_HOST,
+            auth_token=settings.PIWIK_ADMIN_TOKEN,
+            site_id=settings.PIWIK_SITE_ID,
+            period='week',
+            date='today',
+        )
+        popular_project_ids = [
+            x for x in client.custom_variables if x.label == 'Project ID'
+        ][0].values
+
+
+        for nid in popular_project_ids:
+            node = Node.load(nid.value)
+            if node is None:
+                continue
+            if node.is_public and not node.is_registration and node['category'] == 'preprint':
+                if len(popular_preprints) < 10:
+                    popular_preprints.append(node)
+            if len(popular_preprints) >= 10:
+                break
+
+        hits = {
+            x.value: {
+                'hits': x.actions,
+                'visits': x.visits
+            } for x in popular_project_ids
+        }
+
+    # Projects
+
+    recent_query = (
+        Q('category', 'eq', 'project') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+
+    # Temporary bug fix: Skip projects with empty contributor lists
+    # Todo: Fix underlying bug and remove this selector
+    recent_query = recent_query & Q('contributors', 'ne', [])
+
+    recent_preprints_query = (
+        Q('category', 'eq', 'preprint') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    )
+    recent_preprints_query = recent_preprints_query & Q('contributors', 'ne', [])
+
+    recent_preprints = Node.find(
+        recent_preprints_query
+    ).sort(
+        '-date_created'
+    ).limit(10)
+
+    return {
+        'recent_preprints': recent_preprints,
+        'popular_preprints': popular_preprints,
+        'hits': hits,
+    }
+
+# def preprint_activity(**kwargs):
+#     return discovery_views.activity(**kwargs)
 
 @must_be_logged_in
 def preprint_new(**kwargs):
