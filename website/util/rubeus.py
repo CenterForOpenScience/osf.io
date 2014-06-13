@@ -165,6 +165,7 @@ class NodeProjectCollector(object):
                 'fetch': None,
             },
             'children': [],
+            'expand': False,
             'isPointer': False,
             'isFolder': True,
             'isSmartFolder': True,
@@ -251,7 +252,9 @@ class NodeProjectCollector(object):
                     else None,
             },
             'children': [],
-            'expanded': expanded,
+            'expand': True
+                if node.is_dashboard
+                else expanded,
             'isProject': is_project,
             'isPointer': is_pointer,
             'isComponent': is_component,
