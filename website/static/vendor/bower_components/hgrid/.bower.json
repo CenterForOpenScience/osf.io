@@ -7,7 +7,7 @@
     "Steven Loria <sloria1@gmail.com>"
   ],
   "description": "A Javascript-based hierarchical grid that can be used to manage and organize files and folders",
-  "main": "src/hgrid.js",
+  "main": "dist/hgrid.js",
   "keywords": [
     "grid",
     "file",
@@ -27,17 +27,20 @@
     "test",
     "tests",
     "logo",
-    "examples"
+    "examples",
+    "src",
+    "amd-footer.js",
+    "amd-header.js"
   ],
   "dependencies": {
     "jQuery": ">=1.9.0"
   },
-  "_release": "a24cc2d5cd",
+  "_release": "9a92cfe79d",
   "_resolution": {
     "type": "commit",
-    "commit": "a24cc2d5cdaf0772081d0959e5ade96d5388626f"
+    "commit": "9a92cfe79d839bdcd1981ee84032f5f0dfc6885e"
   },
   "_source": "https://github.com/CenterForOpenScience/hgrid.git",
-  "_target": "a24cc2d5cdaf0772081d0959e5ade96d5388626f",
+  "_target": "9a92cfe79d839bdcd1981ee84032f5f0dfc6885e",
   "_originalSource": "https://github.com/CenterForOpenScience/hgrid.git"
 }

@@ -8,7 +8,7 @@
     "Steven Loria <sloria1@gmail.com>"
   ],
   "description": "A Javascript-based hierarchical grid that can be used to manage and organize files and folders",
-  "main": "src/hgrid.js",
+  "main": "dist/hgrid.js",
   "keywords": [
     "grid",
     "file",
@@ -28,7 +28,10 @@
     "test",
     "tests",
     "logo",
-    "examples"
+    "examples",
+    "src",
+    "amd-footer.js",
+    "amd-header.js"
   ],
   "dependencies": {
     "jQuery": ">=1.9.0"

@@ -94,8 +94,6 @@ this.HGrid = (function($) {
     }
     // Assumes nodes have a `kind` property. If `kind` is "item", create a leaf,
     // else create a Tree.
-    // TODO: This logic might not be necessary. Could just create a tree node for
-    // every item.
     for (var i = 0, len = children.length; i < len; i++) {
       var child = children[i];
       if (child.kind === ITEM) {
@@ -1019,7 +1017,9 @@ this.HGrid = (function($) {
      * Called when a user tries to upload to a folder they don't have permission
      * to upload to. This is called before adding a file to the upload queue.
      */
-    uploadDenied: function(folder) {}
+    uploadDenied: function(folder) {},
+
+    getExpandState: null
   };
 
   HGrid._defaults = defaults;
@@ -1169,8 +1169,22 @@ this.HGrid = (function($) {
     if (this.isLazy()) {
       this.collapseAll();
     }
+    this.refreshExpandState();
     this.options.init.call(this);
     return this;
+  };
+
+
+  HGrid.prototype.refreshExpandState = function() {
+    var self = this;
+    if (self.options.getExpandState) {
+      var data = self.getData();
+      for (var i = 0, item; item= data[i]; i++) {
+        if (self.options.getExpandState.call(self, item)) {
+          self.expandItem(item);
+        }
+      }
+    }
   };
 
   HGrid.prototype.setHeight = function(height) {
@@ -1815,19 +1829,31 @@ this.HGrid = (function($) {
     return Boolean(this.options.fetchUrl);  // Assume lazy loading is enabled if fetchUrl is defined
   };
 
+  var LOADING_UNFINISHED = HGrid.LOADING_UNFINISHED = 'lu';
+  var LOADING_STARTED = HGrid.LOADING_STARTED = 'ls';
+  var LOADING_FINISHED = HGrid.LOADING_FINISHED = 'lf';
+
+
+  HGrid.prototype.setLoadingStatus = function(item, status) {
+    item._node._load_status = status;
+  };
+
+
   // TODO: test fetch callbacks
   HGrid.prototype._lazyLoad = function(item) {
     var self = this;
     var url = self.options.fetchUrl(item);
     if (url !== null) {
       self.options.fetchStart.call(self, item);
-      item._node._loaded = true; // Add flag to make sure data are only fetched once.
+      self.setLoadingStatus(item, LOADING_STARTED);
       return self.getFromServer(url, function(newData, error) {
         if (!error) {
           self.addData(newData, item.id);
+          self.setLoadingStatus(item, LOADING_FINISHED);
+          self.refreshExpandState();
           self.options.fetchSuccess.call(self, newData, item);
         } else {
-          item._node._loaded = false;
+          self.setLoadingStatus(item, LOADING_UNFINISHED);
           self.options.fetchError.call(self, error, item);
           throw new HGrid.Error('Could not fetch data from url: "' + url + '". Error: ' + error);
         }
@@ -1850,7 +1876,9 @@ this.HGrid = (function($) {
     var hints = self.getRefreshHints(item).expand;
     dataview.setRefreshHints(hints);
     self.getDataView().updateItem(item.id, item);
-    if (self.isLazy() && !node._loaded) {
+    if (self.isLazy() &&
+        (node._load_status !== LOADING_FINISHED ||
+        node._load_status !== LOADING_STARTED)) {
       this._lazyLoad(item);
     }
     self.options.onExpand.call(self, evt, item);
@@ -2013,13 +2041,15 @@ this.HGrid = (function($) {
     for (var i = 0, datum; datum = toAdd[i]; i++) {
       var node;
       if (datum.kind === HGrid.FOLDER) {
-        var args = {collapse: self.isLazy()};
+        var collapse = self.isLazy();
+        var args = {collapse: collapse};
         node = Tree.fromObject(datum, tree, args);
       } else {
         node = Leaf.fromObject(datum, tree);
       }
       tree.add(node, true); // ensure dataview is updated
     }
+    // self.refreshExpandState();
     return this;
   };
 
@@ -2027,8 +2057,13 @@ this.HGrid = (function($) {
    * Reset a node's loaded state to false. When the node is expanded again and
    * lazy loading is enabled, a new xhr request will be sent.
    */
-  HGrid.prototype.resetLoadedState = function(folder, loaded) {
-    folder._node._loaded = Boolean(loaded);
+  HGrid.prototype.resetLoadedState = function(folder, status) {
+    var self = this;
+    if (status) {
+      self.setLoadingStatus(folder, status);
+    } else {
+      self.setLoadingStatus(folder, LOADING_UNFINISHED);
+    }
     return this;
   };
 
@@ -2052,6 +2087,10 @@ this.HGrid = (function($) {
   HGrid.prototype.invalidate = function () {
     this.grid.invalidate();
     return this;
+  };
+
+  HGrid.prototype.refreshData = function() {
+    this.getDataView().refresh();
   };
 
   HGrid.prototype.registerPlugin = function(plugin) {
