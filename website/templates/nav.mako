@@ -22,6 +22,7 @@
             <ul class="dropdown-menu">
               <li><a href="/explore">Collaborator Network</a></li>
               <li><a href="/explore/activity">Public Activity</a></li>
+              <li><a href="/preprint">Preprints</a></li>
             </ul><!-- end dropdown-menu -->
           </li><!-- end dropdown -->
           <li class="dropdown">

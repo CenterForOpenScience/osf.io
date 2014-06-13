@@ -949,7 +949,7 @@ def make_url_map(app):
         ),
 
         Rule([
-            '/preprint/new/'
+            '/new/preprint/'
         ],
              'get',
              preprint_views.preprint_new,
@@ -977,7 +977,7 @@ def make_url_map(app):
         ),
 
         Rule([
-                 '/preprint/new/'
+                 '/new/preprint/'
              ],
              'post',
              preprint_views.post_preprint_new,

@@ -18,7 +18,7 @@
     </div>
 
     <div class="col-md-9" role="main">
-      <h1 class="page-header">Public Activity</h1>
+      <h1 class="page-header">Public Preprint Activity</h1>
         <section id='newPreprints'>
             <h3>Newest Preprints</h3>
             <ul class='project-list list-group'>

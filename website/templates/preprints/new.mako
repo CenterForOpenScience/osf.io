@@ -7,7 +7,7 @@
 
 
 
-        <form action="" method="post" enctype="multipart/form-data">
+        <form action="${api_url_for('post_preprint_new')}" method="post" enctype="multipart/form-data">
             <input type="file" name="file" />
             <input type="submit" class="btn" value="Upload File"/>
         </form>
