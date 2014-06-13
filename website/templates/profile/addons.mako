@@ -33,7 +33,6 @@
                                 if category in addon.categories
                             ]
                         %>
-
                         % if addons:
                             <h3>${category.capitalize()}</h3>
                             % for addon in addons:
@@ -60,9 +59,7 @@
 
             </div>
         </div>
-
         % if addon_enabled_settings:
-
             <div id="configureAddons" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
@@ -73,23 +70,45 @@
                                 "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
                                 "uri": "${user_api_url}${name}/settings/"
                             }'></div>
-
                         % if not loop.last:
                             <hr />
                         % endif
 
                     % endfor
+                </div>
 
+                <div id='addonPermissionsScope' class='addon-settings scripted'>
+                    <div data-bind="foreach: addons">
+
+                        <div data-bind="id: addonFullTitle" class="scrolling-table">
+                            <h3 data-bind="text: addonFullTitle"></h3>
+                            <table class="table table-hover">
+##                                <!-- ko if: (nodes.length() != 0) -->
+##                                <div data-bind="text: 'Authorized Prokects:'"></div>
+
+                                <tbody data-bind="foreach: nodes">
+                                    <tr>
+                                        <td>
+                                            <a data-bind="attr: { href: url, title: title }, text: title"></a>
+                                        </td>
+                                        <td>
+                                            <a data-bind="click: removeNodeAuth" class="text-danger pull-right">Deauthorize</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                                <!-- /ko -->
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-        % endif
-
+            % endif
     </div>
 
 </div>
 
 <script type="text/javascript">
+
 
     // TODO: Move all this to its own module
     function formToObj(form) {
@@ -158,6 +177,14 @@
 
         return false;
 
+    });
+
+    $script(['/static/js/addonPermissions.js'], function() {
+        // Endpoint for dropbox user settings
+        var url = '/api/v1/settings/addon_config/';
+        // Start up the Dropbox Config manager
+        var addon = new AddonUserConfig(url);
+        $.osf.applyBindings(addon, '#addonPermissionsScope');
     });
 
 </script>

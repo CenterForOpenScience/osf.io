@@ -16,20 +16,6 @@
             </a>
         % endif
     </h4>
-    <div>Authorized Projects:</div>
-    <div class="scrolling-table">
-        <table class="table table-hover">
-            % for node in nodes:
-                <tr style="">
-                    <td><a href="${node.absolute_url}">${node.title}</a></td>
-                    <td><a
-                            class="text-danger github-remove-token pull-right"
-                            data-node-api-url="${node.api_url}"
-                        >Deauthorize</a></td>
-                </tr>
-            % endfor
-        </table>
-    </div>
 </div>
 
 
@@ -72,22 +58,6 @@
                     }
                 }
             )
-        });
-
-        $('.github-remove-token').on('click', function(event) {
-            var $elm = $(event.target);
-            var nodeApiUrl = $elm.attr('data-node-api-url');
-            bootbox.confirm('Are you sure you want to remove the GitHub authorization from this project?', function(confirm) {
-                if (confirm) {
-                    $.ajax({
-                        type: 'DELETE',
-                        url: nodeApiUrl + 'github/oauth/',
-                        success: function(response) {
-                            window.location.reload();
-                        }
-                    });
-                }
-            });
         });
     });
 

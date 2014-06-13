@@ -387,6 +387,17 @@ def make_url_map(app):
         Rule('/settings/names/', 'put', profile_views.unserialize_names, json_renderer),
         Rule('/settings/names/impute/', 'get', profile_views.impute_names, json_renderer),
 
+        #(asmacdo)
+        #TODO(asmacdo) add delete?
+        Rule(
+            [
+                '/settings/addon_config/',
+            ],
+            'get',
+            profile_views.user_addons_json,
+            json_renderer,
+        ),
+
         Rule(
             [
                 '/settings/social/',

@@ -132,6 +132,11 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
+    #TODO(asmacdo) implement!
+    @property
+    def urls(self):
+        return "user URL!"
+
     def delete(self):
         self.clear()
         super(DropboxUserSettings, self).delete()
@@ -165,6 +170,10 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    @property
+    def urls(self):
+        return "this URL"
 
     def set_folder(self, folder, auth):
         self.folder = folder

@@ -190,6 +190,9 @@ class AddonSettingsBase(StoredObject):
         if save:
             self.save()
 
+    def urls(self):
+        raise NotImplementedError
+
     def undelete(self, save=True):
         self.deleted = False
         if save:
@@ -217,7 +220,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def get_backref(self, schema, backref_name):
         return schema + "__" + backref_name
 
-    #TODO show this
+    #TODO(asmacdo) list comprehend this
     @property
     def nodes(self):
         schema = self.config.settings_models['node']._name
@@ -229,11 +232,12 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
         return ret
 
-    #TODO show this
+
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
-            'nodes': self.nodes
+            'urls': self.urls,
+            'nodes': [{'title': node.title, '_id': node._id, 'api_url': node.api_url, 'url': node.url} for node in self.nodes]
         })
         return ret
 

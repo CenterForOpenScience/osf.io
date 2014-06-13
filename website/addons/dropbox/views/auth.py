@@ -135,6 +135,5 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'result': {
             'userHasAuth': user_addon.has_auth,
             'urls': urls,
-            'nodes': [{'title': node.title, '_id': node._id, 'url': node.api_url} for node in user_addon.nodes]
         },
     }, http.OK
