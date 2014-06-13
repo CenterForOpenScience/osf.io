@@ -55,6 +55,7 @@ website/cache/*
 website/settings/uploads/*
 website/uploads/*
 website/mfrcache/*
+website/gpg/*
 # Local settings
 */settings/local.py
 
@@ -68,6 +69,7 @@ scripts/solr-dev/solr/collection1/data/*
 #######################
 website/addons/*/settings/local.py
 website/templates/log_templates.mako
+.cache/
 osf.sublime-workspace
 osf.sublime-project
 .project

@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import platform
 
 from invoke import task, run
 
@@ -242,3 +243,44 @@ def mfr_requirements():
     mfr = 'mfr'
     print 'Installing mfr requirements'
     run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+
+
+@task
+def encryption(owner=None):
+    """Generate GnuPG key.
+    
+    For local development:
+    > invoke encryption
+    On Linode:
+    > sudo env/bin/invoke encryption --owner www-data
+
+    """
+    import gnupg
+    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    keys = gpg.list_keys()
+    if keys:
+        print 'Existing GnuPG key found'
+        return
+    print 'Generating GnuPG key'
+    input_data = gpg.gen_key_input(name_real='OSF Generated Key')
+    gpg.gen_key(input_data)
+    if owner:
+        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
+
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and imports encryption key"""
+    if not os.path.isfile('website/settings/local.py'):
+        print 'Creating local.py file'
+        run('cp website/settings/local-dist.py website/settings/local.py')
+    if platform.system() == 'Darwin':
+        print 'Running brew bundle'
+        run('brew bundle')
+    elif platform.system() == 'Linux':
+        # TODO: Write a script similar to brew bundle for Ubuntu
+        # run('sudo apt-get install [list of packages]')
+        pass
+    print 'Installing requirements'
+    requirements(all=True)
+    encryption()
