@@ -122,7 +122,6 @@
 
 
         <div class="col-md-12" data-bind="visible: showPreprint">
-                ## TODO: Asynchronous upload, reload table on page rather than redirecting
                 ## <pre data-bind="text: ko.toJSON($data, null, 2)"></pre>
             <div data-bind="visible: canEdit">
             <div action='${node["api_url"]+"preprint/upload/"}'
@@ -150,17 +149,17 @@
                     </thead>
 
                     <tbody>
-                        <!-- ko if: uploading-->
-                            <tr>
-                                <td>...</td>
-                                <td>...</td>
-                                <td>...</td>
-                                <td>...</td>
-                                <td>...</td>
-                            </tr>
-                        <!-- /ko -->
+                    <!-- ko if: uploading-->
+                    <tr>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                        <td>...</td>
+                    </tr>
+                    <!-- /ko -->
 
-                        <!-- ko foreach: versions -->
+                    <!-- ko foreach: versions -->
                     <tr>
                         <td>{{number}}</td>
                         <td>{{date_uploaded}}</td>
@@ -173,7 +172,7 @@
                             </a>
                         </td>
                     </tr>
-                        <!-- /ko -->
+                    <!-- /ko -->
                     </tbody>
 
                 </table>

@@ -5,12 +5,107 @@ from framework import must_be_logged_in, redirect
 from framework.analytics.piwik import PiwikClient
 from website import settings
 import website.addons.osffiles.views as osffiles_views
+import website.project.views as project_views
 from website.project import new_node, Node
-from website.project.decorators import must_be_valid_project
 from os.path import splitext
+from website.project.decorators import must_be_valid_project, must_be_contributor_or_public, must_have_addon
+from website.util import rubeus
 
 import website.views as website_views
 
+# This calls upload_preprint, which calls a decorated function. Decorating it may cause confusing behavior.
+def post_preprint_new(**kwargs):
+    """This function is the endpoint for the url where the user can create a new preprint project.
+    It creates a new private project named with the name of the uploaded pdf.
+    This project is given a public component named with the name of the uploaded pdf with ' (Preprint)'
+    as a suffix.
+    Finally, this component contains the uploaded pdf as an OsfFile with the name 'preprint.pdf'."""
+
+    # todo: validation that file is pdf
+    # todo: add error handling
+
+    auth = kwargs['auth']
+    file = request.files.get('file')
+    # todo: should this leave it as unicode? Thinking about, e.g. mathematical symbols in titles
+    node_title = splitext(file.filename)[0]
+
+    # creates private project to house the preprint component
+    project = new_node('project',
+                       node_title,
+                       auth.user,
+                       description='Automatically generated as a preprint for ' + node_title)
+    project.set_privacy('private', auth=auth)
+
+    # creates public component to house the preprint file
+    preprint_component = new_node('preprint',
+                                  node_title + " (Preprint)",
+                                  auth.user,
+                                  project=project)
+    preprint_component.set_privacy('public', auth=auth)
+
+    # commits to database upon successful creation of project and component
+    project.save()
+    preprint_component.save()
+
+    # adds file to new component
+    upload_preprint(project=project,
+                    node=preprint_component,
+                    **kwargs)
+
+    return redirect(preprint_component.url+'preprint/')
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def upload_preprint(**kwargs):
+    request.files['file'].filename = unicode("preprint.pdf")
+    rv = osffiles_views.upload_file_public(**kwargs)
+    return rv
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def preprint_dashboard(**kwargs):
+    return website_views.dashboard(**kwargs)
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def view_project_as_preprint(**kwargs):
+    return project_views.node.view_project(**kwargs)
+
+@must_be_logged_in
+def get_preprint_dashboard_nodes(auth, **kwargs):
+    """This function queries the database for and renders the nodes for the preprint dashboard"""
+    user = auth.user
+
+    contributed = user.node__contributed
+
+    preprints = contributed.find(
+        Q('category', 'eq', 'preprint') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False)
+    ) # There's a lot of boilerplate here. we should fix that
+
+    # TODO: I don't like importing _*. What should I do with this?
+    return website_views._render_nodes(list(preprints))
+
+@must_be_valid_project # returns project
+@must_be_contributor_or_public # returns user, project
+@must_have_addon('osffiles', 'node')
+def preprint_files(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    auth = kwargs['auth']
+
+    files = rubeus.to_hgrid(node, auth)[0]['children']
+    rv = {'supplements': []}
+    for f in files:
+        if f['name'] == 'preprint.pdf':
+            rv['pdf'] = f
+            rv['pdf']['versions'] = osffiles_views.file_versions('preprint.pdf', node)
+        else:
+            rv['supplements'].append(f)
+    return rv
+
+@must_be_logged_in
+def preprint_new(**kwargs):
+    """This is the view function for a page that serves a dynamically-generated widget that allows the user to
+    create a new preprint project."""
+    return {}, http.OK
 
 # TODO: this is mostly duplicated code from discovery/views.py
 def preprint_activity():
@@ -48,23 +143,13 @@ def preprint_activity():
             } for x in popular_project_ids
         }
 
-    # Projects
-
-    recent_query = (
-        Q('category', 'eq', 'project') &
-        Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
-    )
-
-    # Temporary bug fix: Skip projects with empty contributor lists
-    # Todo: Fix underlying bug and remove this selector
-    recent_query = recent_query & Q('contributors', 'ne', [])
-
     recent_preprints_query = (
         Q('category', 'eq', 'preprint') &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
-    )
+    ) # TODO: refactor to remove boilerplate shared with other activity-getting queries
+    # Temporary bug fix: Skip projects with empty contributor lists
+    # Todo: Fix underlying bug and remove this selector
     recent_preprints_query = recent_preprints_query & Q('contributors', 'ne', [])
 
     recent_preprints = Node.find(
@@ -79,69 +164,3 @@ def preprint_activity():
         'hits': hits,
     }
 
-# def preprint_activity(**kwargs):
-#     return discovery_views.activity(**kwargs)
-
-@must_be_logged_in
-def preprint_new(**kwargs):
-    return {}, http.OK
-
-@must_be_logged_in
-def post_preprint_new(**kwargs):
-    # todo: validation that file is pdf
-    # todo: add error handling
-
-    auth = kwargs['auth']
-    file = request.files.get('file')
-    # todo: should this leave it as unicode? Thinking about, e.g. mathematical symbols in titles
-    node_title = splitext(file.filename)[0]
-    # node_title = str(splitext(file.filename)[0])
-
-    # creates private project to house the preprint component
-    project = new_node('project',
-                       node_title,
-                       auth.user,
-                       description='Automatically generated as a preprint for ' + node_title)
-    project.set_privacy('private', auth=auth)
-
-    # creates public component to house the preprint file
-    preprint_component = new_node('preprint',
-                                  node_title + " (Preprint)",
-                                  auth.user,
-                                  project=project)
-    preprint_component.set_privacy('public', auth=auth)
-
-    # commits to database upon successful creation of project and component
-    project.save()
-    preprint_component.save()
-
-    # adds file to new component
-    upload_preprint(project=project,
-                    node=preprint_component,
-                    **kwargs)
-
-    return redirect(preprint_component.url+'preprint/')
-
-@must_be_valid_project
-def upload_preprint(**kwargs):
-    rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
-    node = kwargs['node'] or kwargs['project']
-    return rv
-
-def preprint_dashboard(**kwargs):
-    return website_views.dashboard(**kwargs)
-
-@must_be_logged_in
-def get_preprint_dashboard_nodes(auth, **kwargs):
-    user = auth.user
-
-    contributed = user.node__contributed
-
-    preprints = contributed.find(
-        Q('category', 'eq', 'preprint') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    ) # There's a lot of boilerplate here. we should fix that
-
-    # TODO: I don't like importing _*. What should I do with this?
-    return website_views._render_nodes(list(preprints))

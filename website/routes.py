@@ -927,7 +927,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/preprint/',
             '/project/<pid>/node/<nid>/preprint/',
-        ], 'get', project_views.node.view_project_as_preprint,
+        ], 'get', preprint_views.view_project_as_preprint,
              OsfWebRenderer('preprints/preprint.mako')
         ),
 
@@ -972,7 +972,7 @@ def make_url_map(app):
                  '/project/<pid>/node/<nid>/preprint/'
              ],
              'get',
-             osffiles_views.preprint_files,
+             preprint_views.preprint_files,
              json_renderer
         ),
 

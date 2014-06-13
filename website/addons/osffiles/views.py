@@ -9,12 +9,10 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-
 from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
@@ -25,8 +23,8 @@ from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
 from website.util import rubeus, permissions
-
 from .model import NodeFile, OsfGuidFile
+
 
 logger = logging.getLogger(__name__)
 
@@ -132,19 +130,14 @@ def list_file_paths(**kwargs):
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(filename=None,**kwargs):
+def upload_file_public(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
-
-    file = request.files['file']
-    if filename:
-        file.filename = unicode(filename)
-
-    name, content, content_type, size = prepare_file(file)
+    name, content, content_type, size = prepare_file(request.files['file'])
 
     try:
         fobj = node.add_file(
@@ -316,21 +309,6 @@ def view_file(**kwargs):
     }
 
     rv.update(_view_project(node, auth))
-    return rv
-
-@must_be_contributor_or_public
-def preprint_files(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-
-    files = rubeus.to_hgrid(node, auth)[0]['children']
-    rv = {'supplements': []}
-    for f in files:
-        if f['name'] == 'preprint.pdf':
-            rv['pdf'] = f
-            rv['pdf']['versions'] = file_versions('preprint.pdf', node)
-        else:
-            rv['supplements'].append(f)
     return rv
 
 @must_be_valid_project # returns project

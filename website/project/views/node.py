@@ -274,12 +274,6 @@ def view_project(**kwargs):
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def view_project_as_preprint(**kwargs):
-    return view_project(**kwargs) # TODO: gross hack
-
 #### Reorder components
 
 @must_be_valid_project

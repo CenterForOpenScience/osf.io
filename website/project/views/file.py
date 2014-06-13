@@ -58,24 +58,6 @@ def file_url_to_versions(current_url):
 
     return versions
 
-@must_be_contributor_or_public
-def preprint_files(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-
-    data = request.args.to_dict()
-    files = rubeus.to_hgrid(node, auth, **data)[0]['children']
-    rv = {'supplements': []}
-    for f in files:
-        if f['name'] == 'preprint.pdf':
-            rv['pdf'] = f
-        else:
-            rv['supplements'].append(f)
-
-    rv['downloadCurrent'] = rv['pdf']['urls']['download']
-    rv['pdf']['versions'] = file_url_to_versions(rv['downloadCurrent'])
-    return rv
-
 # File rendering
 def get_cache_path(node_settings):
     return os.path.join(
