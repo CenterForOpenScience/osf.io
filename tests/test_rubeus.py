@@ -64,6 +64,7 @@ class TestRubeus(OsfTestCase):
             },
             'isAddonRoot': True,
             'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -134,7 +135,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -180,7 +182,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),

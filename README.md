@@ -17,32 +17,23 @@ Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a9
 These instructions should work on Mac OSX >= 10.7
 
 - Create your virtualenv.
-- Copy `website/settings/local-dist.py` to `website/settings/local.py`. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
 
-```sh
-$ cp website/settings/local-dist.py website/settings/local.py
-```
+- You will need to:
+    - Create a local.py file. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+    - Install MongoDB.
+    - Install libxml2 and libxslt (required for installing lxml).
+    - Install GPG.
+    - Install requirements.
+    - Create a GPG key.
 
-- Install MongoDB. On MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
-
-```bash
-$ brew update 
-$ brew install mongodb
-```
-
-- Install libxml2 and libxslt (required for installing lxml).
-
-```bash
-$ brew install libxml2
-$ brew install libxslt
-```
-
-- Install requirements.
+- To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
 $ pip install invoke
-$ invoke requirements --all
+$ invoke setup
 ```
+
+- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, and GPG manually before running the above commands.
 
 ## Starting Up
 
@@ -177,6 +168,7 @@ This will start a Solr server on port 8983.
 ```bash
 $ brew install elasticsearch
 ```
+_note: JDK 7 must be installed for elasticsearch to run_
 
 #### Ubuntu 
 
