@@ -4,12 +4,12 @@
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
-            <div class="pull-right"><a class="btn btn-default" href="/project/new">New Project</a></div>
-            <h3>Projects</h3>
+            <div class="pull-right"><a class="btn btn-default" href="/preprint/new">New Preprint</a></div>
+            <h3>My Preprints</h3>
         </div>
         <div mod-meta='{
                  "tpl": "util/render_nodes.mako",
-                 "uri": "/api/v1/dashboard/get_nodes/",
+                 "uri": "/api/v1/preprint/dashboard/get_nodes/",
                  "replace": true
             }'></div>
     </div>
@@ -17,7 +17,7 @@
         <div class="col-md-6">
            <div id="watchFeed">
                <div class="page-header">
-                    <h3>Watched Projects</h3>
+                    <h3>Watched Preprints</h3>
                 </div>
                 <div id="logScope">
                     <%include file="log_list.mako"/>
@@ -27,31 +27,6 @@
         </div>
     </div>
 </div>
-%if 'badges' in addons_enabled:
-    <div class="row">
-        <div class="col-md-6">
-            <div class="page-header">
-              <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
-                <h3>Your Badges</h3>
-            </div>
-            <div mod-meta='{
-                     "tpl": "../addons/badges/templates/dashboard_badges.mako",
-                     "uri": "/api/v1/dashboard/get_badges/",
-                     "replace": true
-                }'></div>
-        </div>
-        <div class="col-md-6">
-            <div class="page-header">
-                <h3>Badges You've Awarded</h3>
-            </div>
-            <div mod-meta='{
-                     "tpl": "../addons/badges/templates/dashboard_assertions.mako",
-                     "uri": "/api/v1/dashboard/get_assertions/",
-                     "replace": true
-                }'></div>
-        </div>
-    </div>
-%endif
 </%def>
 
 <%def name="javascript_bottom()">

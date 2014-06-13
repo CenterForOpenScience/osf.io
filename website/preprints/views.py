@@ -3,15 +3,13 @@ from flask import request
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework import must_be_logged_in, redirect
 from framework.analytics.piwik import PiwikClient
-from framework.auth.decorators import Auth
-from framework.exceptions import HTTPError
 from website import settings
 import website.addons.osffiles.views as osffiles_views
-import website.discovery.views as discovery_views
 from website.project import new_node, Node
-from website.project.decorators import must_be_contributor, must_be_valid_project
+from website.project.decorators import must_be_valid_project
 from os.path import splitext
-from website.project.views.file import prepare_file
+
+import website.views as website_views
 
 
 # TODO: this is mostly duplicated code from discovery/views.py
@@ -32,7 +30,7 @@ def preprint_activity():
             x for x in client.custom_variables if x.label == 'Project ID'
         ][0].values
 
-
+        # TODO: these sorts of things should be refactored out
         for nid in popular_project_ids:
             node = Node.load(nid.value)
             if node is None:
@@ -129,3 +127,21 @@ def upload_preprint(**kwargs):
     rv = osffiles_views.upload_file_public(filename="preprint.pdf", **kwargs)
     node = kwargs['node'] or kwargs['project']
     return rv
+
+def preprint_dashboard(**kwargs):
+    return website_views.dashboard(**kwargs)
+
+@must_be_logged_in
+def get_preprint_dashboard_nodes(auth, **kwargs):
+    user = auth.user
+
+    contributed = user.node__contributed
+
+    preprints = contributed.find(
+        Q('category', 'eq', 'preprint') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False)
+    ) # There's a lot of boilerplate here. we should fix that
+
+    # TODO: I don't like importing _*. What should I do with this?
+    return website_views._render_nodes(list(preprints))

@@ -918,30 +918,25 @@ def make_url_map(app):
         ),
     ], prefix='/api/v1')
 
+
+    ### Preprints ###
+
+    # Web
+
     process_rules(app, [
         Rule([
             '/project/<pid>/preprint/',
             '/project/<pid>/node/<nid>/preprint/',
         ], 'get', project_views.node.view_project_as_preprint,
-             OsfWebRenderer('preprints/preprint.mako')),
+             OsfWebRenderer('preprints/preprint.mako')
+        ),
 
-        # TODO: put API endpoints in their own process_rules call
         Rule([
-            '/api/v1/project/<pid>/preprint/',
-            '/api/v1/project/<pid>/node/<nid>/preprint/'
+            '/preprint/dashboard/'
         ],
              'get',
-             osffiles_views.preprint_files,
-             json_renderer
-        ),
-        # TODO: put API endpoints in their own process_rules call
-        Rule([
-            '/api/v1/project/<pid>/preprint/upload/',
-            '/api/v1/project/<pid>/node/<nid>/preprint/upload/'
-        ],
-             'post',
-             preprint_views.upload_preprint,
-             json_renderer
+             preprint_views.preprint_dashboard,
+             OsfWebRenderer('preprints/dashboard.mako')
         ),
 
         Rule([
@@ -960,14 +955,42 @@ def make_url_map(app):
              preprint_views.preprint_new,
              OsfWebRenderer('preprints/new.mako')
         ),
+    ])
 
-        # TODO: define this as an API endpoint, not normal one
+    # API
+    process_rules(app,[
         Rule([
-            '/api/v1/preprint/new/'
-        ],
+                 '/preprint/dashboard/get_nodes/'
+             ],
+             'get',
+             preprint_views.get_preprint_dashboard_nodes,
+             json_renderer
+        ),
+
+        Rule([
+                 '/project/<pid>/preprint/',
+                 '/project/<pid>/node/<nid>/preprint/'
+             ],
+             'get',
+             osffiles_views.preprint_files,
+             json_renderer
+        ),
+
+        Rule([
+                 '/preprint/new/'
+             ],
              'post',
              preprint_views.post_preprint_new,
              json_renderer
         ),
 
-    ])
+        Rule([
+                 '/project/<pid>/preprint/upload/',
+                 '/project/<pid>/node/<nid>/preprint/upload/'
+             ],
+             'post',
+             preprint_views.upload_preprint,
+             json_renderer
+        ),],
+                  prefix="/api/v1"
+    )
