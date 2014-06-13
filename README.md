@@ -20,8 +20,10 @@ These instructions should work on Mac OSX >= 10.7
 
 - You will need to:
     - Create a local.py file. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+    - Create local.py files for addons that need them.
     - Install MongoDB.
     - Install libxml2 and libxslt (required for installing lxml).
+    - Install elasticsearch.
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
@@ -33,7 +35,7 @@ $ pip install invoke
 $ invoke setup
 ```
 
-- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, and GPG manually before running the above commands.
+- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
 ## Starting Up
 

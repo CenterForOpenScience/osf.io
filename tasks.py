@@ -282,11 +282,28 @@ def travis_addon_settings():
 
 
 @task
-def setup():
-    """Creates local settings, installs requirements, and imports encryption key"""
+def local_settings(addons=False):
+    # Website settings
     if not os.path.isfile('website/settings/local.py'):
         print 'Creating local.py file'
         run('cp website/settings/local-dist.py website/settings/local.py')
+
+    # Addon settings
+    if addons:
+        addon_root = 'website/addons'
+        for directory in os.listdir(addon_root):
+            path = os.path.join(addon_root, directory, 'settings')
+            if os.path.isdir(path) and not os.path.isfile(os.path.join(path, 'local.py')):
+                try:
+                    open(os.path.join(path, 'local-dist.py'))
+                    run('cp {path}/local-dist.py {path}/local.py'.format(path=path))
+                except IOError:
+                    pass
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and imports encryption key"""
+    local_settings(addons=True)
     if platform.system() == 'Darwin':
         print 'Running brew bundle'
         run('brew bundle')
