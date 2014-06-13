@@ -2,16 +2,15 @@ import httplib as http
 
 from framework.exceptions import HTTPError
 from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.settings import HOST
-from website.addons.dataverse.settings import DISABLE_SSL_CERTIFICATE_VALIDATION
+from website.addons.dataverse import settings
 
 
-def connect(username, password, host=HOST):
+def connect(username, password, host=settings.HOST):
     connection = DvnConnection(
         username=username,
         password=password,
         host=host,
-        disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+        disable_ssl_certificate_validation=not settings.VERIFY_SSL,
     )
     return connection if connection.connected else None
 
@@ -23,12 +22,12 @@ def connect_from_settings(user_settings):
     ) if user_settings else None
 
 
-def connect_or_403(username, password, host=HOST):
+def connect_or_403(username, password, host=settings.HOST):
     connection = DvnConnection(
         username=username,
         password=password,
         host=host,
-        disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+        disable_ssl_certificate_validation=not settings.VERIFY_SSL,
     )
     if connection.status == http.FORBIDDEN:
         raise HTTPError(http.FORBIDDEN)
@@ -105,4 +104,3 @@ def get_dataverse(connection, alias):
         return
     dataverse = connection.get_dataverse(alias)
     return dataverse if dataverse and dataverse.is_released else None
-

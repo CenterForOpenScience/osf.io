@@ -269,6 +269,19 @@ def encryption(owner=None):
 
 
 @task
+def travis_addon_settings():
+    addon_root = 'website/addons'
+    for directory in os.listdir(addon_root):
+        path = os.path.join(addon_root, directory, 'settings')
+        if os.path.isdir(path):
+            try:
+                open(os.path.join(path, 'local-travis.py'))
+                run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
+            except IOError:
+                pass
+
+
+@task
 def setup():
     """Creates local settings, installs requirements, and imports encryption key"""
     if not os.path.isfile('website/settings/local.py'):
