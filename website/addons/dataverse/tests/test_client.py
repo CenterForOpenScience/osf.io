@@ -12,8 +12,7 @@ from website.addons.dataverse.dvn.dataverse import Dataverse
 from website.addons.dataverse.dvn.file import DvnFile
 from website.addons.dataverse.dvn.study import Study
 from website.addons.dataverse.model import AddonDataverseUserSettings
-from website.addons.dataverse.settings import HOST, \
-    DISABLE_SSL_CERTIFICATE_VALIDATION
+from website.addons.dataverse import settings
 
 
 class TestClient(DataverseAddonTestCase):
@@ -39,7 +38,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
         )
 
         assert_true(c)
@@ -55,7 +54,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
         )
 
         assert_equal(c, None)
@@ -71,7 +70,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
         )
 
         assert_true(c)
@@ -88,7 +87,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
         )
 
         assert_equal(cm.exception.code, 403)
@@ -142,8 +141,8 @@ class TestClient(DataverseAddonTestCase):
         mock_dvn_connection.assert_called_once_with(
             username=user_settings.dataverse_username,
             password=user_settings.dataverse_password,
-            host=HOST,
-            disable_ssl_certificate_validation=DISABLE_SSL_CERTIFICATE_VALIDATION,
+            host=settings.HOST,
+            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
         )
 
         assert_equal(cm.exception.code, 403)
