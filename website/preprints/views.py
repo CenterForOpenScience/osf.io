@@ -13,6 +13,29 @@ from website.util import rubeus
 
 import website.views as website_views
 
+# N.B.: Several of these view functions, marked below simply call other view functions. We want the same
+# data, but rendered in a different template. Limitations of the current routing system require the view
+# functions to have different names if they use the same renderer, hence this suboptimal solution.
+# These functions should be unnecessary once the site has more dynamic behavior: the page can simply get the same
+# data via the API.
+
+# Many of the view functions called are decorated. Decorating these functions again may cause unpredictable behavior.
+
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def preprint_dashboard(**kwargs):
+    return website_views.dashboard(**kwargs)
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def view_project_as_preprint(**kwargs):
+    return project_views.node.view_project(**kwargs)
+
+# This calls a decorated function. Decorating it may cause confusing behavior.
+def upload_preprint(**kwargs):
+    request.files['file'].filename = unicode("preprint.pdf")
+    rv = osffiles_views.upload_file_public(**kwargs)
+    return rv
+
 # This calls upload_preprint, which calls a decorated function. Decorating it may cause confusing behavior.
 def post_preprint_new(**kwargs):
     """This function is the endpoint for the url where the user can create a new preprint project.
@@ -53,20 +76,6 @@ def post_preprint_new(**kwargs):
                     **kwargs)
 
     return redirect(preprint_component.url+'preprint/')
-
-# This calls a decorated function. Decorating it may cause confusing behavior.
-def upload_preprint(**kwargs):
-    request.files['file'].filename = unicode("preprint.pdf")
-    rv = osffiles_views.upload_file_public(**kwargs)
-    return rv
-
-# This calls a decorated function. Decorating it may cause confusing behavior.
-def preprint_dashboard(**kwargs):
-    return website_views.dashboard(**kwargs)
-
-# This calls a decorated function. Decorating it may cause confusing behavior.
-def view_project_as_preprint(**kwargs):
-    return project_views.node.view_project(**kwargs)
 
 @must_be_logged_in
 def get_preprint_dashboard_nodes(auth, **kwargs):
