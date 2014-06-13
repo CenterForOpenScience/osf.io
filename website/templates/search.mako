@@ -6,14 +6,14 @@
         % if query:
 ##            split on and, so we will be able to remove tags
             <%
-                cleaned_query = 'AND'.join(query.split('and'))
+                cleaned_query = 'AND'.join(query.split('AND'))
                 components = cleaned_query.split('AND')
             %>
         <h1>Search <small> for
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
-                    <span class="label label-success btn-mini" style="margin-right:.5em">${term}\
+                    <span class="label label-success btn-mini" style="margin-right:.5em">${term.replace('(', ' ').replace(')',' ')}\
                         % if len(components) > 1:
                         <a href="/search/?q=${'AND'.join((x for x in components if x != term)) | h }" style="color:white">&times;</a>
                         % endif

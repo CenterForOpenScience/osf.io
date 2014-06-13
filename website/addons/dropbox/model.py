@@ -117,6 +117,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
 
     dropbox_id = fields.StringField(required=False)
     access_token = fields.StringField(required=False)
+    dropbox_info = fields.DictionaryField(required=False)
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):

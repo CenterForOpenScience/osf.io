@@ -30,7 +30,6 @@ from framework.analytics import (
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
 from framework import StoredObject, fields, utils
-from framework.search.solr import update_solr, delete_solr_doc
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -721,7 +720,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
         if need_update:
-            self.update_solr()
+            self.update_search()
 
         # This method checks what has changed.
         if settings.PIWIK_HOST:
@@ -1063,71 +1062,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         return None
 
-    def update_solr(self):
-        """Send the current state of the object to Solr, or delete it from Solr
-        as appropriate.
-
-        """
-        def solr_bool(value):
-            """Return a string value for a boolean value that solr will
-            correctly serialize.
-            """
-            return 'true' if value is True else 'false'
-        if not settings.USE_SOLR:
-            return
-
-        from website.addons.wiki.model import NodeWikiPage
-
-        if self.category == 'project':
-            # All projects use their own IDs.
-            solr_document_id = self._id
-        else:
-            try:
-                # Components must have a project for a parent; use its ID.
-                solr_document_id = self.parent_id
-            except IndexError:
-                # Skip orphaned components. There are some in the DB...
-                return
-
-        if self.is_deleted or not self.is_public:
-            # If the Node is deleted *or made private*
-            # Delete or otherwise ensure the Solr document doesn't exist.
-            delete_solr_doc({
-                'doc_id': solr_document_id,
-                '_id': self._id,
-            })
-        else:
-            # Insert/Update the Solr document
-            solr_document = {
-                'id': solr_document_id,
-                #'public': self.is_public,
-                '{}_contributors'.format(self._id): [
-                    x.fullname for x in self.contributors
-                    if x is not None
-                ],
-                '{}_contributors_url'.format(self._id): [
-                    x.profile_url for x in self.contributors
-                    if x is not None
-                ],
-                '{}_title'.format(self._id): self.title,
-                '{}_category'.format(self._id): self.category,
-                '{}_public'.format(self._id): solr_bool(self.is_public),
-                '{}_tags'.format(self._id): [x._id for x in self.tags],
-                '{}_description'.format(self._id): self.description,
-                '{}_url'.format(self._id): self.url,
-                '{}_registeredproject'.format(self._id): solr_bool(self.is_registration),
-            }
-
-            # TODO: Move to wiki add-on
-            for wiki in [
-                NodeWikiPage.load(x)
-                for x in self.wiki_pages_current.values()
-            ]:
-                solr_document.update({
-                    '__'.join((self._id, wiki.page_name, 'wiki')): wiki.raw_text
-                })
-
-            update_solr(solr_document)
+    def update_search(self):
+        import website.search.search as search
+        search.update_node(self)
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.
@@ -1728,29 +1665,32 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{url}</a>'.format(
+        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='&'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property
     def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{url}</a>'.format(
+        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property
     def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{url}</a>'.format(
+        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
-            url=self.display_absolute_url,
+            url=self.url,
+            display_url=self.display_absolute_url,
         )
 
     @property

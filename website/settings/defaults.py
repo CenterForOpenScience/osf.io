@@ -16,6 +16,7 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
+GNUPGHOME = os.path.join(BASE_PATH, 'gpg')
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
@@ -23,9 +24,9 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 ALLOW_CLAIMING = True
 
-USE_SOLR = False
+SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
 SOLR_URI = 'http://localhost:8983/solr/'
-
+ELASTIC_URI = 'http://localhost:9200'
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -130,7 +131,7 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
-    'dropbox',
+    'dropbox', 'dataverse',
     # 'badges',
     'forward',
 ]

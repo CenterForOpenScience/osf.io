@@ -17,6 +17,7 @@
 
     function ViewModel(url) {
         self.userHasAuth = ko.observable(false);
+        self.dropboxName = ko.observable();
         self.urls = ko.observable({});
         // Whether the initial data has been loaded.
         self.loaded = ko.observable(false);
@@ -26,6 +27,7 @@
             success: function(response) {
                 var data = response.result;
                 self.userHasAuth(data.userHasAuth);
+                self.dropboxName(data.dropboxName);
                 self.urls(data.urls);
                 self.loaded(true);
             },

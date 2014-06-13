@@ -17,7 +17,6 @@ from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
-from framework.search import solr
 from framework.addons import AddonModelMixin
 from framework.auth import utils
 from website import settings, filters, security
@@ -71,8 +70,8 @@ class User(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
 
-    # Node fields that trigger an update to Solr on save
-    SOLR_UPDATE_FIELDS = {
+    # Node fields that trigger an update to the search engine on save
+    SEARCH_UPDATE_FIELDS = {
         'fullname',
     }
 
@@ -379,9 +378,9 @@ class User(GuidStoredObject, AddonModelMixin):
             # Revoke token
             del self.email_verifications[token]
             self.save()
-            # Note: We must manually update Solr here because the fullname
+            # Note: We must manually update search here because the fullname
             # field has not changed
-            self.update_solr()
+            self.update_search()
             return True
         else:
             return False
@@ -475,8 +474,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
         if self.is_active():
-            if self.SOLR_UPDATE_FIELDS.intersection(rv):
-                self.update_solr()
+            if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+                self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
@@ -484,10 +483,12 @@ class User(GuidStoredObject, AddonModelMixin):
                 logger.error("Piwik user creation failed: " + self._id)
         return rv
 
-    def update_solr(self):
-        if not settings.USE_SOLR:
+    def update_search(self):
+        if not settings.SEARCH_ENGINE:
             return
-        solr.update_user(self)
+
+        from website.search import search
+        search.update_user(self)
 
     @classmethod
     def find_by_email(cls, email):

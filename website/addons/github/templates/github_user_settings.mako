@@ -2,22 +2,21 @@
 <div>
     <h4 class="addon-title">
         GitHub
-        % if authorized:
-            <small class="authorized-by">
-                authorized by
-                <a href="https://github.com/${authorized_github_user}" target="_blank">
-                    ${authorized_github_user}
+        <small class="authorized-by">
+            % if authorized:
+                    authorized by
+                    <a href="https://github.com/${authorized_github_user}" target="_blank">
+                        ${authorized_github_user}
+                    </a>
+                <a id="githubDelKey" class="text-danger pull-right" style="margin-top: 4.8px">Delete Access Token</a>
+            % else:
+                <a id="githubAddKey" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Create Access Token
                 </a>
-            </small>
-            <a id="githubDelKey" class="btn btn-danger pull-right">Delete Access Token</a>
-        % else:
-            <a id="githubAddKey" class="btn btn-primary pull-right">
-                Create Access Token
-            </a>
-        % endif
+            % endif
+        </small>
     </h4>
 </div>
-
 
 <script type="text/javascript">
 
