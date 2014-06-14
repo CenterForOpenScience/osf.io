@@ -39,7 +39,11 @@ class TestAuthViews(OsfTestCase):
         assert_is_redirect(res)
 
     @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    def test_dropbox_oauth_finish(self, mock_finish):
+    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
+    def test_dropbox_oauth_finish(self, mock_get, mock_finish):
+        mock_client = mock.MagicMock()
+        mock_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
+        mock_get.return_value = mock_client
         mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
         url = api_url_for('dropbox_oauth_finish')
         res = self.app.get(url)
