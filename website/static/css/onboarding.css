@@ -1,68 +1,81 @@
-/* @override 
-	http://localhost:5000/static/css/onboarding.css */
+/* class css */
+.ob-heading {
+	display:inline;
+	margin: 5px;
+	margin-bottom: 20px;
 
-.onboard_heading {
 	font-family: inherit;
 	font-weight: 500;
-	line-height: 1.1;
 	font-size: 18px;
-	margin:5px;
+	line-height: 1.1;	
 }
 
-#input_project_register_project{
-	margin:20px;
+li.ob-list {
+	margin-bottom: 10px;
+	border-style: dashed;
 }
 
-#input_project_register_project{
-	margin:20px;
+.ob-expand-icon{
+	float: right;
+	height: 14px;
 }
 
+.ob-reveal {
+	display: none;
+}
 
-#obDropzone{
+.ob-reveal-btn{
+	height: 100%;
+	width: 100%;
+}
+/* id css */
+#input-project-register-project{
+	margin: 20px;
+}
+
+#ob-dropzone{
+	float:left;
 	height: 150px; 
 	width: 150px; 
-	border-style: dashed; 
 	margin: 10px; 
-	float:left;
-	padding:5px;
+	padding: 5px;
+
 	font-size: 14px;
+
+	border-style: dashed; 
 	background-repeat:no-repeat;
-	/*background-attachment:fixed;*/
 	background-position:center; 
-	/*background-image: url('/static/img/file-icon.png')*/
-	/*style='width:50px; display:block; margin-left:auto; margin-right:auto;  margin-top:20px;'*/
 }
 
-.obReveal {
-	display:none;
-}
 
-#obArrowRight{
-	width:50px;
-	height:50px;
-	margin: 60px 0px 60px 0px;
+#ob-arrow-right{
 	display:inline;
+	width: 50px;
+	height: 50px;
+	margin: 60px 0 60px 0;
 }
 
-#project-search_add_file{
-	text-align:center; 
-	height:170px;
+#project-search-add-file{
+	height: 170px;
+
+	text-align: center; 
 }
 
-#obProjectSearchContainer{
+#ob-project-search-container{
 	float: right; 
-	margin: 61px 10px 0px 10px;"
-	/*display: block;*/
-	
+	margin: 61px 10px 0 10px;"
 }
 
-#add_link_add_file{
-	disabled="disabled";
-	margin-top: 5px;
+#add-link-add-file{
 	float: right;
+	margin-top: 5px;
+
+	disabled="disabled";
 }
 
-#add_link_register_project {
+#add-link-register-project {
 	float:right;
 	margin:20px;
 }
+
+

@@ -29,59 +29,62 @@
 ########################################################################################################################
                     <h3>I want to...</h3>
                         <div id="logScope">
-                    ##<%include file="log_list.mako"/>
-                    ##<a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-                </div><!-- end #logScope -->
-
-                </div>
+                        </div><!-- end #logScope -->
+                </div><!-- end #page-header -->
                 <ul>
-                <div>
-                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
-                    <div class="onboard_heading">Create a New Project</div>
 
-                    <a class="btn btn-default" id="obNewProjectBtn">Make a New Project</a>
-                    <div class="obReveal" id="obRevealNewProject">
-                        <%include file="project/new_project_form.mako"/>
-                    </div>
-                    </li>
+                    <!-- start #ob-new-project -->
+                    <li id="ob-new-project" class="ob-list list-group-item">
+                        <div id="ob-new-project-btn" class="ob-reveal-btn">
+                            <div class="ob-heading" >Create a New Project</div>
+                            <img class="ob-expand-icon" id="ob-icon-new-project" src="/static/img/plus.png">
+                        </div><!-- end #ob-new-project-btn -->
+                        <div class="ob-reveal" id="ob-reveal-new-project">
+                            <br> 
+                            <%include file="project/new_project_form.mako"/>
+                        </div> <!-- end #ob-reveal -->
+                    </li> <!-- end #ob-new-project" -->
 
-                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
-                    <div class="onboard_heading">Register a Project</div>
+                    <!-- start #ob-register-project -->
+                    <li id="ob-register-project" class="ob-list list-group-item"> 
 
-                    <a class="btn btn-default" id="obRegisterProjectBtn">Register a Project</a>
-                    <div class="obReveal" id="obRevealRegisterProject">
-                        <div id="project-search_register_project">
-            
+                        <div id="ob-register-project-btn">
+                            <div class="ob-heading" >Register a Project</div>
+                            <img class="ob-expand-icon" id="ob-icon-register-project" src="/static/img/plus.png">
+                        </div><!-- end #ob-register-project-btn -->
+
+                            <!-- <a class="btn btn-default" id="obRegisterProjectBtn">Register a Project</a> -->
+                            <div class="ob-reveal" id="ob-reveal-register-project">
+                        <div id="project-search-register-project">
                             <input class="typeahead" type="text" placeholder="Search projects" style="margin:20px;" 
-                            id = 'input_project_register_project'>
-                            <span class = "findBtn btn btn-default" id="add_link_register_project" disabled="disabled">Go to registration page</span>
+                            id = 'input-project-register-project'>
+                            <span class = "findBtn btn btn-default" id="add-link-register-project" disabled="disabled">Go to registration page</span>
                         </div>
 
                     </div>
-                    </li>
+                    </li> <!-- end #ob-register-project" -->
 
-                    <li node_reference="fks27:node" class="project list-group-item list-group-item-node unavailable">
-                    <div class="onboard_heading">Add a File to a Project</div>
-                    <div id="project-search_add_file">
-                        
-                        <div id="obDropzone">
-                        
-                        Drop File (or click)
-                        
-                        </div>
-                        <div class="obReveal" id="obDropzoneReveal">
-                            <img id="obArrowRight" src="/static/img/triangle_right.png" >
-                            <div id="obProjectSearchContainer">
-                                <input class="typeahead" type="text" placeholder="Search projects" id = 'input_project_add_file'><br>
-                                <span class = "findBtn btn btn-default" id="add_link_add_file" disabled="disabled">Upload file to this project</span>
+                    <!-- start #ob-add-file -->
+                    <li class="ob-list list-group-item">
+                        <div class="ob-heading">Add a File to a Project</div>
+                        <div id="project-search-add-file">
+                            <div id="ob-dropzone">
+                            Drop File (or click)
+                            </div>
+                            <div class="ob-reveal" id="ob-dropzone-reveal">
+                                <img id="ob-arrow-right" src="/static/img/triangle_right.png" >
+                                <div id="ob-project-search-container">
+                                    <input class="typeahead" type="text" placeholder="Search projects" id = 'input-project-add-file'>
+                                    <br>
+                                    <span class="findBtn btn btn-default" id="add-link-add-file" disabled="disabled">Upload</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
-
+                    </li> <!-- end #ob-add-file" -->
                 </ul>
 
 #########################################################################################################################
+
             </div><!-- end #watchFeed -->
         </div>
     </div>
@@ -118,18 +121,35 @@
 
 <%def name="javascript_bottom()">
 <script>
-    $('#obNewProjectBtn').click(function(){
-        $('#obRevealNewProject').fadeIn();
-        $('#obNewProjectBtn').hide();
-    });
+// new project js
+    $('#ob-new-project-btn').one("click", obOpenNewProject);
 
-    $('#obRegisterProjectBtn').click(function(){
-        console.log("this")
-        $('#obRevealRegisterProject').fadeIn();
-        $('#obRegisterProjectBtn').hide();
-    });
+    function obOpenNewProject() {
+        $('#ob-reveal-new-project').fadeIn(300);
+        $(this).one("click", obCloseNewProject);
+        $('#ob-icon-new-project').attr('src', "/static/img/minus.png")
+    }
 
+    function obCloseNewProject() {
+        $('#ob-reveal-new-project').fadeOut(100);
+        $(this).one("click", obOpenNewProject);
+        $('#ob-icon-new-project').attr('src', "/static/img/plus.png")
+    }
 
+// new registration js
+    $('#ob-register-project-btn').one("click", obOpenRegisterProject);
+
+    function obOpenRegisterProject() {
+        $('#ob-reveal-register-project').fadeIn(300);
+        $(this).one("click", obCloseRegisterProject);
+        $('#ob-icon-register-project').attr('src', "/static/img/minus.png")
+    }
+
+    function obCloseRegisterProject() {
+        $('#ob-reveal-register-project').fadeOut(100);
+        $(this).one("click", obOpenRegisterProject);
+        $('#ob-icon-register-project').attr('src', "/static/img/plus.png")
+    }
 
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js']);

@@ -38,28 +38,28 @@ function TypeaheadSearch(namespace) {
                 });
             });
             //  once a typeahead option is selected, enable the button and assign the add_link variable for use later
-            $('#input_project_' + namespace).bind('typeahead:selected', function(obj, datum) {
-                $('#add_link_' + namespace).removeAttr('disabled');
+            $('#input-project-' + namespace).bind('typeahead:selected', function(obj, datum) {
+                $('#add-link-' + namespace).removeAttr('disabled');
                 var linkID = datum.value.node_id;
-                $('#input_project_' + namespace).css("border-color", "lightgreen");
-                $('#add_link_' + namespace).prop('linkID', linkID);
+                $('#input-project-' + namespace).css("border-color", "lightgreen");
+                $('#add-link-' + namespace).prop('linkID', linkID);
             });
             
             // Listener that disables button when nothing selected
-            $('#input_project_' + namespace).keypress(function(){
-                $('#add_link_' + namespace).attr('disabled', true);
-                $('#input_project_' + namespace).css("border-color", "");
-                $('#add_link_' + namespace).removeProp('linkID');
+            $('#input-project-' + namespace).keypress(function(){
+                $('#add-link-' + namespace).attr('disabled', true);
+                $('#input-project-' + namespace).css("border-color", "");
+                $('#add-link-' + namespace).removeProp('linkID');
             });
 
             // type ahead logic
-            $('#project-search_' + namespace + ' .typeahead').typeahead({
+            $('#project-search-' + namespace + ' .typeahead').typeahead({
                 hint: true,
                 highlight: true,
                 minLength: 1
             },
             {
-                name: 'project_search' + namespace,
+                name: 'project-search' + namespace,
                 displayKey: function(data){
                     return data.value.name;
                 },
