@@ -60,7 +60,6 @@
                             id = 'input-project-register-project'>
                             <span class = "findBtn btn btn-default" id="add-link-register-project" disabled="disabled">Go to registration page</span>
                         </div>
-
                     </div>
                     </li> <!-- end #ob-register-project" -->
 
