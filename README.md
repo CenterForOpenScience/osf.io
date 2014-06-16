@@ -18,7 +18,7 @@ These instructions should work on Mac OSX >= 10.7
 
 - Create your virtualenv.
 
-- Create your local settings file. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
 
 ```bash
 $ cp website/settings/local-dist.py website/settings/local.py
