@@ -5,7 +5,7 @@ formated hgrid list/folders.
 import os
 import hurry
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 
 FOLDER = 'folder'
 FILE = 'item'

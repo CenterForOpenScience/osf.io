@@ -5,7 +5,7 @@ from boto.s3.connection import *
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
 

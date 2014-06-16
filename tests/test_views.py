@@ -20,13 +20,12 @@ from modularodm import Q
 
 from framework import auth
 from framework.exceptions import HTTPError
-from framework.auth.model import User
+from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
-from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors

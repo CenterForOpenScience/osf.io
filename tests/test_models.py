@@ -15,9 +15,8 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User
+from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
-from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
@@ -150,13 +149,13 @@ class TestUser(OsfTestCase):
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
-    @mock.patch('framework.auth.model.User.update_search')
+    @mock.patch('framework.auth.core.User.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
         assert_false(update_search.called)
 
-    @mock.patch('framework.auth.model.User.update_search')
+    @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
         u = UserFactory(is_registered=True)
         assert_true(update_search.called)
@@ -168,8 +167,11 @@ class TestUser(OsfTestCase):
             dupe.save()
 
     def test_user_with_no_password_is_not_active(self):
-        u = User(username=fake.email(),
-            fullname='Freddie Mercury', is_registered=True)
+        u = User(
+            username=fake.email(),
+            fullname='Freddie Mercury',
+            is_registered=True,
+        )
         u.save()
         assert_false(u.is_active())
 

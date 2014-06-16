@@ -8,10 +8,10 @@ from modularodm.exceptions import ModularOdmException
 from slugify import slugify
 
 from framework import fields
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.dropbox.client import get_client, get_node_addon_client
+from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
