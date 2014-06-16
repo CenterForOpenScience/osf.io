@@ -1360,6 +1360,16 @@ div#logScope a.moreLogs{
 .text-align{
     margin-left:7px;
 }
+
+.private-link-name{
+    width:60%
+}
+
+.list-overflow{
+    max-height:250px;
+    overflow-y:auto;
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {

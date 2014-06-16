@@ -550,7 +550,7 @@ def _view_project(node, auth, primary=False):
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
-            'link': auth.private_key or request.args.get('key', '').strip('/'),
+            'link': auth.private_key or request.args.get('view_only', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
@@ -803,7 +803,7 @@ def project_generate_private_link_post(*args, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    note = request.json.get('note', '')
+    name = request.json.get('name', '')
     nodes=[]
 
     if node_to_use._id not in node_ids:
@@ -814,7 +814,7 @@ def project_generate_private_link_post(*args, **kwargs):
         nodes.append(node)
 
     new_private_link(
-        note =note, user=auth.user, nodes=nodes
+        name = name, user=auth.user, nodes=nodes
     )
 
     return {'status': 'success'}, 201

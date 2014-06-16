@@ -52,10 +52,10 @@
 
                 <thead>
                     <tr>
-                    <th class="col-sm-2">Link name</th>
-                    <th class="col-sm-4">What this link shares</th>
-                    <th class="col-sm-3">Created date</th>
-                    <th class="col-sm-2">Created by</th>
+                    <th class="col-sm-3">Link Name</th>
+                    <th class="col-sm-4">What This Link Shares</th>
+                    <th class="col-sm-2">Created Date</th>
+                    <th class="col-sm-2">Created By</th>
                     <th class="col-sm-1"></th>
                     </tr>
                 </thead>
@@ -73,27 +73,27 @@
                 </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                         <tr>
-                        <td class="col-sm-2">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
+                        <td class="col-sm-3">
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
                                     data-bind="attr: {data-clipboard-text: linkUrl}" >
                                 <span class="icon-copy" ></span>
                             </button>
-                            <span class="key-name" data-bind="text: linkUrl"></span>
+                            <span class="key-name" data-bind="text: name, tooltip: {title: linkUrl}"></span>
                         </td>
                         <td class="col-sm-4" data-bind="foreach:nodes">
                                <ul class="narrow-list">
                                    <li >
-                                      {{$data}}
+                                      <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                    </li>
                                </ul>
                         </td>
 
-                        <td class="col-sm-3">
+                        <td class="col-sm-2">
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
+                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
                         </td>
                         </tr>
                 </tbody>

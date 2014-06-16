@@ -2258,7 +2258,7 @@ class PrivateLink(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
-    note = fields.StringField()
+    name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
 
     nodes = fields.ForeignField('node', list=True, backref='shared')
@@ -2269,8 +2269,8 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
-            "note": self.note,
+            "name": self.name,
             "creator": self.creator.fullname,
-            "nodes": [x.title for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url} for x in self.nodes],
         }
 

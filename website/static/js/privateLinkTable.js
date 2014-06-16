@@ -53,7 +53,7 @@
         $.extend(self, data);
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
         self.linkUrl = ko.computed(function(){
-            return self.$root.nodeUrl() + "?key=" + data.key
+            return self.$root.nodeUrl() + "?view_only=" + data.key
         });
 
     }
