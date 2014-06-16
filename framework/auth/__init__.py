@@ -3,7 +3,7 @@ import logging
 
 from framework import session, create_session
 from framework import goback
-import framework.bcrypt as bcrypt
+from framework import bcrypt
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
                                         PasswordIncorrectError)

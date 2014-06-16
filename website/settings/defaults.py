@@ -6,16 +6,19 @@ These settings can be overridden in local.py.
 
 import os
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
+GNUPGHOME = os.path.join(BASE_PATH, 'gpg')
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
@@ -130,7 +133,7 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
-    'dropbox',
+    'dropbox', 'dataverse',
     # 'badges',
     'forward',
 ]
