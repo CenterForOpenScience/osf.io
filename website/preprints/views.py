@@ -39,6 +39,7 @@ def upload_preprint(**kwargs):
     return rv
 
 # This calls upload_preprint, which calls a decorated function. Decorating it may cause confusing behavior.
+@must_be_logged_in
 def post_preprint_new(**kwargs):
     """This function is the endpoint for the url where the user can create a new preprint project.
     It creates a new private project named with the name of the uploaded pdf.
