@@ -75,7 +75,7 @@ def new_private_link(name, user, nodes):
         key=key,
         name=name,
         creator=user,
-        nodes = nodes
+        nodes=nodes
     )
 
     private_link.save()

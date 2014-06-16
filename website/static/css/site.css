@@ -1370,6 +1370,9 @@ div#logScope a.moreLogs{
     overflow-y:auto;
 }
 
+#privateLinkTable .tooltip{
+    word-wrap:break-word;
+}
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {

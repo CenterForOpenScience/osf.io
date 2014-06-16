@@ -97,12 +97,12 @@ class TestAuthObject(OsfTestCase):
 
     def test_from_kwargs(self):
         user = UserFactory()
-        request_args = {'key': 'mykey'}
+        request_args = {'view_only': 'mykey'}
         kwargs = {'user': user, 'api_key': 'myapikey', 'api_node': '123v'}
         auth_obj = Auth.from_kwargs(request_args, kwargs)
         assert_equal(auth_obj.user, user)
         assert_equal(auth_obj.api_key, kwargs['api_key'])
-        assert_equal(auth_obj.private_key, request_args['key'])
+        assert_equal(auth_obj.private_key, request_args['view_only'])
 
     def test_logged_in(self):
         user = UserFactory()
@@ -136,7 +136,7 @@ class TestPrivateLink(OsfTestCase):
         mock_get_api_key.return_value = 'foobar123'
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'key': self.link.key})
+            {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')

@@ -78,7 +78,7 @@
                                     data-bind="attr: {data-clipboard-text: linkUrl}" >
                                 <span class="icon-copy" ></span>
                             </button>
-                            <span class="key-name" data-bind="text: name, tooltip: {title: linkUrl}"></span>
+                            <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
                         </td>
                         <td class="col-sm-4" data-bind="foreach:nodes">
                                <ul class="narrow-list">

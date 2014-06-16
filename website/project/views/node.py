@@ -814,7 +814,7 @@ def project_generate_private_link_post(*args, **kwargs):
         nodes.append(node)
 
     new_private_link(
-        name = name, user=auth.user, nodes=nodes
+        name=name, user=auth.user, nodes=nodes
     )
 
     return {'status': 'success'}, 201
