@@ -222,6 +222,8 @@
 
         self.add = function(data) {
             data.permission = ko.observable('admin');
+            // All manually added contributors are visible
+            data.visible = true;
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
@@ -284,7 +286,7 @@
 
         self.submit = function() {
             $.osf.block();
-            $(".modal").modal('hide');
+            $('.modal').modal('hide');
             $.ajax({
                 url: nodeApiUrl + 'contributors/',
                 type: "post",

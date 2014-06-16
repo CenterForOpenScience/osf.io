@@ -9,9 +9,7 @@ import pytz
 import bson
 
 from modularodm.validators import URLValidator
-from modularodm.exceptions import (
-    ValidationError, ValidationValueError, ValidationTypeError
-)
+from modularodm.exceptions import ValidationValueError
 
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -592,14 +590,19 @@ class User(GuidStoredObject, AddonModelMixin):
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
-            node.add_contributor(contributor=self, log=False)
+            node.add_contributor(
+                contributor=self,
+                permissions=node.get_permissions(user),
+                visible=node.is_visible_contributor(user),
+                log=False,
+            )
             try:
                 node.remove_contributor(
                     contributor=user, auth=Auth(user=self), log=False
                 )
             except ValueError:
                 logger.error('Contributor {0} not in list on node {1}'.format(
-                    user, node
+                    user._id, node._id
                 ))
             node.save()
         # Inherits projects the user created
