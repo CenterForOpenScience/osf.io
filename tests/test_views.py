@@ -20,13 +20,12 @@ from modularodm import Q
 
 from framework import auth
 from framework.exceptions import HTTPError
-from framework.auth.model import User
+from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
-from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors
@@ -43,7 +42,7 @@ from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory
+    CommentFactory, PrivateLinkFactory
 )
 
 
@@ -52,6 +51,7 @@ app = website.app.init_app(
 )
 
 lookup = URLLookup(app)
+
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -157,6 +157,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
+
 class TestProjectViews(OsfTestCase):
 
     def setUp(self):
@@ -220,8 +221,14 @@ class TestProjectViews(OsfTestCase):
 
         dict2 = add_contributor_json(user2)
         dict3 = add_contributor_json(user3)
-        dict2['permission'] = 'admin'
-        dict3['permission'] = 'write'
+        dict2.update({
+            'permission': 'admin',
+            'visible': True,
+        })
+        dict3.update({
+            'permission': 'write',
+            'visible': False,
+        })
 
         self.app.post_json(
             url,
@@ -249,9 +256,9 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True},
-                    {'id': self.user1._id, 'permission': 'read', 'registered': True},
-                    {'id': self.user2._id, 'permission': 'admin', 'registered': True},
+                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': self.user1._id, 'permission': 'read', 'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -269,8 +276,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
+                {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': True},
             ]
         )
         # Add a non-registered user
@@ -285,10 +292,10 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': project.creator._id, 'permission': 'admin', 'registered': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True},
-                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False},
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True},
+                    {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -559,21 +566,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
 
-    def test_get_recently_added_contributors(self):
-        project = ProjectFactory(creator=self.consolidate_auth1.user)
-        contrib1 = UserFactory()
-        contrib2 = UserFactory()
-        project.add_contributor(contrib1, auth=self.consolidate_auth1)
-        project.add_contributor(contrib2, auth=self.consolidate_auth1)
-        # has one unregistered contributor
-        project.add_unregistered_contributor(fullname=fake.name(),
-            email=fake.email(), auth=self.consolidate_auth1)
-        project.save()
-        url = '{0}get_recently_added_contributors/'.format(self.project.api_url)
-        res = self.app.get(url, auth=self.auth)
-        project.reload()
-        recent = [c for c in self.user1.recently_added if c.is_active()]
-        assert_equal(len(res.json['contributors']), len(recent))
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -608,6 +600,9 @@ class TestAddingContributorViews(OsfTestCase):
         contrib_data[0]['permission'] = 'admin'
         contrib_data[1]['permission'] = 'write'
         contrib_data[2]['permission'] = 'read'
+        contrib_data[0]['visible'] = True
+        contrib_data[1]['visible'] = True
+        contrib_data[2]['visible'] = True
         res = deserialize_contributors(
             self.project,
             contrib_data,
@@ -625,6 +620,7 @@ class TestAddingContributorViews(OsfTestCase):
         unreg = UnregUserFactory()
         from website.project.model import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
+        serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
             deserialize_contributors(self.project, serialized,
                 auth=Auth(self.creator))
@@ -656,9 +652,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': []
@@ -698,6 +696,7 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': fake.name(),
             'email': fake.email(),
             'permission': 'admin',
+            'visible': True,
         }
         payload = {
             'users': [unreg_user],
@@ -726,6 +725,7 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         payload = {
             'users': [pseudouser],
@@ -748,9 +748,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': fake.email(),
             'permission': 'write',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': []
@@ -773,9 +775,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': [self.project._primary_key, child._primary_key]

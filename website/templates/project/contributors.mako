@@ -13,16 +13,27 @@
                         <thead>
                             <tr>
                             <th class="col-sm-6">Name</th>
-                            <th class="col-sm-5">
-                                Permissions
+                            <th class="col-sm-3">
                                 <i class="icon-question-sign permission-info"
                                         data-toggle="popover"
                                         data-title="Permission Information"
                                         data-container="body"
+                                        data-placement="left"
                                         data-html="true"
                                     ></i>
+                                Permissions
                             </th>
-                            <th class="col-sm-1"></th>
+                            <th class="col-sm-1">
+                                <i class="icon-question-sign visibility-info"
+                                        data-toggle="popover"
+                                        data-title="Visibility Information"
+                                        data-container="body"
+                                        data-placement="left"
+                                        data-html="true"
+                                    ></i>
+                                Visibility
+                            </th>
+                            <th class="col-sm-1 col-offset-1"></th>
                             </tr>
                         </thead>
                         <tr data-bind="if: canEdit">
@@ -32,11 +43,16 @@
                                 </a>
                             </td>
                         </tr>
-                        <tbody data-bind="sortable: {template: 'contribTpl',
-                            data: contributors, as: 'contributor',
-                            isEnabled: canEdit,
-                            afterRender: setupEditable,
-                            options: {containment: '#manageContributors'}}">
+                        <tbody data-bind="sortable: {
+                                template: 'contribTpl',
+                                data: contributors,
+                                as: 'contributor',
+                                isEnabled: canEdit,
+                                afterRender: setupEditable,
+                                options: {
+                                    containment: '#manageContributors'
+                                }
+                            }">
                         </tbody>
                     </table>
                     ${buttonGroup()}
@@ -129,6 +145,12 @@
             <!-- /ko -->
         </td>
         <td>
+            <input
+                    type="checkbox"
+                    data-bind="checked: visible, enable: $parent.canEdit"
+                />
+        </td>
+        <td>
             <!-- ko if: $parent.canEdit -->
                 <!-- ko ifnot: deleteStaged -->
                     <a
@@ -163,7 +185,9 @@
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
-        <div data-bind="text: messageText, css: messageClass"></div>
+        <div data-bind="foreach: messages">
+            <div data-bind="css: cssClass">{{ text }}</div>
+        </div>
     % endif
 </%def>
 
@@ -176,7 +200,7 @@
         var contributors = ${json.dumps(contributors)};
         var user = ${json.dumps(user)};
         var isRegistration = ${json.dumps(node['is_registration'])};
-        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
+        manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
 
     $script(['/static/js/privateLinkManager.js',

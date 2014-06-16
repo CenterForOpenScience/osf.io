@@ -5,7 +5,8 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
 
 from website.search.utils import clean_solr_doc
-from framework.auth.decorators import Auth
+from framework.auth import Auth
+
 from website import settings
 
 #if settings.SEARCH_ENGINE is not None: #Uncomment to force solr to load for testing

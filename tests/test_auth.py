@@ -10,8 +10,8 @@ from flask import Flask
 from werkzeug.wrappers import BaseResponse
 from webtest_plus import TestApp
 
+from framework import auth
 from framework.exceptions import HTTPError
-import framework.auth as auth
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, AuthUserFactory, PrivateLinkFactory
@@ -19,8 +19,8 @@ from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
 
 from framework import Q
 from framework import app
-from framework.auth.model import User
-from framework.auth.decorators import must_be_logged_in, Auth
+from framework.auth import User, Auth
+from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_have_permission, must_be_contributor
 
@@ -92,7 +92,7 @@ class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
-        assert_true(isinstance(auth_obj.user, auth.model.User))
+        assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
 
     def test_from_kwargs(self):
@@ -168,6 +168,7 @@ class AuthAppTestCase(OsfTestCase):
 
     def tearDown(self):
         self.ctx.pop()
+
 
 class TestMustBeContributorDecorator(AuthAppTestCase):
 
