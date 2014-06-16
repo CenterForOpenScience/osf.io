@@ -1,20 +1,21 @@
-<%inherit file="project/addon/user_settings.mako" />
-
 <!-- Authorization -->
 <div>
-    % if authorized:
-        <a id="githubDelKey" class="btn btn-danger">Delete Access Token</a>
-        <div style="padding-top: 10px;">
-            Authorized by GitHub user
-            <a href="https://github.com/${authorized_github_user}" target="_blank">
-                ${authorized_github_user}
-            </a>
-        </div>
-    % else:
-        <a id="githubAddKey" class="btn btn-primary">
-            Create Access Token
-        </a>
-    % endif
+    <h4 class="addon-title">
+        GitHub
+        <small class="authorized-by">
+            % if authorized:
+                    authorized by
+                    <a href="https://github.com/${authorized_github_user}" target="_blank">
+                        ${authorized_github_user}
+                    </a>
+                <a id="githubDelKey" class="text-danger pull-right" style="margin-top: 4.8px">Delete Access Token</a>
+            % else:
+                <a id="githubAddKey" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Create Access Token
+                </a>
+            % endif
+        </small>
+    </h4>
 </div>
 
 <script type="text/javascript">
