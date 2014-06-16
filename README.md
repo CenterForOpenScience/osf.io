@@ -37,6 +37,26 @@ $ invoke setup
 
 - On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 
+
+```bash
+sudo apt-get install rng-tools
+```
+
+next edit /etc/default/rng-tools and set:
+
+```
+HRNGDEVICE=/dev/urandom
+```
+
+last start the rng-tools daemon with:
+
+```
+sudo /etc/init.d/rng-tools start
+```
+
+__source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny __
+
 ## Starting Up
 
 - Run your mongodb process.
@@ -232,3 +252,4 @@ invoke celery_worker
 invoke solr
 invoke server
 ```
+
