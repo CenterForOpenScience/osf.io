@@ -1349,7 +1349,7 @@ div#logScope a.moreLogs{
 
 /* private_link*/
 .narrow-list{
-    padding: 0px 0px;
+    padding-left:16px;
     margin: 0px 0px;
 }
 
@@ -1366,12 +1366,17 @@ div#logScope a.moreLogs{
 }
 
 .list-overflow{
-    max-height:250px;
+    max-height:260px;
     overflow-y:auto;
 }
 
 #privateLinkTable .tooltip{
     word-wrap:break-word;
+}
+
+.more-link-node{
+    margin-top:7px;
+    padding:3px;
 }
 /* Contributor page */
 

@@ -80,12 +80,14 @@
                             </button>
                             <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
                         </td>
-                        <td class="col-sm-4" data-bind="foreach:nodes">
-                               <ul class="narrow-list">
-                                   <li >
+                        <td class="col-sm-4" >
+
+                               <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
+                                   <li data-bind="style:{margin-left: $data.scale}">
                                       <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                    </li>
                                </ul>
+                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
                         </td>
 
                         <td class="col-sm-2">

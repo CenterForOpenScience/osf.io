@@ -55,7 +55,15 @@
         self.linkUrl = ko.computed(function(){
             return self.$root.nodeUrl() + "?view_only=" + data.key
         });
-
+        self.nodesList = ko.observableArray(data.nodes.slice(0,2));
+        self.moreNode = ko.observable(data.nodes.length > 2);
+        self.hasMoreText = ko.computed(function(){
+            return "And " + (data.nodes.length - 2).toString() + " more";
+        });
+        self.displayAllNodes = function(){
+            self.nodesList(data.nodes);
+            self.moreNode(false);
+        }
     }
 
     function ViewModel(url) {

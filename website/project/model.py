@@ -2264,6 +2264,19 @@ class PrivateLink(StoredObject):
     nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
 
+    @property
+    def node_id_lists(self):
+        node_id_lists=[]
+        for node in self.nodes:
+            node_id_lists.append(node._id)
+        return node_id_lists
+
+    def node_scale(self, node):
+        if node.parent_id not in self.node_id_lists:
+            return 0
+        else:
+            return 20 + self.node_scale(node.parent_node)
+
     def to_json(self):
         return {
             "id": self._id,
@@ -2271,6 +2284,6 @@ class PrivateLink(StoredObject):
             "key": self.key,
             "name": self.name,
             "creator": self.creator.fullname,
-            "nodes": [{'title': x.title, 'url': x.url} for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px'} for x in self.nodes],
         }
 
