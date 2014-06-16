@@ -422,6 +422,8 @@ def make_url_map(app):
 
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
 
+        Rule('/preprint/search/', 'get', search_views.search_preprints, PreprintWebRenderer('preprints/search.mako')),
+
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(

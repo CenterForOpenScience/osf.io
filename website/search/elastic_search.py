@@ -59,7 +59,6 @@ def search(raw_query, start=0):
 
 
 def _build_query(raw_query, start=0):
-
     # Default to searching all types
     type_filter = {
         'or': [
@@ -438,3 +437,15 @@ def search_contributor(query, exclude=None):
             })
 
     return {'users': users}
+
+
+def search_preprints(query, start=0):
+
+    query = _build_query(query, start)
+
+    raw_results = elastic.search(query, index='website')
+    total = raw_results['hits']['total']
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    formatted_results, tags = create_result(results, total)
+
+    return formatted_results, total
