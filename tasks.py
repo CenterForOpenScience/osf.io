@@ -6,6 +6,7 @@ commands, run ``$ invoke --list``.
 import os
 import sys
 import code
+import platform
 
 from invoke import task, run
 
@@ -93,11 +94,14 @@ def shell():
 
 @task
 def mongo(daemon=False,
-          logpath="/usr/local/var/log/mongodb/mongo.log"):
+          logpath="/usr/local/var/log/mongodb/mongo.log",
+          logappend=True):
     """Run the mongod process.
     """
     port = settings.DB_PORT
     cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
+    if logappend:
+        cmd += " --logappend"
     if daemon:
         cmd += " --fork --logpath /data/log.txt"
     run(cmd)
@@ -137,9 +141,23 @@ def solr():
     run("java -jar start.jar", pty=True)
 
 @task
-def solr_migrate():
-    '''Migrate the solr-enabled models.'''
-    run("python -m website.solr_migration.migrate")
+def elasticsearch():
+    '''Start a local elasticsearch server
+
+    NOTE: Requires that elasticsearch is installed. See README for instructions
+    '''
+    import platform
+    if platform.linux_distribution()[0] == 'Ubuntu':
+        run("sudo service elasticsearch start")
+    elif platform.system() == 'Darwin': # Mac OSX
+        run('elasticsearch')
+    else:
+        print("Your system is not recognized, you will have to start elasticsearch manually")
+
+@task
+def migrate_search():
+    '''Migrate the search-enabled models.'''
+    run("python -m website.search_migration.migrate")
 
 @task
 def mailserver(port=1025):
@@ -201,37 +219,22 @@ def test_all():
     test_osf()
     test_addons()
 
-
-# TODO: user bower once hgrid is released
-@task
-def get_hgrid():
-    """Get the latest development version of hgrid and put it in the static
-    directory.
-    """
-    target = 'website/static/vendor/hgrid'
-    run('git clone https://github.com/CenterForOpenScience/hgrid.git')
-    print('Removing old version')
-    run('rm -rf {0}'.format(target))
-    print('Replacing with fresh version')
-    run('mkdir {0}'.format(target))
-    run('mv hgrid/dist/hgrid.js {0}'.format(target))
-    run('mv hgrid/dist/hgrid.css {0}'.format(target))
-    run('mv hgrid/dist/images {0}'.format(target))
-    run('rm -rf hgrid/')
-    print('Finished')
-
-
 @task
 def addon_requirements(mfr=1):
     """Install all addon requirements."""
-    addon_root = 'website/addons'
-    for directory in os.listdir(addon_root):
-        path = os.path.join(addon_root, directory)
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory)
         if os.path.isdir(path):
             try:
                 open(os.path.join(path, 'requirements.txt'))
-                print 'Installing requirements for {0}'.format(directory)
-                run('pip install --upgrade -r {0}/{1}/requirements.txt'.format(addon_root, directory), pty=True)
+                print('Installing requirements for {0}'.format(directory))
+                run(
+                    'pip install --upgrade -r {0}/{1}/requirements.txt'.format(
+                        settings.ADDON_PATH,
+                        directory
+                    ),
+                    pty=True
+                )
             except IOError:
                 pass
     if mfr:
@@ -243,5 +246,79 @@ def addon_requirements(mfr=1):
 def mfr_requirements():
     """Install modular file renderer requirements"""
     mfr = 'mfr'
-    print 'Installing mfr requirements'
+    print('Installing mfr requirements')
     run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+
+
+@task
+def encryption(owner=None):
+    """Generate GnuPG key.
+    
+    For local development:
+    > invoke encryption
+    On Linode:
+    > sudo env/bin/invoke encryption --owner www-data
+
+    """
+    import gnupg
+    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    keys = gpg.list_keys()
+    if keys:
+        print('Existing GnuPG key found')
+        return
+    print('Generating GnuPG key')
+    input_data = gpg.gen_key_input(name_real='OSF Generated Key')
+    gpg.gen_key(input_data)
+    if owner:
+        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
+
+
+@task
+def travis_addon_settings():
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory, 'settings')
+        if os.path.isdir(path):
+            try:
+                open(os.path.join(path, 'local-travis.py'))
+                run('cp {path}/local-travis.py {path}/local.py'.format(path=path))
+            except IOError:
+                pass
+
+
+@task
+def copy_addon_settings():
+    for directory in os.listdir(settings.ADDON_PATH):
+        path = os.path.join(settings.ADDON_PATH, directory, 'settings')
+        if os.path.isdir(path) and not os.path.isfile(os.path.join(path, 'local.py')):
+            try:
+                open(os.path.join(path, 'local-dist.py'))
+                run('cp {path}/local-dist.py {path}/local.py'.format(path=path))
+            except IOError:
+                pass
+
+
+@task
+def copy_settings(addons=False):
+    # Website settings
+    if not os.path.isfile('website/settings/local.py'):
+        print('Creating local.py file')
+        run('cp website/settings/local-dist.py website/settings/local.py')
+
+    # Addon settings
+    if addons:
+        copy_addon_settings()
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and imports encryption key"""
+    copy_settings(addons=True)
+    if platform.system() == 'Darwin':
+        print('Running brew bundle')
+        run('brew bundle')
+    elif platform.system() == 'Linux':
+        # TODO: Write a script similar to brew bundle for Ubuntu
+        # run('sudo apt-get install [list of packages]')
+        pass
+    print('Installing requirements')
+    requirements(all=True)
+    encryption()

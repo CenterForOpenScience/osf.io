@@ -105,6 +105,15 @@
             });
         }
     }
+    if (item.buttons) {
+        item.buttons.forEach(function(button) {
+            buttonDefs.push({
+                text: button.text,
+                action: button.action,
+                cssClass: 'btn btn-primary btn-mini'
+            });
+        });
+    }
     return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
@@ -125,6 +134,15 @@
                 text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
+            });
+        }
+        if (row.buttons) {
+            row.buttons.forEach(function(button) {
+                buttonDefs.push({
+                    text: button.text,
+                    action: button.action,
+                    cssClass: 'btn btn-primary btn-mini'
+                });
             });
         }
         if (buttonDefs) {
@@ -150,19 +168,27 @@
         return default_status[whichStatus];
      }
 
-     HGrid.prototype.showButtons = function(row) {
-        var $rowElem = $(this.getRowElement(row.id));
+    HGrid.prototype.showButtons = function(row) {
+        try {
+            var $rowElem = $(this.getRowElement(row.id));
+        } catch(error) {
+            return this;
+        }
         var $buttons = $rowElem.find('.' + Rubeus.buttonContainer);
         $buttons.show();
         return this;
-     };
+    };
 
-     HGrid.prototype.hideButtons = function(row) {
-        var $rowElem = $(this.getRowElement(row.id));
+    HGrid.prototype.hideButtons = function(row) {
+        try {
+            var $rowElem = $(this.getRowElement(row.id));
+        } catch (error) {
+            return this;
+        }
         var $buttons = $rowElem.find('.rubeus-buttons');
         $buttons.hide();
         return this;
-     };
+    };
 
     /**
      * Changes the html in the status column.
@@ -204,7 +230,8 @@
         },
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
-        }
+        },
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
     };
 
     var statusType = {
@@ -217,7 +244,8 @@
         DELETING: 'DELETING',
         DELETED: 'DELETED',
         UPLOAD_ERROR: 'UPLOAD_ERROR',
-        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
+        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS',
+        RELEASING_STUDY: 'RELEASING_STUDY'
     };
 
     Rubeus.Status = statusType;
@@ -370,7 +398,8 @@
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            bootbox.alert(message);
+            var cfgOption = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            bootbox.alert(cfgOption || message);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
@@ -380,16 +409,24 @@
             if (data.actionTaken === null) {
                 self.changeStatus(row, statusType.NO_CHANGES);
                 setTimeout(function() {
-                    $(self.getRowElement(row)).fadeOut(500, function() {
+                    try {
+                        $(self.getRowElement(row)).fadeOut(500, function() {
+                          self.removeItem(row.id);
+                        });
+                    } catch (error) {
                         self.removeItem(row.id);
-                    });
+                    }
                 }, 2000);
             } else if (data.actionTaken === 'file_updated') {
                 self.changeStatus(row, statusType.UPDATED);
                 setTimeout(function() {
-                    $(self.getRowElement(row)).fadeOut(500, function() {
+                    try {
+                        $(self.getRowElement(row)).fadeOut(500, function() {
+                            self.removeItem(row.id);
+                        });
+                    } catch (error) {
                         self.removeItem(row.id);
-                    });
+                    }
                 }, 2000);
             } else{
                 // Update the row with the returned server data

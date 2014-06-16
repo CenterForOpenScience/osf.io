@@ -6,16 +6,19 @@ These settings can be overridden in local.py.
 
 import os
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
+GNUPGHOME = os.path.join(BASE_PATH, 'gpg')
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
@@ -23,9 +26,9 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 ALLOW_CLAIMING = True
 
-USE_SOLR = False
+SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
 SOLR_URI = 'http://localhost:8983/solr/'
-
+ELASTIC_URI = 'http://localhost:9200'
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -130,8 +133,9 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
-    'dropbox',
-    # 'badges', 'forward',
+    'dropbox', 'dataverse',
+    # 'badges',
+    'forward',
 ]
 
 ADDON_CATEGORIES = [
@@ -150,3 +154,5 @@ SYSTEM_ADDED_ADDONS = {
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
+
+SENTRY_DSN = None

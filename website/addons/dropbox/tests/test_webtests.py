@@ -2,12 +2,11 @@
 from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 from website.app import init_app
-from tests.base import OsfTestCase, URLLookup
+from website.util import api_url_for, web_url_for
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 
 app = init_app(set_backends=False, routes=True)
-
-lookup = URLLookup(app)
 
 
 class TestDropboxIntegration(OsfTestCase):
@@ -27,9 +26,9 @@ class TestDropboxIntegration(OsfTestCase):
         settings.save()
         assert_true(self.user.get_addon('dropbox').has_auth)
         # Tries to start oauth again
-        url = lookup('api', 'dropbox_oauth_start_user')
+        url = api_url_for('dropbox_oauth_start_user')
         res = self.app.get(url).follow()
 
         # Is redirected back to settings page
         assert_equal(res.request.path,
-            lookup('web', 'user_addons'))
+            web_url_for('user_addons'))

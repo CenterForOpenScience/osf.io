@@ -107,14 +107,29 @@ def index(auth, **kwargs):
 
 
 @must_be_logged_in
-def get_dashboard_nodes(**kwargs):
-    user = kwargs['auth'].user
-    nodes = user.node__contributed.find(
+def get_dashboard_nodes(auth, **kwargs):
+    user = auth.user
+
+    contributed = user.node__contributed  # nodes user cotributed to
+
+    nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
     )
-    return _render_nodes(nodes)
+
+    comps = contributed.find(
+        # components only
+        Q('category', 'ne', 'project') &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', False)
+    )
+
+    return _render_nodes(list(nodes) + list(comps))
 
 
 @must_be_logged_in

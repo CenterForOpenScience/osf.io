@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Fake data generator.
 
@@ -56,12 +55,14 @@ def parse_args():
     parser.add_argument('-u', '--user', dest='user', required=True)
     parser.add_argument('--nusers', dest='n_users', type=int, default=3)
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
+    parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public','private'])
     return parser.parse_args()
 
-def create_fake_project(creator, n_users):
+def create_fake_project(creator, n_users, privacy):
     auth = Auth(user=creator)
     project = ProjectFactory.build(title=fake.catch_phrase(),
         description=fake.bs(), creator=creator)
+    project.set_privacy(privacy)
     for _ in range(n_users):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
@@ -73,7 +74,7 @@ def main():
     args = parse_args()
     creator = models.User.find_by_email(args.user)[0]
     for _ in range(args.n_projects):
-        create_fake_project(creator, args.n_users)
+        create_fake_project(creator, args.n_users, args.privacy)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 
