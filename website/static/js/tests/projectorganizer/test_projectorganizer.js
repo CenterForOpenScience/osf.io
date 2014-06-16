@@ -34,13 +34,23 @@ describe("Jasmine works at all", function () {
 });
 
 describe("Dahsboard has a project organizer", function () {
+
     beforeEach(function (done) {
-        var projectbrowser = new ProjectOrganizer('#project-grid');
+        var runAlready = false;
+        var projectbrowser = new ProjectOrganizer('#project-grid',
+            {
+                success: function() {
+                    if(!runAlready) {
+                        runAlready = true;
+                        done();
+                    }
+                }
+            });
     });
 
-    it("appears on the dashboard", function () {
+    it("should create an hgrid", function() {
+        var hgridDiv = $("#project-grid");
+        expect(hgridDiv).not.toBeEmpty();
+    })
 
-            expect($('#project-grid').html()).not.toEqual('');
-
-    });
 });

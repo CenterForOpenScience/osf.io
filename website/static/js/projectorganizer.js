@@ -743,7 +743,7 @@
 
     function ProjectOrganizer(selector, options) {
         var self = this;
-        var baseOptions = {
+        var baseHGridOptions = {
             width: '550',
             height: '600',
             columns: [
@@ -773,6 +773,7 @@
                     draggable.grid.grid.setSelectedRows([]);
                     draggable.grid.grid.resetActiveCell();
                 }
+                self.options.success.call();
             },
             getExpandState: function(folder) {
                 return folder.expand;
@@ -817,15 +818,25 @@
             init: hgridInit.bind(self)
         };
 
+        var defaultOptions = {
+           success: function() {}
+        };
+
         self.selector = selector;
-        self.options = $.extend({}, baseOptions, options);
+        self.options = $.extend(defaultOptions, options);
+        self.hgridOptions = baseHGridOptions;
+
         self.init(self);
         self.altKey = false;
     }
 
     ProjectOrganizer.prototype.init = function () {
         var self = this;
-        self.grid = new HGrid(self.selector, self.options);
+        self.grid = new HGrid(self.selector, self.hgridOptions);
+    };
+
+    ProjectOrganizer.prototype.getGrid = function() {
+        return this.grid;
     };
 
     return ProjectOrganizer;
