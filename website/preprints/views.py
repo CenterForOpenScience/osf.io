@@ -32,6 +32,8 @@ def view_project_as_preprint(**kwargs):
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
 def upload_preprint(**kwargs):
+    """This function uploads the file in `request` to an existing component. First it renames that file `preprint.pdf`."""
+
     request.files['file'].filename = unicode("preprint.pdf")
     rv = osffiles_views.upload_file_public(**kwargs)
     return rv
