@@ -309,9 +309,7 @@ def copy_settings(addons=False):
         copy_addon_settings()
 
 @task
-def setup():
-    """Creates local settings, installs requirements, and imports encryption key"""
-    copy_settings(addons=True)
+def packages():
     if platform.system() == 'Darwin':
         print('Running brew bundle')
         run('brew bundle')
@@ -319,6 +317,11 @@ def setup():
         # TODO: Write a script similar to brew bundle for Ubuntu
         # run('sudo apt-get install [list of packages]')
         pass
-    print('Installing requirements')
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and generates encryption key"""
+    copy_settings(addons=True)
+    packages()
     requirements(all=True)
     encryption()
