@@ -10,9 +10,9 @@
                 <div >
 
                     <div>
-                        Would you like to add a note for this link?
+                        Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
                         <div class="form-group">
-                            <input type="text" class="form-control private-link-note" placeholder="New Note" data-bind="value:note"/>
+                            <input type="text" class="form-control private-link-note" placeholder="Add link name" data-bind="value:note"/>
                         </div>
                     </div>
 

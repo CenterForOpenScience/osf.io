@@ -1361,22 +1361,6 @@ div#logScope a.moreLogs{
     width: 60%;
 }
 
-.link-name{
-    width: 55%;
-}
-
-.link-label{
-    width: 15%;
-}
-
-.link-date{
-    width: 15%;
-}
-
-.link-creator{
-    width: 20%;
-}
-
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {

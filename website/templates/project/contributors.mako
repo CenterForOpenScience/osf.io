@@ -5,6 +5,10 @@
     <div class="col-md-12">
 
         <h2>Contributors</h2>
+            % if 'admin' in user['permissions']:
+                <div>Drag and drop contributors to change listing order.</div>
+            % endif
+
             <div id="manageContributors" class="scripted">
                     <table id="manageContributorsTable" class="table">
                         <thead>
@@ -25,7 +29,7 @@
                         <tr data-bind="if: canEdit">
                             <td colspan="3">
                                 <a href="#addContributors" data-toggle="modal">
-                                    Click to add a contributor
+                                    Add a contributor
                                 </a>
                             </td>
                         </tr>
@@ -42,17 +46,17 @@
 
     % if 'admin' in user['permissions']:
         <h2>Sharing</h2>
+        <div>Create a link to share this project so those who have the link can view but not edit the project</div>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
 
                 <thead>
                     <tr>
-                    <th class="col-sm-3 link-name">Links</th>
-                    <th class="col-sm-1 link-nodes">Shared Project(s)</th>
-                    <th class="col-sm-2 link-note">Note</th>
-                    <th class="col-sm-3 link-date">Created Date</th>
-                    <th class="col-sm-2 link-creator">Created By</th>
+                    <th class="col-sm-2">Link name</th>
+                    <th class="col-sm-4">What this link shares</th>
+                    <th class="col-sm-3">Created Date</th>
+                    <th class="col-sm-2">Created By</th>
                     <th class="col-sm-1"></th>
                     </tr>
                 </thead>
@@ -62,8 +66,7 @@
                     <tr>
                         <td colspan="3">
                             <a href="#addPrivateLink" data-toggle="modal">
-                                Click to create a link to share this project so those
-                                who have the link can view but not edit the project
+                                Create a link
                             </a>
                         </td>
                     </tr>
@@ -71,25 +74,25 @@
                 </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                         <tr>
-                        <td class="col-sm-3 link-name">
+                        <td class="col-sm-2">
                             <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy"
                                     data-bind="attr: {data-clipboard-text: linkUrl}" >
                                 <span class="icon-copy" ></span>
                             </button>
                             <span class="key-name" data-bind="text: linkUrl"></span>
                         </td>
-                        <td class="col-sm-1 link-nodes" data-bind="foreach:nodes">
+                        <td class="col-sm-4" data-bind="foreach:nodes">
                                <ul class="narrow-list">
                                    <li >
                                       {{$data}}
                                    </li>
                                </ul>
                         </td>
-                        <td class="col-sm-2 link-note" data-bind="text: note"></td>
-                        <td class="col-sm-3 link-date">
+
+                        <td class="col-sm-3">
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
-                        <td class="col-sm-2 link-creator" data-bind="text: creator"></td>
+                        <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
                             <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove private link" data-bind="click: $root.removeLink">-</a>
                         </td>
