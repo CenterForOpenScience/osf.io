@@ -1366,7 +1366,7 @@ div#logScope a.moreLogs{
 }
 
 .list-overflow{
-    max-height:260px;
+    max-height:200px;
     overflow-y:auto;
 }
 
