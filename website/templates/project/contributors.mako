@@ -6,9 +6,8 @@
 
         <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
-                <div>Drag and drop contributors to change listing order.</div>
+                <div class="text-align">Drag and drop contributors to change listing order.</div>
             % endif
-
             <div id="manageContributors" class="scripted">
                     <table id="manageContributorsTable" class="table">
                         <thead>
@@ -46,7 +45,7 @@
 
     % if 'admin' in user['permissions']:
         <h2>Sharing</h2>
-        <div>Create a link to share this project so those who have the link can view but not edit the project</div>
+        <div class="text-align">Create a link to share this project so those who have the link can view but not edit the project</div>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
@@ -55,8 +54,8 @@
                     <tr>
                     <th class="col-sm-2">Link name</th>
                     <th class="col-sm-4">What this link shares</th>
-                    <th class="col-sm-3">Created Date</th>
-                    <th class="col-sm-2">Created By</th>
+                    <th class="col-sm-3">Created date</th>
+                    <th class="col-sm-2">Created by</th>
                     <th class="col-sm-1"></th>
                     </tr>
                 </thead>
