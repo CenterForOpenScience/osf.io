@@ -109,6 +109,7 @@ def preprint_files(**kwargs):
         if f['name'] == 'preprint.pdf':
             rv['pdf'] = f
             rv['pdf']['versions'] = osffiles_views.file_versions('preprint.pdf', node)
+            # rv['pdf']['render_url'] = f.render_url(node)
         else:
             rv['supplements'].append(f)
     return rv
