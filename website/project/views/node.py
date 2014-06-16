@@ -736,6 +736,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'ua': None,
             'non_ua': None,
             'addons_enabled': node.get_addon_names(),
+            'is_public': node.is_public
         })
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
