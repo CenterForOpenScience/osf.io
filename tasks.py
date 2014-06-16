@@ -260,6 +260,10 @@ def encryption(owner=None):
     > sudo env/bin/invoke encryption --owner www-data
 
     """
+    if not settings.USE_GNUPG:
+        print('GnuPG is not enabled. No GnuPG key will be generated.')
+        return
+
     import gnupg
     gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME)
     keys = gpg.list_keys()
@@ -308,6 +312,7 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
+
 @task
 def packages():
     if platform.system() == 'Darwin':
@@ -315,8 +320,9 @@ def packages():
         run('brew bundle')
     elif platform.system() == 'Linux':
         # TODO: Write a script similar to brew bundle for Ubuntu
-        # run('sudo apt-get install [list of packages]')
+        # e.g., run('sudo apt-get install [list of packages]')
         pass
+
 
 @task
 def setup():

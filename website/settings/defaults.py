@@ -58,6 +58,9 @@ MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 # Use Celery for file rendering
 USE_CELERY = True
 
+# Use GnuPG for encryption
+USE_GNUPG = True
+
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
 
