@@ -1374,9 +1374,12 @@ div#logScope a.moreLogs{
     word-wrap:break-word;
 }
 
-.more-link-node{
-    margin-top:7px;
+#privateLinkTable .btn-mini{
     padding:3px;
+}
+
+.more-link-node{
+    margin-top:5px;
 }
 /* Contributor page */
 
