@@ -179,9 +179,6 @@
         });
 
         self.messages = ko.observableArray([]);
-//        self.messageClass = ko.computed(function() {
-//            return self.messageType() === 'success' ? 'text-success' : 'text-danger';
-//        });
 
         // Hack: Ignore beforeunload when submitting
         // TODO: Single-page-ify and remove this
