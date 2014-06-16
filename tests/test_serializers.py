@@ -8,6 +8,7 @@ from tests.base import OsfTestCase
 from framework.auth.decorators import Auth
 from website.project.views.node import _get_summary
 
+
 class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489

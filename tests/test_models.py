@@ -276,6 +276,7 @@ class TestUser(OsfTestCase):
 
     def test_factory(self):
         # Clear users
+        Node.remove()
         User.remove()
         user = UserFactory()
         assert_equal(User.find().count(), 1)
@@ -504,7 +505,7 @@ class TestMergingUsers(OsfTestCase):
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
-        project.contributors.append(self.dupe)
+        project.add_contributor(self.dupe)
         project.save()
         self._merge_dupe()
         assert_true(project.is_contributor(self.master))
@@ -1288,8 +1289,8 @@ class TestProject(OsfTestCase):
     def test_manage_contributors_new_contributor(self):
         user = UserFactory()
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1310,8 +1311,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1326,8 +1327,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': unregistered._id, 'permission': 'admin'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': unregistered._id, 'permission': 'admin', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1461,8 +1462,8 @@ class TestProject(OsfTestCase):
         user2 = UserFactory()
         self.project.add_contributors(
             [
-                {'user': user1, 'permissions': ['read', 'write', 'admin']},
-                {'user': user2, 'permissions': ['read', 'write']}
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': False}
             ],
             auth=self.consolidate_auth
         )
@@ -1474,6 +1475,8 @@ class TestProject(OsfTestCase):
         )
         assert_in(user1._id, self.project.permissions)
         assert_in(user2._id, self.project.permissions)
+        assert_in(user1._id, self.project.visible_contributor_ids)
+        assert_not_in(user2._id, self.project.visible_contributor_ids)
         assert_equal(self.project.permissions[user1._id], ['read', 'write', 'admin'])
         assert_equal(self.project.permissions[user2._id], ['read', 'write'])
         assert_equal(

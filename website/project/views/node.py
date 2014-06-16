@@ -969,7 +969,7 @@ def fork_pointer(**kwargs):
 
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
-    if len(node.contributors) > 1:
+    if len(node.visiblecontributors) > 1:
         rv += ' et al.'
     return rv
 
