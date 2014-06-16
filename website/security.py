@@ -21,7 +21,27 @@ def random_string(length=8, chars=string.letters+string.digits):
 
 class Encryption(object):
 
-    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    try:
+        gpg = gnupg.GPG(
+            gpgbinary=settings.GNUPG_BINARY,
+            gnupghome=settings.GNUPG_HOME,
+        )
+    except OSError as error:
+        if error.errno == 2:
+            raise RuntimeError(
+                'Could not find GPG binary in PATH. Try setting GNUPGBINARY ' +
+                'as the full path to the binary in website/settings/local.py'
+            )
+        elif error.errno == 13:
+            raise RuntimeError(
+                """GPG could not access {0} due to a permission issue. Try
+                chowning the directory to give yourself permission. """.format(
+                    settings.GNUPG_HOME
+                )
+            )
+        else:
+            raise
+
     keys = gpg.list_keys()
 
     if not keys:

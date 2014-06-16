@@ -53,3 +53,6 @@ USE_CDN_FOR_CLIENT_LIBS = False
 # PIWIK_SITE_ID = 1
 
 SENTRY_DSN = "<INSERT DSN HERE>"
+
+# Uncomment if GPG was installed with homebrew
+# GNUPG_BINARY = '/usr/local/bin/gpg'

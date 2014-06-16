@@ -18,7 +18,8 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
-GNUPGHOME = os.path.join(BASE_PATH, 'gpg')
+GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
+GNUPG_BINARY = 'gpg'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True

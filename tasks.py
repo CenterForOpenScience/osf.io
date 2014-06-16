@@ -261,7 +261,7 @@ def encryption(owner=None):
 
     """
     import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME)
     keys = gpg.list_keys()
     if keys:
         print('Existing GnuPG key found')
@@ -270,7 +270,7 @@ def encryption(owner=None):
     input_data = gpg.gen_key_input(name_real='OSF Generated Key')
     gpg.gen_key(input_data)
     if owner:
-        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
+        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPG_HOME))
 
 
 @task
