@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">Resend Confirmation Email</%def>
 <%def name="content()">
 <h1 class="page-header text-center">Resend Confirmation Email</h1>

@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="content()">
 <h1>Nodes</h1>
 % if nodes:

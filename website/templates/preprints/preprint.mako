@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 
 <%def name="content()">
 
@@ -217,7 +217,7 @@
 
         <div class="logs">
             <div id='logScope'>
-                <%include file="log_list.mako"/>
+                <%include file="preprints/log_list.mako"/>
                 <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
             </div><!-- end #logScope -->
         </div>
