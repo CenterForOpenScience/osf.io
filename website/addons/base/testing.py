@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory

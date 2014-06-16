@@ -2,7 +2,7 @@
 from nose.tools import *  # PEP8 asserts
 
 import framework
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.app import init_app
 from webtest_plus import TestApp
 from tests.base import OsfTestCase

@@ -22,8 +22,7 @@ from modularodm.exceptions import ValidationValueError, ValidationTypeError
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
-from framework.auth import get_user, User
-from framework.auth.decorators import Auth
+from framework.auth import get_user, User, Auth
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )

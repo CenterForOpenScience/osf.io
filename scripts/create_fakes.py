@@ -23,7 +23,7 @@ import logging
 
 from faker import Factory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.app import init_app
 from website import models, security
 from framework.auth import utils

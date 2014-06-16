@@ -12,8 +12,7 @@ from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
 
-from framework.auth.decorators import Auth
-from website.addons.figshare import settings as figshare_settings
+from framework.auth import Auth
 
 
 app = website.app.init_app(
