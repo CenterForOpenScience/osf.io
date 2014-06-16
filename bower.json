@@ -8,6 +8,7 @@
     "requirejs": "~2.1.11",
     "zeroclipboard": "~1.3.5",
     "hgrid": "https://github.com/CenterForOpenScience/hgrid.git#9a92cfe79d839bdcd1981ee84032f5f0dfc6885e",
-    "jasmine": "~2.0"
+    "jasmine": "~2.0",
+    "jasmine-ajax": "v2.0.0.rc2"
   }
 }
