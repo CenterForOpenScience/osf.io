@@ -19,7 +19,8 @@ import website.views as website_views
 # These functions should be unnecessary once the site has more dynamic behavior: the page can simply get the same
 # data via the API.
 
-# Many of the view functions called are decorated. Decorating these functions again may cause unpredictable behavior.
+# Many of the view functions called are decorated. Decorating these
+# functions again may cause unpredictable behavior.
 
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
@@ -27,10 +28,14 @@ def preprint_dashboard(**kwargs):
     return website_views.dashboard(**kwargs)
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
+
+
 def view_project_as_preprint(**kwargs):
     return project_views.node.view_project(**kwargs)
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
+
+
 def upload_preprint(**kwargs):
     """This function uploads the file in `request` to an existing component. First it renames that file `preprint.pdf`."""
 
@@ -38,7 +43,10 @@ def upload_preprint(**kwargs):
     rv = osffiles_views.upload_file_public(**kwargs)
     return rv
 
-# This calls upload_preprint, which calls a decorated function. Decorating it may cause confusing behavior.
+# This calls upload_preprint, which calls a decorated function. Decorating
+# it may cause confusing behavior.
+
+
 @must_be_logged_in
 def post_preprint_new(**kwargs):
     """This function is the endpoint for the url where the user can create a new preprint project.
@@ -52,7 +60,8 @@ def post_preprint_new(**kwargs):
 
     auth = kwargs['auth']
     file = request.files.get('file')
-    # todo: should this leave it as unicode? Thinking about, e.g. mathematical symbols in titles
+    # todo: should this leave it as unicode? Thinking about, e.g. mathematical
+    # symbols in titles
     node_title = splitext(file.filename)[0]
 
     # creates private project to house the preprint component
@@ -78,7 +87,8 @@ def post_preprint_new(**kwargs):
                     node=preprint_component,
                     **kwargs)
 
-    return redirect(preprint_component.url+'preprint/')
+    return redirect(preprint_component.url + 'preprint/')
+
 
 @must_be_logged_in
 def get_preprint_dashboard_nodes(auth, **kwargs):
@@ -91,13 +101,14 @@ def get_preprint_dashboard_nodes(auth, **kwargs):
         Q('category', 'eq', 'preprint') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False)
-    ) # There's a lot of boilerplate here. we should fix that
+    )  # There's a lot of boilerplate here. we should fix that
 
     # TODO: I don't like importing _*. What should I do with this?
     return website_views._render_nodes(list(preprints))
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def preprint_files(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -113,6 +124,7 @@ def preprint_files(**kwargs):
             rv['supplements'].append(f)
     return rv
 
+
 @must_be_logged_in
 def preprint_new(**kwargs):
     """This is the view function for a page that serves a dynamically-generated widget that allows the user to
@@ -120,6 +132,8 @@ def preprint_new(**kwargs):
     return {}, http.OK
 
 # TODO: this is mostly duplicated code from discovery/views.py
+
+
 def preprint_activity():
 
     popular_preprints = []
@@ -159,7 +173,7 @@ def preprint_activity():
         Q('category', 'eq', 'preprint') &
         Q('is_public', 'eq', True) &
         Q('is_deleted', 'eq', False)
-    ) # TODO: refactor to remove boilerplate shared with other activity-getting queries
+    )  # TODO: refactor to remove boilerplate shared with other activity-getting queries
     # Temporary bug fix: Skip projects with empty contributor lists
     # Todo: Fix underlying bug and remove this selector
     recent_preprints_query = recent_preprints_query & Q('contributors', 'ne', [])
@@ -176,3 +190,32 @@ def preprint_activity():
         'hits': hits,
     }
 
+
+def disciplines():
+    return {
+        'disciplines': {
+            'Humanities': [
+                'Linguistics',
+                'Philosophy',
+                'History'
+            ],
+            'Social sciences': [
+                'Economics',
+                'Political Science',
+                'Psychology'
+            ],
+            'Natural Sciences': [
+                'Physics',
+                'Chemistry',
+                'Biology'
+            ],
+            'Formal Sciences': [
+                'Mathematics',
+                'Statistics',
+                'Logic'
+            ],
+            'Professional and Applied Sciences': [
+                'Computer Science',
+                'Law',
+                'Healthcare science'
+            ]}}

@@ -955,6 +955,13 @@ def make_url_map(app):
              preprint_views.preprint_new,
              PreprintWebRenderer('preprints/new.mako')
         ),
+
+        Rule(
+            '/api/v1/preprint/disciplines/',
+            'get',
+            preprint_views.disciplines,
+            json_renderer
+        )
     ])
 
     # API
