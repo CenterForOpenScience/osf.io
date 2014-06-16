@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">New Preprint</%def>
 <%def name="content()">
     <h2 class="page-title text-center">Create New Preprint Project</h2>

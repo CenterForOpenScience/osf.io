@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
@@ -38,11 +38,11 @@
         </h4><h4>
                 <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Projects: ${counts['projects']}</a>
         </h4><h4>
-                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Components: ${counts['components']}</a> 
+                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Components: ${counts['components']}</a>
         </h4><h4>
-                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Registrations: ${counts['registrations']}</a> 
+                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Registrations: ${counts['registrations']}</a>
         </h4><h4>
-                <a href="/search/?q=preprint:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Preprints: ${counts['preprints']}</a> 
+                <a href="/search/?q=preprint:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '').replace('preprint:(', '')})">Preprints: ${counts['preprints']}</a>
         </h4>
 
             % endif
@@ -89,7 +89,7 @@
                                     % endif
                                 </h4>
                             </div><!-- end title -->
-            
+
                             <div class="description">
                                 % if result['description']:
                                     <h5>
@@ -97,7 +97,7 @@
                                     </h5>
                                 % endif
                             </div>
-                            
+
     ##                            jeff's nice logic for displaying users
                             <div class="contributors">
                                 % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):

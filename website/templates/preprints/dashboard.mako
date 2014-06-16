@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
 <div class="row">

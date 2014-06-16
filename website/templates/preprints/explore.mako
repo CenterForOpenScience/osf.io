@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">Explore Preprints</%def>
 <%def name="content()">
 <%

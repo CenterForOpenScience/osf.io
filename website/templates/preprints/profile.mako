@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">${profile["fullname"]}'s Profile</%def>
 
 <%def name="javascript_bottom()">
