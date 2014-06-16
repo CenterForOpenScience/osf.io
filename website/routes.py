@@ -15,7 +15,7 @@ from website import settings, language, util
 from website import views as website_views
 from website.addons.osffiles import views as osffiles_views
 from website.addons.base import views as addon_views
-from website.osf_web_renderer import OsfWebRenderer
+from website.osf_web_renderer import OsfWebRenderer, PreprintWebRenderer
 from website.preprints import views as preprint_views
 from website.search import views as search_views
 from website.discovery import views as discovery_views
@@ -928,7 +928,7 @@ def make_url_map(app):
             '/project/<pid>/preprint/',
             '/project/<pid>/node/<nid>/preprint/',
         ], 'get', preprint_views.view_project_as_preprint,
-             OsfWebRenderer('preprints/preprint.mako')
+             PreprintWebRenderer('preprints/preprint.mako')
         ),
 
         Rule([
@@ -936,7 +936,7 @@ def make_url_map(app):
         ],
              'get',
              preprint_views.preprint_dashboard,
-             OsfWebRenderer('preprints/dashboard.mako')
+             PreprintWebRenderer('preprints/dashboard.mako')
         ),
 
         Rule([
@@ -945,7 +945,7 @@ def make_url_map(app):
         ],
              'get',
              preprint_views.preprint_activity,
-             OsfWebRenderer('preprints/explore.mako')
+             PreprintWebRenderer('preprints/explore.mako')
         ),
 
         Rule([
@@ -953,7 +953,7 @@ def make_url_map(app):
         ],
              'get',
              preprint_views.preprint_new,
-             OsfWebRenderer('preprints/new.mako')
+             PreprintWebRenderer('preprints/new.mako')
         ),
     ])
 

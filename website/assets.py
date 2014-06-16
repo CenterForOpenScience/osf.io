@@ -30,6 +30,27 @@ css = Bundle(
         output="public/css/common.css"
 )
 
+preprint_css = Bundle(
+        # Vendorized libraries
+         Bundle(
+            'vendor/jquery-tagit/css/jquery.tagit.css',
+            'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
+            'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
+            'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
+            'vendor/pygments.css',
+            'vendor/bootstrap3-editable/css/bootstrap-editable.css',
+            'vendor/bower_components/hgrid/dist/hgrid.css',
+            filters='cssmin'),
+        # Site-specific CSS
+        Bundle(
+            'css/site.css',
+            'css/rubeus.css',
+            'css/commentpane.css',
+            'css/preprint-theme.css',
+            filters="cssmin"),
+        output="public/css/common.css"
+)
+
 
 js = Bundle(
     # Vendorized libraries that are already minified
@@ -71,5 +92,6 @@ logger.debug('Registering asset bundles')
 env.register('js', js)
 env.register('css', css)
 env.register('js_bottom', js_bottom)
+env.register('preprint_css', preprint_css)
 # Don't bundle in debug mode
 env.debug = settings.DEBUG_MODE

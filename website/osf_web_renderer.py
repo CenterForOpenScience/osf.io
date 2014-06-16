@@ -41,3 +41,14 @@ class OsfWebRenderer(WebRenderer):
         kwargs['data'] = get_globals
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
+class PreprintWebRenderer(WebRenderer):
+
+    def get_preprint_globals(self):
+        ret = get_globals()
+        ret['css_all'] = assets_env['preprint_css'].urls()
+        return ret
+
+    def __init__(self, *args, **kwargs):
+        kwargs['data'] = self.get_preprint_globals
+        super(PreprintWebRenderer, self).__init__(*args, **kwargs)
+
