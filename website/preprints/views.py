@@ -241,9 +241,7 @@ def disciplines():
         'disciplines': preprint_disciplines}
 
 def preprint_discipline_new(discipline=None,**kwargs):
-    if not discipline:
-        raise HTTPError("")
-    if not valid_discipline(discipline):
+    if not discipline or not valid_discipline(discipline):
         raise HTTPError("")
 
     discipline_query = (
