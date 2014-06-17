@@ -13,19 +13,19 @@
                  "replace": true
             }'></div>
     </div>
-    <div class="row">
-        <div class="col-md-6">
-           <div id="watchFeed">
-               <div class="page-header">
-                    <h3>Watched Preprints</h3>
-                </div>
-                <div id="logScope">
-                    <%include file="log_list.mako"/>
-                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-                </div><!-- end #logScope -->
-            </div><!-- end #watchFeed -->
-        </div>
-    </div>
+##    <div class="row">
+##        <div class="col-md-6">
+##           <div id="watchFeed">
+##               <div class="page-header">
+##                    <h3>Watched Preprints</h3>
+##                </div>
+##                <div id="logScope">
+##                    <%include file="log_list.mako"/>
+##                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
+##                </div><!-- end #logScope -->
+##            </div><!-- end #watchFeed -->
+##        </div>
+##    </div>
 </div>
 </%def>
 

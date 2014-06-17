@@ -12,18 +12,14 @@
       </div><!-- end navbar-header -->
 
       <div class="collapse navbar-collapse navbar-ex1-collapse">
-        <ul class="nav navbar-nav">
-          <li class="visible-xs"><a href="/">Home</a></li>
-          %if user_name:
-          <li><a rel="tooltip" title="My Dashboard" href="/preprint/dashboard/">Dashboard</a></li>
-          %endif
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
-            <ul class="dropdown-menu">
-              <li><a href="/preprint/explore/activity">Public Activity</a></li>
-              <li><a href="/preprint">Preprints</a></li>
-              <li><a href="/">Open Science Framework</a></li>
-            </ul><!-- end dropdown-menu -->
+          <ul class="nav navbar-nav">
+              <li class="visible-xs"><a href="/">Home</a></li>
+              %if user_name:
+                  <li><a rel="tooltip" title="My Uploaded Preprints" href="/preprint/dashboard/">My Preprints</a></li>
+              %endif
+              <li><a href="/preprint">All Preprints</a></li>
+              <li><a href="/">OSF</a></li>
+          </ul><!-- end dropdown-menu -->
           </li><!-- end dropdown -->
 ##          <li class="dropdown">
 ##            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>

@@ -232,19 +232,23 @@ preprint_disciplines = {
 disciplines_flattened = preprint_disciplines.keys() +\
     [d for dlist in preprint_disciplines.values() for d in dlist]
 
+def valid_discipline(name):
+    formatted_disciplines = [d.lower().replace(" ", "-") for d in disciplines_flattened]
+    return str(name) in formatted_disciplines
+
 def disciplines():
     return {
         'disciplines': preprint_disciplines}
 
-def preprint_explore_discipline(discipline=None,**kwargs):
+def preprint_discipline_new(discipline=None,**kwargs):
     if not discipline:
-        raise HTTPError
-    if discipline.lower() not in [d.lower() for d in disciplines_flattened]:
-        raise HTTPError
+        raise HTTPError("")
+    if not valid_discipline(discipline):
+        raise HTTPError("")
 
     discipline_query = (
         base_recent_preprint_query &
-        Q('tags', 'eq', discipline)
+        Q('tags', 'eq', discipline.replace("-", " "))
     )
 
     recent_preprints = Node.find(
@@ -255,5 +259,9 @@ def preprint_explore_discipline(discipline=None,**kwargs):
 
     return {
         'recent_preprints': recent_preprints,
-        'discipline': discipline.title(),
+        'discipline': discipline.replace('-', ' ').title(),
         }
+
+
+def preprint_discipline_popular():
+    raise NotImplementedError

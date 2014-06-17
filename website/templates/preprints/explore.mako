@@ -35,7 +35,7 @@
 ##  </div><!-- /.row -->
 
 <div id="disciplines" data-bind="visible: fetched">
-    <div class="panel-group" data-bind="foreach: { data: disciplines, as: 'discipline' }">
+    <div class="panel-group col-md-8" data-bind="foreach: { data: disciplines, as: 'discipline' }">
         <div class="panel panel-default">
             <div class="panel-heading">
                 <h4 class="panel-title">
@@ -47,9 +47,9 @@
                     <table data-bind="foreach: { data: discipline.children, as: 'subtopic' }" class="table table-striped">
                         <tr>
                             <td>{{ subtopic.readable }}</td>
-                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/newest/">Newest </a></td>
-                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/mostpopular/">Most Popular</a></td>
-                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/search/">Find more</a></td>
+                            <td><a href="/preprint/{{ subtopic.stripped }}/new/">Newest </a></td>
+                            <td><a href="/preprint/{{ subtopic.stripped }}/popular/">Most Popular</a></td>
+                            <td><a href="/preprint/{{ subtopic.stripped }}/search/">Find more</a></td>
                         </tr>
                     </table>
                 </div>

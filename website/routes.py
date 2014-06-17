@@ -959,12 +959,20 @@ def make_url_map(app):
         ),
 
         Rule([
-            '/preprint/explore/<discipline>/',
+            '/preprint/<discipline>/new/',
         ],
              'get',
-             preprint_views.preprint_explore_discipline,
-             PreprintWebRenderer('preprints/explore_discipline.mako')
+             preprint_views.preprint_discipline_new,
+             PreprintWebRenderer('preprints/discipline_new.mako')
         ),
+
+        Rule([
+            '/preprint/<discipline>/popular/',
+        ],
+             'get',
+             preprint_views.preprint_discipline_popular,
+             PreprintWebRenderer('preprints/discipline_popular.mako')
+        )
     ])
 
     # API

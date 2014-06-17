@@ -15,7 +15,7 @@
         var self = this;
         self.topDisciplince = top;
         self.children = ko.utils.arrayMap(kids, function(kid) {
-            return {'stripped':kid.split(' ').join('').toLowerCase(), 'readable': kid}
+            return {'stripped':kid.split(' ').join('-').toLowerCase(), 'readable': kid}
         });
         self.topDisciplinceFormatted = top.split(' ').join('').toLowerCase();
     };
