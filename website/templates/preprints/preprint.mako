@@ -135,13 +135,13 @@
             </div>
 
         </div>
-##            <div id="fileRendered" class="mfr mfr-file">
-##                % if rendered is not None:
-##                    ${rendered}
-##                % else:
-##                    <img src="/static/img/loading.gif">
-##                % endif
-##            </div>
+            <div id="fileRendered" class="mfr mfr-file">
+                % if rendered is not None:
+                    ${rendered}
+                % else:
+                    <img src="/static/img/loading.gif">
+                % endif
+            </div>
             <div class="col-md-4">
                 <table class="table table-striped" id="file-version-history">
                     ## TODO integrate into osffiles_view_file.mako and replace with a reference to that

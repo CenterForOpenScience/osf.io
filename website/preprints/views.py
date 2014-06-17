@@ -1,15 +1,18 @@
 import httplib as http
+import os
 from flask import request
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework import must_be_logged_in, redirect
 from framework.analytics.piwik import PiwikClient
 from framework.exceptions import HTTPError
 from website import settings
+from website.addons.osffiles.model import NodeFile
 import website.addons.osffiles.views as osffiles_views
 import website.project.views as project_views
 from website.project import new_node, Node
 from os.path import splitext
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public, must_have_addon
+from website.project.views.file import get_cache_content
 from website.util import rubeus
 
 import website.views as website_views
@@ -29,10 +32,42 @@ def preprint_dashboard(**kwargs):
     return website_views.dashboard(**kwargs)
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
-
-
+# TODO: Much of this is copied from view_file. Refactor.
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('osffiles', 'node')
 def view_project_as_preprint(**kwargs):
-    return project_views.node.view_project(**kwargs)
+    node = kwargs['node']
+    node_settings = kwargs['node_addon']
+
+    internal_filename = 'preprint.pdf'.replace('.', '_')
+
+    file_id = node.files_versions[internal_filename][-1]
+    file_object = NodeFile.load(file_id)
+
+    render_url = file_object.render_url(node)
+
+    cache_file = osffiles_views.get_cache_file(
+        file_object.filename,
+        file_object.latest_version_number(node)
+    )
+    file_path = os.path.join(
+        settings.UPLOADS_PATH,
+        node._primary_key,
+        internal_filename
+    )
+    download_url = file_object.download_url(node)
+    rendered = get_cache_content(
+        node_settings, cache_file, start_render=True, file_path=file_path,
+        file_content=None, download_path=download_url
+    )
+
+    project_view = project_views.node.view_project(**kwargs)
+
+    project_view['rendered'] = rendered
+    project_view['render_url'] = render_url
+
+    return project_view
 
 # This calls a decorated function. Decorating it may cause confusing behavior.
 
