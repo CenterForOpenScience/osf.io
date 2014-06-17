@@ -461,4 +461,8 @@ def search_preprints(query, start=0):
     total = raw_results['hits']['total']
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, total)
+    formatted_results = [result['nest'].values()[0] for result in formatted_results]
+    for result in formatted_results:
+        result['url'] = result['url'] + 'preprint/'
+        logger.warn(result['url'])
     return formatted_results, total
