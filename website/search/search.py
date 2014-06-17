@@ -17,15 +17,24 @@ def search(query, start=0):
     result, tags, counts = search_engine.search(query, start)
     return result, tags, counts
 
+
 def update_node(node):
     search_engine.update_node(node)
+
 
 def update_user(user):
     search_engine.update_user(user)
 
+
 def delete_all():
     search_engine.delete_all()
 
+
 def search_contributor(query, exclude=None):
-    result= search_engine.search_contributor(query, exclude)
+    result = search_engine.search_contributor(query, exclude)
     return result
+
+
+def search_preprints(query, start=0):
+    result, total = search_engine.search_preprints(query, start)
+    return result, total
