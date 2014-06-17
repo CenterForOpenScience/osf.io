@@ -223,9 +223,9 @@ preprint_disciplines = {
         'Statistics',
         'Logic'
     ],
-    'Professional and Applied Sciences': [
+    'Engineering and Applied Sciences': [
         'Computer Science',
-        'Law',
+        'Chemical Engineering',
         'Healthcare Science'
     ]}
 
