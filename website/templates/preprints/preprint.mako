@@ -62,12 +62,6 @@
                                 <span data-bind="text: watchButtonDisplay" id="watchCount"></span>
                             </a>
 
-                            <a rel="tooltip" title="Duplicate"
-                               class="btn btn-default${ '' if is_project else ' disabled'}" href="#"
-                               data-toggle="modal" data-target="#duplicateModal">
-                                <span class="glyphicon glyphicon-share"></span>&nbsp; ${ node['templated_count'] + node['fork_count'] + node['points'] }
-                            </a>
-
                         </div><!-- end btn-grp -->
                         %if 'badges' in addons_enabled and badges and badges['can_award']:
                             <div class="btn-group">
