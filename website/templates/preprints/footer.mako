@@ -1,14 +1,14 @@
 <footer class="footer">
     <div class="container">
         <div class="row">
-            <div class="col-md-3">
-                <h4>Center for Open Science</h4>
-                <ul>
-                    <li><a href="http://cos.io">Home</a></li>
-                    <li><a href="http://cos.io/#contact">Contact</a></li>
-                    <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
-                    <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
-                </ul>
+            <div class="col-md-1 col-md-offset-1"></div>
+            <div class="col-md-2">
+                <h4>Socialize</h4>
+                <a href="http://twitter.com/OSFramework"><i class="icon-twitter icon-2x"></i></a>
+                <a href="https://www.facebook.com/OpenScienceFramework"><i class="icon-facebook icon-2x"></i></a>
+                <a href="https://groups.google.com/forum/#!forum/opensciencefdramework"><i class="icon-group icon-2x"></i></a>
+                <a href="https://www.github.com/centerforopenscience"><i class="icon-github icon-2x"></i></a>
+                <a href="https://plus.google.com/103557785986281627994" rel="publisher"><i class="icon-google-plus-sign icon-2x"></i></a>
             </div>
             <div class="col-md-2">
                 <h4>Documentation</h4>
@@ -17,7 +17,7 @@
                     <li><a href="/qb0du/">Developer API</a></li>
                 </ul>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-3">
                 <h4>Center for Open Science</h4>
                 <ul>
                     <li><a href="http://cos.io">Home</a></li>
