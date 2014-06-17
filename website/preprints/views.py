@@ -3,6 +3,7 @@ from flask import request
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from framework import must_be_logged_in, redirect
 from framework.analytics.piwik import PiwikClient
+from framework.exceptions import HTTPError
 from website import settings
 import website.addons.osffiles.views as osffiles_views
 import website.project.views as project_views
@@ -120,6 +121,16 @@ def preprint_new(**kwargs):
     create a new preprint project."""
     return {}, http.OK
 
+base_recent_preprint_query = (
+        Q('category', 'eq', 'preprint') &
+        Q('is_public', 'eq', True) &
+        Q('is_deleted', 'eq', False)
+    ) # TODO: refactor to remove boilerplate shared with other activity-getting queries
+# Temporary bug fix: Skip projects with empty contributor lists
+# Todo: Fix underlying bug and remove this selector
+base_recent_preprint_query = base_recent_preprint_query & Q('contributors', 'ne', [])
+
+
 # TODO: this is mostly duplicated code from discovery/views.py
 def preprint_activity():
 
@@ -177,3 +188,20 @@ def preprint_activity():
         'hits': hits,
     }
 
+
+def preprint_explore_discipline(discipline=None,**kwargs):
+    if not discipline:
+        raise HTTPError
+
+    discipline_query = (
+        base_recent_preprint_query &
+        Q('tags', 'eq', discipline)
+    )
+
+    recent_preprints = Node.find(
+        discipline_query
+    ).sort(
+        '-date_created'
+    ).limit(10)
+
+    return {'recent_preprints': recent_preprints,}
