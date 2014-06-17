@@ -48,8 +48,10 @@
                         <tr>
                             <td>{{ subtopic.readable }}</td>
                             <td><a href="/preprint/{{ subtopic.stripped }}/new/">Newest </a></td>
-                            <td><a href="/preprint/{{ subtopic.stripped }}/popular/">Most Popular</a></td>
-                            <td><a href="/preprint/{{ subtopic.stripped }}/search/">Find more</a></td>
+                            <td>
+                                <input type='text' id="{{ subtopic.stripped }}_search" placeholder="Search">
+                                <button data-bind="click: $parent.search.bind(subtopic)">Search</button> 
+                            </td>
                         </tr>
                     </table>
                 </div>

@@ -439,25 +439,31 @@ def search_contributor(query, exclude=None):
     return {'users': users}
 
 
-def search_preprints(query, start=0):
+def search_preprints(raw_query, start=0):
+    if 'discipline:' in raw_query:
+        discipline = raw_query.split(':')[1]
+        raw_query = raw_query.split(':')[0].replace(', discipline', '')
+        filter = {
+            'term': {
+                'tags': {
+                    'value': discipline
+                }
+            }
+        }
 
     query = {
         'query': {
             'filtered': {
-                'filter': {
-                    'type': {
-                        'value': 'preprint'
-                    }
-                },
+                'filter': filter,
                 'query': {
                     'match': {
-                        '_all': query
+                        '_all': raw_query
                     }
                 }
             }
         }
     }
-    raw_results = elastic.search(query, index='website')
+    raw_results = elastic.search(query, index='website', doc_type='preprint')
     total = raw_results['hits']['total']
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, total)

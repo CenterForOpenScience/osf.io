@@ -13,7 +13,7 @@
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
-                    <span class="label label-success btn-mini" style="margin-right:.5em">${term.replace('(', ' ').replace(')',' ')}\
+                    <span class="label label-success btn-mini" style="margin-right:.5em">${term.split(', discipline:')[0].replace('(', ' ').replace(')',' ')}\
                         % if len(components) > 1:
                         <a href="/search/?q=${'AND'.join((x for x in components if x != term)) | h }" style="color:white">&times;</a>
                         % endif

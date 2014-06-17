@@ -18,6 +18,11 @@
             return {'stripped':kid.split(' ').join('-').toLowerCase(), 'readable': kid}
         });
         self.topDisciplinceFormatted = top.split(' ').join('').toLowerCase();
+        self.search = function(subtopic){
+            subtopic = subtopic.stripped
+            var q = $("#"+subtopic+"_search").val();
+            window.location.href = "/preprint/" + subtopic + "/search/?q=" + q
+        }
     };
 
     function PreprintViewModel(url) {
@@ -57,3 +62,5 @@
 
     return PreprintModel;
 }));
+
+
