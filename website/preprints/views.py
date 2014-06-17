@@ -202,38 +202,44 @@ def preprint_activity():
         'hits': hits,
     }
 
+preprint_disciplines = {
+    'Humanities': [
+        'Linguistics',
+        'Philosophy',
+        'History'
+    ],
+    'Social Sciences': [
+        'Economics',
+        'Political Science',
+        'Psychology'
+    ],
+    'Natural Sciences': [
+        'Physics',
+        'Chemistry',
+        'Biology'
+    ],
+    'Formal Sciences': [
+        'Mathematics',
+        'Statistics',
+        'Logic'
+    ],
+    'Professional and Applied Sciences': [
+        'Computer Science',
+        'Law',
+        'Healthcare Science'
+    ]}
+
+disciplines_flattened = preprint_disciplines.keys() +\
+    [d for dlist in preprint_disciplines.values() for d in dlist]
 
 def disciplines():
     return {
-        'disciplines': {
-            'Humanities': [
-                'Linguistics',
-                'Philosophy',
-                'History'
-            ],
-            'Social Sciences': [
-                'Economics',
-                'Political Science',
-                'Psychology'
-            ],
-            'Natural Sciences': [
-                'Physics',
-                'Chemistry',
-                'Biology'
-            ],
-            'Formal Sciences': [
-                'Mathematics',
-                'Statistics',
-                'Logic'
-            ],
-            'Professional and Applied Sciences': [
-                'Computer Science',
-                'Law',
-                'Healthcare science'
-            ]}}
+        'disciplines': preprint_disciplines}
 
 def preprint_explore_discipline(discipline=None,**kwargs):
     if not discipline:
+        raise HTTPError
+    if discipline.lower() not in [d.lower() for d in disciplines_flattened]:
         raise HTTPError
 
     discipline_query = (
@@ -247,4 +253,7 @@ def preprint_explore_discipline(discipline=None,**kwargs):
         '-date_created'
     ).limit(10)
 
-    return {'recent_preprints': recent_preprints,}
+    return {
+        'recent_preprints': recent_preprints,
+        'discipline': discipline.title(),
+        }
