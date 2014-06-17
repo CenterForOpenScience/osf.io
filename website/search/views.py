@@ -128,3 +128,47 @@ def search_contributor():
     exclude = Node.load(nid).contributors if nid else list()
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     return search.search_contributor(query, exclude)
+
+
+def search_preprints():
+    tick = time.time()
+    # search results are automatically paginated. on the pages that are
+    # not the first page, we pass the page number along with the url
+    start = request.args.get('pagination', 0)
+    try:
+        start = int(start)
+    except (TypeError, ValueError):
+        logger.error(u'Invalid pagination value: {0}'.format(start))
+        start = 0
+    query = request.args.get('q')
+    # if there is not a query, tell our users to enter a search
+    query = bleach.clean(query, tags=[], strip=True)
+    if query == '':
+        status.push_status_message('No search query', 'info')
+        return {
+            'results': [],
+            'query': '',
+        }
+    # if the search does not work,
+    # post an error message to the user, otherwise,
+    # the document, highlight,
+    # and spellcheck suggestions are returned to us
+    try:
+        results_search, total = search.search_preprints(query, start)
+    except HTTPError:
+        status.push_status_message('Malformed query. Please try again')
+        return {
+            'results': [],
+            'query': '',
+        }
+    # with our highlights and search result 'documents' we build the search
+    # results so that it is easier for us to display
+    # Whether or not the user is searching for users
+    results_search = [result['nest'].values()[0] for result in results_search]
+    return {
+        'results': results_search,
+        'total': total,
+        'query': query,
+        'current_page': start,
+        'time': round(time.time() - tick, 2),
+    }
