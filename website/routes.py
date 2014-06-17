@@ -34,7 +34,7 @@ def get_globals():
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
         'user_api_url': user.api_url if user else '',
-        'display_name': framework.auth.get_display_name(user.username) if user else '',
+        'display_name': framework.auth.get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
