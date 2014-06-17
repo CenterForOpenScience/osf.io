@@ -33,23 +33,26 @@
 ##        </section>
 ##    </div>
 ##  </div><!-- /.row -->
-<div class="panel-group" id="preprint-disciplines" data-bind="foreach: { data: disciplines, as: 'discipline' }">
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#preprint-disciplines" href="#{{ discipline.topDisciplinceFormatted}}">{{discipline.topDisciplince}}</a>
-            </h4>
-        </div>
-        <div id="{{ discipline.topDisciplinceFormatted}}" class="panel-collapse collapse">
-            <div class="panel-body">
-                <table data-bind="foreach: { data: discipline.children, as: 'subtopic' }" class="table table-striped">
-                    <tr>
-                        <td>{{ subtopic.readable }}</td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/newest/">Newest </a></td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/mostpopular/">Most Popular</a></td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/search/">Find more</a></td>
-                    </tr>
-                </table>
+
+<div id="disciplines" data-bind="visible: fetched">
+    <div class="panel-group" data-bind="foreach: { data: disciplines, as: 'discipline' }">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#disciplines" href="#{{ discipline.topDisciplinceFormatted}}">{{discipline.topDisciplince}}</a>
+                </h4>
+            </div>
+            <div id="{{ discipline.topDisciplinceFormatted}}" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <table data-bind="foreach: { data: discipline.children, as: 'subtopic' }" class="table table-striped">
+                        <tr>
+                            <td>{{ subtopic.readable }}</td>
+                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/newest/">Newest </a></td>
+                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/mostpopular/">Most Popular</a></td>
+                            <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/search/">Find more</a></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
