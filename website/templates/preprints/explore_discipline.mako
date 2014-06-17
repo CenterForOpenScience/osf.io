@@ -7,7 +7,7 @@
 
 
 
-##  <div class="row">
+  <div class="row">
 ##    <div class="col-md-3">
 ##        <div data-spy="affix" class="sidebar affix hidden-print" role="complementary">
 ##            <ul class="nav nav-stacked nav-pills">
@@ -17,22 +17,21 @@
 ##        </div><!-- end sidebar -->
 ##    </div>
 ##
-##    <div class="col-md-9" role="main">
-##      <h1 class="page-header">Public Preprint Activity</h1>
-##        <section id='newPreprints'>
-##            <h3>Newest Preprints</h3>
-##            <ul class='project-list list-group'>
-##                ${node_list(recent_preprints, prefix='newest_public', metric='date_created', url_suffix='preprint/')}
-##            </ul>
-##        </section>
+    <div class="col-md-9" role="main">
+        <section id='newPreprints'>
+            <h3>Newest ${discipline.capitalize()} Preprints</h3>
+            <ul class='project-list list-group'>
+                ${node_list(recent_preprints, prefix='newest_public', metric='date_created', url_suffix='preprint/')}
+            </ul>
+        </section>
 ##        <section id="popularPreprints">
 ##            <h3>Popular Preprints</h3>
 ##            <ul class='project-list list-group'>
 ##                ${node_list(popular_preprints, prefix='most_viewed', metric='hits')}
 ##            </ul>
 ##        </section>
-##    </div>
-##  </div><!-- /.row -->
+    </div>
+  </div><!-- /.row -->
 
 
     <%def name="node_list(nodes, default=0, prefix='', metric='hits', url_suffix='')">
