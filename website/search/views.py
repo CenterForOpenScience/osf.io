@@ -130,7 +130,7 @@ def search_contributor():
     return search.search_contributor(query, exclude)
 
 
-def search_preprints():
+def search_preprints(discipline=None):
     tick = time.time()
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
@@ -149,6 +149,9 @@ def search_preprints():
             'results': [],
             'query': '',
         }
+    # If a discipline is included, search only that disciple
+    if discipline:
+        query = query + ', discipline:' + discipline
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
@@ -171,3 +174,4 @@ def search_preprints():
         'current_page': start,
         'time': round(time.time() - tick, 2),
     }
+
