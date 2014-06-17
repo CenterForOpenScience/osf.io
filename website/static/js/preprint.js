@@ -28,7 +28,7 @@
 
         self.downloadCurrent  = ko.observable('');
         self.showPreprint     = ko.observable(false);
-        self.versions = ko.observable([]);
+        self.versions         = ko.observable([]);
         self.canEdit          = ko.observable(false);
         self.response         = ko.observable({}); // for debugging only
         self.uploadUrl        = ko.observable(url + "upload/");
