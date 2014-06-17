@@ -20,19 +20,19 @@
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
             <ul class="dropdown-menu">
-              <li><a href="/explore">Collaborator Network</a></li>
-              <li><a href="/explore/activity">Public Activity</a></li>
+              <li><a href="/preprint/explore/activity">Public Activity</a></li>
               <li><a href="/preprint">Preprints</a></li>
+              <li><a href="/">Open Science Framework</a></li>
             </ul><!-- end dropdown-menu -->
           </li><!-- end dropdown -->
-          <li class="dropdown">
-            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>
+##          <li class="dropdown">
+##            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Help <b class="caret"></b></a>
 ##            <ul class="dropdown-menu">
 ##              <li><a href="/4znZP/wiki/home">About</a></li>
 ##              <li><a href="/faq/">FAQ</a></li>
 ##              <li><a href="/getting-started">Getting Started</a></li>
 ##            </ul><!-- end dropdown-menu -->
-          </li><!-- end dropdown -->
+##          </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
         <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="/preprint/search/" method="get" role="search">
