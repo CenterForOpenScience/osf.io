@@ -1181,7 +1181,7 @@ this.HGrid = (function($) {
       var data = self.getData();
       for (var i = 0, item; item= data[i]; i++) {
         if (self.options.getExpandState.call(self, item)) {
-          self.expandItem(item);
+          self.reloadFolder(item);
         }
       }
     }

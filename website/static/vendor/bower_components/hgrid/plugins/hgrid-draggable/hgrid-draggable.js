@@ -219,10 +219,13 @@ this.Draggable = (function($, HGrid) {
     var getParent = function(index) {
       // First check if the dragged over item is an empty folder
       var prev = dataView.getItemByIdx(index - 1);
+      var parent;
       if (prev.kind === HGrid.FOLDER) {
         parent = prev;
       } else{  // The item being dragged over is an item; get it's parent folder
-        var insertItem = dataView.getItemByIdx(index);
+        var nItems = dataView.getItems().length;
+        var idx = index > nItems - 1 ? nItems - 1 : index;
+        var insertItem = dataView.getItemByIdx(idx);
         parent = grid.getByID(insertItem.parentID);
       }
       return parent;

@@ -779,7 +779,9 @@
                 return folder.expand;
             },
             onExpand: function(event, item) {
+                var self = this;
                 item.expand = false;
+                self.emptyFolder(item);
                 if(typeof item.apiURL !== "undefined") {
                     var expandUrl = item.apiURL + 'expand/';
                     var postData = JSON.stringify({});
@@ -790,6 +792,7 @@
                         contentType: 'application/json',
                         dataType: 'json'
                     }).done(function() {
+
                         item.expand = false;
                     });
                 }

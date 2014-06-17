@@ -1,5 +1,5 @@
 /*
- *  HGrid - v0.1.3-dev
+ *  HGrid - v0.2.0
  *  A Javascript-based hierarchical grid that can be used to manage and organize files and folders
  */
 (function (global, factory) {
@@ -1195,7 +1195,7 @@ this.HGrid = (function($) {
       var data = self.getData();
       for (var i = 0, item; item= data[i]; i++) {
         if (self.options.getExpandState.call(self, item)) {
-          self.expandItem(item);
+          self.reloadFolder(item);
         }
       }
     }

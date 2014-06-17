@@ -1,56 +1,21 @@
-describe("Jasmine works at all", function () {
-    beforeEach(function () {
-        jasmine.Ajax.install();
-    });
-
-    afterEach(function () {
-        jasmine.Ajax.uninstall();
-    });
-
-    it("true equals true", function () {
-        expect(true).toBe(true);
-    });
-
-    it("ajax specifying response when you need it", function () {
-        var doneFn = jasmine.createSpy("success");
-
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function (arguments) {
-            if (this.readyState == this.DONE) {
-                doneFn(this.responseText);
-            }
-        };
-        xhr.open("GET", "/some/cool/url");
-        xhr.send();
-        expect(jasmine.Ajax.requests.mostRecent().url).toBe('/some/cool/url');
-        expect(doneFn).not.toHaveBeenCalled();
-        jasmine.Ajax.requests.mostRecent().response({
-            "status": 200,
-            "contentType": 'text/plain',
-            "responseText": 'awesome response'
-        });
-        expect(doneFn).toHaveBeenCalledWith('awesome response');
-    });
+QUnit.test( "hello test", function( assert ) {
+  assert.ok( 1 == "1", "Passed!" );
 });
 
-describe("Dahsboard has a project organizer", function () {
-
-    beforeEach(function (done) {
+QUnit.asyncTest("Creates hgrid", function (assert) {
         var runAlready = false;
+    var $fixture = $('#qunit-fixutre');
+    $fixture.append('<div id="project-grid" class="hgrid" ></div>');
         var projectbrowser = new ProjectOrganizer('#project-grid',
             {
                 success: function() {
+
                     if(!runAlready) {
                         runAlready = true;
-                        done();
+                        QUnit.start();
+                        assert.ok(true, "Success callback called");
+                        assert.notEqual($('#project-grid'), "");
                     }
                 }
             });
-    });
-
-    it("should create an hgrid", function() {
-        var hgridDiv = $("#project-grid");
-        expect(hgridDiv).not.toBeEmpty();
-    })
-
 });
