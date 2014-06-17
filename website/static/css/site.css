@@ -1568,3 +1568,9 @@ a {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+@media (max-width:991px){
+    #features-nav, [role=complementary] {
+        display:none
+    }
+}
