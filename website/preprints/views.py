@@ -40,7 +40,9 @@ def view_project_as_preprint(**kwargs):
     node = kwargs['node']
     node_settings = kwargs['node_addon']
 
-    internal_filename = 'preprint.pdf'.replace('.', '_')
+    file_path_name = u"preprint.pdf"
+
+    internal_filename = str(file_path_name).replace('.', '_')
 
     file_id = node.files_versions[internal_filename][-1]
     file_object = NodeFile.load(file_id)
@@ -54,7 +56,7 @@ def view_project_as_preprint(**kwargs):
     file_path = os.path.join(
         settings.UPLOADS_PATH,
         node._primary_key,
-        internal_filename
+        file_path_name
     )
     download_url = file_object.download_url(node)
     rendered = get_cache_content(
@@ -95,10 +97,10 @@ def post_preprint_new(**kwargs):
     # todo: add error handling
 
     auth = kwargs['auth']
-    file = request.files.get('file')
+    request_file = request.files.get('file')
     # todo: should this leave it as unicode? Thinking about, e.g. mathematical
     # symbols in titles
-    node_title = splitext(file.filename)[0]
+    node_title = splitext(request_file.filename)[0]
 
     # creates private project to house the preprint component
     project = new_node('project',

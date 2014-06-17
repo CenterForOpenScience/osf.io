@@ -164,7 +164,6 @@ def search_preprints():
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to display
     # Whether or not the user is searching for users
-    results_search = [result['nest'].values()[0] for result in results_search]
     return {
         'results': results_search,
         'total': total,
