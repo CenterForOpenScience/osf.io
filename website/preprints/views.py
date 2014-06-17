@@ -211,7 +211,7 @@ def disciplines():
                 'Philosophy',
                 'History'
             ],
-            'Social sciences': [
+            'Social Sciences': [
                 'Economics',
                 'Political Science',
                 'Psychology'
