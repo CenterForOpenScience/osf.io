@@ -15,10 +15,10 @@
             <div class="panel-body">
                 <table data-bind="foreach: { data: discipline.children, as: 'subtopic' }" class="table table-striped">
                     <tr>
-                        <td>{{ subtopic }}</td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic }}/newest/">Newest </a></td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic }}/mostpopular/">Most Popular</a></td>
-                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic }}/search/">Find more</a></td>
+                        <td>{{ subtopic.readable }}</td>
+                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/newest/">Newest </a></td>
+                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/mostpopular/">Most Popular</a></td>
+                        <td><a href="/preprint/{{ discipline.topDisciplinceFormatted }}/{{ subtopic.stripped }}/search/">Find more</a></td>
                     </tr>
                 </table>
             </div>

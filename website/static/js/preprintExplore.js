@@ -14,8 +14,10 @@
     function Disciplince(top, kids) {
         var self = this;
         self.topDisciplince = top;
-        self.children = kids;
-        self.topDisciplinceFormatted = top.split(' ').join('-');
+        self.children = ko.utils.arrayMap(kids, function(kid) {
+            return {'stripped':kid.split(' ').join('').toLowerCase(), 'readable': kid}
+        });
+        self.topDisciplinceFormatted = top.split(' ').join('').toLowerCase();
     };
 
     function PreprintViewModel(url) {
