@@ -19,7 +19,7 @@
 ##
     <div class="col-md-9" role="main">
         <section id='newPreprints'>
-            <h3>Newest ${discipline.capitalize()} Preprints</h3>
+            <h3>Newest ${discipline} Preprints</h3>
             <ul class='project-list list-group'>
                 ${node_list(recent_preprints, prefix='newest_public', metric='date_created', url_suffix='preprint/')}
             </ul>
