@@ -174,7 +174,6 @@ def user_addons(auth, **kwargs):
     ]
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
-
     return out
 
 
