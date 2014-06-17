@@ -963,6 +963,13 @@ def make_url_map(app):
              preprint_views.preprint_explore_discipline,
              PreprintWebRenderer('preprints/explore_discipline.mako')
         )
+
+        Rule(
+            '/api/v1/preprint/disciplines/',
+            'get',
+            preprint_views.disciplines,
+            json_renderer
+        )
     ])
 
     # API
@@ -999,8 +1006,6 @@ def make_url_map(app):
              'post',
              preprint_views.upload_preprint,
              json_renderer
-        ),
-
-    ],
-    prefix="/api/v1"
+        ),],
+                  prefix="/api/v1"
     )
