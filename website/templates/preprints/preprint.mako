@@ -99,7 +99,7 @@
                 | Last Updated:
             <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}"
                   class="date node-last-modified-date"></span>
-            | <a href="${parent_node['url']}">View Project</a>
+                <br/><a href="${parent_node['url']}">View Project</a>
                 </header>
     </div><!-- end projectScope -->
 
@@ -130,56 +130,56 @@
             </div>
 
         </div>
-            <div id="fileRendered" class="mfr mfr-file">
-                % if rendered is not None:
-                    ${rendered}
-                % else:
-                    <img src="/static/img/loading.gif">
-                % endif
+                <div id="fileRendered" class="mfr mfr-file">
+                    % if rendered is not None:
+                        ${rendered}
+                    % else:
+                        <img src="/static/img/loading.gif">
+                    % endif
+                </div>
+                <div class="col-md-4">
+                    <table class="table table-striped" id="file-version-history">
+                        ## TODO integrate into osffiles_view_file.mako and replace with a reference to that
+
+                        <thead>
+                        <tr>
+                            <th>Version</th>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th colspan=2>Downloads</th>
+                        </tr>
+                        </thead>
+
+                        <tbody>
+                        <!-- ko if: uploading-->
+                        <tr>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                            <td>...</td>
+                        </tr>
+                        <!-- /ko -->
+
+                        <!-- ko foreach: versions -->
+                        <tr>
+                            <td>{{number}}</td>
+                            <td>{{date_uploaded}}</td>
+                            <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                            ## download count; 'Downloads' column 1
+
+                            <td>{{total}}</td>
+                            <td>
+                                <a href="{{download_url}}" download="{{number}}">
+                                    <i class="icon-download-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <!-- /ko -->
+                        </tbody>
+
+                    </table>
             </div>
-            <div class="col-md-4">
-                <table class="table table-striped" id="file-version-history">
-                    ## TODO integrate into osffiles_view_file.mako and replace with a reference to that
-
-                    <thead>
-                    <tr>
-                        <th>Version</th>
-                        <th>Date</th>
-                        <th>User</th>
-                        <th colspan=2>Downloads</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    <!-- ko if: uploading-->
-                    <tr>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                        <td>...</td>
-                    </tr>
-                    <!-- /ko -->
-
-                    <!-- ko foreach: versions -->
-                    <tr>
-                        <td>{{number}}</td>
-                        <td>{{date_uploaded}}</td>
-                        <td><a href="{{committer_url}}">{{committer_name}}</a></td>
-                        ## download count; 'Downloads' column 1
-                        <td>{{total}}</td>
-                        <td>
-                            <a href="{{download_url}}" download="{{number}}">
-                                <i class="icon-download-alt"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    <!-- /ko -->
-                    </tbody>
-
-                </table>
-            </div>
-
 
 
         </div>

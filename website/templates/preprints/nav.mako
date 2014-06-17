@@ -7,7 +7,7 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a class="navbar-brand visible-lg visible-md" href="/preprint/">OSF Preprints<span class="brand-version"> ALPHA</span></a>
+        <a class="navbar-brand visible-lg visible-md" href="/preprint/">Open Preprints, Open Science<span class="brand-version"> ALPHA</span></a>
         <a class="navbar-brand visible-sm visible-xs" href="/preprint/">OSF</a>
       </div><!-- end navbar-header -->
 

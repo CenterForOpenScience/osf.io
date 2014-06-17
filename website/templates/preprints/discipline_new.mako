@@ -29,8 +29,8 @@
             %for node in recent_preprints:
                 {
                     id: '${node._id}',
-                    nodeUrl: '${node.url}preprint/',
-                    title: '${node.title}',
+                    nodeUrl: "${node.url}preprint/",
+                    title: "${node.title}",
                     author: [
                         %for author in node.contributors:
                             '${author.family_name}',
