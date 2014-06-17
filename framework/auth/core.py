@@ -9,18 +9,18 @@ import pytz
 import bson
 
 from modularodm.validators import URLValidator
-from modularodm.exceptions import (
-    ValidationError, ValidationValueError, ValidationTypeError
-)
+from modularodm.exceptions import ValidationValueError
 
+from framework import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework import fields, Q, analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
-from website import settings, filters, security
 from framework.exceptions import PermissionsError
+
+from website import settings, filters, security
 
 
 name_formatters = {
@@ -64,6 +64,96 @@ def validate_personal_site(value):
 
 def validate_social(value):
     validate_personal_site(value.get('personal_site'))
+
+
+def get_current_username():
+    return session.data.get('auth_user_username')
+
+
+def get_current_user_id():
+    return session.data.get('auth_user_id')
+
+
+def get_current_user():
+    uid = session._get_current_object() and session.data.get('auth_user_id')
+    return User.load(uid)
+
+
+# TODO(sloria): This belongs in website.project
+def get_current_node():
+    from website.models import Node
+    nid = session.data.get('auth_node_id')
+    if nid:
+        return Node.load(nid)
+
+
+def get_api_key():
+    # Hack: Avoid circular import
+    from website.project.model import ApiKey
+    api_key = session.data.get('auth_api_key')
+    return ApiKey.load(api_key)
+
+
+# TODO: This should be a class method of User
+def get_user(id=None, username=None, password=None, verification_key=None):
+    # tag: database
+    query_list = []
+    if id:
+        query_list.append(Q('_id', 'eq', id))
+    if username:
+        username = username.strip().lower()
+        query_list.append(Q('username', 'eq', username))
+    if password:
+        password = password.strip()
+        try:
+            query = query_list[0]
+            for query_part in query_list[1:]:
+                query = query & query_part
+            user = User.find_one(query)
+        except Exception as err:
+            logging.error(err)
+            user = None
+        if user and not user.check_password(password):
+            return False
+        return user
+    if verification_key:
+        query_list.append(Q('verification_key', 'eq', verification_key))
+    try:
+        query = query_list[0]
+        for query_part in query_list[1:]:
+            query = query & query_part
+        user = User.find_one(query)
+        return user
+    except Exception as err:
+        logging.error(err)
+        return None
+
+
+class Auth(object):
+
+    def __init__(self, user=None, api_key=None, api_node=None,
+                 private_key=None):
+        self.user = user
+        self.api_key = api_key
+        self.api_node = api_node
+        self.private_key = private_key
+
+    @property
+    def logged_in(self):
+        return self.user is not None
+
+    @classmethod
+    def from_kwargs(cls, request_args, kwargs):
+        user = request_args.get('user') or kwargs.get('user') or get_current_user()
+        api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
+        api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
+        private_key = request_args.get('key')
+        return cls(
+            user=user,
+            api_key=api_key,
+            api_node=api_node,
+            private_key=private_key,
+        )
 
 
 class User(GuidStoredObject, AddonModelMixin):
@@ -577,8 +667,10 @@ class User(GuidStoredObject, AddonModelMixin):
         (starting at UTC 00:00).
         '''
         utcnow = dt.datetime.utcnow()
-        midnight = dt.datetime(utcnow.year, utcnow.month, utcnow.day,
-                            0, 0, 0, tzinfo=pytz.utc)
+        midnight = dt.datetime(
+            utcnow.year, utcnow.month, utcnow.day,
+            0, 0, 0, tzinfo=pytz.utc
+        )
         return self.get_recent_log_ids(since=midnight)
 
     def merge_user(self, user, save=False):
@@ -588,19 +680,24 @@ class User(GuidStoredObject, AddonModelMixin):
         :param user: A User object to be merged.
         '''
         # Inherit emails
-        # TODO: Shouldn't import inside function call
-        from .decorators import Auth
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
         for node in user.node__contributed:
-            node.add_contributor(contributor=self, log=False)
+            node.add_contributor(
+                contributor=self,
+                permissions=node.get_permissions(user),
+                visible=node.is_visible_contributor(user),
+                log=False,
+            )
             try:
                 node.remove_contributor(
-                    contributor=user, auth=Auth(user=self), log=False
+                    contributor=user,
+                    auth=Auth(user=self),
+                    log=False,
                 )
             except ValueError:
                 logger.error('Contributor {0} not in list on node {1}'.format(
-                    user, node
+                    user._id, node._id
                 ))
             node.save()
         # Inherits projects the user created

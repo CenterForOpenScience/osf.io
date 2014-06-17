@@ -2,8 +2,8 @@
 '''Consolidates all necessary models from the framework and website packages.
 '''
 
+from framework.auth import User
 from framework.guid.model import Guid
-from framework.auth.model import User
 from framework.sessions.model import Session
 
 from website.project.model import (

@@ -7,7 +7,7 @@ from github3.repos import Repository
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
 
