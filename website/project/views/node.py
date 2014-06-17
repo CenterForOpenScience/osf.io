@@ -720,7 +720,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'can_view': True,
             'can_edit': node.can_edit(auth),
             'primary_id': node._id,
-            'url': node.url + 'preprint/' if node.category == 'preprint' else '',
+            'url': node.url,
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,

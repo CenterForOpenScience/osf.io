@@ -99,6 +99,7 @@
                 | Last Updated:
             <span data-bind="text: dateModified.local, tooltip: {title: dateModified.utc}"
                   class="date node-last-modified-date"></span>
+            | <a href="${parent_node['url']}">View Project</a>
                 </header>
     </div><!-- end projectScope -->
 
