@@ -1572,3 +1572,14 @@ a {
         display:none
     }
 }
+
+#duplicateModal h4 {
+    line-height: 34px;
+}
+
+.well-inline {
+    padding:6px 12px;
+    line-height:20px;
+    font-weight:normal;
+    font-size:14px;
+}
