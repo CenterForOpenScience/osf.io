@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+<%inherit file="preprints/base.mako"/>
 <%def name="title()">Error</%def>
 <%def name="content()">
 <div class="container">
