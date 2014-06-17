@@ -875,6 +875,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'ua': None,
             'non_ua': None,
             'addons_enabled': node.get_addon_names(),
+            'is_public': node.is_public
         })
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
@@ -1223,7 +1224,7 @@ def fork_pointer(**kwargs):
 
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
-    if len(node.contributors) > 1:
+    if len(node.visiblecontributors) > 1:
         rv += ' et al.'
     return rv
 

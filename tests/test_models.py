@@ -15,9 +15,8 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User
+from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
-from framework.auth.decorators import Auth
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
@@ -150,13 +149,13 @@ class TestUser(OsfTestCase):
         parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
-    @mock.patch('framework.auth.model.User.update_search')
+    @mock.patch('framework.auth.core.User.update_search')
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
         assert_false(update_search.called)
 
-    @mock.patch('framework.auth.model.User.update_search')
+    @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
         u = UserFactory(is_registered=True)
         assert_true(update_search.called)
@@ -168,8 +167,11 @@ class TestUser(OsfTestCase):
             dupe.save()
 
     def test_user_with_no_password_is_not_active(self):
-        u = User(username=fake.email(),
-            fullname='Freddie Mercury', is_registered=True)
+        u = User(
+            username=fake.email(),
+            fullname='Freddie Mercury',
+            is_registered=True,
+        )
         u.save()
         assert_false(u.is_active())
 
@@ -276,6 +278,7 @@ class TestUser(OsfTestCase):
 
     def test_factory(self):
         # Clear users
+        Node.remove()
         User.remove()
         user = UserFactory()
         assert_equal(User.find().count(), 1)
@@ -504,7 +507,7 @@ class TestMergingUsers(OsfTestCase):
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
-        project.contributors.append(self.dupe)
+        project.add_contributor(self.dupe)
         project.save()
         self._merge_dupe()
         assert_true(project.is_contributor(self.master))
@@ -1363,8 +1366,8 @@ class TestProject(OsfTestCase):
     def test_manage_contributors_new_contributor(self):
         user = UserFactory()
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1385,8 +1388,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1401,8 +1404,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': unregistered._id, 'permission': 'admin'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': unregistered._id, 'permission': 'admin', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1536,8 +1539,8 @@ class TestProject(OsfTestCase):
         user2 = UserFactory()
         self.project.add_contributors(
             [
-                {'user': user1, 'permissions': ['read', 'write', 'admin']},
-                {'user': user2, 'permissions': ['read', 'write']}
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': False}
             ],
             auth=self.consolidate_auth
         )
@@ -1549,6 +1552,8 @@ class TestProject(OsfTestCase):
         )
         assert_in(user1._id, self.project.permissions)
         assert_in(user2._id, self.project.permissions)
+        assert_in(user1._id, self.project.visible_contributor_ids)
+        assert_not_in(user2._id, self.project.visible_contributor_ids)
         assert_equal(self.project.permissions[user1._id], ['read', 'write', 'admin'])
         assert_equal(self.project.permissions[user2._id], ['read', 'write'])
         assert_equal(
@@ -1691,7 +1696,7 @@ class TestTemplateNode(OsfTestCase):
         # check that all children were copied
         assert_equal(
             [x.title for x in new.nodes],
-            [self._default_title(x) for x in self.project.nodes],
+            [x.title for x in self.project.nodes],
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -1799,8 +1804,8 @@ class TestTemplateNode(OsfTestCase):
 
         # check that all children were copied
         assert_equal(
-            [x.title for x in new.nodes],
-            [self._default_title(x) for x in visible_nodes]
+            set(x.template_node._id for x in new.nodes),
+            set(x._id for x in visible_nodes),
         )
         # ensure all child nodes were actually copied, instead of moved
         assert_true({x._primary_key for x in new.nodes}.isdisjoint(

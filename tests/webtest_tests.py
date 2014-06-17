@@ -10,8 +10,7 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework import Q
-from framework.auth.model import User
-from framework.auth.decorators import Auth
+from framework.auth import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,

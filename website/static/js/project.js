@@ -192,7 +192,7 @@ NodeActions.openCloseNode = function(nodeId){
                 $logs.attr('data-uri'),
                 {count: 3},
                 function(response) {
-                    var log = new LogFeed($logs, response.logs);
+                    var log = new window.LogFeed($logs, response.logs);
                     $logs.addClass('served');
                 }
             );
@@ -209,14 +209,22 @@ $(document).ready(function() {
 
     ko.punches.enableAll();
 
-    var permissionInfoHtml = '<ul>' +
-            '<li><strong>Read</strong>: View project content and comment</li>' +
-            '<li><strong>Read + Write</strong>: Read privileges plus add and configure components; add and edit content</li>' +
-            '<li><strong>Administrator</strong>: Read and write privileges; manage contributors; delete and register project; public-private settings</li>' +
-        '</ul>';
+    var permissionInfoHtml = '<dl>' +
+            '<dt>Read</dt><dd>View project content and comment</dd>' +
+            '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
+            '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '</dl>';
 
     $('.permission-info').attr(
         'data-content', permissionInfoHtml
+    ).popover();
+
+    var visibilityInfoHtml = 'Only visible contributors will be displayed ' +
+        'in the Contributors list and in project citations. Non-visible ' +
+        'contributors can read and modify the project as normal.';
+
+    $('.visibility-info').attr(
+        'data-content', visibilityInfoHtml
     ).popover();
 
     ////////////////////

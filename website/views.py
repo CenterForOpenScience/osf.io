@@ -8,11 +8,10 @@ from modularodm import Q
 from framework.exceptions import HTTPError
 from framework.forms import utils
 from framework.routing import proxy_url
-from framework.auth import get_current_user
-from framework.auth.decorators import collect_auth, must_be_logged_in, Auth
+from framework.auth import Auth, get_current_user
+from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm,
-                                  SetEmailAndPasswordForm)
+                                  ForgotPasswordForm, ResetPasswordForm)
 
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus

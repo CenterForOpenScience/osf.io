@@ -11,7 +11,7 @@ from github3.repos.branch import Branch
 from framework.exceptions import HTTPError
 import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
