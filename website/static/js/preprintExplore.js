@@ -25,10 +25,13 @@
         self.url = url;
         self.disciplines = ko.observableArray([]);
 
+        self.fetched = ko.observable(false);
+
         function onFetchSuccess(response) {
             self.disciplines(ko.utils.arrayMap(Object.keys(response.disciplines), function(key) {
                 return new Disciplince(key, response.disciplines[key]);
             }));
+            self.fetched(true);
         }
 
         function onFetchError() {
