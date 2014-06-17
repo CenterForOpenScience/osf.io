@@ -51,6 +51,8 @@
 
         self.$root = $root;
         $.extend(self, data);
+        self.collapse = "Collapse";
+        self.collapseNode = ko.observable(false);
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
         self.linkUrl = ko.computed(function(){
             return self.$root.nodeUrl() + "?view_only=" + data.key
@@ -63,6 +65,13 @@
         self.displayAllNodes = function(){
             self.nodesList(data.nodes);
             self.moreNode(false);
+            self.collapseNode(true);
+        }
+
+        self.displayTwoNodes = function(){
+            self.nodesList(data.nodes.slice(0,2));
+            self.moreNode(true);
+            self.collapseNode(false);
         }
     }
 

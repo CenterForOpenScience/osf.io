@@ -104,6 +104,7 @@
                                    </li>
                                </ul>
                                <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
+                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayTwoNodes"></button>
                         </td>
 
                         <td class="col-sm-2">
