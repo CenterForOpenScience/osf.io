@@ -550,7 +550,7 @@ def _view_project(node, auth, primary=False):
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
-            'link': auth.private_key or request.args.get('view_only', '').strip('/'),
+            'link': auth.private_key or request.args.get('key', '').strip('/'),
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
@@ -798,24 +798,21 @@ def get_registrations(**kwargs):
 
 @must_be_valid_project # returns project
 @must_have_permission('admin')
-def project_generate_private_link_post(*args, **kwargs):
+def project_generate_private_link_post(auth, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    name = request.json.get('name', '')
+    note = request.json.get('note', '')
     nodes=[]
 
     if node_to_use._id not in node_ids:
         node_ids.insert(0, node_to_use._id)
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        nodes.append(node)
+    nodes.append(Node.load(node_id) for node_id in node_ids)
 
     new_private_link(
-        name=name, user=auth.user, nodes=nodes
+        note =note, user=auth.user, nodes=nodes
     )
 
     return {'status': 'success'}, 201
