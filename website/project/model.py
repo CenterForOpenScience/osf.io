@@ -2365,11 +2365,9 @@ class PrivateLink(StoredObject):
     creator = fields.ForeignField('user', backref='created')
 
     @property
-    def node_id_lists(self):
-        node_id_lists=[]
-        for node in self.nodes:
-            node_id_lists.append(node._id)
-        return node_id_lists
+    def node_ids(self):
+        node_ids = [node._id for node in self.nodes]
+        return node_ids
 
     def node_scale(self, node):
         if node.parent_id not in self.node_id_lists:
