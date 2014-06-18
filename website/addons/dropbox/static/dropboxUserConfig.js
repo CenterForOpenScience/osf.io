@@ -86,39 +86,6 @@
                 }
             });
         };
-
-//        /** Pop up confirm dialog for removing addon access for one project */
-//        self.removeNodeAuth = function(currNode) {
-//            bootbox.confirm({
-//                title: 'Deauthorize Dropbox for this project?',
-//                message: 'Are you sure you want to remove this Dropbox authorization?',
-//                callback: function(confirmed) {
-//                    if (confirmed) {
-//                        return sendDeauthorizeNode(currNode);
-//                    }
-//                }
-//            });
-//        };
-//
-//        /** Send DELETE request to remove addon auth from a project */
-//        function sendDeauthorizeNode(currNode) {
-//            var api_url = currNode['url'] + 'dropbox/config/'
-//
-//
-//            return $.ajax({
-//                url: api_url,
-//                type: 'DELETE',
-//                success: function() {
-//                    self.nodes.remove(currNode)
-//                },
-//                error: function() {
-//                    self.changeMessage('Could not deauthorize because of an error. Please try again later.',
-//                        'text-danger');
-//
-//                }
-//            });
-//        }
-
     }
 
     function DropboxUserConfig(selector, url) {

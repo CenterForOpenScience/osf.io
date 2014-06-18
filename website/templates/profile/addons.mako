@@ -76,27 +76,6 @@
 
                     % endfor
                 </div>
-##                <div id='addonPermissionsScope' class='addon-settings scripted'>
-##                    <div data-bind="foreach: addons">
-##
-##                        <div data-bind="id: addonFullTitle" class="scrolling-table">
-##                            <div style="margin: 5px"><h3 data-bind="text: addonFullTitle"></h3></div>
-##                            <table class="table table-hover">
-##                                <tbody data-bind="foreach: nodes">
-##                                    <tr>
-##                                        <td>
-##                                            <a data-bind="attr: { href: url, title: title }, text: title"></a>
-##                                        </td>
-##                                        <td>
-##                                            <a data-bind="click: removeNodeAuth" class="text-danger pull-right">Deauthorize</a>
-##                                        </td>
-##                                    </tr>
-##                                </tbody>
-##                                <!-- /ko -->
-##                            </table>
-##                        </div>
-##                    </div>
-##                </div>
             </div>
             % endif
     </div>
@@ -174,14 +153,6 @@
         return false;
 
     });
-##
-##    $script(['/static/js/addonPermissions.js'], function() {
-##        // Endpoint for dropbox user settings
-##        var url = '/api/v1/settings/addon_config/';
-##        // Start up the Dropbox Config manager
-##        var addon = new AddonUserConfig(url);
-##        $.osf.applyBindings(addon, '#addonPermissionsScope');
-##    });
 
 </script>
 

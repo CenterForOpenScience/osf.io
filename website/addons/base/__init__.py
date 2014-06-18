@@ -229,7 +229,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
-            # 'deauth_node_url': self.deauth_node_url,
             'nodes': [{'title': node.title, '_id': node._id, 'url': node.url} for node in self.nodes]
         })
         return ret
