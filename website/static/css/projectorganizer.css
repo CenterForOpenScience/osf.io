@@ -14,6 +14,14 @@
     /*background-color: #fefab4;*/
 }
 
+.project-organizer-dand {
+	display: block;
+	background: blue;
+	opacity: 0.15;
+	filter: alpha(opacity=15);
+	cursor: move;
+}
+
 .hg-cell.selected {
     background-color: #fefab4;
 }
