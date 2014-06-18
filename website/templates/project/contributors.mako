@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-md-12">
-        <img src="/static/img/hgrid/project.png" >
+        
         <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
                 <div class="text-align">Drag and drop contributors to change listing order.</div>
