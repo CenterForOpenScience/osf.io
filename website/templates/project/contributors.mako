@@ -88,33 +88,32 @@
 
                 </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
-                        <tr>
-                        <td class="col-sm-3">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                <span class="icon-copy" ></span>
-                            </button>
-                            <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
-                        </td>
-                        <td class="col-sm-4" >
+                    <tr>
+                    <td class="col-sm-3">
+                        <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
+                                data-bind="attr: {data-clipboard-text: linkUrl}" >
+                            <span class="icon-copy" ></span>
+                        </button>
+                        <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
+                    </td>
+                    <td class="col-sm-4">
+                       <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
+                           <li data-bind="style: {margin-left: $data.scale}">
+                              <a data-bind="text: $data.title, attr.href: $data.url"></a>
+                           </li>
+                       </ul>
+                       <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
+                       <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
+                    </td>
 
-                               <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
-                                   <li data-bind="style:{margin-left: $data.scale}">
-                                      <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
-                                   </li>
-                               </ul>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayTwoNodes"></button>
-                        </td>
-
-                        <td class="col-sm-2">
-                            <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
-                        </td>
-                        <td class="col-sm-2" data-bind="text: creator"></td>
-                        <td class="col-sm-1">
-                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
-                        </td>
-                        </tr>
+                    <td class="col-sm-2">
+                        <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
+                    </td>
+                    <td class="col-sm-2" data-bind="text: creator"></td>
+                    <td class="col-sm-1">
+                        <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
+                    </td>
+                    </tr>
                 </tbody>
 
             </table>

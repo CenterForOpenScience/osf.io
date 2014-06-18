@@ -53,8 +53,6 @@
         // Initial fetch of data
         fetch();
 
-
-
         self.cantSelectNodes = function() {
             return self.nodesToChange().length == self.nodes().length;
         };
