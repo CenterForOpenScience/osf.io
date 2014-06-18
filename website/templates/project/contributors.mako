@@ -209,7 +209,7 @@
 
     $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
         // Controls the modal
-        var configUrl = nodeApiUrl + 'private_link/config/';
+        var configUrl = nodeApiUrl + 'get_editable_children/';
         var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
         var tableUrl = nodeApiUrl + 'private_link/table/';
