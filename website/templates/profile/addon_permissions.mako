@@ -15,7 +15,6 @@
     <script>
         $('.${addon_short_name}-remove-token').on('click', function(event) {
             var $elm = $(event.target);
-            console.log('/project/${node['_id']}/${addon_short_name}/config/')
             bootbox.confirm('Are you sure you want to remove the ${addon_full_name} authorization from this project?', function(confirm) {
                 if (confirm) {
                     $.ajax({
