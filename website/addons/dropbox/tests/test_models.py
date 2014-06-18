@@ -4,7 +4,7 @@ import os
 from nose.tools import *  # PEP8 asserts
 from slugify import slugify
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )

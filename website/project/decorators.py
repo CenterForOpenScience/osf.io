@@ -5,8 +5,7 @@ import logging
 from furl import furl
 from framework import request, redirect, status
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user, get_api_key
-from framework.auth.decorators import Auth
+from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
 

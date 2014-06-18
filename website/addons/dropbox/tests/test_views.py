@@ -10,7 +10,7 @@ import datetime
 from werkzeug import FileStorage
 from webtest_plus import TestApp
 from webtest import Upload
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
 from tests.base import OsfTestCase, assert_is_redirect
