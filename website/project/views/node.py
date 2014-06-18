@@ -810,11 +810,11 @@ def project_generate_private_link_post(auth, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    new_private_link(
-        name =name, user=auth.user, nodes=nodes
+    new_link = new_private_link(
+        name=name, user=auth.user, nodes=nodes
     )
 
-    return {'status': 'success'}, 201
+    return new_link
 
 
 def _serialize_node_search(node):

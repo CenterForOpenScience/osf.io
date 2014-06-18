@@ -81,9 +81,7 @@
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function(response) {
-                        if (response.status === 'success') {
-                            window.location.reload();
-                        }
+                        window.location.reload();
                     }
                 }
             )
