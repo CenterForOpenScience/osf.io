@@ -166,15 +166,12 @@ def mailserver(port=1025):
 
 
 @task
-def requirements(all=False, addons=False):
+def requirements(all=False):
     '''Install dependencies.'''
+    run("pip install --upgrade -r dev-requirements.txt", pty=True)
     if all:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
         addon_requirements()
-    elif addons:
-        addon_requirements()
-    else:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        mfr_requirements()
 
 
 @task
