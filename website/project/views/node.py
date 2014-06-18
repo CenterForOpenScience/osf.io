@@ -1005,9 +1005,10 @@ def search_node(**kwargs):
     title_query = Q('title', 'icontains', query)
     not_deleted_query = Q('is_deleted', 'eq', False)
     visibility_query = Q('contributors', 'eq', auth.user)
+    no_folders_query = Q('is_folder', 'eq', False)
     if include_public:
         visibility_query = visibility_query | Q('is_public', 'eq', True)
-    odm_query = title_query & not_deleted_query & visibility_query
+    odm_query = title_query & not_deleted_query & visibility_query & no_folders_query
 
     # Exclude current node from query if provided
     if node:
