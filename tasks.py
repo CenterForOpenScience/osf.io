@@ -220,7 +220,7 @@ def test_all():
     test_addons()
 
 @task
-def addon_requirements(mfr=1):
+def addon_requirements(mfr=False):
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
