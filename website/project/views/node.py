@@ -620,30 +620,6 @@ def _get_children(node, auth, indent=0):
 
     return children
 
-@must_be_valid_project # returns project
-@must_have_permission('admin')
-def private_link_config(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-
-    if not node.can_edit(auth):
-        return
-    children = _get_children(node, auth)
-
-    parent = node.parent_node
-    rv = {
-        'result': {
-            'node': {
-                'title': node.title,
-                'parentId': parent._primary_key if parent else '',
-                'parentTitle': parent.title if parent else '',
-                },
-            'children': children,
-            }
-    }
-
-    return rv
-
 
 @must_be_valid_project # returns project
 @must_have_permission('admin')
@@ -662,15 +638,18 @@ def private_link_table(**kwargs):
 @must_be_valid_project
 def get_editable_children(**kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
-
-    if not node_to_use.can_edit(auth):
+    
+    if not node.can_edit(auth):
         return
 
-    children = _get_children(node_to_use, auth)
+    children = _get_children(node, auth)
 
-    return {'children': children}
+    return {
+        'node': {'title': node.title,},
+        'children': children,
+     }
 
 
 def _get_user_activity(node, auth, rescale_ratio):
