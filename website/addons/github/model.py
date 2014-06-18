@@ -87,6 +87,11 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             node_settings.user_settings = None
             node_settings.save()
 
+    #TODO(asmacdo) deauth_node_url
+    def deauth_url(self, pid):
+        return 'project/{0}/github/oauth/'.format(pid)
+
+
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()

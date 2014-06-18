@@ -220,24 +220,27 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def get_backref(self, schema, backref_name):
         return schema + "__" + backref_name
 
-    #TODO(asmacdo) list comprehend this
+    def deauth_node_url(self, pid):
+        """
+        param: project id of the node
+        return: the api url to remove a node's authorization for an addon
+        """
+        return NotImplementedError
+
     @property
     def nodes(self):
+        """Create a list of node objects"""
+
         schema = self.config.settings_models['node']._name
-        ret = []
         nodes_backref = self.get_backref(schema, "authorized")
 
-        for node in getattr(self, nodes_backref):
-            ret.append(node.owner)
-
-        return ret
-
+        return [node.owner for node in getattr(self, nodes_backref)]
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
-            'urls': self.urls,
-            'nodes': [{'title': node.title, '_id': node._id, 'api_url': node.api_url, 'url': node.url} for node in self.nodes]
+            'deauth_node_url': self.deauth_node_url,
+            'nodes': [{'title': node.title, '_id': node._id, 'url': node.url} for node in self.nodes]
         })
         return ret
 
