@@ -122,7 +122,7 @@ class ProjectFactory(AbstractNodeFactory):
 
 
 class NodeFactory(AbstractNodeFactory):
-    category = 'hypothesis'
+    category = 'preprint'
     project = SubFactory(ProjectFactory)
 
 

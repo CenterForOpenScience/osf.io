@@ -17,7 +17,7 @@
               %if user_name:
                   <li><a rel="tooltip" title="My Uploaded Preprints" href="/preprint/dashboard/">My Preprints</a></li>
               %endif
-              <li><a href="/preprint">All Preprints</a></li>
+              <li><a href="/preprint">Explore</a></li>
               <li><a href="/">OSF</a></li>
           </ul><!-- end dropdown-menu -->
           </li><!-- end dropdown -->
