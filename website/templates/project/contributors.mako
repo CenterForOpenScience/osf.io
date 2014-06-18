@@ -212,7 +212,7 @@
         var configUrl = nodeApiUrl + 'get_editable_children/';
         var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
-        var tableUrl = nodeApiUrl + 'private_link/table/';
+        var tableUrl = nodeApiUrl + 'private_link/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
     </script>
