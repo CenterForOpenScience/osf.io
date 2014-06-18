@@ -723,7 +723,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/private_link/config/',
             '/project/<pid>/node/<nid>/private_link/config/',
-        ], 'get', project_views.node.private_link_config, json_renderer),
+        ], 'get', project_views.node.get_editable_children, json_renderer),
 
         Rule([
             '/project/<pid>/private_link/table/',
