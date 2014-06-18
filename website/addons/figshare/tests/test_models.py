@@ -5,7 +5,7 @@ import website.app
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.figshare import settings as figshare_settings
 
 app = website.app.init_app(

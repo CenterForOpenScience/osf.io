@@ -7,7 +7,7 @@ from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory)
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.util import rubeus
 
 

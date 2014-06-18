@@ -3,10 +3,7 @@ import os
 
 from nose.tools import *
 
-from framework.auth.decorators import Auth
-from website.addons.badges.model import (
-    BadgesUserSettings, BadgesNodeSettings, Badge, BadgeAssertion
-)
+from website.addons.badges.model import BadgeAssertion
 from utils import *
 from tests.base import OsfTestCase, fake, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory

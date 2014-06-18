@@ -3,8 +3,8 @@ import httplib as http
 import logging
 
 from framework import request
-from framework.auth import get_current_user, get_api_key, get_current_node
-from framework.auth.decorators import collect_auth, Auth
+from framework.auth import Auth, get_current_user, get_api_key, get_current_node
+from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 
 from website.project.model import NodeLog

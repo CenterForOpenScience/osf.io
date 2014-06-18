@@ -260,8 +260,12 @@ def encryption(owner=None):
     > sudo env/bin/invoke encryption --owner www-data
 
     """
+    if not settings.USE_GNUPG:
+        print('GnuPG is not enabled. No GnuPG key will be generated.')
+        return
+
     import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPGHOME)
+    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME)
     keys = gpg.list_keys()
     if keys:
         print('Existing GnuPG key found')
@@ -270,7 +274,7 @@ def encryption(owner=None):
     input_data = gpg.gen_key_input(name_real='OSF Generated Key')
     gpg.gen_key(input_data)
     if owner:
-        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPGHOME))
+        run('sudo chown -R {0} {1}'.format(owner, settings.GNUPG_HOME))
 
 
 @task
@@ -308,17 +312,22 @@ def copy_settings(addons=False):
     if addons:
         copy_addon_settings()
 
+
 @task
-def setup():
-    """Creates local settings, installs requirements, and imports encryption key"""
-    copy_settings(addons=True)
+def packages():
     if platform.system() == 'Darwin':
         print('Running brew bundle')
         run('brew bundle')
     elif platform.system() == 'Linux':
         # TODO: Write a script similar to brew bundle for Ubuntu
-        # run('sudo apt-get install [list of packages]')
+        # e.g., run('sudo apt-get install [list of packages]')
         pass
-    print('Installing requirements')
+
+
+@task
+def setup():
+    """Creates local settings, installs requirements, and generates encryption key"""
+    copy_settings(addons=True)
+    packages()
     requirements(all=True)
     encryption()
