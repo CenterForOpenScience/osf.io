@@ -152,6 +152,8 @@
         return self;
     };
 
+    var unloadFunction = function() {};
+
     var BaseViewModel = function(urls, modes) {
 
         var self = this;
@@ -161,6 +163,33 @@
         self.viewable = $.inArray('view', modes) >= 0;
         self.editable = ko.observable(false);
         self.mode = ko.observable(self.viewable ? 'view' : 'edit');
+
+        self.original = ko.observable();
+        self.tracked = [];  // Define for each view model that inherits
+
+        self.setOriginal = function() {
+            self.original(ko.toJSON(self.tracked));
+        };
+
+        self.dirty = ko.computed(function() {
+            return ko.toJSON(self.tracked) !== self.original();
+        });
+
+        // Append dirty check for this view model to existing models.
+        unloadFunction = (function() {
+            var cachedUnloadFunction = unloadFunction;
+            return function() {
+                var result = cachedUnloadFunction();
+                if (result != null){
+                    return result;
+                }
+                if (self.dirty()) {
+                    return 'There are unsaved changes to your settings.';
+                }
+            }
+        }());
+
+        window.onbeforeunload = unloadFunction;
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
@@ -209,7 +238,7 @@
             type: 'GET',
             url: this.urls.crud,
             dataType: 'json',
-            success: this.unserialize.bind(this),
+            success: [this.unserialize.bind(this), this.setOriginal],
             error: this.handleError.bind(this, 'Could not fetch data')
         });
     };
@@ -235,7 +264,7 @@
             data: this.serialize(),
             contentType: 'application/json',
             dataType: 'json',
-            success: this.handleSuccess.bind(this),
+            success: [this.handleSuccess.bind(this), this.setOriginal],
             error: this.handleError.bind(this)
         });
     };
@@ -252,6 +281,14 @@
         self.middle = sanitizedObservable();
         self.family = sanitizedObservable();
         self.suffix = sanitizedObservable();
+
+        self.tracked = [
+            self.full,
+            self.given,
+            self.middle,
+            self.family,
+            self.suffix
+        ];
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -398,6 +435,16 @@
             self, 'github', 'https://github.com/'
         );
 
+        self.tracked = [
+            self.personal,
+            self.orcid,
+            self.researcherId,
+            self.twitter,
+            self.scholar,
+            self.linkedIn,
+            self.github
+        ]
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
@@ -438,6 +485,8 @@
 
         self.ContentModel = ContentModel;
         self.contents = ko.observableArray();
+
+        self.tracked = self.contents;
 
         self.canRemove = ko.computed(function() {
             return self.contents().length > 1;
