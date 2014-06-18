@@ -1054,11 +1054,14 @@ def move_pointers(auth):
     to_node_id = request.json.get('toNodeId')
     pointers_to_move = request.json.get('pointerIds')
 
-    if not (from_node_id and to_node_id and pointers_to_move):
+    if from_node_id is None or to_node_id is None or pointers_to_move is None:
         raise HTTPError(http.BAD_REQUEST)
 
     from_node = Node.load(from_node_id)
     to_node = Node.load(to_node_id)
+
+    if to_node is None or from_node is None:
+        raise HTTPError(http.BAD_REQUEST)
 
     for pointer_to_move in pointers_to_move:
         pointer_id = from_node.pointing_at(pointer_to_move)

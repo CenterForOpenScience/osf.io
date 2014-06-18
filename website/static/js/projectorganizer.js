@@ -612,78 +612,79 @@
         },
         onDrop: function (event, items, folder) {
             if(typeof folder !== "undefined" && folder !== null) {
-                var theFolderID = folder.node_id;
+                var theFolderNodeID = folder.node_id;
                 var getChildrenURL = folder.apiURL + 'get_folder_pointers/';
                 var folderChildren;
-                $.getJSON(getChildrenURL, function (data) {
-                    // We can't add a pointer to a folder that already has those pointers, so cull those away
-                    folderChildren = data;
-                    var itemsToMove = [];
-                    var itemsNotToMove = [];
-                    items.forEach(function (item){
-                        if ($.inArray(item.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
-                            itemsToMove.push(item.node_id);
-                        } else if (copyMode == "move") { // Pointer is already in the folder and it's a move
+                var sampleItem = items[0];
+                var itemParentID = sampleItem.parentID;
+                var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                var itemParentNodeID = itemParent.node_id;
+                if(itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
+                    $.getJSON(getChildrenURL, function (data) {
+                        // We can't add a pointer to a folder that already has those pointers, so cull those away
+                        folderChildren = data;
+                        var itemsToMove = [];
+                        var itemsNotToMove = [];
+                        items.forEach(function (item) {
+                            if ($.inArray(item.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
+                                itemsToMove.push(item.node_id);
+                            } else if (copyMode == "move") { // Pointer is already in the folder and it's a move
 //                              We  need to make sure not to delete the folder if the item is moved to the same folder.
 //                              When we add the ability to reorganize within a folder, this will have to change.
-                            itemsNotToMove.push(item.node_id);
-                        }
-                    });
-
-                    var sampleItem = items[0];
-                    var itemParentID = sampleItem.parentID;
-                    var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                    var itemParentNodeID = itemParent.node_id;
-                    var postInfo = {
-                        "copy": {
-                            "url": "/api/v1/project/" + theFolderID + "/pointer/",
-                            "json":
-                            {
-                                nodeIds: itemsToMove
+                                itemsNotToMove.push(item.node_id);
                             }
-                        },
-                        "move":{
-                            "url": "/api/v1/pointers/move/",
-                            "json":  {
-                                pointerIds: itemsToMove,
-                                toNodeId: theFolderID,
-                                fromNodeId: itemParentNodeID
+                        });
+
+                        var postInfo = {
+                            "copy": {
+                                "url": "/api/v1/project/" + theFolderNodeID + "/pointer/",
+                                "json": {
+                                    nodeIds: itemsToMove
+                                }
+                            },
+                            "move": {
+                                "url": "/api/v1/pointers/move/",
+                                "json": {
+                                    pointerIds: itemsToMove,
+                                    toNodeId: theFolderNodeID,
+                                    fromNodeId: itemParentNodeID
+                                }
                             }
-                        }
-                    };
+                        };
 
-                    if (copyMode === "copy" || copyMode === "move") {
-                        // Remove all the duplicated pointers
-                        deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
-                        if(itemsToMove.length > 0) {
-                            var url = postInfo[copyMode]["url"];
-                            var postData = JSON.stringify(postInfo[copyMode]["json"]);
-                            var reloadedFolder = "";
-                            $.ajax({
-                                type: "POST",
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                complete: function () {
-                                    if (copyMode == "move") {
-                                        itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                                        setReloadNextFolder(itemParentID, folder.id);
-                                        draggable.grid.reloadFolder(itemParent);
+                        if (copyMode === "copy" || copyMode === "move") {
+                            // Remove all the duplicated pointers
+                            deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
+                            if (itemsToMove.length > 0) {
+                                var url = postInfo[copyMode]["url"];
+                                var postData = JSON.stringify(postInfo[copyMode]["json"]);
+                                var reloadedFolder = "";
+                                $.ajax({
+                                    type: "POST",
+                                    url: url,
+                                    data: postData,
+                                    contentType: 'application/json',
+                                    dataType: 'json',
+                                    complete: function () {
+                                        if (copyMode == "move") {
+                                            itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                                            setReloadNextFolder(itemParentID, folder.id);
+                                            draggable.grid.reloadFolder(itemParent);
 
-                                    } else {
-                                        reloadFolder(draggable.grid, folder);
+                                        } else {
+                                            reloadFolder(draggable.grid, folder);
+
+                                        }
+                                        copyMode = "none";
 
                                     }
-                                    copyMode = "none";
-
-                                }
-                            });
-                        } else { // From:  if(itemsToMove.length > 0)
-                            reloadFolder(draggable.grid, itemParent);
-                        }
-                    } // From: if (copyMode === "copy" || copyMode === "move")
-                });
+                                });
+                            } else { // From:  if(itemsToMove.length > 0)
+                                reloadFolder(draggable.grid, itemParent);
+                            }
+                        } // From: if (copyMode === "copy" || copyMode === "move")
+                    });
+                }
             }
             $('.project-organizer-dand').css('cursor', 'default');
         },
