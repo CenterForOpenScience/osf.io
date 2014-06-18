@@ -67,7 +67,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
 def figshare_deauthorize(auth, node_addon, **kwargs):
-    node_addon.deauthorize(auth=auth)
+    node_addon.deauthorize(auth=auth)   
     node_addon.save()
     return None
 
