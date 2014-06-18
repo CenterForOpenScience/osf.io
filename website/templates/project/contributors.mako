@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-md-12">
-
+        <img src="/static/img/hgrid/project.png" >
         <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
                 <div class="text-align">Drag and drop contributors to change listing order.</div>
@@ -100,7 +100,7 @@
 
                                <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
                                    <li data-bind="style:{margin-left: $data.scale}">
-                                      <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                                      <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                    </li>
                                </ul>
                                <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>

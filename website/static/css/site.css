@@ -1349,8 +1349,8 @@ div#logScope a.moreLogs{
 
 /* private_link*/
 .narrow-list{
-    padding-left:16px;
     margin: 0px 0px;
+    list-style:none;
 }
 
 #generate-private-link {
@@ -1381,6 +1381,8 @@ div#logScope a.moreLogs{
 .more-link-node{
     margin-top:5px;
 }
+
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
