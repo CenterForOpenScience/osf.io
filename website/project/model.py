@@ -2370,7 +2370,7 @@ class PrivateLink(StoredObject):
         return node_ids
 
     def node_scale(self, node):
-        if node.parent_id not in self.node_id_lists:
+        if node.parent_id not in self.node_ids:
             return 0
         else:
             return 20 + self.node_scale(node.parent_node)
