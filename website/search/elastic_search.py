@@ -120,15 +120,18 @@ def _build_query(raw_query, start=0):
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
-    if node.category == 'project':
+    component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
+    category = 'component' if node.category in component_categories else node.category
+
+    if category == 'project':
         elastic_document_id = node._id
         parent_id = None
-        category = 'registration' if node.is_registration else 'project'
+        category = 'registration' if node.is_registration else category
     else:
         try:
             elastic_document_id = node._id
             parent_id = node.parent_id
-            category = 'registration' if node.is_registration else 'component'
+            category = 'registration' if node.is_registration else category
         except IndexError:
             # Skip orphaned components
             return
