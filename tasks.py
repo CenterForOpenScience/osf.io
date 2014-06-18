@@ -116,6 +116,22 @@ def mongoshell():
 
 
 @task
+def mongodump(path=None):
+    """Back up the contents of the running OSF database"""
+    if not path:
+        print "Please specify a path with the '--path' option"
+        exit()
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongodump --db {db} --port {port} --out {path}".format(
+        db=db,
+        port=port,
+        path=path,
+        pty=True)
+    run(cmd)
+
+@task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
     run("celery worker -A framework.tasks -l {0}".format(level))
