@@ -24,11 +24,14 @@
                         success: function(response) {
 
                             $("#${addon_short_name}-${node['_id']}-auth-row").hide();
-                            console.log($("#${addon_short_name}-auth-table tr:visible").length);
                             if ($("#${addon_short_name}-auth-table tr:visible").length === 0) {
                                 $("#${addon_short_name}-header").hide();
                             }
+                        },
 
+                        error: function(response) {
+
+                            bootbox.alert('There was a problem, the project has not been deauthorized.');
                         }
                     });
                 }
@@ -36,6 +39,3 @@
         });
     </script>
 % endif
-
-
-## '/api/v1/project/<pid>/dropbox/config/',

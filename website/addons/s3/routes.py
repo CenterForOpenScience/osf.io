@@ -34,7 +34,8 @@ settings_routes = {
             [
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
-                '/project/<pid>/s3/config/'
+                '/project/<pid>/s3/config/',
+                '/project/<pid>/node/<nid>/s3/config/',
             ],
             'delete',
             views.config.s3_remove_node_settings,
