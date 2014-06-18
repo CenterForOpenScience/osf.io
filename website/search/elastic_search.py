@@ -11,6 +11,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+# These are the doc_types that exist in the search database
+TYPES = ['project', 'component', 'user', 'registration']
+
 try:
     elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
     logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
@@ -27,19 +30,15 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 def search(raw_query, start=0):
     orig_query = raw_query
 
-    # TODO(fabianvf) See if there is a better place to put this
-    # These are the doc_types that exist in the search database
-    types = ['project', 'component', 'user', 'registration']
-
-    query, filtered_query = _build_query(raw_query, types, start)
+    query, filtered_query = _build_query(raw_query, start)
 
     # Get document counts by type
     counts = {}
-    for type in types:
+    for type in TYPES:
         counts[type + 's'] = elastic.count(filtered_query, index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
-    for type in types:
+    for type in TYPES:
         if type + ':' in orig_query:
             counts['total'] = counts[type + 's']
     if not counts.get('total'):
@@ -53,7 +52,7 @@ def search(raw_query, start=0):
     return formatted_results, tags, counts
 
 
-def _build_query(raw_query, types, start=0):
+def _build_query(raw_query, start=0):
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -61,10 +60,10 @@ def _build_query(raw_query, types, start=0):
         'type': {
             'value': type
         }
-    } for type in types]
+    } for type in TYPES]
 
     # But make sure to filter by type if requested
-    for type in types:
+    for type in TYPES:
         if type + ':' in raw_query:
             type_filter = {
                 'type': {
@@ -73,7 +72,7 @@ def _build_query(raw_query, types, start=0):
             }
 
     # Cleanup string before using it to query
-    for type in types:
+    for type in TYPES:
         raw_query = raw_query.replace(type + ':', '')
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
 
