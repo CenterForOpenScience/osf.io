@@ -9,53 +9,53 @@
                 <div class="text-align">Drag and drop contributors to change listing order.</div>
             % endif
             <div id="manageContributors" class="scripted">
-                    <table id="manageContributorsTable" class="table">
-                        <thead>
-                            <tr>
-                            <th class="col-sm-6">Name</th>
-                            <th class="col-sm-3">
-                                <i class="icon-question-sign permission-info"
-                                        data-toggle="popover"
-                                        data-title="Permission Information"
-                                        data-container="body"
-                                        data-placement="left"
-                                        data-html="true"
-                                    ></i>
-                                Permissions
-                            </th>
-                            <th class="col-sm-1">
-                                <i class="icon-question-sign visibility-info"
-                                        data-toggle="popover"
-                                        data-title="Visibility Information"
-                                        data-container="body"
-                                        data-placement="left"
-                                        data-html="true"
-                                    ></i>
-                                Visibility
-                            </th>
-                            <th class="col-sm-1 col-offset-1"></th>
-                            </tr>
-                        </thead>
-                        <tr data-bind="if: canEdit">
-                            <td colspan="3">
-                                <a href="#addContributors" data-toggle="modal">
-                                    Add a contributor
-                                </a>
-                            </td>
+                <table id="manageContributorsTable" class="table">
+                    <thead>
+                        <tr>
+                        <th class="col-sm-6">Name</th>
+                        <th class="col-sm-3">
+                            <i class="icon-question-sign permission-info"
+                                    data-toggle="popover"
+                                    data-title="Permission Information"
+                                    data-container="body"
+                                    data-placement="left"
+                                    data-html="true"
+                                ></i>
+                            Permissions
+                        </th>
+                        <th class="col-sm-1">
+                            <i class="icon-question-sign visibility-info"
+                                    data-toggle="popover"
+                                    data-title="Visibility Information"
+                                    data-container="body"
+                                    data-placement="left"
+                                    data-html="true"
+                                ></i>
+                            Visibility
+                        </th>
+                        <th class="col-sm-1 col-offset-1"></th>
                         </tr>
-                        <tbody data-bind="sortable: {
-                                template: 'contribTpl',
-                                data: contributors,
-                                as: 'contributor',
-                                isEnabled: canEdit,
-                                afterRender: setupEditable,
-                                options: {
-                                    containment: '#manageContributors'
-                                }
-                            }">
-                        </tbody>
-                    </table>
-                    ${buttonGroup()}
+                    </thead>
+                    <tr data-bind="if: canEdit">
+                        <td colspan="3">
+                            <a href="#addContributors" data-toggle="modal">
+                                Add a contributor
+                            </a>
+                        </td>
+                    </tr>
+                    <tbody data-bind="sortable: {
+                            template: 'contribTpl',
+                            data: contributors,
+                            as: 'contributor',
+                            isEnabled: canEdit,
+                            afterRender: setupEditable,
+                            options: {
+                                containment: '#manageContributors'
+                            }
+                        }">
+                    </tbody>
+                </table>
+                ${buttonGroup()}
             </div>
 
 
