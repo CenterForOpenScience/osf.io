@@ -817,6 +817,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
+        if self.is_folder:
+            need_update = False
         if need_update:
             self.update_search()
 
