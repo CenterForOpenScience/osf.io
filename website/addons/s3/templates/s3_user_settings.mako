@@ -65,3 +65,5 @@
         ${parent.on_submit()}
     %endif
 </%def>
+
+<%include file="profile/addon_permissions.mako" />
