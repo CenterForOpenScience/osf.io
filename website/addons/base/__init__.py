@@ -190,9 +190,6 @@ class AddonSettingsBase(StoredObject):
         if save:
             self.save()
 
-    def urls(self):
-        raise NotImplementedError
-
     def undelete(self, save=True):
         self.deleted = False
         if save:
@@ -220,13 +217,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def get_backref(self, schema, backref_name):
         return schema + "__" + backref_name
 
-    def deauth_node_url(self, pid):
-        """
-        param: project id of the node
-        return: the api url to remove a node's authorization for an addon
-        """
-        return NotImplementedError
-
     @property
     def nodes(self):
         """Create a list of node objects"""
@@ -239,7 +229,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
-            'deauth_node_url': self.deauth_node_url,
+            # 'deauth_node_url': self.deauth_node_url,
             'nodes': [{'title': node.title, '_id': node._id, 'url': node.url} for node in self.nodes]
         })
         return ret
