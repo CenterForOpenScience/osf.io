@@ -27,26 +27,25 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 def search(raw_query, start=0):
     orig_query = raw_query
 
-    query, filtered_query = _build_query(raw_query, start)
+    # TODO(fabianvf) See if there is a better place to put this
+    # These are the doc_types that exist in the search database
+    types = ['project', 'component', 'user', 'registration']
 
-    counts = {
-        'users': elastic.count(filtered_query, index='website', doc_type='user')['count'],
-        'projects': elastic.count(filtered_query, index='website', doc_type='project')['count'],
-        'components': elastic.count(filtered_query, index='website', doc_type='component')['count'],
-        'registrations': elastic.count(filtered_query, index='website', doc_type='registration')['count']
-    }
+    query, filtered_query = _build_query(raw_query, types, start)
 
-    if 'user:' in orig_query:
-        counts['total'] = counts['users']
-    elif 'project:' in orig_query:
-        counts['total'] = counts['projects']
-    elif 'component:' in orig_query:
-        counts['total'] = counts['components']
-    elif 'registration:' in orig_query:
-        counts['total'] = counts['registrations']
-    else:
+    # Get document counts by type
+    counts = {}
+    for type in types:
+        counts[type + 's'] = elastic.count(filtered_query, index='website', doc_type=type)['count']
+
+    # Figure out which count we should display as a total
+    for type in types:
+        if type + ':' in orig_query:
+            counts['total'] = counts[type + 's']
+    if not counts.get('total'):
         counts['total'] = sum([x for x in counts.values()])
 
+    # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, counts)
@@ -54,61 +53,29 @@ def search(raw_query, start=0):
     return formatted_results, tags, counts
 
 
-def _build_query(raw_query, start=0):
+def _build_query(raw_query, types, start=0):
 
-    # Default to searching all types
-    type_filter = {
-        'or': [
-            {
-                'type': {'value': 'project'}
-            },
-            {
-                'type': {'value': 'component'}
-            },
-            {
-                'type': {'value': 'user'}
-            },
-            {
-                'type': {'value': 'registration'}
-            }
-        ]
-    }
-    raw_query = raw_query.replace('AND', ' ')
+    # Default to searching all types with a big 'or' query
+    type_filter = {}
+    type_filter['or'] = [{
+        'type': {
+            'value': type
+        }
+    } for type in types]
 
-    # TODO(fabianvf): Definitely a more elegant way to do this
-    if 'project:' in raw_query:
-        type_filter = {
-            'type': {
-                'value': 'project'
+    # But make sure to filter by type if requested
+    for type in types:
+        if type + ':' in raw_query:
+            type_filter = {
+                'type': {
+                    'value': type
+                }
             }
-        }
-    elif 'component:' in raw_query:
-        type_filter = {
-            'type': {
-                'value': 'component'
-            }
-        }
-    elif 'user:' in raw_query:
-        type_filter = {
-            'type': {
-                'value': 'user'
-            }
-        }
-    elif 'registration:' in raw_query:
-        type_filter = {
-            'type': {
-                'value': 'registration'
-            }
-        }
 
-    raw_query = raw_query.replace('user:', '')
-    raw_query = raw_query.replace('project:', '')
-    raw_query = raw_query.replace('component:', '')
-    raw_query = raw_query.replace('registration:', '')
-    raw_query = raw_query.replace('(', '')
-    raw_query = raw_query.replace(')', '')
-    raw_query = raw_query.replace('\\', '')
-    raw_query = raw_query.replace('"', '')
+    # Cleanup string before using it to query
+    for type in types:
+        raw_query = raw_query.replace(type + ':', '')
+    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
 
     # If the search contains wildcards, make them mean something
     if '*' in raw_query:
