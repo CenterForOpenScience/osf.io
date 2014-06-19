@@ -2,6 +2,7 @@ import os
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
+from framework.auth.decorators import Auth
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -73,6 +74,40 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     @property
     def linked_content(self):
         return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
+
+    def set_user_auth(self, user_settings):       
+        node = self.owner
+        self.user_settings = user_settings
+        self.save()
+        
+        node.add_log(
+            action='figshare_node_authorized',
+            auth=Auth(user_settings.owner),
+            params={
+                'project': node.parent_id,
+                'node': node._primary_key,
+            }
+        )
+
+    def deauthorize(self, auth, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        self.user_settings = None
+        self.figshare_id = None
+        self.figshare_type = None
+        self.figshare_title = None        
+        self.save()
+
+        if add_log:
+            node = self.owner
+            self.owner.add_log(
+            action='figshare_node_deauthorized',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+            },
+            auth=auth,
+        )
+        
 
     def update_fields(self, fields, node, auth):        
         updated = False
