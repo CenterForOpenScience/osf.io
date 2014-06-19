@@ -97,7 +97,7 @@
                                         data-bind="attr: {data-clipboard-text: linkUrl}" >
                                     <span class="icon-copy" ></span>
                                 </button>
-                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, onclick: selectText(data,event)" />
+                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                                 </div>
 
                         </td>
@@ -220,6 +220,8 @@
         var tableUrl = nodeApiUrl + 'private_link/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
+
+    $("body").on('click', ".link-url", function(e) { e.target.select() });
 
     </script>
 </%def>
