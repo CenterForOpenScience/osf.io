@@ -138,6 +138,10 @@ def mongodump(path=None):
         pty=True)
     run(cmd)
 
+    print
+    print "To restore from the dumped database, run `invoke mongorestore {0}`".format(
+        os.path.join(path,settings.DB_NAME))
+
 
 @task
 def mongorestore(path=None, drop=False):
