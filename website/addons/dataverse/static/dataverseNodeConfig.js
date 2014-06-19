@@ -252,6 +252,7 @@
                 success: function() {
                     self.nodeHasAuth(false);
                     self.userIsOwner(false);
+                    self.connected(false);
                     self.changeMessage(language.deauthSuccess, 'text-success', 5000);
                 },
                 error: function() {
