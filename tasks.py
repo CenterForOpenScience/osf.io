@@ -265,7 +265,7 @@ def encryption(owner=None):
         return
 
     import gnupg
-    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME)
+    gpg = gnupg.GPG(gnupghome=settings.GNUPG_HOME, gpgbinary=settings.GNUPG_BINARY)
     keys = gpg.list_keys()
     if keys:
         print('Existing GnuPG key found')

@@ -193,6 +193,9 @@
         }
 
         var type = "project";
+        if (row.isFile){
+            type = "file"
+        }
         if (row.isPointer && !row.parentIsFolder) {
             type = "pointer"
         }

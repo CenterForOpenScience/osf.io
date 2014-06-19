@@ -40,6 +40,7 @@ def to_hgrid(node, auth, **data):
     """
     return NodeFileCollector(node, auth, **data).to_hgrid()
 
+
 def to_project_hgrid(node, auth, **data):
     """Converts a node into a rubeus grid format
 
@@ -50,8 +51,10 @@ def to_project_hgrid(node, auth, **data):
     """
     return NodeProjectCollector(node, auth, **data).to_hgrid()
 
+
 def to_project_root(node, auth, **data):
     return NodeProjectCollector(node, auth, **data).get_root()
+
 
 def build_addon_root(node_settings, name, permissions=None,
                      urls=None, extra=None, buttons=None, **kwargs):
@@ -141,7 +144,6 @@ class NodeProjectCollector(object):
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
         return rv
 
-
     def get_all_projects_smart_folder(self):
         return self.make_smart_folder('All my projects', '-amp')
 
@@ -185,6 +187,8 @@ class NodeProjectCollector(object):
     def to_hgrid(self):
         """Return the Rubeus.JS representation of the node's children, not including addons
         """
+
+        # This will be important soon: self._collect_addons(self.node) +
         root = self._collect_components(self.node, visited=None)
         if self.node.is_dashboard:
             root.append(self.get_all_projects_smart_folder())
@@ -199,11 +203,13 @@ class NodeProjectCollector(object):
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         expanded = node.is_expanded(auth=self.auth)
         can_view = True # node.can_view(auth=self.auth)
+        children = []
         modified_delta = delta_date(node.date_modified)
         date_modified = node.date_modified.isoformat()
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
-        children_count = len(node.nodes)
+        # test_children = self._collect_addons(node)
+        # children_count = len(node.nodes)
         if node.resolve().parent_id is None:
             is_project = True
         else:
@@ -211,17 +217,20 @@ class NodeProjectCollector(object):
         is_pointer = not node.primary
         is_component = node.resolve().primary and not is_project
 
-        if can_view and (node.primary or node.is_folder or parent_is_folder) and children_count > 0:
-            children = True
+        if node.is_dashboard:
+            to_expand = True
+        elif parent_is_folder:
+            to_expand = expanded
         else:
-            children = False
+            to_expand = False
+
         return {
             'name': node.title
                 if can_view
                 else u'Private Component',
-            'kind': FOLDER
-                if (children or node.is_folder)
-                else FILE,
+            'kind': FILE
+                if is_component
+                else FOLDER,
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
@@ -250,19 +259,19 @@ class NodeProjectCollector(object):
                     if not node.is_folder
                     else None,
             },
-            'children': [],
-            'expand': True
-                if node.is_dashboard
-                else expanded,
+            'children': children,
+            'expand': to_expand,
+            # TODO: (bgeiger) replace these flags with a Kind property or something
             'isProject': is_project,
             'isPointer': is_pointer,
             'isComponent': is_component,
             'isFolder': node.is_folder,
+            'isDashboard': node.is_dashboard,
+            'isFile': False,
             'dateModified': date_modified,
             'modifiedDelta': modified_delta,
             'modifiedBy': modified_by,
             'parentIsFolder': parent_is_folder,
-            'isDashboard': node.is_dashboard,
             'contributors': contributors,
             'node_id': node.resolve()._id,
             'isSmartFolder': False,
@@ -271,6 +280,46 @@ class NodeProjectCollector(object):
             'description': node.description,
             'registeredMeta': node.registered_meta,
         }
+
+    def _collect_addons(self, node):
+        return_value = []
+        for addon in node.get_addons():
+            if addon.config.has_hgrid_files:
+                temp = self._upgrade_addon_meta(addon.config.get_hgrid_data(addon, self.auth, **self.extra))
+                for item in temp:
+                    item["node_id"] = node._id
+                    item["apiURL"] = node.api_url
+                return_value.extend(temp or [])
+        return return_value
+
+    def _upgrade_addon_meta(self, data):
+        for datum in data:
+            datum["expand"] = False
+            datum["isProject"] = False
+            datum["isPointer"] = False
+            datum["isComponent"] = False
+            datum["isFolder"] = False
+            datum["isDashboard"] = False
+            datum["isFile"] = True
+            datum["dateModified"] = None
+            datum["modifiedDelta"] = 0
+            datum["modifiedBy"] = ""
+            datum["parentIsFolder"] = False
+            datum["contributors"] = []
+            datum["isSmartFolder"] = False
+            datum["isRegistration"] = False
+            datum["description"] = ""
+            datum["registeredMeta"] = {}
+            datum["permissions"]["copyable"] = False
+            datum["permissions"]["movable"] = False
+            datum["permissions"]["acceptsFolders"] = False
+            datum["permissions"]["acceptsMoves"] = False
+            datum["permissions"]["acceptsCopies"] = False
+            datum["permissions"]["acceptsComponents"] = False
+
+        return data
+
+
 
 
 class NodeFileCollector(object):
