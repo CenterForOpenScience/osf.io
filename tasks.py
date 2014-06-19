@@ -126,7 +126,7 @@ def mongoshell():
 def mongodump(path=None):
     """Back up the contents of the running OSF database"""
     if not path:
-        print "Please specify a path with the '--path' option"
+        print "Please specify a path with the '--path' option."
         exit()
     db = settings.DB_NAME
     port = settings.DB_PORT
