@@ -203,7 +203,7 @@ def upload_file_public(**kwargs):
 @must_be_valid_project #returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-def file_versions(**kwargs):
+def file_info(**kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
     file_name = kwargs['fid']
@@ -334,7 +334,7 @@ def view_file(**kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'versions_url': file_object.versions_url(node),
+        'info_url': file_object.api_url(node) + 'info/',
     }
 
     rv.update(_view_project(node, auth))

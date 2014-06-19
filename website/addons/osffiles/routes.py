@@ -127,11 +127,11 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osffiles/<fid>/versions/',
-                '/project/<pid>/node/<nid>/osffiles/<fid>/versions/',
+                '/project/<pid>/osffiles/<fid>/info/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/info/',
             ],
             'get',
-            views.file_versions,
+            views.file_info,
             json_renderer,
         ),
 

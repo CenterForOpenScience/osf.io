@@ -4,12 +4,12 @@
 
 <%def name="file_versions()">
 
-    <ol class="breadcrumb">
-        <li><a href="${node['url']}files/">${node['title']}</a></li>
-        <li class="active overflow" >${file_name}</li>
-    </ol>
+    <div class="scripted" id="osffileScope">
+        <ol class="breadcrumb">
+            <li><a href={{files_url}}>{{node_title}}</a></li>
+            <li class="active overflow" >{{file_name}}</li>
+        </ol>
 
-    <div class="scripted" id="versionScope">
         <table class="table table-striped" id="file-version-history">
 
 
@@ -43,11 +43,11 @@
         </table>
     </div>
 
-<script>
-    $script(["/static/addons/osffiles/versions.js"], function() {
-        var url = '${versions_url}';
-        var versionTable = new VersionTable('#versionScope', url);
-    });
-</script>
+    <script>
+        $script(["/static/addons/osffiles/view_file.js"], function() {
+            var url = '${info_url}';
+            var versionTable = new VersionTable('#osffileScope', url);
+        });
+    </script>
 
 </%def>
