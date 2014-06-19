@@ -9,7 +9,7 @@ from website.addons.dataverse.client import connect, connect_from_settings, \
     get_studies, get_study, get_dataverses, get_dataverse
 from website.addons.dataverse.settings import HOST
 from website.project import decorators
-from website.util import web_url_for
+from website.util import web_url_for, api_url_for
 from website.util.sanitize import deep_ensure_clean
 
 
@@ -87,6 +87,7 @@ def serialize_settings(node_settings, current_user):
 def serialize_urls(node_settings):
     node = node_settings.owner
     urls = {
+        'create': api_url_for('dataverse_set_user_config'),
         'set': node.api_url_for('set_dataverse_and_study'),
         'importAuth': node.api_url_for('dataverse_import_user_auth'),
         'deauthorize': node.api_url_for('deauthorize_dataverse'),
@@ -114,8 +115,10 @@ def dataverse_get_studies(node_addon, **kwargs):
     code = http.PARTIAL_CONTENT if bad_studies else http.OK
     return rv, code
 
-@decorators.must_have_addon('dataverse', 'user')
-def dataverse_set_user_config(user_addon, **kwargs):
+
+def dataverse_set_user_config(**kwargs):
+
+    user = get_current_user()
 
     try:
         deep_ensure_clean(request.json)
@@ -131,11 +134,17 @@ def dataverse_set_user_config(user_addon, **kwargs):
     if connection is None:
         raise HTTPError(http.UNAUTHORIZED)
 
+    user_addon = user.get_addon('dataverse')
+    if user_addon is None:
+        user.add_addon('dataverse')
+        user_addon = user.get_addon('dataverse')
+
     user_addon.dataverse_username = username
     user_addon.dataverse_password = password
     user_addon.save()
 
     return {'username': username}, http.OK
+
 
 @decorators.must_have_permission('write')
 @decorators.must_have_addon('dataverse', 'user')
