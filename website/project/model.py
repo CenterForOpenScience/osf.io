@@ -417,6 +417,7 @@ class Pointer(StoredObject):
         return self._clone()
 
     def use_as_template(self, auth, changes=None, top_level=False):
+        # unused arguments for compatibility with Node.use_as_template()
         return self._clone()
 
     def resolve(self):
