@@ -388,9 +388,13 @@ def unwatch_post(**kwargs):
                                 digest=request.json.get('digest', False),
                                 immediate=request.json.get('immediate', False))
     try:
-        user.unwatch(watch_config, save=True)
+        user.unwatch(watch_config, save=False)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
+
+    watch_config.save()
+    user.save()
+
     return {
         'status': 'success',
         'watchCount': len(node_to_use.watchconfig__watched)
@@ -416,6 +420,10 @@ def togglewatch_post(**kwargs):
             user.watch(watch_config, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+    watch_config.save()
+    user.save()
+
     return {
         'status': 'success',
         'watchCount': len(node.watchconfig__watched),
@@ -443,6 +451,7 @@ def component_remove(**kwargs):
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
+    node_to_use.save()
 
     message = '{} deleted'.format(
         node_to_use.project_or_component.capitalize()
