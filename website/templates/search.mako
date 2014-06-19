@@ -44,10 +44,6 @@
         </h4>
 
             % endif
-##            our search users query
-##            % if 'user:' not in query:
-##                <a href="/search/?q=user:(${query|h})"> Search users </a>
-##            % endif
         % else:
         <h3>Searching users</h3>
         % endif
@@ -208,7 +204,6 @@
                     <ul class="pagination">
                     % if counts['total'] > 10:
                         <li> <a href="?q=${query | h}&pagination=${0}">First</a></li>
-##                        <a href="?q=${query | h}&pagination=${0}">First</a>
                         % if current_page >= 10:
                               <li><a href="?q=${query | h}&pagination=${(current_page)-10}">&laquo;</a></li>
                         % else:
