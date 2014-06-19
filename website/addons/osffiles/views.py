@@ -200,6 +200,40 @@ def upload_file_public(**kwargs):
 
     return file_info, 201
 
+@must_be_valid_project #returns project
+@must_be_contributor_or_public # returns user, project
+@must_have_addon('osffiles', 'node')
+def file_versions(**kwargs):
+    versions = []
+    node = kwargs['node'] or kwargs['project']
+    file_name = kwargs['fid']
+
+    file_name_clean = file_name.replace('.', '_')
+
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+    for idx, version in enumerate(list(reversed(files_versions))):
+        node_file = NodeFile.load(version)
+        number = len(files_versions) - idx
+        unique, total = get_basic_counters('download:{}:{}:{}'.format(
+            node._primary_key,
+            file_name_clean,
+            number,
+        ))
+        versions.append({
+            'file_name': file_name,
+            'download_url': node_file.download_url(node),
+            'version_number': number,
+            'display_number': number if idx > 0 else 'current',
+            'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            'downloads': total if total else 0,
+            'committer_name': node_file.uploader.fullname,
+            'committer_url': node_file.uploader.url,
+        })
+    return versions
+
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')

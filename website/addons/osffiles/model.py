@@ -107,3 +107,8 @@ class NodeFile(GuidStoredObject):
         return '{}osffiles/{}/version/{}/render/'.format(
             node.api_url, self.filename, self.latest_version_number(node)
         )
+
+    def versions_url(self, node):
+        return '{}osffiles/{}/versions/'.format(
+            node.api_url, self.filename
+        )
