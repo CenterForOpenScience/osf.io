@@ -123,11 +123,8 @@ def mongoshell():
 
 
 @task
-def mongodump(path=None):
+def mongodump(path):
     """Back up the contents of the running OSF database"""
-    if not path:
-        print "Please specify a path with the '--path' option."
-        exit()
     db = settings.DB_NAME
     port = settings.DB_PORT
 
@@ -144,9 +141,9 @@ def mongodump(path=None):
 
 
 @task
-def mongorestore(path=None, drop=False):
-    """Restores the contents of a database at the location given with the
-    `--path` option to the running OSF database. 
+def mongorestore(path, drop=False):
+    """Restores the running OSF database with the contents of the database at
+    the location given its argument. 
 
     By default, the contents of the specified database are added to
     the existing database. The `--drop` option will cause the existing database
