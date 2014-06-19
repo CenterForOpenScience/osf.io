@@ -26,19 +26,25 @@
     function VersionViewModel(url) {
         var self = this;
         self.versions = ko.observable([]);
-        // Get current revision from URL param
-        self.currentVersion = $.osf.urlParams().rev;
+
+        self.file_name = ko.observable(null);
+        self.files_url = ko.observable(null);
+        self.node_title = ko.observable(null);
+
 
         // Date when this project was registered, or null if not a registration
-        // TODO: populate this (@mambocab)
+        // TODO: should I populate this? (@mambocab)
         self.registered = ko.observable(null);
         $.ajax({
             url: url, type: 'GET', dataType: 'json',
             // On success, update the revisions observable
             success: function(response) {
-                self.versions(ko.utils.arrayMap(response, function(rev) {
+                self.versions(ko.utils.arrayMap(response.versions, function(rev) {
                     return new Version(rev);
                 }));
+                self.node_title(response.node_title);
+                self.file_name(response.file_name);
+                self.node_title(response.node_title);
             }
         });
     }

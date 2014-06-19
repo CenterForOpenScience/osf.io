@@ -232,7 +232,12 @@ def file_info(**kwargs):
             'committer_name': node_file.uploader.fullname,
             'committer_url': node_file.uploader.url,
         })
-    return versions
+    return {
+        'files_url': node.url + "files/",
+        'node_title': node.title,
+        'file_name': file_name,
+        'versions': versions,
+        }
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
