@@ -99,7 +99,7 @@
                                 </button>
                                     <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, onclick: selectText(data,event)" />
                                 </div>
-                 
+
                         </td>
                         <td class="col-sm-4" >
 

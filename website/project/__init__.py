@@ -69,7 +69,7 @@ def new_private_link(name, user, nodes):
     if name:
         name = sanitize(name.strip())
     else:
-        name = "Share project link"
+        name = "Shared project link"
 
     private_link = PrivateLink(
         key=key,
