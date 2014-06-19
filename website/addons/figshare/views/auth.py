@@ -68,17 +68,6 @@ def figshare_oauth_delete_node(auth, node_addon, **kwargs):
 
     return {}
 
-
-@must_have_addon('figshare', 'user')
-def figshare_oauth_delete_user(user_addon, **kwargs):
-
-    user_addon.oauth_access_token = None
-    user_addon.oauth_token_type = None
-    user_addon.save()
-
-    return {}
-
-
 def figshare_oauth_callback(**kwargs):
 
     user = get_current_user()

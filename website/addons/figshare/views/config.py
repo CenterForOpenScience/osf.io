@@ -13,6 +13,7 @@ from website.project.decorators import (must_have_addon,
 from ..api import Figshare
 from ..utils import options_to_hgrid
 
+
 ###### AJAX Config
 @must_be_valid_project
 @must_have_addon('figshare', 'node')
@@ -22,6 +23,7 @@ def figshare_config_get(node_addon, **kwargs):
     return {
         'result': serialize_settings(node_addon, user),
     }, http.OK
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -64,12 +66,14 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
         'message': 'Successfully imported access token from profile.',
     }, http.OK
 
+
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
 def figshare_deauthorize(auth, node_addon, **kwargs):
-    node_addon.deauthorize(auth=auth)
+    node_addon.deauthorize(auth=auth)   
     node_addon.save()
     return None
+
 
 def serialize_settings(node_settings, current_user, client=None):
     """View helper that returns a dictionary representation of a
@@ -93,6 +97,7 @@ def serialize_settings(node_settings, current_user, client=None):
         result['linked'] = linked
     return result
 
+
 def serialize_urls(node_settings):
     node = node_settings.owner
     urls = {
@@ -107,19 +112,23 @@ def serialize_urls(node_settings):
     }
     return urls
 
+
 @must_be_valid_project
 @must_have_addon('figshare', 'node')
 def figshare_get_options(node_addon, **kwargs):
     options = Figshare.from_settings(node_addon.user_settings).get_options()
-    
+
+    # TODO: Fix error handling
     if options == 401 or not isinstance(options, list):
-        self.user_settings.remove_auth()
-        push_status_message(messages.OAUTH_INVALID)
+        raise HTTPError(http.BAD_REQUEST)
+        # self.user_settings.remove_auth()
+        # push_status_message(messages.OAUTH_INVALID)
     else:
         node = node_addon.owner
         return options_to_hgrid(node, options) or []
 
 ##############
+
 
 def figshare_update_config(node, auth, node_settings, fs_title, fs_url, fs_type, fs_id):    
     # If authorized, only owner can change settings
@@ -142,11 +151,11 @@ def figshare_update_config(node, auth, node_settings, fs_title, fs_url, fs_type,
 
     return {}
 
+
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('figshare', 'node')
-def figshare_set_config(*args, **kwargs):
-    auth = kwargs['auth']
+def figshare_set_config(auth, **kwargs):
     node_settings = kwargs['node_addon']
     node = node_settings.owner
 
@@ -155,13 +164,14 @@ def figshare_set_config(*args, **kwargs):
         figshare_url = request.json.get('figshare_value', '').split('_')
         figshare_type = figshare_url[0]
         figshare_id = figshare_url[1]
+    # TODO: Which errors are we catching here?
     except:
         raise HTTPError(http.BAD_REQUEST)
 
     if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
         raise HTTPError(http.BAD_REQUEST)
 
-    fields = {'title': figshare_title, 'type': figshare_type, 'id': figshare_id}    
+    fields = {'title': figshare_title, 'type': figshare_type, 'id': figshare_id}
     node_settings.update_fields(fields, node, auth)
 
 
