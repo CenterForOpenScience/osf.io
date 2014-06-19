@@ -68,7 +68,7 @@
 
                 <thead>
                     <tr>
-                    <th class="col-sm-3">Link Name</th>
+                    <th class="col-sm-3">Link</th>
                     <th class="col-sm-4">What This Link Shares</th>
                     <th class="col-sm-2">Created Date</th>
                     <th class="col-sm-2">Created By</th>
@@ -90,16 +90,21 @@
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                         <tr>
                         <td class="col-sm-3">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                <span class="icon-copy" ></span>
-                            </button>
-                            <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
+                            <span data-bind="text: name, tooltip: {title: linkName}"></span>
+
+                                <div class="btn-group">
+                                <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    <span class="icon-copy" ></span>
+                                </button>
+                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, onclick: selectText(data,event)" />
+                                </div>
+                 
                         </td>
                         <td class="col-sm-4" >
 
                                <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
-                                   <li data-bind="style:{margin-left: $data.scale}">
+                                   <li data-bind="style:{marginLeft: $data.scale}">
                                       <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                    </li>
                                </ul>
@@ -215,5 +220,6 @@
         var tableUrl = nodeApiUrl + 'private_link/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
+
     </script>
 </%def>

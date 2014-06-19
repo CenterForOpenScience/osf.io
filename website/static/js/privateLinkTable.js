@@ -52,6 +52,9 @@
         self.$root = $root;
         $.extend(self, data);
         self.collapse = "Collapse";
+        self.linkName = "Link Name";
+        self.readonly = "readonly";
+        self.selectText = "this.setSelectionRange(0, this.value.length);";
         self.collapseNode = ko.observable(false);
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
         self.linkUrl = ko.computed(function(){
@@ -72,6 +75,11 @@
             self.nodesList(data.nodes.slice(0,2));
             self.moreNode(true);
             self.collapseNode(false);
+        }
+
+        self.selectText = function(data,event){
+            console.log(event);
+            event.target.select();
         }
     }
 
