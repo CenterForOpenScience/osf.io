@@ -334,7 +334,7 @@ def view_file(**kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'versions': versions,
+        'versions_url': file_object.versions_url(node),
     }
 
     rv.update(_view_project(node, auth))

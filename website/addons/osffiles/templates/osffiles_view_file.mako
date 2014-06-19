@@ -9,43 +9,45 @@
         <li class="active overflow" >${file_name}</li>
     </ol>
 
-    <table class="table table-striped" id="file-version-history">
+    <div class="scripted" id="versionScope">
+        <table class="table table-striped" id="file-version-history">
 
-        <thead>
+
+            <thead>
             <tr>
                 <th>Version</th>
                 <th>Date</th>
                 <th>User</th>
                 <th colspan=2>Downloads</th>
             </tr>
-        </thead>
+            </thead>
 
-        <tbody>
-            % for version in versions:
-                <tr>
-                    <td>
-                        ${version['display_number']}
-                    </td>
-                    <td>
-                        ${version['date_uploaded']}
-                    </td>
-                    <td>
-                        <a href="${version['committer_url']}">
-                            ${version['committer_name']}
-                        </a>
-                    </td>
-                    <td>
-                        ${version['total']}
-                    </td>
-                    <td>
-                        <a href="${version['download_url']}" download="${version['file_name']}">
-                            <i class="icon-download-alt"></i>
-                        </a>
-                    </td>
-                </tr>
-            %endfor
-        </tbody>
+            <tbody>
+            <!-- ko foreach: versions -->
+            <tr>
+                <td>{{version_number}}</td>
+                <td>{{modified_date.local}}</td>
+                <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                ## download count; 'Downloads' column 1
+                <td>{{downloads}}</td>
+                ## download url; 'Downloads' column 2
+                <td>
+                    <a href="{{download_url}}">
+                        <i class="icon-download-alt"></i>
+                    </a>
+                </td>
+            </tr>
+            <!-- /ko -->
+            </tbody>
 
-    </table>
+        </table>
+    </div>
+
+<script>
+    $script(["/static/addons/osffiles/versions.js"], function() {
+        var url = '${versions_url}';
+        var versionTable = new VersionTable('#versionScope', url);
+    });
+</script>
 
 </%def>
