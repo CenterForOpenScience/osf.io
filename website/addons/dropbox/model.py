@@ -184,7 +184,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         nodelogger.log(action="node_authorized", save=True)
 
     def delete(self, save=True):
-        self.deauthorize( add_log=False)
+        self.deauthorize(add_log=False)
         super(DropboxNodeSettings, self).delete(save)
 
     def deauthorize(self, auth=None, add_log=True):
