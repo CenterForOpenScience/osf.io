@@ -77,10 +77,6 @@
             self.collapseNode(false);
         }
 
-        self.selectText = function(data,event){
-            console.log(event);
-            event.target.select();
-        }
     }
 
     function ViewModel(url) {
