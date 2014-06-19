@@ -948,7 +948,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth)
+        node.rm_pointer(pointer, auth=auth, save=False)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
