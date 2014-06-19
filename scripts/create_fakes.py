@@ -70,7 +70,7 @@ def create_fake_project(creator, n_users, privacy, n_components):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
     for _ in range(n_components):
-        component = NodeFactory(project=project, title=fake.catch_phrase(), creator=creator)
+        component = NodeFactory(project=project, title=fake.catch_phrase(), description=fake.bs(), creator=creator)
     project.save()
     print('Created project: {0}'.format(project.title))
     return project
