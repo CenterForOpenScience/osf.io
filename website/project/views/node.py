@@ -406,6 +406,7 @@ def unwatch_post(**kwargs):
 @must_not_be_registration
 def togglewatch_post(**kwargs):
     '''View for toggling watch mode for a node.'''
+    # TODO: refactor this, watch_post, unwatch_post (@mambocab)
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(
