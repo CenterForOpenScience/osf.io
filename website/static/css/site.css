@@ -845,8 +845,6 @@ border-radius: 6px;
 
 /*****************************************************/
 table.table.table-plain th, table.table.table-plain td {
-  padding: 8px;
-  line-height: 10px;
   text-align: left;
   border-top: 0px solid #ddd;
 }
@@ -1581,3 +1579,20 @@ a {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+@media (max-width:991px){
+    #features-nav, [role=complementary] {
+        display:none
+    }
+}
+
+#duplicateModal h4 {
+    line-height: 34px;
+}
+
+.well-inline {
+    padding:6px 12px;
+    line-height:20px;
+    font-weight:normal;
+    font-size:14px;
+}
