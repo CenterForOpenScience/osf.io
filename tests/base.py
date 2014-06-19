@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from faker import Factory
 
 from framework import storage, set_up_storage
-from framework.auth.model import User
+from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from website.project.model import (ApiKey, Node, NodeLog,

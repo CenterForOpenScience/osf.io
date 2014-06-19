@@ -70,17 +70,25 @@ def project_new_post(**kwargs):
     form = NewProjectForm(request.form)
     if form.validate():
         if form.template.data:
+            # Create a project from a template
             original_node = Node.load(form.template.data)
+
+            project_changes = {
+                'title': form.title.data
+            }
+
+            # If the user entered a description, use it instead of the source's
+            if form.description.data:
+                project_changes['description'] = form.description.data
+
             project = original_node.use_as_template(
                 auth=kwargs['auth'],
                 changes={
-                    form.template.data: {
-                        'title': form.title.data,
-                    }
+                    form.template.data: project_changes
                 }
             )
-                # node._fields['date_created'].__set__(new_date, safe=True)
         else:
+            # Create a new project
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
@@ -736,6 +744,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'ua': None,
             'non_ua': None,
             'addons_enabled': node.get_addon_names(),
+            'is_public': node.is_public
         })
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
@@ -968,7 +977,7 @@ def fork_pointer(**kwargs):
 
 def abbrev_authors(node):
     rv = node.contributors[0].family_name
-    if len(node.contributors) > 1:
+    if len(node.visiblecontributors) > 1:
         rv += ' et al.'
     return rv
 

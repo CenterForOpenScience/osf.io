@@ -10,8 +10,7 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework import Q
-from framework.auth.model import User
-from framework.auth.decorators import Auth
+from framework.auth import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
@@ -281,14 +280,14 @@ class TestAUser(OsfTestCase):
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, self.user.display_absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
