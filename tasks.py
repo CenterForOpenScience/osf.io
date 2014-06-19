@@ -138,6 +138,36 @@ def mongodump(path=None):
         pty=True)
     run(cmd)
 
+
+@task
+def mongorestore(path=None, drop=False):
+    """Restores the contents of a database at the location given with the
+    `--path` option to the running OSF database. 
+
+    By default, the contents of the specified database are added to
+    the existing database. The `--drop` option will cause the existing database
+    to be dropped.
+
+    A caveat: if you `invoke mongodump --path {path}`, you must restore with
+    `invoke mongorestore --path {path}/{settings.DB_NAME}, as that's where the
+    database dump will be stored."""
+    if not path:
+        print "Please specify a path with the '--path' option."
+        exit()
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongorestore --db {db} --port {port}".format(
+        db=db,
+        port=port,
+        pty=True)
+
+    if drop:
+        cmd += " --drop"
+
+    cmd += " " + path
+    run(cmd)
+
 @task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
