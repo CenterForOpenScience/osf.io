@@ -74,7 +74,7 @@
                     self.changeMessage(language.authSuccess, 'text-info', 5000);
                 },
                 error: function(xhr, textStatus, error) {
-                    var errorMessage = (xhr.status === 403) ? language.authInvalid : language.authError;
+                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
                     self.changeMessage(errorMessage, 'text-danger');
                 }
             });
