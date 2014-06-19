@@ -1,11 +1,10 @@
 from nose.tools import *
 import mock
 
-from website.addons.dataverse.dvn.dataverse import Dataverse
-from website.addons.dataverse.dvn.file import DvnFile, ReleasedFile
-from website.addons.dataverse.dvn.study import Study
+from dataverse import Dataverse, Study, DataverseFile
+
 from website.addons.dataverse.tests.utils import (create_mock_connection,
-    create_mock_dataverse, create_mock_study, create_mock_dvn_file,
+    create_mock_dataverse, create_mock_study, create_mock_draft_file,
     create_mock_released_file, DataverseAddonTestCase)
 
 
@@ -34,7 +33,7 @@ class TestUtils(DataverseAddonTestCase):
         assert_equal(mock_dv.alias, 'ALIAS1')
         assert_equal(len(mock_dv.get_studies()), 3)
         assert_is_instance(mock_dv.get_studies()[0], Study)
-        assert_equal(mock_dv.get_study_by_hdl(mock_dv.get_studies()[1].doi),
+        assert_equal(mock_dv.get_study_by_doi(mock_dv.get_studies()[1].doi),
                      mock_dv.get_studies()[1])
 
     def test_mock_study(self):
@@ -42,32 +41,30 @@ class TestUtils(DataverseAddonTestCase):
         doi = 'doi:12.3456/{0}'.format(study_id)
         mock_study = create_mock_study(study_id)
         assert_equal(mock_study.doi, doi)
-        assert_equal(mock_study.get_citation(),
+        assert_equal(mock_study.citation,
                      'Example Citation for {0}'.format(study_id))
         assert_equal(mock_study.title, 'Example ({0})'.format(study_id))
         assert_equal(mock_study.doi, doi)
         assert_equal(mock_study.get_state(), 'DRAFT')
         assert_equal(len(mock_study.get_files()), 1)
-        assert_is_instance(mock_study.get_files()[0], DvnFile)
-        assert_is_instance(mock_study.get_files(released=True)[0], ReleasedFile)
-        assert_is_instance(mock_study.get_file('name.txt'), DvnFile)
-        assert_is_instance(mock_study.get_file('name.txt', released=True),
-                           ReleasedFile)
-        assert_is_instance(mock_study.get_file_by_id('123'), DvnFile)
-        assert_is_instance(mock_study.get_file_by_id('123', released=True),
-                           ReleasedFile)
+        assert_false(mock_study.get_files()[0].is_released)
+        assert_true(mock_study.get_files(released=True)[0].is_released)
+        assert_false(mock_study.get_file('name.txt').is_released)
+        assert_true(mock_study.get_file('name.txt', released=True).is_released)
+        assert_false(mock_study.get_file_by_id('123').is_released)
+        assert_true(mock_study.get_file_by_id('123', released=True).is_released)
 
     def test_mock_dvn_file(self):
         fid = '65432'
-        mock_file = create_mock_dvn_file(fid)
+        mock_file = create_mock_draft_file(fid)
         assert_equal(mock_file.name, 'file.txt')
         assert_equal(mock_file.id, fid)
-        assert_is_instance(mock_file, DvnFile)
+        assert_is_instance(mock_file, DataverseFile)
 
     def test_mock_dvn_file(self):
         fid = '65432'
         mock_file = create_mock_released_file(fid)
         assert_equal(mock_file.name, 'released.txt')
         assert_equal(mock_file.id, fid)
-        assert_is_instance(mock_file, ReleasedFile)
+        assert_is_instance(mock_file, DataverseFile)
 

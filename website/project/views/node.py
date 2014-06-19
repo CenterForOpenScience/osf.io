@@ -70,17 +70,25 @@ def project_new_post(**kwargs):
     form = NewProjectForm(request.form)
     if form.validate():
         if form.template.data:
+            # Create a project from a template
             original_node = Node.load(form.template.data)
+
+            project_changes = {
+                'title': form.title.data
+            }
+
+            # If the user entered a description, use it instead of the source's
+            if form.description.data:
+                project_changes['description'] = form.description.data
+
             project = original_node.use_as_template(
                 auth=kwargs['auth'],
                 changes={
-                    form.template.data: {
-                        'title': form.title.data,
-                    }
+                    form.template.data: project_changes
                 }
             )
-                # node._fields['date_created'].__set__(new_date, safe=True)
         else:
+            # Create a new project
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
