@@ -1,12 +1,14 @@
-import os
-
 import httplib as http
 
 from framework import request
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
-from website.addons.dataverse.client import connect, connect_from_settings, \
-    get_studies, get_study, get_dataverses, get_dataverse
+from framework.auth.decorators import must_be_logged_in
+
+from website.addons.dataverse.client import (
+    connect, connect_from_settings,
+    get_studies, get_study, get_dataverses, get_dataverse,
+)
 from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import web_url_for, api_url_for
@@ -116,9 +118,10 @@ def dataverse_get_studies(node_addon, **kwargs):
     return rv, code
 
 
-def dataverse_set_user_config(**kwargs):
+@must_be_logged_in
+def dataverse_set_user_config(auth, **kwargs):
 
-    user = get_current_user()
+    user = auth.user
 
     try:
         deep_ensure_clean(request.json)
