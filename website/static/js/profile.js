@@ -173,6 +173,14 @@
             return ko.toJSON(self.tracked) !== self.original();
         });
 
+        // Must be set after isValid is defined in inherited view models
+        // Necessary for enableSubmit to subscribe to isValid
+        self.hasValidProperty = ko.observable(false);
+
+        self.enableSubmit = ko.computed(function() {
+            return self.hasValidProperty() && self.isValid() && self.dirty();
+        });
+
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
                 return 'There are unsaved changes to your settings.';
@@ -243,7 +251,7 @@
     };
 
     BaseViewModel.prototype.submit = function() {
-        if (this.isValid() === false) {
+        if (this.enableSubmit() === false) {
             return
         }
         $.ajax({
@@ -282,6 +290,7 @@
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.citations = ko.observable();
 
@@ -437,6 +446,7 @@
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.values = ko.computed(function() {
             return [
@@ -488,6 +498,7 @@
             }
             return true;
         });
+        self.hasValidProperty(true);
 
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);

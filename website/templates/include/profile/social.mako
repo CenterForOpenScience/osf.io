@@ -61,7 +61,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: isValid"
+                        data-bind="enable: enableSubmit"
                     >Submit</button>
 
             </div>
