@@ -31,6 +31,7 @@
     </div>
 </div>
 
+<%include file="profile/addon_permissions.mako" />
 
 <script>
     $script(['/static/addons/dropbox/dropboxUserConfig.js'], function() {
