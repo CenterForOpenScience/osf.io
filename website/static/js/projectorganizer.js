@@ -25,6 +25,8 @@
     // copyMode can be "copy", "move", "forbidden", or "none".
     var copyMode = "none";
 
+    var fadeTime = 100;
+
 
 
     //
@@ -526,9 +528,9 @@
                         $('#findNode' + theItem.node_id).show();
                     });
 
-                    $(".project-details").show();
+                    $(".project-details").fadeIn(fadeTime);
                 } else {
-                    $(".project-details").hide();
+                    $(".project-details").fadeOut(fadeTime);
                 }
             } else if(selectedRows.length > 1) {
                 var someItemsAreFolders = false;
@@ -553,16 +555,16 @@
                     theParentNodeID = theParentNode.node_id;
                     var displayHTML = detailTemplate(detailTemplateContext);
                     $(".project-details").html(displayHTML);
-                    $(".project-details").show();
+                    $(".project-details").fadeIn(fadeTime);
                     $('#remove-links-multiple').click(function(){
                         deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
                     });
 
                 } else {
-                    $(".project-details").hide();
+                    $(".project-details").fadeOut(fadeTime);
                 }
             } else {
-                    $(".project-details").hide();
+                    $(".project-details").fadeOut(fadeTime);
                 }
 
 
