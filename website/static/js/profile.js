@@ -152,8 +152,6 @@
         return self;
     };
 
-    var unloadFunction = function() {};
-
     var BaseViewModel = function(urls, modes) {
 
         var self = this;
@@ -175,21 +173,11 @@
             return ko.toJSON(self.tracked) !== self.original();
         });
 
-        // Append dirty check for this view model to existing models.
-        unloadFunction = (function() {
-            var cachedUnloadFunction = unloadFunction;
-            return function() {
-                var result = cachedUnloadFunction();
-                if (result != null){
-                    return result;
-                }
-                if (self.dirty()) {
-                    return 'There are unsaved changes to your settings.';
-                }
+        $(window).on('beforeunload', function() {
+            if (self.dirty()) {
+                return 'There are unsaved changes to your settings.';
             }
-        }());
-
-        window.onbeforeunload = unloadFunction;
+        });
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
