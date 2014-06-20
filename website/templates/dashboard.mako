@@ -67,14 +67,27 @@
                     <li class="ob-list list-group-item">
                         <div class="ob-heading">Add a File to a Project</div>
                         <div id="project-search-add-file">
-                            <div id="ob-dropzone">
+                        <div style="max-width:170px;">
+                            <div id="ob-dropzone" class="ob-dropzone-box">
                             Drop File (or click)
                             </div>
+                            <!-- <div id="ob-dropzone-selected" class="ob-dropzone-box"> -->
+                            <div id="ob-dropzone-selected" class="ob-dropzone-box ob-reveal">
+                                    <img id="uploadIcon" src="//:0">
+                                    <div id="obDropzoneFilename"> </div>
+                                    <progress class="ob-reveal" id="uploadProgress" max="100" value="0"></progress>
+
+                                <div id="clearDropzone"><img src="/static/img/close2.png"></div>
+                            </div>
+                            
+                            </div>
+
                             <div class="ob-reveal" id="ob-dropzone-reveal">
+
                                 <img id="ob-arrow-right" src="/static/img/triangle_right.png" >
                                 <div id="ob-project-search-container">
                                     <input class="typeahead" type="text" placeholder="Search projects" id = 'input-project-add-file'>
-                                    <br>
+                                    <br>                                    
                                     <span class="findBtn btn btn-default" id="add-link-add-file" disabled="disabled">Upload</span>
                                 </div>
                             </div>
@@ -135,6 +148,14 @@
         $('#ob-icon-new-project').attr('src', "/static/img/plus.png")
     }
 
+// TODO(sloria): require('jquery') here
+//block the create new project button when the form is submitted
+    $('#projectForm').on('submit',function(){
+        $('button[type="submit"]', this)
+            .attr('disabled', 'disabled')
+            .text('Creating');
+    });
+
 // new registration js
     $('#ob-register-project-btn').one("click", obOpenRegisterProject);
 
@@ -150,12 +171,13 @@
         $('#ob-icon-register-project').attr('src', "/static/img/plus.png")
     }
 
+
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js']);
     $script.ready('logFeed', function() {
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
-    $script(['/static/vendor/dropzone/dropzone.js'],'dropzone');
+    // $script(['/static/vendor/dropzone/dropzone.js'],'dropzone');
 
     $script(['/static/js/typeahead.js'],'typeahead');
     $script(['/static/js/typeaheadSearch.js'], 'typeaheadSearch');

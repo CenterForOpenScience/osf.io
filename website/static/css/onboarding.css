@@ -28,25 +28,55 @@ li.ob-list {
 	height: 100%;
 	width: 100%;
 }
-/* id css */
-#input-project-register-project{
-	margin: 20px;
-}
 
-#ob-dropzone{
+.ob-dropzone-box{
+	border-radius:5px;
+	position:relative;
 	float:left;
 	height: 150px; 
 	width: 150px; 
 	margin: 10px; 
 	padding: 5px;
-
-	font-size: 14px;
-
-	border-style: dashed; 
+	font-size: 12px;
 	background-repeat:no-repeat;
-	background-position:center; 
+	background-position:center;
+	-moz-box-shadow:    inset 0 0 10px #000000;
+   	-webkit-box-shadow: inset 0 0 10px #000000;
+   	box-shadow:         inset 0 0 10px #000000;
 }
 
+#uploadProgress {
+	position: absolute;
+	left:10px;
+	width: 130px;
+	bottom: 10px;
+}
+
+
+#input-project-register-project{
+	margin: 20px;
+}
+
+#ob-dropzone{
+	font-size: 16px;
+}
+
+/*#floater	{float:left; height:50%; margin-bottom:-120px;}*/
+#content {position:absolute; top:0; bottom:0; left:0; right:0;
+			margin:auto; height:240px; width:70%;}
+
+#clearDropzone{
+	position:absolute;
+	top: -8px;
+	right: -8px;
+}
+
+#clearDropzone:hover{
+	cursor: pointer;
+}
+
+#ob-dropzone-selected{
+}
 
 #ob-arrow-right{
 	display:inline;
@@ -55,9 +85,13 @@ li.ob-list {
 	margin: 60px 0 60px 0;
 }
 
+#obDropzoneFilename{
+	margin-top:20px;
+	font-family: "Lucida Console", Monaco, monospace;
+}
+
 #project-search-add-file{
 	height: 170px;
-
 	text-align: center; 
 }
 
@@ -66,10 +100,15 @@ li.ob-list {
 	margin: 61px 10px 0 10px;"
 }
 
+#uploadIcon{
+	margin-top:20px;
+	margin-left:auto;
+	margin-right:auto;
+}
+
 #add-link-add-file{
 	float: right;
 	margin-top: 5px;
-
 	disabled="disabled";
 }
 
@@ -77,5 +116,3 @@ li.ob-list {
 	float:right;
 	margin:20px;
 }
-
-
