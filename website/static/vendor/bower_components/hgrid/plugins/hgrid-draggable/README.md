@@ -63,7 +63,7 @@ grid.registerPlugin(draggable);
 
 ## TODO
 
-- Fix drop position
+- Fix drop ordering
 - Make folders draggable
 - Multiple selection
 

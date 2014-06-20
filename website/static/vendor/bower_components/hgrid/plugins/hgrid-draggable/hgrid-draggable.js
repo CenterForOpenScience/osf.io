@@ -43,13 +43,19 @@ this.Draggable = (function($, HGrid) {
       throw new HGrid.Error(message);
     },
     canDrag: function(item) {
+      // disable dragging folder's for now
       if (item.kind === HGrid.FOLDER) {
         return false;
       }
       return true;
     },
-
-    canAcceptDrop: function(folder) {},
+    /**
+     * Return false if folder should not be allowed as a drop target.
+     * The folder will not be highlighted when being dragged over.
+     * @param {Array[Object]} items The items being moved.
+     * @param  {Object} folder The folder object
+     */
+    canAcceptDrop: function(items, folder) {},
     enableMove: true,
 
     // Additional options passed to the HGrid.RowMoveManager constructor
@@ -239,7 +245,27 @@ this.Draggable = (function($, HGrid) {
       var parent;
       if (args.insertBefore) {
         parent = getParent(args.insertBefore);
-        // Check if folder can accep drop
+
+        for (var i=0; i < movedItems.length; i++) {
+          var node = movedItems[i]._node;
+          // Can't drag folder into itself
+          if (node.id === parent.id) {
+            return false;
+          }
+
+          // Prevent dragging parent folders into descendant folder
+          if (node.children) {
+            for (var j=0; j < node.children.length; j++) {
+              var child = node.children[j];
+              if (parent.id === child.id) {
+                self.clearTarget();
+                return false;
+              }
+            }
+          }
+        }
+
+        // Check if folder can accept drop
         // NOTE: canAccept must return false to disallow dropping, not just a falsy value
         if (self.options.canAcceptDrop.call(self, movedItems, parent) === false) {
           self.clearTarget();
@@ -385,6 +411,10 @@ this.Draggable = (function($, HGrid) {
       });
     }
 
+    var cancelDrag = function() {
+      _dragging = false;
+    };
+
     function handleDrag(e, dd) {
       if (!_dragging) {
         return;
@@ -433,16 +463,17 @@ this.Draggable = (function($, HGrid) {
     }
 
     function handleDragEnd(e, dd) {
+      e.stopImmediatePropagation();
+      dd.selectionProxy.remove();
       if (!_dragging) {
+        dd.selectionProxy.remove();
         return;
       }
       _dragging = false;
-      e.stopImmediatePropagation();
 
       if (options.enableReorder) {
         dd.guide.remove();
       }
-      dd.selectionProxy.remove();
 
       if (dd.canMove) {
         var eventData = {
@@ -463,7 +494,8 @@ this.Draggable = (function($, HGrid) {
       /*jshint unused:false */
       'canDrag': function(item) { return true; },
       'init': init,
-      'destroy': destroy
+      'destroy': destroy,
+      'cancelDrag': cancelDrag
     });
   }
 

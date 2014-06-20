@@ -37,6 +37,9 @@
     "jQuery": ">=1.9.0"
   },
   "devDependencies": {
-    "dropzone": "~3.10.2"
+    "dropzone": "~3.10.2",
+    "qunit": "~1.14.0",
+    "sinon-qunit": "http://sinonjs.org/releases/sinon-qunit-1.0.0.js",
+    "sinon": "http://sinonjs.org/releases/sinon-1.10.2.js"
   }
 }

@@ -343,6 +343,7 @@ Hgrid depends on [NodeJS](http://nodejs.org/) for package management and [Grunt]
 To install all development dependencies needed for development, run
 
     $ npm install
+    $ bower install
 
 in the project root's root directory.
 
