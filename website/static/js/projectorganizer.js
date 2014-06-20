@@ -689,7 +689,11 @@
                             }
                         } // From: if (copyMode === "copy" || copyMode === "move")
                     });
+                } else{
+                    console.error("Parent node ("+itemParentNodeID + ") == Folder Node ("+theFolderNodeID+")");
                 }
+            } else {
+                console.error("Folder is either undefined or null");
             }
             $('.project-organizer-dand').css('cursor', 'default');
         },

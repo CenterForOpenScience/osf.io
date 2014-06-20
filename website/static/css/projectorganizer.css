@@ -103,7 +103,7 @@ div.project-details {
     margin-left: 550px;
     margin-top: 130px;
     position: fixed;
-    z-index: 10;
+    z-index: 9999999;
     display: none;
     overflow: visible;
     border-radius: 10px;
