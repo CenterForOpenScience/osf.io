@@ -68,7 +68,7 @@
 
                 <thead>
                     <tr>
-                    <th class="col-sm-3">Link Name</th>
+                    <th class="col-sm-3">Link</th>
                     <th class="col-sm-4">What This Link Shares</th>
                     <th class="col-sm-2">Created Date</th>
                     <th class="col-sm-2">Created By</th>
@@ -89,31 +89,37 @@
                 </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                     <tr>
-                    <td class="col-sm-3">
-                        <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                data-bind="attr: {data-clipboard-text: linkUrl}" >
-                            <span class="icon-copy" ></span>
-                        </button>
-                        <span data-bind="text: name, tooltip: {title: linkUrl}"></span>
-                    </td>
-                    <td class="col-sm-4">
-                       <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
-                           <li data-bind="style: {margin-left: $data.scale}">
-                              <a data-bind="text: $data.title, attr.href: $data.url"></a>
-                           </li>
-                       </ul>
-                       <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                       <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
-                    </td>
+                        <td class="col-sm-3">
+                            <div data-bind="text: name, tooltip: {title: linkName}"></div>
 
-                    <td class="col-sm-2">
-                        <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
-                    </td>
-                    <td class="col-sm-2" data-bind="text: creator"></td>
-                    <td class="col-sm-1">
-                        <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
-                    </td>
-                    </tr>
+                                <div class="btn-group">
+                                <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    <span class="icon-copy" ></span>
+                                </button>
+                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                                </div>
+
+                        </td>
+                        <td class="col-sm-4" >
+
+                               <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
+                                   <li data-bind="style:{marginLeft: $data.scale}">
+                                      <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                                   </li>
+                               </ul>
+                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
+                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayTwoNodes"></button>
+                        </td>
+
+                        <td class="col-sm-2">
+                            <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
+                        </td>
+                        <td class="col-sm-2" data-bind="text: creator"></td>
+                        <td class="col-sm-1">
+                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
+                        </td>
+                        </tr>
                 </tbody>
 
             </table>
@@ -208,11 +214,14 @@
 
     $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
         // Controls the modal
-        var configUrl = nodeApiUrl + 'private_link/config/';
+        var configUrl = nodeApiUrl + 'get_editable_children/';
         var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
-        var tableUrl = nodeApiUrl + 'private_link/table/';
+        var tableUrl = nodeApiUrl + 'private_link/';
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
+
+    $("body").on('click', ".link-url", function(e) { e.target.select() });
+
     </script>
 </%def>

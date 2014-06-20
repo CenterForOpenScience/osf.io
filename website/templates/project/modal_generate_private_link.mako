@@ -7,7 +7,7 @@
 
             <div class="modal-body">
 
-                <div >
+                <div>
 
                     <div>
                         Name this link (e.g., "For Peer Review", "Sharing data", "Share project")

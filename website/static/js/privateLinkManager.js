@@ -14,8 +14,6 @@
 
         self.url = url;
         self.title = ko.observable('');
-        self.parentId = ko.observable(null);
-        self.parentTitle = ko.observable(null);
         self.name = ko.observable(null);
         self.pageTitle = 'Generate New Link to Share Project';
         self.errorMsg = ko.observable('');
@@ -28,14 +26,11 @@
          */
 
         function onFetchSuccess(response) {
-            var node = response.result.node;
-            self.title(node.title);
-            self.parentId(node.parentId);
-            self.parentTitle(node.parentTitle);
-            $.each(response.result['children'], function(idx, child) {
+            self.title(response.node.title);
+            $.each(response['children'], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
-            self.nodes(response.result['children']);
+            self.nodes(response['children']);
         }
 
         function onFetchError() {

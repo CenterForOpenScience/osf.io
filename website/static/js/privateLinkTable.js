@@ -14,7 +14,7 @@
         moviePath: '/static/vendor/bower_components/zeroclipboard/ZeroClipboard.swf'}
     );
 
-    var DEFAULT_LINK_CUTOFF = 2;
+    var LINK_CUTOFF = 2;
 
     var updateClipboard = function(target) {
 
@@ -53,16 +53,20 @@
         self.$root = $root;
         $.extend(self, data);
 
-        self.collapse = 'Collapse';
+        self.collapse = "Collapse";
+        self.linkName = "Link Name";
+        self.readonly = "readonly";
+        self.selectText = "this.setSelectionRange(0, this.value.length);";
+
         self.collapseNode = ko.observable(false);
         self.dateCreated = new $.osf.FormattableDate(data.date_created);
-        self.linkUrl = ko.computed(function(){
+        self.linkUrl = ko.computed(function() {
             return self.$root.nodeUrl() + '?view_only=' + data.key;
         });
-        self.nodesList = ko.observableArray(data.nodes.slice(0, DEFAULT_LINK_CUTOFF));
-        self.moreNode = ko.observable(data.nodes.length > DEFAULT_LINK_CUTOFF);
+        self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
+        self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
         self.hasMoreText = ko.computed(function(){
-            return 'Show ' + (data.nodes.length - DEFAULT_LINK_CUTOFF).toString() + ' more...';
+            return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
         });
 
         self.displayAllNodes = function() {
@@ -71,7 +75,7 @@
             self.collapseNode(true);
         };
         self.displayDefaultNodes = function() {
-            self.nodesList(data.nodes.slice(0, DEFAULT_LINK_CUTOFF));
+            self.nodesList(data.nodes.slice(0, LINK_CUTOFF));
             self.moreNode(true);
             self.collapseNode(false);
         };

@@ -845,8 +845,6 @@ border-radius: 6px;
 
 /*****************************************************/
 table.table.table-plain th, table.table.table-plain td {
-  padding: 8px;
-  line-height: 10px;
   text-align: left;
   border-top: 0px solid #ddd;
 }
@@ -1348,9 +1346,10 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
+
 .narrow-list{
-    padding-left:16px;
     margin: 0px 0px;
+    list-style: none;
 }
 
 #generate-private-link {
@@ -1358,28 +1357,36 @@ div#logScope a.moreLogs{
 }
 
 .text-align{
-    margin-left:7px;
+    margin-left: 7px;
 }
 
 .private-link-name{
-    width:60%
+    width: 60%
 }
 
 .list-overflow{
-    max-height:200px;
-    overflow-y:auto;
+    max-height: 200px;
+    overflow-y: auto;
 }
 
 #privateLinkTable .tooltip{
-    word-wrap:break-word;
-}
-
-#privateLinkTable .btn-mini{
-    padding:3px 7px;
+    word-wrap: break-word;
 }
 
 .more-link-node{
-    margin-top:5px;
+    margin-top: 5px;
+}
+
+.link-url{
+    padding: 1px;
+    border-left: 0px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    color: grey;
+}
+
+#privateLinkTable .btn-group .btn-mini{
+    padding:5px;
 }
 /* Contributor page */
 
@@ -1572,3 +1579,20 @@ a {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+@media (max-width:991px){
+    #features-nav, [role=complementary] {
+        display:none
+    }
+}
+
+#duplicateModal h4 {
+    line-height: 34px;
+}
+
+.well-inline {
+    padding:6px 12px;
+    line-height:20px;
+    font-weight:normal;
+    font-size:14px;
+}

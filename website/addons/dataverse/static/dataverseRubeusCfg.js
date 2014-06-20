@@ -13,21 +13,13 @@
 
     function getCitation(item) {
         bootbox.alert(
-            '<table>' +
-                '<tr>'+
-                    '<td><b>Title: </b></td> <td>' + item.study + '</td>' +
-                '</tr>' +
-                '<tr>'+
-                    '<td><b>Study Global ID: &nbsp&nbsp&nbsp</b></td> <td><a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' + item.doi + '</a></td>' +
-                '</tr>' +
-                '<tr>'+
-                    '<td><b>Dataverse: </b></td> <td>' + item.dataverse + '</td>' +
-                '</tr>' +
-                '<tr><td>&nbsp</td></tr>' +
-                '<tr>'+
-                    '<td><b>Citation: </b></td> <td>' + item.citation + '</td>' +
-                '</tr>' +
-            '</table>'
+            '<dl class="dl-horizontal">' +
+                '<dt>Title</dt> <dd>' + item.study + '</dd>' +
+                '<dt>Study Global ID</dt> <dd><a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' + item.doi + '</a></dd>' +
+                '<dt>Dataverse</dt> <dd>' + item.dataverse + '</dd>' +
+                '<dt>&nbsp</dt><dd>&nbsp</dd>' +
+                '<dt>Citation</dt> <dd>' + item.citation + '</dd>' +
+            '</dl>'
         )
     }
 
