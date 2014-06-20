@@ -17,7 +17,7 @@
     </h4>
 </div>
 
-<%include file="profile/addon_permissions.mako" />`
+<%include file="profile/addon_permissions.mako" />
 
 <script type="text/javascript">
 
