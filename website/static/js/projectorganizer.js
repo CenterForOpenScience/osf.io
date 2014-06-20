@@ -528,9 +528,9 @@
                         $('#findNode' + theItem.node_id).show();
                     });
 
-                    $(".project-details").show("scale", {percent: 100, origin: ['middle','center']},fadeTime);
+                    $(".project-details").show();
                 } else {
-                    $(".project-details").hide("scale", {percent: 0, origin: ['middle','center']},fadeTime);
+                    $(".project-details").hide();
                 }
             } else if(selectedRows.length > 1) {
                 var someItemsAreFolders = false;
@@ -555,16 +555,16 @@
                     theParentNodeID = theParentNode.node_id;
                     var displayHTML = detailTemplate(detailTemplateContext);
                     $(".project-details").html(displayHTML);
-                    $(".project-details").show("scale", {percent: 100, origin: ['middle','center']},fadeTime);
+                    $(".project-details").show();
                     $('#remove-links-multiple').click(function(){
                         deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
                     });
 
                 } else {
-                    $(".project-details").hide("scale", {percent: 0, origin: ['middle','center']},fadeTime);
+                    $(".project-details").hide();
                 }
             } else {
-                    $(".project-details").hide("scale", {percent: 0, origin: ['middle','center']},fadeTime);
+                    $(".project-details").hide();
                 }
 
 
