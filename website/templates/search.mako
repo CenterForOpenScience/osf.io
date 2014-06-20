@@ -230,7 +230,7 @@
                         % else:
                             <li><a href="#">&raquo;</a></li>
                         % endif
-                        <li><a href="?q=${query | h}&pagination=${counts['total']/10 * 10}">Last</a></li>
+                        <li><a href="?q=${query | h}&pagination=${(counts['total']-1)/10 * 10}">Last</a></li>
                     % endif
                     </ul>
                 </div><!-- end navigate -->
