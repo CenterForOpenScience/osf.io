@@ -14,10 +14,8 @@
 
         self.url = url;
         self.title = ko.observable('');
-        self.parentId = ko.observable(null);
-        self.parentTitle = ko.observable(null);
-        self.note = ko.observable(null);
-        self.pageTitle = 'Generate New Link to Share Private Project';
+        self.name = ko.observable(null);
+        self.pageTitle = 'Generate New Link to Share Project';
         self.errorMsg = ko.observable('');
 
         self.nodes = ko.observableArray([]);
@@ -28,14 +26,11 @@
          */
 
         function onFetchSuccess(response) {
-            var node = response.result.node;
-            self.title(node.title);
-            self.parentId(node.parentId);
-            self.parentTitle(node.parentTitle);
-            $.each(response.result['children'], function(idx, child) {
+            self.title(response.node.title);
+            $.each(response['children'], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
-            self.nodes(response.result['children']);
+            self.nodes(response['children']);
         }
 
         function onFetchError() {
@@ -52,8 +47,6 @@
 
         // Initial fetch of data
         fetch();
-
-
 
         self.cantSelectNodes = function() {
             return self.nodesToChange().length == self.nodes().length;
@@ -76,14 +69,12 @@
                     type: 'post',
                     data: JSON.stringify({
                         node_ids: self.nodesToChange(),
-                        note: self.note()
+                        name: self.name()
                     }),
                     contentType: 'application/json',
                     dataType: 'json',
                     success: function(response) {
-                        if (response.status === 'success') {
-                            window.location.reload();
-                        }
+                        window.location.reload();
                     }
                 }
             )
