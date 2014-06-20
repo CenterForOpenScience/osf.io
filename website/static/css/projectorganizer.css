@@ -97,7 +97,7 @@ div.project-details span.title {
 div.project-details {
     width: 450px;
     border: 1px solid silver;
-    background-color: white;
+    background-color: lightyellow;
     float: right;
     margin-right: -100px;
     margin-left: 600px;

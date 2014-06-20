@@ -800,8 +800,6 @@
                         item.expand = false;
                     });
                 }
-
-
             },
             onCollapse: function(event, item) {
                 item.expand = false;
