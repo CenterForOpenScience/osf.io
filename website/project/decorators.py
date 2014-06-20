@@ -166,7 +166,7 @@ def _must_be_contributor_factory(include_public):
                 api_node = get_api_key()
                 kwargs['api_node'] = api_node
 
-            key = request.args.get('key', '').strip('/')
+            key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
             if not kwargs['auth'].user:
                 kwargs['auth'].private_key = key

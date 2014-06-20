@@ -2,6 +2,7 @@
 
 import functools
 from framework.flask import request, redirect
+
 from .core import Auth
 
 
