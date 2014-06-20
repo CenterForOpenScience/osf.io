@@ -121,13 +121,13 @@ api_routes = {
         Rule([
             '/project/<pid>/figshare/hgrid/',
             '/project/<pid>/node/<nid>/figshare/hgrid/',
-            '/project/<pid>/figshare/hgrid/<type>/<id>',
-            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>',
+            '/project/<pid>/figshare/hgrid/<type>/<id>/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>/',
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
         Rule([
-            '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
-            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
+            '/project/<pid>/figshare/render/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
         Rule([
             '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
