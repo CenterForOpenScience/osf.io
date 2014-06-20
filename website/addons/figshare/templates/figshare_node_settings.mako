@@ -29,7 +29,7 @@
                         {{folderName}}
                     </a>
 
-                    <p data-bind="if: linked().id === null" class="text-muted">No content linked selected</p>
+                    <p data-bind="if: linked().id === null" class="text-muted">No content linked</p>
                 </div>
 
                 <!-- Folder buttons -->
@@ -52,7 +52,7 @@
             
                     <!-- Queued selection -->
                     <div class="figshare-confirm-selection"
-                        data-bind="visible: currentDisplay() == PICKER">
+                        data-bind="visible: currentDisplay() === PICKER && selected()">
                         <form data-bind="submit: submitSettings">
 
                             <h4 data-bind="if: selected" class="figshare-confirm-dlg">
@@ -60,12 +60,13 @@
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
-                                        data-bind="click: cancelSelection,
-                                                    visible: selected()">Cancel</button>
-                                <input data-bind="attr.disabled: !selected()"
+                                        data-bind="click: cancelSelection
+                                    ">Cancel</button>
+                                <input
                                         type="submit"
                                         class="btn btn-primary"
-                                        value="Submit">
+                                        value="Submit"
+                                    />
                             </div>
                         </form>
                     </div><!-- end .figshare-confirm-selection -->
