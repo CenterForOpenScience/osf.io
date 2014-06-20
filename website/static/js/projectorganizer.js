@@ -693,7 +693,11 @@
                     console.error("Parent node ("+itemParentNodeID + ") == Folder Node ("+theFolderNodeID+")");
                 }
             } else {
-                console.error("Folder is either undefined or null");
+                if(typeof folder === "undefined") {
+                    console.error("oDrop folder is undefined.");
+                } else {
+                    console.error("onDrop folder is null.");
+                }
             }
             $('.project-organizer-dand').css('cursor', 'default');
         },
