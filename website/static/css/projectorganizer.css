@@ -96,7 +96,7 @@ div.project-details span.title {
 
 div.project-details {
     width: 450px;
-    border: 1px solid silver;
+    border: 2px solid silver;
     background-color: lightyellow;
     float: right;
     margin-right: -100px;
@@ -108,7 +108,7 @@ div.project-details {
     overflow: visible;
     border-radius: 5px;
     padding: 8px;
-    box-shadow: 10px 10px 5px #888888;
+    box-shadow: 10px 10px 12px #888877;
 }
 
 .organize-project-controls {
