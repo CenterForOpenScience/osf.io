@@ -131,7 +131,7 @@
 	});
 
         function onSubmitSuccess(response) {
-            self.changeMessage('Successfully linked "' + self.selected().name +
+            self.changeMessage('Successfully linked "' + self.selected().title +
                 '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your files.',
                 'text-success', 5000);
