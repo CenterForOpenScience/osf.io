@@ -116,7 +116,7 @@ class Figshare(object):
     def project(self, node_settings, project_id):
         if not project_id:
             return
-        project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
+        project = self._send(os.path.join(node_settings.api_url, 'projects', str(project_id)))
         if not project:
             return
         articles = self._send(
