@@ -94,12 +94,10 @@
 
     </div>
 
-    <div class="dataverse-settings" data-bind="if: credentialsChanged">
+    <!-- Changed Credentials -->
+    <div class="text-danger dataverse-settings" data-bind="if: credentialsChanged">
         <span data-bind="if: userIsOwner">
-            There was a problem connecting to the Dataverse using your
-            credentials. If they have changed, please go to
-            <a href="/settings/addons/">user settings</a> and update your account
-            information.
+            Your dataverse credentials may not be valid. Please re-enter your password.
         </span>
         <span data-bind="ifnot: userIsOwner">
             There was a problem connecting to the Dataverse with the given
@@ -114,11 +112,19 @@
         </a>
     </div>
 
-    <!-- Create Dataverse Button -->
-    <div data-bind="if: showCreateButton">
-        <a data-bind="attr.href: '/settings/addons/'" class="btn btn-primary">
-            Authorize: Set Dataverse Credentials
-        </a>
+    <!-- Input Credentials-->
+    <div data-bind="if: showInputCredentials">
+        <div class="form-group">
+            <label for="dataverseUsername">Dataverse Username</label>
+            <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
+        </div>
+        <div class="form-group">
+            <label for="dataversePassword">Dataverse Password</label>
+            <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
+        </div>
+        <button data-bind="click: sendAuth" class="btn btn-success">
+            Submit
+        </button>
     </div>
 
     <!-- Flashed Messages -->

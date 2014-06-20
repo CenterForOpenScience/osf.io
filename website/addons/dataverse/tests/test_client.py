@@ -1,16 +1,14 @@
 from nose.tools import *
 import mock
 
+from dataverse import Connection, Dataverse, DataverseFile, Study
+
 from framework.exceptions import HTTPError
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 from website.addons.dataverse.client import (connect, delete_file, upload_file,
     get_file, get_file_by_id, get_files, release_study, get_studies, get_study,
     get_dataverses, get_dataverse, connect_from_settings, connect_or_403,
     connect_from_settings_or_403)
-from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.dvn.dataverse import Dataverse
-from website.addons.dataverse.dvn.file import DvnFile
-from website.addons.dataverse.dvn.study import Study
 from website.addons.dataverse.model import AddonDataverseUserSettings
 from website.addons.dataverse import settings
 
@@ -18,18 +16,18 @@ from website.addons.dataverse import settings
 class TestClient(DataverseAddonTestCase):
 
     def setUp(self):
-        self.mock_connection = mock.create_autospec(DvnConnection)
+        self.mock_connection = mock.create_autospec(Connection)
         self.mock_dataverse = mock.create_autospec(Dataverse)
         self.mock_study = mock.create_autospec(Study)
-        self.mock_file = mock.create_autospec(DvnFile)
+        self.mock_file = mock.create_autospec(DataverseFile)
 
-        self.mock_file.hostStudy = self.mock_study
-        self.mock_study.hostDataverse = self.mock_dataverse
+        self.mock_file.study = self.mock_study
+        self.mock_study.dataverse = self.mock_dataverse
         self.mock_dataverse.connection = self.mock_connection
 
-    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = True
         mock_obj.status = 200
         mock_dvn_connection.return_value = mock_obj
@@ -38,14 +36,14 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+            disable_ssl=not settings.VERIFY_SSL,
         )
 
         assert_true(c)
 
-    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_fail(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = False
         mock_obj.status = 400
         mock_dvn_connection.return_value = mock_obj
@@ -54,14 +52,14 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+            disable_ssl=not settings.VERIFY_SSL,
         )
 
         assert_equal(c, None)
 
-    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_or_403(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = True
         mock_obj.status = 200
         mock_dvn_connection.return_value = mock_obj
@@ -70,14 +68,14 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+            disable_ssl=not settings.VERIFY_SSL,
         )
 
         assert_true(c)
 
-    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_or_403_forbidden(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = False
         mock_obj.status = 403
         mock_dvn_connection.return_value = mock_obj
@@ -87,7 +85,7 @@ class TestClient(DataverseAddonTestCase):
 
         mock_dvn_connection.assert_called_once_with(
             username='My user', password='My pw', host='My host',
-            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+            disable_ssl=not settings.VERIFY_SSL,
         )
 
         assert_equal(cm.exception.code, 403)
@@ -124,9 +122,9 @@ class TestClient(DataverseAddonTestCase):
             user_settings.dataverse_password,
         )
 
-    @mock.patch('website.addons.dataverse.client.DvnConnection')
+    @mock.patch('website.addons.dataverse.client.Connection')
     def test_connect_from_settings_or_403_forbidden(self, mock_dvn_connection):
-        mock_obj = mock.create_autospec(DvnConnection)
+        mock_obj = mock.create_autospec(Connection)
         mock_obj.connected = False
         mock_obj.status = 403
         mock_dvn_connection.return_value = mock_obj
@@ -142,7 +140,7 @@ class TestClient(DataverseAddonTestCase):
             username=user_settings.dataverse_username,
             password=user_settings.dataverse_password,
             host=settings.HOST,
-            disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+            disable_ssl=not settings.VERIFY_SSL,
         )
 
         assert_equal(cm.exception.code, 403)
@@ -153,7 +151,7 @@ class TestClient(DataverseAddonTestCase):
 
     def test_upload_file(self):
         upload_file(self.mock_study, 'filename.txt', b'File Content')
-        self.mock_study.add_file_obj.assert_called_once_with('filename.txt',
+        self.mock_study.upload_file.assert_called_once_with('filename.txt',
                                                              b'File Content')
 
     def test_get_file(self):
@@ -217,29 +215,29 @@ class TestClient(DataverseAddonTestCase):
 
     def test_get_study(self):
         self.mock_study.get_state.return_value = 'DRAFT'
-        self.mock_dataverse.get_study_by_hdl.return_value = self.mock_study
+        self.mock_dataverse.get_study_by_doi.return_value = self.mock_study
 
         s = get_study(self.mock_dataverse, 'My hdl')
-        self.mock_dataverse.get_study_by_hdl.assert_called_once_with('My hdl')
+        self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
 
         assert_equal(s, self.mock_study)
 
     def test_get_deaccessioned_study(self):
         self.mock_study.get_state.return_value = 'DEACCESSIONED'
-        self.mock_dataverse.get_study_by_hdl.return_value = self.mock_study
+        self.mock_dataverse.get_study_by_doi.return_value = self.mock_study
 
         s = get_study(self.mock_dataverse, 'My hdl')
-        self.mock_dataverse.get_study_by_hdl.assert_called_once_with('My hdl')
+        self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
 
         assert_is_none(s)
 
     def test_get_bad_study(self):
         error = UnicodeDecodeError('utf-8', b'', 1, 2, 'jeepers')
         self.mock_study.get_state.side_effect = error
-        self.mock_dataverse.get_study_by_hdl.return_value = self.mock_study
+        self.mock_dataverse.get_study_by_doi.return_value = self.mock_study
 
         s = get_study(self.mock_dataverse, 'My hdl')
-        self.mock_dataverse.get_study_by_hdl.assert_called_once_with('My hdl')
+        self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
 
         assert_is_none(s)
 

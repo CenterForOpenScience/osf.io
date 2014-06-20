@@ -91,11 +91,9 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     )
 
     def delete(self, save=True):
-        super(AddonS3NodeSettings, self).delete(save=False)
         self.bucket = None
         self.user_settings = None
-        if save:
-            self.save()
+        super(AddonS3NodeSettings, self).delete(save)
 
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)

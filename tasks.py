@@ -9,10 +9,17 @@ import code
 import platform
 
 from invoke import task, run
+from invoke.exceptions import Failure
 
 from website import settings
 
 SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+
+try:
+    run('pip freeze | grep rednose', hide='both')
+    TEST_CMD = 'nosetests --rednose'
+except Failure:
+    TEST_CMD = 'nosetests'
 
 
 @task
@@ -33,7 +40,7 @@ Available variables:
 
 def make_shell_context():
     from framework import Q
-    from framework.auth.model import User
+    from framework.auth import User
     from framework import db
     from website.app import init_app
     from website.project.model import Node
@@ -182,12 +189,11 @@ def test_module(module=None, verbosity=2):
     """
     Helper for running tests.
     """
-    test_cmd = 'nosetests'
     # Allow selecting specific submodule
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
-    run(test_cmd + args, pty=True)
+    run(TEST_CMD + args, pty=True)
 
 
 @task
@@ -253,7 +259,7 @@ def mfr_requirements():
 @task
 def encryption(owner=None):
     """Generate GnuPG key.
-    
+
     For local development:
     > invoke encryption
     On Linode:

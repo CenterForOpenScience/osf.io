@@ -67,38 +67,38 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url,{'key': self.link.key})
+        res = self.app.get(self.project_url,{'view_only': self.link.key})
         assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'key': None})
+        res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow()
         assert_equal(res.request.path, lookup('web', 'auth_login'))
 
     def test_logged_in_no_private_key(self):
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'key': self.link.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_logged_in_has_key_ring(self):
         self.user.private_links.append(self.link)
         self.user.save()
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth)
         assert_is_redirect(res)
         redirected = res.follow()
-        assert_equal(redirected.request.GET['key'], self.link.key)
+        assert_equal(redirected.request.GET['view_only'], self.link.key)
         assert_equal(redirected.status_code, 200)
 
     def test_logged_in_with_no_key_ring(self):
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
@@ -107,11 +107,11 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.user.save()
         #check if key_ring works
         link2 = PrivateLinkFactory(key="123456")
-        res = self.app.get(self.project_url, {'key': link2.key}, auth=self.user.auth)
-        assert_equal(res.request.GET['key'], link2.key)
+        res = self.app.get(self.project_url, {'view_only': link2.key}, auth=self.user.auth)
+        assert_equal(res.request.GET['view_only'], link2.key)
         assert_equal(res.status_code, 302)
         res2 = res.maybe_follow(auth=self.user.auth)
-        assert_equal(res2.request.GET['key'], self.link.key)
+        assert_equal(res2.request.GET['view_only'], self.link.key)
         assert_equal(res2.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')

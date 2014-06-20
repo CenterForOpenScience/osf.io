@@ -106,28 +106,31 @@ def new_folder(title, user):
 
     return node
 
-def new_private_link(label, user):
+def new_private_link(name, user, nodes):
     """Create a new private link.
 
-    :param str label: private link label
+    :param str name: private link name
     :param User user: User object
+    :param list Node node: a list of node object
     :return PrivateLink: Created private link
 
     """
     key = str(uuid.uuid4()).replace("-", "")
-    if label:
-        label = sanitize(label.strip())
+    if name:
+        name = sanitize(name.strip())
+    else:
+        name = "Shared project link"
 
     private_link = PrivateLink(
         key=key,
-        label=label,
+        name=name,
         creator=user,
+        nodes=nodes
     )
 
     private_link.save()
 
     return private_link
-
 
 
 template_name_replacements = {
