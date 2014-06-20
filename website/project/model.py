@@ -1047,7 +1047,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             # backref from self to pointer.
             Pointer.remove_one(pointer)
 
-
         # Return forked content
         return forked
 

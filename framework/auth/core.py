@@ -602,33 +602,33 @@ class User(GuidStoredObject, AddonModelMixin):
     ###### OSF-Specific methods ######
 
     def watch(self, watch_config, save=False):
-        '''Watch a node by adding its WatchConfig to this user's ``watched``
+        """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
         :param watch_config: The WatchConfig to add.
         :param save: Whether to save the user.
-        '''
+
+        """
         watched_nodes = [each.node for each in self.watched]
         if watch_config.node in watched_nodes:
-            raise ValueError("Node is already being watched.")
+            raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
         if save:
             self.save()
         return None
 
-    def unwatch(self, watch_config, save=False):
-        '''Unwatch a node by removing its WatchConfig from this user's ``watched``
+    def unwatch(self, watch_config):
+        """Unwatch a node by removing its WatchConfig from this user's ``watched``
         list. Raises ``ValueError`` if the node is not already being watched.
 
         :param watch_config: The WatchConfig to remove.
         :param save: Whether to save the user.
-        '''
+
+        """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
                 each.__class__.remove_one(each)
-                if save:
-                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
