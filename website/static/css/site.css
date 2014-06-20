@@ -1354,35 +1354,48 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
+
 .narrow-list{
-    padding: 0px 0px;
     margin: 0px 0px;
+    list-style: none;
 }
 
 #generate-private-link {
     margin: 20px 20px;
 }
 
-.private-link-label{
-    width: 60%;
+.text-align{
+    margin-left: 7px;
 }
 
-.link-name{
-    width: 55%;
+.private-link-name{
+    width: 60%
 }
 
-.link-label{
-    width: 15%;
+.list-overflow{
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-.link-date{
-    width: 15%;
+#privateLinkTable .tooltip{
+    word-wrap: break-word;
 }
 
-.link-creator{
-    width: 20%;
+.more-link-node{
+    margin-top: 5px;
 }
 
+.link-url{
+    padding: 1px;
+    border-left: 0px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    color: grey;
+}
+
+#privateLinkTable .btn-group .btn-mini{
+    padding:5px;
+}
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
