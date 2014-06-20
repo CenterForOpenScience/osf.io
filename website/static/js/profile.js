@@ -162,6 +162,31 @@
         self.editable = ko.observable(false);
         self.mode = ko.observable(self.viewable ? 'view' : 'edit');
 
+        self.original = ko.observable();
+        self.tracked = [];  // Define for each view model that inherits
+
+        self.setOriginal = function() {
+            self.original(ko.toJSON(self.tracked));
+        };
+
+        self.dirty = ko.computed(function() {
+            return ko.toJSON(self.tracked) !== self.original();
+        });
+
+        // Must be set after isValid is defined in inherited view models
+        // Necessary for enableSubmit to subscribe to isValid
+        self.hasValidProperty = ko.observable(false);
+
+        self.enableSubmit = ko.computed(function() {
+            return self.hasValidProperty() && self.isValid() && self.dirty();
+        });
+
+        $(window).on('beforeunload', function() {
+            if (self.dirty()) {
+                return 'There are unsaved changes to your settings.';
+            }
+        });
+
         this.message = ko.observable();
         this.messageClass = ko.observable();
 
@@ -209,7 +234,7 @@
             type: 'GET',
             url: this.urls.crud,
             dataType: 'json',
-            success: this.unserialize.bind(this),
+            success: [this.unserialize.bind(this), this.setOriginal],
             error: this.handleError.bind(this, 'Could not fetch data')
         });
     };
@@ -226,7 +251,7 @@
     };
 
     BaseViewModel.prototype.submit = function() {
-        if (this.isValid() === false) {
+        if (this.enableSubmit() === false) {
             return
         }
         $.ajax({
@@ -235,7 +260,7 @@
             data: this.serialize(),
             contentType: 'application/json',
             dataType: 'json',
-            success: this.handleSuccess.bind(this),
+            success: [this.handleSuccess.bind(this), this.setOriginal],
             error: this.handleError.bind(this)
         });
     };
@@ -253,10 +278,19 @@
         self.family = sanitizedObservable();
         self.suffix = sanitizedObservable();
 
+        self.tracked = [
+            self.full,
+            self.given,
+            self.middle,
+            self.family,
+            self.suffix
+        ];
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.citations = ko.observable();
 
@@ -398,10 +432,21 @@
             self, 'github', 'https://github.com/'
         );
 
+        self.tracked = [
+            self.personal,
+            self.orcid,
+            self.researcherId,
+            self.twitter,
+            self.scholar,
+            self.linkedIn,
+            self.github
+        ]
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.values = ko.computed(function() {
             return [
@@ -439,6 +484,8 @@
         self.ContentModel = ContentModel;
         self.contents = ko.observableArray();
 
+        self.tracked = self.contents;
+
         self.canRemove = ko.computed(function() {
             return self.contents().length > 1;
         });
@@ -451,6 +498,7 @@
             }
             return true;
         });
+        self.hasValidProperty(true);
 
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);
