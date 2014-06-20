@@ -1,16 +1,16 @@
 import httplib as http
+from dataverse import Connection
 
 from framework.exceptions import HTTPError
-from website.addons.dataverse.dvn.connection import DvnConnection
 from website.addons.dataverse import settings
 
 
 def connect(username, password, host=settings.HOST):
-    connection = DvnConnection(
+    connection = Connection(
         username=username,
         password=password,
         host=host,
-        disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+        disable_ssl=not settings.VERIFY_SSL,
     )
     return connection if connection.connected else None
 
@@ -23,11 +23,11 @@ def connect_from_settings(user_settings):
 
 
 def connect_or_403(username, password, host=settings.HOST):
-    connection = DvnConnection(
+    connection = Connection(
         username=username,
         password=password,
         host=host,
-        disable_ssl_certificate_validation=not settings.VERIFY_SSL,
+        disable_ssl=not settings.VERIFY_SSL,
     )
     if connection.status == http.FORBIDDEN:
         raise HTTPError(http.FORBIDDEN)
@@ -42,12 +42,12 @@ def connect_from_settings_or_403(user_settings):
 
 
 def delete_file(file):
-    study = file.hostStudy
+    study = file.study
     study.delete_file(file)
 
 
 def upload_file(study, filename, content):
-    study.add_file_obj(filename, content)
+    study.upload_file(filename, content)
 
 
 def get_file(study, filename, released=False):
@@ -83,7 +83,7 @@ def get_studies(dataverse):
 def get_study(dataverse, hdl):
     if dataverse is None:
         return
-    study = dataverse.get_study_by_hdl(hdl)
+    study = dataverse.get_study_by_doi(hdl)
     try:
         if study and study.get_state() != 'DEACCESSIONED':
             return study

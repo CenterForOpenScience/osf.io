@@ -125,7 +125,6 @@ def user_profile(auth, **kwargs):
         'user_api_url': user.api_url,
     }
 
-
 @must_be_logged_in
 def user_addons(auth, **kwargs):
 
@@ -152,7 +151,6 @@ def user_addons(auth, **kwargs):
     ]
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
-
     return out
 
 

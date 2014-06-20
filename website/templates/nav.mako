@@ -41,12 +41,12 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
-          <li>
-            <a class="hidden-lg" rel="tooltip" title="Profile: ${display_name}" href="/profile/">
+          <li rel="tooltip" title="${user_full_name}">
+            <a class="hidden-lg" href="/profile/">
               <span class="icon-user"></span>
             </a>
             <a class="visible-lg"href="/profile/">
-              <span>${user_name}</span>
+              <span>${display_name}</span>
             </a>
           </li>
           <li><a rel="tooltip" title="Settings" href="${ web_url_for('user_profile') }"><span class="icon-cog"></span></a></li>

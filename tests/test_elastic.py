@@ -2,7 +2,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
+from tests.factories import UserFactory, ProjectFactory, NodeFactory, UnregUserFactory
 
 from website.search.utils import clean_solr_doc
 from framework.auth.decorators import Auth
@@ -80,15 +80,28 @@ class TestProject(SearchTestCase):
         assert_equal(len(docs), 1)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
-class TestPublicProject(SearchTestCase):
+class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
         self.user = UserFactory(usename='Doug Bogie')
+        self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(
-            title='Red Special',
+            title=self.title,
             creator=self.user,
             is_public=True
+        )
+        self.component = NodeFactory(
+            project=self.project,
+            title=self.title,
+            creator=self.user,
+            is_public=True
+        )
+        self.registration = ProjectFactory(
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+            is_registration=True
         )
 
     def test_make_private(self):
@@ -96,15 +109,27 @@ class TestPublicProject(SearchTestCase):
         in search.
         """
         self.project.set_privacy('private')
-        docs = query(self.project.title)
+        docs = query('project:' + self.title)
+        assert_equal(len(docs), 0)
+
+        self.component.set_privacy('private')
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 0)
+
+        self.registration.set_privacy('private')
+        docs = query('registration:' + self.title)
         assert_equal(len(docs), 0)
 
     def test_delete_project(self):
         """
 
         """
+        self.component.remove_node(self.consolidate_auth)
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 0)
+
         self.project.remove_node(self.consolidate_auth)
-        docs = query(self.project.title)
+        docs = query('project:' + self.title)
         assert_equal(len(docs), 0)
 
     def test_change_title(self):
@@ -113,12 +138,12 @@ class TestPublicProject(SearchTestCase):
         """
         title_original = self.project.title
         self.project.set_title(
-            self.project.title[::-1], self.consolidate_auth, save=True)
+            'Blue Ordinary', self.consolidate_auth, save=True)
 
-        docs = query(title_original)
+        docs = query('project:' + title_original)
         assert_equal(len(docs), 0)
 
-        docs = query(self.project.title)
+        docs = query('project:' + self.project.title)
         assert_equal(len(docs), 1)
 
     def test_add_tag(self):
@@ -179,12 +204,12 @@ class TestPublicProject(SearchTestCase):
         """
         user2 = UserFactory(fullname='Adam Lambert')
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('"project:{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
     def test_remove_contributor(self):
@@ -197,7 +222,7 @@ class TestPublicProject(SearchTestCase):
         self.project.add_contributor(user2, save=True)
         self.project.remove_contributor(user2, self.consolidate_auth)
 
-        docs = query('"{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')

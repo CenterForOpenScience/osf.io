@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
     if len(username) > 40:
-        return '%s...%s' % (username[:15], username[-10:])
+        return '%s...%s' % (username[:20].strip(), username[-15:].strip())
     return username
 
 

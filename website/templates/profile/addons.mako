@@ -33,7 +33,6 @@
                                 if category in addon.categories
                             ]
                         %>
-
                         % if addons:
                             <h3>${category.capitalize()}</h3>
                             % for addon in addons:
@@ -60,9 +59,7 @@
 
             </div>
         </div>
-
         % if addon_enabled_settings:
-
             <div id="configureAddons" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
@@ -73,23 +70,20 @@
                                 "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
                                 "uri": "${user_api_url}${name}/settings/"
                             }'></div>
-
                         % if not loop.last:
                             <hr />
                         % endif
 
                     % endfor
-
                 </div>
             </div>
-
-        % endif
-
+            % endif
     </div>
 
 </div>
 
 <script type="text/javascript">
+
 
     // TODO: Move all this to its own module
     function formToObj(form) {

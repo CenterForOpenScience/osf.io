@@ -16,7 +16,7 @@
         </span>
     </h4>
 
-    <!-- Create Access Token Button -->
+    <!-- Enter Credentials -->
     <form data-bind="if: showInputCredentials">
         <div class="text-danger" style="padding-bottom: 10px" data-bind="if: credentialsChanged">
             Your dataverse credentials may not be valid. Please re-enter your password.
@@ -54,3 +54,5 @@
         var dataverse = new DataverseUserConfig('#dataverseAddonScope', url);
     });
 </script>
+
+<%include file="profile/addon_permissions.mako" />

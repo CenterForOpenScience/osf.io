@@ -10,7 +10,7 @@ from wtforms.validators import ValidationError
 
 from wtfrecaptcha.fields import RecaptchaField
 
-from framework.forms.utils import sanitize
+from website.util.sanitize import scrub_html
 
 
 class BootstrapTextInput(TextInput):
@@ -168,10 +168,10 @@ class NoHtmlCharacters(object):
     """
 
     def __init__(self, message=None):
-        self.message = message or u'Illegal characters in field'
+        self.message = message or u'HTML is not allowed in form field'
 
     def __call__(self, form, field):
-        if not field.data == sanitize(field.data):
+        if not field.data == scrub_html(field.data):
             raise ValidationError(self.message)
 
 # Filters

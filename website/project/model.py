@@ -2384,19 +2384,37 @@ class PrivateLink(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
-    note = fields.StringField()
+    name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
 
     nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
+
+    @property
+    def node_ids(self):
+        node_ids = [node._id for node in self.nodes]
+        return node_ids
+
+    def node_scale(self, node):
+        if node.parent_id not in self.node_ids:
+            return -40
+        else:
+            return 20 + self.node_scale(node.parent_node)
+
+    def node_icon(self, node):
+        if node.category == 'project':
+            node_type = "reg-project" if node.is_registration else "project"
+        else:
+            node_type = "reg-component" if node.is_registration else "component"
+        return "/static/img/hgrid/{0}.png".format(node_type)
 
     def to_json(self):
         return {
             "id": self._id,
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
-            "note": self.note,
+            "name": self.name,
             "creator": self.creator.fullname,
-            "nodes": [x.title for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
         }
 

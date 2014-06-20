@@ -138,6 +138,6 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'result': {
             'userHasAuth': user_addon.has_auth,
             'dropboxName': info['display_name'] if info else None,
-            'urls': urls
+            'urls': urls,
         },
     }, http.OK

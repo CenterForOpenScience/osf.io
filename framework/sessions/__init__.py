@@ -21,7 +21,7 @@ def add_key_to_url(url, key):
     """
     parsed_path = urlparse.urlparse(url)
     args = request.args.to_dict()
-    args['key'] = key
+    args['view_only'] = key
     new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
     new_path = urlparse.urlunparse(new_parsed_path)
     return new_path
@@ -34,7 +34,7 @@ def prepare_private_key():
         return
 
     # Done if private_key in args
-    key_from_args = request.args.get('key', '')
+    key_from_args = request.args.get('view_only', '')
     if key_from_args:
         return
 
@@ -42,7 +42,7 @@ def prepare_private_key():
     if request.referrer:
         key = urlparse.parse_qs(
             urlparse.urlparse(request.referrer).query
-        ).get('key')
+        ).get('view_only')
         if key:
             key = key[0]
     else:
