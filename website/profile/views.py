@@ -126,29 +126,6 @@ def user_profile(auth, **kwargs):
     }
 
 @must_be_logged_in
-def user_addons_json(auth, **kwargs):
-
-    user = auth.user
-    out = []
-    addons = user.get_addons()
-    for addon in addons:
-
-        if 'user' in addon.config.configs:
-
-            dict_addon = {}
-            dict_addon['title'] = addon.config.short_name
-            dict_addon['full_name'] = addon.config.full_name
-
-            nodes = []
-            for node in addon.nodes:
-                dict = {'title': node.title, '_id': node._id, 'api_url': node.api_url, 'url': node.url}
-                nodes.append(dict)
-            dict_addon['nodes'] = nodes
-        out.append(dict_addon)
-    dict_addons = {'addons': out}
-    return dict_addons
-
-@must_be_logged_in
 def user_addons(auth, **kwargs):
 
     user = auth.user

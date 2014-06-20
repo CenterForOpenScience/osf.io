@@ -389,15 +389,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/settings/addon_config/',
-            ],
-            'get',
-            profile_views.user_addons_json,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/settings/social/',
                 '/settings/social/<uid>/',
             ],
