@@ -214,22 +214,26 @@ class AddonUserSettingsBase(AddonSettingsBase):
     def public_id(self):
         return None
 
-    def get_backref(self, schema, backref_name):
-        return schema + "__" + backref_name
+    def get_backref_key(self, schema, backref_name):
+        return schema._name + '__' + backref_name
 
+    # TODO: Test me @asmacdo
     @property
     def nodes(self):
-        """Create a list of node objects"""
+        """Get authorized nodes."""
 
-        schema = self.config.settings_models['node']._name
-        nodes_backref = self.get_backref(schema, "authorized")
+        schema = self.config.settings_models['node']
+        nodes_backref = self.get_backref_key(schema, 'authorized')
 
         return [node.owner for node in getattr(self, nodes_backref)]
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
-            'nodes': [{'title': node.title, '_id': node._id, 'url': node.url} for node in self.nodes]
+            'nodes': [
+                {'title': node.title, '_id': node._id, 'url': node.url}
+                for node in self.nodes
+            ]
         })
         return ret
 
