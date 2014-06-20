@@ -14,13 +14,16 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SEARCH_ENGINE = 'elastic'
 
 # Comment out to use celery in development
-USE_CELERY = True
+USE_CELERY = False
+
+# Comment out to use GnuPG in development
+USE_GNUPG = False # Changing this may require you to re-enter encrypted fields
 
 # Which addons are enabled
 ADDONS_REQUESTED = [
     'wiki', 'osffiles',
     'github', 's3', 'figshare',
-    'dropbox',
+    'dropbox', 'dataverse',
     # 'badges', 'forward',
 ]
 
@@ -33,6 +36,9 @@ MAIL_PASSWORD = 'CHANGEME'
 # Session
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
+
+# Uncomment if GPG was installed with homebrew
+# GNUPG_BINARY = '/usr/local/bin/gpg'
 
 ##### Celery #####
 ## Default RabbitMQ broker

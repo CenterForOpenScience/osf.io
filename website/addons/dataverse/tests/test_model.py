@@ -107,7 +107,6 @@ class TestDataverseNodeSettings(DataverseAddonTestCase):
 
         assert_true(self.node_settings.deleted)
         args, kwargs = mock_deauth.call_args
-        assert_is_instance(args[0], Auth)
         assert_equal(kwargs, {'add_log': False})
 
         # Log was not generated

@@ -5,8 +5,7 @@ import logging
 from furl import furl
 from framework import request, redirect, status
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user, get_api_key
-from framework.auth.decorators import Auth
+from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
 
@@ -167,7 +166,7 @@ def _must_be_contributor_factory(include_public):
                 api_node = get_api_key()
                 kwargs['api_node'] = api_node
 
-            key = request.args.get('key', '').strip('/')
+            key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
             if not kwargs['auth'].user:
                 kwargs['auth'].private_key = key

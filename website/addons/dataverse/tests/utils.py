@@ -1,13 +1,10 @@
 import mock
 
 from webtest_plus import TestApp
+from dataverse import Connection, Dataverse, Study, DataverseFile
 
 import website
 from website.addons.base.testing import AddonTestCase
-from website.addons.dataverse.dvn.connection import DvnConnection
-from website.addons.dataverse.dvn.dataverse import Dataverse
-from website.addons.dataverse.dvn.study import Study
-from website.addons.dataverse.dvn.file import DvnFile, ReleasedFile
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -39,7 +36,7 @@ def create_mock_connection(username='snowman', password='frosty'):
     will fail.
     """
 
-    mock_connection = mock.create_autospec(DvnConnection)
+    mock_connection = mock.create_autospec(Connection)
 
     mock_connection.username = username
     mock_connection.password = password
@@ -82,14 +79,14 @@ def create_mock_dataverse(title='Example Dataverse 0'):
         create_mock_study('DVN/00003')
     ]
 
-    def _get_study_by_hdl(hdl):
+    def _get_study_by_doi(hdl):
         return next((
             study for study in mock_dataverse.get_studies()
             if study.doi == hdl), None
         )
 
-    mock_dataverse.get_study_by_hdl = mock.MagicMock(
-        side_effect=_get_study_by_hdl
+    mock_dataverse.get_study_by_doi = mock.MagicMock(
+        side_effect=_get_study_by_doi
     )
 
     return mock_dataverse
@@ -98,13 +95,13 @@ def create_mock_dataverse(title='Example Dataverse 0'):
 def create_mock_study(id='DVN/12345'):
     mock_study = mock.create_autospec(Study)
 
-    mock_study.get_citation.return_value = 'Example Citation for {0}'.format(id)
+    mock_study.citation = 'Example Citation for {0}'.format(id)
     mock_study.title = 'Example ({0})'.format(id)
     mock_study.doi = 'doi:12.3456/{0}'.format(id)
     mock_study.get_state.return_value = 'DRAFT'
 
     def _create_file(name, released=False):
-        return create_mock_released_file() if released else create_mock_dvn_file()
+        return create_mock_released_file() if released else create_mock_draft_file()
 
     def _create_files(released=False):
         return [_create_file('name.txt', released)]
@@ -117,19 +114,21 @@ def create_mock_study(id='DVN/12345'):
     if 'DVN' in id:
         return mock_study
 
-def create_mock_dvn_file(id='54321'):
-    mock_file = mock.create_autospec(DvnFile)
+def create_mock_draft_file(id='54321'):
+    mock_file = mock.create_autospec(DataverseFile)
 
     mock_file.name = 'file.txt'
     mock_file.id = id
+    mock_file.is_released = False
 
     return mock_file
 
 def create_mock_released_file(id='54321'):
-    mock_file = mock.create_autospec(ReleasedFile)
+    mock_file = mock.create_autospec(DataverseFile)
 
     mock_file.name = 'released.txt'
     mock_file.id = id
+    mock_file.is_released = True
 
     return mock_file
 

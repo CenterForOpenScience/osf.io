@@ -21,6 +21,7 @@
         self.url = url;
         self.urls = ko.observable();
         self.dataverseUsername = ko.observable();
+        self.dataversePassword = ko.observable();
 
         self.ownerName = ko.observable();
         self.nodeHasAuth = ko.observable(false);
@@ -80,14 +81,15 @@
         self.showLinkDataverse = ko.computed(function() {
             return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
         });
-        self.showCreateButton = ko.computed(function() {
-            return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
+        self.credentialsChanged = ko.computed(function() {
+           return self.nodeHasAuth() && !self.connected();
+        });
+        self.showInputCredentials = ko.computed(function() {
+            return  (self.credentialsChanged() && self.userIsOwner()) ||
+                (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
         });
         self.hasDataverses = ko.computed(function() {
            return self.dataverses().length > 0;
-        });
-        self.credentialsChanged = ko.computed(function() {
-           return self.nodeHasAuth() && !self.connected();
         });
         self.hasBadStudies = ko.computed(function() {
             return self.badStudies().length > 0;
@@ -179,6 +181,27 @@
             });
         }
 
+        /** Send POST request to authorize Dataverse */
+        self.sendAuth = function() {
+            return $.ajax({
+                url: self.urls().create,
+                data: ko.toJSON({
+                    dataverse_username: self.dataverseUsername,
+                    dataverse_password: self.dataversePassword
+                }),
+                contentType: 'application/json',
+                type: 'POST',
+                success: function() {
+                    // User now has auth
+                    authorizeNode();
+                },
+                error: function(xhr, textStatus, error) {
+                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+                    self.changeMessage(errorMessage, 'text-danger');
+                }
+            });
+        }
+
         /**
          * Send PUT request to import access token from user profile.
          */
@@ -229,6 +252,7 @@
                 success: function() {
                     self.nodeHasAuth(false);
                     self.userIsOwner(false);
+                    self.connected(false);
                     self.changeMessage(language.deauthSuccess, 'text-success', 5000);
                 },
                 error: function() {

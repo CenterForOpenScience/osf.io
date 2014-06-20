@@ -10,8 +10,8 @@ from flask import Flask
 from werkzeug.wrappers import BaseResponse
 from webtest_plus import TestApp
 
+from framework import auth
 from framework.exceptions import HTTPError
-import framework.auth as auth
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, AuthUserFactory, PrivateLinkFactory
@@ -19,8 +19,8 @@ from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
 
 from framework import Q
 from framework import app
-from framework.auth.model import User
-from framework.auth.decorators import must_be_logged_in, Auth
+from framework.auth import User, Auth
+from framework.auth.decorators import must_be_logged_in
 
 from website.project.decorators import must_have_permission, must_be_contributor
 
@@ -92,17 +92,17 @@ class TestAuthObject(OsfTestCase):
 
     def test_factory(self):
         auth_obj = AuthFactory()
-        assert_true(isinstance(auth_obj.user, auth.model.User))
+        assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
 
     def test_from_kwargs(self):
         user = UserFactory()
-        request_args = {'key': 'mykey'}
+        request_args = {'view_only': 'mykey'}
         kwargs = {'user': user, 'api_key': 'myapikey', 'api_node': '123v'}
         auth_obj = Auth.from_kwargs(request_args, kwargs)
         assert_equal(auth_obj.user, user)
         assert_equal(auth_obj.api_key, kwargs['api_key'])
-        assert_equal(auth_obj.private_key, request_args['key'])
+        assert_equal(auth_obj.private_key, request_args['view_only'])
 
     def test_logged_in(self):
         user = UserFactory()
@@ -136,7 +136,7 @@ class TestPrivateLink(OsfTestCase):
         mock_get_api_key.return_value = 'foobar123'
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'key': self.link.key})
+            {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')
@@ -168,6 +168,7 @@ class AuthAppTestCase(OsfTestCase):
 
     def tearDown(self):
         self.ctx.pop()
+
 
 class TestMustBeContributorDecorator(AuthAppTestCase):
 

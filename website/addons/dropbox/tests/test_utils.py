@@ -6,7 +6,7 @@ import os
 from nose.tools import *  # PEP8 asserts
 from werkzeug.wrappers import Response
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.project.model import NodeLog
 
 from tests.base import OsfTestCase
