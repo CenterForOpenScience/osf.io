@@ -786,7 +786,7 @@
                 var self = this;
                 item.expand = false;
                 self.emptyFolder(item);
-                if(typeof item.apiURL !== "undefined") {
+                if(typeof item.apiURL !== "undefined" && item.parentIsFolder) {
                     var expandUrl = item.apiURL + 'expand/';
                     var postData = JSON.stringify({});
                     $.ajax({
@@ -805,7 +805,7 @@
             },
             onCollapse: function(event, item) {
                 item.expand = false;
-                if(typeof item.apiURL !== "undefined") {
+                if(typeof item.apiURL !== "undefined" && item.parentIsFolder) {
                     var collapseUrl = item.apiURL + 'collapse/';
                     var postData = JSON.stringify({});
                     $.ajax({
