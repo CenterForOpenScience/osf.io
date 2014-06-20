@@ -392,11 +392,9 @@ def unwatch_post(**kwargs):
                                digest=request.json.get('digest', False),
                                immediate=request.json.get('immediate', False))
     try:
-        user.unwatch(watch_config, save=False)
+        user.unwatch(watch_config)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
-
-    user.save()
 
     return {
         'status': 'success',
