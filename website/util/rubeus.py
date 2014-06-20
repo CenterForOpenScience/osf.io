@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Contanins Helper functions for generating correctly
-formated hgrid list/folders.
+"""Contains helper functions for generating correctly
+formatted hgrid list/folders.
 """
 import os
 import hurry
@@ -113,12 +113,12 @@ def build_addon_root(node_settings, name, permissions=None,
 def build_addon_button(text, action):
     """Builds am action button to be rendered in HGrid
 
-    :param String text: A string or html to appear on the button itself
-    :param String action: The name of the HGrid action for the button to call.
+    :param str text: A string or html to appear on the button itself
+    :param str action: The name of the HGrid action for the button to call.
         The callback for the HGrid action must be defined as a member of HGrid.Actions
     :return dict: Hgrid formatted dictionary for custom buttons
-    """
 
+    """
     return {
         'text': text,
         'action': action,

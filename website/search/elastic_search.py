@@ -194,7 +194,7 @@ def delete_all():
 
 
 def delete_doc(elastic_document_id, node):
-    category = node.project_or_component
+    category = 'registration' if node.is_registration else node.project_or_component
     try:
         elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:

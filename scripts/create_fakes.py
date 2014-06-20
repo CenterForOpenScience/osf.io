@@ -59,11 +59,14 @@ def parse_args():
     parser.add_argument('--nprojects', dest='n_projects', type=int, default=3)
     parser.add_argument('--ncomponents', dest='n_components', type=int, default=0)
     parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
+    parser.add_argument('-n', '--name', dest='name', type=str, default=None)
     return parser.parse_args()
 
 
-def create_fake_project(creator, n_users, privacy, n_components):
+def create_fake_project(creator, n_users, privacy, n_components, name):
     auth = Auth(user=creator)
+    project_title = name if name else fake.catch_phrase()
+    project = ProjectFactory.build(title=project_title,
     project = ProjectFactory.build(title=fake.catch_phrase(), description=fake.bs(), creator=creator)
     project.set_privacy(privacy)
     for _ in range(n_users):
@@ -79,8 +82,9 @@ def create_fake_project(creator, n_users, privacy, n_components):
 def main():
     args = parse_args()
     creator = models.User.find_by_email(args.user)[0]
-    for _ in range(args.n_projects):
-        create_fake_project(creator, args.n_users, args.privacy, args.n_components)
+    for i in range(args.n_projects):
+        name = args.name + str(i) if args.name else ''
+        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 

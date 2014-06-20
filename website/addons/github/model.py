@@ -87,6 +87,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             node_settings.user_settings = None
             node_settings.save()
 
+
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()

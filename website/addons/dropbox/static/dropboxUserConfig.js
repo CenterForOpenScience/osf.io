@@ -43,6 +43,7 @@
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
+
         /** Send DELETE request to deauthorize Dropbox */
         function sendDeauth() {
             return $.ajax({
@@ -85,7 +86,6 @@
                 }
             });
         };
-
     }
 
     function DropboxUserConfig(selector, url) {

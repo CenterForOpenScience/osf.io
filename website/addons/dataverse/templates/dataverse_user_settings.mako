@@ -54,3 +54,5 @@
         var dataverse = new DataverseUserConfig('#dataverseAddonScope', url);
     });
 </script>
+
+<%include file="profile/addon_permissions.mako" />

@@ -38,20 +38,17 @@ logger = logging.getLogger(__name__)
 @must_be_valid_project  # returns project
 @must_have_permission('write')
 @must_not_be_registration
-def edit_node(**kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    auth = kwargs['auth']
-    node_to_use = node or project
+def edit_node(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
     value = sanitize(post_data.get("value"))
     if value:
         if edited_field == 'title':
-            node_to_use.set_title(value, auth=auth)
+            node.set_title(value, auth=auth)
         elif edited_field == 'description':
-            node_to_use.set_description(value, auth=auth)
-        node_to_use.save()
+            node.set_description(value, auth=auth)
+        node.save()
     return {'status': 'success'}
 
 
@@ -101,7 +98,7 @@ def project_new_post(**kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def project_new_from_template(*args, **kwargs):
+def project_new_from_template(**kwargs):
     original_node = kwargs.get('node')
     new_node = original_node.use_as_template(
         auth=kwargs['auth'],
@@ -197,8 +194,7 @@ def project_before_fork(**kwargs):
 
     prompts = node.callback('before_fork', user=user)
 
-    pointers = node.get_pointers()
-    if pointers:
+    if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_FORK_HAS_POINTERS.format(
                 category=node.project_or_component
@@ -424,18 +420,17 @@ def project_statistics(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('admin')
-def project_set_privacy(**kwargs):
+def project_set_privacy(auth, **kwargs):
 
-    auth = kwargs['auth']
     permissions = kwargs['permissions']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    node_to_use.set_privacy(permissions, auth)
+    node.set_privacy(permissions, auth)
 
     return {
         'status': 'success',
         'permissions': permissions,
-        'redirect_url': node_to_use.url
+        'redirect_url': node.url,
     }, None, None
 
 
@@ -443,40 +438,41 @@ def project_set_privacy(**kwargs):
 @must_be_contributor_or_public
 @must_not_be_registration
 def watch_post(**kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
-    watch_config = WatchConfig(node=node_to_use,
+    watch_config = WatchConfig(node=node,
                                digest=request.json.get('digest', False),
                                immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
     except ValueError:  # Node is already being watched
         raise HTTPError(http.BAD_REQUEST)
-    watch_config.save()
+
     user.save()
+
     return {
         'status': 'success',
-        'watchCount': len(node_to_use.watchconfig__watched)
+        'watchCount': len(node.watchconfig__watched)
     }
-
 
 
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(**kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
-    watch_config = WatchConfig(node=node_to_use,
-                                digest=request.json.get('digest', False),
-                                immediate=request.json.get('immediate', False))
+    watch_config = WatchConfig(node=node,
+                               digest=request.json.get('digest', False),
+                               immediate=request.json.get('immediate', False))
     try:
-        user.unwatch(watch_config, save=True)
+        user.unwatch(watch_config)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
+
     return {
         'status': 'success',
-        'watchCount': len(node_to_use.watchconfig__watched)
+        'watchCount': len(node.watchconfig__watched)
     }
 
 
@@ -485,6 +481,7 @@ def unwatch_post(**kwargs):
 @must_not_be_registration
 def togglewatch_post(**kwargs):
     '''View for toggling watch mode for a node.'''
+    # TODO: refactor this, watch_post, unwatch_post (@mambocab)
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(
@@ -499,6 +496,10 @@ def togglewatch_post(**kwargs):
             user.watch(watch_config, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+    watch_config.save()
+    user.save()
+
     return {
         'status': 'success',
         'watchCount': len(node.watchconfig__watched),
@@ -526,6 +527,7 @@ def component_remove(**kwargs):
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
+    node_to_use.save()
 
     message = '{} deleted'.format(
         node_to_use.project_or_component.capitalize()
@@ -1123,7 +1125,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth)
+        node.rm_pointer(pointer, auth=auth, save=False)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 

@@ -59,7 +59,7 @@
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-	    self.linked(data.linked);
+	        self.linked(data.linked || {});
             self.urls(data.urls);
         };
 
@@ -124,19 +124,19 @@
             return (userHasAuth && selected) ? selected.title : '';
         });
 
-	self.selectedFolderType = ko.computed(function(){
-	    var userHasAuth = self.userHasAuth();
-            var selected = self.selected();
-            return (userHasAuth && selected) ? selected.type : '';
-	});
+        self.selectedFolderType = ko.computed(function(){
+            var userHasAuth = self.userHasAuth();
+                var selected = self.selected();
+                return (userHasAuth && selected) ? selected.type : '';
+        });
 
         function onSubmitSuccess(response) {
-            self.changeMessage('Successfully linked "' + self.selected().name +
+            self.changeMessage('Successfully linked "' + self.selected().title +
                 '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your files.',
                 'text-success', 5000);
             // Update folder in ViewModel
-	    self.linked(response.result.linked);
+	        self.linked(response.result.linked);
             self.urls(response.result.urls);
             self.selected(null);
         }

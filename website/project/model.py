@@ -158,7 +158,10 @@ class Comment(GuidStoredObject):
                 'comment': comment._id,
             },
             auth=auth,
+            save=False,
         )
+
+        comment.node.save()
 
         return comment
 
@@ -174,6 +177,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -189,6 +193,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -204,6 +209,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -410,7 +416,7 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
-    def use_as_template(self, auth, changes=None, top_level=False):
+    def use_as_template(self, *args, **kwargs):
         return self._clone()
 
     def resolve(self):
@@ -1045,6 +1051,19 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
+    def has_pointers_recursive(self):
+        """Recursively checks whether the current node or any of its nodes
+        contains a pointer.
+
+        """
+        if self.nodes_pointer:
+            return True
+        for node in self.nodes_primary:
+            if node.has_pointers_recursive:
+                return True
+        return False
+
+    @property
     def pointed(self):
         return getattr(self, '_pointed', [])
 
@@ -1096,14 +1115,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.nodes[index] = forked
 
-        # Optionally save changes
-        if save:
-            self.save()
-            # Garbage-collect pointer. Note: Must save current node before
-            # removing pointer, else remove will fail when trying to remove
-            # backref from self to pointer.
-            Pointer.remove_one(pointer)
-
         # Add log
         self.add_log(
             NodeLog.POINTER_FORKED,
@@ -1118,7 +1129,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
             },
             auth=auth,
+            save=False,
         )
+
+        # Optionally save changes
+        if save:
+            self.save()
+            # Garbage-collect pointer. Note: Must save current node before
+            # removing pointer, else remove will fail when trying to remove
+            # backref from self to pointer.
+            Pointer.remove_one(pointer)
 
         # Return forked content
         return forked
@@ -1160,6 +1180,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'title_original': original_title,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -1175,8 +1196,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         original = self.description
         self.description = description
-        if save:
-            self.save()
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
@@ -1186,7 +1205,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'description_original': original
             },
             auth=auth,
+            save=False,
         )
+        if save:
+            self.save()
         return None
 
     def update_search(self):
@@ -1232,6 +1254,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
                 auth=auth,
                 log_date=log_date,
+                save=True,
             )
 
         # Remove self from parent registration list
@@ -1342,7 +1365,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
 
@@ -1414,6 +1437,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=when,
+            save=False,
         )
         original.registration_list.append(registered._id)
         original.save()
@@ -1433,6 +1457,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'tag':tag,
                 },
                 auth=auth,
+                save=False,
             )
             if save:
                 self.save()
@@ -1455,6 +1480,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'tag': tag,
                 },
                 auth=auth,
+                save=False,
             )
             if save:
                 self.save()
@@ -1537,9 +1563,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 nf.save()
             self.files_versions.pop(file_name_key)
 
-        # Updates self.date_modified
-        self.save()
-
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
@@ -1549,7 +1572,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=nf.date_modified,
+            save=False,
         )
+
+        # Updates self.date_modified
+        self.save()
 
         return True
 
@@ -1688,8 +1715,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
             },
             auth=auth,
-            log_date=node_file.date_uploaded
+            log_date=node_file.date_uploaded,
+            save=False,
         )
+        self.save()
 
         return node_file
 
@@ -1886,7 +1915,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'addon': config.full_name,
                 },
                 auth=auth,
+                save=False,
             )
+            self.save() # TODO: here, or outside the conditional? @mambocab
         return rv
 
     def delete_addon(self, addon_name, auth):
@@ -1908,7 +1939,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'addon': config.full_name,
                 },
                 auth=auth,
+                save=False,
             )
+            self.save()
+            # TODO: save here or outside the conditional? @mambocab
         return rv
 
     def callback(self, callback, recursive=False, *args, **kwargs):
@@ -1937,12 +1971,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                     )
 
         return messages
-
-    def get_pointers(self):
-        pointers = self.nodes_pointer
-        for node in self.nodes:
-            pointers.extend(node.get_pointers())
-        return pointers
 
     def replace_contributor(self, old, new):
         for i, contrib in enumerate(self.contributors):
@@ -1990,8 +2018,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Clear permissions for removed user
         self.permissions.pop(contributor._id, None)
 
-        self.save()
-
         # After remove callback
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor)
@@ -2007,7 +2033,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributor': contributor._id,
                 },
                 auth=auth,
+                save=False,
             )
+
+        self.save()
 
         return True
 
@@ -2031,7 +2060,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributors': removed,
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
 
         if save:
@@ -2105,7 +2134,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     ],
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
 
         if to_remove:
@@ -2122,7 +2151,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributors': permissions_changed,
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
 
         if save:
@@ -2174,7 +2203,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'contributors': [contrib_to_add._primary_key],
                     },
                     auth=auth,
-                    save=save,
+                    save=False,
                 )
             if save:
                 self.save()
@@ -2210,7 +2239,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     ],
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
         if save:
             self.save()
@@ -2246,8 +2275,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=save,
+            log=True, save=False,
         )
+        self.save()
         return contributor
 
     def set_privacy(self, permissions, auth=None):
@@ -2281,7 +2311,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':self._primary_key,
             },
             auth=auth,
+            save=False,
         )
+        self.save()
         return True
 
     # TODO: Move to wiki add-on
