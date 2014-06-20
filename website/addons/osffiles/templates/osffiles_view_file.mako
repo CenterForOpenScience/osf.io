@@ -12,7 +12,6 @@
 
         <table class="table table-striped" id="file-version-history">
 
-
             <thead>
             <tr>
                 <th>Version</th>
@@ -22,22 +21,20 @@
             </tr>
             </thead>
 
-            <tbody>
-            <!-- ko foreach: versions -->
-            <tr>
-                <td>{{version_number}}</td>
-                <td>{{modified_date.local}}</td>
-                <td><a href="{{committer_url}}">{{committer_name}}</a></td>
-                <!-- download count; 'Downloads' column 1 -->
-                <td>{{downloads}}</td>
-                <!-- download url; 'Downloads' column 2 -->
-                <td>
-                    <a href="{{download_url}}">
-                        <i class="icon-download-alt"></i>
-                    </a>
-                </td>
-            </tr>
-            <!-- /ko -->
+            <tbody data-bind="foreach: versions">
+                <tr>
+                    <td>{{version_number}}</td>
+                    <td>{{modified_date.local}}</td>
+                    <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                    <!-- download count; 'Downloads' column 1 -->
+                    <td>{{downloads}}</td>
+                    <!-- download url; 'Downloads' column 2 -->
+                    <td>
+                        <a href="{{download_url}}">
+                            <i class="icon-download-alt"></i>
+                        </a>
+                    </td>
+                </tr>
             </tbody>
 
         </table>
