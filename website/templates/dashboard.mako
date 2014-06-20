@@ -74,7 +74,9 @@
     <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
     <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
     <script>
-        $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
+        $script.ready(['hgrid'], function() {
+            $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
+        });
         $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
         $script(['/static/js/projectorganizer.js']);
         $script.ready(['projectorganizer'], function() {
