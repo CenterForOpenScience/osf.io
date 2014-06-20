@@ -23,7 +23,7 @@
 }
 
 .hg-cell.selected {
-    background-color: #fefab4;
+    background-color: lightyellow;
 }
 
 span.project-folder.smart-folder{
