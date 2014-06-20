@@ -528,7 +528,7 @@
                         $('#findNode' + theItem.node_id).show();
                     });
 
-                    $(".project-details").fadeIn(fadeTime);
+                    $(".project-details").show("scale", {percent: 100},fadeTime);
                 } else {
                     $(".project-details").fadeOut(fadeTime);
                 }
@@ -555,16 +555,16 @@
                     theParentNodeID = theParentNode.node_id;
                     var displayHTML = detailTemplate(detailTemplateContext);
                     $(".project-details").html(displayHTML);
-                    $(".project-details").fadeIn(fadeTime);
+                    $(".project-details").show("scale", {percent: 100},fadeTime);
                     $('#remove-links-multiple').click(function(){
                         deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
                     });
 
                 } else {
-                    $(".project-details").fadeOut(fadeTime);
+                    $(".project-details").hide("scale", {percent: 0},fadeTime);
                 }
             } else {
-                    $(".project-details").fadeOut(fadeTime);
+                    $(".project-details").hide("scale", {percent: 0},fadeTime);
                 }
 
 
