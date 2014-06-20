@@ -175,8 +175,8 @@ class GitHub(object):
         """
         return self.repo(user, repo).contents(path, ref)
 
-    # TODO
-    def starball(self, user, repo, archive='tar', ref=None):
+    # TODO: Test
+    def starball(self, user, repo, archive='tar', ref='master'):
         """Get link for archive download.
 
         :param str user: GitHub user name
@@ -187,7 +187,12 @@ class GitHub(object):
 
         """
 
-        return self.repo(user, repo).archive(archive + 'ball', ref=None)
+        # github3 archive method writes file to disk
+        repository = self.repo(user, repo)
+        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
+        resp = repository._get(url, allow_redirects=True, stream=True)
+
+        return resp.headers, resp.content
 
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
