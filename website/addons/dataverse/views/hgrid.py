@@ -81,7 +81,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
         study=study_name,
         doi=study.doi,
         dataverse=dataverse.title,
-        citation=study.get_citation(),
+        citation=study.citation,
     )]
 
 

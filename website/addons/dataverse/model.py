@@ -60,9 +60,9 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
         self.encrypted_password = encrypt(value)
 
-    def delete(self):
+    def delete(self, save=True):
         self.clear()
-        super(AddonDataverseUserSettings, self).delete()
+        super(AddonDataverseUserSettings, self).delete(save)
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes.
@@ -75,6 +75,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
         return self
+
 
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
@@ -92,9 +93,9 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def delete(self):
-        self.deauthorize(Auth(self.user_settings.owner), add_log=False)
-        super(AddonDataverseNodeSettings, self).delete()
+    def delete(self, save=True):
+        self.deauthorize(add_log=False)
+        super(AddonDataverseNodeSettings, self).delete(save)
 
     def set_user_auth(self, user_settings):
         node = self.owner
@@ -108,7 +109,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             }
         )
 
-    def deauthorize(self, auth, add_log=True):
+    def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None

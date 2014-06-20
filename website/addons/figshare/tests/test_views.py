@@ -1,5 +1,4 @@
 import mock
-import unittest
 from nose.tools import *
 from webtest_plus import TestApp
 
@@ -54,6 +53,28 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.save()
 
         self.figshare = create_mock_figshare('test')
+    
+    def test_import_auth(self):
+        """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
+        settings = self.node_settings
+        settings.user_settings = None        
+        settings.save()
+        url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
+        self.app.put(url, auth=self.user.auth)
+        self.node_settings.reload()
+        is_not_none = settings.user_settings != None
+        assert_true(is_not_none)
+
+    def test_deauthorize(self):
+        """Testing figshare_deauthorize to ensure user auth gets removed from the node and that the AddonNodeSettings are cleared"""
+        settings = self.node_settings
+        url = '/api/v1/project/{0}/figshare/config/'.format(self.project._id)
+        self.app.delete(url, auth=self.user.auth)
+        self.node_settings.reload()
+        assert_true(settings.user_settings == None)        
+        is_none = (settings.figshare_id == None) and (settings.figshare_title == None) and (settings.figshare_type == None)
+        assert_true(is_none)    
+        
 
     def test_config_no_change(self):
         num = len(self.project.logs)
