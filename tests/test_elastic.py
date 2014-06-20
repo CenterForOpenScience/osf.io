@@ -153,7 +153,7 @@ class TestPublicNodes(SearchTestCase):
         docs = query(tag_text)
         assert_equal(len(docs), 0)
 
-        self.project.add_tag(tag_text, self.consolidate_auth, None)
+        self.project.add_tag(tag_text, self.consolidate_auth, save=True)
 
         docs = query(tag_text)
         assert_equal(len(docs), 1)
@@ -162,8 +162,8 @@ class TestPublicNodes(SearchTestCase):
 
         tag_text = 'stonecoldcrazy'
 
-        self.project.add_tag(tag_text, self.consolidate_auth, None)
-        self.project.remove_tag(tag_text, self.consolidate_auth, None)
+        self.project.add_tag(tag_text, self.consolidate_auth, save=True)
+        self.project.remove_tag(tag_text, self.consolidate_auth, save=True)
 
         docs = query(tag_text)
         assert_equal(len(docs), 0)
