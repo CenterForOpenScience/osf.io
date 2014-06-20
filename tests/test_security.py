@@ -2,6 +2,7 @@
 from nose.tools import *
 
 from website import security
+from test_features import requires_gnupg
 
 
 def test_random_string():
@@ -12,6 +13,7 @@ def test_random_string():
     assert_not_equal(s, s2)
 
 
+@requires_gnupg
 def test_encryption():
     encryption = security.Encryption()
     private_string = 'p4ssw0rd'
