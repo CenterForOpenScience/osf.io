@@ -416,8 +416,7 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
-    def use_as_template(self, auth, changes=None, top_level=False):
-        # unused arguments for compatibility with Node.use_as_template()
+    def use_as_template(self, *args, **kwargs):
         return self._clone()
 
     def resolve(self):
@@ -984,6 +983,19 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
+    def has_pointers_recursive(self):
+        """Recursively checks whether the current node or any of its nodes
+        contains a pointer.
+
+        """
+        if self.nodes_pointer:
+            return True
+        for node in self.nodes_primary:
+            if node.has_pointers_recursive:
+                return True
+        return False
+
+    @property
     def pointed(self):
         return getattr(self, '_pointed', [])
 
@@ -1264,7 +1276,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
 
@@ -1867,12 +1879,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                     )
 
         return messages
-
-    def get_pointers(self):
-        pointers = self.nodes_pointer
-        for node in self.nodes:
-            pointers.extend(node.get_pointers())
-        return pointers
 
     def replace_contributor(self, old, new):
         for i, contrib in enumerate(self.contributors):

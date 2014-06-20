@@ -142,8 +142,7 @@ def project_before_fork(**kwargs):
 
     prompts = node.callback('before_fork', user=user)
 
-    pointers = node.get_pointers()
-    if pointers:
+    if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_FORK_HAS_POINTERS.format(
                 category=node.project_or_component
