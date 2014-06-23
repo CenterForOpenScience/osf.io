@@ -35,8 +35,11 @@ def search(raw_query, start=0):
 
     # Get document counts by type
     counts = {}
+    count_query = dict(query)
+    del count_query['from']
+    del count_query['size']
     for type in TYPES:
-        counts[type + 's'] = elastic.count(filtered_query + '*', index='website', doc_type=type)['count']
+        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
