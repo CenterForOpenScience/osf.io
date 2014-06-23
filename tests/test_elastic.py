@@ -2,10 +2,14 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory, NodeFactory, UnregUserFactory
+from tests.factories import (
+    UserFactory, ProjectFactory, NodeFactory,
+    UnregUserFactory, UnconfirmedUserFactory
+)
 
-from website.search.utils import clean_solr_doc
-from framework.auth.decorators import Auth
+from framework.auth.core import Auth
+
+from website.models import User
 from website import settings
 
 #if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
@@ -16,7 +20,6 @@ import website.search.search as search
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
 
-        
     def tearDown(self):
         search.delete_all() 
 
@@ -33,13 +36,21 @@ def query_user(name):
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestUserUpdate(SearchTestCase):
 
-    def test_new_user(self):
-        """Add a user, then verify that user is present in search
+    def setUp(self):
+        self.user = UserFactory(fullname='David Bowie')
 
-        """
-        # Create user
-        user = UserFactory(fullname='David Bowie')
+    def test_new_user(self):
         # Verify that user has been added to Solr
+        docs = query_user(self.user.fullname)
+        assert_equal(len(docs), 1)
+
+    def test_new_user_unconfirmed(self):
+        user = UnconfirmedUserFactory()
+        docs = query_user(user.fullname)
+        assert_equal(len(docs), 0)
+        token = user.get_confirmation_token(user.username)
+        user.confirm_email(token)
+        user.save()
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
 
@@ -58,6 +69,7 @@ class TestUserUpdate(SearchTestCase):
 
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestProject(SearchTestCase):
@@ -78,6 +90,7 @@ class TestProject(SearchTestCase):
         self.project.set_privacy('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestPublicNodes(SearchTestCase):
@@ -224,6 +237,7 @@ class TestPublicNodes(SearchTestCase):
 
         docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestAddContributor(SearchTestCase):

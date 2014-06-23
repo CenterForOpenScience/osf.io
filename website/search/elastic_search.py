@@ -143,10 +143,12 @@ def update_node(node):
             'contributors': [
                 x.fullname for x in node.contributors
                 if x is not None
+                and x.is_active()
             ],
             'contributors_url': [
                 x.profile_url for x in node.contributors
                 if x is not None
+                and x.is_active()
             ],
             'title': node.title,
             'category': node.category,
