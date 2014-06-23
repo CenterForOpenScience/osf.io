@@ -136,7 +136,7 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
             'urls': {
                     'view': node.web_url_for('dataverse_view_file',
                                              path=f.id),
-                    'download': node.api_url_for('dataverse_download_file',
+                    'download': node.web_url_for('dataverse_download_file',
                                                  path=f.id),
                     'delete': node.api_url_for('dataverse_delete_file',
                                                path=f.id),

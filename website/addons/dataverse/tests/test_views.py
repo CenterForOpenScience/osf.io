@@ -617,7 +617,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         mock_get_files.return_value = [create_mock_draft_file('foo')]
 
         path = 'foo'
-        url = api_url_for('dataverse_download_file',
+        url = web_url_for('dataverse_download_file',
                           pid=self.project._primary_key, path=path)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(
