@@ -162,9 +162,9 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search():
+def migrate_search(python='python'):
     '''Migrate the search-enabled models.'''
-    run("python -m website.search_migration.migrate")
+    run("{0} -m website.search_migration.migrate".format(python))
 
 @task
 def mailserver(port=1025):
