@@ -2,6 +2,7 @@
 
 import logging
 import pyelasticsearch
+import re 
 
 from website import settings
 from website.filters import gravatar
@@ -76,6 +77,8 @@ def _build_query(raw_query, start=0):
         raw_query = raw_query.replace(type + ':', '')
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
 
+    raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
+
     # If the search contains wildcards, make them mean something
     if '*' in raw_query:
         inner_query = {
@@ -87,19 +90,10 @@ def _build_query(raw_query, start=0):
         }
     else:
         inner_query = {
-            'filtered': {
-                'filter': {
-                    'prefix': {
-                        '_all': raw_query
-                    }
-                },
-                'query': {
-                    'query_string': {
-                        'default_field': '_all',
-                        'query': raw_query + '*',
-                        'analyze_wildcard': True,
-                    }
-                }
+            'multi_match': {
+                'query': raw_query,
+                'type': 'phrase_prefix',
+                'fields': '_all',
             }
         }
 
@@ -366,7 +360,6 @@ def search_contributor(query, exclude=None):
         gravatar URL of an OSF user
 
     """
-    import re
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
