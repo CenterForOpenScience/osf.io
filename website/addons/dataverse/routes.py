@@ -148,6 +148,15 @@ api_routes = {
             views.crud.dataverse_release_study,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/files/<path:path>/info/',
+                '/project/<pid>/node/<nid>/dataverse/files/<path:path>/info/',
+            ],
+            'get',
+            views.crud.dataverse_get_file_info,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }
