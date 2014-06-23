@@ -170,7 +170,7 @@
         };
 
         self.dirty = ko.computed(function() {
-            return ko.toJSON(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
         });
 
         // Must be set after isValid is defined in inherited view models
