@@ -15,18 +15,18 @@
             </tr>
             </thead>
 
-            <tbody data-bind="foreach: {data: versions, as: 'version'}">
-                <tr>
+            <tbody>
+                <tr data-bind="if: loaded">
                     <td>
-                        <a data-bind="attr: {href: version.dataverse_url}">
-                            {{version.dataverse}}</a>
+                        <a data-bind="attr: {href: dataverse_url}">
+                            {{dataverse}}</a>
                     </td>
                     <td>
-                        <a data-bind="attr: {href: version.study_url}">
-                            {{version.study}}</a>
+                        <a data-bind="attr: {href: study_url}">
+                            {{study}}</a>
                     </td>
                     <td>
-                        <a href="{{version.download_url}}">
+                        <a href="{{download_url}}">
                             <i class="icon-download-alt"></i>
                         </a>
                     </td>
@@ -38,9 +38,9 @@
     </div>
 
     <script>
-        $script(["/static/addons/dataverse/view_file.js"], function() {
+        $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
             var url = '${info_url}';
-            var versionTable = new VersionTable('#dataverseScope', url);
+            var dataverseFileTable = new DataverseFileTable('#dataverseScope', url);
         });
     </script>
 </%def>
