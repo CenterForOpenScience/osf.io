@@ -2432,7 +2432,6 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(self.project)
 
 
-
 class TestProjectWithAddons(OsfTestCase):
 
     def test_factory(self):

@@ -1147,7 +1147,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-
         if not self.can_edit(auth):
             raise PermissionsError()
 

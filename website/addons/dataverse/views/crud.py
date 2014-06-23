@@ -77,8 +77,10 @@ def dataverse_download_file(node_addon, auth, **kwargs):
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
+    fail_if_private(file_id)
 
-    return redirect('http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id))
+    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
+    return redirect(url)
 
 
 @must_be_contributor_or_public
@@ -88,6 +90,7 @@ def dataverse_download_file_proxy(node_addon, auth, **kwargs):
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
+    fail_if_private(file_id)
 
     filename, content = scrape_dataverse(file_id)
 
@@ -111,6 +114,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     file_id = kwargs.get('path')
 
     fail_if_unauthorized(node_addon, auth, file_id)
+    fail_if_private(file_id)
 
     # lazily create a file GUID record
     file_obj, created = DataverseFile.get_or_create(node=node, path=file_id)
@@ -141,7 +145,7 @@ def dataverse_view_file(node_addon, auth, **kwargs):
         'rendered': rendered,
         'render_url': node.api_url_for('dataverse_get_rendered_file',
                                        path=file_id),
-        'download_url': node.api_url_for('dataverse_download_file',
+        'download_url': node.web_url_for('dataverse_download_file',
                                          path=file_id),
     }
     rv.update(_view_project(node, auth))
@@ -224,7 +228,7 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         'urls': {
                 'view': node.web_url_for('dataverse_view_file',
                                          path=file.id),
-                'download': node.api_url_for('dataverse_download_file',
+                'download': node.web_url_for('dataverse_download_file',
                                              path=file.id),
                 'delete': node.api_url_for('dataverse_delete_file',
                                            path=file.id),
@@ -353,3 +357,21 @@ def fail_if_unauthorized(node_addon, auth, file_id):
         raise HTTPError(http.FORBIDDEN)
     elif not node.can_edit(auth) and file_id not in released_file_ids:
         raise HTTPError(http.UNAUTHORIZED)
+
+
+def fail_if_private(file_id):
+
+    url = 'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, file_id)
+    resp = requests.head(url)
+
+    if resp.status_code == 403:
+        raise HTTPError(
+            http.FORBIDDEN,
+            data={
+                'message_short': 'Cannot access file contents',
+                'message_long':
+                    'The dataverse does not allow users to download files on ' +
+                    'private studies at this time. Please contact the owner ' +
+                    'of this Dataverse study for access to this file.',
+              }
+        )

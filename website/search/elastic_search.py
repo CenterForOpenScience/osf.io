@@ -35,7 +35,7 @@ def search(raw_query, start=0):
     # Get document counts by type
     counts = {}
     for type in TYPES:
-        counts[type + 's'] = elastic.count(filtered_query, index='website', doc_type=type)['count']
+        counts[type + 's'] = elastic.count(filtered_query + '*', index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
@@ -77,20 +77,13 @@ def _build_query(raw_query, start=0):
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
 
     # If the search contains wildcards, make them mean something
-    if '*' in raw_query:
-        inner_query = {
-            'query_string': {
-                'default_field': '_all',
-                'query': raw_query,
-                'analyze_wildcard': True,
-            }
+    inner_query = {
+        'query_string': {
+            'default_field': '_all',
+            'query': raw_query + '*',
+            'analyze_wildcard': True,
         }
-    else:
-        inner_query = {
-            'match': {
-                '_all': raw_query
-            }
-        }
+    }
 
     # This is the complete query
     query = {
@@ -143,10 +136,12 @@ def update_node(node):
             'contributors': [
                 x.fullname for x in node.contributors
                 if x is not None
+                and x.is_active()
             ],
             'contributors_url': [
                 x.profile_url for x in node.contributors
                 if x is not None
+                and x.is_active()
             ],
             'title': node.title,
             'category': node.category,
