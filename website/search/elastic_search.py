@@ -77,13 +77,31 @@ def _build_query(raw_query, start=0):
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
 
     # If the search contains wildcards, make them mean something
-    inner_query = {
-        'query_string': {
-            'default_field': '_all',
-            'query': raw_query + '*',
-            'analyze_wildcard': True,
+    if '*' in raw_query:
+        inner_query = {
+            'query_string': {
+                'default_field': '_all',
+                'query': raw_query + '*',
+                'analyze_wildcard': True,
+            }
         }
-    }
+    else:
+        inner_query = {
+            'filtered': {
+                'filter': {
+                    'prefix': {
+                        '_all': raw_query
+                    }
+                },
+                'query': {
+                    'query_string': {
+                        'default_field': '_all',
+                        'query': raw_query + '*',
+                        'analyze_wildcard': True,
+                    }
+                }
+            }
+        }
 
     # This is the complete query
     query = {
