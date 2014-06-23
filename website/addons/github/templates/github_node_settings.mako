@@ -2,28 +2,39 @@
 
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
-    <div>
-        <h4 class="addon-title">
-            GitHub
-            <small class="authorized-by">
-                % if node_has_auth:
-                        authorized by
-                        <a href="${github_user_url}}" target="_blank">
-                            ${github_user_name}
-                        </a>
-                    <a id="githubRemoveToken" class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
-                % else:
-                    % if user_has_auth:
-                        <a id="githubImportToken" class="text-primary pull-right" style="margin-top: 4.8px">
-                            Import Access Token
+    <div class="container-fluid" style="padding-left: 0px; padding-right: 0px">
+        <h4 class="addon-title row">
+            <div class="col-md-8">
+                GitHub
+                <small class="authorized-by">
+                    % if node_has_auth:
+                            authorized by
+                            <a href="${auth_osf_url}" target="_blank">
+                                ${auth_osf_name}
+                            </a>
+                    % endif
+                </small>
+            </div>
+            <div class="col-md-4">
+                <small>
+                    % if node_has_auth:
+                        <a id="githubRemoveToken" class="text-danger pull-right" style="margin-top: 4.8px">
+                            Deauthorize
                         </a>
                     % else:
-                        <a id="githubCreateToken" class="text-primary pull-right" style="margin-top: 4.8px">
-                            Create Access Token
-                        </a>
+                        % if user_has_auth:
+                            <a id="githubImportToken" class="text-primary pull-right" style="margin-top: 4.8px">
+                                Import Access Token
+                            </a>
+                        % else:
+                            <a id="githubCreateToken" class="text-primary pull-right" style="margin-top: 4.8px">
+                                Create Access Token
+                            </a>
+                        % endif
                     % endif
-                % endif
-            </small>
+                </small>
+            </div>
+
         </h4>
     </div>
 
