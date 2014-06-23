@@ -2,6 +2,7 @@
 from modularodm.validators import (
     URLValidator, MinValueValidator, MaxValueValidator
 )
+from modularodm.exceptions import ValidationValueError
 
 from framework import fields
 
@@ -16,3 +17,10 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
         default=15,
         validate=[MinValueValidator(5), MaxValueValidator(60)]
     )
+
+
+@ForwardNodeSettings.subscribe('before_save')
+def validate_circular_reference(schema, instance):
+    """Prevent node from forwarding to itself."""
+    if instance.url and instance.owner._id in instance.url:
+        raise ValidationValueError('Circular URL')

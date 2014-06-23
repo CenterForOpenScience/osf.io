@@ -9,6 +9,7 @@ from framework.exceptions import HTTPError
 from website import models
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
+from website.util import web_url_for
 
 from ..auth import oauth_start_url, oauth_get_token
 
@@ -68,6 +69,7 @@ def figshare_oauth_delete_node(auth, node_addon, **kwargs):
 
     return {}
 
+
 def figshare_oauth_callback(**kwargs):
 
     user = get_current_user()
@@ -110,7 +112,8 @@ def figshare_oauth_callback(**kwargs):
 
     if node:
         return redirect(os.path.join(node.url, 'settings'))
-    return redirect('/settings/')
+
+    return redirect(web_url_for('user_addons'))
 
 
 @must_have_permission('write')

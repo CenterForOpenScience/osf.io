@@ -55,6 +55,7 @@ js_bottom = Bundle(
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
     Bundle('js/site.js',
+           'js/koHelpers.js',
             'js/language.js',
             'js/project.js',
             'js/app.js',

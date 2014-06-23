@@ -2314,13 +2314,26 @@ class TestPointer(OsfTestCase):
         self._assert_clone(self.pointer, registered)
 
     def test_register_with_pointer_to_registration(self):
-        "Check for regression"
+        """Check for regression"""
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)
         project.add_pointer(pointee, auth=auth)
         registration = project.register_node(None, auth, '', '')
         assert_equal(registration.nodes[0].node, pointee)
+
+    def test_has_pointers_recursive_false(self):
+        project = ProjectFactory()
+        node = NodeFactory(project=project)
+        assert_false(project.has_pointers_recursive)
+        assert_false(node.has_pointers_recursive)
+
+    def test_has_pointers_recursive_true(self):
+        project = ProjectFactory()
+        node = NodeFactory(project=project)
+        node.nodes.append(self.pointer)
+        assert_true(node.has_pointers_recursive)
+        assert_true(project.has_pointers_recursive)
 
 
 class TestWatchConfig(OsfTestCase):
@@ -2417,7 +2430,6 @@ class TestUnregisteredUser(OsfTestCase):
         # sanity cheque
         assert_false(self.user.is_registered)
         assert_true(self.project)
-
 
 
 class TestProjectWithAddons(OsfTestCase):

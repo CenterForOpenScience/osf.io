@@ -195,7 +195,7 @@ This will start a Solr server on port 8983.
 ```bash
 $ brew install elasticsearch
 ```
-_note: JDK 7 must be installed for elasticsearch to run_
+_note: Oracle JDK 7 must be installed for elasticsearch to run_
 
 #### Ubuntu 
 

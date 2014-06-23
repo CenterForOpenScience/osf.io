@@ -1,4 +1,4 @@
-% if nodes:
+% if nodes and authorized:
     <div style="margin-right: 20px; margin-left: 20px" id = "${addon_short_name}-header">
         <table class="table table-hove" id="${addon_short_name}-auth-table">
              <thead>Authorized Projects:</thead>

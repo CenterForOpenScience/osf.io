@@ -3,7 +3,7 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from website.routes import OsfWebRenderer, notemplate
 
 from . import views
 
@@ -80,7 +80,7 @@ page_routes = {
             ],
             'get',
             views.crud.dataverse_download_file,
-            json_renderer,
+            notemplate,
         ),
     ],
 }
