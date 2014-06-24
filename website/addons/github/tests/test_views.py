@@ -22,6 +22,7 @@ app = website.app.init_app(
 
 github_mock = create_mock_github(user='fred', private=False)
 
+
 class TestHGridViews(OsfTestCase):
     def setUp(self):
         self.github = github_mock
@@ -577,7 +578,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'github_repo_unlinked')
+        assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
 
 if __name__ == '__main__':

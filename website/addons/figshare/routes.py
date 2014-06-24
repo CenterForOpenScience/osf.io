@@ -11,10 +11,6 @@ settings_routes = {
     'rules': [
         #Configuration
         Rule([
-            '/project/<pid>/figshare/unlink/',
-            '/project/<pid>/node/<nid>/figshare/unlink/'
-        ], 'post', views.config.figshare_unlink, json_renderer),
-        Rule([
             '/project/<pid>/figshare/settings/',
             '/project/<pid>/node/<nid>/figshare/settings/',
         ], 'post', views.config.figshare_set_config, json_renderer),

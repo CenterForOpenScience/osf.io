@@ -175,7 +175,6 @@ class GuidFile(GuidStoredObject):
         )
 
 
-
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))

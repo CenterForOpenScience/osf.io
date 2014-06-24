@@ -26,15 +26,14 @@ for {{ nodeCategory }}
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
-<script type="text/html" id="dataverse_node_deauthorized">
-deauthorized the Dataverse addon for {{ nodeCategory }}
+<script type="text/html" id="dataverse_node_authorized">
+authorized the Dataverse addon for {{ nodeCategory }}
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
-
-<script type="text/html" id="dataverse_node_authorized">
-authorized the Dataverse addon for {{ nodeCategory }}
+<script type="text/html" id="dataverse_node_deauthorized">
+deauthorized the Dataverse addon for {{ nodeCategory }}
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
