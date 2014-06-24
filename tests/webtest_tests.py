@@ -561,7 +561,7 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
 
-        res = res.click('Users: 2')
+        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 
