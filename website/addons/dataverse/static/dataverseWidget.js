@@ -66,14 +66,15 @@
         };
     }
 
-
-
     // Public API
     function DataverseWidget(selector, url) {
         var self = this;
         self.viewModel = new ViewModel(url);
-        $.osf.applyBindings(self.viewModel, selector);
-        self.viewModel.init();
+        // Don't apply bindings
+        if ($(selector).length) {
+            $.osf.applyBindings(self.viewModel, selector);
+            self.viewModel.init();
+        }
     }
 
     return DataverseWidget;
