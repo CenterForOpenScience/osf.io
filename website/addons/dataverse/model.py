@@ -89,6 +89,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     )
 
     @property
+    def is_fully_configured(self):
+        return bool(self.has_auth and self.study_hdl is not None)
+
+    @property
     def has_auth(self):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
