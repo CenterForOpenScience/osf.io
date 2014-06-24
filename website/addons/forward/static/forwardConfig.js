@@ -33,6 +33,8 @@
             false: 'No'
         };
 
+	self.label = ko.observable();
+
         // Forward configuration
         self.url = ko.observable().extend({
             required: true,
@@ -72,6 +74,7 @@
          */
         self.updateFromData = function(data) {
             self.url(data.url);
+	    self.label(data.label);
             self.redirectBool(data.redirectBool);
             self.redirectSecs(data.redirectSecs);
         };

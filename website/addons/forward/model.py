@@ -12,12 +12,18 @@ from website.addons.base import AddonNodeSettingsBase
 class ForwardNodeSettings(AddonNodeSettingsBase):
 
     url = fields.StringField(validate=URLValidator())
+    label = fields.StringField()
     redirect_bool = fields.BooleanField(default=True, validate=True)
     redirect_secs = fields.IntegerField(
         default=15,
         validate=[MinValueValidator(5), MaxValueValidator(60)]
     )
 
+    @property
+    def link_text(self):
+        if len(self.label) > 0:
+            return self.label
+        return self.url
 
 @ForwardNodeSettings.subscribe('before_save')
 def validate_circular_reference(schema, instance):
