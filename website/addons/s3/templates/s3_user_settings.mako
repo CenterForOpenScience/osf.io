@@ -42,6 +42,21 @@
     <script type="text/javascript">
 
         $('#s3RemoveAccess').on('click', function() {
+            bootbox.confirm(
+                'Are you sure you want to delete your Amazon Simple Storage Service access key? This will ' +
+                    'revoke access to Amazon S3 for all projects you have authorized ' +
+                    'and delete your access token from Amazon S3. Your OSF collaborators ' +
+                    'will not be able to write to Amazon S3 buckets or view private buckets ' +
+                    'that you have authorized.',
+                function(result) {
+                    if (result) {
+                        DeleteToken();
+                    }
+                }
+            )
+        });
+
+        function DeleteToken() {
             var $this = $(this),
             addon = $this.attr('data-addon'),
             msgElm = $this.find('.addon-settings-message');
@@ -72,7 +87,7 @@
                 }
             });
             return false;
-        });
+        };
 
         $(document).ready(function() {
             $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
