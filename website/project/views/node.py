@@ -41,13 +41,12 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = sanitize(post_data.get("value"))
-    if value:
-        if edited_field == 'title':
-            node.set_title(value, auth=auth)
-        elif edited_field == 'description':
-            node.set_description(value, auth=auth)
-        node.save()
+    value = sanitize(post_data.get('value', ''))
+    if edited_field == 'title':
+        node.set_title(value, auth=auth)
+    elif edited_field == 'description':
+        node.set_description(value, auth=auth)
+    node.save()
     return {'status': 'success'}
 
 

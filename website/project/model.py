@@ -482,7 +482,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField(versioned=True)
+    title = fields.StringField()
     description = fields.StringField()
     category = fields.StringField()
 
@@ -1088,6 +1088,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
+        if not title:
+            return
         original_title = self.title
         self.title = title
         self.add_log(
