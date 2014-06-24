@@ -1,5 +1,3 @@
-##<%inherit file="../../project/addon/node_settings.mako" />
-
 <script src="/static/addons/s3/s3-node-settings.js"></script>
 
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
