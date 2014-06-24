@@ -35,12 +35,12 @@
 
     </div>
 
-% endif
+    <script>
+        $script(['/static/addons/dataverse/dataverseWidget.js']);
+        $script.ready('dataverseWidget', function() {
+            var url = '${node['api_url'] + 'dataverse/widget/contents/'}';
+            var dataverse = new DataverseWidget('#dataverseScope', url);
+        });
+    </script>
 
-<script>
-    $script(['/static/addons/dataverse/dataverseWidget.js']);
-    $script.ready('dataverseWidget', function() {
-        var url = '${node['api_url'] + 'dataverse/widget/contents/'}';
-        var dataverse = new DataverseWidget('#dataverseScope', url);
-    });
-</script>
+% endif

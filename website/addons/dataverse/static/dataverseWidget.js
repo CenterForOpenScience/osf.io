@@ -70,11 +70,8 @@
     function DataverseWidget(selector, url) {
         var self = this;
         self.viewModel = new ViewModel(url);
-        // Don't apply bindings
-        if ($(selector).length) {
-            $.osf.applyBindings(self.viewModel, selector);
-            self.viewModel.init();
-        }
+        $.osf.applyBindings(self.viewModel, selector);
+        self.viewModel.init();
     }
 
     return DataverseWidget;
