@@ -9,6 +9,7 @@ import itertools
 from github3 import GitHubError
 
 from framework import fields
+from framework.auth import Auth
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -19,7 +20,9 @@ from website.addons.github.exceptions import ApiError, NotFoundError
 from website.addons.github.api import GitHub
 from website.addons.github import utils
 
+
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
 
 class GithubGuidFile(GuidFile):
 
@@ -30,6 +33,7 @@ class GithubGuidFile(GuidFile):
         if self.path is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('github', 'file', self.path)
+
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -57,7 +61,6 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-
         connection = GitHub.from_settings(self)
         try:
             connection.revoke_token()
@@ -71,21 +74,17 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             else:
                 raise
 
-    def clear_auth(self):
-
-        self.revoke_token()
-
-        self.oauth_access_token = None
-        self.oauth_token_type = None
-        self.save()
-
-    def delete(self, save=True):
-        super(AddonGitHubUserSettings, self).delete()
-        self.clear_auth()
+    def clear_auth(self, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.delete(save=False)
-            node_settings.user_settings = None
-            node_settings.save()
+            node_settings.delete(save=True)
+        self.revoke_token()
+        self.oauth_access_token, self.oauth_token_type = None, None
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        self.clear_auth(save=False)
+        super(AddonGitHubUserSettings, self).delete(save=save)
 
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
@@ -101,12 +100,37 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
-    def delete(self, save=True):
-        super(AddonGitHubNodeSettings, self).delete(save=False)
+    def authorize(self, user_settings, save=False):
+        self.user_settings = user_settings
+        self.owner.add_log(
+            action='github_node_authorized',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+            },
+            auth=Auth(user_settings.owner),
+        )
+        if save:
+            self.save()
+
+    def deauthorize(self, auth=None, log=True, save=False):
         self.delete_hook(save=False)
-        self.user = None
-        self.repo = None
-        self.user_settings = None
+        self.user, self.repo, self.user_settings = None, None, None
+        if log:
+            self.owner.add_log(
+                action='github_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        super(AddonGitHubNodeSettings, self).delete(save=False)
+        self.deauthorize(save=False, log=False)
         if save:
             self.save()
 

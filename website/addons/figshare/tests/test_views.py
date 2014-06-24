@@ -99,28 +99,6 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(len(self.project.logs), num + 1)
         assert_equal(self.project.logs[num].action, 'figshare_content_linked')
 
-    def test_config_unlink(self):
-        url = '/api/v1/project/{0}/figshare/unlink/'.format(self.project._id)
-        rv = self.app.post(url, auth=self.user.auth)
-        self.node_settings.reload()
-        self.project.reload()
-
-        assert_equal(self.project.logs[-1].action, 'figshare_content_unlinked')
-        assert_equal(rv.status_int, 200)
-        assert_true(self.node_settings.figshare_id == None)
-
-    def test_config_unlink_no_node(self):
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        self.node_settings.reload()
-        url = '/api/v1/project/{0}/figshare/unlink/'.format(self.project._id)
-        rv = self.app.post(url, expect_errors=True, auth=self.user.auth)
-        self.project.reload()
-
-        assert_equal(self.node_settings.figshare_id, '123456')
-        assert_not_equal(self.project.logs[-1].action, 'figshare_content_unlinked')
-        assert_equal(rv.status_int, 400)
-
 
 class TestUtils(OsfTestCase):
 

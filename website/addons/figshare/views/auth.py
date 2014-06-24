@@ -135,16 +135,9 @@ def figshare_add_user_auth(auth, **kwargs):
 
     return {}
 
-# TODO: Expose this
 
-
-def figshare_oauth_delete_user(**kwargs):
-
-    user = get_current_user()
-    figshare_user = user.get_addon('figshare')
-
-    figshare_user.oauth_access_token = None
-    figshare_user.oauth_token_type = None
-    figshare_user.save()
-
+@must_be_logged_in
+@must_have_addon('figshare', 'user')
+def figshare_oauth_delete_user(user_addon, **kwargs):
+    user_addon.remove_auth(save=True)
     return {}

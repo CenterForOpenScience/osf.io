@@ -87,14 +87,11 @@ ${next.body()}
             }
         );
 
-        var linksModal = $('#showLinks')[0];
-        var linksVM = new LinksViewModel(linksModal);
-        ko.applyBindings(linksVM, linksModal);
-        
     });
 
     $script.ready('pointers', function() {
-        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
+        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
     });
 
     // Make unregistered contributors claimable

@@ -154,13 +154,29 @@ api_routes = {
             [
             '/project/<pid>/dataverse/widget/',
             '/project/<pid>/node/<nid>/dataverse/widget/',
-            ], 'get', dataverse_widget,
+            ],
+            'get',
+            dataverse_widget,
             OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako'),
         ),
-        Rule([
+        Rule(
+            [
             '/project/<pid>/dataverse/widget/contents/',
             '/project/<pid>/node/<nid>/dataverse/widget/contents/',
-        ], 'get', dataverse_get_widget_contents, json_renderer),
+            ],
+            'get',
+            dataverse_get_widget_contents,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/files/<path:path>/info/',
+                '/project/<pid>/node/<nid>/dataverse/files/<path:path>/info/',
+            ],
+            'get',
+            views.crud.dataverse_get_file_info,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1'
 }

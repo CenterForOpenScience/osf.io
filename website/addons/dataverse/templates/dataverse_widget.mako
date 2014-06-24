@@ -1,5 +1,3 @@
-##<%inherit file="project/addon/widget.mako"/>
-
 % if complete:
 
     <h3 class="addon-widget-header">
