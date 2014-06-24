@@ -11,5 +11,3 @@
 % else:
     [Released]
 % endif
-## Metadata
-<i id="dataverseGetCitation" class="icon-info-sign"></i>
