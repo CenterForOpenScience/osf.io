@@ -75,6 +75,8 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
                 raise
 
     def clear_auth(self, save=False):
+        for node_settings in self.addongithubnodesettings__authorized:
+            node_settings.delete(save=True)
         self.revoke_token()
         self.oauth_access_token, self.oauth_token_type = None, None
         if save:
@@ -82,8 +84,6 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     def delete(self, save=False):
         self.clear_auth(save=False)
-        for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.delete(save=True)
         super(AddonGitHubUserSettings, self).delete(save=save)
 
 

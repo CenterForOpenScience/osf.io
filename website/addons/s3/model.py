@@ -12,8 +12,9 @@ import os
 from boto.exception import BotoServerError
 
 from framework import fields
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from framework.auth.core import Auth
 
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import get_bucket_drop_down, serialize_bucket, remove_osf_user
 
@@ -59,27 +60,18 @@ class AddonS3UserSettings(AddonUserSettingsBase):
                 return False
             raise
 
-    def revoke_auth(self):
-
+    def revoke_auth(self, save=False):
+        for node_settings in self.addons3nodesettings__authorized:
+            node_settings.delete(save=True)
         rv = self.remove_iam_user()
-
-        self.s3_osf_user = None
-        self.access_key = None
-        self.secret_key = None
-        self.save()
-
+        self.s3_osf_user, self.access_key, self.secret_key = None, None, None
+        if save:
+            self.save()
         return rv
 
     def delete(self, save=True):
-
-        super(AddonS3UserSettings, self).delete()
-
-        self.revoke_auth()
-
-        for node_settings in self.addons3nodesettings__authorized:
-            node_settings.delete(save=False)
-            node_settings.user_settings = None
-            node_settings.save()
+        self.revoke_auth(save=False)
+        super(AddonS3UserSettings, self).delete(save=save)
 
 
 class AddonS3NodeSettings(AddonNodeSettingsBase):
@@ -90,10 +82,36 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         'addons3usersettings', backref='authorized'
     )
 
+    def authorize(self, user_settings, save=False):
+        self.user_settings = user_settings
+        self.owner.add_log(
+            action='s3_node_authorized',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+            },
+            auth=Auth(user_settings.owner),
+        )
+        if save:
+            self.save()
+
+    def deauthorize(self, auth=None, log=True, save=False):
+        self.bucket, self.user_settings = None, None
+        if log:
+            self.owner.add_log(
+                action='s3_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
     def delete(self, save=True):
-        self.bucket = None
-        self.user_settings = None
-        super(AddonS3NodeSettings, self).delete(save)
+        self.deauthorize(log=False, save=False)
+        super(AddonS3NodeSettings, self).delete(save=save)
 
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)

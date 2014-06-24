@@ -63,7 +63,6 @@ def github_hook_callback(node_addon, **kwargs):
     )
 
     node = kwargs['node'] or kwargs['project']
-    github = kwargs['node_addon']
 
     payload = request.json
 
@@ -82,17 +81,17 @@ def github_hook_callback(node_addon, **kwargs):
         # Add logs
         for path in commit.get('added', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_ADDED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_ADDED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('modified', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_UPDATED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_UPDATED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('removed', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_REMOVED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_REMOVED,
                 path, date, committer,
             )
 
