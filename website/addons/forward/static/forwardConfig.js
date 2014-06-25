@@ -33,8 +33,6 @@
             false: 'No'
         };
 
-	self.label = ko.observable();
-
         // Forward configuration
         self.url = ko.observable().extend({
             required: true,
@@ -48,6 +46,7 @@
                 false
             )
         );
+	    self.label = $.osf.sanitizedObservable();
         self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
         self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
             required: true,
