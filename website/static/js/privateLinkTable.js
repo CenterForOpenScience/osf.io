@@ -1,6 +1,6 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'zeroclipboard', 'bootstrap', 'editable', 'osfutils'], factory);
+        define(['knockout', 'jquery', 'zeroclipboard', 'editable', 'osfutils'], factory);
     } else {
         $script.ready(['zeroclipboard'], function (){
             global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
@@ -159,7 +159,7 @@
              });
         };
 
-        self.updateClipboard = function(elm,data) {
+        self.updateClipboard = function(elm, data) {
 
             var $tr = $(elm);
             // Add this to client
