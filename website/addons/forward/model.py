@@ -21,9 +21,8 @@ class ForwardNodeSettings(AddonNodeSettingsBase):
 
     @property
     def link_text(self):
-        if len(self.label) > 0:
-            return self.label
-        return self.url
+        return self.label if self.label else self.url
+
 
 @ForwardNodeSettings.subscribe('before_save')
 def validate_circular_reference(schema, instance):
