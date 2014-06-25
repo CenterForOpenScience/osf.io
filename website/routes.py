@@ -716,6 +716,11 @@ def make_url_map(app):
         ], 'post', project_views.node.project_generate_private_link_post, json_renderer),
 
         Rule([
+            '/project/<pid>/private_link/edit/',
+            '/project/<pid>/node/<nid>/private_link/edit/',
+        ], 'post', project_views.node.project_private_link_edit, json_renderer),
+
+        Rule([
             '/project/<pid>/private_link/',
             '/project/<pid>/node/<nid>/private_link/',
         ], 'delete', project_views.node.remove_private_link, json_renderer),

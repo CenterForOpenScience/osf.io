@@ -805,6 +805,15 @@ def project_generate_private_link_post(auth, **kwargs):
     return new_link
 
 
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def project_private_link_edit(auth, **kwargs):
+    new_name = request.json.get('value', '')
+    private_link_id = request.json.get('pk','')
+    private_link = PrivateLink.load(private_link_id)
+    private_link.name = new_name
+    private_link.save()
+
 def _serialize_node_search(node):
     """Serialize a node for use in pointer search.
 

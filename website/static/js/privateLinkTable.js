@@ -1,6 +1,6 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'zeroclipboard', 'osfutils'], factory);
+        define(['knockout', 'jquery', 'zeroclipboard', 'bootstrap', 'editable', 'osfutils'], factory);
     } else {
         $script.ready(['zeroclipboard'], function (){
             global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
@@ -46,6 +46,31 @@
 
     };
 
+    var setupEditable = function(elm, data) {
+        var $elm = $(elm);
+        var $editable = $elm.find('.link-name');
+        $editable.editable({
+            type: 'text',
+            url: nodeApiUrl + 'private_link/edit/',
+            placement: 'bottom',
+            ajaxOptions: {
+                'type': 'POST',
+                "dataType": "json",
+                "contentType": "application/json"
+            },
+            send:"always",
+            title:"Edit Link Name",
+            params: function(params){
+                // Send JSON data
+                params.pk = data.id;
+                return JSON.stringify(params);
+            },
+            success: function(response, value) {
+                data.name(value);
+            }
+        });
+    };
+
     function LinkViewModel(data, $root) {
 
         var self = this;
@@ -54,6 +79,7 @@
         $.extend(self, data);
 
         self.collapse = "Collapse";
+        self.name = ko.observable(data.name);
         self.linkName = "Link Name";
         self.readonly = "readonly";
         self.selectText = "this.setSelectionRange(0, this.value.length);";
@@ -79,6 +105,7 @@
             self.moreNode(true);
             self.collapseNode(false);
         };
+
     }
 
     function ViewModel(url) {
@@ -132,13 +159,14 @@
              });
         };
 
-        self.updateClipboard = function(elm) {
+        self.updateClipboard = function(elm,data) {
 
             var $tr = $(elm);
             // Add this to client
             var target = $tr.find('.copy-button');
             updateClipboard(target);
             $tr.find('.remove-private-link').tooltip();
+            setupEditable(elm, data);
         };
 
     }
