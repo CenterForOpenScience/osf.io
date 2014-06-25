@@ -115,7 +115,7 @@
     </div>
 
     <!-- Input Credentials-->
-    <div data-bind="if: showInputCredentials">
+    <form data-bind="if: showInputCredentials">
         <div class="form-group">
             <label for="dataverseUsername">Dataverse Username</label>
             <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
@@ -127,7 +127,7 @@
         <button data-bind="click: sendAuth" class="btn btn-success">
             Submit
         </button>
-    </div>
+    </form>
 
     <!-- Flashed Messages -->
     <div class="help-block">
