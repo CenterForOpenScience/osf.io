@@ -90,7 +90,7 @@
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
                     <tr>
                         <td class="col-sm-3">
-                            <div class="link-name" data-bind="text: name, tooltip: {title: linkName}, attr:{id: id}"></div>
+                            <div class="link-name" data-bind="text: name, tooltip: {title: linkName}"></div>
 
                                 <div class="btn-group">
                                 <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
