@@ -22,7 +22,7 @@
     /**
      * Knockout view model for the Figshare node settings widget.
      */
-    var ViewModel = function(url, folderPicker) {
+    var ViewModel = function(url, selector, folderPicker) {
         var self = this;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
@@ -138,7 +138,7 @@
             // Update folder in ViewModel
 	        self.linked(response.result.linked);
             self.urls(response.result.urls);
-            self.selected(null);
+            self.cancelSelection();
         }
 
         function onSubmitError() {
@@ -153,8 +153,12 @@
                 onSubmitSuccess, onSubmitError);
         };
 
+        /**
+         * Must be used to update radio buttons and knockout view model simultaneously
+         */
         self.cancelSelection = function() {
             self.selected(null);
+            $(selector + ' input[type="radio"]').prop('checked', false);
         };
 
         /** Change the flashed message. */
@@ -181,7 +185,7 @@
                 success: function() {
                     // Update observables
                     self.nodeHasAuth(false);
-                    self.selected(null);
+                    self.cancelSelection();
                     self.currentDisplay(null);
                     self.changeMessage('Deauthorized Figshare.', 'text-warning', 3000);
                 },
@@ -295,7 +299,7 @@
             } else {
                 self.currentDisplay(null);
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
             }
         };
     };
@@ -305,7 +309,7 @@
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
-        self.viewModel = new ViewModel(url, folderPicker);
+        self.viewModel = new ViewModel(url, selector, folderPicker);
         $.osf.applyBindings(self.viewModel, selector);
     }
 
