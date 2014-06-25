@@ -39,6 +39,8 @@ def project_to_hgrid(node, project, expand=False, folders_only=False):
 
 
 def article_to_hgrid(node, article, expand=False, folders_only=False):
+    if not article.get('status') or article['status'] == 'Drafts':
+        return None    
     if article['defined_type'] == 'fileset' or not article['files']:
         if folders_only:
             return None
