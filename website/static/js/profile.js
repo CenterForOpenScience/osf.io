@@ -78,10 +78,22 @@
             return self.hasValidProperty() && self.isValid() && self.dirty();
         });
 
+        // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
                 return 'There are unsaved changes to your settings.';
             }
+        });
+
+        // Warn on tab change if dirty
+        $('body').on('show.bs.tab', function() {
+            if (self.dirty()) {
+                bootbox.alert('There are unsaved changes to your settings. ' +
+                    'Please save or discard your changes before switching ' +
+                    'tabs.');
+                return false;
+            }
+            return true;
         });
 
         this.message = ko.observable();
