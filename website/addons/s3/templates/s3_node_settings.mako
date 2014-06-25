@@ -23,6 +23,8 @@
 
         <div class="form-group">
 
+            <p> <strong>Current Bucket:</strong></p>
+
             <div class="row">
 
                 <div class="col-md-6">
