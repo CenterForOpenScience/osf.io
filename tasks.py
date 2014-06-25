@@ -30,6 +30,39 @@ def server():
 SHELL_BANNER = """
 {version}
 
++--------------------------------------------------+
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
+|ccccccccccccccccccccccOOOOOOOccccccccccccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccOOOOOOOOOOOOccccccccccccccccccc|
+|cccccccccOOOOOOOcccOOOOOOOOOOOOcccOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOccOOOOOsssOOOOcOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOccOOssssssOOccOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOsOcOssssssOOOOOOOOOOOOOOOccccccc|
+|cccccccOOOOOOOOOOOssccOOOOOOcOssOOOOOOOOOOcccccccc|
+|cccccccccOOOOOOOsssOccccccccccOssOOOOOOOcccccccccc|
+|cccccOOOccccOOssssOccccccccccccOssssOccccOOOcccccc|
+|ccOOOOOOOOOOOOOccccccccccccccccccccOOOOOOOOOOOOccc|
+|cOOOOOOOOssssssOcccccccccccccccccOOssssssOOOOOOOOc|
+|cOOOOOOOssssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOsssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOOssssOOccccccccccccccccccOsssssOOOOOOOOcc|
+|cccOOOOOOOOOOOOOOOccccccccccccccOOOOOOOOOOOOOOOccc|
+|ccccccccccccOOssssOOccccccccccOssssOOOcccccccccccc|
+|ccccccccOOOOOOOOOssOccccOOcccOsssOOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOOsOcOOssssOcOssOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOOOsssssssOcOOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOcccOssssssOcccOOOOOOOOOOOccccccc|
+|ccccccccOOOOOOOOOcccOOOOOOOOOOcccOOOOOOOOOcccccccc|
+|ccccccccccOOOOcccccOOOOOOOOOOOcccccOOOOccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccccOOOOccccccccccccccccccccccc|
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
++--------------------------------------------------+
+
 Welcome to the OSF Python Shell. Happy hacking!
 
 Available variables:
