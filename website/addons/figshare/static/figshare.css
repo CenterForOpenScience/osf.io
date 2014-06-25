@@ -1,3 +1,38 @@
 .figshare_article_link_active{
     color: black;
 }
+.figshare-confirm-selection {
+    padding-top: 10px;
+}
+.figshare-confirm-dlg {
+    display: inline-block;
+}
+.figshare-folder-picker {
+    margin-top: 10px;
+}
+
+.selected-folder {
+    margin: 12px;
+    font-size: 1.3em;
+}
+
+.figshare-loading-text {
+    padding-top: 20px;
+}
+
+
+.btn-figshare {
+    color: #333;
+    background-color: #fff;
+    border-color: #ccc;
+}
+
+.btn-figshare:hover,
+.btn-figshare:focus,
+.btn-figshare:active,
+.btn-figshare.active,
+.open .dropdown-toggle.btn-figshare {
+    color: #333;
+    background-color: #ebebeb;
+    border-color: #adadad;
+}

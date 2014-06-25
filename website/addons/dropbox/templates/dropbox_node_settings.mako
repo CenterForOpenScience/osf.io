@@ -67,7 +67,7 @@
                     Loading folders...</p>
 
                     <div data-bind="visible: currentDisplay() === PICKER">
-                        <div id="myGrid"
+                        <div id="myDropboxGrid"
                              class="filebrowser hgrid dropbox-folder-picker"></div>
                     </div>
 
@@ -106,7 +106,7 @@
 
                     <!-- Queued selection -->
                     <div class="dropbox-confirm-selection"
-                        data-bind="visible: currentDisplay() == PICKER">
+                        data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
 
                             <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
@@ -114,12 +114,12 @@
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
-                                        data-bind="click: cancelSelection,
-                                                    visible: selected()">Cancel</button>
-                                <input data-bind="attr.disabled: !selected()"
-                                        type="submit"
-                                        class="btn btn-primary"
-                                        value="Submit">
+                                        data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit"
+                                       class="btn btn-primary"
+                                       value="Submit" />
                             </div>
                         </form>
                     </div><!-- end .dropbox-confirm-selection -->
@@ -144,6 +144,6 @@
     $script.ready('dropboxNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
-        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myGrid');
+        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
     });
 </script>

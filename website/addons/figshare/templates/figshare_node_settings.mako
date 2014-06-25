@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="/static/addons/figshare/figshare.css">
+
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -10,7 +12,7 @@
             </small>
             <small data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
-                    class="text-danger pull-right">Deauthorize</a>
+                    class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
             </small>
         </span>
 
@@ -74,13 +76,12 @@
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
-                                        data-bind="click: cancelSelection
-                                    ">Cancel</button>
-                                <input
-                                        type="submit"
-                                        class="btn btn-primary"
-                                        value="Submit"
-                                    />
+                                        data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit"
+                                       class="btn btn-primary"
+                                       value="Submit" />
                             </div>
                         </form>
                     </div><!-- end .figshare-confirm-selection -->
