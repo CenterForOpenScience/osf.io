@@ -62,7 +62,7 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
     def revoke_auth(self, save=False):
         for node_settings in self.addons3nodesettings__authorized:
-            node_settings.delete(save=True)
+            node_settings.deauthorize(save=True)
         rv = self.remove_iam_user()
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
         if save:
