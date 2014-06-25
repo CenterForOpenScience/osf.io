@@ -79,6 +79,13 @@
         return !!value ? cleaner(value) : '';
     });
 
+    addExtender('ensureHttp', function(value, options) {
+        if (!value || value.search(/^https?:\/\//i) === 0) {
+            return value;
+        }
+        return 'http://' + value;
+    });
+
     var sanitize = function(value) {
         return value.replace(/<\/?[^>]+>/g, '');
     };

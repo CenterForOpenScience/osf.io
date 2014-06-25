@@ -2,6 +2,8 @@ import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
+from modularodm.exceptions import ValidationError
+
 from framework import (
     get_user,
     must_be_logged_in,
@@ -370,7 +372,10 @@ def unserialize_social(auth, **kwargs):
     user.social['scholar'] = json_data.get('scholar')
     user.social['linkedIn'] = json_data.get('linkedIn')
 
-    user.save()
+    try:
+        user.save()
+    except ValidationError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def unserialize_job(job):

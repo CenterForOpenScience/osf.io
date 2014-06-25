@@ -3,6 +3,7 @@
 import logging
 import pyelasticsearch
 import re 
+import copy
 
 from website import settings
 from website.filters import gravatar
@@ -16,9 +17,12 @@ logger = logging.getLogger(__name__)
 TYPES = ['project', 'component', 'user', 'registration']
 
 try:
-    elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
-    logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
-    logging.getLogger('requests').setLevel(logging.DEBUG)
+    elastic = pyelasticsearch.ElasticSearch(
+        settings.ELASTIC_URI, 
+        timeout=settings.ELASTIC_TIMEOUT
+    )
+    logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
+    logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
 except pyelasticsearch.exceptions.ConnectionError as e:
     logger.error(e)
@@ -35,10 +39,15 @@ def search(raw_query, start=0):
 
     # Get document counts by type
     counts = {}
-    count_query = dict(query)
+    count_query = copy.deepcopy(query)
     del count_query['from']
     del count_query['size']
     for type in TYPES:
+        try:
+            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
+        except KeyError:
+            pass
+
         counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
