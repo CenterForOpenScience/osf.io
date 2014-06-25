@@ -34,10 +34,11 @@ css = Bundle(
 js = Bundle(
     # Vendorized libraries that are already minified
     Bundle(
+        # For unknown reasons, moment must be first
+        "vendor/bower_components/momentjs/min/moment.min.js",
         "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
-        "vendor/bower_components/momentjs/min/moment.min.js",
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
     'js/site.js',
