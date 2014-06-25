@@ -5,6 +5,7 @@ Utility functions for Forward add-on.
 def serialize_settings(node_addon):
     return {
         'url': node_addon.url,
+        'label': node_addon.link_text,
         'redirectBool': node_addon.redirect_bool,
         'redirectSecs': node_addon.redirect_secs,
     }
