@@ -4,29 +4,29 @@
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
         Dropbox
-        <span data-bind="if: nodeHasAuth">
-            <small class="authorized-by">
+        <small class="authorized-by">
+            <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
                     {{ownerName}}
                 </a>
-            </small>
-            <small>
-                <a data-bind="click: deauthorize"
-                    class="text-danger pull-right">Deauthorize</a>
-            </small>
-        </span>
-         <!-- Import Access Token Button -->
-        <small data-bind="if: showImport">
-            <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
-                Import Access Token
-            </a>
-        </small>
 
-        <!-- Oauth Start Button -->
-        <small data-bind="if: showTokenCreateButton">
-            <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
-                Create Access Token
-            </a>
+                <a data-bind="click: deauthorize" style="margin-top: 4.8px"
+                    class="text-danger pull-right">Deauthorize</a>
+            </span>
+
+             <!-- Import Access Token Button -->
+            <span data-bind="if: showImport">
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Import Access Token
+                </a>
+            </span>
+
+            <!-- Oauth Start Button -->
+            <span data-bind="if: showTokenCreateButton">
+                <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Create Access Token
+                </a>
+            </span>
         </small>
     </h4>
 
