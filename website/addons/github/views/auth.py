@@ -110,7 +110,7 @@ def github_oauth_callback(**kwargs):
 
 @must_have_addon('github', 'user')
 def github_oauth_delete_user(user_addon, **kwargs):
-    user_addon.delete(save=True)
+    user_addon.clear_auth(save=True)
     return {}
 
 
