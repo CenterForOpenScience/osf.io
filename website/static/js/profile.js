@@ -301,7 +301,12 @@
         self.addons = ko.observableArray();
 
         self.personal = extendLink(
-            ko.observable().extend({url: true}),
+            // Note: Apply extenders in reverse order so that `ensureHttp` is
+            // applied before `url`.
+            ko.observable().extend({
+                url: true,
+                ensureHttp: true
+            }),
             self, 'personal'
         );
         self.orcid = extendLink(
