@@ -4,15 +4,24 @@
 
     <h4 class="addon-title">
         Dataverse
-        <span data-bind="if: nodeHasAuth">
-            <small class="authorized-by">
-                authorized by <a data-bind="attr.href: urls().owner">
-                    {{ownerName}}
+        <small class="authorized-by">
+
+            <span data-bind="if: nodeHasAuth">
+                    authorized by <a data-bind="attr.href: urls().owner">
+                        {{ownerName}}
+                    </a>
+                    <a data-bind="click: clickDeauth"
+                        class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
+            </span>
+
+            <span data-bind="if: showLinkDataverse">
+                <a data-bind="click: importAuth" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Import Credentials
                 </a>
-                <a data-bind="click: clickDeauth"
-                    class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
-            </small>
-        </span>
+            </span>
+
+        </small>
+
     </h4>
 
     <div class="dataverse-settings" data-bind="if: nodeHasAuth && connected">
@@ -95,7 +104,7 @@
     </div>
 
     <!-- Changed Credentials -->
-    <div class="text-danger dataverse-settings" data-bind="if: credentialsChanged">
+    <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
         <span data-bind="if: userIsOwner">
             Your dataverse credentials may not be valid. Please re-enter your password.
         </span>
@@ -103,13 +112,6 @@
             There was a problem connecting to the Dataverse with the given
             credentials.
         </span>
-    </div>
-
-    <!-- Link Dataverse Button -->
-    <div data-bind="if: showLinkDataverse">
-        <a data-bind="click: importAuth" class="btn btn-primary">
-            Authorize: Import Credentials from Profile
-        </a>
     </div>
 
     <!-- Input Credentials-->
