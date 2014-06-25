@@ -17,7 +17,10 @@ logger = logging.getLogger(__name__)
 TYPES = ['project', 'component', 'user', 'registration']
 
 try:
-    elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
+    elastic = pyelasticsearch.ElasticSearch(
+        settings.ELASTIC_URI, 
+        timeout=settings.ELASTIC_TIMEOUT
+    )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
