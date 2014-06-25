@@ -114,7 +114,9 @@
                 self.savedStudyHdl(data.savedStudy.hdl);
                 self.savedStudyTitle(data.savedStudy.title);
                 self.connected(data.connected);
-                self.getStudies(); // Sets studies, selectedStudyHdl
+                if (self.userIsOwner()) {
+                    self.getStudies(); // Sets studies, selectedStudyHdl
+                }
             }
         };
 

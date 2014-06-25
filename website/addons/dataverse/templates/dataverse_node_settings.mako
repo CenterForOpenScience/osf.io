@@ -10,7 +10,7 @@
                     {{ownerName}}
                 </a>
                 <a data-bind="click: clickDeauth"
-                    class="text-danger pull-right">Deauthorize</a>
+                    class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
             </small>
         </span>
     </h4>

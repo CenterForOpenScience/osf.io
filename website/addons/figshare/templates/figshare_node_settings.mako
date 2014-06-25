@@ -13,6 +13,20 @@
                     class="text-danger pull-right">Deauthorize</a>
             </small>
         </span>
+
+         <!-- Import Access Token Button -->
+        <small data-bind="if: showImport">
+            <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                Import Access Token
+            </a>
+        </small>
+
+        <!-- Oauth Start Button -->
+        <small data-bind="if: showTokenCreateButton">
+            <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                Create Access Token
+            </a>
+        </small>
     </h4>
 
 
@@ -75,20 +89,6 @@
             </div><!-- end col -->
         </div><!-- end row -->
     </div><!-- end .figshare-settings -->
-
-     <!-- Import Access Token Button -->
-    <div data-bind="if: showImport">
-        <a data-bind="click: importAuth" href="#" class="btn btn-primary">
-            Authorize: Import Access Token from Profile
-        </a>
-    </div>
-
-    <!-- Oauth Start Button -->
-    <div data-bind="if: showTokenCreateButton">
-        <a data-bind="attr.href: urls().auth" class="btn btn-primary">
-            Authorize: Create Access Token
-        </a>
-    </div>
 
     <!-- Flashed Messages -->
     <div class="help-block">
