@@ -58,7 +58,6 @@ js_bottom = Bundle(
            'js/koHelpers.js',
             'js/language.js',
             'js/project.js',
-            'js/app.js',
             'js/addons.js',
             # 'js/dropzone-patch.js',
             # 'js/rubeus.js'

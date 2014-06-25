@@ -104,6 +104,33 @@ def dataverse_download_file_proxy(node_addon, auth, **kwargs):
 
     return resp
 
+@must_be_contributor_or_public
+@must_have_addon('dataverse', 'node')
+def dataverse_get_file_info(node_addon, auth, **kwargs):
+    """API view that gets info for a file."""
+
+    node = node_addon.owner
+    file_id = kwargs.get('path')
+
+    fail_if_unauthorized(node_addon, auth, file_id)
+    fail_if_private(file_id)
+
+    download_url = node.web_url_for('dataverse_download_file', path=file_id)
+    dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
+    study_url = 'http://dx.doi.org/' + node_addon.study_hdl
+
+    data = {
+        'dataverse': node_addon.dataverse,
+        'dataverse_url': dataverse_url,
+        'study': node_addon.study,
+        'study_url': study_url,
+        'download_url': download_url,
+    }
+
+    return {
+        'data': data,
+    }, http.OK
+
 
 @must_be_contributor_or_public
 @must_have_addon('dataverse', 'node')
@@ -147,6 +174,8 @@ def dataverse_view_file(node_addon, auth, **kwargs):
                                        path=file_id),
         'download_url': node.web_url_for('dataverse_download_file',
                                          path=file_id),
+        'info_url': node.api_url_for('dataverse_get_file_info',
+                                     path=file_id),
     }
     rv.update(_view_project(node, auth))
     return rv

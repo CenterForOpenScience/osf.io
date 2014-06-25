@@ -117,7 +117,7 @@ settings_routes = {
 
             ],
             'delete',
-            views.auth.github_oauth_delete_node,
+            views.auth.github_oauth_deauthorize_node,
             json_renderer,
         ),
 

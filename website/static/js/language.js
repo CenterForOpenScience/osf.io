@@ -28,7 +28,10 @@
                 deauthSuccess: 'Unlinked your Dataverse account.',
                 authError: 'There was a problem connecting to the Dataverse.',
                 authInvalid: 'Your Dataverse username or password is invalid.',
-                authSuccess: 'Your dataverse account was linked.'
+                authSuccess: 'Your Dataverse account was linked.',
+                widgetInvalid: 'The Dataverse credentials associated with ' +
+                    'this node appear to be invalid.',
+                widgetError: 'There was a problem connecting to the Dataverse.'
             },
             dropbox: {
                 // Shown on clicking "Delete Access Token" for dropbox

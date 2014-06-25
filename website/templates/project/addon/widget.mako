@@ -1,11 +1,6 @@
 <div class="addon-widget" name="${short_name}">
 
     <h3 class="addon-widget-header">
-        % if capabilities:
-            <span class="pull-right addon-capabilities">
-                <i class="icon-question-sign"></i>
-            </span>
-        % endif
         % if has_page:
             <a href="${node['url']}${short_name}/">${full_name}</a>
         % else:

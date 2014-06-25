@@ -2,6 +2,7 @@
 
 import logging
 import pyelasticsearch
+import re 
 
 from website import settings
 from website.filters import gravatar
@@ -34,8 +35,11 @@ def search(raw_query, start=0):
 
     # Get document counts by type
     counts = {}
+    count_query = dict(query)
+    del count_query['from']
+    del count_query['size']
     for type in TYPES:
-        counts[type + 's'] = elastic.count(filtered_query + '*', index='website', doc_type=type)['count']
+        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
@@ -74,16 +78,47 @@ def _build_query(raw_query, start=0):
     # Cleanup string before using it to query
     for type in TYPES:
         raw_query = raw_query.replace(type + ':', '')
-    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
+
+    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
+
+    raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
     # If the search contains wildcards, make them mean something
-    inner_query = {
-        'query_string': {
-            'default_field': '_all',
-            'query': raw_query + '*',
-            'analyze_wildcard': True,
+    if '*' in raw_query:
+        inner_query = {
+            'query_string': {
+                'default_field': '_all',
+                'query': raw_query + '*',
+                'analyze_wildcard': True,
+            }
         }
-    }
+    else:
+        inner_query = {
+            'multi_match': {
+                'query': raw_query,
+                'type': 'phrase_prefix',
+                'fields': '_all',
+            }
+        }
+
+    # If the search has a tag filter, add that to the query
+    if 'AND tags:' in raw_query:
+        tags = raw_query.split('AND tags:')
+        tag_filter = {
+            'terms': {
+                'tags': []
+            }
+        }
+        for i in range(1, len(tags)):
+            tag_filter['terms']['tags'].append(tags[i])
+        inner_query['query_string']['query'] = tags[0]
+        inner_query = {
+            'filtered': {
+                'filter': tag_filter,
+                'query': inner_query
+            }
+        }
+
 
     # This is the complete query
     query = {
@@ -348,7 +383,6 @@ def search_contributor(query, exclude=None):
         gravatar URL of an OSF user
 
     """
-    import re
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
