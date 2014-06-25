@@ -40,7 +40,7 @@ def figshare_config_put(node_addon, auth, **kwargs):
     return {
         'result': {
             'linked': {
-                'name': fields.get('title') or '',
+                'title': fields.get('title') or '',
                 'id': fields.get('id') or None,
                 'type': fields.get('type') or None
             },
