@@ -87,29 +87,28 @@
                     </tr>
 
                 </tbody>
-                <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
+                <tbody data-bind="foreach: {data: privateLinks, afterRender: afterRenderLink}">
                     <tr>
                         <td class="col-sm-3">
-                            <div class="link-name" data-bind="text: name, tooltip: {title: linkName}"></div>
-
-                                <div class="btn-group">
-                                <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                    <span class="icon-copy" ></span>
-                                </button>
-                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
-                                </div>
-
+                            <div>
+                                <span class="link-name" data-bind="text: name, tooltip: {title: linkName}"></span>
+                            </div>
+                            <div class="btn-group">
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                <span class="icon-copy" ></span>
+                            </button>
+                                <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                            </div>
                         </td>
-                        <td class="col-sm-4" >
-
-                               <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
-                                   <li data-bind="style:{marginLeft: $data.scale}">
-                                      <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
-                                   </li>
-                               </ul>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
+                        <td class="col-sm-4">
+                           <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
+                               <li data-bind="style:{marginLeft: $data.scale}">
+                                  <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                               </li>
+                           </ul>
+                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
+                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
                         </td>
 
                         <td class="col-sm-2">
@@ -119,7 +118,7 @@
                         <td class="col-sm-1">
                             <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
                         </td>
-                        </tr>
+                    </tr>
                 </tbody>
 
             </table>
@@ -206,7 +205,7 @@
         var contributors = ${json.dumps(contributors)};
         var user = ${json.dumps(user)};
         var isRegistration = ${json.dumps(node['is_registration'])};
-        manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
+        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
 
     $script(['/static/js/privateLinkManager.js',

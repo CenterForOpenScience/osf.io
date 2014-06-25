@@ -718,7 +718,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/private_link/edit/',
             '/project/<pid>/node/<nid>/private_link/edit/',
-        ], 'post', project_views.node.project_private_link_edit, json_renderer),
+        ], 'put', project_views.node.project_private_link_edit, json_renderer),
 
         Rule([
             '/project/<pid>/private_link/',

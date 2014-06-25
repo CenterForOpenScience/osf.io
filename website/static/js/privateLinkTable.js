@@ -54,7 +54,7 @@
             url: nodeApiUrl + 'private_link/edit/',
             placement: 'bottom',
             ajaxOptions: {
-                'type': 'POST',
+                'type': 'PUT',
                 "dataType": "json",
                 "contentType": "application/json"
             },
@@ -159,7 +159,7 @@
              });
         };
 
-        self.updateClipboard = function(elm, data) {
+        self.afterRenderLink = function(elm, data) {
 
             var $tr = $(elm);
             // Add this to client
