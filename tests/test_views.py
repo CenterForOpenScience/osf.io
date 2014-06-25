@@ -525,6 +525,18 @@ class TestProjectViews(OsfTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_private_link_edit_name(self):
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
+        assert_equal(link.name, "link")
+        url = self.project.api_url + 'private_link/edit/'
+        self.app.post_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_equal(link.name, "new name")
+
+
     def test_remove_private_link(self):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
