@@ -1,8 +1,7 @@
-% if nodes and authorized:
-    <div style="margin-right: 20px; margin-left: 20px" id = "${addon_short_name}-header">
-        <table class="table table-hove" id="${addon_short_name}-auth-table">
-             <thead>Authorized Projects:</thead>
-
+% if nodes:
+    <div style="margin-right: 20px; margin-left: 20px" id="${addon_short_name}-header">
+        <table class="table table-hover" id="${addon_short_name}-auth-table">
+             <thead><th>Authorized Projects:</th><th></th></thead>
             % for node in nodes:
                  <tr id="${addon_short_name}-${node['_id']}-auth-row">
                     <th><a style="font-weight: normal" href="${node['url']}">${node['title']}</a></th>
