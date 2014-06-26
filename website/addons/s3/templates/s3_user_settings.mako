@@ -50,13 +50,13 @@
                     'that you have authorized.',
                 function(result) {
                     if (result) {
-                        DeleteToken();
+                        deleteToken();
                     }
                 }
             )
         });
 
-        function DeleteToken() {
+        function deleteToken() {
             var $this = $(this),
             addon = $this.attr('data-addon'),
             msgElm = $this.find('.addon-settings-message');
@@ -87,7 +87,7 @@
                 }
             });
             return false;
-        };
+        }
 
         $(document).ready(function() {
             $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
