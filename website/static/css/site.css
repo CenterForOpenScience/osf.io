@@ -645,11 +645,6 @@ h4 {
     font-size: 50px;
 }
 
-.scrolling-table {
-    max-height: 250px;
-    overflow: scroll;
-}
-
 .table-less {
     max-height: 140px;
     overflow-y: hidden;
