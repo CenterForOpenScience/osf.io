@@ -96,7 +96,7 @@
         });
         self.studyWasFound = ko.observable(false);
         self.showNotFound = ko.computed(function() {
-            return self.loadedStudies() && !self.studyWasFound();
+            return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
         });
 
         /**
