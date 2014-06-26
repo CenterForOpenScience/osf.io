@@ -14,26 +14,26 @@
                         <tr>
                         <th class="col-md-6">Name</th>
                         <th class="col-md-2">
+                            Permissions
                             <i class="icon-question-sign permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Permissions
                         </th>
-                        <th class="col-md-2">
+                        <th class="col-md-3">
+                            Visibility
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
                                     data-title="Visibility Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Visibility
                         </th>
-                        <th class="col-md-2"></th>
+                        <th class="col-md-1"></th>
                         </tr>
                     </thead>
                     <tr data-bind="if: canEdit">
