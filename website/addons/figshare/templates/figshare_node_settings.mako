@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="/static/addons/figshare/figshare.css">
+
 <div id="figshareScope" class="scripted">
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
@@ -10,9 +12,23 @@
             </small>
             <small data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
-                    class="text-danger pull-right">Deauthorize</a>
+                    class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
             </small>
         </span>
+
+         <!-- Import Access Token Button -->
+        <small data-bind="if: showImport">
+            <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                Import Access Token
+            </a>
+        </small>
+
+        <!-- Oauth Start Button -->
+        <small data-bind="if: showTokenCreateButton">
+            <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                Create Access Token
+            </a>
+        </small>
     </h4>
 
 
@@ -60,13 +76,12 @@
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
-                                        data-bind="click: cancelSelection
-                                    ">Cancel</button>
-                                <input
-                                        type="submit"
-                                        class="btn btn-primary"
-                                        value="Submit"
-                                    />
+                                        data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit"
+                                       class="btn btn-primary"
+                                       value="Submit" />
                             </div>
                         </form>
                     </div><!-- end .figshare-confirm-selection -->
@@ -75,20 +90,6 @@
             </div><!-- end col -->
         </div><!-- end row -->
     </div><!-- end .figshare-settings -->
-
-     <!-- Import Access Token Button -->
-    <div data-bind="if: showImport">
-        <a data-bind="click: importAuth" href="#" class="btn btn-primary">
-            Authorize: Import Access Token from Profile
-        </a>
-    </div>
-
-    <!-- Oauth Start Button -->
-    <div data-bind="if: showTokenCreateButton">
-        <a data-bind="attr.href: urls().auth" class="btn btn-primary">
-            Authorize: Create Access Token
-        </a>
-    </div>
 
     <!-- Flashed Messages -->
     <div class="help-block">

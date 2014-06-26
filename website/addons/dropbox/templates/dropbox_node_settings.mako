@@ -4,17 +4,30 @@
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
     <h4 class="addon-title">
         Dropbox
-        <span data-bind="if: nodeHasAuth">
-            <small class="authorized-by">
+        <small class="authorized-by">
+            <span data-bind="if: nodeHasAuth">
                 authorized by <a data-bind="attr.href: urls().owner">
                     {{ownerName}}
                 </a>
-            </small>
-            <small>
-                <a data-bind="click: deauthorize"
+
+                <a data-bind="click: deauthorize" style="margin-top: 4.8px"
                     class="text-danger pull-right">Deauthorize</a>
-            </small>
-        </span>
+            </span>
+
+             <!-- Import Access Token Button -->
+            <span data-bind="if: showImport">
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Import Access Token
+                </a>
+            </span>
+
+            <!-- Oauth Start Button -->
+            <span data-bind="if: showTokenCreateButton">
+                <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                    Create Access Token
+                </a>
+            </span>
+        </small>
     </h4>
 
 
@@ -54,7 +67,7 @@
                     Loading folders...</p>
 
                     <div data-bind="visible: currentDisplay() === PICKER">
-                        <div id="myGrid"
+                        <div id="myDropboxGrid"
                              class="filebrowser hgrid dropbox-folder-picker"></div>
                     </div>
 
@@ -93,7 +106,7 @@
 
                     <!-- Queued selection -->
                     <div class="dropbox-confirm-selection"
-                        data-bind="visible: currentDisplay() == PICKER">
+                        data-bind="visible: currentDisplay() == PICKER && selected()">
                         <form data-bind="submit: submitSettings">
 
                             <h4 data-bind="if: selected" class="dropbox-confirm-dlg">
@@ -101,12 +114,12 @@
                             </h4>
                             <div class="pull-right">
                                 <button class="btn btn-default"
-                                        data-bind="click: cancelSelection,
-                                                    visible: selected()">Cancel</button>
-                                <input data-bind="attr.disabled: !selected()"
-                                        type="submit"
-                                        class="btn btn-primary"
-                                        value="Submit">
+                                        data-bind="click: cancelSelection">
+                                    Cancel
+                                </button>
+                                <input type="submit"
+                                       class="btn btn-primary"
+                                       value="Submit" />
                             </div>
                         </form>
                     </div><!-- end .dropbox-confirm-selection -->
@@ -115,20 +128,6 @@
             </div><!-- end col -->
         </div><!-- end row -->
     </div><!-- end .dropbox-settings -->
-
-     <!-- Import Access Token Button -->
-    <div data-bind="if: showImport">
-        <a data-bind="click: importAuth" href="#" class="btn btn-primary">
-            Authorize: Import Access Token from Profile
-        </a>
-    </div>
-
-    <!-- Oauth Start Button -->
-    <div data-bind="if: showTokenCreateButton">
-        <a data-bind="attr.href: urls().auth" class="btn btn-primary">
-            Authorize: Create Access Token
-        </a>
-    </div>
 
     <!-- Flashed Messages -->
     <div class="help-block">
@@ -145,6 +144,6 @@
     $script.ready('dropboxNodeConfig', function() {
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
-        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myGrid');
+        var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
     });
 </script>
