@@ -94,6 +94,11 @@
         self.hasBadStudies = ko.computed(function() {
             return self.badStudies().length > 0;
         });
+        self.studyWasFound = ko.observable(false);
+        self.showNotFound = ko.computed(function() {
+            return self.loadedStudies() && !self.studyWasFound();
+        });
+
         /**
          * Update the view model from data returned from the server.
          */
@@ -153,12 +158,26 @@
                     self.savedDataverseTitle(self.selectedDataverseTitle());
                     self.savedStudyHdl(self.selectedStudyHdl());
                     self.savedStudyTitle(self.selectedStudyTitle());
+                    self.studyWasFound(true);
                     self.changeMessage('Settings updated.', 'text-success', 5000);
                 },
                 error: function() {
                     self.changeMessage('The study could not be set at this time.', 'text-danger');
                 }
             });
+        }
+
+        /**
+         * Looks for study in list of studies when first loaded.
+         * This prevents an additional request to the server, but requires additional logic.
+         */
+        self.findStudy = function() {
+            for (var i in self.studies()) {
+                if (self.studies()[i].hdl === self.savedStudyHdl()) {
+                    self.studyWasFound(true);
+                    return;
+                }
+            }
         }
 
         self.getStudies = function() {
@@ -176,6 +195,7 @@
                     self.badStudies(response.badStudies);
                     self.loadedStudies(true);
                     self.selectedStudyHdl(self.savedStudyHdl());
+                    self.findStudy();
                 },
                 error: function() {
                     self.changeMessage('Could not load studies', 'text-danger');

@@ -36,6 +36,9 @@
             <span data-bind="ifnot: showLinkedStudy" class="text-muted">
                 None
             </span>
+            <div data-bind="if: showNotFound" class="text-danger">
+                The current study was not found on Dataverse.
+            </div>
         </p>
 
         <div data-bind="if: userIsOwner">
