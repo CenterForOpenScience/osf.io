@@ -54,9 +54,9 @@ def s3_authorize_user(user_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
-def s3_authorize_node(node_addon, **kwargs):
+def s3_authorize_node(auth, node_addon, **kwargs):
 
-    user = kwargs['auth'].user
+    user = auth.user
 
     s3_access_key = request.json.get('access_key')
     s3_secret_key = request.json.get('secret_key')
@@ -73,6 +73,14 @@ def s3_authorize_node(node_addon, **kwargs):
 
     node_addon.authorize(user_settings, save=True)
 
+    return {}
+
+
+@must_have_permission('write')
+@must_have_addon('s3', 'node')
+@must_have_addon('s3', 'user')
+def s3_node_import_auth(node_addon, user_addon, **kwargs):
+    node_addon.authorize(user_addon, save=True)
     return {}
 
 

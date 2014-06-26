@@ -96,7 +96,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.save()
 
     def deauthorize(self, auth=None, log=True, save=False):
-        self.bucket, self.user_settings = None, None
+        self.registration_data = None
+        self.bucket = None
+        self.user_settings = None
+
         if log:
             self.owner.add_log(
                 action='s3_node_deauthorized',
@@ -116,32 +119,26 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def to_json(self, user):
         rv = super(AddonS3NodeSettings, self).to_json(user)
 
+        user_settings = user.get_addon('s3')
+
         rv.update({
             'bucket': self.bucket or '',
             'has_bucket': self.bucket is not None,
-            'is_owner': (
+            'user_is_owner': (
                 self.user_settings and self.user_settings.owner == user
             ),
-            'user_has_auth': False,
-            'owner': None,  # needed?
+            'user_has_auth': user_settings.has_auth,
+            'node_has_auth': self.has_auth,
+            'owner': None,
             'bucket_list': None,
             'is_registration': self.owner.is_registration,
         })
 
-        user_settings = user.get_addon('s3')
-
-        if self.user_settings and self.user_settings.has_auth:
-            rv['node_has_auth'] = True
+        if self.has_auth:
             rv['owner'] = self.user_settings.owner.fullname
             rv['owner_url'] = self.user_settings.owner.url
-            self.save()
-            if self.user_settings.has_auth:
-                rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
-                rv['user_has_auth'] = True
-
-        elif user_settings and user_settings.has_auth:
-                rv['bucket_list'] = get_bucket_drop_down(user.get_addon('s3'))
-                rv['user_has_auth'] = user_settings.has_auth
+            rv['bucket_list'] = get_bucket_drop_down(self.user_settings)
+            rv['node_has_auth'] = True
 
         return rv
 

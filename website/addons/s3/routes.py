@@ -43,6 +43,15 @@ settings_routes = {
         ),
         Rule(
             [
+                '/project/<pid>/s3/import-auth/',
+                '/project/<pid>/node/<nid>/s3/import-auth/',
+            ],
+            'post',
+            views.config.s3_node_import_auth,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/s3/authorize/',
                 '/project/<pid>/node/<nid>/s3/authorize/',
             ],

@@ -13,6 +13,8 @@
                         ${owner}
                     </a>
                     <a id="s3RemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                % elif user_has_auth:
+                    <a id="s3ImportToken" class="text-primary pull-right addon-auth">Import Credentials</a>
                 % endif
             </small>
 
@@ -29,16 +31,19 @@
 
                 <div class="col-md-6">
 
-                    <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) and not is_registration else 'disabled'}>
+                    <select class="form-control" id="s3_bucket" name="s3_bucket"
+                        ${'' if user_has_auth and user_is_owner and not is_registration else 'disabled'}>
                         <option value="">-----</option>
                         % for bucket_name in bucket_list or []:
-                            <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
+                            <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>
+                                ${bucket_name}
+                            </option>
                         % endfor
                     </select>
 
                 </div>
 
-                % if user_has_auth and (owner is None or is_owner) and not is_registration:
+                % if user_has_auth and user_is_owner and not is_registration:
                     <div class="col-md-6">
                         <a class="btn btn-default" id="newBucket">Create Bucket</a>
 
@@ -52,7 +57,7 @@
 
         </div> <!-- End form group -->
 
-    % elif user_has_auth and bucket_list is None:
+    % elif node_has_auth and bucket_list is None:
 
         <div>
             <i class="icon-spinner icon-large icon-spin"></i>
@@ -61,7 +66,7 @@
             </span>
         </div>
 
-    % else:
+    % elif not node_has_auth and not user_has_auth:
 
         <div class="form-group">
             <label for="s3Addon">Access Key</label>
