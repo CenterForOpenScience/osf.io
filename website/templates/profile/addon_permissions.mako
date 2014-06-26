@@ -24,13 +24,12 @@
                         success: function(response) {
 
                             $("#${addon_short_name}-" + nodeId + "-auth-row").hide();
-                            if ($("#${addon_short_name}-auth-table tr:visible").length === 0) {
-                                $("#${addon_short_name}-header").hide();
+                            if ($("#${addon_short_name}-auth-table tr:visible").length === 1) {
+                                $("#${addon_short_name}-auth-table").hide();
                             }
                         },
 
                         error: function(response) {
-
                             bootbox.alert('There was a problem, the project has not been deauthorized.');
                         }
                     });
