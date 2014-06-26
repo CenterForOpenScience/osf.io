@@ -8,9 +8,9 @@
                     <a href="https://github.com/${authorized_github_user}" target="_blank">
                         ${authorized_github_user}
                     </a>
-                <a id="githubDelKey" class="text-danger pull-right" style="margin-top: 4.8px">Delete Access Token</a>
+                <a id="githubDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
             % else:
-                <a id="githubAddKey" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a id="githubAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token
                 </a>
             % endif

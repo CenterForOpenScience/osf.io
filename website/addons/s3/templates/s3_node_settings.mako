@@ -12,7 +12,7 @@
                     <a href="${owner_url}" target="_blank">
                         ${owner}
                     </a>
-                    <a id="s3RemoveToken" class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
+                    <a id="s3RemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
                 % endif
             </small>
 

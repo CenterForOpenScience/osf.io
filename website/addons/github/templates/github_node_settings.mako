@@ -11,14 +11,14 @@
                         <a href="${auth_osf_url}" target="_blank">
                             ${auth_osf_name}
                         </a>
-                    <a id="githubRemoveToken" class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
+                    <a id="githubRemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
                 % else:
                     % if user_has_auth:
-                        <a id="githubImportToken" class="text-primary pull-right" style="margin-top: 4.8px">
+                        <a id="githubImportToken" class="text-primary pull-right addon-auth">
                             Import Access Token
                         </a>
                     % else:
-                        <a id="githubCreateToken" class="text-primary pull-right" style="margin-top: 4.8px">
+                        <a id="githubCreateToken" class="text-primary pull-right addon-auth">
                             Create Access Token
                         </a>
                     % endif
