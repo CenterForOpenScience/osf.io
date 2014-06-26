@@ -153,6 +153,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.user_settings and self.user_settings.has_auth
         )
 
+    @property
+    def is_private(self):
+        connection = GitHub.from_settings(self.user_settings)
+        return connection.repo(user=self.user, repo=self.repo).private
+
+
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -450,6 +456,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
+
+    def before_make_public(self, node):
+        if self.is_private:
+            return (
+                'This {cat} is connected to a private GitHub repository. Users '
+                '(other than contributors) will not be able to see the '
+                'contents of this repo unless it is made public on GitHub.'
+            ).format(
+                cat=node.project_or_component,
+            )
 
     #########
     # Hooks #

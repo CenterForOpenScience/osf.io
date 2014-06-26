@@ -344,6 +344,15 @@ def project_statistics(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('admin')
+def project_before_set_public(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    return {
+        'prompts': node.callback('before_make_public')
+    }
+
+@must_be_valid_project
+@must_have_permission('admin')
 def project_set_privacy(auth, **kwargs):
 
     permissions = kwargs['permissions']

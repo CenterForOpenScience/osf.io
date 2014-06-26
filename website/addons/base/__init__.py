@@ -368,6 +368,22 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         return clone, None
 
+    def before_make_public(self, node):
+        """
+
+        :param Node node:
+        :return: Alert message or None
+        """
+        pass
+
+    def before_make_private(self, node):
+        """
+
+        :param Node node:
+        :return: Alert message or None
+        """
+        pass
+
 
 # TODO: Move this
 LOG_TEMPLATES = 'website/templates/log_templates.mako'

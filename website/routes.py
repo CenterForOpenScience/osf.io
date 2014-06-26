@@ -847,6 +847,10 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
         ], 'post', project_views.node.project_set_privacy, json_renderer),
 
+        Rule([
+            '/project/<pid>/permissions/beforepublic/',
+            '/project/<pid>/node/<nid>/permissions/beforepublic/',
+        ], 'get', project_views.node.project_before_set_public, json_renderer),
 
         ### Wiki ###
 

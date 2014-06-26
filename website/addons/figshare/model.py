@@ -296,3 +296,12 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
+
+    def before_make_public(self, node):
+        return (
+            'This {cat} is connected to a Figshare project. Files marked as '
+            'private on Figshare <strong>will be visible to the public'
+            '</strong>.'
+        ).format(
+            cat=node.project_or_component,
+        )
