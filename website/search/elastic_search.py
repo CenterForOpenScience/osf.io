@@ -120,14 +120,18 @@ def _build_query(raw_query, start=0):
         }
         for i in range(1, len(tags)):
             tag_filter['terms']['tags'].append(tags[i])
-        inner_query['query_string']['query'] = tags[0]
+
+        if inner_query.get('query_string'):
+            inner_query['query_string']['query'] = tags[0]
+        elif inner_query.get('multi_match'):
+            inner_query['multi_match']['query'] = tags[0]
+
         inner_query = {
             'filtered': {
                 'filter': tag_filter,
                 'query': inner_query
             }
         }
-
 
     # This is the complete query
     query = {
