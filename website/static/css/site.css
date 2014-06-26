@@ -645,9 +645,9 @@ h4 {
     font-size: 50px;
 }
 
-.scrolling-table {
-    max-height: 250px;
-    overflow-x: auto;
+.table-less {
+    max-height: 140px;
+    overflow-y: hidden;
 }
 
 /* RESPONSIVE CSS */
@@ -1546,6 +1546,14 @@ a {
 
 .contributor-unregistered:hover{
   background-color: #F3F3F3;
+}
+
+.collapse-button {
+   color: #b0b0b0;
+}
+
+.collapse-button:hover {
+    color: #505050;
 }
 
 /* jQuery UI Autocomplete (WTForms Widget) */
