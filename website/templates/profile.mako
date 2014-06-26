@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">${profile["fullname"]}'s Profile</%def>
+<%def name="title()">${profile["fullname"]}</%def>
 
 <%def name="javascript_bottom()">
 
