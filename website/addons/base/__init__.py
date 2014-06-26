@@ -223,9 +223,9 @@ class AddonUserSettingsBase(AddonSettingsBase):
         schema = self.config.settings_models['node']
         nodes_backref = self.get_backref_key(schema, 'authorized')
         return [
-            node.owner
-            for node in getattr(self, nodes_backref)
-            if not node.is_deleted
+            node_addon.owner
+            for node_addon in getattr(self, nodes_backref)
+            if not node_addon.owner.is_deleted
         ]
 
     def to_json(self, user):

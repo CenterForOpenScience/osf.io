@@ -1,6 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
-<%def name="title()">Project</%def>
+<%def name="title()">${node['title']}</%def>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />

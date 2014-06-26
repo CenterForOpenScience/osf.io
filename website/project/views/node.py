@@ -346,7 +346,10 @@ def project_statistics(**kwargs):
 @must_have_permission('admin')
 def project_set_privacy(auth, **kwargs):
 
-    permissions = kwargs['permissions']
+    permissions = kwargs.get('permissions')
+    if permissions is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     node = kwargs['node'] or kwargs['project']
 
     node.set_privacy(permissions, auth)
@@ -354,8 +357,7 @@ def project_set_privacy(auth, **kwargs):
     return {
         'status': 'success',
         'permissions': permissions,
-        'redirect_url': node.url,
-    }, None, None
+    }
 
 
 @must_be_valid_project  # returns project

@@ -696,7 +696,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
-                visible=node.is_visible_contributor(user),
+                visible=node.get_visible(user),
                 log=False,
             )
             try:
