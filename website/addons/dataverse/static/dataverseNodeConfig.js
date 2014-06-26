@@ -30,6 +30,7 @@
         self.connected = ko.observable(false);
         self.loadedSettings = ko.observable(false);
         self.loadedStudies = ko.observable(false);
+        self.submitting = ko.observable(false);
 
         self.dataverses = ko.observableArray([]);
         self.studies = ko.observableArray([]);
@@ -39,6 +40,7 @@
         self.savedStudyTitle = ko.observable();
         self.savedDataverseAlias = ko.observable();
         self.savedDataverseTitle = ko.observable();
+        self.studyWasFound = ko.observable(false);
 
         self.savedStudyUrl = ko.computed(function() {
             return (self.urls()) ? self.urls().studyPrefix + self.savedStudyHdl() : null;
@@ -94,9 +96,12 @@
         self.hasBadStudies = ko.computed(function() {
             return self.badStudies().length > 0;
         });
-        self.studyWasFound = ko.observable(false);
         self.showNotFound = ko.computed(function() {
             return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
+        });
+        self.enableSubmit = ko.computed(function() {
+            return !self.submitting() && self.dataverseHasStudies() &&
+                self.savedStudyHdl() !== self.selectedStudyHdl();
         });
 
         /**
@@ -144,6 +149,7 @@
         self.messageClass = ko.observable('text-info')
 
         self.setInfo = function() {
+            self.submitting(true);
             return $.ajax({
                 url: self.urls().set,
                 type: 'POST',
@@ -154,6 +160,7 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
+                    self.submitting(false);
                     self.savedDataverseAlias(self.selectedDataverseAlias());
                     self.savedDataverseTitle(self.selectedDataverseTitle());
                     self.savedStudyHdl(self.selectedStudyHdl());
@@ -162,6 +169,7 @@
                     self.changeMessage('Settings updated.', 'text-success', 5000);
                 },
                 error: function() {
+                    self.submitting(false);
                     self.changeMessage('The study could not be set at this time.', 'text-danger');
                 }
             });
