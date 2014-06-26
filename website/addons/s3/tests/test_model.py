@@ -127,3 +127,10 @@ class TestCallbacks(OsfTestCase):
     def test_before_register_settings_and_auth(self):
         message = self.node_settings.before_register(self.project, self.project.creator)
         assert_true(message)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)
+        assert_true(self.node_settings.bucket is None)

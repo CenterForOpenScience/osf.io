@@ -375,6 +375,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         return clone, None
 
+    def after_delete(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+
+        """
+        pass
+
 
 # TODO: Move this
 LOG_TEMPLATES = 'website/templates/log_templates.mako'

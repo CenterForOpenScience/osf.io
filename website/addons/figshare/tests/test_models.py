@@ -191,5 +191,13 @@ class TestCallbacks(OsfTestCase):
             None,
         )
 
-        #TODO Test figshare options and figshare to_json
-    
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)
+        assert_true(self.node_settings.figshare_id is None)
+        assert_true(self.node_settings.figshare_type is None)
+        assert_true(self.node_settings.figshare_title is None)
+
+    #TODO Test figshare options and figshare to_json

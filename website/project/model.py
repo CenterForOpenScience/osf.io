@@ -1155,6 +1155,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
 
+        # After delete callback
+        for addon in self.get_addons():
+            message = addon.after_delete(self, auth.user)
+            if message:
+                status.push_status_message(message)
+
         log_date = date or datetime.datetime.utcnow()
 
         # Add log to parent
