@@ -77,6 +77,16 @@ def s3_authorize_node(node_addon, **kwargs):
 
 
 @must_have_permission('write')
+@must_have_addon('s3', 'node')
+@must_have_addon('s3', 'user')
+def s3_node_import_auth(node_addon, user_addon, auth, **kwargs):
+
+    node_addon.authorize(user_addon, save=True)
+
+    return http.OK
+
+
+@must_have_permission('write')
 @must_have_addon('s3', 'user')
 @must_have_addon('s3', 'node')
 @must_not_be_registration
