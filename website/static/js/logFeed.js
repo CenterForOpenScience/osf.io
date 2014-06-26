@@ -52,7 +52,7 @@
          */
         self.displayContributors = ko.computed(function(){
             var ret = "";
-            for(var i=0; i < self.contributors.length; i++){
+            for (var i=0; i < self.contributors.length; i++) {
                 var person = self.contributors[i];
                 if(i == self.contributors.length - 1 && self.contributors.length > 2){
                     ret += " and ";
