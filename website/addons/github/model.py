@@ -451,6 +451,9 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         return clone, message
 
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), log=True, save=True)
+
     #########
     # Hooks #
     #########

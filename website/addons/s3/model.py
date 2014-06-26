@@ -305,3 +305,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
                     url=node.url,
                 )
             )
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), log=True, save=True)

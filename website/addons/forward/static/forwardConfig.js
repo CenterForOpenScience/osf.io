@@ -46,6 +46,7 @@
                 false
             )
         );
+	    self.label = $.osf.sanitizedObservable();
         self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
         self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
             required: true,
@@ -72,6 +73,7 @@
          */
         self.updateFromData = function(data) {
             self.url(data.url);
+	    self.label(data.label);
             self.redirectBool(data.redirectBool);
             self.redirectSecs(data.redirectSecs);
         };

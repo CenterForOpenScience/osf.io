@@ -230,3 +230,9 @@ class TestCallbacks(OsfTestCase):
             self.project, registration, self.project.creator,
         )
         assert_false(clone.registration_data)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)

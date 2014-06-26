@@ -41,7 +41,7 @@
         </form>
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
-          <li rel="tooltip" title="${user_full_name}">
+          <li rel="tooltip" title="${user_name}">
             <a class="hidden-lg" href="/profile/">
               <span class="icon-user"></span>
             </a>

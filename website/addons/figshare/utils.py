@@ -1,3 +1,4 @@
+from framework.auth import get_current_user
 from website.util import rubeus
 
 
@@ -39,6 +40,11 @@ def project_to_hgrid(node, project, expand=False, folders_only=False):
 
 
 def article_to_hgrid(node, article, expand=False, folders_only=False):
+    if node.is_public:
+        user = get_current_user()
+        if not node.is_contributor(user):
+            if article.get('status') in ['Drafts', None]:
+                return None
     if article['defined_type'] == 'fileset' or not article['files']:
         if folders_only:
             return None

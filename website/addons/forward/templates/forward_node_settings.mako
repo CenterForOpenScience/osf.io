@@ -17,6 +17,15 @@
                         data-bind="value: url"
                     />
             </div>
+	    
+            <div class="form-group">
+                    <label for="forwardLabel">Label</label>
+                    <input
+                            id="forwardLabel"
+                            class="form-control"
+                            data-bind="value: label"
+                        />
+                </div>
 
             <div class="form-group">
                 <label for="forwardBool">Automatic Forward</label>

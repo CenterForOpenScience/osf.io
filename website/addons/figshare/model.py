@@ -206,11 +206,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         if article_permissions != node_permissions:
             message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(
-                    category=node.project_or_component,
-                    node_perm=node_permissions,
-                    figshare_perm=article_permissions,
-                    figshare_id=self.figshare_id,
-                )
+                category=node.project_or_component,
+                node_perm=node_permissions,
+                figshare_perm=article_permissions,
+                figshare_id=self.figshare_id,
+            )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
             return [message]
@@ -227,7 +227,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return messages.BEFORE_REMOVE_CONTRIBUTOR.format(
                 category=node.project_or_component,
                 user=removed.fullname,
-                )
+            )
 
     def after_remove_contributor(self, node, removed):
         """
@@ -244,10 +244,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.save()
 
             return messages.AFTER_REMOVE_CONTRIBUTOR.format(
-                    user=removed.fullname,
-                    url=node.url,
-                    category=self.figshare_id
-                    )
+                user=removed.fullname,
+                url=node.url,
+                category=self.figshare_id
+            )
 
     def before_fork(self, node, user):
         """
@@ -260,10 +260,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == user:
             return messages.BEFORE_FORK_OWNER.format(
                 category=node.project_or_component,
-                )
+            )
         return messages.BEFORE_FORK_NOT_OWNER.format(
             category=node.project_or_component,
-            )
+        )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -277,22 +277,25 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         """
         clone, _ = super(AddonFigShareNodeSettings, self).after_fork(
             node, fork, user, save=False
-            )
+        )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
             message = messages.AFTER_FORK_OWNER.format(
                 category=fork.project_or_component,
-                )
+            )
         else:
             message = messages.AFTER_FORK_NOT_OWNER.format(
                 category=fork.project_or_component,
                 url=fork.url + 'settings/'
-                )
+            )
             return AddonFigShareNodeSettings(), message
 
         if save:
             clone.save()
 
         return clone, message
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True, save=True)

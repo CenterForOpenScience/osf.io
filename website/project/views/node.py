@@ -645,10 +645,9 @@ def private_link_table(**kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(**kwargs):
+def get_editable_children(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     
     if not node.can_edit(auth):
         return
@@ -658,7 +657,7 @@ def get_editable_children(**kwargs):
     return {
         'node': {'title': node.title,},
         'children': children,
-     }
+    }
 
 
 def _get_user_activity(node, auth, rescale_ratio):
@@ -803,6 +802,17 @@ def project_generate_private_link_post(auth, **kwargs):
     )
 
     return new_link
+
+
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def project_private_link_edit(auth, **kwargs):
+    new_name = request.json.get('value', '')
+    private_link_id = request.json.get('pk','')
+    private_link = PrivateLink.load(private_link_id)
+    if private_link:
+        private_link.name = new_name
+        private_link.save()
 
 
 def _serialize_node_search(node):
