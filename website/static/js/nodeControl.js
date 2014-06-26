@@ -41,7 +41,7 @@
                 if (result) {
                     $.osf.postJSON(URLS[urlKey], {permissions: permissions},
                         function(data){
-                            window.location.href = data.redirect_url;
+                            window.location.reload();
                         }
                     );
                 }
