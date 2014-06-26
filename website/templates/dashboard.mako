@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+z<%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
 
@@ -33,46 +33,42 @@
                 </div><!-- end #page-header -->
                 <ul>
 
-                    <!-- start #ob-new-project -->
-                    <li id="ob-new-project" class="ob-list list-group-item">
-                        <div id="ob-new-project-btn" class="ob-reveal-btn">
+                    <!-- start #ob-newProject -->
+                    <li id="obNewProject" class="ob-list list-group-item">
+                        <div id="obNewProjectBtn" class="ob-reveal-btn">
                             <div class="ob-heading" >Create a New Project</div>
-                            <img class="ob-expand-icon" id="ob-icon-new-project" src="/static/img/plus.png">
-                        </div><!-- end #ob-new-project-btn -->
-                        <div class="ob-reveal" id="ob-reveal-new-project">
+                            <img class="ob-expand-icon" id="obIconNewProject" src="/static/img/plus.png">
+                        </div><!-- end #ob-newProject-btn -->
+                        <div class="ob-reveal" id="obRevealNewProject">
                             <br> 
                             <%include file="project/new_project_form.mako"/>
                         </div> <!-- end #ob-reveal -->
-                    </li> <!-- end #ob-new-project" -->
+                    </li> <!-- end #ob-newProject" -->
 
-                    <!-- start #ob-register-project -->
-                    <li id="ob-register-project" class="ob-list list-group-item"> 
-
-                        <div id="ob-register-project-btn">
+                    <!-- start #obRegisterProject -->
+                    <li id="obRegisterProject" class="ob-list list-group-item"> 
+                        <div id="obRegisterProjectBtn">
                             <div class="ob-heading" >Register a Project</div>
-                            <img class="ob-expand-icon" id="ob-icon-register-project" src="/static/img/plus.png">
-                        </div><!-- end #ob-register-project-btn -->
-
-                            <!-- <a class="btn btn-default" id="obRegisterProjectBtn">Register a Project</a> -->
-                            <div class="ob-reveal" id="ob-reveal-register-project">
-                        <div id="project-search-register-project">
+                            <img class="ob-expand-icon" id="obIconRegisterProject" src="/static/img/plus.png">
+                        </div><!-- end #obInputProject-btn -->
+                            <div class="ob-reveal" id="obRevealRegisterProject">
+                        <div  id="projectSearchRegisterProject">
                             <input class="typeahead" type="text" placeholder="Search projects" style="margin:20px;" 
-                            id = 'input-project-register-project'>
-                            <span class = "findBtn btn btn-default" id="add-link-register-project" disabled="disabled">Go to registration page</span>
+                            id = 'inputProjectRegisterProject'>
+                            <span class = "findBtn btn btn-default" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
                         </div>
                     </div>
-                    </li> <!-- end #ob-register-project" -->
+                    </li> <!-- end #obInputProject" -->
 
-                    <!-- start #ob-add-file -->
+                    <!-- start #ob-AddFile -->
                     <li class="ob-list list-group-item">
                         <div class="ob-heading">Add a File to a Project</div>
-                        <div id="project-search-add-file">
+                        <div id="projectSearchAddFile">
                         <div style="max-width:170px;">
-                            <div id="ob-dropzone" class="ob-dropzone-box">
+                            <div id="obDropzone" class="ob-dropzone-box">
                             Drop File (or click)
                             </div>
-                            <!-- <div id="ob-dropzone-selected" class="ob-dropzone-box"> -->
-                            <div id="ob-dropzone-selected" class="ob-dropzone-box ob-reveal">
+                            <div id="obDropzoneSelected" class="ob-dropzone-box ob-reveal">
                                     <img id="uploadIcon" src="//:0">
                                     <div id="obDropzoneFilename"> </div>
                                     <progress class="ob-reveal" id="uploadProgress" max="100" value="0"></progress>
@@ -82,17 +78,17 @@
                             
                             </div>
 
-                            <div class="ob-reveal" id="ob-dropzone-reveal">
+                            <div class="ob-reveal" id="obDropzoneReveal">
 
-                                <img id="ob-arrow-right" src="/static/img/triangle_right.png" >
-                                <div id="ob-project-search-container">
-                                    <input class="typeahead" type="text" placeholder="Search projects" id = 'input-project-add-file'>
+                                <img id="obArrowRight" src="/static/img/triangle_right.png" >
+                                <div id="obProjectSearchContainer">
+                                    <input class="typeahead" type="text" placeholder="Search projects" id = 'inputProjectAddFile'>
                                     <br>                                    
-                                    <span class="findBtn btn btn-default" id="add-link-add-file" disabled="disabled">Upload</span>
+                                    <span class="findBtn btn btn-default" id="addLinkAddFile" disabled="disabled">Upload</span>
                                 </div>
                             </div>
                         </div>
-                    </li> <!-- end #ob-add-file" -->
+                    </li> <!-- end #ob-AddFile" -->
                 </ul>
 
 #########################################################################################################################
@@ -134,18 +130,18 @@
 <%def name="javascript_bottom()">
 <script>
 // new project js
-    $('#ob-new-project-btn').one("click", obOpenNewProject);
+    $('#obNewProjectBtn').one("click", obOpenNewProject);
 
     function obOpenNewProject() {
-        $('#ob-reveal-new-project').fadeIn(300);
+        $('#obRevealNewProject').fadeIn(300);
         $(this).one("click", obCloseNewProject);
-        $('#ob-icon-new-project').attr('src', "/static/img/minus.png")
+        $('#obIconNewProject').attr('src', "/static/img/minus.png")
     }
 
     function obCloseNewProject() {
-        $('#ob-reveal-new-project').fadeOut(100);
+        $('#obRevealNewProject').fadeOut(100);
         $(this).one("click", obOpenNewProject);
-        $('#ob-icon-new-project').attr('src', "/static/img/plus.png")
+        $('#obIconNewProject').attr('src', "/static/img/plus.png")
     }
 
 // TODO(sloria): require('jquery') here
@@ -157,18 +153,18 @@
     });
 
 // new registration js
-    $('#ob-register-project-btn').one("click", obOpenRegisterProject);
+    $('#obRegisterProjectBtn').one("click", obOpenRegisterProject);
 
     function obOpenRegisterProject() {
-        $('#ob-reveal-register-project').fadeIn(300);
+        $('#obRevealRegisterProject').fadeIn(300);
         $(this).one("click", obCloseRegisterProject);
-        $('#ob-icon-register-project').attr('src', "/static/img/minus.png")
+        $('#obIconRegisterProject').attr('src', "/static/img/minus.png")
     }
 
     function obCloseRegisterProject() {
-        $('#ob-reveal-register-project').fadeOut(100);
+        $('#obRevealRegisterProject').fadeOut(100);
         $(this).one("click", obOpenRegisterProject);
-        $('#ob-icon-register-project').attr('src', "/static/img/plus.png")
+        $('#obIconRegisterProject').attr('src', "/static/img/plus.png")
     }
 
 

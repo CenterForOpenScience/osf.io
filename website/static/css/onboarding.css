@@ -53,17 +53,13 @@ li.ob-list {
 }
 
 
-#input-project-register-project{
+#inputProjectRegisterProject{
 	margin: 20px;
 }
 
-#ob-dropzone{
+#obDropzone{
 	font-size: 16px;
 }
-
-/*#floater	{float:left; height:50%; margin-bottom:-120px;}*/
-#content {position:absolute; top:0; bottom:0; left:0; right:0;
-			margin:auto; height:240px; width:70%;}
 
 #clearDropzone{
 	position:absolute;
@@ -75,10 +71,10 @@ li.ob-list {
 	cursor: pointer;
 }
 
-#ob-dropzone-selected{
+#obDropzoneSelected{
 }
 
-#ob-arrow-right{
+#obArrowRight{
 	display:inline;
 	width: 50px;
 	height: 50px;
@@ -87,17 +83,12 @@ li.ob-list {
 
 #obDropzoneFilename{
 	margin-top:20px;
-	font-family: "Lucida Console", Monaco, monospace;
+	font-family: "Lucida Console", Monaco, monospace;	
 }
 
-#project-search-add-file{
+#projectSearchAddFile{
 	height: 170px;
 	text-align: center; 
-}
-
-#ob-project-search-container{
-	float: right; 
-	margin: 61px 10px 0 10px;"
 }
 
 #uploadIcon{
@@ -106,13 +97,18 @@ li.ob-list {
 	margin-right:auto;
 }
 
-#add-link-add-file{
+#addLinkAddFile{
 	float: right;
 	margin-top: 5px;
 	disabled="disabled";
 }
 
-#add-link-register-project {
+#addLinkRegisterProject {
 	float:right;
 	margin:20px;
+}
+
+#obProjectSearchContainer{
+	float: right; 
+	margin: 61px 10px 0 10px;"
 }

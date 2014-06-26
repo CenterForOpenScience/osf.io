@@ -12,46 +12,47 @@
 }(this, function ($) {
     'use strict';
 
-    var namespace = 'add-file';
-    var myDropzone = new Dropzone('div#ob-dropzone', { 
-        url: '/',
-        autoProcessQueue: false,
+    var namespace = 'AddFile';
+    var myDropzone = new Dropzone('div#obDropzone', { 
+        url: '/', // specified per upload
+        autoProcessQueue: false, 
         createImageThumbnails: false,
         maxFiles:1,
         uploadMultiple: false,
 
-        uploadprogress: function(file, progress) {
-            // progress bar update
+        uploadprogress: function(file, progress) { // progress bar update
             $('#uploadProgress').attr('value', Math.round(progress));
       },
 
         init: function() {
-            var submitButton = document.querySelector('#add-link-' + namespace);
+            var submitButton = document.querySelector('#addLink' + namespace);
             myDropzone = this;
 
             this.on('maxfilesexceeded', function(file){
                 this.removeFile(file);
-                $('#ob-dropzone').text(file_name);
-                $('#ob-dropzone').css('background-image', icon_url);
+                $('#obDropzone').text(file_name);
+                $('#obDropzone').css('background-image', icon_url);
             });
 
             submitButton.addEventListener('click', function() {
-                var projectRoute =  $('#add-link-'+ namespace).prop('linkID');
-                $('#add-link-add-file').attr('disabled', true);
+                var projectRoute = $('#addLink'+ namespace).prop('routeID');
+                
+                $('#addLinkAddFile').attr('disabled', true);
                 $('#uploadProgress').show();
-                myDropzone.options.url =  '/api/v1/project/' + projectRoute + '/osffiles/';
+                // myDropzone.options.url =  '/api/v1/project/' + projectRoute + '/osffiles/';
+                myDropzone.options.url = projectRoute + 'osffiles/';
                 myDropzone.processQueue(); // Tell Dropzone to process all queued files.
             });
 
             var clearButton = document.querySelector('#clearDropzone');
             clearButton.addEventListener('click', function() {
 
-                $('#ob-dropzone-selected').hide();
-                $('#ob-dropzone').show();
-                $('#ob-dropzone-reveal').hide();
-                delete $('add-link-add-file').linkID;
-                $('#input-project-add-file').val('');
-                $('#input-project-add-file').css("border-color", "");
+                $('#obDropzoneSelected').hide();
+                $('#obDropzone').show();
+                $('#obDropzoneReveal').hide();
+                delete $('addLinkAddFile').linkID;
+                $('#InputProjectAddFile').val('');
+                $('#InputProjectAddFile').css("border-color", '');
 
                 myDropzone.removeAllFiles();
             });
@@ -59,7 +60,7 @@
 
             // This reloads the window to the project you uploaded the file to...
             this.on('complete', function () {
-                var url = '/'+ $('#add-link-' + namespace).prop('linkID'); 
+                var url = '/'+ $('#addLink' + namespace).prop('linkID'); 
                 if(url !== '/undefined'){
                     window.location = url;
                 }
@@ -77,12 +78,12 @@
                 $('#uploadIcon').attr('src', icon_url);
                 $('#obDropzoneFilename').text(file_name);
 
-                // $('#ob-dropzone-selected').css('background-image', icon_url);
-                $('#ob-dropzone-reveal').fadeIn();
-                $('#ob-dropzone').hide();
-                $('#ob-dropzone-selected').show();
+                // $('#obDropzoneSelected').css('background-image', icon_url);
+                $('#obDropzoneReveal').fadeIn();
+                $('#obDropzone').hide();
+                $('#obDropzoneSelected').show();
             
-                $('#input-project-add-file').focus();
+                $('#inputProjectAddFile').focus();
             });
         }
 });

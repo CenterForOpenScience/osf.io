@@ -11,15 +11,14 @@
     }
 }(this, function ($) {
     'use strict';
-
-    var namespace = 'register-project';
+    console.log();
+    var namespace = 'RegisterProject';
 
     function ObRegisterProject(){
-
         var typeaheadsearch  = new TypeaheadSearch(namespace);
         // to  do any of this just edit the click functionality editing the name spaced add_linkk
-        $('#add-link-'+ namespace).click(function() {
-            var url = '/'+ $('#add-link-' + namespace).prop('linkID') + '/register'; 
+        $('#addLink'+ namespace).click(function() {
+            var url = '/'+ $('#addLink' + namespace).prop('linkID') + '/register'; 
             window.location = url;
         });
     }

@@ -24,46 +24,64 @@ var substringMatcher = function(strs) {
   };
 };
  
+
 function TypeaheadSearch(namespace) {
         var self = this;
         this.myProjects = [];
 
+        function makeName(name, api_url, nodes){
+            var parentUrl = nodes[api_url.split('/')[4]];
+            if(api_url.indexOf('/node/') > -1){
+                nodes.forEach(function(node){
+                    if(node.url === parentUrl){
+                        return parentUrl + ': ' + name;
+                    }
+                });
+            }}
+        }
+        
         // gets data from api route
         $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
             projects.nodes.forEach(function(item){
                 self.myProjects.push(
                 {
+                    // name: makeName(item.title, item.api_url, projects.nodes),
                     name: item.title,
-                    node_id: item.id
+                    node_id: item.id,
+                    route: item.api_url,
+
                 });
             });
             //  once a typeahead option is selected, enable the button and assign the add_link variable for use later
-            $('#input-project-' + namespace).bind('typeahead:selected', function(obj, datum) {
-                $('#add-link-' + namespace).removeAttr('disabled');
+            $('#inputProject' + namespace).bind('typeahead:selected', function(obj, datum) {
+                $('#addLink' + namespace).removeAttr('disabled');
                 var linkID = datum.value.node_id;
-                $('#input-project-' + namespace).css("border-color", "lightgreen");
-                $('#add-link-' + namespace).prop('linkID', linkID);
+                var routeID = datum.value.route;
+                $('#inputProject' + namespace).css('border-color', 'lightgreen');
+                $('#addLink' + namespace).prop('linkID', linkID);
+                $('#addLink' + namespace).prop('routeID', routeID);
             });
             
             // Listener that disables button when nothing selected
-            $('#input-project-' + namespace).keypress(function(){
-                $('#add-link-' + namespace).attr('disabled', true);
-                $('#input-project-' + namespace).css("border-color", "");
-                $('#add-link-' + namespace).removeProp('linkID');
+            $('#inputProject' + namespace).keypress(function(){
+                $('#addLink' + namespace).attr('disabled', true);
+                $('#inputProject' + namespace).css('border-color', '');
+                $('#addLink' + namespace).removeProp('linkID');
+                $('#addLink' + namespace).removeProp('routeID');
             });
 
             // type ahead logic
-            $('#project-search-' + namespace + ' .typeahead').typeahead({
+            $('#projectSearch' + namespace + ' .typeahead').typeahead({
                 hint: true,
                 highlight: true,
                 minLength: 1
             },
             {
-                name: 'project-search' + namespace,
+                name: 'projectSearch' + namespace,
                 displayKey: function(data){
                     return data.value.name;
                 },
                 source: substringMatcher(self.myProjects)
             });
         });
-}
+};
