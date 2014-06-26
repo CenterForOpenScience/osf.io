@@ -5,6 +5,7 @@
 import os
 import urlparse
 import itertools
+import httplib as http
 
 from github3 import GitHubError
 
@@ -65,7 +66,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         try:
             connection.revoke_token()
         except GitHubError as error:
-            if error.code == 401:
+            if error.code == http.UNAUTHORIZED:
                 return (
                     'Your GitHub credentials were removed from the OSF, but we '
                     'were unable to revoke your access token from GitHub. Your '
@@ -152,6 +153,12 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.user and self.repo and
             self.user_settings and self.user_settings.has_auth
         )
+
+    @property
+    def is_private(self):
+        connection = GitHub.from_settings(self.user_settings)
+        return connection.repo(user=self.user, repo=self.repo).private
+
 
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
@@ -450,6 +457,16 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
+
+    def before_make_public(self, node):
+        if self.is_private:
+            return (
+                'This {cat} is connected to a private GitHub repository. Users '
+                '(other than contributors) will not be able to see the '
+                'contents of this repo unless it is made public on GitHub.'
+            ).format(
+                cat=node.project_or_component,
+            )
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), log=True, save=True)

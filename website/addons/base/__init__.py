@@ -310,6 +310,25 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_make_public(self, node):
+
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
+    def before_make_private(self, node):
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
     def after_set_privacy(self, node, permissions):
         """
 
@@ -324,7 +343,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -336,7 +355,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -352,7 +371,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -364,7 +383,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
