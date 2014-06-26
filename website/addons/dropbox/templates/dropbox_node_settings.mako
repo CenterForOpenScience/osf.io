@@ -10,20 +10,20 @@
                     {{ownerName}}
                 </a>
 
-                <a data-bind="click: deauthorize" style="margin-top: 4.8px"
-                    class="text-danger pull-right">Deauthorize</a>
+                <a data-bind="click: deauthorize"
+                    class="text-danger pull-right addon-auth">Deauthorize</a>
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
-                <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
                     Import Access Token
                 </a>
             </span>
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
-                <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
                     Create Access Token
                 </a>
             </span>
@@ -35,17 +35,16 @@
     <div class="dropbox-settings" data-bind='if: showSettings'>
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Current Folder:</strong></p>
-
-                <!-- The linked folder -->
-                <div class="selected-folder">
-                    <i data-bind="visible: folder().name" class="icon-folder-close-alt"></i>
-                    <a data-bind="attr.href: urls().files"class='selected-folder-name'>
+                <p>
+                    <strong>Current Folder:</strong>
+                    <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
+                    <span data-bind="if: folder().path === null" class="text-muted">
+                        None
+                    </span>
 
-                    <p data-bind="if: folder().path === null" class="text-muted">No folder selected</p>
-                </div>
+                </p>
 
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner()">

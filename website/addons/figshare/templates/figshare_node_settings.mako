@@ -12,20 +12,20 @@
             </small>
             <small data-bind="visible: userHasAuth">
                 <a data-bind="click: deauthorize"
-                    class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
+                    class="text-danger pull-right addon-auth">Deauthorize</a>
             </small>
         </span>
 
          <!-- Import Access Token Button -->
         <small data-bind="if: showImport">
-            <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+            <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
                 Import Access Token
             </a>
         </small>
 
         <!-- Oauth Start Button -->
         <small data-bind="if: showTokenCreateButton">
-            <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+            <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
                 Create Access Token
             </a>
         </small>
@@ -36,17 +36,16 @@
     <div class="figshare-settings" data-bind='if: showSettings'>
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Current Linked Content:</strong></p>
+                <p>
+                    <strong>Current Linked Content:</strong>
 
-                <!-- The linked folder -->
-                <div class="selected-folder">
-                    <i data-bind="visible: linked().name" class="icon-folder-close-alt"></i>
-                    <a data-bind="attr.href: urls().files" class="selected-folder-name">
+                    <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
-
-                    <p data-bind="if: linked().id === null" class="text-muted">No content linked</p>
-                </div>
+                    <span data-bind="if: linked().id === null" class="text-muted">
+                        None
+                    </span>
+                </p>
 
                 <!-- Folder buttons -->
                 <div class="btn-group">
