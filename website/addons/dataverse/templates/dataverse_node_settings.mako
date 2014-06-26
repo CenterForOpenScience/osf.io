@@ -33,7 +33,7 @@
                 <a data-bind="attr.href: savedStudyUrl()"> {{ savedStudyTitle }}</a> on
                 <a data-bind="attr.href: savedDataverseUrl()"> {{ savedDataverseTitle }}</a>.
             </span>
-            <span data-bind="ifnot: showLinkedStudy">
+            <span data-bind="ifnot: showLinkedStudy" class="text-muted">
                 None
             </span>
         </p>

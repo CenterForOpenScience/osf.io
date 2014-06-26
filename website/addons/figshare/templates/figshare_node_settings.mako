@@ -36,17 +36,16 @@
     <div class="figshare-settings" data-bind='if: showSettings'>
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Current Linked Content:</strong></p>
+                <p>
+                    <strong>Current Linked Content:</strong>
 
-                <!-- The linked folder -->
-                <div class="selected-folder">
-                    <i data-bind="visible: linked().name" class="icon-folder-close-alt"></i>
-                    <a data-bind="attr.href: urls().files" class="selected-folder-name">
+                    <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
-
-                    <p data-bind="if: linked().id === null" class="text-muted">No content linked</p>
-                </div>
+                    <span data-bind="if: linked().id === null" class="text-muted">
+                        None
+                    </span>
+                </p>
 
                 <!-- Folder buttons -->
                 <div class="btn-group">

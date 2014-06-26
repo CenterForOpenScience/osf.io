@@ -35,17 +35,16 @@
     <div class="dropbox-settings" data-bind='if: showSettings'>
         <div class="row">
             <div class="col-md-12">
-                <p><strong>Current Folder:</strong></p>
-
-                <!-- The linked folder -->
-                <div class="selected-folder">
-                    <i data-bind="visible: folder().name" class="icon-folder-close-alt"></i>
-                    <a data-bind="attr.href: urls().files"class='selected-folder-name'>
+                <p>
+                    <strong>Current Folder:</strong>
+                    <a data-bind="attr.href: urls().files">
                         {{folderName}}
                     </a>
+                    <span data-bind="if: folder().path === null" class="text-muted">
+                        None
+                    </span>
 
-                    <p data-bind="if: folder().path === null" class="text-muted">No folder selected</p>
-                </div>
+                </p>
 
                 <!-- Folder buttons -->
                 <div class="btn-group" data-bind="visible: userIsOwner()">
