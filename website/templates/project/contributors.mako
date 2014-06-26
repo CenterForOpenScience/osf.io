@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Contributors</%def>
+<%def name="title()">${node['title']} Contributors</%def>
 
 <div class="row">
     <div class="col-md-12">
