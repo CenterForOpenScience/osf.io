@@ -12,8 +12,8 @@
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
-                        <th class="col-sm-6">Name</th>
-                        <th class="col-sm-3">
+                        <th class="col-md-6">Name</th>
+                        <th class="col-md-2">
                             <i class="icon-question-sign permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
@@ -23,7 +23,7 @@
                                 ></i>
                             Permissions
                         </th>
-                        <th class="col-sm-1">
+                        <th class="col-md-2">
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
                                     data-title="Visibility Information"
@@ -33,7 +33,7 @@
                                 ></i>
                             Visibility
                         </th>
-                        <th class="col-sm-1 col-offset-1"></th>
+                        <th class="col-md-2"></th>
                         </tr>
                     </thead>
                     <tr data-bind="if: canEdit">
