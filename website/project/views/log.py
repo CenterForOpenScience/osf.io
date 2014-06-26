@@ -64,15 +64,14 @@ def _get_logs(node, count, auth, offset=0):
 
 @collect_auth
 @must_be_valid_project
-def get_logs(**kwargs):
+def get_logs(auth, **kwargs):
     """
 
     """
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     if 'count' in request.args:
@@ -87,5 +86,5 @@ def get_logs(**kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, has_more_logs = _get_logs(node_to_use, count, auth, offset)
+    logs, has_more_logs = _get_logs(node, count, auth, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}
