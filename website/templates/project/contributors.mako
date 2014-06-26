@@ -14,26 +14,26 @@
                         <tr>
                         <th class="col-md-6">Name</th>
                         <th class="col-md-2">
+                            Permissions
                             <i class="icon-question-sign permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Permissions
                         </th>
-                        <th class="col-md-2">
+                        <th class="col-md-3">
+                            Visibility
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
                                     data-title="Visibility Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Visibility
                         </th>
-                        <th class="col-md-2"></th>
+                        <th class="col-md-1"></th>
                         </tr>
                     </thead>
                     <tr data-bind="if: canEdit">
@@ -116,7 +116,9 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
+                            <a  rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">
+                                <i class="icon-remove text-danger"></i>
+                            </a>
                         </td>
                     </tr>
                 </tbody>
@@ -159,11 +161,12 @@
             <!-- ko if: $parent.canEdit -->
                 <!-- ko ifnot: deleteStaged -->
                     <a
-                            class="btn btn-danger contrib-button btn-mini"
                             data-bind="click: remove"
                             rel="tooltip"
                             title="Remove contributor"
-                        >–</a>
+                        >
+                                <i class="icon-remove text-danger"></i>
+                    </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
                     Removed

@@ -190,10 +190,10 @@
     margin-top: 40px;
     float: right;
 }
-.center {
+.text-center {
     text-align: center;
 }
-.right {
+.text-right {
     text-align: right;
 }
 

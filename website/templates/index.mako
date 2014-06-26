@@ -94,25 +94,25 @@
         </div><!-- end #signUpScope -->
     </div>
     <div id="hpContainerTwo" class="row">
-        <div class="header center col-md-12">
+        <div class="header text-center col-md-12">
             <p class="headTwo">What can the OSF do for you?</p>
             <p class="subHeadOne">Provide features to increase the efficiency and effectiveness of your research</p>
         </div>
         <div class="col-md-12 featureDescriptions">
-            <div class="col-md-4 center connect">
+            <div class="col-md-4 text-center connect">
                 <img id="connect" src="/static/img/outlet.gif">
-                <div class="subHeadTwo center">CONNECTIONS</div>
+                <div class="subHeadTwo text-center">CONNECTIONS</div>
                 <p>with the services you already use</p>
                 <div class="featureInfo">Link services to simplify transitions and facilitate interactions; e.g., connect OSF to your Dropbox, GitHub, and Amazon S3 repositories and all four work together!</div>
             </div>
-            <div class="col-md-4 center archive">
+            <div class="col-md-4 text-center archive">
                 <img id="archive" src="/static/img/filedrawer.gif"><br>
-                <div class="subHeadTwo center">ARCHIVING</div>
+                <div class="subHeadTwo text-center">ARCHIVING</div>
                 <p>and management of research and collaborations</p>
                 <div class="featureInfo">Spend more time doing your research and less time keeping track of it. No more lost data from crashed drives, disappearing collaborators, or failing memories.</div>
             </div>
 
-            <div class="col-md-4 center integrate">
+            <div class="col-md-4 text-center integrate">
                 <img id="integrate" src="/static/img/padlock.gif">
                 <div class="subHeadTwo">CONTROL</div>
                 <p>over private and public workflows</p>
@@ -121,7 +121,7 @@
         </div>
     </div>
     <div id="hpContainerThree" class="row">
-        <div class="header center col-md-12">
+        <div class="header text-center col-md-12">
             <p class="headTwo">Free and easy to use</p>
             <p class="subHeadOne">Follow these simple steps to get started. We'll be <a class="hpLink" href="mailto:contact@osf.io">here to help</a> the whole way.</p>
             <div class="col-md-12 padded">
