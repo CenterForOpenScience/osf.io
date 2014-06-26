@@ -218,20 +218,27 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     # TODO: Test me @asmacdo
     @property
-    def nodes(self):
-        """Get authorized nodes."""
-
+    def nodes_authorized(self):
+        """Get authorized, non-deleted nodes."""
         schema = self.config.settings_models['node']
         nodes_backref = self.get_backref_key(schema, 'authorized')
-
-        return [node.owner for node in getattr(self, nodes_backref)]
+        return [
+            node.owner
+            for node in getattr(self, nodes_backref)
+            if not node.is_deleted
+        ]
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
             'nodes': [
-                {'title': node.title, '_id': node._id, 'url': node.url}
-                for node in self.nodes
+                {
+                    '_id': node._id,
+                    'url': node.url,
+                    'title': node.title,
+                    'registered': node.is_registration,
+                }
+                for node in self.nodes_authorized
             ]
         })
         return ret
