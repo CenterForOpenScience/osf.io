@@ -531,11 +531,10 @@ class TestProjectViews(OsfTestCase):
         link.save()
         assert_equal(link.name, "link")
         url = self.project.api_url + 'private_link/edit/'
-        self.app.post_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
+        self.app.put_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
         self.project.reload()
         link.reload()
         assert_equal(link.name, "new name")
-
 
     def test_remove_private_link(self):
         link = PrivateLinkFactory()

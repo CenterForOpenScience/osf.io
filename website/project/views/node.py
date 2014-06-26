@@ -645,10 +645,9 @@ def private_link_table(**kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(**kwargs):
+def get_editable_children(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     
     if not node.can_edit(auth):
         return
@@ -658,7 +657,7 @@ def get_editable_children(**kwargs):
     return {
         'node': {'title': node.title,},
         'children': children,
-     }
+    }
 
 
 def _get_user_activity(node, auth, rescale_ratio):
