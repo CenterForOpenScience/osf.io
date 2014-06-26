@@ -238,6 +238,16 @@ class TestPublicNodes(SearchTestCase):
         docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
+    def test_hide_contributor(self):
+        user2 = UserFactory(fullname='Brian May')
+        self.project.add_contributor(user2)
+        self.project.set_visible(user2, False, save=True)
+        docs = query('project:"{}"'.format(user2.fullname))
+        assert_equal(len(docs), 0)
+        self.project.set_visible(user2, True, save=True)
+        docs = query('project:"{}"'.format(user2.fullname))
+        assert_equal(len(docs), 1)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestAddContributor(SearchTestCase):

@@ -450,7 +450,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         'title',
         'category',
         'description',
-        'contributors',
+        'visible_contributor_ids',
         'tags',
         'is_fork',
         'is_registration',
@@ -689,21 +689,35 @@ class Node(GuidStoredObject, AddonModelMixin):
             for _id in self.visible_contributor_ids
         ]
 
-    def is_visible_contributor(self, user):
-        return user and user._id in self.visible_contributor_ids
-
     def get_visible(self, user):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         return user._id in self.visible_contributor_ids
 
-    def set_visible(self, user, visible):
+    def update_visible_ids(self, save=False):
+        """Update the order of `visible_contributor_ids`. Updating on making
+        a contributor visible is more efficient than recomputing order on
+        accessing `visible_contributors`.
+
+        """
+        self.visible_contributor_ids = [
+            contributor._id
+            for contributor in self.contributors
+            if contributor._id in self.visible_contributor_ids
+        ]
+        if save:
+            self.save()
+
+    def set_visible(self, user, visible, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and user._id not in self.visible_contributor_ids:
             self.visible_contributor_ids.append(user._id)
+            self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(user._id)
+        if save:
+            self.save()
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
