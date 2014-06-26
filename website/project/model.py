@@ -2128,7 +2128,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             self.contributors.append(contrib_to_add)
             if visible:
-                self.set_visible(contrib_to_add, visible=True, auth=auth)
+                self.set_visible(contrib_to_add, visible=True, log=False)
 
             # Add default contributor permissions
             permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
