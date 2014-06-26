@@ -1,5 +1,5 @@
 % if nodes:
-    <div style="margin-right: 20px; margin-left: 20px" id="${addon_short_name}-header">
+    <div class ="table-less" style="margin-right: 20px; margin-left: 20px;" id="${addon_short_name}-header">
         <table class="table table-hover" id="${addon_short_name}-auth-table">
              <thead><th>Authorized Projects:</th><th></th></thead>
             % for node in nodes:
@@ -21,7 +21,12 @@
             % endfor
         </table>
     </div>
-
+    %if len(nodes) > 3:
+        <div class="text-center" >
+            <i id="${addon_short_name}-more" class="icon-double-angle-down icon-large collapse-button"></i>
+            <i style="display: none;" id="${addon_short_name}-less" class="icon-double-angle-up icon-large collapse-button"></i>
+        </div>
+    %endif
     <script>
         $('.${addon_short_name}-remove-token').on('click', function(event) {
             var nodeId = $(this).attr('node-id');
@@ -34,8 +39,13 @@
                         success: function(response) {
 
                             $("#${addon_short_name}-" + nodeId + "-auth-row").hide();
-                            if ($("#${addon_short_name}-auth-table tr:visible").length === 1) {
+                            var numNodes = $("#${addon_short_name}-auth-table tr:visible").length;
+                            if (numNodes === 1) {
                                 $("#${addon_short_name}-auth-table").hide();
+                            }
+                            if (numNodes === 4) {
+                                $("#${addon_short_name}-more").hide();
+                                $("#${addon_short_name}-less").hide();
                             }
                         },
 
@@ -47,5 +57,17 @@
                 }
             });
         });
+
+        $('#${addon_short_name}-more').on('click', function(event) {
+            $('#${addon_short_name}-header').removeClass('table-less');
+            $('#${addon_short_name}-more').hide();
+            $('#${addon_short_name}-less').show();
+        });
+        $('#${addon_short_name}-less').on('click', function(event) {
+            $('#${addon_short_name}-header').addClass('table-less');
+            $('#${addon_short_name}-less').hide();
+            $('#${addon_short_name}-more').show();
+        });
+
     </script>
 % endif
