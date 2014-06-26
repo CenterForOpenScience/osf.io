@@ -178,12 +178,12 @@ def update_node(node):
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
-                x.fullname for x in node.contributors
+                x.fullname for x in node.visible_contributors
                 if x is not None
                 and x.is_active()
             ],
             'contributors_url': [
-                x.profile_url for x in node.contributors
+                x.profile_url for x in node.visible_contributors
                 if x is not None
                 and x.is_active()
             ],
@@ -248,12 +248,12 @@ def _load_parent(parent):
         parent_info['wiki_url'] = parent.url + 'wiki/'
         parent_info['contributors'] = [
             contributor.fullname
-            for contributor in parent.contributors
+            for contributor in parent.visible_contributors
         ]
         parent_info['tags'] = [tag._id for tag in parent.tags]
         parent_info['contributors_url'] = [
             contributor.url
-            for contributor in parent.contributors
+            for contributor in parent.visible_contributors
         ]
         parent_info['is_registration'] = parent.is_registration
         parent_info['description'] = parent.description
