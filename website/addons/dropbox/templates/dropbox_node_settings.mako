@@ -10,20 +10,20 @@
                     {{ownerName}}
                 </a>
 
-                <a data-bind="click: deauthorize" style="margin-top: 4.8px"
-                    class="text-danger pull-right">Deauthorize</a>
+                <a data-bind="click: deauthorize"
+                    class="text-danger pull-right addon-auth">Deauthorize</a>
             </span>
 
              <!-- Import Access Token Button -->
             <span data-bind="if: showImport">
-                <a data-bind="click: importAuth" href="#" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
                     Import Access Token
                 </a>
             </span>
 
             <!-- Oauth Start Button -->
             <span data-bind="if: showTokenCreateButton">
-                <a data-bind="attr.href: urls().auth" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a data-bind="attr.href: urls().auth" class="text-primary pull-right addon-auth">
                     Create Access Token
                 </a>
             </span>

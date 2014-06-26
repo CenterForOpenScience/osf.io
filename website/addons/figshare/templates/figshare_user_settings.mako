@@ -5,11 +5,11 @@
         <small class="authorized-by">
             % if authorized:
                     authorized
-                <a id="figshareDelKey" class="text-danger pull-right" style="margin-top: 4.8px">
+                <a id="figshareDelKey" class="text-danger pull-right addon-auth">
                     Delete Access Token
                 </a>
             % else:
-                <a id="figshareAddKey" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a id="figshareAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token
                 </a>
             % endif

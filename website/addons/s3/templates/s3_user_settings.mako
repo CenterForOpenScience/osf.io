@@ -9,7 +9,7 @@
             <small class="authorized-by">
                 % if has_auth:
                     authorized
-                    <a id="s3RemoveAccess" class="text-danger pull-right" style="margin-top: 4.8px">Delete Credentials</a>
+                    <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Delete Credentials</a>
                 % endif
             </small>
 

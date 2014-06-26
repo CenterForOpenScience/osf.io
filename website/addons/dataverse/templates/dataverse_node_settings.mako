@@ -11,11 +11,11 @@
                         {{ownerName}}
                     </a>
                     <a data-bind="click: clickDeauth"
-                        class="text-danger pull-right" style="margin-top: 4.8px">Deauthorize</a>
+                        class="text-danger pull-right addon-auth">Deauthorize</a>
             </span>
 
             <span data-bind="if: showLinkDataverse">
-                <a data-bind="click: importAuth" class="text-primary pull-right" style="margin-top: 4.8px">
+                <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
                     Import Credentials
                 </a>
             </span>

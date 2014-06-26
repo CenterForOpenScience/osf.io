@@ -408,6 +408,10 @@ li.pointer {
     cursor: pointer;
 }
 
+.addon-auth {
+    margin-top: 4.8px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
