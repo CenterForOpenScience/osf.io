@@ -2,6 +2,8 @@
 
 import logging
 import pyelasticsearch
+import re 
+import copy
 
 from website import settings
 from website.filters import gravatar
@@ -15,9 +17,12 @@ logger = logging.getLogger(__name__)
 TYPES = ['project', 'component', 'user', 'registration']
 
 try:
-    elastic = pyelasticsearch.ElasticSearch(settings.ELASTIC_URI)
-    logging.getLogger('pyelasticsearch').setLevel(logging.DEBUG)
-    logging.getLogger('requests').setLevel(logging.DEBUG)
+    elastic = pyelasticsearch.ElasticSearch(
+        settings.ELASTIC_URI, 
+        timeout=settings.ELASTIC_TIMEOUT
+    )
+    logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
+    logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
 except pyelasticsearch.exceptions.ConnectionError as e:
     logger.error(e)
@@ -34,8 +39,16 @@ def search(raw_query, start=0):
 
     # Get document counts by type
     counts = {}
+    count_query = copy.deepcopy(query)
+    del count_query['from']
+    del count_query['size']
     for type in TYPES:
-        counts[type + 's'] = elastic.count(filtered_query, index='website', doc_type=type)['count']
+        try:
+            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
+        except KeyError:
+            pass
+
+        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
@@ -74,21 +87,49 @@ def _build_query(raw_query, start=0):
     # Cleanup string before using it to query
     for type in TYPES:
         raw_query = raw_query.replace(type + ':', '')
-    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '').replace(' AND ', ' ')
+
+    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
+
+    raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
     # If the search contains wildcards, make them mean something
     if '*' in raw_query:
         inner_query = {
             'query_string': {
                 'default_field': '_all',
-                'query': raw_query,
+                'query': raw_query + '*',
                 'analyze_wildcard': True,
             }
         }
     else:
         inner_query = {
-            'match': {
-                '_all': raw_query
+            'multi_match': {
+                'query': raw_query,
+                'type': 'phrase_prefix',
+                'fields': '_all',
+            }
+        }
+
+    # If the search has a tag filter, add that to the query
+    if 'AND tags:' in raw_query:
+        tags = raw_query.split('AND tags:')
+        tag_filter = {
+            'terms': {
+                'tags': []
+            }
+        }
+        for i in range(1, len(tags)):
+            tag_filter['terms']['tags'].append(tags[i])
+
+        if inner_query.get('query_string'):
+            inner_query['query_string']['query'] = tags[0]
+        elif inner_query.get('multi_match'):
+            inner_query['multi_match']['query'] = tags[0]
+
+        inner_query = {
+            'filtered': {
+                'filter': tag_filter,
+                'query': inner_query
             }
         }
 
@@ -141,12 +182,14 @@ def update_node(node):
         elastic_document = {
             'id': elastic_document_id,
             'contributors': [
-                x.fullname for x in node.contributors
+                x.fullname for x in node.visible_contributors
                 if x is not None
+                and x.is_active()
             ],
             'contributors_url': [
-                x.profile_url for x in node.contributors
+                x.profile_url for x in node.visible_contributors
                 if x is not None
+                and x.is_active()
             ],
             'title': node.title,
             'category': node.category,
@@ -209,12 +252,12 @@ def _load_parent(parent):
         parent_info['wiki_url'] = parent.url + 'wiki/'
         parent_info['contributors'] = [
             contributor.fullname
-            for contributor in parent.contributors
+            for contributor in parent.visible_contributors
         ]
         parent_info['tags'] = [tag._id for tag in parent.tags]
         parent_info['contributors_url'] = [
             contributor.url
-            for contributor in parent.contributors
+            for contributor in parent.visible_contributors
         ]
         parent_info['is_registration'] = parent.is_registration
         parent_info['description'] = parent.description
@@ -353,7 +396,6 @@ def search_contributor(query, exclude=None):
         gravatar URL of an OSF user
 
     """
-    import re
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)

@@ -328,6 +328,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = dt.datetime.utcnow()
+        self.update_search()
+        self.update_search_nodes()
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
@@ -471,9 +473,19 @@ class User(GuidStoredObject, AddonModelMixin):
             # Note: We must manually update search here because the fullname
             # field has not changed
             self.update_search()
+            self.update_search_nodes()
             return True
         else:
             return False
+
+    def update_search_nodes(self):
+        """Call `update_search` on all nodes on which the user is a
+        contributor. Needed to add self to contributor lists in search upon
+        registration or claiming.
+
+        """
+        for node in self.node__contributed:
+            node.update_search()
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -574,11 +586,9 @@ class User(GuidStoredObject, AddonModelMixin):
         return rv
 
     def update_search(self):
-        if not settings.SEARCH_ENGINE:
-            return
-
         from website.search import search
-        search.update_user(self)
+        if self.is_active():
+            search.update_user(self)
 
     @classmethod
     def find_by_email(cls, email):
@@ -686,7 +696,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
-                visible=node.is_visible_contributor(user),
+                visible=node.get_visible(user),
                 log=False,
             )
             try:

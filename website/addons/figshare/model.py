@@ -32,16 +32,24 @@ class AddonFigShareUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return self.oauth_access_token is not None
 
-    def remove_auth(self):
-        self.oauth_access_token = None
-        self.oauth_access_token_secret = None
-
     def to_json(self, user):
         rv = super(AddonFigShareUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
         })
         return rv
+
+    def remove_auth(self, save=False):
+        self.oauth_access_token = None
+        self.oauth_access_token_secret = None
+        for node_settings in self.addonfigsharenodesettings__authorized:
+            node_settings.deauthorize(auth=Auth(user=self.owner), save=True)
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        self.remove_auth(save=False)
+        super(AddonFigShareUserSettings, self).delete(save=save)
 
 
 class AddonFigShareNodeSettings(AddonNodeSettingsBase):
@@ -75,39 +83,44 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
     def linked_content(self):
         return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
 
-    def set_user_auth(self, user_settings):       
-        node = self.owner
+    def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
-        self.save()
-        
+        node = self.owner
         node.add_log(
             action='figshare_node_authorized',
-            auth=Auth(user_settings.owner),
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-            }
-        )
-
-    def deauthorize(self, auth, add_log=True):
-        """Remove user authorization from this node and log the event."""
-        self.user_settings = None
-        self.figshare_id = None
-        self.figshare_type = None
-        self.figshare_title = None        
-        self.save()
-
-        if add_log:
-            node = self.owner
-            self.owner.add_log(
-            action='figshare_node_deauthorized',
             params={
                 'project': node.parent_id,
                 'node': node._id,
             },
-            auth=auth,
+            auth=Auth(user=user_settings.owner),
         )
-        
+        if save:
+            self.save()
+
+    def deauthorize(self, auth=None, add_log=True, save=False):
+        """Remove user authorization from this node and log the event."""
+        self.user_settings = None
+        self.figshare_id = None
+        self.figshare_type = None
+        self.figshare_title = None
+
+        if add_log:
+            node = self.owner
+            self.owner.add_log(
+                action='figshare_node_deauthorized',
+                params={
+                    'project': node.parent_id,
+                    'node': node._id,
+                },
+                auth=auth,
+            )
+
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        super(AddonFigShareNodeSettings, self).delete(save=False)
+        self.deauthorize(add_log=False, save=save)
 
     def update_fields(self, fields, node, auth):        
         updated = False
@@ -132,10 +145,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
                         'type': self.figshare_type,
                         'id': self.figshare_id,
                         'title': self.figshare_title,
-                        }
                     },
+                },
                 auth=auth,
-                )
+            )
 
     def to_json(self, user):
         rv = super(AddonFigShareNodeSettings, self).to_json(user)
@@ -193,11 +206,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
         if article_permissions != node_permissions:
             message = messages.BEFORE_PAGE_LOAD_PERM_MISMATCH.format(
-                    category=node.project_or_component,
-                    node_perm=node_permissions,
-                    figshare_perm=article_permissions,
-                    figshare_id=self.figshare_id,
-                )
+                category=node.project_or_component,
+                node_perm=node_permissions,
+                figshare_perm=article_permissions,
+                figshare_id=self.figshare_id,
+            )
             if article_permissions == 'private' and node_permissions == 'public':
                 message += messages.BEFORE_PAGE_LOAD_PUBLIC_NODE_PRIVATE_FS
             return [message]
@@ -214,7 +227,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             return messages.BEFORE_REMOVE_CONTRIBUTOR.format(
                 category=node.project_or_component,
                 user=removed.fullname,
-                )
+            )
 
     def after_remove_contributor(self, node, removed):
         """
@@ -231,10 +244,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             self.save()
 
             return messages.AFTER_REMOVE_CONTRIBUTOR.format(
-                    user=removed.fullname,
-                    url=node.url,
-                    category=self.figshare_id
-                    )
+                user=removed.fullname,
+                url=node.url,
+                category=self.figshare_id
+            )
 
     def before_fork(self, node, user):
         """
@@ -247,10 +260,10 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == user:
             return messages.BEFORE_FORK_OWNER.format(
                 category=node.project_or_component,
-                )
+            )
         return messages.BEFORE_FORK_NOT_OWNER.format(
             category=node.project_or_component,
-            )
+        )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -264,22 +277,34 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         """
         clone, _ = super(AddonFigShareNodeSettings, self).after_fork(
             node, fork, user, save=False
-            )
+        )
 
         # Copy authentication if authenticated by forking user
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
             message = messages.AFTER_FORK_OWNER.format(
                 category=fork.project_or_component,
-                )
+            )
         else:
             message = messages.AFTER_FORK_NOT_OWNER.format(
                 category=fork.project_or_component,
                 url=fork.url + 'settings/'
-                )
+            )
             return AddonFigShareNodeSettings(), message
 
         if save:
             clone.save()
 
         return clone, message
+
+    def before_make_public(self, node):
+        return (
+            'This {cat} is connected to a Figshare project. Files marked as '
+            'private on Figshare <strong>will be visible to the public'
+            '</strong>.'
+        ).format(
+            cat=node.project_or_component,
+        )
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True, save=True)

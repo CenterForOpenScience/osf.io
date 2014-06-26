@@ -786,6 +786,11 @@ def make_url_map(app):
         ], 'post', project_views.node.project_generate_private_link_post, json_renderer),
 
         Rule([
+            '/project/<pid>/private_link/edit/',
+            '/project/<pid>/node/<nid>/private_link/edit/',
+        ], 'put', project_views.node.project_private_link_edit, json_renderer),
+
+        Rule([
             '/project/<pid>/private_link/',
             '/project/<pid>/node/<nid>/private_link/',
         ], 'delete', project_views.node.remove_private_link, json_renderer),
@@ -912,6 +917,10 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/<permissions>/',
         ], 'post', project_views.node.project_set_privacy, json_renderer),
 
+        Rule([
+            '/project/<pid>/permissions/beforepublic/',
+            '/project/<pid>/node/<nid>/permissions/beforepublic/',
+        ], 'get', project_views.node.project_before_set_public, json_renderer),
 
         ### Wiki ###
 

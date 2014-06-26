@@ -7,21 +7,17 @@
         <span data-bind="if: showDeleteAuth">
             <small class="authorized-by">
                 authorized by {{ dataverseUsername }}
-                <span data-bind="ifnot: showInputCredentials">
                     <a data-bind="click: deleteKey"
-                        class="text-danger pull-right"
-                            style="margin-top: 4.8px">Delete Credentials</a>
-                </span>
+                       class="text-danger pull-right addon-auth">Delete Credentials</a>
             </small>
         </span>
     </h4>
 
     <!-- Enter Credentials -->
     <form data-bind="if: showInputCredentials">
-        <div class="text-danger" style="padding-bottom: 10px" data-bind="if: credentialsChanged">
+        <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
             Your dataverse credentials may not be valid. Please re-enter your password.
         </div>
-
         <div class="form-group">
             <label for="dataverseUsername">Dataverse Username</label>
             <input class="form-control" name="dataverseUsername" data-bind="value: dataverseUsername"/>
@@ -33,10 +29,6 @@
         <button data-bind="click: sendAuth" class="btn btn-success">
             Submit
         </button>
-        <span data-bind="if: showDeleteAuth">
-            <a data-bind="click: deleteKey"
-                class="btn btn-danger pull-right">Delete Credentials</a>
-        </span>
     </form>
 
     <!-- Flashed Messages -->

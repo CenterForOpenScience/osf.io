@@ -22,7 +22,7 @@
 
         <div>
             This project contains a forward to
-            <a data-bind="attr.href: url">{{ url }}</a>.
+            <a data-bind="attr.href: url" target="_blank">{{ label }}</a>.
         </div>
 
         <div class="spaced-buttons">

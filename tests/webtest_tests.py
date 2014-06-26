@@ -213,13 +213,13 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/', auto_follow=True)
         title = res.html.title.string
         # page title is correct
-        assert_equal('Open Science Framework | Home', title)
+        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('Open Science Framework | Dashboard', title)
+        assert_equal('OSF | Dashboard', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -562,7 +562,7 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
 
-        res = res.click('Users: 2')
+        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 

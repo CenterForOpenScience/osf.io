@@ -105,6 +105,7 @@ class ApiKeyFactory(ModularOdmFactory):
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
+    name = "link"
     key = "foobarblaz"
     creator = SubFactory(AuthUserFactory)
 

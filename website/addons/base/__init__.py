@@ -175,7 +175,6 @@ class GuidFile(GuidStoredObject):
         )
 
 
-
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -219,20 +218,27 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     # TODO: Test me @asmacdo
     @property
-    def nodes(self):
-        """Get authorized nodes."""
-
+    def nodes_authorized(self):
+        """Get authorized, non-deleted nodes."""
         schema = self.config.settings_models['node']
         nodes_backref = self.get_backref_key(schema, 'authorized')
-
-        return [node.owner for node in getattr(self, nodes_backref)]
+        return [
+            node_addon.owner
+            for node_addon in getattr(self, nodes_backref)
+            if not node_addon.owner.is_deleted
+        ]
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
         ret.update({
             'nodes': [
-                {'title': node.title, '_id': node._id, 'url': node.url}
-                for node in self.nodes
+                {
+                    '_id': node._id,
+                    'url': node.url,
+                    'title': node.title,
+                    'registered': node.is_registration,
+                }
+                for node in self.nodes_authorized
             ]
         })
         return ret
@@ -304,6 +310,25 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_make_public(self, node):
+
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
+    def before_make_private(self, node):
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
     def after_set_privacy(self, node, permissions):
         """
 
@@ -318,7 +343,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -330,7 +355,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -346,7 +371,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -358,7 +383,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -368,6 +393,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             clone.save()
 
         return clone, None
+
+    def after_delete(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+
+        """
+        pass
 
 
 # TODO: Move this

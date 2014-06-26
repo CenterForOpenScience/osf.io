@@ -32,7 +32,7 @@
     // Column title
     FolderPicker.Col.title = 'Folders';
     // Name for the radio button inputs
-    var INPUT_NAME = 'folder-select';
+    var INPUT_NAME = '-folder-select';
 
     /**
      * Returns the folder select button for a single row.
@@ -40,7 +40,7 @@
     function folderSelectView(row) {
         // Build the parts of the radio button
         var open = '<input type="radio" ';
-        var name = 'name="' + INPUT_NAME + '" ';
+        var name = 'name="' + this.selector + INPUT_NAME + '" ';
         var checked = row._fpChecked ? ' checked ' : ' ';
         // Store the HGrid id as the value
         var value = 'value="' + row.id + '" ';
@@ -61,9 +61,6 @@
 
     // Default HGrid options
     var defaults = {
-        columns: [FolderPicker.Col.Name,
-                  FolderPicker.Col.SelectFolder
-        ],
         // Disable uploads
         uploads: false, width: '100%', height: 300,
         // Add listener that expands a folder upon clicking its name
@@ -81,19 +78,30 @@
     function FolderPicker(selector, opts) {
         var self = this;
         self.selector = selector;
+        self.checkedRowId = null;
         // Custom HGrid action to select a folder that uses the passed in
         // "onChooseFolder" callback
         if (!opts.onPickFolder) {
             throw 'FolderPicker must have the "onPickFolder" option defined';
         }
         self.options = $.extend({}, defaults, opts);
+        // Scope problems arise with multiple grids when columns are defined in defaults
+        self.options.columns = [
+            FolderPicker.Col.Name,
+            {name: 'Select', folderView: folderSelectView, width: 10}
+        ];
         // Start up the grid
         self.grid = new HGrid(selector, self.options);
         // Set up listener for folder selection
-        $(selector).on('change', 'input[name="' + INPUT_NAME + '"]', function(evt) {
+        $(selector).on('change', 'input[name="' + self.selector + INPUT_NAME + '"]', function(evt) {
             var id = $(this).val();
             var row = self.grid.getByID(id);
-            // Store checked state so that radio button doesn't deselect when expanding a folder
+            // Store checked state of rows so that it doesn't uncheck when HGrid is redrawn
+            var oldRow = self.grid.getByID(self.checkedRowId);
+            if (oldRow) {
+                oldRow._fpChecked = false;
+            }
+            self.checkedRowId = row.id;
             row._fpChecked = true;
             self.options.onPickFolder.call(self, evt, row);
         });

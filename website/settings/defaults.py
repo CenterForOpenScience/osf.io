@@ -30,6 +30,7 @@ ALLOW_CLAIMING = True
 SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
 SOLR_URI = 'http://localhost:8983/solr/'
 ELASTIC_URI = 'http://localhost:9200'
+ELASTIC_TIMEOUT = 10
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'

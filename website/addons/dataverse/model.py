@@ -1,4 +1,5 @@
 import os
+import logging
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -9,6 +10,7 @@ from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
 
+logging.getLogger('sword2').setLevel(logging.WARNING)
 
 class DataverseFile(GuidFile):
 
@@ -87,6 +89,10 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
+
+    @property
+    def is_fully_configured(self):
+        return bool(self.has_auth and self.study_hdl is not None)
 
     @property
     def has_auth(self):
@@ -230,3 +236,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()

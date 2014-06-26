@@ -1,17 +1,16 @@
 import os
 import logging
 import httplib as http
-from github3 import GitHubError
 
 from framework import request, redirect
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website import models
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
+from website.util import web_url_for
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
@@ -27,20 +26,10 @@ def get_profile_view(user_settings):
 
 
 @must_have_permission('write')
+@must_have_addon('github', 'user')
 @must_have_addon('github', 'node')
-def github_add_user_auth(**kwargs):
-
-    user = kwargs['auth'].user
-
-    user_settings = user.get_addon('github')
-    node_settings = kwargs['node_addon']
-
-    if node_settings is None or user_settings is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node_settings.user_settings = user_settings
-    node_settings.save()
-
+def github_add_user_auth(user_addon, node_addon, **kwargs):
+    node_addon.authorize(user_addon, save=True)
     return {}
 
 
@@ -70,111 +59,6 @@ def github_oauth_start(**kwargs):
     user_settings.save()
 
     return redirect(authorization_url)
-
-
-@must_have_addon('github', 'user')
-def github_oauth_delete_user(**kwargs):
-
-    user_settings = kwargs['user_addon']
-
-    failed = False
-
-    # Remove webhooks
-    for node_settings in user_settings.addongithubnodesettings__authorized:
-        try:
-            node_settings.delete_hook()
-        except GitHubError as error:
-            if error.code == 401:
-                failed = True
-            else:
-                raise
-
-    if failed:
-        push_status_message(
-            'We were unable to remove your webhook from GitHub. Your GitHub '
-            'credentials may no longer be valid.'
-        )
-
-    message = user_settings.clear_auth()
-    if message:
-        push_status_message(message)
-
-    return {}
-
-
-@must_have_permission('write')
-@must_have_addon('github', 'node')
-def github_oauth_delete_node(**kwargs):
-
-    node_settings = kwargs['node_addon']
-
-    # Remove webhook
-    try:
-        node_settings.delete_hook()
-    except GitHubError:
-        logger.error(
-            'Could not remove webhook from {0} in node {1}'.format(
-                node_settings.repo, node_settings.owner._id
-            )
-        )
-
-    # Remove user settings
-    node_settings.user_settings = None
-    node_settings.user = None
-    node_settings.repo = None
-
-    # Save changes
-    node_settings.save()
-
-    return {}
-
-
-# TODO: Move into remove addon
-@must_have_permission('write')
-@must_have_addon('github', 'node')
-def github_oauth_delete_node(**kwargs):
-
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-
-    # Remove webhook
-    try:
-        node_settings.delete_hook()
-    except GitHubError:
-        logger.error(
-            'Could not remove webhook from {0} in node {1}'.format(
-                node_settings.repo, node._id
-            )
-        )
-
-    github_user = node_settings.user
-    github_repo = node_settings.repo
-
-    # Remove user settings
-    node_settings.user_settings = None
-    node_settings.user = None
-    node_settings.repo = None
-
-    # Save changes
-    node_settings.save()
-
-    # Log repo un-select if repo was specified before
-    if github_user and github_repo:
-        node.add_log(
-            action='github_repo_unlinked',
-            params={
-                'project': node.parent_id,
-                'node': node._id,
-                'github': {
-                    'user': github_user,
-                    'repo': github_repo,
-                },
-            },
-            auth=auth,
-        )
-
-    return {}
 
 
 def github_oauth_callback(**kwargs):
@@ -221,4 +105,17 @@ def github_oauth_callback(**kwargs):
 
     if node:
         return redirect(os.path.join(node.url, 'settings'))
-    return redirect('/settings/')
+    return redirect(web_url_for('user_addons'))
+
+
+@must_have_addon('github', 'user')
+def github_oauth_delete_user(user_addon, **kwargs):
+    user_addon.clear_auth(save=True)
+    return {}
+
+
+@must_have_permission('write')
+@must_have_addon('github', 'node')
+def github_oauth_deauthorize_node(auth, node_addon, **kwargs):
+    node_addon.deauthorize(auth=auth, save=True)
+    return {}

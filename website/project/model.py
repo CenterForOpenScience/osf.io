@@ -321,6 +321,9 @@ class NodeLog(StoredObject):
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
 
+    MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
+    MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
     @property
     def node(self):
         return (
@@ -450,7 +453,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         'title',
         'category',
         'description',
-        'contributors',
+        'visible_contributor_ids',
         'tags',
         'is_fork',
         'is_registration',
@@ -487,7 +490,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField(versioned=True)
+    title = fields.StringField()
     description = fields.StringField()
     category = fields.StringField()
 
@@ -543,7 +546,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if self.creator:
             self.contributors.append(self.creator)
-            self.set_visible(self.creator, visible=True)
+            self.set_visible(self.creator, visible=True, log=False)
 
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
@@ -735,21 +738,53 @@ class Node(GuidStoredObject, AddonModelMixin):
             for _id in self.visible_contributor_ids
         ]
 
-    def is_visible_contributor(self, user):
-        return user and user._id in self.visible_contributor_ids
-
     def get_visible(self, user):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         return user._id in self.visible_contributor_ids
 
-    def set_visible(self, user, visible):
+    def update_visible_ids(self, save=False):
+        """Update the order of `visible_contributor_ids`. Updating on making
+        a contributor visible is more efficient than recomputing order on
+        accessing `visible_contributors`.
+
+        """
+        self.visible_contributor_ids = [
+            contributor._id
+            for contributor in self.contributors
+            if contributor._id in self.visible_contributor_ids
+        ]
+        if save:
+            self.save()
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and user._id not in self.visible_contributor_ids:
             self.visible_contributor_ids.append(user._id)
+            self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(user._id)
+        else:
+            return
+        message = (
+            NodeLog.MADE_CONTRIBUTOR_VISIBLE
+            if visible
+            else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        )
+        if log:
+            self.add_log(
+                message,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [user._id],
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
@@ -1169,6 +1204,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
+        if not title:
+            return
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1242,6 +1279,12 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
+
+        # After delete callback
+        for addon in self.get_addons():
+            message = addon.after_delete(self, auth.user)
+            if message:
+                status.push_status_message(message)
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -2097,7 +2140,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=False)
                 permissions_changed[user._id] = permissions
-            self.set_visible(user, user_dict['visible'])
+            self.set_visible(user, user_dict['visible'], auth=auth)
             users.append(user)
 
         to_retain = [
@@ -2178,7 +2221,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             self.contributors.append(contrib_to_add)
             if visible:
-                self.set_visible(contrib_to_add, visible=True)
+                self.set_visible(contrib_to_add, visible=True, log=False)
 
             # Add default contributor permissions
             permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS

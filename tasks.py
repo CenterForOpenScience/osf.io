@@ -30,6 +30,39 @@ def server():
 SHELL_BANNER = """
 {version}
 
++--------------------------------------------------+
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
+|ccccccccccccccccccccccOOOOOOOccccccccccccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccOOOOOOOOOOOOccccccccccccccccccc|
+|cccccccccOOOOOOOcccOOOOOOOOOOOOcccOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOccOOOOOsssOOOOcOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOccOOssssssOOccOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOsOcOssssssOOOOOOOOOOOOOOOccccccc|
+|cccccccOOOOOOOOOOOssccOOOOOOcOssOOOOOOOOOOcccccccc|
+|cccccccccOOOOOOOsssOccccccccccOssOOOOOOOcccccccccc|
+|cccccOOOccccOOssssOccccccccccccOssssOccccOOOcccccc|
+|ccOOOOOOOOOOOOOccccccccccccccccccccOOOOOOOOOOOOccc|
+|cOOOOOOOOssssssOcccccccccccccccccOOssssssOOOOOOOOc|
+|cOOOOOOOssssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOsssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOOssssOOccccccccccccccccccOsssssOOOOOOOOcc|
+|cccOOOOOOOOOOOOOOOccccccccccccccOOOOOOOOOOOOOOOccc|
+|ccccccccccccOOssssOOccccccccccOssssOOOcccccccccccc|
+|ccccccccOOOOOOOOOssOccccOOcccOsssOOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOOsOcOOssssOcOssOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOOOsssssssOcOOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOcccOssssssOcccOOOOOOOOOOOccccccc|
+|ccccccccOOOOOOOOOcccOOOOOOOOOOcccOOOOOOOOOcccccccc|
+|ccccccccccOOOOcccccOOOOOOOOOOOcccccOOOOccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccccOOOOccccccccccccccccccccccc|
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
++--------------------------------------------------+
+
 Welcome to the OSF Python Shell. Happy hacking!
 
 Available variables:
@@ -162,9 +195,9 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search():
+def migrate_search(python='python'):
     '''Migrate the search-enabled models.'''
-    run("python -m website.search_migration.migrate")
+    run("{0} -m website.search_migration.migrate".format(python))
 
 @task
 def mailserver(port=1025):

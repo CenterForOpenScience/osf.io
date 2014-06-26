@@ -42,13 +42,12 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = sanitize(post_data.get("value"))
-    if value:
-        if edited_field == 'title':
-            node.set_title(value, auth=auth)
-        elif edited_field == 'description':
-            node.set_description(value, auth=auth)
-        node.save()
+    value = sanitize(post_data.get('value', ''))
+    if edited_field == 'title':
+        node.set_title(value, auth=auth)
+    elif edited_field == 'description':
+        node.set_description(value, auth=auth)
+    node.save()
     return {'status': 'success'}
 
 
@@ -420,9 +419,21 @@ def project_statistics(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('admin')
+def project_before_set_public(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    return {
+        'prompts': node.callback('before_make_public')
+    }
+
+@must_be_valid_project
+@must_have_permission('admin')
 def project_set_privacy(auth, **kwargs):
 
-    permissions = kwargs['permissions']
+    permissions = kwargs.get('permissions')
+    if permissions is None:
+        raise HTTPError(http.BAD_REQUEST)
+
     node = kwargs['node'] or kwargs['project']
 
     node.set_privacy(permissions, auth)
@@ -430,8 +441,7 @@ def project_set_privacy(auth, **kwargs):
     return {
         'status': 'success',
         'permissions': permissions,
-        'redirect_url': node.url,
-    }, None, None
+    }
 
 
 @must_be_valid_project  # returns project
@@ -785,10 +795,9 @@ def private_link_table(**kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(**kwargs):
+def get_editable_children(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     
     if not node.can_edit(auth):
         return
@@ -798,7 +807,7 @@ def get_editable_children(**kwargs):
     return {
         'node': {'title': node.title,},
         'children': children,
-     }
+    }
 
 
 def _get_user_activity(node, auth, rescale_ratio):
@@ -953,6 +962,17 @@ def project_generate_private_link_post(auth, **kwargs):
     )
 
     return new_link
+
+
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def project_private_link_edit(auth, **kwargs):
+    new_name = request.json.get('value', '')
+    private_link_id = request.json.get('pk','')
+    private_link = PrivateLink.load(private_link_id)
+    if private_link:
+        private_link.name = new_name
+        private_link.save()
 
 
 def _serialize_node_search(node):

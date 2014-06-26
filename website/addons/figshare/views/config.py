@@ -40,7 +40,7 @@ def figshare_config_put(node_addon, auth, **kwargs):
     return {
         'result': {
             'linked': {
-                'name': fields.get('title') or '',
+                'title': fields.get('title') or '',
                 'id': fields.get('id') or None,
                 'type': fields.get('type') or None
             },
@@ -59,8 +59,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
     user_addon = user.get_addon('figshare')
     if user_addon is None or node_addon is None:
         raise HTTPError(http.BAD_REQUEST)
-    node_addon.set_user_auth(user_addon)
-    node_addon.save()
+    node_addon.authorize(user_addon, save=True)
     return {
         'result': serialize_settings(node_addon, user),
         'message': 'Successfully imported access token from profile.',
@@ -70,9 +69,8 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
 def figshare_deauthorize(auth, node_addon, **kwargs):
-    node_addon.deauthorize(auth=auth)   
-    node_addon.save()
-    return None
+    node_addon.deauthorize(auth=auth, save=True)
+    return {}
 
 
 def serialize_settings(node_settings, current_user, client=None):
@@ -173,32 +171,3 @@ def figshare_set_config(auth, **kwargs):
 
     fields = {'title': figshare_title, 'type': figshare_type, 'id': figshare_id}
     node_settings.update_fields(fields, node, auth)
-
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('figshare', 'node')
-def figshare_unlink(*args, **kwargs):
-    auth = kwargs['auth']
-    node = kwargs['node'] or kwargs['project']
-    figshare_node = node.get_addon('figshare')
-
-    # If authorized, only owner can change settings
-    if not figshare_node.user_settings or figshare_node.user_settings.owner != auth.user:
-        raise HTTPError(http.BAD_REQUEST)
-    node.add_log(
-        action='figshare_content_unlinked',
-        params={
-            'project': node.parent_id,
-            'node': node._id,
-            'figshare': {
-                'type': figshare_node.figshare_type,
-                'id': figshare_node.figshare_id
-            }
-        },
-        auth=auth,
-    )
-    figshare_node.figshare_id = None
-    figshare_node.figshare_type = None
-    figshare_node.figshare_title = None
-    figshare_node.save()

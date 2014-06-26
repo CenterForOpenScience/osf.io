@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Contributors</%def>
+<%def name="title()">${node['title']} Contributors</%def>
 
 <div class="row">
     <div class="col-md-12">
@@ -12,28 +12,28 @@
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
-                        <th class="col-sm-6">Name</th>
-                        <th class="col-sm-3">
+                        <th class="col-md-6">Name</th>
+                        <th class="col-md-2">
+                            Permissions
                             <i class="icon-question-sign permission-info"
                                     data-toggle="popover"
                                     data-title="Permission Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Permissions
                         </th>
-                        <th class="col-sm-1">
+                        <th class="col-md-3">
+                            Visibility
                             <i class="icon-question-sign visibility-info"
                                     data-toggle="popover"
                                     data-title="Visibility Information"
                                     data-container="body"
-                                    data-placement="left"
+                                    data-placement="right"
                                     data-html="true"
                                 ></i>
-                            Visibility
                         </th>
-                        <th class="col-sm-1 col-offset-1"></th>
+                        <th class="col-md-1"></th>
                         </tr>
                     </thead>
                     <tr data-bind="if: canEdit">
@@ -87,29 +87,28 @@
                     </tr>
 
                 </tbody>
-                <tbody data-bind="foreach: {data: privateLinks, afterRender: updateClipboard}">
+                <tbody data-bind="foreach: {data: privateLinks, afterRender: afterRenderLink}">
                     <tr>
                         <td class="col-sm-3">
-                            <div data-bind="text: name, tooltip: {title: linkName}"></div>
-
-                                <div class="btn-group">
-                                <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
-                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                    <span class="icon-copy" ></span>
-                                </button>
-                                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
-                                </div>
-
+                            <div>
+                                <span class="link-name" data-bind="text: name, tooltip: {title: linkName}"></span>
+                            </div>
+                            <div class="btn-group">
+                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
+                                    data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                <span class="icon-copy" ></span>
+                            </button>
+                                <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                            </div>
                         </td>
-                        <td class="col-sm-4" >
-
-                               <ul class="narrow-list list-overflow" data-bind="foreach:nodesList">
-                                   <li data-bind="style:{marginLeft: $data.scale}">
-                                      <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
-                                   </li>
-                               </ul>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                               <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayTwoNodes"></button>
+                        <td class="col-sm-4">
+                           <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
+                               <li data-bind="style:{marginLeft: $data.scale}">
+                                  <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                               </li>
+                           </ul>
+                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
+                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
                         </td>
 
                         <td class="col-sm-2">
@@ -117,9 +116,11 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <a class="remove-private-link btn btn-danger btn-mini" rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">–</a>
+                            <a  rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">
+                                <i class="icon-remove text-danger"></i>
+                            </a>
                         </td>
-                        </tr>
+                    </tr>
                 </tbody>
 
             </table>
@@ -160,11 +161,12 @@
             <!-- ko if: $parent.canEdit -->
                 <!-- ko ifnot: deleteStaged -->
                     <a
-                            class="btn btn-danger contrib-button btn-mini"
                             data-bind="click: remove"
                             rel="tooltip"
                             title="Remove contributor"
-                        >–</a>
+                        >
+                                <i class="icon-remove text-danger"></i>
+                    </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
                     Removed
@@ -206,7 +208,7 @@
         var contributors = ${json.dumps(contributors)};
         var user = ${json.dumps(user)};
         var isRegistration = ${json.dumps(node['is_registration'])};
-        manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
+        var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
 
     $script(['/static/js/privateLinkManager.js',

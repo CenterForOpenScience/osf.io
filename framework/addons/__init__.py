@@ -73,7 +73,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name, deleted=True)
         if addon:
             if addon.deleted:
-                addon.undelete()
+                addon.undelete(save=True)
                 return True
             return False
 
@@ -100,7 +100,7 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory:
                 raise ValueError('Cannot delete mandatory add-on.')
-            addon.delete()
+            addon.delete(save=True)
             return True
         return False
 
