@@ -412,6 +412,9 @@
             }
             return true;
         });
+        self.hasMultiple = ko.computed(function() {
+            return self.contents().length > 1;
+        });
         self.hasValidProperty(true);
 
     };
