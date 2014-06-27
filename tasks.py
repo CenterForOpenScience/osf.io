@@ -78,6 +78,7 @@ def make_shell_context():
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
+    from website import settings
     import requests
     app = init_app()
     context = {'app': app,
@@ -90,7 +91,8 @@ def make_shell_context():
                 'rget': requests.get,
                 'rpost': requests.post,
                 'rdelete': requests.delete,
-                'rput': requests.put
+                'rput': requests.put,
+                'settings': settings,
     }
     try:  # Add a fake factory for generating fake names, emails, etc.
         from faker import Factory

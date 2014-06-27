@@ -199,7 +199,7 @@ _note: Oracle JDK 7 must be installed for elasticsearch to run_
 
 #### Ubuntu 
 
-````bash
+```bash
 $ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
 $ sudo dpkg -i elasticsearch-1.2.1.deb
 ```
