@@ -172,7 +172,8 @@ ${parent.javascript_bottom()}
         // Tag input
         $('#node-tags').tagsInput({
             width: "100%",
-            interactive:${'true' if user["can_edit"] else 'false'},
+            interactive: ${'true' if user["can_edit"] else 'false'},
+            maxChars: 128,
             onAddTag: function(tag){
                 $.ajax({
                     url: "${node['api_url']}" + "addtag/" + tag + "/",

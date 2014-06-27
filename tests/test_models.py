@@ -2429,6 +2429,42 @@ class TestUnregisteredUser(OsfTestCase):
         assert_true(self.project)
 
 
+class TestTags(OsfTestCase):
+
+    def setUp(self):
+        super(TestTags, self).setUp()
+        self.project = ProjectFactory()
+        self.auth = Auth(self.project.creator)
+
+    def test_add_tag(self):
+        self.project.add_tag('scientific', auth=self.auth)
+        assert_in('scientific', self.project.tags)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.TAG_ADDED
+        )
+
+    def test_add_tag_too_long(self):
+        with assert_raises(ValidationError):
+            self.project.add_tag('q' * 129, auth=self.auth)
+
+    def test_remove_tag(self):
+        self.project.add_tag('scientific', auth=self.auth)
+        self.project.remove_tag('scientific', auth=self.auth)
+        assert_not_in('scientific', self.project.tags)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.TAG_REMOVED
+        )
+
+    def test_remove_tag_not_present(self):
+        self.project.remove_tag('scientific', auth=self.auth)
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.PROJECT_CREATED
+        )
+
+
 class TestContributorVisibility(OsfTestCase):
 
     def setUp(self):
