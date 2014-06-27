@@ -323,7 +323,7 @@
         );
         self.orcid = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.orcid)}),
-            self, 'orcid', 'http://orcid.com/'
+            self, 'orcid', 'http://orcid.org/'
         );
         self.researcherId = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
