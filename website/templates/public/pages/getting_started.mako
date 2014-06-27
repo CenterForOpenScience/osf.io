@@ -26,6 +26,7 @@
                     <li><a href="#github"><i class="icon-chevron-right"></i> GitHub</a></li>
                     <li><a href="#s3"><i class="icon-chevron-right"></i> Amazon S3</a></li>
                     <li><a href="#figshare"><i class="icon-chevron-right"></i> FigShare</a></li>
+                    <li><a href="#dataverse"><i class="icon-chevron-right"></i> Dataverse</a></li>
                     <li><a href="#commenting"><i class="icon-chevron-right"></i> Commenting</a></li>
                     <li><a href="#citations"><i class="icon-chevron-right"></i> Citations</a></li>
                     <li><a href="#statistics"><i class="icon-chevron-right"></i> Statistics</a></li>
@@ -177,6 +178,14 @@
                     <p>To associate a FigShare project with an OSF project, visit the project you want to add the FigShare project to. Go to "Settings" in the grey navigation bar. Select the FigShare add-on under “Select Add-ons” and click “OK” on the pop-up. Then, submit your new settings.</p>
                     <p>Still in your project settings, now click the authorize button for FigShare under "Configure Add-ons" and then select the project you want to add.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/PYbDtghU1VI?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
+                </div>
+                <div id="dataverse"></div>
+                <div class="row">
+                    <p class="gs-header">Dataverse Add-on</p>
+                    <p>Currently, the OSF only supports linking Dataverses that you have already released on the <a href="http://thedata.harvard.edu/dvn/">Harvard Dataverse Network</a>.</p>
+                    <p>To link a Dataverse study to a project/component, visit the project you want to add a Dataverse study to. Then go to "Settings" in the grey navigation bar. Check "Dataverse" under "Select Add-ons" to enable the add-on. Read, then click "OK" on the pop-up, then submit.</p>
+                    <p>Next, authenticate with Dataverse by entering your Dataverse username and password and clicking "Submit". You can then choose the Dataverse study you would like to add to your OSF project. Click "Submit" to save your settings.</p>
+                    <p>Contributors to your project will have access to both released and draft versions of your study, but only the most recent release will be made public alongside your OSF project.</p>
                 </div>
                 <div id="commenting"></div>
                 <div class="row">
