@@ -578,6 +578,84 @@ class TestProjectViews(OsfTestCase):
         assert_false(node.is_deleted)
 
 
+class TestUserProfile(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfile, self).setUp()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+
+    def test_unserialize_social(self):
+        url = api_url_for('unserialize_social')
+        payload = {
+            'personal': 'http://frozen.pizza.com/reviews',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        for key, value in payload.iteritems():
+            assert_equal(self.user.social[key], value)
+        assert_true(self.user.social['researcherId'] is None)
+
+    def test_serialize_social_editable(self):
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_true(res.json['editable'])
+
+    def test_serialize_social_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_false(res.json['editable'])
+
+    def test_serialize_social_addons_editable(self):
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(
+            res.json['addons']['github'],
+            'howtogithub'
+        )
+
+    def test_serialize_social_addons_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_not_in('addons', res.json)
+
+
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
