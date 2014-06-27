@@ -31,9 +31,9 @@ def get_public_projects(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category == 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
@@ -43,9 +43,9 @@ def get_public_components(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category != 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
