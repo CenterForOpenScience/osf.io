@@ -1,6 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
-<%def name="title()">Project</%def>
+<%def name="title()">${node['title']}</%def>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />
@@ -98,12 +98,9 @@
 <div class="page-header">
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
-            % if 'write' in user['permissions']:
+            % if 'write' in user['permissions'] and not node['is_registration']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                 <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % else:
-                <a class="btn btn-default disabled">Add Component</a>
-                <a class="btn btn-default disabled">Add Link</a>
             % endif
         </div>
 

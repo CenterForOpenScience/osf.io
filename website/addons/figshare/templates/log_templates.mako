@@ -16,3 +16,15 @@ unlinked FigShare project <span data-bind="text: params.figshare.title"></span> 
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="figshare_node_authorized">
+authorized the Figshare addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<script type="text/html" id="figshare_node_deauthorized">
+deauthorized the Figshare addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>

@@ -12,6 +12,27 @@
         makePrivate: null,
 
         Addons: {
+            dataverse: {
+                userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.',
+                confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
+                  'account? This will revoke access to Dataverse for all ' +
+                  'projects you have authorized.',
+                confirmNodeDeauth: 'Are you sure you want to unlink this Dataverse account? This will ' +
+                    'revoke the ability to view, download, modify, and upload files ' +
+                    'to studies on the Dataverse from the OSF. This will not remove your ' +
+                    'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
+                    'page.',
+                deauthError: 'Could not unlink Dataverse at this time.',
+                deauthSuccess: 'Unlinked your Dataverse account.',
+                authError: 'There was a problem connecting to the Dataverse.',
+                authInvalid: 'Your Dataverse username or password is invalid.',
+                authSuccess: 'Your Dataverse account was linked.',
+                widgetInvalid: 'The Dataverse credentials associated with ' +
+                    'this node appear to be invalid.',
+                widgetError: 'There was a problem connecting to the Dataverse.'
+            },
             dropbox: {
                 // Shown on clicking "Delete Access Token" for dropbox
                 confirmDeauth: 'Are you sure you want to delete your Dropbox access ' +

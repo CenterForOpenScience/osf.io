@@ -8,10 +8,10 @@ from modularodm.exceptions import ModularOdmException
 from slugify import slugify
 
 from framework import fields
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
-from website.addons.dropbox.client import get_client, get_node_addon_client
+from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
@@ -117,6 +117,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
 
     dropbox_id = fields.StringField(required=False)
     access_token = fields.StringField(required=False)
+    dropbox_info = fields.DictionaryField(required=False)
 
     # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
     def to_json(self, user=None):
@@ -132,9 +133,9 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return bool(self.access_token)
 
-    def delete(self):
+    def delete(self, save=True):
         self.clear()
-        super(DropboxUserSettings, self).delete()
+        super(DropboxUserSettings, self).delete(save)
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes."""
@@ -182,11 +183,11 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
-    def delete(self):
-        self.deauthorize(Auth(self.user_settings.owner), add_log=False)
-        super(DropboxNodeSettings, self).delete()
+    def delete(self, save=True):
+        self.deauthorize(add_log=False)
+        super(DropboxNodeSettings, self).delete(save)
 
-    def deauthorize(self, auth, add_log=True):
+    def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner
         folder = self.folder
@@ -196,7 +197,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
         if add_log:
             extra = {'folder': folder}
-            nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
+            nodelogger = DropboxNodeLogger(node=node, auth=auth)
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def __repr__(self):
@@ -305,3 +306,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()

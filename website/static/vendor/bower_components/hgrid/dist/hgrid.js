@@ -1167,7 +1167,7 @@ this.HGrid = (function($) {
   HGrid.prototype.init = function() {
     this.setHeight(this.options.height)
       .setWidth(this.options.width)
-      ._initSlickGrid()
+      ._initSlickGrid.call(this)
       ._initDataView();
 
     if (this.options.uploads) {
@@ -1281,7 +1281,7 @@ this.HGrid = (function($) {
   HGrid.prototype._initSlickGrid = function() {
     var self = this;
     // Convert column schemas to Slickgrid column definitions
-    var columns = self._makeSlickgridColumns(self.options.columns);
+    var columns = self._makeSlickgridColumns.call(self, self.options.columns);
     var options = $.extend({}, requiredSlickgridOptions, self.options.slickgridOptions);
     self.grid = new Slick.Grid(self.element.selector, self.tree.dataView,
       columns,

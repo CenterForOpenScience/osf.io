@@ -125,7 +125,8 @@ def github_hgrid_data(node_settings, auth, **kwargs):
     repo = None
 
     # Quit if privacy mismatch and not contributor
-    if node_settings.owner.is_public:
+    node = node_settings.owner
+    if node.is_public and not node.is_contributor(auth.user):
         try:
             repo = connection.repo(node_settings.user, node_settings.repo)
         except NotFoundError:
@@ -173,13 +174,19 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+        'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
     }
+    buttons = [rubeus.build_addon_button(
+        '<i class="icon-cloud-download"></i> Download ZIP',
+        'githubDownloadZip')]
+
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        extra=name_append
+        extra=name_append,
+        buttons=buttons,
     )]
 
 

@@ -4,11 +4,11 @@ import os
 from nose.tools import *  # PEP8 asserts
 from slugify import slugify
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
-from tests.base import OsfTestCase, fake, URLLookup
+from tests.base import OsfTestCase, fake
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
@@ -16,9 +16,9 @@ from website.addons.dropbox.tests.factories import (
     DropboxFileFactory
 )
 from website.app import init_app
+from website.util import web_url_for
 
 app = init_app(set_backends=False, routes=True)
-lookup = URLLookup(app)
 
 
 class TestUserSettingsModel(OsfTestCase):
@@ -217,13 +217,12 @@ class TestNodeSettingsCallbacks(OsfTestCase):
     def test_after_fork_by_unauthorized_dropbox_user(self):
         fork = ProjectFactory()
         user = UserFactory()
-        with app.test_request_context():
-            clone, message = self.node_settings.after_fork(
-                node=self.project, fork=fork, user=user,
-                save=True
-            )
-            # need request context for url_for
-            assert_is(clone.user_settings, None)
+        clone, message = self.node_settings.after_fork(
+            node=self.project, fork=fork, user=user,
+            save=True
+        )
+        # need request context for url_for
+        assert_is(clone.user_settings, None)
 
     def test_before_fork(self):
         node = ProjectFactory()
@@ -238,12 +237,19 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.project.project_or_component, message)
 
     def test_after_remove_authorized_dropbox_user(self):
-        with app.test_request_context():
-            message = self.node_settings.after_remove_contributor(
-                self.project, self.user_settings.owner)
+        message = self.node_settings.after_remove_contributor(
+            self.project, self.user_settings.owner)
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)
+        assert_true(self.node_settings.folder is None)
+
 
 
 class TestDropboxGuidFile(OsfTestCase):
@@ -252,10 +258,9 @@ class TestDropboxGuidFile(OsfTestCase):
         project = ProjectFactory()
         file_obj = DropboxFile(node=project, path='foo.txt')
         file_obj.save()
-        with app.test_request_context():
-            file_url = file_obj.url(guid=False)
+        file_url = file_obj.url(guid=False)
 
-        url = lookup('web', 'dropbox_view_file',
+        url = web_url_for('dropbox_view_file',
             pid=project._primary_key, path=file_obj.path, rev='')
         assert_equal(url, file_url)
 
@@ -278,11 +283,9 @@ class TestDropboxGuidFile(OsfTestCase):
 
     def test_download_url(self):
         file_obj = DropboxFileFactory()
-        with app.test_request_context():
-            dl_url = file_obj.download_url(guid=False)
-            expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
-                rev='',
-                _absolute=True)
+        dl_url = file_obj.download_url(guid=False)
+        expected = file_obj.node.web_url_for('dropbox_download', path=file_obj.path,
+            rev='', _absolute=True)
         assert_equal(dl_url, expected)
 
     def test_download_url_guid(self):

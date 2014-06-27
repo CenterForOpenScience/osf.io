@@ -23,7 +23,7 @@ from framework.routing import (Rule, process_rules,
 from framework.guid.model import GuidStoredObject
 
 ###### Auth
-from framework.auth import get_current_username, get_current_user_id, get_user, User
+from framework.auth.core import get_current_username, get_current_user_id, get_user, User
 from framework.auth.decorators import must_be_logged_in
 
 ##### Form

@@ -11,9 +11,25 @@ DEV_MODE = True
 DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Comment out to use solr in development
-USE_SOLR = True
+SEARCH_ENGINE = 'elastic'
+ELASTIC_TIMEOUT = 10
+
+# Comment out to use celery in development
+USE_CELERY = False
+
+# Comment out to use GnuPG in development
+USE_GNUPG = False # Changing this may require you to re-enter encrypted fields
+
+# Which addons are enabled
+ADDONS_REQUESTED = [
+    'wiki', 'osffiles',
+    'github', 's3', 'figshare',
+    'dropbox', 'dataverse',
+    # 'badges', 'forward',
+]
 
 # Email
+USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
@@ -21,6 +37,9 @@ MAIL_PASSWORD = 'CHANGEME'
 # Session
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
+
+# Uncomment if GPG was installed with homebrew
+# GNUPG_BINARY = '/usr/local/bin/gpg'
 
 ##### Celery #####
 ## Default RabbitMQ broker

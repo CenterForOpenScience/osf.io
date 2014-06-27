@@ -15,7 +15,7 @@ from framework import Q
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
 from framework.flask import request
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 
 from website import settings, security
 from website.util import web_url_for

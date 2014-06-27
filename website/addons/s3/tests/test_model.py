@@ -5,7 +5,7 @@ from boto.s3.connection import *
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.s3.model import AddonS3NodeSettings, AddonS3UserSettings
 
 
@@ -127,3 +127,10 @@ class TestCallbacks(OsfTestCase):
     def test_before_register_settings_and_auth(self):
         message = self.node_settings.before_register(self.project, self.project.creator)
         assert_true(message)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)
+        assert_true(self.node_settings.bucket is None)

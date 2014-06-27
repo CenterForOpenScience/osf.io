@@ -15,9 +15,8 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
-from framework.auth import User
-from framework.auth.utils import parse_name
-from framework.auth.decorators import Auth
+from framework.auth import User, Auth
+from framework.auth.utils import impute_names_model
 from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
@@ -36,14 +35,81 @@ from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
-    NodeWikiFactory, UnregUserFactory, RegistrationFactory, UnregUserFactory,
-    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory
+    NodeWikiFactory, RegistrationFactory, UnregUserFactory,
+    ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
+    AuthUserFactory
 )
 
 app = init_app(set_backends=False, routes=True)
 lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
+
+
+class TestUserValidation(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserValidation, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_validate_fullname_none(self):
+        self.user.fullname = None
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_fullname_empty(self):
+        self.user.fullname = ''
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_social_personal_empty(self):
+        self.user.social = {'personal_site': ''}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_valid(self):
+        self.user.social = {'personal_site': 'http://cos.io/'}
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_social_personal_invalid(self):
+        self.user.social = {'personal_site': 'help computer'}
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_valid(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1980, 1, 1),
+        }]
+        try:
+            self.user.save()
+        except:
+            assert 0
+
+    def test_validate_jobs_institution_empty(self):
+        self.user.jobs = [{'institution': ''}]
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_jobs_bad_end_date(self):
+        self.user.jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': datetime.datetime(1970, 1, 1),
+            'end': datetime.datetime(1960, 1, 1),
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
 
 class TestUser(OsfTestCase):
 
@@ -57,7 +123,7 @@ class TestUser(OsfTestCase):
         u.update_guessed_names()
         u.save()
 
-        parsed = parse_name(name)
+        parsed = impute_names_model(name)
         assert_equal(u.fullname, name)
         assert_equal(u.given_name, parsed['given_name'])
         assert_equal(u.middle_names, parsed['middle_names'])
@@ -80,19 +146,19 @@ class TestUser(OsfTestCase):
         assert_equal(u.username, email)
         assert_false(u.is_registered)
         assert_true(email in u.emails)
-        parsed = parse_name(name)
+        parsed = impute_names_model(name)
         assert_equal(u.given_name, parsed['given_name'])
 
-    @mock.patch('framework.auth.model.User.update_solr')
-    def test_solr_not_updated_for_unreg_users(self, update_solr):
+    @mock.patch('framework.auth.core.User.update_search')
+    def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert_false(update_solr.called)
+        assert_false(update_search.called)
 
-    @mock.patch('framework.auth.model.User.update_solr')
-    def test_solr_updated_for_registered_users(self, update_solr):
+    @mock.patch('framework.auth.core.User.update_search')
+    def test_search_updated_for_registered_users(self, update_search):
         u = UserFactory(is_registered=True)
-        assert_true(update_solr.called)
+        assert_true(update_search.called)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
         u = UnregUserFactory()
@@ -101,8 +167,11 @@ class TestUser(OsfTestCase):
             dupe.save()
 
     def test_user_with_no_password_is_not_active(self):
-        u = User(username=fake.email(),
-            fullname='Freddie Mercury', is_registered=True)
+        u = User(
+            username=fake.email(),
+            fullname='Freddie Mercury',
+            is_registered=True,
+        )
         u.save()
         assert_false(u.is_active())
 
@@ -129,7 +198,7 @@ class TestUser(OsfTestCase):
         user.save()
         assert_true(user.check_password('foobar'))
         assert_true(user._id)
-        assert_equal(user.given_name, parse_name(name)['given_name'])
+        assert_equal(user.given_name, impute_names_model(name)['given_name'])
 
     def test_create_unconfirmed(self):
         name, email = fake.name(), fake.email()
@@ -209,6 +278,7 @@ class TestUser(OsfTestCase):
 
     def test_factory(self):
         # Clear users
+        Node.remove()
         User.remove()
         user = UserFactory()
         assert_equal(User.find().count(), 1)
@@ -402,12 +472,12 @@ class TestUser(OsfTestCase):
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
-        parsed = parse_name('John Darnielle')
+        parsed = impute_names_model('John Darnielle')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'Darnielle')
 
     def test_parse_first_last_particles(self):
-        parsed = parse_name('John van der Slice')
+        parsed = impute_names_model('John van der Slice')
         assert_equal(parsed['given_name'], 'John')
         assert_equal(parsed['family_name'], 'van der Slice')
 
@@ -437,7 +507,7 @@ class TestMergingUsers(OsfTestCase):
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
-        project.contributors.append(self.dupe)
+        project.add_contributor(self.dupe)
         project.save()
         self._merge_dupe()
         assert_true(project.is_contributor(self.master))
@@ -1199,16 +1269,11 @@ class TestProject(OsfTestCase):
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
 
-
     def test_add_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         assert_in(link, self.project.private_links)
-
-    def test_remove_private_link(self):
-        link = self.project.add_private_link()
-        assert_in(link, self.project.private_links)
-        self.project.remove_private_link(link)
-        assert_not_in(link, self.project.private_links)
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),
@@ -1226,8 +1291,8 @@ class TestProject(OsfTestCase):
     def test_manage_contributors_new_contributor(self):
         user = UserFactory()
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1248,8 +1313,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': user._id, 'permission': 'read'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': user._id, 'permission': 'read', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1264,8 +1329,8 @@ class TestProject(OsfTestCase):
             save=True
         )
         users = [
-            {'id': self.project.creator._id, 'permission': 'read'},
-            {'id': unregistered._id, 'permission': 'admin'},
+            {'id': self.project.creator._id, 'permission': 'read', 'visible': True},
+            {'id': unregistered._id, 'permission': 'admin', 'visible': True},
         ]
         with assert_raises(ValueError):
             self.project.manage_contributors(
@@ -1311,7 +1376,9 @@ class TestProject(OsfTestCase):
 
     def test_can_view_private(self):
         # Create contributor and noncontributor
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         contributor = UserFactory()
         contributor_auth = Auth(user=contributor)
         other_guy = UserFactory()
@@ -1323,7 +1390,7 @@ class TestProject(OsfTestCase):
         assert_true(self.project.can_view(self.consolidate_auth))
         assert_true(self.project.can_view(contributor_auth))
         assert_false(self.project.can_view(other_guy_auth))
-        other_guy_auth.private_key = link
+        other_guy_auth.private_key = link.key
         assert_true(self.project.can_view(other_guy_auth))
 
     def test_creator_cannot_edit_project_if_they_are_removed(self):
@@ -1337,7 +1404,7 @@ class TestProject(OsfTestCase):
         project.remove_contributor(creator, auth=Auth(user=contrib))
         assert_false(project.can_view(Auth(user=creator)))
         assert_false(project.can_edit(Auth(user=creator)))
-        assert_false(project.is_contributor(Auth(user=creator)))
+        assert_false(project.is_contributor(creator))
 
     def test_can_view_public(self):
         # Create contributor and noncontributor
@@ -1397,8 +1464,8 @@ class TestProject(OsfTestCase):
         user2 = UserFactory()
         self.project.add_contributors(
             [
-                {'user': user1, 'permissions': ['read', 'write', 'admin']},
-                {'user': user2, 'permissions': ['read', 'write']}
+                {'user': user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': user2, 'permissions': ['read', 'write'], 'visible': False}
             ],
             auth=self.consolidate_auth
         )
@@ -1410,6 +1477,8 @@ class TestProject(OsfTestCase):
         )
         assert_in(user1._id, self.project.permissions)
         assert_in(user2._id, self.project.permissions)
+        assert_in(user1._id, self.project.visible_contributor_ids)
+        assert_not_in(user2._id, self.project.visible_contributor_ids)
         assert_equal(self.project.permissions[user1._id], ['read', 'write', 'admin'])
         assert_equal(self.project.permissions[user2._id], ['read', 'write'])
         assert_equal(
@@ -1552,7 +1621,7 @@ class TestTemplateNode(OsfTestCase):
         # check that all children were copied
         assert_equal(
             [x.title for x in new.nodes],
-            [self._default_title(x) for x in self.project.nodes],
+            [x.title for x in self.project.nodes],
         )
         # ensure all child nodes were actually copied, instead of moved
         assert {x._primary_key for x in new.nodes}.isdisjoint(
@@ -1660,8 +1729,8 @@ class TestTemplateNode(OsfTestCase):
 
         # check that all children were copied
         assert_equal(
-            [x.title for x in new.nodes],
-            [self._default_title(x) for x in visible_nodes]
+            set(x.template_node._id for x in new.nodes),
+            set(x._id for x in visible_nodes),
         )
         # ensure all child nodes were actually copied, instead of moved
         assert_true({x._primary_key for x in new.nodes}.isdisjoint(
@@ -1847,7 +1916,9 @@ class TestForkNode(OsfTestCase):
         assert_false(fork.is_public)
 
     def test_not_fork_private_link(self):
-        link = self.project.add_private_link()
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
         fork = self.project.fork_node(self.consolidate_auth)
         assert_not_in(link, fork.private_links)
 
@@ -1892,8 +1963,9 @@ class TestRegisterNode(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        self.project.add_private_link()
-        self.project.save()
+        self.link = PrivateLinkFactory()
+        self.link.nodes.append(self.project)
+        self.link.save()
         self.registration = RegistrationFactory(project=self.project)
 
     def test_factory(self):
@@ -2242,13 +2314,26 @@ class TestPointer(OsfTestCase):
         self._assert_clone(self.pointer, registered)
 
     def test_register_with_pointer_to_registration(self):
-        "Check for regression"
+        """Check for regression"""
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)
         project.add_pointer(pointee, auth=auth)
         registration = project.register_node(None, auth, '', '')
         assert_equal(registration.nodes[0].node, pointee)
+
+    def test_has_pointers_recursive_false(self):
+        project = ProjectFactory()
+        node = NodeFactory(project=project)
+        assert_false(project.has_pointers_recursive)
+        assert_false(node.has_pointers_recursive)
+
+    def test_has_pointers_recursive_true(self):
+        project = ProjectFactory()
+        node = NodeFactory(project=project)
+        node.nodes.append(self.pointer)
+        assert_true(node.has_pointers_recursive)
+        assert_true(project.has_pointers_recursive)
 
 
 class TestWatchConfig(OsfTestCase):
@@ -2346,6 +2431,64 @@ class TestUnregisteredUser(OsfTestCase):
         assert_false(self.user.is_registered)
         assert_true(self.project)
 
+
+class TestContributorVisibility(OsfTestCase):
+
+    def setUp(self):
+        super(TestContributorVisibility, self).setUp()
+        self.project = ProjectFactory()
+        self.user2 = UserFactory()
+        self.project.add_contributor(self.user2)
+
+    def test_get_visible_true(self):
+        assert_true(self.project.get_visible(self.project.creator))
+
+    def test_get_visible_false(self):
+        self.project.set_visible(self.project.creator, False)
+        assert_false(self.project.get_visible(self.project.creator))
+
+    def test_make_invisible(self):
+        self.project.set_visible(self.project.creator, False, save=True)
+        self.project.reload()
+        assert_not_in(
+            self.project.creator._id,
+            self.project.visible_contributor_ids
+        )
+        assert_not_in(
+            self.project.creator,
+            self.project.visible_contributors
+        )
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        )
+
+    def test_make_visible(self):
+        self.project.set_visible(self.project.creator, False, save=True)
+        self.project.set_visible(self.project.creator, True, save=True)
+        self.project.reload()
+        assert_in(
+            self.project.creator._id,
+            self.project.visible_contributor_ids
+        )
+        assert_in(
+            self.project.creator,
+            self.project.visible_contributors
+        )
+        assert_equal(
+            self.project.logs[-1].action,
+            NodeLog.MADE_CONTRIBUTOR_VISIBLE
+        )
+        # Regression test: Ensure that hiding and showing the first contributor
+        # does not change the visible contributor order
+        assert_equal(
+            self.project.visible_contributors,
+            [self.project.creator, self.user2]
+        )
+
+    def test_set_visible_missing(self):
+        with assert_raises(ValueError):
+            self.project.set_visible(UserFactory(), True)
 
 
 class TestProjectWithAddons(OsfTestCase):

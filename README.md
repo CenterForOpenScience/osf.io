@@ -17,32 +17,50 @@ Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a9
 These instructions should work on Mac OSX >= 10.7
 
 - Create your virtualenv.
-- Copy `website/settings/local-dist.py` to `website/settings/local.py`. NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
 
-```sh
+- Copy `website/settings/local-dist.py` to `website/settings/local.py.`  NOTE: This is your local settings file, which overrides the settings in `website/settings/defaults.py`. It will not be added to source control, so change it as you wish.
+
+```bash
 $ cp website/settings/local-dist.py website/settings/local.py
 ```
 
-- Install MongoDB. On MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
+- You will need to:
+    - Create local.py files for addons that need them.
+    - Install MongoDB.
+    - Install libxml2 and libxslt (required for installing lxml).
+    - Install elasticsearch.
+    - Install GPG.
+    - Install requirements.
+    - Create a GPG key.
 
-```bash
-$ brew update 
-$ brew install mongodb
-```
-
-- Install libxml2 and libxslt (required for installing lxml).
-
-```bash
-$ brew install libxml2
-$ brew install libxslt
-```
-
-- Install requirements.
+- To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
 $ pip install invoke
-$ invoke requirements --all
+$ invoke setup
 ```
+
+- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
+
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 
+
+```bash
+sudo apt-get install rng-tools
+```
+
+next edit /etc/default/rng-tools and set:
+
+```
+HRNGDEVICE=/dev/urandom
+```
+
+last start the rng-tools daemon with:
+
+```
+sudo /etc/init.d/rng-tools start
+```
+
+__source: http://www.howtoforge.com/helping-the-random-number-generator-to-gain-enough-entropy-with-rng-tools-debian-lenny __
 
 ## Starting Up
 
@@ -142,30 +160,68 @@ $ launchctl load ~/Library/LaunchAgents/homebrew.mxcl.rabbitmq.plist
 invoke celery_worker
 ```
 
-## Using Solr
+## Using Search
 
+### Solr
 - Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
+
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
+
+```python
+SEARCH_ENGINE = 'solr'
+```
 
 - Start the Solr server and migrate the models.
 
 ```bash
 $ invoke solr
-$ invoke solr_migrate
+$ invoke migrate_search
 ```
 
-- In your `website/settings/local.py` file, set `USE_SOLR` to True.
-
-```python
-USE_SOLR = True
-```
-
-### Starting A Local Solr Server
+#### Starting A Local Solr Server
 
 ```bash
 $ invoke solr
 ```
 
 This will start a Solr server on port 8983.
+
+### Elasticsearch
+
+- Install Elasticsearch
+
+#### Mac OSX
+
+```bash
+$ brew install elasticsearch
+```
+_note: Oracle JDK 7 must be installed for elasticsearch to run_
+
+#### Ubuntu 
+
+````bash
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
+$ sudo dpkg -i elasticsearch-1.2.1.deb
+```
+
+#### Using Elasticsearch
+- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'elastic'.
+
+```python
+SEARCH_ENGINE = 'elastic'
+```
+- Start the Elasticsearch server and migrate the models.
+
+```bash
+$ invoke elasticsearch
+$ invoke migrate_search
+```
+#### Starting a local Elasticsearch server
+
+```bash
+$ invoke elasticsearch
+```
+
 
 ## Using Bower for front-end dependencies
 
@@ -201,3 +257,4 @@ invoke celery_worker
 invoke solr
 invoke server
 ```
+

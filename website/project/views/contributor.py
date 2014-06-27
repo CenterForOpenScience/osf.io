@@ -6,7 +6,7 @@ import time
 from modularodm.exceptions import ValidationValueError
 import framework
 from framework import request, User, status
-from framework.auth.decorators import collect_auth
+from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import forms
 from framework.auth.signals import user_registered
@@ -31,21 +31,20 @@ logger = logging.getLogger(__name__)
 
 @collect_auth
 @must_be_valid_project
-def get_node_contributors_abbrev(**kwargs):
+def get_node_contributors_abbrev(auth, **kwargs):
 
-    auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
         users = [
             User.load(user_id) for user_id in kwargs['user_ids']
-            if user_id in node_to_use.contributors
+            if user_id in node.visible_contributor_ids
         ]
     else:
-        users = node_to_use.contributors
+        users = node.visible_contributors
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
@@ -80,56 +79,56 @@ def get_node_contributors_abbrev(**kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_contributors(**kwargs):
+def get_contributors(auth, **kwargs):
 
-    auth = kwargs.get('auth')
     node = kwargs['node'] or kwargs['project']
 
     if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    contribs = utils.serialize_contributors(node.contributors, node=node)
+    contribs = utils.serialize_contributors(
+        node.visible_contributors,
+        node=node,
+    )
 
     return {'contributors': contribs}
 
 
-@collect_auth
+@must_be_logged_in
 @must_be_valid_project
-def get_contributors_from_parent(**kwargs):
+def get_contributors_from_parent(auth, **kwargs):
 
-    auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
+    parent = node.parent_node
 
-    parent = node_to_use.node__parent[0] if node_to_use.node__parent else None
     if not parent:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
         utils.add_contributor_json(contrib)
-        for contrib in parent.contributors
-        if contrib not in node_to_use.contributors
+        for contrib in parent.visible_contributors
+        if contrib._id not in node.visible_contributor_ids
     ]
 
     return {'contributors': contribs}
 
 
 @must_have_permission(ADMIN)
-def get_recently_added_contributors(**kwargs):
+def get_recently_added_contributors(auth, **kwargs):
 
-    auth = kwargs.get('auth')
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
         utils.add_contributor_json(contrib)
         for contrib in auth.user.recently_added
         if contrib.is_active()
-        if contrib not in node_to_use.contributors
+        if contrib._id not in node.contributors
     ]
 
     return {'contributors': contribs}
@@ -138,9 +137,8 @@ def get_recently_added_contributors(**kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_before_remove_contributor(**kwargs):
+def project_before_remove_contributor(auth, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json.get('id'))
@@ -166,9 +164,7 @@ def project_before_remove_contributor(**kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor
 @must_not_be_registration
-def project_removecontributor(**kwargs):
-
-    auth = kwargs['auth']
+def project_removecontributor(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     contributor = User.load(request.json['id'])
@@ -203,6 +199,7 @@ def project_removecontributor(**kwargs):
         }
     )
 
+
 def deserialize_contributors(node, user_dicts, auth):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
@@ -223,8 +220,9 @@ def deserialize_contributors(node, user_dicts, auth):
     # Add the registered contributors
     contribs = []
     for contrib_dict in user_dicts:
-        email = contrib_dict.get('email')
         fullname = contrib_dict['fullname']
+        visible = contrib_dict['visible']
+        email = contrib_dict.get('email')
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
         else:
@@ -247,6 +245,7 @@ def deserialize_contributors(node, user_dicts, auth):
                 auth=auth)
         contribs.append({
             'user': contributor,
+            'visible': visible,
             'permissions': expand_permissions(contrib_dict.get('permission'))
         })
     return contribs
@@ -350,28 +349,34 @@ def throttle_period_expired(timestamp, throttle):
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
-    claim_url = web_url_for('claim_user_registered',
-            uid=unreg_user._primary_key,
-            pid=node._primary_key,
-            token=unclaimed_record['token'],
-            _external=True)
+    claim_url = web_url_for(
+        'claim_user_registered',
+        uid=unreg_user._primary_key,
+        pid=node._primary_key,
+        token=unclaimed_record['token'],
+        _external=True,
+    )
     timestamp = unclaimed_record.get('last_sent')
     if throttle_period_expired(timestamp, throttle):
         # Send mail to referrer, telling them to forward verification link to claimer
-        mails.send_mail(referrer.username, mails.FORWARD_INVITE_REGiSTERED,
+        mails.send_mail(
+            referrer.username,
+            mails.FORWARD_INVITE_REGiSTERED,
             user=unreg_user,
             referrer=referrer,
             node=node,
             claim_url=claim_url,
-            fullname=unclaimed_record['name']
+            fullname=unclaimed_record['name'],
         )
         unclaimed_record['last_sent'] = get_timestamp()
         unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
-    mails.send_mail(claimer.username, mails.PENDING_VERIFICATION_REGISTERED,
+    mails.send_mail(
+        claimer.username,
+        mails.PENDING_VERIFICATION_REGISTERED,
         fullname=claimer.fullname,
         referrer=referrer,
-        node=node
+        node=node,
     )
 
 
@@ -400,11 +405,14 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
     else:  # Otherwise have the referrer forward the email to the user
         if notify:
             pending_mail = mails.PENDING_VERIFICATION
-            mails.send_mail(invited_email, pending_mail,
+            mails.send_mail(
+                invited_email,
+                pending_mail,
                 user=user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
-                node=node)
+                node=node
+            )
         timestamp = unclaimed_record.get('last_sent')
         if throttle_period_expired(timestamp, throttle):
             unclaimed_record['last_sent'] = get_timestamp()
@@ -413,7 +421,9 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
             return
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
-    mails.send_mail(to_addr, mail_tpl,
+    mails.send_mail(
+        to_addr,
+        mail_tpl,
         user=user,
         referrer=referrer,
         node=node,
@@ -422,6 +432,7 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         fullname=unclaimed_record['name']
     )
     return to_addr
+
 
 def verify_claim_token(user, token, pid):
     """View helper that checks that a claim token for a given user and node ID

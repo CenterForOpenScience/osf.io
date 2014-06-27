@@ -1,0 +1,2 @@
+-e git+https://github.com/rliebz/python-client-sword2.git#egg=sword2
+-e git+https://github.com/rliebz/dvn-client-python.git#egg=dataverse

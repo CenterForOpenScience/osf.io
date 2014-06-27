@@ -4,12 +4,12 @@
   "description": "Drag and drop support for hgrid.js",
   "version": "0.1.0",
   "devDependencies": {
-    "gulp": "~3.6.2",
+    "gulp": "~3.7.0",
     "gulp-concat": "^2.2.0",
-    "gulp-qunit": "^0.3.3",
     "gulp-rename": "~1.0.0",
     "gulp-uglify": "~0.2.0",
-    "gulp-util": "~2.2.14"
+    "gulp-util": "~2.2.14",
+    "node-qunit-phantomjs": "^0.2.1"
   },
   "scripts": {
     "test": "gulp"

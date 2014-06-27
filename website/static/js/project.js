@@ -96,26 +96,6 @@ NodeActions.useAsTemplate = function() {
 
 $(function(){
 
-    $(".remove-private-link").on("click",function(){
-        var me = $(this);
-        var data_to_send={
-            'private_link': me.attr("data-link")
-        };
-        bootbox.confirm('Are you sure to remove this private link?', function(result) {
-            if (result) {
-                $.ajax({
-                    type: "delete",
-                    url: nodeApiUrl + "private_link/",
-                    contentType: "application/json",
-                    dataType: "json",
-                    data: JSON.stringify(data_to_send)
-                }).done(function(response) {
-                    window.location.reload();
-                });
-            }
-         });
-    });
-
     $('#newComponent form').on('submit', function(e) {
 
           $("#add-component-submit")
@@ -229,14 +209,22 @@ $(document).ready(function() {
 
     ko.punches.enableAll();
 
-    var permissionInfoHtml = '<ul>' +
-            '<li><strong>Read</strong>: View project content and comment</li>' +
-            '<li><strong>Read + Write</strong>: Read privileges plus add and configure components; add and edit content</li>' +
-            '<li><strong>Administrator</strong>: Read and write privileges; manage contributors; delete and register project; public-private settings</li>' +
-        '</ul>';
+    var permissionInfoHtml = '<dl>' +
+            '<dt>Read</dt><dd>View project content and comment</dd>' +
+            '<dt>Read + Write</dt><dd>Read privileges plus add and configure components; add and edit content</dd>' +
+            '<dt>Administrator</dt><dd>Read and write privileges; manage contributors; delete and register project; public-private settings</dd>' +
+        '</dl>';
 
     $('.permission-info').attr(
         'data-content', permissionInfoHtml
+    ).popover();
+
+    var visibilityInfoHtml = 'Only visible contributors will be displayed ' +
+        'in the Contributors list and in project citations. Non-visible ' +
+        'contributors can read and modify the project as normal.';
+
+    $('.visibility-info').attr(
+        'data-content', visibilityInfoHtml
     ).popover();
 
     ////////////////////
