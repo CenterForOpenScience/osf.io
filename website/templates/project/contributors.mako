@@ -160,8 +160,10 @@
         <td>
             <!-- ko if: $parent.canEdit -->
                 <!-- ko ifnot: deleteStaged -->
+                    <!-- Note: Prevent clickBubble so that removing a
+                     contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove"
+                            data-bind="click: remove, clickBubble: false"
                             rel="tooltip"
                             title="Remove contributor"
                         >

@@ -286,8 +286,9 @@ def serialize_social_addons(user):
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     out = target.social
-    out['addons'] = serialize_social_addons(user)
     append_editable(out, auth, uid)
+    if out['editable']:
+        out['addons'] = serialize_social_addons(target)
     return out
 
 
