@@ -68,7 +68,7 @@
             if (value.match(/^\d{4}$/)) {
                 date = new Date(value, 0, 1);
             } else {
-                date = new Date(value);
+                date = moment(value).toDate();
             }
             out = date != 'Invalid Date' ? printDate(date) : value;
         }
