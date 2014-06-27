@@ -111,17 +111,32 @@ def _build_query(raw_query, start=0):
         }
 
     # If the search has a tag filter, add that to the query
-    if 'AND tags:' in raw_query:
-        tags = raw_query.split('AND tags:')
+    if 'tags:' in raw_query:
+        tags = raw_query.replace('AND', ' ').split('tags:')
         tag_filter = {
-            'terms': {
-                'tags': []
+            'query': {
+                'match': {
+                    'tags': {
+                        'query': '',
+                        'operator': 'or'
+                    }
+                }
             }
         }
         for i in range(1, len(tags)):
-            tag_filter['terms']['tags'].append(tags[i])
+            for tag in tags[i].split():
+                tag_filter['query']['match']['tags']['query'] += ' ' + tag
 
-        if inner_query.get('query_string'):
+        # If the query is empty, turn it back to a wildcard search
+        if not tags[0].strip():
+            inner_query = {
+                'query_string': {
+                    'default_field': '_all',
+                    'query': '*',
+                    'analyze_wildcard': True,
+                }
+            }
+        elif inner_query.get('query_string'):
             inner_query['query_string']['query'] = tags[0]
         elif inner_query.get('multi_match'):
             inner_query['multi_match']['query'] = tags[0]
