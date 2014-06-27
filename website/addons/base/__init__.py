@@ -203,7 +203,7 @@ class AddonSettingsBase(StoredObject):
 
 class AddonUserSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('user', required=True, backref='addons')
+    owner = fields.ForeignField('user', backref='addons')
 
     _meta = {
         'abstract': True,
@@ -246,7 +246,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
-    owner = fields.ForeignField('node', required=True, backref='addons')
+    owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
         'abstract': True,
