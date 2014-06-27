@@ -191,7 +191,7 @@
                             <div class="tags">
                                 % if 'tags' in result:
                                     % for tag in result['tags']:
-                                    <a href="/search/?q=${tag}" class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
+                                    <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
                                 % endif
                             </div>
