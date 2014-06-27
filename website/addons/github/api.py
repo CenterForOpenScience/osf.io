@@ -19,6 +19,7 @@ http_cache = CachingHTTPAdapter()
 https_cache = CachingHTTPAdapter()
 default_adapter = HTTPAdapter()
 
+
 class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
@@ -277,6 +278,7 @@ class GitHub(object):
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
 
+
 def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
@@ -290,6 +292,7 @@ def ref_to_params(branch=None, sha=None):
     if params:
         return '?' + params
     return ''
+
 
 # TODO: Use Node#api_url_for and Node#web_url_for
 def build_github_urls(item, node_url, node_api_url, branch, sha):
