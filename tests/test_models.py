@@ -466,9 +466,6 @@ class TestUser(OsfTestCase):
         assert_equal(u.display_full_name(node=project), name)
 
 
-
-
-
 class TestUserParse(unittest.TestCase):
 
     def test_parse_first_last(self):
