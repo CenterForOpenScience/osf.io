@@ -229,3 +229,25 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
+    def before_make_public(self, node):
+        return (
+            'This {cat} is connected to a Figshare project. Files marked as '
+            'private on Figshare <strong>will be visible to the public'
+            '</strong>.'
+        ).format(
+            cat=node.project_or_component,
+        )
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True, save=True)
+
+    def before_register(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+        :return str: Alert message:
+
+        """
+
+        return messages.BEFORE_REGISTER.format(category=node.project_or_component)
