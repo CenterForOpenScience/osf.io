@@ -59,6 +59,15 @@ class TestCallbacks(OsfTestCase):
         assert_equals(self.node_settings.to_json(
             self.project.creator)['user_has_auth'], 1)
 
+    @mock.patch('website.addons.s3.model.get_bucket_drop_down')
+    def test_node_settings_no_contributor_user_settings(self, mock_drop):
+        mock_drop.return_value = ''
+        user2 = UserFactory()
+        self.project.add_contributor(user2)
+        assert_false(
+            self.node_settings.to_json(user2)['user_has_auth']
+        )
+
     def test_user_settings(self):
         s3 = AddonS3UserSettings(owner=self.project)
         s3.access_key = "Sherlock"
