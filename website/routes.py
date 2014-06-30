@@ -150,7 +150,7 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/view/',
+            '/presentations/',
             'get',
             project_views.email.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
