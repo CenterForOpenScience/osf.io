@@ -48,7 +48,7 @@ def figshare_hgrid_data(node_settings, auth, parent=None, **kwargs):
     node_settings.save()
     return [
         rubeus.build_addon_root(
-            node_settings, '{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
+            node_settings, u'{0}:{1}'.format(node_settings.figshare_title or 'Unnamed', node_settings.figshare_id), permissions=auth,
             nodeUrl=node.url, nodeApiUrl=node.api_url,
         )
     ]
