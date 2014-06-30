@@ -29,7 +29,7 @@
                     window.location.href = '${url + 'wiki/'}'+ value;
                 },
                 error: function(response){
-                    if(response.status == 403){
+                    if(response.status == 422){
                         return "This is an invalid wiki page name.";
                     }
                     else if(response.status == 409){

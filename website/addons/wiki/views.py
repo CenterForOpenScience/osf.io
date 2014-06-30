@@ -305,9 +305,10 @@ def project_wiki_rename(*arg, **kwargs):
     wid = request.json.get('pk', None)
     page = NodeWikiPage.load(wid)
     new_name = request.json.get('value', None)
-
+    print page._id
+    print wid
     if new_name != sanitize(new_name):
-        raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
     if page and new_name:
         try:
