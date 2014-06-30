@@ -3,7 +3,6 @@ import httplib as http
 import urllib
 import urlparse
 import logging
-from framework.exceptions import HTTPError
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
@@ -12,19 +11,25 @@ from website import settings
 from framework.flask import app, request, redirect
 from .model import Session
 
+
 logger = logging.getLogger(__name__)
 debug = logger.debug
 
-def add_key_to_url(url, key):
+
+def add_key_to_url(url, scheme, key):
     """Redirects the user to the requests URL with the given key appended
     to the query parameters.
+
     """
-    parsed_path = urlparse.urlparse(url)
-    args = request.args.to_dict()
-    args['key'] = key
-    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-    new_path = urlparse.urlunparse(new_parsed_path)
-    return new_path
+    query = request.args.to_dict()
+    query['view_only'] = key
+    replacements = {'query': urllib.urlencode(query)}
+    if scheme:
+        replacements['scheme'] = scheme
+    parsed_url = urlparse.urlparse(url)
+    parsed_redirect_url = parsed_url._replace(**replacements)
+    return urlparse.urlunparse(parsed_redirect_url)
+
 
 @app.before_request
 def prepare_private_key():
@@ -34,24 +39,27 @@ def prepare_private_key():
         return
 
     # Done if private_key in args
-    key_from_args = request.args.get('key', '')
+    key_from_args = request.args.get('view_only', '')
     if key_from_args:
         return
 
-    #grab querry key from previous request for not login user
+    # grab query key from previous request for not login user
     if request.referrer:
+        referrer_parsed = urlparse.urlparse(request.referrer)
+        scheme = referrer_parsed.scheme
         key = urlparse.parse_qs(
             urlparse.urlparse(request.referrer).query
-        ).get('key')
+        ).get('view_only')
         if key:
             key = key[0]
     else:
+        scheme = None
         key = None
 
     # Update URL and redirect
     if key and not session:
-        new_url = add_key_to_url(request.path, key)
-        return redirect(new_url, code=307)
+        new_url = add_key_to_url(request.url, scheme, key)
+        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
 
 # todo 2-back page view queue
@@ -177,6 +185,7 @@ def before_request():
     ## Retry request, preserving status code
     #response = redirect(request.path, code=307)
     return create_session(None)
+
 
 @app.after_request
 def after_request(response):

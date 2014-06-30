@@ -11,7 +11,7 @@ from github3.repos.branch import Branch
 from framework.exceptions import HTTPError
 import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
@@ -21,6 +21,7 @@ app = website.app.init_app(
 )
 
 github_mock = create_mock_github(user='fred', private=False)
+
 
 class TestHGridViews(OsfTestCase):
     def setUp(self):
@@ -577,7 +578,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'github_repo_unlinked')
+        assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
 
 if __name__ == '__main__':

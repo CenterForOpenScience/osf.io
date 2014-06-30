@@ -16,6 +16,7 @@ from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
 from website.util.sanitize import deep_clean
 
+
 class Figshare(object):
 
     def __init__(self, client_token, client_secret, owner_token, owner_secret):
@@ -115,7 +116,7 @@ class Figshare(object):
     def project(self, node_settings, project_id):
         if not project_id:
             return
-        project = self._send(os.path.join(node_settings.api_url, 'projects', project_id))
+        project = self._send(os.path.join(node_settings.api_url, 'projects', str(project_id)))
         if not project:
             return
         articles = self._send(
@@ -151,7 +152,7 @@ class Figshare(object):
         return articles
 
     def article_is_public(self, article):
-        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', article))
+        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', str(article)))
         if res.status_code == 200:
             data = json.loads(res.content)
             if data['count'] == 0:

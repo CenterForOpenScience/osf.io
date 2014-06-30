@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-
-from .model import Node, NodeLog, Pointer
+import uuid
+from .model import Node, NodeLog, Pointer, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
@@ -54,6 +54,34 @@ def new_node(category, title, user, description=None, project=None):
     node.save()
 
     return node
+
+
+def new_private_link(name, user, nodes):
+    """Create a new private link.
+
+    :param str name: private link name
+    :param User user: User object
+    :param list Node node: a list of node object
+    :return PrivateLink: Created private link
+
+    """
+    key = str(uuid.uuid4()).replace("-", "")
+    if name:
+        name = sanitize(name.strip())
+    else:
+        name = "Shared project link"
+
+    private_link = PrivateLink(
+        key=key,
+        name=name,
+        creator=user,
+        nodes=nodes
+    )
+
+    private_link.save()
+
+    return private_link
+
 
 
 template_name_replacements = {

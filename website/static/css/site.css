@@ -190,10 +190,10 @@
     margin-top: 40px;
     float: right;
 }
-.center {
+.text-center {
     text-align: center;
 }
-.right {
+.text-right {
     text-align: right;
 }
 
@@ -319,7 +319,12 @@ font-weight: bold;
 
 /*End Johanna's CSS*/
 
+/* Knockout Validation Styles */
 
+.validationMessage { color: #d9534f; }
+.customMessage { color: #ed9c28; }
+
+.spaced-buttons { margin-top: 10px; }
 
 /*
 'Modern Business' HTML Theme. Licensed under Apache 2.0.
@@ -347,6 +352,10 @@ body {
 a.disabled {
     color: grey;
     cursor: default;
+}
+
+a.btn-primary.disabled {
+    color: white;
 }
 
 #addPointer td {
@@ -397,6 +406,10 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+}
+
+.addon-auth {
+    margin-top: 4.8px;
 }
 
 /* Make embedded iframes responsive */
@@ -632,6 +645,10 @@ h4 {
     font-size: 50px;
 }
 
+.table-less {
+    max-height: 140px;
+    overflow-y: hidden;
+}
 
 /* RESPONSIVE CSS */
 
@@ -759,9 +776,11 @@ border-radius: 6px;
 
 /* Profile gravatar
 -------------------------------------------------- */
-.profile-gravatar{
-    border-radius: 4px;
-    -webkit-border-radius: 4px;
+#profile-gravatar{
+    float:left;
+    margin-right:.5em;
+    width:40px;
+    height:40px;
 }
 
 /* Data Vis
@@ -834,8 +853,6 @@ border-radius: 6px;
 
 /*****************************************************/
 table.table.table-plain th, table.table.table-plain td {
-  padding: 8px;
-  line-height: 10px;
   text-align: left;
   border-top: 0px solid #ddd;
 }
@@ -846,12 +863,17 @@ ul#projects-list{
 }
 
 input.ui-autocomplete-input{
-    border: 0px solid;
+    /*Typically "!important" is not something we like to use, however
+    in this case it was the simplest way to deal with a JavaScript-related
+    issue regarding the order of specificity in CSS. */
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+    border: 1px solid;
+    border-color: #ccc;
     outline:0;
     background-color:#ffffff;
     color:#404040;
     text-shadow:none;
-    border:0;
     padding:5px 10px;
     -webkit-box-shadow:none;
     -moz-box-shadow:none;
@@ -996,8 +1018,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
   -webkit-border-radius: 4px;
      -moz-border-radius: 4px;
           border-radius: 4px;
-}
-.subnav .nav {
+}5.subnav .nav {
   margin-bottom: 0;
 }
 .subnav .nav > li > a {
@@ -1110,8 +1131,17 @@ h1.unavailable {
         padding:25px;
         font-size: 18px;
     }
-
-/* Searh Contributors */
+.title h4
+    {
+        padding: 0px;
+        margin: 0px;
+    }
+.description h5
+    {
+        padding: 5px;
+        margin: 0px;
+    }
+/* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
@@ -1332,35 +1362,62 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
-.key-name{
-    margin-left: 10px;
+
+.narrow-list{
+    margin: 0px 0px;
+    list-style: none;
 }
 
-#generate-private-link{
+#generate-private-link {
     margin: 20px 20px;
 }
 
-.private-link-label{
-    width: 60%;
+.text-align{
+    margin-left: 7px;
 }
 
-.link-name{
-    width: 55%;
+.private-link-name{
+    width: 60%
 }
 
-.link-label{
-    width: 15%;
+.list-overflow{
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-.link-date{
-    width: 15%;
+#privateLinkTable .tooltip{
+    word-wrap: break-word;
 }
 
-.link-creator{
-    width: 20%;
+.more-link-node{
+    margin-top: 5px;
 }
 
+.link-url{
+    padding: 1px;
+    border-left: 0px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    color: grey;
+}
+
+#privateLinkTable .btn-group .btn-mini{
+    padding:5px;
+}
 /* Contributor page */
+
+#addContributors form .col-md-6 > a {
+    border-top: 1px solid #eee;
+    margin-top: 5px;
+    padding-top: 5px;
+    display: block;
+}
+
+#addContributors form .col-md-6 > a:first-child {
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+}
 
 .contributor-self {
     font-weight: bold;
@@ -1448,8 +1505,6 @@ button.save {
     -webkit-user-select: none;
     border-style:none;
     -webkit-box-shadow: none;
-    box-shadow: none;
-    padding: 0;
 }
 
 .mfr-pdf-button.active {
@@ -1466,6 +1521,10 @@ button.save {
   display: block;
   max-width: 100%;
   height: auto;
+}
+
+.mfr-file > img {
+    max-width:100%
 }
 
 
@@ -1487,6 +1546,14 @@ a {
 
 .contributor-unregistered:hover{
   background-color: #F3F3F3;
+}
+
+.collapse-button {
+   color: #b0b0b0;
+}
+
+.collapse-button:hover {
+    color: #505050;
 }
 
 /* jQuery UI Autocomplete (WTForms Widget) */
@@ -1536,3 +1603,20 @@ a {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+@media (max-width:991px){
+    #features-nav, [role=complementary] {
+        display:none
+    }
+}
+
+#duplicateModal h4 {
+    line-height: 34px;
+}
+
+.well-inline {
+    padding:6px 12px;
+    line-height:20px;
+    font-weight:normal;
+    font-size:14px;
+}

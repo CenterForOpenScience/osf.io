@@ -3,6 +3,8 @@ import os
 import logging
 import httplib as http
 
+from dropbox.rest import ErrorResponse
+
 from framework import make_response
 from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
@@ -142,8 +144,17 @@ def render_dropbox_file(file_obj, client=None, rev=None):
     rendered = get_cache_content(node_settings, cache_name)
     if rendered is None:  # not in MFR cache
         dropbox_client = client or get_node_addon_client(node_settings)
-        file_response, metadata = dropbox_client.get_file_and_metadata(
-            file_obj.path, rev=rev)
+        try:
+            file_response, metadata = dropbox_client.get_file_and_metadata(
+                file_obj.path, rev=rev)
+        except ErrorResponse as err:
+            logger.error(err.body['error'])
+            if err.status == 461:
+                message = ('This file is no longer available due to a takedown request '
+                    'under the Digital Millennium Copyright Act.')
+            else:
+                message = 'This Dropbox file cannot be rendered.'
+            return ''.join(['<p class="text-danger">', message, '</p>'])
         rendered = get_cache_content(
             node_settings=node_settings,
             cache_file=cache_name,

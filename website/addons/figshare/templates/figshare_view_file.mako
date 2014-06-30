@@ -2,7 +2,7 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-<h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span>
+<h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
 % if file_status != 'Public' and parent_type == 'singlefile':
 <!--<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
 <script type="text/javascript">
@@ -22,19 +22,21 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 % endif
-<h3>Versions: ${file_version} </h3>
-<a href="${version_url}">Version History</a><br />
-
 %if download_url:
-    <a href="${download_url}">Download</a><br />
+    <a href="${download_url}">
+      <i class="icon-download-alt"></i>
+    </a><br />
 %endif
-
+%if file_versions:
+    Versions: ${file_version}
+    <a href="${version_url}">Version History</a><br />
+%endif 
 %if figshare_url:
     <a href="${figshare_url}">View on FigShare</a><br />
 %endif
 
 %if file_status == 'Public':
-    FigShare given DOI: <a href="${doi}">${doi}</a><br />
+    FigShare DOI: <a href="${doi}">${doi}</a><br />
 %endif
 </%def>
 

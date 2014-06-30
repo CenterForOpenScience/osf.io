@@ -10,8 +10,7 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework import Q
-from framework.auth.model import User
-from framework.auth.decorators import Auth
+from framework.auth import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
@@ -213,13 +212,13 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/', auto_follow=True)
         title = res.html.title.string
         # page title is correct
-        assert_equal('Open Science Framework | Home', title)
+        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('Open Science Framework | Dashboard', title)
+        assert_equal('OSF | Dashboard', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -281,14 +280,14 @@ class TestAUser(OsfTestCase):
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, self.user.display_absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
@@ -317,12 +316,12 @@ class TestRegistrations(OsfTestCase):
         assert_not_in('Delete project', res)
 
 
-    def test_cant_see_contributor(self):
+    def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Contributors', subnav.text)
+        assert_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
 
@@ -534,7 +533,7 @@ class TestMergingAccounts(OsfTestCase):
 
 # FIXME: These affect search in development environment. So need to migrate solr after running.
 # # Remove this side effect.
-@unittest.skipIf(not settings.USE_SOLR, 'Skipping because USE_SOLR is False')
+@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
 class TestSearching(OsfTestCase):
 
     '''Test searching using the search bar. NOTE: These may affect the
@@ -542,6 +541,8 @@ class TestSearching(OsfTestCase):
     '''
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -559,7 +560,8 @@ class TestSearching(OsfTestCase):
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
-        res = res.click('Search users')
+
+        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 

@@ -259,7 +259,7 @@ pre code{padding:0;color:inherit;white-space:pre;white-space:pre-wrap;background
 .box-group2{-webkit-box-flex-group:2;-moz-box-flex-group:2;box-flex-group:2;}
 .start{-webkit-box-pack:start;-moz-box-pack:start;box-pack:start;}
 .end{-webkit-box-pack:end;-moz-box-pack:end;box-pack:end;}
-.center{-webkit-box-pack:center;-moz-box-pack:center;box-pack:center;}
+.text-center {-webkit-box-pack:center;-moz-box-pack:center;box-pack:center;}
 body{background-color:white;position:absolute;left:0px;right:0px;top:0px;bottom:0px;overflow:visible;}
 div#header{display:none;}
 #ipython_notebook{padding-left:16px;}

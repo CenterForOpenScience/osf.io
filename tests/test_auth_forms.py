@@ -9,7 +9,8 @@ from tests.factories import UserFactory, UnregUserFactory
 
 
 def test_registration_form_processing():
-    form = forms.RegistrationForm(fullname='Freddy Mercury   \t',
+    form = forms.RegistrationForm(
+        fullname='Freddy Mercury   \t',
         username=' fRed@queen.com  ',
         username2='fRed@queen.com',
         password='killerqueen ',
@@ -22,7 +23,8 @@ def test_registration_form_processing():
 
 
 def test_merge_account_form_cleaning():
-    form = forms.MergeAccountForm(merged_username='freD@queen.com\t ',
+    form = forms.MergeAccountForm(
+        merged_username='freD@queen.com\t ',
         merged_password='rhapsodY123 ',
         user_password='bohemi1aN ')
     assert_equal(form.merged_username.data, 'fred@queen.com')

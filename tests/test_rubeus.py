@@ -7,7 +7,7 @@ from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory)
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.util import rubeus
 
 
@@ -64,6 +64,7 @@ class TestRubeus(OsfTestCase):
             },
             'isAddonRoot': True,
             'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -134,7 +135,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -180,7 +182,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),

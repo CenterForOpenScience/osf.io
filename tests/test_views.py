@@ -11,7 +11,7 @@ import httplib as http
 
 
 from nose.tools import *  # PEP8 asserts
-from tests.test_features import requires_solr
+from tests.test_features import requires_search
 from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
@@ -20,12 +20,12 @@ from modularodm import Q
 
 from framework import auth
 from framework.exceptions import HTTPError
-from framework.auth.model import User
+from framework.auth import User, Auth
+from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas
-from framework.auth.decorators import Auth
 from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors
@@ -42,7 +42,7 @@ from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory
+    CommentFactory, PrivateLinkFactory
 )
 
 
@@ -52,6 +52,7 @@ app = website.app.init_app(
 
 lookup = URLLookup(app)
 
+
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def setUp(self):
@@ -59,59 +60,63 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
-        self.key = self.project.add_private_link()
-        self.project.save()
+        self.link = PrivateLinkFactory()
+        self.link.nodes.append(self.project)
+        self.link.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url,{'key': self.key})
+        res = self.app.get(self.project_url,{'view_only': self.link.key})
         assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'key': None})
+        res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow()
         assert_equal(res.request.path, lookup('web', 'auth_login'))
 
     def test_logged_in_no_private_key(self):
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'key': self.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_has_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_has_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth)
         assert_is_redirect(res)
         redirected = res.follow()
-        assert_equal(redirected.request.GET['key'], self.key)
+        assert_equal(redirected.request.GET['view_only'], self.link.key)
         assert_equal(redirected.status_code, 200)
 
     def test_logged_in_with_no_key_ring(self):
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
-    @mock.patch('website.project.decorators.get_key_ring')
-    def test_logged_in_with_private_key_with_key_ring(self, mock_get_key_ring):
-        mock_get_key_ring.return_value = set([self.key])
+    def test_logged_in_with_private_key_with_key_ring(self):
+        self.user.private_links.append(self.link)
+        self.user.save()
         #check if key_ring works
-        key2 = self.project.add_private_link()
-        res = self.app.get(self.project_url, {'key': key2}, auth=self.user.auth)
-        assert_equal(res.request.GET['key'], key2)
-        assert_equal(res.status_code, 200)
+        link2 = PrivateLinkFactory(key="123456")
+        res = self.app.get(self.project_url, {'view_only': link2.key}, auth=self.user.auth)
+        assert_equal(res.request.GET['view_only'], link2.key)
+        assert_equal(res.status_code, 302)
+        res2 = res.maybe_follow(auth=self.user.auth)
+        assert_equal(res2.request.GET['view_only'], self.link.key)
+        assert_equal(res2.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
     def test_prepare_private_key(self):
-        res = self.app.get(self.project_url, {'key': self.key})
+        res = self.app.get(self.project_url, {'key': self.link.key})
 
         res = res.click('Registrations')
 
@@ -119,12 +124,12 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = res.follow()
 
         assert_equal(res.status_code, 200)
-        assert_equal(res.request.GET['key'], self.key)
+        assert_equal(res.request.GET['key'], self.link.key)
 
     def test_choose_key(self):
         # User is not logged in, goes to route with a private key
         res = choose_key(
-            key=self.key,
+            key=self.link.key,
             key_ring=set(),
             api_node='doesntmatter',
             node=self.project,
@@ -134,7 +139,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_choose_key_form_key_ring(self):
         with app.test_request_context():
-            res = choose_key('nope', key_ring=set([self.key]), node=self.project,
+            res = choose_key('nope', key_ring=set([self.link.key]), node=self.project,
                 auth=Auth(None))
         assert_true(isinstance(res, Response))
 
@@ -151,6 +156,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
+
 
 class TestProjectViews(OsfTestCase):
 
@@ -215,8 +221,14 @@ class TestProjectViews(OsfTestCase):
 
         dict2 = add_contributor_json(user2)
         dict3 = add_contributor_json(user3)
-        dict2['permission'] = 'admin'
-        dict3['permission'] = 'write'
+        dict2.update({
+            'permission': 'admin',
+            'visible': True,
+        })
+        dict3.update({
+            'permission': 'write',
+            'visible': False,
+        })
 
         self.app.post_json(
             url,
@@ -244,9 +256,9 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True},
-                    {'id': self.user1._id, 'permission': 'read', 'registered': True},
-                    {'id': self.user2._id, 'permission': 'admin', 'registered': True},
+                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': self.user1._id, 'permission': 'read', 'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -264,8 +276,8 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': ['read', 'write', 'admin']},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin']},
+                {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': True},
             ]
         )
         # Add a non-registered user
@@ -280,10 +292,10 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': project.creator._id, 'permission': 'admin', 'registered': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True},
-                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False},
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True},
+                    {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -513,6 +525,31 @@ class TestProjectViews(OsfTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_private_link_edit_name(self):
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
+        assert_equal(link.name, "link")
+        url = self.project.api_url + 'private_link/edit/'
+        self.app.put_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_equal(link.name, "new name")
+
+    def test_remove_private_link(self):
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
+        with app.test_request_context():
+            url = api_url_for(
+                'remove_private_link',
+                pid=self.project._primary_key
+            )
+        self.app.delete_json(url, {'private_link_id': link._id}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_true(link.is_deleted)
+
     def test_remove_component(self):
         node = NodeFactory(project=self.project, creator=self.user1)
         url = node.api_url
@@ -540,21 +577,84 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
 
-    def test_get_recently_added_contributors(self):
-        project = ProjectFactory(creator=self.consolidate_auth1.user)
-        contrib1 = UserFactory()
-        contrib2 = UserFactory()
-        project.add_contributor(contrib1, auth=self.consolidate_auth1)
-        project.add_contributor(contrib2, auth=self.consolidate_auth1)
-        # has one unregistered contributor
-        project.add_unregistered_contributor(fullname=fake.name(),
-            email=fake.email(), auth=self.consolidate_auth1)
-        project.save()
-        url = '{0}get_recently_added_contributors/'.format(self.project.api_url)
-        res = self.app.get(url, auth=self.auth)
-        project.reload()
-        recent = [c for c in self.user1.recently_added if c.is_active()]
-        assert_equal(len(res.json['contributors']), len(recent))
+
+class TestUserProfile(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfile, self).setUp()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+
+    def test_unserialize_social(self):
+        url = api_url_for('unserialize_social')
+        payload = {
+            'personal': 'http://frozen.pizza.com/reviews',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        for key, value in payload.iteritems():
+            assert_equal(self.user.social[key], value)
+        assert_true(self.user.social['researcherId'] is None)
+
+    def test_serialize_social_editable(self):
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_true(res.json['editable'])
+
+    def test_serialize_social_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_false(res.json['editable'])
+
+    def test_serialize_social_addons_editable(self):
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(
+            res.json['addons']['github'],
+            'howtogithub'
+        )
+
+    def test_serialize_social_addons_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_not_in('addons', res.json)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -589,6 +689,9 @@ class TestAddingContributorViews(OsfTestCase):
         contrib_data[0]['permission'] = 'admin'
         contrib_data[1]['permission'] = 'write'
         contrib_data[2]['permission'] = 'read'
+        contrib_data[0]['visible'] = True
+        contrib_data[1]['visible'] = True
+        contrib_data[2]['visible'] = True
         res = deserialize_contributors(
             self.project,
             contrib_data,
@@ -606,6 +709,7 @@ class TestAddingContributorViews(OsfTestCase):
         unreg = UnregUserFactory()
         from website.project.model import unreg_contributor_added
         serialized = [serialize_unregistered(fake.name(), unreg.username)]
+        serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
             deserialize_contributors(self.project, serialized,
                 auth=Auth(self.creator))
@@ -637,9 +741,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': []
@@ -679,6 +785,7 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': fake.name(),
             'email': fake.email(),
             'permission': 'admin',
+            'visible': True,
         }
         payload = {
             'users': [unreg_user],
@@ -707,6 +814,7 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         payload = {
             'users': [pseudouser],
@@ -729,9 +837,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': fake.email(),
             'permission': 'write',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': []
@@ -754,9 +864,11 @@ class TestAddingContributorViews(OsfTestCase):
             'fullname': name,
             'email': email,
             'permission': 'admin',
+            'visible': True,
         }
         reg_dict = add_contributor_json(reg_user)
         reg_dict['permission'] = 'admin'
+        reg_dict['visible'] = True
         payload = {
             'users': [reg_dict, pseudouser],
             'node_ids': [self.project._primary_key, child._primary_key]
@@ -1032,7 +1144,7 @@ class TestClaimViews(OsfTestCase):
         # Full name was set correctly
         assert_equal(unreg.fullname, different_name)
         # CSL names were set correctly
-        parsed_name = auth.utils.parse_name(different_name)
+        parsed_name = impute_names_model(different_name)
         assert_equal(unreg.given_name, parsed_name['given_name'])
         assert_equal(unreg.family_name, parsed_name['family_name'])
 
@@ -1512,24 +1624,6 @@ class TestAuthViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_change_names(self):
-        self.app.post(
-            '/api/v1/settings/names/',
-            json.dumps({
-                'fullname': 'Lyndon Baines Johnson',
-                'given_name': 'Lyndon',
-                'middle_names': 'Baines',
-                'family_name': 'Johnson',
-                'suffix': '',
-            }),
-            content_type='application/json',
-            auth=self.auth
-        ).maybe_follow()
-        self.user.reload()
-        assert_equal(self.user.given_name, 'Lyndon')
-        assert_equal(self.user.middle_names, 'Baines')
-        assert_equal(self.user.family_name, 'Johnson')
-
 
 # TODO: Use mock add-on
 class TestAddonUserViews(OsfTestCase):
@@ -1958,12 +2052,14 @@ class TestTagViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-@requires_solr
+@requires_search
 class TestSearchViews(OsfTestCase):
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
-        self.project = ProjectFactory()
+        self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
         self.contrib1 = UserFactory(fullname='Freddie Mercury')
         self.contrib2 = UserFactory(fullname='Brian May')
 
@@ -1976,17 +2072,18 @@ class TestSearchViews(OsfTestCase):
         assert_equal(len(result), 1)
         freddie = result[0]
         assert_equal(freddie['fullname'], self.contrib1.fullname)
-        #TODO Should I be passing?
-        assert_equal(freddie['email'], self.contrib1.username)
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-
+       
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+    def tearDown(self):
+        import website.search.search as search
+        search.delete_all()
 
 class TestReorderComponents(OsfTestCase):
 
@@ -2020,8 +2117,25 @@ class TestReorderComponents(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestDashboardViews(OsfTestCase):
 
+    def setUp(self):
+        self.app = TestApp(app)
 
+        self.creator = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
+    def test_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+
+        url = lookup('api', 'get_dashboard_nodes')
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json['nodes']), 1)
 
 
 if __name__ == '__main__':

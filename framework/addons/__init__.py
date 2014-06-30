@@ -56,19 +56,24 @@ class AddonModelMixin(StoredObject):
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name, auth=None):
+    def add_addon(self, addon_name, auth=None, override=False):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
+        :param bool override: For shell use only, Allows adding of system addons
         :return bool: Add-on was added
 
         """
+
+        if not override and addon_name in settings.SYSTEM_ADDED_ADDONS[self._name]:
+            return False
+
         # Reactivate deleted add-on if present
         addon = self.get_addon(addon_name, deleted=True)
         if addon:
             if addon.deleted:
-                addon.undelete()
+                addon.undelete(save=True)
                 return True
             return False
 
@@ -95,7 +100,7 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory:
                 raise ValueError('Cannot delete mandatory add-on.')
-            addon.delete()
+            addon.delete(save=True)
             return True
         return False
 

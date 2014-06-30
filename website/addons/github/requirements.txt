@@ -1,2 +1,2 @@
-git+https://github.com/sigmavirus24/github3.py@develop
+github3.py
 httpcache
