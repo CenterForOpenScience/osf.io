@@ -427,13 +427,11 @@ def conference_view(**kwargs):
         submissions = projects.count()
         if submissions < settings.CONFERNCE_MIN_COUNT:
             continue
-        downloads = get_download_count(projects)
         meetings.append({
             'name': data['name'],
             'active': data['active'],
             'url': web_url_for('conference_results', meeting=meeting),
             'submissions': submissions,
-            'downloads': downloads,
         })
     meetings.sort(key=lambda meeting: meeting['downloads'], reverse=True)
 
