@@ -150,6 +150,23 @@ class TestCallbacks(OsfTestCase):
     def test_api_url(self):
         assert_equal(self.node_settings.api_url, figshare_settings.API_OAUTH_URL)
 
+    def test_before_register_linked_content(self):
+        assert_false(
+            self.node_settings.before_register(
+                self.project,
+                self.project.creator
+            ) is None
+        )
+
+    def test_before_register_no_linked_content(self):
+        self.node_settings.figshare_id = None
+        assert_true(
+            self.node_settings.before_register(
+                self.project,
+                self.project.creator
+            ) is None
+        )
+
     def test_before_remove_contributor_authenticator(self):
         message = self.node_settings.before_remove_contributor(
             self.project, self.project.creator
