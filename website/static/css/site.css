@@ -94,6 +94,9 @@
 
  }
 
+#conferenceViewTable td {
+    vertical-align: middle;
+}
 
 /*CSS Johanna added for front page*/
 
