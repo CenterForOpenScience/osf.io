@@ -324,5 +324,5 @@ def project_wiki_rename(*arg, **kwargs):
         node.save()
         page.rename(new_name)
         return 200
-    
+
     raise HTTPError(http.BAD_REQUEST)

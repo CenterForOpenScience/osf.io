@@ -30,10 +30,10 @@
                 },
                 error: function(response){
                     if(response.status == 403){
-                        return "This is an invalid wiki page name";
+                        return "This is an invalid wiki page name.";
                     }
                     else if(response.status == 409){
-                        return "A wiki page with this name already exist";
+                        return "A wiki page with this name already exist.";
                     }
                 }
 
