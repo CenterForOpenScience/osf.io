@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 from framework import fields
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
@@ -18,7 +20,13 @@ class FigShareGuidFile(GuidFile):
     def file_url(self):
         if self.article_id is None or self.file_id is None:
             raise ValueError('Path field must be defined.')
-        return os.path.join('figshare', 'article', self.article_id, 'file', self.file_id)
+        return os.path.join(
+            'figshare',
+            'article',
+            self.article_id,
+            'file',
+            self.file_id,
+        )
 
 
 class AddonFigShareUserSettings(AddonUserSettingsBase):
@@ -81,7 +89,11 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     @property
     def linked_content(self):
-        return {'id': self.figshare_id, 'type': self.figshare_type, 'title': self.figshare_title}
+        return {
+            'id': self.figshare_id,
+            'type': self.figshare_type,
+            'title': self.figshare_title,
+        }
 
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
@@ -160,7 +172,7 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
             'figshare_type': self.figshare_type or '',
             'figshare_title': self.figshare_title or '',
             'node_has_auth': self.has_auth,
-            'user_has_auth': figshare_user and figshare_user.has_auth,
+            'user_has_auth': bool(figshare_user) and figshare_user.has_auth,
             'figshare_options': [],
             'is_registration': self.owner.is_registration,
         })
@@ -308,3 +320,9 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
 
     def after_delete(self, node, user):
         self.deauthorize(Auth(user=user), add_log=True, save=True)
+
+    def before_register(self, node, user):
+        if self.has_auth and self.figshare_id:
+            return messages.BEFORE_REGISTER.format(
+                category=node.project_or_component,
+            )

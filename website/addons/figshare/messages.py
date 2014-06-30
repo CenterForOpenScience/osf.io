@@ -21,7 +21,7 @@ AFTER_FORK_OWNER = ''+FIGSHARE+' authorization copied to forked {category}.'
 
 AFTER_FORK_NOT_OWNER = ''+FIGSHARE+' authorization not copied to forked {category}. You may authorize this fork on the <a href={url}>Settings</a> page.'
 
-BEFORE_REGISTER =  'Registering this {category} will copy the authentication for its '+FIGSHARE+' add-on to the registered {category}.'
+BEFORE_REGISTER =  'The contents of '+FIGSHARE+' projects cannot be registered at this time. The '+FIGSHARE+' data associated with this {category} will not be included as part of this registration.'
 # END MODEL MESSAGES
 
 # MFR MESSAGES :views/crud.py

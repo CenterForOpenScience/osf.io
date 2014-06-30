@@ -149,6 +149,13 @@ def make_url_map(app):
             endpoint_suffix='__plain',
         ),
 
+        Rule(
+            '/presentations/',
+            'get',
+            project_views.email.conference_view,
+            OsfWebRenderer('public/pages/meeting_landing.mako'),
+        ),
+
         Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
 
     ])
