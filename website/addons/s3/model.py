@@ -127,7 +127,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'user_is_owner': (
                 self.user_settings and self.user_settings.owner == user
             ),
-            'user_has_auth': user_settings.has_auth,
+            'user_has_auth': bool(user_settings) and user_settings.has_auth,
             'node_has_auth': self.has_auth,
             'owner': None,
             'bucket_list': None,
