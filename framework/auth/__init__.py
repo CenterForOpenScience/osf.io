@@ -3,86 +3,27 @@ import logging
 
 from framework import session, create_session
 from framework import goback
-import framework.bcrypt as bcrypt
-from modularodm.query.querydialect import DefaultQueryDialect as Q
-from framework.auth.exceptions import (DuplicateEmailError, LoginNotAllowedError,
-                                        PasswordIncorrectError)
+from framework import bcrypt
+from framework.auth.exceptions import (
+    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError
+)
 
-from model import User
+from .core import User, Auth
+from .core import get_user, get_current_user, get_api_key, get_current_node
 
 
 logger = logging.getLogger(__name__)
-
-def get_current_username():
-    return session.data.get('auth_user_username')
-
-
-def get_current_user_id():
-    return session.data.get('auth_user_id')
-
-
-def get_current_user():
-    uid = session._get_current_object() and session.data.get('auth_user_id')
-    return User.load(uid)
 
 
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
     if len(username) > 40:
-        return '%s...%s' % (username[:15], username[-10:])
+        return '%s...%s' % (username[:20].strip(), username[-15:].strip())
     return username
-
-# TODO(sloria): This belongs in website.project
-def get_current_node():
-    from website.models import Node
-    nid = session.data.get('auth_node_id')
-    if nid:
-        return Node.load(nid)
-
-
-def get_api_key():
-    # Hack: Avoid circular import
-    from website.project.model import ApiKey
-    api_key = session.data.get('auth_api_key')
-    return ApiKey.load(api_key)
 
 
 # check_password(actual_pw_hash, given_password) -> Boolean
 check_password = bcrypt.check_password_hash
-
-# TODO: This should be a class method of User
-def get_user(id=None, username=None, password=None, verification_key=None):
-    # tag: database
-    query_list = []
-    if id:
-        query_list.append(Q('_id', 'eq', id))
-    if username:
-        username = username.strip().lower()
-        query_list.append(Q('username', 'eq', username))
-    if password:
-        password = password.strip()
-        try:
-            query = query_list[0]
-            for query_part in query_list[1:]:
-                query = query & query_part
-            user = User.find_one(query)
-        except Exception as err:
-            logging.error(err)
-            user = None
-        if user and not user.check_password(password):
-            return False
-        return user
-    if verification_key:
-        query_list.append(Q('verification_key', 'eq', verification_key))
-    try:
-        query = query_list[0]
-        for query_part in query_list[1:]:
-            query = query & query_part
-        user = User.find_one(query)
-        return user
-    except Exception as err:
-        logging.error(err)
-        return None
 
 
 def authenticate(user, response):

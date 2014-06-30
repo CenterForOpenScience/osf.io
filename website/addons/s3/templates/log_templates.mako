@@ -37,3 +37,15 @@ un-selected bucket
 <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="s3_node_authorized">
+authorized the S3 addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<script type="text/html" id="s3_node_deauthorized">
+deauthorized the S3 addon for {{ nodeCategory }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>

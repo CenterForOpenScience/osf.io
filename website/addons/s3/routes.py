@@ -34,9 +34,20 @@ settings_routes = {
             [
                 '/project/<pid>/s3/settings/',
                 '/project/<pid>/node/<nid>/s3/settings/',
+                '/project/<pid>/s3/config/',
+                '/project/<pid>/node/<nid>/s3/config/',
             ],
             'delete',
             views.config.s3_remove_node_settings,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/s3/import-auth/',
+                '/project/<pid>/node/<nid>/s3/import-auth/',
+            ],
+            'post',
+            views.config.s3_node_import_auth,
             json_renderer,
         ),
         Rule(

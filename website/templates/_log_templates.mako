@@ -137,3 +137,17 @@ deleted a comment
 on <span data-bind="text: nodeCategory"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
+
+<script type="text/html" id="made_contributor_visible">
+made contributor
+<span data-bind="html: displayContributors"></span>
+visible on <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
+<script type="text/html" id="made_contributor_invisible">
+made contributor
+<span data-bind="html: displayContributors"></span>
+invisible on <span data-bind="text: nodeCategory"></span>
+<a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>

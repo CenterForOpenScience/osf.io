@@ -84,7 +84,7 @@ def get_bucket_drop_down(user_settings):
             for bucket in get_bucket_list(user_settings)
         ]
     except BotoServerError:
-        return False
+        return None
 
 
 def _key_type_to_rubeus(key_type):

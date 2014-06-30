@@ -125,6 +125,16 @@ api_routes = {
             json_renderer,
         ),
 
+        Rule(
+            [
+                '/project/<pid>/osffiles/<fid>/info/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/info/',
+            ],
+            'get',
+            views.file_info,
+            json_renderer,
+        ),
+
         ### File Render ###
         Rule(
             [

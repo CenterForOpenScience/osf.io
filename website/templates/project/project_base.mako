@@ -31,6 +31,7 @@ ${next.body()}
     $script(['/static/js/contribAdder.js'], 'contribAdder');
     $script(['/static/js/pointers.js'], 'pointers');
 
+    ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
     $script(['/static/addons/badges/badge-awarder.js'], function() {
         attachDropDown('${'{}badges/json/'.format(user_api_url)}');
@@ -83,30 +84,14 @@ ${next.body()}
                     });
                 }
 
-                if ($linkScope.length >0){
-                    var $privateLink = $('#private-link');
-                    var privateLinkVM = new PrivateLinkViewModel(data.node.title,
-                                                            data.parent_node.id,
-                                                            data.parent_node.title);
-                    ko.applyBindings(privateLinkVM, $privateLink[0]);
-                    // Clear user search modal when dismissed; catches dismiss by escape key
-                    // or cancel button.
-                    $privateLink.on('hidden', function() {
-                        privateLinkVM.clear();
-                    });
-                }
-
             }
         );
 
-        var linksModal = $('#showLinks')[0];
-        var linksVM = new LinksViewModel(linksModal);
-        ko.applyBindings(linksVM, linksModal);
-        
     });
 
     $script.ready('pointers', function() {
-        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
+        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
     });
 
     // Make unregistered contributors claimable
@@ -119,6 +104,7 @@ ${next.body()}
 </script>
 % if node.get('is_public') and node.get('piwik_site_id'):
 <script type="text/javascript">
+
     $(function() {
         // Note: Don't use cookies for global site ID; cookies will accumulate
         // indefinitely and overflow uwsgi header buffer.

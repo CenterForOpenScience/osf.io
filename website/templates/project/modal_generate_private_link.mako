@@ -1,4 +1,4 @@
-<div class="modal fade" id="private-link">
+<div class="modal fade" id="addPrivateLink">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -7,23 +7,27 @@
 
             <div class="modal-body">
 
-                <div >
+                <div>
 
                     <div>
-                        Generating Private Link to Component
-                        <span data-bind="text:title"></span>.
+                        Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
+                        <div class="form-group">
+                            <input type="text" class="form-control private-link-name" placeholder="Add a link name" data-bind="value:name"/>
+                        </div>
                     </div>
 
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Would you like to apply the link privilege to any children of
-                        the current component?
+                        Anyone with the private link can view, but not edit,
+                        the components associated with the link.
+                        Which components would you like to associate with this link?
                     </div>
 
                     <div class="row">
 
-                        <div class="col-md-6">
+                        <div class="col-md-6" >
+                            <div class="list-overflow">
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
                             <div data-bind="foreach:nodes">
@@ -31,6 +35,7 @@
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <span data-bind="text:title"></span>
                                 </div>
+                            </div>
                             </div>
                         </div>
 

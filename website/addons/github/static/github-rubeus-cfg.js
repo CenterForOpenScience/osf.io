@@ -40,4 +40,13 @@
         }]
     };
 
+    // Define HGrid Button Actions
+    HGrid.Actions['githubDownloadZip'] = {
+        on: 'click',
+        callback: function (evt, row) {
+            var url = row.urls.zip;
+            window.location = url;
+        }
+    }
+
 }));

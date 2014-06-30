@@ -105,6 +105,15 @@
             });
         }
     }
+    if (item.buttons) {
+        item.buttons.forEach(function(button) {
+            buttonDefs.push({
+                text: button.text,
+                action: button.action,
+                cssClass: 'btn btn-primary btn-mini'
+            });
+        });
+    }
     return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
@@ -125,6 +134,15 @@
                 text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
+            });
+        }
+        if (row.buttons) {
+            row.buttons.forEach(function(button) {
+                buttonDefs.push({
+                    text: button.text,
+                    action: button.action,
+                    cssClass: 'btn btn-primary btn-mini'
+                });
             });
         }
         if (buttonDefs) {
@@ -212,7 +230,8 @@
         },
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
-        }
+        },
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
     };
 
     var statusType = {
@@ -225,7 +244,8 @@
         DELETING: 'DELETING',
         DELETED: 'DELETED',
         UPLOAD_ERROR: 'UPLOAD_ERROR',
-        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS'
+        UPLOAD_PROGRESS: 'UPLOAD_PROGRESS',
+        RELEASING_STUDY: 'RELEASING_STUDY'
     };
 
     Rubeus.Status = statusType;
@@ -378,7 +398,8 @@
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            bootbox.alert(message);
+            var cfgOption = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            bootbox.alert(cfgOption || message);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item

@@ -5,7 +5,7 @@ from webtest_plus import TestApp
 import httplib as http
 from boto.exception import S3ResponseError
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 import website.app
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
