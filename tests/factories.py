@@ -57,11 +57,11 @@ class ModularOdmFactory(base.Factory):
 class UserFactory(ModularOdmFactory):
     FACTORY_FOR = User
 
-    username = Sequence(lambda n: "fred{0}@example.com".format(n))
+    username = Sequence(lambda n: u"frêd{0}@example.com".format(n))
     # Don't use post generation call to set_password because
     # It slows down the tests dramatically
     password = "password"
-    fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
+    fullname = Sequence(lambda n: u"Freddie Mercüry{0}".format(n))
     is_registered = True
     is_claimed = True
     api_keys = []
@@ -95,7 +95,7 @@ class AuthUserFactory(UserFactory):
 class TagFactory(ModularOdmFactory):
     FACTORY_FOR = Tag
 
-    _id = Sequence(lambda n: "scientastic-{}".format(n))
+    _id = Sequence(lambda n: u"👍scientastic-{}".format(n))
 
 
 class ApiKeyFactory(ModularOdmFactory):
@@ -105,15 +105,15 @@ class ApiKeyFactory(ModularOdmFactory):
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
-    name = "link"
+    name = u"∫link"
     key = "foobarblaz"
     creator = SubFactory(AuthUserFactory)
 
 class AbstractNodeFactory(ModularOdmFactory):
     FACTORY_FOR = Node
 
-    title = 'The meaning of life'
-    description = 'The meaning of life is 42.'
+    title = u'The meaning of life ∀'
+    description = u'The meaning of life is 42, ∃.'
     creator = SubFactory(AuthUserFactory)
 
 
@@ -194,8 +194,8 @@ class UnregUserFactory(ModularOdmFactory):
 
     """
     FACTORY_FOR = User
-    email = Sequence(lambda n: "brian{0}@queen.com".format(n))
-    fullname = Sequence(lambda n: "Brian May{0}".format(n))
+    email = Sequence(lambda n: u"briän{0}@queen.com".format(n))
+    fullname = Sequence(lambda n: u"Brian May🚢{0}".format(n))
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
@@ -214,8 +214,8 @@ class UnconfirmedUserFactory(ModularOdmFactory):
     """
 
     FACTORY_FOR = User
-    username = Sequence(lambda n: 'roger{0}@queen.com'.format(n))
-    fullname = Sequence(lambda n: 'Roger Taylor{0}'.format(n))
+    username = Sequence(lambda n: u'r⚯ger{0}@queen.com'.format(n))
+    fullname = Sequence(lambda n: u'Roger ⚯ Taylor{0}'.format(n))
     password = 'killerqueen'
 
     @classmethod
@@ -294,8 +294,8 @@ class DeprecatedUnregUserFactory(base.Factory):
     """
     FACTORY_FOR = DeprecatedUnregUser
 
-    nr_name = Sequence(lambda n: "Tom Jones{0}".format(n))
-    nr_email = Sequence(lambda n: "tom{0}@example.com".format(n))
+    nr_name = Sequence(lambda n: u"T⚯m Jones{0}".format(n))
+    nr_email = Sequence(lambda n: u"t⚯m{0}@example.com".format(n))
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
@@ -306,7 +306,7 @@ class DeprecatedUnregUserFactory(base.Factory):
 class CommentFactory(ModularOdmFactory):
 
     FACTORY_FOR = Comment
-    content = Sequence(lambda n: 'Comment {0}'.format(n))
+    content = Sequence(lambda n: u'Comment ¯\_(ツ)_/¯ {0}'.format(n))
     is_public = True
 
     @classmethod
