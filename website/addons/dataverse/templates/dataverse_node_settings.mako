@@ -85,21 +85,7 @@
 
                 </div>
 
-                <div class="padded">
-                    <span data-bind="if: hasBadStudies" class="text-danger">
-                        The following studies could not be loaded:
-                        <ul data-bind="foreach: badStudies">
-                            <li>
-                                <a data-bind="text: hdl, attr.href: url" ></a>
-                            </li>
-                        </ul>
-                    </span>
 
-                    <button data-bind="enable: enableSubmit, click: setInfo"
-                            class="btn btn-primary pull-right">
-                        Submit
-                    </button>
-                </div>
 
             </span>
 
@@ -132,6 +118,7 @@
             <label for="dataversePassword">Dataverse Password</label>
             <input class="form-control" type="password" name="dataversePassword" data-bind="value: dataversePassword" />
         </div>
+        <!-- Submit button for input credentials -->
         <button data-bind="click: sendAuth" class="btn btn-success">
             Submit
         </button>
@@ -139,7 +126,24 @@
 
     <!-- Flashed Messages -->
     <div class="help-block">
-        <p data-bind="html: message, attr: {class: messageClass}"></p>
+
+    </div>
+
+    <!-- Submit button for set info -->
+    <div>
+        <div class="row">
+            <div class="col-md-10">
+                <p data-bind="html: message, attr: {class: messageClass}"></p>
+            </div>
+            <div class="col-md-2" data-bind="if: showSubmitStudy">
+                <button data-bind="enable: enableSubmitStudy, click: setInfo"
+                        class="btn btn-primary pull-right">
+                    Submit
+                </button>
+            </div>
+        </div>
+
+
     </div>
 
 </div>

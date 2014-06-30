@@ -99,7 +99,10 @@
         self.showNotFound = ko.computed(function() {
             return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
         });
-        self.enableSubmit = ko.computed(function() {
+        self.showSubmitStudy = ko.computed(function() {
+            return self.nodeHasAuth() && self.connected() && self.userIsOwner();
+        })
+        self.enableSubmitStudy = ko.computed(function() {
             return !self.submitting() && self.dataverseHasStudies() &&
                 self.savedStudyHdl() !== self.selectedStudyHdl();
         });
@@ -168,9 +171,11 @@
                     self.studyWasFound(true);
                     self.changeMessage('Settings updated.', 'text-success', 5000);
                 },
-                error: function() {
+                error: function(xhr) {
                     self.submitting(false);
-                    self.changeMessage('The study could not be set at this time.', 'text-danger');
+                    var errorMessage = (xhr.status === 410) ? language.studyDeaccessioned :
+                        (xhr.status = 406) ? language.forbiddenCharacters : language.setStudyError;
+                    self.changeMessage(errorMessage, 'text-danger');
                 }
             });
         }
