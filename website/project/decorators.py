@@ -3,6 +3,8 @@ import functools
 import logging
 
 from furl import furl
+import urlparse
+
 from framework import request, redirect, status
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
@@ -122,7 +124,7 @@ def has_deleted_keys(key_ring, node, user):
     return False
 
 
-def choose_key(key, key_ring, node, auth, api_node=None):
+def choose_key(key, key_ring, node, auth, api_node=None, scheme=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
@@ -136,9 +138,8 @@ def choose_key(key, key_ring, node, auth, api_node=None):
     #do a redirect to reappend the key to url only if the user
     # isn't a contributor
     if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-        new_url = add_key_to_url(request.path, auth.private_key)
+        new_url = add_key_to_url(request.path, scheme, auth.private_key)
         return redirect(new_url)
-
 
 
 def _must_be_contributor_factory(include_public):
@@ -208,9 +209,15 @@ def _must_be_contributor_factory(include_public):
                     #has intersection: check if the link is valid if not use other key
                     # in the key ring
                     else:
+                        scheme = (
+                            urlparse.urlparse(request.referrer).scheme
+                            if request.referrer
+                            else None
+                        )
                         response = choose_key(
                             key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node)
+                            auth=kwargs['auth'], api_node=api_node,
+                            scheme=scheme)
                 else:
                     kwargs['auth'].private_key = None
             return response or func(*args, **kwargs)
