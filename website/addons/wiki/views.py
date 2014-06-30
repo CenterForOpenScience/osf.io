@@ -220,6 +220,7 @@ def project_wiki_page(*args, **kwargs):
         ],
         'toc': toc,
         'url': node_to_use.url,
+        'api_url': node_to_use.api_url,
         'category': node_to_use.category
     }
 
@@ -295,3 +296,33 @@ def project_wiki_edit_post(*args, **kwargs):
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
     else:
         return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+
+@must_not_be_registration
+@must_have_permission('write')
+@must_have_addon('wiki', 'node')
+def project_wiki_rename(*arg, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    wid = request.json.get('pk', None)
+    page = NodeWikiPage.load(wid)
+    new_name = request.json.get('value', None)
+
+    if new_name != sanitize(new_name):
+        raise HTTPError(http.FORBIDDEN)
+
+    if page and new_name:
+        try:
+            exist_check = node.wiki_pages_versions[new_name.lower()]
+        except KeyError:
+            exist_check = None
+        if exist_check:
+            raise HTTPError(http.CONFLICT)
+
+        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
+        del node.wiki_pages_versions[page.page_name.lower()]
+        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page.page_name.lower()]
+        node.save()
+        page.rename(new_name)
+        return 200
+    
+    raise HTTPError(http.BAD_REQUEST)
