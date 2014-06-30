@@ -396,3 +396,45 @@ def conference_results(meeting):
         'label': meeting,
         'meeting': MEETING_DATA[meeting],
     }
+
+
+# TODO: Test me @jmcarp
+def get_download_count(nodes):
+    from website.addons.osffiles.model import NodeFile
+    count = 0
+    for node in nodes:
+        if not node.files_current:
+            continue
+        file_id = node.files_current.values()[0]
+        file_obj = NodeFile.load(file_id)
+        if not file_obj:
+            continue
+        count += file_obj.download_count(node)
+    return count
+
+
+# TODO: Test me @jmcarp
+def conference_view(**kwargs):
+
+    meetings = []
+    for meeting, data in MEETING_DATA.iteritems():
+        query = (
+            Q('system_tags', 'eq', meeting)
+            & Q('is_public', 'eq', True)
+            & Q('is_deleted', 'eq', False)
+        )
+        projects = Node.find(query)
+        submissions = projects.count()
+        if submissions < settings.CONFERNCE_MIN_COUNT:
+            continue
+        downloads = get_download_count(projects)
+        meetings.append({
+            'name': data['name'],
+            'active': data['active'],
+            'url': web_url_for('conference_results', meeting=meeting),
+            'submissions': submissions,
+            'downloads': downloads,
+        })
+    meetings.sort(key=lambda meeting: meeting['downloads'], reverse=True)
+
+    return {'meetings': meetings}
