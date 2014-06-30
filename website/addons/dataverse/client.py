@@ -70,13 +70,9 @@ def get_studies(dataverse):
     if dataverse is None:
         return [], []
     accessible_studies = []
-    bad_studies = []
+    bad_studies = []    # Currently none, but we may filter some out
     for s in dataverse.get_studies():
-        try:
-            if s.get_state() != 'DEACCESSIONED':
-                accessible_studies.append(s)
-        except UnicodeDecodeError:
-            bad_studies.append(s)
+        accessible_studies.append(s)
     return accessible_studies, bad_studies
 
 
@@ -85,10 +81,11 @@ def get_study(dataverse, hdl):
         return
     study = dataverse.get_study_by_doi(hdl)
     try:
-        if study and study.get_state() != 'DEACCESSIONED':
-            return study
+        if study.get_state() == 'DEACCESSIONED':
+            raise HTTPError(http.GONE)
+        return study
     except UnicodeDecodeError:
-        return None
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
 
 def get_dataverses(connection):
