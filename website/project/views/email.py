@@ -433,6 +433,6 @@ def conference_view(**kwargs):
             'url': web_url_for('conference_results', meeting=meeting),
             'submissions': submissions,
         })
-    meetings.sort(key=lambda meeting: meeting['downloads'], reverse=True)
+    meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
     return {'meetings': meetings}
