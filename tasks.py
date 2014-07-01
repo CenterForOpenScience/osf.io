@@ -149,8 +149,8 @@ def mongorestore(path, drop=False):
     the existing database. The `--drop` option will cause the existing database
     to be dropped.
 
-    A caveat: if you `invoke mongodump --path {path}`, you must restore with
-    `invoke mongorestore --path {path}/{settings.DB_NAME}, as that's where the
+    A caveat: if you `invoke mongodump {path}`, you must restore with
+    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
     database dump will be stored."""
 
     db = settings.DB_NAME
