@@ -7,7 +7,7 @@ NODE_SETTINGS_MODEL = model.ForwardNodeSettings
 ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'forward'
-FULL_NAME = 'Forward'
+FULL_NAME = 'External Link'
 
 OWNERS = ['node']
 

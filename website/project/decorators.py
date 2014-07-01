@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import logging
+import urlparse
 import functools
 import httplib as http
 
@@ -7,8 +10,7 @@ from flask import request, redirect
 
 from framework import status
 from framework.exceptions import HTTPError
-from framework.auth import get_current_user, get_api_key
-from framework.auth.decorators import Auth
+from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
 
@@ -125,7 +127,7 @@ def has_deleted_keys(key_ring, node, user):
     return False
 
 
-def choose_key(key, key_ring, node, auth, api_node=None):
+def choose_key(key, key_ring, node, auth, api_node=None, scheme=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
@@ -139,9 +141,8 @@ def choose_key(key, key_ring, node, auth, api_node=None):
     #do a redirect to reappend the key to url only if the user
     # isn't a contributor
     if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-        new_url = add_key_to_url(request.path, auth.private_key)
+        new_url = add_key_to_url(request.path, scheme, auth.private_key)
         return redirect(new_url)
-
 
 
 def _must_be_contributor_factory(include_public):
@@ -154,7 +155,6 @@ def _must_be_contributor_factory(include_public):
 
     """
     def wrapper(func):
-
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             response = None
@@ -170,7 +170,7 @@ def _must_be_contributor_factory(include_public):
                 api_node = get_api_key()
                 kwargs['api_node'] = api_node
 
-            key = request.args.get('key', '').strip('/')
+            key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
             if not kwargs['auth'].user:
                 kwargs['auth'].private_key = key
@@ -212,9 +212,15 @@ def _must_be_contributor_factory(include_public):
                     #has intersection: check if the link is valid if not use other key
                     # in the key ring
                     else:
+                        scheme = (
+                            urlparse.urlparse(request.referrer).scheme
+                            if request.referrer
+                            else None
+                        )
                         response = choose_key(
                             key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node)
+                            auth=kwargs['auth'], api_node=api_node,
+                            scheme=scheme)
                 else:
                     kwargs['auth'].private_key = None
             return response or func(*args, **kwargs)

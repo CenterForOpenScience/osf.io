@@ -3,7 +3,7 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
 
 from github3.repos import Repository

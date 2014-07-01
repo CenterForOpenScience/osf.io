@@ -5,6 +5,7 @@ import datetime
 import httplib as http
 from werkzeug.utils import secure_filename
 from flask import request, redirect, make_response
+from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import Q
 from framework.exceptions import HTTPError
@@ -23,7 +24,7 @@ from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
-from website.addons.github.views.util import MESSAGES, get_path
+from website.addons.github.utils import MESSAGES, get_path
 
 
 logger = logging.getLevelName(__name__)
@@ -91,7 +92,7 @@ def github_view_file(**kwargs):
             Q('node', 'eq', node) &
             Q('path', 'eq', path)
         )
-    except:
+    except ModularOdmException:
         # If GUID doesn't exist, check whether file exists before creating
         commits = connection.history(
             node_settings.user, node_settings.repo, path, ref,
@@ -309,15 +310,14 @@ def github_upload_file(**kwargs):
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_delete_file(**kwargs):
+def github_delete_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
 
     now = datetime.datetime.utcnow()
 
-    path = get_path(kwargs)
+    # Must remove trailing slash, else GitHub fails silently on delete
+    path = get_path(kwargs).rstrip('/')
 
     sha = request.args.get('sha')
     if sha is None:
@@ -330,10 +330,10 @@ def github_delete_file(**kwargs):
         'email': '{0}@osf.io'.format(auth.user._id),
     }
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
 
     data = connection.delete_file(
-        node_settings.user, node_settings.repo, path, MESSAGES['delete'],
+        node_addon.user, node_addon.repo, path, MESSAGES['delete'],
         sha=sha, branch=branch, author=author,
     )
 
@@ -347,8 +347,8 @@ def github_delete_file(**kwargs):
             'node': node._primary_key,
             'path': path,
             'github': {
-                'user': node_settings.user,
-                'repo': node_settings.repo,
+                'user': node_addon.user,
+                'repo': node_addon.repo,
             },
         },
         auth=auth,
@@ -365,7 +365,7 @@ def github_download_starball(**kwargs):
 
     node_settings = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
-    ref = request.args.get('ref')
+    ref = request.args.get('sha', 'master')
 
     connection = GitHub.from_settings(node_settings.user_settings)
     headers, data = connection.starball(

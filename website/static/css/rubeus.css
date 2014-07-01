@@ -7,6 +7,10 @@
     border: 0px !important;
 }
 
+.hg-btn {
+    margin-right: 6px;
+}
+
 .btn-mini {
   padding: 2px 6px;
   font-size: 14px;

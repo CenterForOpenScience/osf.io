@@ -23,11 +23,8 @@ class TestUserSettings(GitlabTestCase):
             encrypted_password=self.user.password
         )
 
-class TestNodeSettings(GitlabTestCase):
 
-    def setUp(self):
-        super(TestNodeSettings, self).setUp()
-        self.app.app.test_request_context().push()
+class TestNodeSettings(GitlabTestCase):
 
     def test_hook_url(self):
         relative_url = self.node_lookup.api_url_for('gitlab_hook_callback')

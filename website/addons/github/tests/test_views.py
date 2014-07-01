@@ -8,19 +8,24 @@ from webtest_plus import TestApp
 
 from github3.repos.branch import Branch
 
-from framework.exceptions import HTTPError
-import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
-from framework.auth.decorators import Auth
+
+from framework.auth import Auth
+from framework.exceptions import HTTPError
+
+import website.app
+
 from website.addons.github.tests.utils import create_mock_github
-from website.addons.github import views, api
+from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
+
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
 github_mock = create_mock_github(user='fred', private=False)
+
 
 class TestHGridViews(OsfTestCase):
 
@@ -110,7 +115,7 @@ class TestGithubViews(OsfTestCase):
     def test_get_refs_defaults(self, mock_repo, mock_branches):
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
-        branch, sha, branches = views.util._get_refs(self.node_settings)
+        branch, sha, branches = utils.get_refs(self.node_settings)
         assert_equal(
             branch,
             github_mock.repo.return_value.default_branch
@@ -126,7 +131,7 @@ class TestGithubViews(OsfTestCase):
     def test_get_refs_branch(self, mock_repo, mock_branches):
         mock_repo.return_value = github_mock.repo.return_value
         mock_branches.return_value = github_mock.branches.return_value
-        branch, sha, branches = views.util._get_refs(self.node_settings, 'master')
+        branch, sha, branches = utils.get_refs(self.node_settings, 'master')
         assert_equal(branch, 'master')
         branch_sha = self._get_sha_for_branch('master')
         assert_equal(sha, branch_sha)
@@ -168,7 +173,7 @@ class TestGithubViews(OsfTestCase):
 
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
-            views.util._get_refs(self.node_settings, sha='12345')
+            utils.get_refs(self.node_settings, sha='12345')
 
     def test_get_refs_registered_missing_branch(self):
         self.node_settings.registration_data = {
@@ -179,7 +184,7 @@ class TestGithubViews(OsfTestCase):
         }
         self.node_settings.owner.is_registration = True
         with assert_raises(HTTPError):
-            views.util._get_refs(self.node_settings, branch='nothere')
+            utils.get_refs(self.node_settings, branch='nothere')
 
     # TODO: Write me
     # Tests for _check_permissions
@@ -209,7 +214,8 @@ class TestGithubViews(OsfTestCase):
     def test_github_contents(self):
         pass
 
-    def test_hook_callback_add_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -233,7 +239,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_added")
 
-    def test_hook_callback_modify_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -250,7 +257,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
 
-    def test_hook_callback_remove_file_not_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -267,7 +275,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
 
-    def test_hook_callback_add_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_add_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -284,7 +293,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_added")
 
-    def test_hook_callback_modify_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_modify_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -301,7 +311,8 @@ class TestGithubViews(OsfTestCase):
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_updated")
 
-    def test_hook_callback_remove_file_thro_osf(self):
+    @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
+    def test_hook_callback_remove_file_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
         self.app.post_json(
             url,
@@ -579,7 +590,7 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'github_repo_unlinked')
+        assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
 
 if __name__ == '__main__':

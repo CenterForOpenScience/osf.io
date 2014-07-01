@@ -17,6 +17,8 @@ from flask import request, make_response, redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.flask import app
+from framework import sentry
+
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -33,6 +35,7 @@ REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
 ]
+
 
 class Rule(object):
     """ Container for routing and rendering rules."""
@@ -79,6 +82,7 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
+
         session_error_code = session.data.get('auth_error_code')
         if session_error_code:
             raise HTTPError(session_error_code)
@@ -90,6 +94,8 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
             data = error
         except Exception as error:
             logger.exception(error)
+            if settings.SENTRY_DSN and not app.debug:
+                sentry.log_exception()
             if debug_mode:
                 raise
             data = HTTPError(
@@ -111,6 +117,7 @@ def data_to_lambda(data):
 
 
 view_functions = {}
+
 
 def process_rules(app, rules, prefix=''):
     """Add URL routes to Flask / Werkzeug lookup table.

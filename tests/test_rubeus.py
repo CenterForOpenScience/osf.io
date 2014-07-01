@@ -7,7 +7,7 @@ from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory)
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.util import rubeus
 
 
@@ -64,6 +64,7 @@ class TestRubeus(OsfTestCase):
             },
             'isAddonRoot': True,
             'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -134,7 +135,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -180,7 +182,8 @@ class TestRubeus(OsfTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -240,13 +243,18 @@ serialized = {
 }
 mock_addon.config.get_hgrid_data.return_value = [serialized]
 
+
 class TestSerializingNodeWithAddon(OsfTestCase):
+
     def setUp(self):
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)
         self.project.get_addons = mock.Mock()
         self.project.get_addons.return_value = [mock_addon]
-        self.serializer = rubeus.NodeFileCollector(node=self.project, auth=self.auth)
+        self.serializer = rubeus.NodeFileCollector(
+            node=self.project,
+            auth=self.auth,
+        )
 
     def test_collect_addons(self):
         ret = self.serializer._collect_addons(self.project)
@@ -262,7 +270,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         assert_equal(ret['name'], 'Project: {0}'.format(self.project.title))
         assert_equal(ret['permissions'], {
             'view': True,
-            'edit': True
+            'edit': False,
         })
 
     def test_collect_js_recursive(self):

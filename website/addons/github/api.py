@@ -19,6 +19,7 @@ http_cache = CachingHTTPAdapter()
 https_cache = CachingHTTPAdapter()
 default_adapter = HTTPAdapter()
 
+
 class GitHub(object):
 
     def __init__(self, access_token=None, token_type=None):
@@ -175,8 +176,8 @@ class GitHub(object):
         """
         return self.repo(user, repo).contents(path, ref)
 
-    # TODO
-    def starball(self, user, repo, archive='tar', ref=None):
+    # TODO: Test
+    def starball(self, user, repo, archive='tar', ref='master'):
         """Get link for archive download.
 
         :param str user: GitHub user name
@@ -187,7 +188,12 @@ class GitHub(object):
 
         """
 
-        return self.repo(user, repo).archive(archive + 'ball', ref=None)
+        # github3 archive method writes file to disk
+        repository = self.repo(user, repo)
+        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
+        resp = repository._get(url, allow_redirects=True, stream=True)
+
+        return resp.headers, resp.content
 
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
@@ -272,6 +278,7 @@ class GitHub(object):
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
 
+
 def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
@@ -285,6 +292,7 @@ def ref_to_params(branch=None, sha=None):
     if params:
         return '?' + params
     return ''
+
 
 # TODO: Use Node#api_url_for and Node#web_url_for
 def build_github_urls(item, node_url, node_api_url, branch, sha):

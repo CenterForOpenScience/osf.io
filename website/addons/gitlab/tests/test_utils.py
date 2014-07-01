@@ -115,10 +115,6 @@ class TestSlugify(unittest.TestCase):
 
 class TestBuildUrls(GitlabTestCase):
 
-    def setUp(self):
-        super(TestBuildUrls, self).setUp()
-        self.app.app.test_request_context().push()
-
     def test_tree(self):
 
         item = {
@@ -204,10 +200,6 @@ class TestBuildUrls(GitlabTestCase):
 
 
 class TestGridSerializers(GitlabTestCase):
-
-    def setUp(self):
-        super(TestGridSerializers, self).setUp()
-        self.app.app.test_request_context().push()
 
     def test_item_to_hgrid(self):
 

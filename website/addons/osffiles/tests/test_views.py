@@ -5,7 +5,7 @@ from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from webtest_plus import TestApp
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.osffiles.model import OsfGuidFile

@@ -24,17 +24,13 @@
 </div><!-- end wiki -->
 
 <%def name="javascript_bottom()">
-    <script>
-        $script([
-            '/static/vendor/pagedown/Markdown.Converter.js',
-            '/static/vendor/pagedown/Markdown.Sanitizer.js',
-            '/static/vendor/pagedown/Markdown.Editor.js'
-        ], 'markdown');
 
-        $script.ready(['markdown'], function () {
-            var converter1 = Markdown.getSanitizingConverter();
-            var editor1 = new Markdown.Editor(converter1);
-            editor1.run();
-        });
+    <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
+    <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
+    <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
+    <script>
+        var converter1 = Markdown.getSanitizingConverter();
+        var editor1 = new Markdown.Editor(converter1);
+        editor1.run();
     </script>
 </%def>

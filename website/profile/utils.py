@@ -9,6 +9,7 @@ from website import settings
 
 logger = logging.getLogger(__name__)
 
+
 def get_projects(user):
     '''Return a list of user's projects, excluding registrations.'''
     return [
@@ -42,6 +43,7 @@ def serialize_user(user, node=None, full=False):
     }
     if node is not None:
         rv.update({
+            'visible': user in node.visible_contributors,
             'permission': reduce_permissions(node.get_permissions(user)),
         })
     if user.is_registered:

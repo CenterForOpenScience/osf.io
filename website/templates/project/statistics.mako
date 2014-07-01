@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Project Statistics</%def>
+<%def name="title()">${node['title']} Statistics</%def>
 
 <%
     if user['is_contributor']:

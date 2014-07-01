@@ -8,6 +8,7 @@ app = init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
+
 class GitlabTestCase(AddonTestCase):
 
     TEST_FOR = settings.ADDONS_AVAILABLE_DICT['gitlab']

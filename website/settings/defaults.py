@@ -6,16 +6,20 @@ These settings can be overridden in local.py.
 
 import os
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BASE_PATH = parent_dir(HERE)  # website/ directory
+ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 DOMAIN = 'http://localhost:5000/'
+GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
+GNUPG_BINARY = 'gpg'
 
 # User management & registration
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
@@ -23,9 +27,10 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 ALLOW_CLAIMING = True
 
-USE_SOLR = False
+SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
 SOLR_URI = 'http://localhost:8983/solr/'
-
+ELASTIC_URI = 'http://localhost:9200'
+ELASTIC_TIMEOUT = 10
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -53,6 +58,9 @@ MFR_CACHE_PATH = os.path.join(BASE_PATH, 'mfrcache')
 
 # Use Celery for file rendering
 USE_CELERY = True
+
+# Use GnuPG for encryption
+USE_GNUPG = True
 
 # File rendering timeout (in ms)
 MFR_TIMEOUT = 30000
@@ -82,6 +90,9 @@ COMMENT_MAXLENGTH = 500
 GRAVATAR_SIZE_PROFILE = 120
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
 GRAVATAR_SIZE_DISCUSSION = 20
+
+# Conference options
+CONFERNCE_MIN_COUNT = 5
 
 # User activity style
 USER_ACTIVITY_MAX_WIDTH = 325
@@ -133,10 +144,14 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'osffiles',
-    'github', 's3', 'figshare',
+    'wiki',
+    'osffiles',
     'gitlab',
-    'badges', 'dropbox',
+    'github',
+    's3',
+    'figshare',
+    'dropbox',
+    'badges',
     'forward',
 ]
 
@@ -145,8 +160,9 @@ ADDON_CATEGORIES = [
 ]
 
 SYSTEM_ADDED_ADDONS = {
-    'user': ['badges'],
-    'node': []
+    # 'user': ['badges'],
+    'user': [],
+    'node': [],
 }
 
 FEATURES = {
@@ -159,3 +175,5 @@ FEATURES = {
 PIWIK_HOST = None
 PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
+
+SENTRY_DSN = None

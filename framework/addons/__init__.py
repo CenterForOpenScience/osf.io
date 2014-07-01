@@ -115,7 +115,7 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory:
                 raise ValueError('Cannot delete mandatory add-on.')
-            addon.delete()
+            addon.delete(save=True)
             return True
         return False
 

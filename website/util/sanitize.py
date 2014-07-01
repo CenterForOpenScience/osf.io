@@ -16,27 +16,27 @@ def clean_tag(data):
     return clean(data).replace('"', '&quot;').replace("'", '')
 
 
-def _deep_clean(data, cleaner=bleach.clean):
+def apply_recursive(data, func):
     if isinstance(data, dict):
         return {
-            key: _deep_clean(value, cleaner)
+            key: apply_recursive(value, func)
             for (key, value) in data.iteritems()
         }
     if isinstance(data, list):
         return [
-            _deep_clean(value, cleaner)
+            apply_recursive(value, func)
             for value in data
         ]
     if isinstance(data, basestring):
-        return cleaner(data)
+        return func(data)
     return data
 
 
 def deep_clean(data, cleaner=bleach.clean, copy=False):
     if copy:
-        return _deep_clean(copy.deepcopy(data), cleaner)
+        return apply_recursive(copy.deepcopy(data), cleaner)
     else:
-        return _deep_clean(data, cleaner)
+        return apply_recursive(data, cleaner)
 
 
 def clean(data, cleaner=bleach.clean, copy=False):
@@ -44,3 +44,13 @@ def clean(data, cleaner=bleach.clean, copy=False):
         return cleaner(copy.copy(data))
     else:
         return cleaner(data)
+
+
+def ensure_clean(value):
+    if value != bleach.clean(value):
+        raise ValueError
+
+
+def deep_ensure_clean(data):
+    return apply_recursive(data, ensure_clean)
+

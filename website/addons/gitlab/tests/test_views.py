@@ -139,11 +139,8 @@ class TestHookLog(GitlabTestCase):
         assert_true(mock_list_diff.called)
         assert_true(mock_add_log.called)
 
-class TestListFiles(GitlabTestCase):
 
-    def setUp(self):
-        super(TestListFiles, self).setUp()
-        self.app.app.test_request_context().push()
+class TestListFiles(GitlabTestCase):
 
     @mock.patch('website.addons.gitlab.views.crud.client.listrepositorytree')
     def test_list_files_no_id(self, mock_list):
@@ -193,10 +190,6 @@ class TestListFiles(GitlabTestCase):
 
 class TestFileCommits(GitlabTestCase):
 
-    def setUp(self):
-        super(TestFileCommits, self).setUp()
-        self.app.app.test_request_context().push()
-
     @mock.patch('website.addons.gitlab.views.crud.client.listrepositorycommits')
     def test_commits_sha_given(self, mock_commits):
         mock_commits.return_value = [
@@ -221,7 +214,7 @@ class TestFileCommits(GitlabTestCase):
                 'gitlab_file_commits',
                 path=path, branch=branch, sha=sha
             ),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
         serialized = [
             utils.serialize_commit(
@@ -264,7 +257,7 @@ class TestFileCommits(GitlabTestCase):
                 'gitlab_file_commits',
                 path=path, branch=branch
             ),
-            auth=self.user.auth
+            auth=self.user.auth,
         )
         serialized = [
             utils.serialize_commit(
@@ -281,15 +274,11 @@ class TestFileCommits(GitlabTestCase):
         )
         mock_commits.assert_called_with(
             self.node_settings.project_id,
-            path=path, ref_name=branch
+            path=path, ref_name=branch,
         )
 
 
 class TestDownloadFile(GitlabTestCase):
-
-    def setUp(self):
-        super(TestDownloadFile, self).setUp()
-        self.app.app.test_request_context().push()
 
     @mock.patch('website.addons.gitlab.views.crud.client.getfile')
     def test_download(self, mock_get_file):
@@ -332,10 +321,6 @@ class TestDownloadFile(GitlabTestCase):
 
 
 class TestDeleteFile(GitlabTestCase):
-
-    def setUp(self):
-        super(TestDeleteFile, self).setUp()
-        self.app.app.test_request_context().push()
 
     @mock.patch('website.addons.gitlab.views.crud.client.deletefile')
     def test_delete(self, mock_delete_file):

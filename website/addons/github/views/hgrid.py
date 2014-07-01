@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 import os
 import logging
 import httplib as http
@@ -13,7 +14,7 @@ from website.util import rubeus
 
 from website.addons.github.exceptions import ApiError
 from website.addons.github.api import GitHub, build_github_urls, ref_to_params
-from website.addons.github.views.util import _get_refs, _check_permissions
+from website.addons.github.utils import get_refs, check_permissions
 from website.addons.github.exceptions import NotFoundError
 
 
@@ -21,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 logging.getLogger('github3').setLevel(logging.WARNING)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
+
 
 # TODO: Probably should just take a node object instead of having to pass
 # in both url and api_url
@@ -81,6 +83,7 @@ def to_hgrid(data, node_url, node_api_url=None, branch=None, sha=None,
     return grid
 
 
+# TODO: Move me @jmcarp
 github_branch_template = Template('''
     % if len(branches) > 1:
             <select class="github-branch-select">
@@ -95,6 +98,7 @@ github_branch_template = Template('''
         <a href="https://github.com/${owner}/${repo}/commit/${sha}" target="_blank" class="github-sha text-muted">${sha[:10]}</a>
     % endif
 ''')
+
 
 def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
@@ -124,7 +128,8 @@ def github_hgrid_data(node_settings, auth, **kwargs):
     repo = None
 
     # Quit if privacy mismatch and not contributor
-    if node_settings.owner.is_public:
+    node = node_settings.owner
+    if node.is_public and not node.is_contributor(auth.user):
         try:
             repo = connection.repo(node_settings.user, node_settings.repo)
         except NotFoundError:
@@ -136,7 +141,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
             return None
 
     try:
-        branch, sha, branches = _get_refs(
+        branch, sha, branches = get_refs(
             node_settings,
             branch=kwargs.get('branch'),
             sha=kwargs.get('sha'),
@@ -149,7 +154,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
 
     if branch is not None:
         ref = ref_to_params(branch, sha)
-        can_edit = _check_permissions(
+        can_edit = check_permissions(
             node_settings, auth, connection, branch, sha, repo=repo,
         )
         name_append = github_branch_widget(branches, owner=node_settings.user,
@@ -172,26 +177,31 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+        'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
     }
+    buttons = [rubeus.build_addon_button(
+        '<i class="icon-cloud-download"></i> Download ZIP',
+        'githubDownloadZip')]
+
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        extra=name_append
+        extra=name_append,
+        buttons=buttons,
     )]
 
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_root_folder_public(*args, **kwargs):
+def github_root_folder_public(auth, **kwargs):
     """View function returning the root container for a GitHub repo. In
     contrast to other add-ons, this is exposed via the API for GitHub to
     accommodate switching between branches and commits.
 
     """
     node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
     data = request.args.to_dict()
 
     return github_hgrid_data(node_settings, auth=auth, **data)
@@ -199,20 +209,18 @@ def github_root_folder_public(*args, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_hgrid_data_contents(**kwargs):
+def github_hgrid_data_contents(auth, node_addon, **kwargs):
     """Return a repo's file tree as a dict formatted for HGrid.
 
     """
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_addon = kwargs['node_addon']
     path = kwargs.get('path', '')
 
     connection = GitHub.from_settings(node_addon.user_settings)
     # The requested branch and sha
     req_branch, req_sha = request.args.get('branch'), request.args.get('sha')
     # The actual branch and sha to use, given the addon settings
-    branch, sha, branches = _get_refs(
+    branch, sha, branches = get_refs(
         node_addon, req_branch, req_sha, connection=connection
     )
     # Get file tree
@@ -224,7 +232,7 @@ def github_hgrid_data_contents(**kwargs):
     except ApiError:
         raise HTTPError(http.NOT_FOUND)
 
-    can_edit = _check_permissions(node_addon, auth, connection, branch, sha)
+    can_edit = check_permissions(node_addon, auth, connection, branch, sha)
 
     if contents:
         hgrid_tree = to_hgrid(

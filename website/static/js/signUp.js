@@ -12,21 +12,6 @@
 
     'use strict';
 
-    ko.extenders.cleanup = function(target, func) {
-        var adapter = ko.computed({
-            read: target,
-            write: function(value) {
-                var current = target();
-                var toWrite = func(value);
-                if (current !== toWrite) {
-                    target(func(value));
-                }
-            }
-        });
-        adapter(target());
-        return adapter;
-    };
-
     var ViewModel = function(submitUrl) {
 
         var self = this;
