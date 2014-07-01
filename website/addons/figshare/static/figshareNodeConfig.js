@@ -27,6 +27,7 @@
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         self.userHasAuth = ko.observable(false);
+	self.userIsOwner = ko.observable(false);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.linked = ko.observable({});
         self.ownerName = ko.observable('');
@@ -59,7 +60,8 @@
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-	        self.linked(data.linked || {});
+	    self.userIsOwner(data.userIsOwner);
+	    self.linked(data.linked || {});
             self.urls(data.urls);
         };
 
@@ -119,9 +121,9 @@
         });
 
         self.selectedFolderName = ko.computed(function() {
-            var userHasAuth = self.userHasAuth();
+            var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            return (userHasAuth && selected) ? selected.title : '';
+            return (userIsOwner && selected) ? selected.title : '';
         });
 
         self.selectedFolderType = ko.computed(function(){
