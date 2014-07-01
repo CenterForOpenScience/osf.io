@@ -69,3 +69,8 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_search() 
         return rv
+
+    def rename(self, new_name, save=True):
+        self.page_name = new_name
+        if save:
+            self.save()
