@@ -90,11 +90,14 @@ class TestWikiRename(OsfTestCase):
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.wiki = self.project.get_wiki_page('home')
-        self.url = self.project.api_url + "wiki/" + self.wiki._id + "/rename/"
+        self.url = self.project.api_url_for(
+            'project_wiki_rename',
+            wid=self.wiki._id,
+        )
 
     def test_rename_wiki_page_valid(self):
         new_name = 'away'
-        self.app.post_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+        self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
         self.project.reload()
 
         old_wiki = self.project.get_wiki_page('home')
@@ -110,7 +113,7 @@ class TestWikiRename(OsfTestCase):
         new_name = '<html>hello</html>'
 
         with assert_raises(AppError) as cm:
-            self.app.post_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
 
             e = cm.exception
             assert_equal(e, 422)
@@ -120,7 +123,7 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
 
         with assert_raises(AppError) as cm:
-            self.app.post_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
 
             e = cm.exception
             assert_equal(e, 409)
