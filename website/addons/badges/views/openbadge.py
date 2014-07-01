@@ -7,7 +7,7 @@ from framework.exceptions import HTTPError
 from ..model import Badge, BadgeAssertion
 
 
-def get_assertion_json(*args, **kwargs):
+def get_assertion_json(**kwargs):
     _id = kwargs.get('aid', None)
     if _id:
         assertion = BadgeAssertion.load(_id)
@@ -17,7 +17,7 @@ def get_assertion_json(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def get_badge_json(*args, **kwargs):
+def get_badge_json(**kwargs):
     _id = kwargs.get('bid', None)
     if _id:
         badge = Badge.load(_id)
@@ -25,7 +25,7 @@ def get_badge_json(*args, **kwargs):
     raise HTTPError(http.BAD_REQUEST)
 
 
-def get_organization_json(*args, **kwargs):
+def get_organization_json(**kwargs):
     uid = kwargs.get('uid', None)
     if uid:
         user = User.load(uid)

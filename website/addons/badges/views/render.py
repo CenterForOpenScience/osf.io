@@ -4,10 +4,7 @@ from framework.exceptions import HTTPError
 
 from website.project.views.node import _view_project
 from website.project.decorators import (
-    must_be_contributor_or_public,
-    must_have_addon, must_not_be_registration,
-    must_be_valid_project,
-    must_have_permission,
+    must_be_contributor_or_public, must_have_addon,
 )
 
 from ..model import Badge
@@ -16,9 +13,8 @@ from ..util import get_node_badges, get_sorted_node_badges
 
 @must_be_contributor_or_public
 @must_have_addon('badges', 'node')
-def badges_widget(*args, **kwargs):
+def badges_widget(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     ret = {
         'complete': True,
         'assertions': get_node_badges(node)
