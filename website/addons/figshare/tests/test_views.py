@@ -11,6 +11,8 @@ from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
 
+from website.addons.figshare.views.config import serialize_settings
+
 from framework.auth import Auth
 
 
@@ -98,8 +100,20 @@ class TestViewsConfig(OsfTestCase):
         assert_equal(self.node_settings.figshare_id, '9001')
         assert_equal(len(self.project.logs), num + 1)
         assert_equal(self.project.logs[num].action, 'figshare_content_linked')
+        
+    def test_serialize_settings_helper_returns_correct_auth_info(self):
+        result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
+        assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
+        assert_true(result['userHasAuth'])
+        assert_true(result['userIsOwner'])
 
+    def test_serialize_settings_for_user_no_auth(self):
+        no_addon_user = AuthUserFactory()
+        result = serialize_settings(self.node_settings, no_addon_user, client=figshare_mock)
+        assert_false(result['userIsOwner'])
+        assert_false(result['userHasAuth'])
 
+        
 class TestUtils(OsfTestCase):
 
     def setUp(self):
