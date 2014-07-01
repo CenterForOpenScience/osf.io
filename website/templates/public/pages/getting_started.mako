@@ -185,6 +185,7 @@
                     <p>Currently, the OSF only supports linking Dataverses that you have already released on the <a href="http://thedata.harvard.edu/dvn/">Harvard Dataverse Network</a>.</p>
                     <p>To link a Dataverse study to a project/component, visit the project you want to add a Dataverse study to. Then go to "Settings" in the grey navigation bar. Check "Dataverse" under "Select Add-ons" to enable the add-on. Read, then click "OK" on the pop-up, then submit.</p>
                     <p>Next, authenticate with Dataverse by entering your Dataverse username and password and clicking "Submit". You can then choose the Dataverse study you would like to add to your OSF project. Click "Submit" to save your settings.</p>
+                    <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/QzGJGWgy8Qo?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                     <p>Contributors to your project will have access to both released and draft versions of your study, but only the most recent release will be made public alongside your OSF project.</p>
                 </div>
                 <div id="commenting"></div>
