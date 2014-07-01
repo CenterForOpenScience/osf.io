@@ -152,9 +152,7 @@ def mongorestore(path, drop=False):
     A caveat: if you `invoke mongodump --path {path}`, you must restore with
     `invoke mongorestore --path {path}/{settings.DB_NAME}, as that's where the
     database dump will be stored."""
-    if not path:
-        print "Please specify a path with the '--path' option."
-        exit()
+
     db = settings.DB_NAME
     port = settings.DB_PORT
 
