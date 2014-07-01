@@ -140,7 +140,7 @@
             var data_to_send={
                 'private_link_id': data.id
             };
-            bootbox.confirm('Are you sure to remove this private link?', function(result) {
+            bootbox.confirm('Are you sure to remove this view only link?', function(result) {
                 if (result) {
                     $.ajax({
                         type: 'delete',
