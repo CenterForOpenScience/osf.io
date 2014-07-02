@@ -9,11 +9,6 @@ from . import views
 
 settings_routes = {
     'rules': [
-        #Configuration
-        Rule([
-            '/project/<pid>/figshare/settings/',
-            '/project/<pid>/node/<nid>/figshare/settings/',
-        ], 'post', views.config.figshare_set_config, json_renderer),
         # Widget
         Rule([
             '/project/<pid>/figshare/widget/',
@@ -129,7 +124,7 @@ api_routes = {
             '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_download_file, json_renderer,),
-     ],
+    ],
     'prefix': '/api/v1',
 }
 

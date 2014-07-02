@@ -5,7 +5,8 @@ from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 
 from website.util import web_url_for
-from website.project.decorators import (must_have_addon,
+from website.project.decorators import (
+    must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
@@ -28,12 +29,10 @@ def figshare_config_get(node_addon, **kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('figshare', 'node')
+@must_be_addon_authorizer('figshare')
 def figshare_config_put(node_addon, auth, **kwargs):
     """View for changing a node's linked figshare folder."""
-    selected = request.json.get('selected')    
-    fields = {}
-    for key in selected.keys():
-        fields[key] = selected[key]
+    fields = request.json.get('selected', {})
     node = node_addon.owner
     node_addon.update_fields(fields, node, auth)
 
@@ -132,50 +131,3 @@ def figshare_get_options(node_addon, **kwargs):
     else:
         node = node_addon.owner
         return options_to_hgrid(node, options) or []
-
-##############
-
-
-def figshare_update_config(node, auth, node_settings, fs_title, fs_url, fs_type, fs_id):    
-    # If authorized, only owner can change settings
-    if not node_settings.has_auth or node_settings.user_settings.owner != auth.user:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not fs_id or not (fs_type == 'project' or fs_type == 'fileset'):
-        raise HTTPError(http.BAD_REQUEST)
-
-    changed = (
-        fs_id != node_settings.figshare_id or
-        fs_type != node_settings.figshare_type or
-        fs_title != node_settings.figshare_title
-    )
-    if changed:
-        node_settings.figshare_id = fs_id
-        node_settings.figshare_type = fs_type
-        node_settings.figshare_title = fs_title
-        node_settings.save()
-
-    return {}
-
-
-@must_have_permission('write')
-@must_not_be_registration
-@must_have_addon('figshare', 'node')
-def figshare_set_config(auth, **kwargs):
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-
-    try:
-        figshare_title = request.json.get('figshare_title', '')
-        figshare_url = request.json.get('figshare_value', '').split('_')
-        figshare_type = figshare_url[0]
-        figshare_id = figshare_url[1]
-    # TODO: Which errors are we catching here?
-    except:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not figshare_id or not (figshare_type == 'project' or figshare_type == 'fileset'):
-        raise HTTPError(http.BAD_REQUEST)
-
-    fields = {'title': figshare_title, 'type': figshare_type, 'id': figshare_id}
-    node_settings.update_fields(fields, node, auth)
