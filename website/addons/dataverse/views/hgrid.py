@@ -1,14 +1,15 @@
-import os
+# -*- coding: utf-8 -*-
 
-from framework import request
+import os
+from flask import request
 from mako.template import Template
-from website.addons.dataverse.client import get_study, get_files, \
-    get_dataverse, connect_from_settings
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
 from website.settings import BASE_PATH
 from website.util import rubeus
+
+from website.addons.dataverse import client
 
 
 def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
@@ -19,20 +20,20 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
     default_state = 'released' if 'files' not in request.referrer else 'draft'
     state = 'released' if not node.can_edit(auth) else state or default_state
 
-    connection = connect_from_settings(user_settings)
+    connection = client.connect_from_settings(user_settings)
 
     # Quit if no study linked
     if node_addon.study_hdl is None or connection is None:
         return []
 
-    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
+    study = client.get_study(dataverse, node_addon.study_hdl)
 
     # Quit if hdl does not produce a study
     if study is None:
         return []
 
-    released_files = get_files(study, released=True)
+    released_files = client.get_files(study, released=True)
     authorized = node.can_edit(auth)
 
     # Produce draft version or quit if no released version is available
@@ -111,13 +112,13 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
     can_edit = node.can_edit(auth) and not node.is_registration and not released
     can_view = node.can_view(auth)
 
-    connection = connect_from_settings(user_settings)
+    connection = client.connect_from_settings(user_settings)
 
     if node_addon.study_hdl is None or connection is None:
         return []
 
-    dataverse = get_dataverse(connection, node_addon.dataverse_alias)
-    study = get_study(dataverse, node_addon.study_hdl)
+    dataverse = client.get_dataverse(connection, node_addon.dataverse_alias)
+    study = client.get_study(dataverse, node_addon.study_hdl)
 
     # Quit if hdl does not produce a study
     if study is None:
@@ -125,7 +126,7 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
 
     info = []
 
-    for f in get_files(study, released):
+    for f in client.get_files(study, released):
 
         item = {
             'addon': 'dataverse',

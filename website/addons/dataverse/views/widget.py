@@ -20,7 +20,7 @@ def dataverse_widget(node_addon, **kwargs):
     }
     rv.update(node_addon.config.to_json())
 
-    return rv, http.OK
+    return rv
 
 
 @must_be_contributor_or_public
@@ -56,6 +56,4 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         'studyUrl': study_url,
         'citation': study.citation,
     })
-    return {'data': data}, http.OK
-
-
+    return {'data': data}
