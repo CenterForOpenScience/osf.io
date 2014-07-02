@@ -63,7 +63,7 @@ def github_download_file(**kwargs):
 
 def get_cache_file(path, sha):
     return '{0}_{1}.html'.format(
-        urllib.quote_plus(path), sha,
+        urllib.quote_plus(path.encode("utf-8")), sha,
     )
 
 
