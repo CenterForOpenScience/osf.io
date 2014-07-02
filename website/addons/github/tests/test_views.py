@@ -376,10 +376,6 @@ class TestGithubViews(OsfTestCase):
             res.request.path
         )
 
-        # View file for the second time
-        # self.app.get(url, auth=self.user.auth).maybe_follow()
-
-
 
 class TestRegistrationsWithGithub(OsfTestCase):
 
