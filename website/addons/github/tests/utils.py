@@ -134,8 +134,8 @@ def create_mock_github(user='octo-cat', private=False):
         'octokit.rb': github3.repos.contents.Contents.from_json({
           "type": "file",
           "size": 625,
-          "name": "octokit.rb",
-          "path": "octokit.rb",
+          "name": u"\xf0octokit.rb",
+          "path": u"\xf0octokit.rb",
           "sha": "fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b",
           "url": "https://api.github.com/repos/{user}/octokit/contents/lib/octokit.rb".format(user=user),
           "git_url": "https://api.github.com/repos/{user}/octokit/git/blobs/fff6fe3a23bf1c8ea0692b4a883af99bee26fd3b".format(user=user),
