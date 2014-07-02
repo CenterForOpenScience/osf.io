@@ -4,6 +4,7 @@ from webtest_plus import TestApp
 from dataverse import Connection, Dataverse, Study, DataverseFile
 
 import website
+from website import settings
 from website.addons.base.testing import AddonTestCase
 
 app = website.app.init_app(
@@ -12,6 +13,8 @@ app = website.app.init_app(
 
 
 class DataverseAddonTestCase(AddonTestCase):
+
+    TEST_FOR = settings.ADDONS_AVAILABLE_DICT['dataverse']
     ADDON_SHORT_NAME = 'dataverse'
 
     def create_app(self):

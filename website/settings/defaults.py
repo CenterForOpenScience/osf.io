@@ -115,7 +115,7 @@ WIKI_WHITELIST = {
         'salign', 'align', 'wmode', 'target',
     ],
     # Styles currently used in Reproducibility Project wiki pages
-    'styles' : [
+    'styles': [
         'top', 'left', 'width', 'height', 'position',
         'background', 'font-size', 'text-align', 'z-index',
         'list-style',
@@ -151,6 +151,7 @@ ADDONS_REQUESTED = [
     's3',
     'figshare',
     'dropbox',
+    'dataverse',
     'badges',
     'forward',
 ]

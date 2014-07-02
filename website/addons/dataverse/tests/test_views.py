@@ -297,9 +297,9 @@ class TestDataverseViewsConfig(DataverseAddonTestCase):
 
 class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_study')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.get_study')
     def test_dataverse_data_contents(self, mock_get, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
@@ -315,7 +315,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_in('kind', first)
         assert_equal(first['name'], contents['name'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_no_connection(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -328,7 +328,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_no_study(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -342,7 +342,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json, [])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_state_on_file_page(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -363,7 +363,7 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json['data'][0]['name'], 'released.txt')
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
     def test_dataverse_data_contents_state_on_dashboard(self, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
@@ -384,9 +384,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         res = self.app.get(url, auth=user2.auth)
         assert_equal(res.json['data'][0]['name'], 'released.txt')
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.get_files')
     def test_dataverse_root_released(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
@@ -412,9 +412,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.get_files')
     def test_dataverse_root_draft(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
@@ -440,9 +440,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_false(res.json[0]['permissions']['edit'])
         assert_not_in('select', res.json[0]['extra'])
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.get_files')
     def test_dataverse_root_not_released(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
@@ -467,9 +467,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
         assert_equal(res.json, [])
 
 
-    @mock.patch('website.addons.dataverse.views.hgrid.connect_from_settings')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.connect_from_settings')
     @mock.patch('website.addons.dataverse.views.hgrid.request')
-    @mock.patch('website.addons.dataverse.views.hgrid.get_files')
+    @mock.patch('website.addons.dataverse.views.hgrid.client.get_files')
     def test_dataverse_root_no_connection(self, mock_files, mock_request, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_request.referrer = 'some_url/files/'
@@ -486,9 +486,9 @@ class TestDataverseViewsHgrid(DataverseAddonTestCase):
 
 class TestDataverseViewsCrud(DataverseAddonTestCase):
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.delete_file')
-    @mock.patch('website.addons.dataverse.views.crud.get_file_by_id',
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.delete_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_file_by_id',
                 side_effect=[create_mock_draft_file('54321'), None])
     def test_delete_file(self, mock_get, mock_delete, mock_connection):
         mock_get.return_value = None
@@ -500,12 +500,12 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         res = self.app.delete(url=url, auth=self.user.auth)
 
-        mock_delete.assert_called_once
+        mock_delete.assert_called_once()
         assert_equal(path, mock_delete.call_args[0][0].id)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.upload_file')
-    @mock.patch('website.addons.dataverse.views.crud.get_file',
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_file',
                 side_effect=[None, create_mock_draft_file()])
     def test_upload_file(self, mock_get, mock_upload, mock_connection):
         mock_upload.return_value = {}
@@ -515,7 +515,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         filename = 'myfile.rst'
         content = 'bazbaz'
         path = '54321'
-        payload = {'file': Upload(filename, content,'text/x-rst')}
+        payload = {'file': Upload(filename, content, 'text/x-rst')}
 
         # Upload the file
         url = api_url_for('dataverse_upload_file',
@@ -524,7 +524,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
         # File was uploaded
         assert_equal(res.status_code, http.CREATED)
-        mock_upload.assert_called_once
+        mock_upload.assert_called_once()
 
         # Parameters are correct
         assert_equal(self.node_settings.study_hdl,
@@ -533,11 +533,11 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_uploaded', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.upload_file')
-    @mock.patch('website.addons.dataverse.views.crud.delete_file')
-    @mock.patch('website.addons.dataverse.views.crud.get_file')
-    @mock.patch('website.addons.dataverse.views.crud.get_file_by_id')
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.delete_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_file_by_id')
     def test_upload_existing(self, mock_get_by_id, mock_get, mock_delete,
                              mock_upload, mock_connection):
         mock_get.return_value = create_mock_draft_file()  # File already exists
@@ -570,10 +570,10 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(content, mock_upload.call_args[0][2])
         assert_equal('file_updated', json.loads(res.body)['actionTaken'])
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.upload_file')
-    @mock.patch('website.addons.dataverse.views.crud.delete_file')
-    @mock.patch('website.addons.dataverse.views.crud.get_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.upload_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.delete_file')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_file')
     def test_upload_too_small(self, mock_get, mock_delete, mock_upload,
                              mock_connection):
         mock_get.return_value = create_mock_draft_file() # File already exists
@@ -599,8 +599,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_equal(res.status_code, http.UNSUPPORTED_MEDIA_TYPE)
         assert_false(mock_upload.call_count)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_files')
     def test_dataverse_view_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
@@ -610,8 +610,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_files')
     def test_download_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
@@ -625,8 +625,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             'http://{0}/dvn/FileDownload/?fileId={1}'.format(HOST, path),
         )
 
-    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
-    @mock.patch('website.addons.dataverse.views.crud.release_study')
+    @mock.patch('website.addons.dataverse.views.crud.client.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.client.release_study')
     def test_dataverse_release_study(self, mock_release, mock_connection):
         mock_connection.return_value = create_mock_connection()
 
@@ -653,14 +653,14 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             fail_if_unauthorized(self.node_settings, self.user.auth, None)
             assert_equal(error.code, http.NOT_FOUND)
 
-    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    @mock.patch('website.addons.dataverse.views.crud.client.get_files')
     def test_fail_if_unauthorized_forbidden(self, mock_get_files):
         mock_get_files.return_value = [create_mock_draft_file('foo')]
         with assert_raises(HTTPError) as error:
             fail_if_unauthorized(self.node_settings, self.user.auth, 'bar')
             assert_equal(error.code, http.FORBIDDEN)
 
-    @mock.patch('website.addons.dataverse.views.crud.get_files',
+    @mock.patch('website.addons.dataverse.views.crud.client.get_files',
                 side_effect=[[create_mock_draft_file('released')],
                              [create_mock_draft_file('draft')]])
     def test_fail_if_unauthorized_unauthorized(self, mock_get_files):
