@@ -174,7 +174,7 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        return self.repo(user, repo).contents(path, ref)
+        return self.repo(user, repo).contents(path.encode("utf-8", ref))
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):
@@ -297,7 +297,7 @@ def ref_to_params(branch=None, sha=None):
 # TODO: Use Node#api_url_for and Node#web_url_for
 def build_github_urls(item, node_url, node_api_url, branch, sha):
 
-    quote_path = urllib.quote_plus(item.path)
+    quote_path = urllib.quote_plus(item.path.encode('utf-8'))
     params = ref_to_params(branch, sha)
 
     if item.type in ['tree', 'dir']:
