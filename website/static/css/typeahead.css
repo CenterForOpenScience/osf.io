@@ -56,7 +56,8 @@ input.typeahead.tt-input {
 
 .tt-dropdown-menu {
     /*display:inline-block;*/
-    width: 422px;
+    width:100%;
+    /*width: 422px;*/
     padding: 8px 0;
     background-color: #fff;
     border: 1px solid #ccc;

@@ -13,6 +13,16 @@
     'use strict';
 
     var namespace = 'AddFile';
+    var $obDropzone = $('#obDropzone');
+    var $obDropzoneSelected = $('#obDropzoneSelected');
+    var $uploadProgress = $('#uploadProgress');
+    var $addLink = $('#addLink'+ namespace);
+    var $clearInputProjectAddFile = $('#clearInputProjectAddFile');
+    var $clearInputComponentAddFile = $('#clearInputComponentAddFile');
+    var $uploadIcon = $('#uploadIcon');
+    var $obDropzoneFilename = $('#obDropzoneFilename');
+    var $inputProjectAddFile = $('#inputProjectAddFile');
+
     var myDropzone = new Dropzone('div#obDropzone', { 
         url: '/', // specified per upload
         autoProcessQueue: false, 
@@ -30,37 +40,33 @@
 
             this.on('maxfilesexceeded', function(file){
                 this.removeFile(file);
-                $('#obDropzone').text(file_name);
-                $('#obDropzone').css('background-image', icon_url);
+                $obDropzone.text(file_name);
+                $obDropzone.css('background-image', icon_url);
             });
 
             submitButton.addEventListener('click', function() {
-                var projectRoute = $('#addLink'+ namespace).prop('routeID');
+                var projectRoute = $addLink.prop('routeID');
                 
-                $('#addLinkAddFile').attr('disabled', true);
-                $('#uploadProgress').show();
-                // myDropzone.options.url =  '/api/v1/project/' + projectRoute + '/osffiles/';
+                $addLink.attr('disabled', true);
+                $uploadProgress.show();
                 myDropzone.options.url = projectRoute + 'osffiles/';
                 myDropzone.processQueue(); // Tell Dropzone to process all queued files.
             });
 
             var clearButton = document.querySelector('#clearDropzone');
             clearButton.addEventListener('click', function() {
-
-                $('#obDropzoneSelected').hide();
-                $('#obDropzone').show();
-                $('#obDropzoneReveal').hide();
-                delete $('addLinkAddFile').linkID;
-                $('#InputProjectAddFile').val('');
-                $('#InputProjectAddFile').css("border-color", '');
-
+                $clearInputProjectAddFile.click();
+                $clearInputComponentAddFile.click();
+                $obDropzoneSelected.hide();
+                $obDropzone.show();
+                delete $addLink.linkID;
                 myDropzone.removeAllFiles();
             });
 
 
             // This reloads the window to the project you uploaded the file to...
             this.on('complete', function () {
-                var url = '/'+ $('#addLink' + namespace).prop('linkID'); 
+                var url = '/'+ $addLink.prop('linkID'); 
                 if(url !== '/undefined'){
                     window.location = url;
                 }
@@ -75,15 +81,16 @@
                 // var icon_url = 'url(/static/img/upload_icons/' + get_dz_icon(file_name) + ')';
                 var icon_url = '/static/img/upload_icons/' + get_dz_icon(file_name);
                 
-                $('#uploadIcon').attr('src', icon_url);
-                $('#obDropzoneFilename').text(file_name);
+                $uploadIcon.attr('src', icon_url);
+                $obDropzoneFilename.text(file_name);
 
-                // $('#obDropzoneSelected').css('background-image', icon_url);
-                $('#obDropzoneReveal').fadeIn();
-                $('#obDropzone').hide();
-                $('#obDropzoneSelected').show();
-            
-                $('#inputProjectAddFile').focus();
+
+                // $('#obDropzoneReveal').fadeIn();
+                $obDropzone.hide();
+                $obDropzoneSelected.show();
+                
+                $inputProjectAddFile.focus();
+                $inputProjectAddFile.css('background-color', 'white !important;');
             });
         }
 });
@@ -176,15 +183,17 @@
     // truncate long file names
     function truncateFilename(string){
         var ext = getStringEnd(string);
-        if (string.length > 20){
-            return string.substring(0, 20-ext.length-3) + '...' + ext;
+        if (string.length > 50){
+            return string.substring(0, 50-ext.length-3) + '...' + ext;
         }else{
             return string;
         }
     }
 
     function ObAddFile(){
-        var typeaheadsearch  = new TypeaheadSearch(namespace);
+        var typeaheadsearch1  = new TypeaheadSearch(namespace, "Project", 1);
+        var typeaheadsearch2  = new TypeaheadSearch(namespace, 'Component');
+
     }
 
     return ObAddFile;

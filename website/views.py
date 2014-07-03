@@ -128,7 +128,6 @@ def get_dashboard_nodes(auth, **kwargs):
         # exclude registrations
         Q('is_registration', 'eq', False)
     )
-
     return _render_nodes(list(nodes) + list(comps))
 
 

@@ -5,6 +5,7 @@ var substringMatcher = function(strs) {
     var matches = [];
 
     // regex used to determine if a string contains the substring `q`
+
     var substrRegex = new RegExp(q, 'i');
 
     // iterate through the pool of strings and for any string that
@@ -24,64 +25,113 @@ var substringMatcher = function(strs) {
   };
 };
  
+function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, namespace, nodeType, componentBool){
+//  once a typeahead option is selected, enable the button and assign the add_link variable for use later
+    inputProject.bind('typeahead:selected', function(obj, datum) {
+        var linkID = datum.value.node_id;
+        var routeID = datum.value.route;
+        clearInputProject.show();
 
-function TypeaheadSearch(namespace) {
-        var self = this;
-        this.myProjects = [];
+        inputProject.css('background-color', '#f5f5f5')
+            .attr('disabled', true)
+            .css('border', '2px solid LightGreen');
 
-        function makeName(name, api_url, nodes){
-            var parentUrl = nodes[api_url.split('/')[4]];
-            if(api_url.indexOf('/node/') > -1){
-                nodes.forEach(function(node){
-                    if(node.url === parentUrl){
-                        return parentUrl + ': ' + name;
-                    }
-                });
-            }}
+        addLink.prop('linkID', linkID)
+            .removeAttr('disabled')
+            .prop('routeID', routeID);
+        if(componentBool===1){
+            console.log('this');
+
+            parent_node = $('#addLink' + namespace).prop('linkID');
+            $.getJSON('/api/v1/project/'+ parent_node +'/get_children/', function (projects) {
+            var myProjects = projects.nodes.map(
+                function(item){return {
+                    'name': item.title,
+                    'node_id': item.id,
+                    'route': item.api_url,
+                };
+            });
+              $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
+
+            $('#inputComponent' + namespace).attr('disabled', false);
+            });
         }
+    });
+}
+
+
+function TypeaheadAddListenter(clearInputProject, inputProject, addLink, namespace, nodeType, componentBool){
+    clearInputProject[0].addEventListener('click', function() {
+
+        clearInputProject.hide();
         
-        // gets data from api route
-        $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
-            projects.nodes.forEach(function(item){
-                self.myProjects.push(
-                {
-                    // name: makeName(item.title, item.api_url, projects.nodes),
-                    name: item.title,
-                    node_id: item.id,
-                    route: item.api_url,
+        inputProject.attr('disabled', false)
+            .css('background-color', '')
+            .css('border-color','#ccc')
+            .val('');
 
-                });
-            });
-            //  once a typeahead option is selected, enable the button and assign the add_link variable for use later
-            $('#inputProject' + namespace).bind('typeahead:selected', function(obj, datum) {
-                $('#addLink' + namespace).removeAttr('disabled');
-                var linkID = datum.value.node_id;
-                var routeID = datum.value.route;
-                $('#inputProject' + namespace).css('border-color', 'lightgreen');
-                $('#addLink' + namespace).prop('linkID', linkID);
-                $('#addLink' + namespace).prop('routeID', routeID);
-            });
-            
-            // Listener that disables button when nothing selected
-            $('#inputProject' + namespace).keypress(function(){
-                $('#addLink' + namespace).attr('disabled', true);
-                $('#inputProject' + namespace).css('border-color', '');
-                $('#addLink' + namespace).removeProp('linkID');
-                $('#addLink' + namespace).removeProp('routeID');
-            });
+        addLink.removeProp('linkID')
+            .removeProp('routeID')
+            .attr('disabled', true);
+        if(componentBool===1){
+            $('#inputComponent' + namespace).attr('disabled', true);      
+        }
+    });
+}
 
-            // type ahead logic
-            $('#projectSearch' + namespace + ' .typeahead').typeahead({
-                hint: true,
-                highlight: true,
-                minLength: 1
-            },
-            {
-                name: 'projectSearch' + namespace,
-                displayKey: function(data){
-                    return data.value.name;
-                },
-                source: substringMatcher(self.myProjects)
-            });
+function TypeaheadLogic(nodeType, namespace, myProjects){
+    $('#input' + nodeType + namespace).typeahead({
+        hint: true,
+        highlight: true,
+        minLength: 1
+    },
+    {
+        name: 'projectSearch' + nodeType + namespace,
+        displayKey: function(data){
+            return data.value.name;
+    },
+        source: substringMatcher(myProjects)
+    });
+    // $('#input' + nodeType + namespace).data('typeahead');
+}
+
+function TypeaheadComponent(namespace, nodeType, componentBool){
+        var myProjects = [];
+        var $addLink = $('#addLink' + namespace);
+        var $clearInputProject = $('#clearInput' + nodeType + namespace);
+        var $inputProject = $('#input'+ nodeType + namespace); 
+
+        TypeaheadSelectedOption($inputProject, $clearInputProject, $addLink, namespace, nodeType, componentBool);
+        TypeaheadAddListenter($clearInputProject, $inputProject, $addLink, namespace, nodeType, componentBool);
+        TypeaheadLogic(nodeType, namespace, myProjects);
+}
+
+function TypeaheadProject(namespace, nodeType, componentBool){
+    $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
+
+        var myProjects = projects.nodes.map(
+            function(item){return {
+                'name': item.title,
+                'node_id': item.id,
+                'route': item.api_url,
+            };
         });
-};
+
+        var $addLink = $('#addLink' + namespace);
+        var $clearInputProject = $('#clearInput' + nodeType + namespace);
+        var $inputProject = $('#input'+ nodeType + namespace); 
+        
+        TypeaheadSelectedOption($inputProject, $clearInputProject, $addLink, namespace, nodeType, componentBool);
+        TypeaheadAddListenter($clearInputProject, $inputProject, $addLink, namespace, nodeType, componentBool);
+        TypeaheadLogic(nodeType, namespace, myProjects);            
+    });
+}
+
+function TypeaheadSearch(namespace, nodeType, componentBool) {
+    if(nodeType==='Project'){
+        TypeaheadProject(namespace, nodeType, componentBool);
+    }else{
+        TypeaheadComponent(namespace, nodeType, componentBool);
+    }
+}
+

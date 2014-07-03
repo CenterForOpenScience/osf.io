@@ -52,47 +52,64 @@ z<%inherit file="base.mako"/>
                             <img class="ob-expand-icon" id="obIconRegisterProject" src="/static/img/plus.png">
                         </div><!-- end #obInputProject-btn -->
                             <div class="ob-reveal" id="obRevealRegisterProject">
-                        <div  id="projectSearchRegisterProject">
-                            <input class="typeahead" type="text" placeholder="Search projects" style="margin:20px;" 
-                            id = 'inputProjectRegisterProject'>
-                            <span class = "findBtn btn btn-default" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
+                        <div  id="projectSearchProjectRegisterProject">
+                            <div>
+                                
+                        <div>
+                            <img class="clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
+                            <input class="typeahead" type="text" placeholder="Search projects" id = 'inputProjectRegisterProject'>
+                        </div>
+                                
+                            <span class="findBtn btn btn-default" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
                         </div>
                     </div>
                     </li> <!-- end #obInputProject" -->
 
                     <!-- start #ob-AddFile -->
                     <li class="ob-list list-group-item">
-                        <div class="ob-heading">Add a File to a Project</div>
-                        <div id="projectSearchAddFile">
-                        <div style="max-width:170px;">
-                            <div id="obDropzone" class="ob-dropzone-box">
-                            Drop File (or click)
+
+                        <div class="row" >
+                            <div class="col-md-12">
+                                <h3>Add a File to a Project</h3>
                             </div>
-                            <div id="obDropzoneSelected" class="ob-dropzone-box ob-reveal">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>1. Drop File (or click)</h4>
+                                <div id="obDropzone" class="ob-dropzone-box pull-left"></div>
+                                <div id="obDropzoneSelected" class="ob-dropzone-box ob-reveal pull-left">
                                     <img id="uploadIcon" src="//:0">
-                                    <div id="obDropzoneFilename"> </div>
+                                    <div id="obDropzoneFilename"></div>
                                     <progress class="ob-reveal" id="uploadProgress" max="100" value="0"></progress>
-
-                                <div id="clearDropzone"><img src="/static/img/close2.png"></div>
+                                    <img class="clear-button" id="clearDropzone" src="/static/img/close2.png">
+                                </div>
                             </div>
-                            
+                        </div>
+                        <div class="" id="obDropzoneReveal">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4> 2. Select a project</h4>
+                                    <div style="position:relative;" class="projectSearchAddFile" >
+                                        <img class="clear-button ob-reveal" id="clearInputProjectAddFile" src="/static/img/close2.png">
+                                        <input class="typeahead search-box-add-file" type="text" placeholder="Type to search"
+                                         id='inputProjectAddFile'>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div class="ob-reveal" id="obDropzoneReveal">
-
-                                <img id="obArrowRight" src="/static/img/triangle_right.png" >
-                                <div id="obProjectSearchContainer">
-                                    <input class="typeahead" type="text" placeholder="Search projects" id = 'inputProjectAddFile'>
-                                    <br>                                    
-                                    <span class="findBtn btn btn-default" id="addLinkAddFile" disabled="disabled">Upload</span>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <h4>3. (optional) Select a component</h4>
+                                    <div style="position:relative;" class="projectSearchAddFile">
+                                        <img class="clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">                        
+                                        <input class="typeahead search-box-add-file disabled-input" disabled="disabled" type="text" placeholder="Type to search" id='inputComponentAddFile'>
+                                    </div>
+                                    <span class="findBtn btn btn-default pull-right" id="addLinkAddFile" disabled="disabled">Upload</span>
                                 </div>
                             </div>
                         </div>
                     </li> <!-- end #ob-AddFile" -->
                 </ul>
-
 #########################################################################################################################
-
             </div><!-- end #watchFeed -->
         </div>
     </div>

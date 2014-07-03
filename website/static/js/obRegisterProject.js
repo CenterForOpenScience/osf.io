@@ -11,11 +11,10 @@
     }
 }(this, function ($) {
     'use strict';
-    console.log();
     var namespace = 'RegisterProject';
 
     function ObRegisterProject(){
-        var typeaheadsearch  = new TypeaheadSearch(namespace);
+        var typeaheadsearch  = new TypeaheadSearch(namespace, "Project", false);
         // to  do any of this just edit the click functionality editing the name spaced add_linkk
         $('#addLink'+ namespace).click(function() {
             var url = '/'+ $('#addLink' + namespace).prop('linkID') + '/register'; 
