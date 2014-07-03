@@ -11,13 +11,13 @@
                 </a>
             </small>
 	    
-	    <a data-bind="click: deauthorize"
-               class="text-danger pull-right addon-auth">
-	      Deauthorize
-	    </a>
-	</span>
+            <a data-bind="click: deauthorize"
+                   class="text-danger pull-right addon-auth">
+              Deauthorize
+            </a>
+        </span>
 
-         <!-- Import Access Token Button -->
+        <!-- Import Access Token Button -->
         <small data-bind="if: showImport">
             <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
                 Import Access Token
@@ -31,7 +31,6 @@
             </a>
         </small>
     </h4>
-
 
     <!-- Settings Pane -->
     <div class="figshare-settings" data-bind='if: showSettings'>
