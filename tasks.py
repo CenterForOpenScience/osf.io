@@ -158,6 +158,52 @@ def mongoshell():
 
 
 @task
+def mongodump(path):
+    """Back up the contents of the running OSF database"""
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongodump --db {db} --port {port} --out {path}".format(
+        db=db,
+        port=port,
+        path=path,
+        pty=True)
+    run(cmd, echo=True)
+
+    print()
+    print("To restore from the dumped database, run `invoke mongorestore {0}`".format(
+        os.path.join(path, settings.DB_NAME)))
+
+
+@task
+def mongorestore(path, drop=False):
+    """Restores the running OSF database with the contents of the database at
+    the location given its argument.
+
+    By default, the contents of the specified database are added to
+    the existing database. The `--drop` option will cause the existing database
+    to be dropped.
+
+    A caveat: if you `invoke mongodump {path}`, you must restore with
+    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
+    database dump will be stored.
+    """
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongorestore --db {db} --port {port}".format(
+        db=db,
+        port=port,
+        pty=True)
+
+    if drop:
+        cmd += " --drop"
+
+    cmd += " " + path
+    run(cmd, echo=True)
+
+
+@task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
     run("celery worker -A framework.tasks -l {0}".format(level))
