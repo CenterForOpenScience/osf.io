@@ -140,10 +140,10 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-   'wiki', 'osffiles',
-    'github', 's3', 'figshare',
-    'dropbox', 'dataverse',
     # 'badges',
+    'dataverse',
+    'dropbox',
+    'figshare',
     'forward',
     'github',
     'osffiles',
