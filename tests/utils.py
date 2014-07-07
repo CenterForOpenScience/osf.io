@@ -1,6 +1,7 @@
 from nose import SkipTest
 from functools import wraps
 
+
 def requires_module(module):
     def decorator(fn):
         @wraps(fn)

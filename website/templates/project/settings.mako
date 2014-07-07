@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Project Settings</%def>
+<%def name="title()">${node['title']} Settings</%def>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -52,7 +52,6 @@
             </div>
 
         % endif
-
 
         <div id="configureCommenting" class="panel panel-default">
 
@@ -156,7 +155,6 @@
                             % endif
 
                         % endfor
-
                     </div>
                 </div>
 

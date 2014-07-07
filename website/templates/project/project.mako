@@ -1,6 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
-<%def name="title()">Project</%def>
+<%def name="title()">${node['title']}</%def>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />
@@ -98,12 +98,9 @@
 <div class="page-header">
     % if node['category'] == 'project':
         <div class="pull-right btn-group">
-            % if 'write' in user['permissions']:
+            % if 'write' in user['permissions'] and not node['is_registration']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
                 <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % else:
-                <a class="btn btn-default disabled">Add Component</a>
-                <a class="btn btn-default disabled">Add Link</a>
             % endif
         </div>
 
@@ -175,7 +172,8 @@ ${parent.javascript_bottom()}
         // Tag input
         $('#node-tags').tagsInput({
             width: "100%",
-            interactive:${'true' if user["can_edit"] else 'false'},
+            interactive: ${'true' if user["can_edit"] else 'false'},
+            maxChars: 128,
             onAddTag: function(tag){
                 $.ajax({
                     url: "${node['api_url']}" + "addtag/" + tag + "/",
@@ -206,7 +204,7 @@ ${parent.javascript_bottom()}
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
                 data: nodeApiUrl + 'files/grid/',
-                columns: [HGrid.Col.Name],
+                columns: [Rubeus.Col.Name],
                 uploads: false,
                 width: "100%",
                 height: 600,

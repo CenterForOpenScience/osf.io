@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # PEP8 asserts
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from webtest_plus import TestApp
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
 from website.addons.osffiles.model import OsfGuidFile
@@ -15,7 +15,7 @@ app = website.app.init_app(
     settings_module='website.settings'
 )
 
-class TestFilesViews(DbTestCase):
+class TestFilesViews(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

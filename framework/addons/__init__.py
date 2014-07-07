@@ -43,7 +43,10 @@ class AddonModelMixin(StoredObject):
             return False
 
         backref_key = self._backref_key(addon_config)
-        addons = getattr(self, backref_key)
+        addons = [
+            addon for addon in getattr(self, backref_key)
+            if addon is not None
+        ]
         if addons:
             if deleted or not addons[0].deleted:
                 assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
@@ -70,7 +73,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name, deleted=True)
         if addon:
             if addon.deleted:
-                addon.undelete()
+                addon.undelete(save=True)
                 return True
             return False
 
@@ -98,7 +101,7 @@ class AddonModelMixin(StoredObject):
         if addon:
             if self._name in addon.config.added_mandatory:
                 raise ValueError('Cannot delete mandatory add-on.')
-            addon.delete()
+            addon.delete(save=True)
             return True
         return False
 

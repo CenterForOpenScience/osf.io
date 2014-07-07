@@ -73,7 +73,7 @@
 
 <p>The OSF infrastructure will be open-sourced to encourage a community of
     developers to contribute to open science by adding features and improving
-    existing features. For updates on new features, you can join our <a href="">Google
+    existing features. For updates on new features, you can join our <a href="https://groups.google.com/forum/#!forum/openscienceframework">Google
         Group</a>, find us on <a
             href="https://twitter.com/osframework">Twitter</a> and on <a
             href="https://www.facebook.com/OpenScienceFramework">Facebook</a>,

@@ -1,7 +1,7 @@
 <div id="forwardScope" class="scripted">
 
     <h4 class="addon-title">
-        Forward
+        External Link
     </h4>
 
     <!-- Settings Pane -->
@@ -10,13 +10,22 @@
         <form class="form" data-bind="submit: submitSettings">
 
             <div class="form-group">
-                <label for="forwardUrl">Forward URL</label>
+                <label for="forwardUrl">URL</label>
                 <input
                         id="forwardUrl"
                         class="form-control"
                         data-bind="value: url"
                     />
             </div>
+	    
+            <div class="form-group">
+                    <label for="forwardLabel">Label</label>
+                    <input
+                            id="forwardLabel"
+                            class="form-control"
+                            data-bind="value: label"
+                        />
+                </div>
 
             <div class="form-group">
                 <label for="forwardBool">Automatic Forward</label>
@@ -61,6 +70,6 @@
     $script(['/static/addons/forward/forwardConfig.js']);
     $script.ready('forwardConfig', function() {
         var url = '${node['api_url'] + 'forward/config/'}';
-        var forward = new ForwardConfig('#forwardScope', url);
+        var forward = new ForwardConfig('#forwardScope', url, nodeId);
     });
 </script>

@@ -175,6 +175,9 @@
      */
     $.osf.applyBindings = function(viewModel, selector) {
         var $elem = $(selector);
+        if ($elem.length === 0) {
+            throw "No elements matching selector '" + selector + "'";
+        }
         if ($elem.length > 1) {
             throw "Can't bind ViewModel to multiple elements.";
         }

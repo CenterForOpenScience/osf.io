@@ -54,6 +54,8 @@ web_routes = {
                 '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/download/',
                 # Note: Added these old URLs for backwards compatibility with
                 # hard-coded links.
+                '/project/<pid>/osffiles/<fid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
                 '/project/<pid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/node/<nid>/osffiles/download/<fid>/version/<vid>/',
                 '/project/<pid>/files/<fid>/version/<vid>/',
@@ -120,6 +122,16 @@ api_routes = {
             ],
             'delete',
             views.delete_file,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/osffiles/<fid>/info/',
+                '/project/<pid>/node/<nid>/osffiles/<fid>/info/',
+            ],
+            'get',
+            views.file_info,
             json_renderer,
         ),
 
