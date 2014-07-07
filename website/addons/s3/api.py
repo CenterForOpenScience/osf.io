@@ -1,4 +1,5 @@
 import os
+
 from dateutil.parser import parse
 
 from boto.s3.connection import S3Connection, Key
@@ -86,7 +87,8 @@ class S3Wrapper(object):
         return self.bucket.delete_key(keyName)
 
     def download_file_URL(self, keyName, vid=None):
-        return self.bucket.get_key(keyName, version_id=vid, headers={'Content-Disposition': 'attachment'}).generate_url(5)
+        headers = {'response-content-disposition': 'attachment'}
+        return self.bucket.get_key(keyName, version_id=vid).generate_url(5, response_headers=headers)
 
     def get_wrapped_keys(self, prefix=None):
         return [S3Key(x) for x in self.get_file_list()]

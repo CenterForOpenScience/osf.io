@@ -10,9 +10,8 @@ from nose.tools import *  # PEP8 asserts
 from webtest_plus import TestApp
 
 from framework import Q
-from framework.auth.model import User
-from framework.auth.decorators import Auth
-from tests.base import DbTestCase, fake
+from framework.auth import User, Auth
+from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
@@ -29,7 +28,7 @@ from website.app import init_app
 app = init_app(set_backends=False, routes=True)
 
 
-class TestAnUnregisteredUser(DbTestCase):
+class TestAnUnregisteredUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -86,7 +85,7 @@ class TestAnUnregisteredUser(DbTestCase):
         )
 
 
-class TestAUser(DbTestCase):
+class TestAUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -213,13 +212,13 @@ class TestAUser(DbTestCase):
         res = self.app.get('/', auto_follow=True)
         title = res.html.title.string
         # page title is correct
-        assert_equal('Open Science Framework | Home', title)
+        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('Open Science Framework | Dashboard', title)
+        assert_equal('OSF | Dashboard', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -281,19 +280,19 @@ class TestAUser(DbTestCase):
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, self.user.display_absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
 
-class TestRegistrations(DbTestCase):
+class TestRegistrations(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
@@ -316,13 +315,12 @@ class TestRegistrations(DbTestCase):
         res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
         assert_not_in('Delete project', res)
 
-
-    def test_cant_see_contributor(self):
+    def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_not_in('Contributors', subnav.text)
+        assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
 
@@ -366,7 +364,7 @@ class TestRegistrations(DbTestCase):
         assert_not_in('Registrations', subnav.text)
 
 
-class TestComponents(DbTestCase):
+class TestComponents(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -427,7 +425,7 @@ class TestComponents(DbTestCase):
         )
 
 
-class TestMergingAccounts(DbTestCase):
+class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -534,14 +532,16 @@ class TestMergingAccounts(DbTestCase):
 
 # FIXME: These affect search in development environment. So need to migrate solr after running.
 # # Remove this side effect.
-@unittest.skipIf(not settings.USE_SOLR, 'Skipping because USE_SOLR is False')
-class TestSearching(DbTestCase):
+@unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
+class TestSearching(OsfTestCase):
 
     '''Test searching using the search bar. NOTE: These may affect the
     Solr database. May need to migrate after running these.
     '''
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -559,7 +559,8 @@ class TestSearching(DbTestCase):
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
-        res = res.click('Search users')
+
+        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 
@@ -575,7 +576,7 @@ class TestSearching(DbTestCase):
         assert_in('Foobar Project', res)
 
 
-class TestShortUrls(DbTestCase):
+class TestShortUrls(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -650,7 +651,7 @@ class TestShortUrls(DbTestCase):
 
 
 @requires_piwik
-class TestPiwik(DbTestCase):
+class TestPiwik(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.users = [
@@ -704,7 +705,7 @@ class TestPiwik(DbTestCase):
         )
 
 @unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
-class TestClaiming(DbTestCase):
+class TestClaiming(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)
@@ -870,7 +871,7 @@ class TestClaiming(DbTestCase):
         assert_in(different_name, res)
 
 
-class TestConfirmingEmail(DbTestCase):
+class TestConfirmingEmail(OsfTestCase):
     def setUp(self):
         self.app = TestApp(app)
         self.user = UnconfirmedUserFactory()
@@ -936,7 +937,7 @@ class TestConfirmingEmail(DbTestCase):
         # Sees alert message
         assert_in('already been confirmed', res)
 
-class TestClaimingAsARegisteredUser(DbTestCase):
+class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
         self.app = TestApp(app)

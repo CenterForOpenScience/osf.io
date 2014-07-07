@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Open Science Framework | ${self.title()}</title>
+    <title>OSF | ${self.title()}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
@@ -45,14 +45,14 @@
     <%include file="footer.mako"/>
 
         %if use_cdn:
-            <div id="fb-root"></div>
-            <script>(function(d, s, id) {
-              var js, fjs = d.getElementsByTagName(s)[0];
-              if (d.getElementById(id)) {return;}
-              js = d.createElement(s); js.id = id;
-              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-              fjs.parentNode.insertBefore(js, fjs);
-            }(document, 'script', 'facebook-jssdk'));</script>
+##            <div id="fb-root"></div>
+##            <script>(function(d, s, id) {
+##              var js, fjs = d.getElementsByTagName(s)[0];
+##              if (d.getElementById(id)) {return;}
+##              js = d.createElement(s); js.id = id;
+##              js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+##              fjs.parentNode.insertBefore(js, fjs);
+##            }(document, 'script', 'facebook-jssdk'));</script>
 
             <script>
             var _prum = [['id', '526076f6abe53d9e35000000'],
@@ -163,6 +163,7 @@
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
+##    <script src="/static/js/koHelpers.js"></script>
 
     % for url in js_all:
     <script src="${url}"></script>
@@ -172,8 +173,10 @@
         // Enable knockout punches
         ko.punches.enableAll();
         // Filebrowser dependencies
+        $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
+            'zeroclipboard');
         $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
-        $script(['/static/vendor/hgrid/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'

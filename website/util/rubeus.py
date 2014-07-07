@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Contanins Helper functions for generating correctly
-formated hgrid list/folders.
+"""Contains helper functions for generating correctly
+formatted hgrid list/folders.
 """
 import os
 import hurry
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 
 FOLDER = 'folder'
 FILE = 'item'
@@ -33,8 +33,8 @@ def default_urls(node_api, short_name):
 def to_hgrid(node, auth, **data):
     """Converts a node into a rubeus grid format
 
-    :param node Node: the node to be parsed
-    :param auth Auth: the user authorization object
+    :param Node node: the node to be parsed
+    :param Auth auth: the user authorization object
     :returns: rubeus-formatted dict
 
     """
@@ -42,17 +42,20 @@ def to_hgrid(node, auth, **data):
 
 
 def build_addon_root(node_settings, name, permissions=None,
-                     urls=None, extra=None, **kwargs):
+                     urls=None, extra=None, buttons=None, **kwargs):
     """Builds the root or "dummy" folder for an addon.
 
-    :param node_settings addonNodeSettingsBase: Addon settings
-    :param name String: Additional information for the folder title
+    :param addonNodeSettingsBase node_settings: Addon settings
+    :param String name: Additional information for the folder title
         eg. Repo name for Github or bucket name for S3
-    :param permissions dict or Auth: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
-    :param urls dict: Hgrid related urls
-    :param extra String: Html to be appened to the addon folder name
+    :param dict or Auth permissions: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
+    :param dict urls: Hgrid related urls
+    :param String extra: Html to be appened to the addon folder name
         eg. Branch switcher for github
-    :param kwargs dict: Any additional information to add to the root folder
+    :param list of dicts buttons: List of buttons to appear in HGrid row. Each
+        dict must have 'text', a string that will appear on the button, and
+        'action', the name of a function in
+    :param dict kwargs: Any additional information to add to the root folder
     :return dict: Hgrid formatted dictionary for the addon root folder
 
     """
@@ -78,6 +81,7 @@ def build_addon_root(node_settings, name, permissions=None,
         'iconUrl': node_settings.config.icon_url,
         KIND: FOLDER,
         'extra': extra,
+        'buttons': buttons,
         'isAddonRoot': True,
         'permissions': permissions,
         'accept': {
@@ -91,24 +95,19 @@ def build_addon_root(node_settings, name, permissions=None,
     return rv
 
 
-# TODO finish or remove me....
-def build_addon_item():
-    pass
+def build_addon_button(text, action):
+    """Builds am action button to be rendered in HGrid
 
+    :param str text: A string or html to appear on the button itself
+    :param str action: The name of the HGrid action for the button to call.
+        The callback for the HGrid action must be defined as a member of HGrid.Actions
+    :return dict: Hgrid formatted dictionary for custom buttons
 
-# TODO: Is this used anywhere?
-def validate_row(item):
-    """Returns whether or not the given item has the minimium
-    requirements to be rendered in a rubeus grid
     """
-    try:
-        item['addon']
-        item['name']
-        item[KIND]
-        item['urls']
-        return True
-    except KeyError:
-        return False
+    return {
+        'text': text,
+        'action': action,
+    }
 
 
 class NodeFileCollector(object):

@@ -3,15 +3,15 @@ import os
 import mock
 from nose.tools import *
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory)
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.util import rubeus
 
 
-class TestRubeus(DbTestCase):
+class TestRubeus(OsfTestCase):
 
     def setUp(self):
 
@@ -64,6 +64,7 @@ class TestRubeus(DbTestCase):
             },
             'isAddonRoot': True,
             'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -134,7 +135,8 @@ class TestRubeus(DbTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -180,7 +182,8 @@ class TestRubeus(DbTestCase):
                 'acceptedFiles': node_settings.config.accept_extensions
             },
             'isAddonRoot': True,
-            'extra': None
+            'extra': None,
+            'buttons': None,
         }
         permissions = {
             'view': node.can_view(user),
@@ -240,7 +243,7 @@ serialized = {
 }
 mock_addon.config.get_hgrid_data.return_value = [serialized]
 
-class TestSerializingNodeWithAddon(DbTestCase):
+class TestSerializingNodeWithAddon(OsfTestCase):
     def setUp(self):
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)

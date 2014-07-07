@@ -1,4 +1,4 @@
-<form role="form" id="addonSettings${addon_short_name.capitalize()}" class="addon-settings" method="POST" data-addon="${addon_short_name}">
+<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
     <!-- Title -->
     ${self.title()}

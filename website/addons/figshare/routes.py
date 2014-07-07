@@ -9,15 +9,6 @@ from . import views
 
 settings_routes = {
     'rules': [
-        #Configuration
-        Rule([
-            '/project/<pid>/figshare/unlink/',
-            '/project/<pid>/node/<nid>/figshare/unlink/'
-        ], 'post', views.config.figshare_unlink, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/settings/',
-            '/project/<pid>/node/<nid>/figshare/settings/',
-        ], 'post', views.config.figshare_set_config, json_renderer),
         # Widget
         Rule([
             '/project/<pid>/figshare/widget/',
@@ -80,22 +71,60 @@ settings_routes = {
 
 api_routes = {
     'rules': [
+        ##### Node settings #####
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'get',
+            views.config.figshare_config_get,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'put',
+            views.config.figshare_config_put,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/hgrid/options/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/options/'],
+            'get',
+            views.config.figshare_get_options,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/import-auth/',
+            '/project/<pid>/node/<nid>/figshare/config/import-auth/'],
+            'put',
+            views.config.figshare_import_user_auth,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/figshare/config/',
+            '/project/<pid>/node/<nid>/figshare/config/'],
+            'delete',
+            views.config.figshare_deauthorize,
+            json_renderer
+        ),
+
+        #######################
         Rule([
             '/project/<pid>/figshare/hgrid/',
             '/project/<pid>/node/<nid>/figshare/hgrid/',
-            '/project/<pid>/figshare/hgrid/<type>/<id>',
-            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>',
+            '/project/<pid>/figshare/hgrid/<type>/<id>/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>/',
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
         Rule([
-            '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
-            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
+            '/project/<pid>/figshare/render/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
         Rule([
             '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_download_file, json_renderer,),
-     ],
+    ],
     'prefix': '/api/v1',
 }
 

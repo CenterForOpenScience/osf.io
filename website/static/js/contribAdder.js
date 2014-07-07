@@ -35,7 +35,7 @@
         self.query = ko.observable();
         self.results = ko.observableArray([]);
         self.selection = ko.observableArray();
-        self.errorMsg = ko.observable('');
+        self.notification = ko.observable('');
         self.inviteError = ko.observable('');
 
         self.nodes = ko.observableArray([]);
@@ -81,7 +81,7 @@
         };
 
         self.search = function() {
-            self.errorMsg('');
+            self.notification(false);
             if (self.query()) {
                 $.getJSON(
                     '/api/v1/user/search/',
@@ -99,13 +99,16 @@
         };
 
         self.importFromParent = function() {
-            self.errorMsg('');
+            self.notification(false);
             $.getJSON(
                 nodeApiUrl + 'get_contributors_from_parent/',
                 {},
                 function(result) {
                     if (!result.contributors.length) {
-                        self.errorMsg('All contributors from parent already included.');
+                        self.notification({
+                            'message': 'All contributors from parent already included.',
+                            'level': 'info'
+                        });
                     }
                     self.results(result['contributors']);
                 }
@@ -113,13 +116,16 @@
         };
 
         self.recentlyAdded = function() {
-            self.errorMsg('');
+            self.notification(false);
             $.getJSON(
                 nodeApiUrl + 'get_recently_added_contributors/',
                 {},
                 function(result) {
                     if (!result.contributors.length) {
-                        self.errorMsg('All recently added contributors already included.');
+                        self.notification({
+                            'message': 'No recently added contributors not already included.',
+                            'level': 'info'
+                        });
                     }
                     self.results(result['contributors']);
                 }
@@ -216,6 +222,8 @@
 
         self.add = function(data) {
             data.permission = ko.observable('admin');
+            // All manually added contributors are visible
+            data.visible = true;
             self.selection.push(data);
             // Hack: Hide and refresh tooltips
             $('.tooltip').hide();
@@ -278,7 +286,7 @@
 
         self.submit = function() {
             $.osf.block();
-            $(".modal").modal('hide');
+            $('.modal').modal('hide');
             $.ajax({
                 url: nodeApiUrl + 'contributors/',
                 type: "post",
@@ -306,7 +314,7 @@
             self.results([]);
             self.selection([]);
             self.nodesToChange([]);
-            self.errorMsg('');
+            self.notification(false);
         };
 
     };

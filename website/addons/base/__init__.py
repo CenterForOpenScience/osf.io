@@ -21,9 +21,6 @@ lookup = TemplateLookup(
     ]
 )
 
-class AddonError(Exception): pass
-
-
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
     return mtype and mtype.startswith('image')
@@ -149,6 +146,10 @@ class AddonConfig(object):
             'has_widget': 'widget' in self.views,
         }
 
+    @property
+    def path(self):
+        return os.path.join(settings.BASE_PATH, self.short_name)
+
 
 class GuidFile(GuidStoredObject):
 
@@ -172,7 +173,6 @@ class GuidFile(GuidStoredObject):
         return os.path.join(
             self.node.deep_url, self.file_url,
         )
-
 
 
 class AddonSettingsBase(StoredObject):
@@ -224,6 +224,40 @@ class AddonUserSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    @property
+    def public_id(self):
+        return None
+
+    def get_backref_key(self, schema, backref_name):
+        return schema._name + '__' + backref_name
+
+    # TODO: Test me @asmacdo
+    @property
+    def nodes_authorized(self):
+        """Get authorized, non-deleted nodes."""
+        schema = self.config.settings_models['node']
+        nodes_backref = self.get_backref_key(schema, 'authorized')
+        return [
+            node_addon.owner
+            for node_addon in getattr(self, nodes_backref)
+            if not node_addon.owner.is_deleted
+        ]
+
+    def to_json(self, user):
+        ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret.update({
+            'nodes': [
+                {
+                    '_id': node._id,
+                    'url': node.url,
+                    'title': node.title,
+                    'registered': node.is_registration,
+                }
+                for node in self.nodes_authorized
+            ]
+        })
+        return ret
+
 
 class AddonNodeSettingsBase(AddonSettingsBase):
 
@@ -240,7 +274,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
                 'permissions': self.owner.get_permissions(user)
             },
             'node': {
-                'id': self.owner._primary_key,
+                'id': self.owner._id,
                 'api_url': self.owner.api_url,
                 'url': self.owner.url,
                 'is_registration': self.owner.is_registration,
@@ -252,7 +286,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
 
         """
-        # Note: `config` is added to `self` in AddonConfig::__init__.
+        # Note: `config` is added to `self` in `AddonConfig::__init__`.
         template = lookup.get_template('project/addon/config_error.mako')
         return template.get_def('config_error').render(
             title=self.config.full_name,
@@ -291,6 +325,25 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_make_public(self, node):
+
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
+    def before_make_private(self, node):
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
     def after_set_privacy(self, node, permissions):
         """
 
@@ -305,7 +358,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -317,7 +370,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -333,7 +386,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -345,7 +398,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -355,6 +408,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             clone.save()
 
         return clone, None
+
+    def after_delete(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+
+        """
+        pass
 
 
 # TODO: Move this

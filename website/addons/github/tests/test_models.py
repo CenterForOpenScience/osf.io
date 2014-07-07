@@ -4,17 +4,17 @@ from nose.tools import *
 
 from github3.repos import Repository
 
-from tests.base import DbTestCase
+from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
 
-class TestCallbacks(DbTestCase):
+class TestCallbacks(OsfTestCase):
 
     def setUp(self):
 
@@ -230,3 +230,9 @@ class TestCallbacks(DbTestCase):
             self.project, registration, self.project.creator,
         )
         assert_false(clone.registration_data)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)

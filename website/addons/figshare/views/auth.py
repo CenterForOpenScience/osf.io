@@ -9,11 +9,13 @@ from framework.exceptions import HTTPError
 from website import models
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
+from website.util import web_url_for
 
 from ..auth import oauth_start_url, oauth_get_token
 
+
 @must_be_logged_in
-def figshare_oauth_start(*args, **kwargs):
+def figshare_oauth_start(**kwargs):
 
     user = get_current_user()
 
@@ -42,17 +44,15 @@ def figshare_oauth_start(*args, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
-def figshare_oauth_delete_node(*args, **kwargs):
+def figshare_oauth_delete_node(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_settings = node.get_addon('figshare')
 
-    node_settings.user_settings = None
-    node_settings.figshare_id = None
-    node_settings.figshare_type = None
-    node_settings.figshare_title = None
-    node_settings.save()
+    node_addon.user_settings = None
+    node_addon.figshare_id = None
+    node_addon.figshare_type = None
+    node_addon.figshare_title = None
+    node_addon.save()
 
     node.add_log(
         action='figshare_content_unlinked',
@@ -60,8 +60,8 @@ def figshare_oauth_delete_node(*args, **kwargs):
             'project': node.parent_id,
             'node': node._id,
             'figshare': {
-                'type': node_settings.figshare_type,
-                'id': node_settings.figshare_id
+                'type': node_addon.figshare_type,
+                'id': node_addon.figshare_id,
             }
         },
         auth=auth,
@@ -70,19 +70,7 @@ def figshare_oauth_delete_node(*args, **kwargs):
     return {}
 
 
-@must_have_addon('figshare', 'user')
-def figshare_oauth_delete_user(*args, **kwargs):
-
-    figshare_user = kwargs['user_addon']
-
-    figshare_user.oauth_access_token = None
-    figshare_user.oauth_token_type = None
-    figshare_user.save()
-
-    return {}
-
-
-def figshare_oauth_callback(*args, **kwargs):
+def figshare_oauth_callback(**kwargs):
 
     user = get_current_user()
 
@@ -124,14 +112,15 @@ def figshare_oauth_callback(*args, **kwargs):
 
     if node:
         return redirect(os.path.join(node.url, 'settings'))
-    return redirect('/settings/')
+
+    return redirect(web_url_for('user_addons'))
 
 
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
-def figshare_add_user_auth(*args, **kwargs):
+def figshare_add_user_auth(auth, **kwargs):
 
-    user = kwargs['auth'].user
+    user = auth.user
     node = kwargs['node'] or kwargs['project']
 
     figshare_node = node.get_addon('figshare')
@@ -146,16 +135,9 @@ def figshare_add_user_auth(*args, **kwargs):
 
     return {}
 
-# TODO: Expose this
 
-
-def figshare_oauth_delete_user(*args, **kwargs):
-
-    user = get_current_user()
-    figshare_user = user.get_addon('figshare')
-
-    figshare_user.oauth_access_token = None
-    figshare_user.oauth_token_type = None
-    figshare_user.save()
-
+@must_be_logged_in
+@must_have_addon('figshare', 'user')
+def figshare_oauth_delete_user(user_addon, **kwargs):
+    user_addon.remove_auth(save=True)
     return {}

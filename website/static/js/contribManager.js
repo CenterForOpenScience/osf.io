@@ -10,8 +10,10 @@
 }(this, function($, ko) {
 
     var contribsEqual = function(a, b) {
-        return a.id === b.id && a.permission === b.permission &&
-            a.deleteStaged === b.deleteStaged;
+        return a.id === b.id
+            && a.visible === b.visible
+            && a.permission === b.permission
+            && a.deleteStaged === b.deleteStaged;
     };
 
     // Modified from http://stackoverflow.com/questions/7837456/comparing-two-arrays-in-javascript
@@ -51,11 +53,12 @@
         });
     };
 
-    var ContributorModel = function(contributor, pageOwner) {
+    var ContributorModel = function(contributor, pageOwner, isRegistration) {
 
         var self = this;
 
         $.extend(self, contributor);
+        self.visible = ko.observable(contributor.visible);
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
 
@@ -72,6 +75,8 @@
             if (!$target.hasClass('contrib-button')) {
                 self.deleteStaged(false);
             }
+            // Allow default action
+            return true;
         };
 
         self.notDeleteStaged = ko.computed(function() {
@@ -82,8 +87,8 @@
             return permission.charAt(0).toUpperCase() + permission.slice(1);
         });
 
-        self.contributorIsUser = ko.computed(function() {
-            return self.id === pageOwner['id'];
+        self.canRemove = ko.computed(function(){
+            return (self.id === pageOwner['id']) && !isRegistration;
         });
 
         // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -132,9 +137,34 @@
 
     };
 
-    var ContributorsViewModel = function(contributors, user) {
+    var MessageModel = function(text, level) {
 
         var self = this;
+
+        self.text = ko.observable(text || '');
+        self.level = ko.observable(level || '');
+
+        var classes = {
+            success: 'text-success',
+            error: 'text-danger'
+        };
+
+        self.cssClass = ko.computed(function() {
+            var out = classes[self.level()];
+            if (out === undefined) {
+                console.log('Unrecognized message level ' + self.level());
+                out = '';
+            }
+            return out;
+        });
+
+    };
+
+    var ContributorsViewModel = function(contributors, user, isRegistration) {
+
+        var self = this;
+
+        self.bob = ko.observable(false);
         for (var i=0; i<contributors.length; i++) {
             contributors[i].deleteStaged = false;
         }
@@ -144,12 +174,11 @@
 
         self.user = ko.observable(user);
         self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
-
-        self.messageText = ko.observable('');
-        self.messageType = ko.observable('');
-        self.messageClass = ko.computed(function() {
-            return self.messageType() === 'success' ? 'text-success' : 'text-danger';
+        self.canEdit = ko.computed(function() {
+            return (self.userIsAdmin()) && !isRegistration;
         });
+
+        self.messages = ko.observableArray([]);
 
         // Hack: Ignore beforeunload when submitting
         // TODO: Single-page-ify and remove this
@@ -178,35 +207,59 @@
             });
             return !arraysEqual(contributorData, self.original());
         });
-        self.valid = ko.computed(function() {
-            var contributors = ko.utils.arrayFilter(self.contributors(), function(item) {
+
+        self.retainedContributors = ko.computed(function() {
+            return ko.utils.arrayFilter(self.contributors(), function(item) {
                 return !item.deleteStaged();
             });
-            var admins = ko.utils.arrayFilter(contributors, function(item) {
+        });
+        self.validAdmin = ko.computed(function() {
+            var admins = ko.utils.arrayFilter(self.retainedContributors(), function(item) {
                 return item.permission() === 'admin' &&
                     item.registered;
             });
             return !!admins.length;
         });
+        self.validVisible = ko.computed(function() {
+            return ko.utils.arrayFilter(self.retainedContributors(), function(item) {
+                return item.visible();
+            }).length;
+        });
+
         self.canSubmit = ko.computed(function() {
-            return self.changed() && self.valid();
+            return self.changed() && self.validAdmin() && self.validVisible();
         });
         self.changed.subscribe(function() {
-            self.messageText('');
+            self.messages([]);
         });
-        self.valid.subscribe(function(value) {
+
+        self.validAdmin.subscribe(function(value) {
             if (!value) {
-                self.messageText('Must have at least one registered admin contributor');
-                self.messageType('error');
+                self.messages.push(
+                    new MessageModel(
+                        'Must have at least one registered admin contributor',
+                        'error'
+                    )
+                );
             } else {
-                self.messageText('');
+                self.messages([]);
+            }
+        });
+        self.validVisible.subscribe(function(value) {
+            if (!value) {
+                self.messages.push(
+                    new MessageModel(
+                        'Must have at least one visible contributor',
+                        'error'
+                    )
+                )
             }
         });
 
         self.init = function() {
-            self.messageText('');
+            self.messages([]);
             self.contributors(self.original().map(function(item) {
-                return new ContributorModel(item, self.user());
+                return new ContributorModel(item, self.user(), isRegistration);
             }));
         };
 
@@ -274,7 +327,7 @@
         };
 
         self.submit = function() {
-            self.messageText('');
+            self.messages([]);
             self.forceSubmit(true);
             bootbox.confirm('Are you sure you want to save these changes?', function(result) {
                 if (result) {
@@ -300,8 +353,12 @@
                     ).fail(function(xhr) {
                         self.init();
                         var response = JSON.parse(xhr.responseText);
-                        self.messageText('Submission failed: ' + response.message_long);
-                        self.messageType('error');
+                        self.messages.push(
+                            new MessageModel(
+                                'Submission failed: ' + response.message_long,
+                                'error'
+                            )
+                        );
                         self.forceSubmit(false);
                     });
                 }
@@ -314,12 +371,12 @@
     // Public API //
     ////////////////
 
-    function ContribManager(selector, contributors, user) {
+    function ContribManager(selector, contributors, user, isRegistration) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.contributors = contributors;
-        self.viewModel = new ContributorsViewModel(contributors, user);
+        self.viewModel = new ContributorsViewModel(contributors, user, isRegistration);
         self.init();
     }
 

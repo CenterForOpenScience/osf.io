@@ -2,17 +2,14 @@
     if (typeof define === 'function' && define.amd) {
         define(['knockout', 'jquery', 'knockoutpunches'], factory);
     } else if (typeof $script === 'function') {
-        global.ForwardWidget = factory(ko, jQuery);
+        global.ForwardWidget = factory(ko, jQuery, window);
         $script.done('forwardWidget');
     } else {
-        global.ForwardWidget = factory(ko, jQuery);
+        global.ForwardWidget = factory(ko, jQuery, window);
     }
-}(this, function(ko, $) {
+}(this, function(ko, $, window) {
 
     'use strict';
-
-    // Alias `this` for redirect in view model below; h/t @sloria
-    var global = this;
 
     ko.punches.attributeInterpolationMarkup.enable();
 
@@ -24,6 +21,7 @@
         var self = this;
 
         self.url = ko.observable();
+	self.label = ko.observable();
         self.redirectBool = ko.observable();
         self.redirectSecs = ko.observable();
 
@@ -32,7 +30,7 @@
         self.timeLeft = ko.observable();
 
         self.doRedirect = function() {
-            global.location.href = self.url();
+            window.location.href = self.url();
         };
 
         self.tryRedirect = function() {
@@ -50,7 +48,7 @@
             self.interval = setInterval(
                 self.tryRedirect,
                 1000
-            )
+            );
         };
 
         self.cancelRedirect = function() {
@@ -72,6 +70,7 @@
                 dataType: 'json',
                 success: function(response) {
                     self.url(response.url);
+		    self.label(response.label);
                     self.redirectBool(response.redirectBool);
                     self.redirectSecs(response.redirectSecs);
                     self.execute();

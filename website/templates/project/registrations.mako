@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Registrations</%def>
+<%def name="title()">${node['title']} Registrations</%def>
 
 <div class="page-header">
     <div class="pull-right">
