@@ -110,41 +110,6 @@ class TestCallbacks(OsfTestCase):
         # check for log added
         assert_equals(len(self.project.logs), num_logs)
 
-    def test_node_settings_article(self):
-        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'article_9001', 'figshare_title': 'newName'}, expect_errors=True, auth=self.user.auth)
-        self.node_settings.reload()
-        assert_equal(rv.status_int, 400)
-        assert_equal(self.node_settings.figshare_id, '123456')
-
-    def test_node_settings_fileset(self):
-        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'fileset_9002', 'figshare_title': 'newFeatureYAY'}, expect_errors=True, auth=self.user.auth)
-        self.node_settings.reload()
-        assert_equal(rv.status_int, 200)
-        assert_equal(self.node_settings.figshare_id, '9002')
-
-    def test_node_settings_none(self):
-        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': ''}, expect_errors=True, auth=self.user.auth)
-        self.node_settings.reload()
-        assert_equal(rv.status_int, 400)
-        assert_equal(self.node_settings.figshare_id, '123456')
-
-    def test_node_settings_bad(self):
-        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_id': 'iamnothing', 'figshare_title': 'alsonothing'}, expect_errors=True, auth=self.user.auth)
-        self.node_settings.reload()
-        assert_equal(rv.status_int, 400)
-        assert_equal(self.node_settings.figshare_id, '123456')
-
-    def test_node_settings_project(self):
-        url = '/api/v1/project/{0}/figshare/settings/'.format(self.project._id)
-        rv = self.app.post_json(url, {'figshare_value': 'project_9001', 'figshare_title': 'newName'}, auth=self.user.auth)
-        self.node_settings.reload()
-        assert_equal(rv.status_int, 200)
-        assert_equal(self.node_settings.figshare_id, '9001')
-
     def test_api_url_no_user(self):
         self.node_settings.user_settings = None
         self.node_settings.save()

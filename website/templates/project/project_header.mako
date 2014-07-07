@@ -158,7 +158,7 @@
                         % endif
                         <li><a href="${node['url']}forks/">Forks</a></li>
                         % if user['is_contributor']:
-                            <li><a href="${node['url']}contributors/">Contributors</a></li>
+                            <li><a href="${node['url']}contributors/">Sharing</a></li>
                         %endif
                         % if 'write' in user['permissions']:
                             <li><a href="${node['url']}settings/">Settings</a></li>
