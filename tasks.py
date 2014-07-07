@@ -208,15 +208,12 @@ def mailserver(port=1025):
 
 
 @task
-def requirements(all=False, addons=False):
+def requirements(all=False):
     '''Install dependencies.'''
+    run("pip install --upgrade -r dev-requirements.txt", pty=True)
     if all:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
         addon_requirements()
-    elif addons:
-        addon_requirements()
-    else:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        mfr_requirements()
 
 
 @task
@@ -261,7 +258,7 @@ def test_all():
     test_addons()
 
 @task
-def addon_requirements(mfr=1):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -278,8 +275,6 @@ def addon_requirements(mfr=1):
                 )
             except IOError:
                 pass
-    if mfr:
-        mfr_requirements()
     print('Finished')
 
 
