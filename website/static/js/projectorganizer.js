@@ -663,7 +663,6 @@
                             if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]["url"];
                                 var postData = JSON.stringify(postInfo[copyMode]["json"]);
-                                var reloadedFolder = "";
                                 $.ajax({
                                     type: "POST",
                                     url: url,
