@@ -6,6 +6,7 @@ These settings can be overridden in local.py.
 
 import os
 
+os_env = os.environ
 
 def parent_dir(path):
     '''Return the parent of a directory.'''
@@ -66,7 +67,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
-DB_PORT = 20771
+DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
 DB_PASS = None
