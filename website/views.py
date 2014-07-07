@@ -312,6 +312,7 @@ def _build_guid_url(url, prefix=None, suffix=None):
         url += '/'
     return url
 
+
 def resolve_guid(guid, suffix=None):
     """Resolve GUID to corresponding URL and return result of appropriate
     view function. This effectively yields a redirect without changing the

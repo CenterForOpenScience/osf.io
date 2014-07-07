@@ -17,6 +17,7 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
@@ -383,7 +384,7 @@ class NodeLog(StoredObject):
 
 class Tag(StoredObject):
 
-    _id = fields.StringField(primary=True)
+    _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
 

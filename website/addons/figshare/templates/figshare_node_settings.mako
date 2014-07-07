@@ -10,13 +10,14 @@
                     {{ownerName}}
                 </a>
             </small>
-            <small data-bind="visible: userHasAuth">
-                <a data-bind="click: deauthorize"
-                    class="text-danger pull-right addon-auth">Deauthorize</a>
-            </small>
+	    
+            <a data-bind="click: deauthorize"
+                   class="text-danger pull-right addon-auth">
+              Deauthorize
+            </a>
         </span>
 
-         <!-- Import Access Token Button -->
+        <!-- Import Access Token Button -->
         <small data-bind="if: showImport">
             <a data-bind="click: importAuth" href="#" class="text-primary pull-right addon-auth">
                 Import Access Token
@@ -30,7 +31,6 @@
             </a>
         </small>
     </h4>
-
 
     <!-- Settings Pane -->
     <div class="figshare-settings" data-bind='if: showSettings'>
@@ -48,7 +48,7 @@
                 </p>
 
                 <!-- Folder buttons -->
-                <div class="btn-group">
+                <div class="btn-group" data-bind="visible: userIsOwner">
                     <button data-bind="click: togglePicker,
                                         css: {active: currentDisplay() === PICKER}"
                             class="btn btn-sm btn-figshare"><i class="icon-edit"></i> Change</button>

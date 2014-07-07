@@ -121,7 +121,7 @@ def create_osf_user(access_key, secret_key, name):
 
     connection = IAMConnection(access_key, secret_key)
 
-    user_name = u'osf-{0}-{1}'.format(name, ObjectId())
+    user_name = u'osf-{0}'.format(ObjectId())
 
     try:
         connection.get_user(user_name)

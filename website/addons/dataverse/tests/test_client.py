@@ -1,5 +1,6 @@
 from nose.tools import *
 import mock
+import unittest
 
 from dataverse import Connection, Dataverse, DataverseFile, Study
 
@@ -188,7 +189,7 @@ class TestClient(DataverseAddonTestCase):
         self.mock_dataverse.get_studies.assert_called_once_with()
         assert_in(mock_study1, studies)
         assert_in(mock_study2, studies)
-        assert_not_in(mock_study3, studies)
+        assert_in(mock_study3, studies)
         assert_equal(bad_studies, [])
 
     def test_get_studies_no_dataverse(self):
@@ -196,6 +197,7 @@ class TestClient(DataverseAddonTestCase):
         assert_equal(studies, [])
         assert_equal(bad_studies, [])
 
+    @unittest.skip('Functionality was removed due to high number of requests.')
     def test_get_studies_some_bad(self):
         mock_study1 = mock.create_autospec(Study)
         mock_study2 = mock.create_autospec(Study)
@@ -226,20 +228,21 @@ class TestClient(DataverseAddonTestCase):
         self.mock_study.get_state.return_value = 'DEACCESSIONED'
         self.mock_dataverse.get_study_by_doi.return_value = self.mock_study
 
-        s = get_study(self.mock_dataverse, 'My hdl')
-        self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
+        with assert_raises(HTTPError) as e:
+            s = get_study(self.mock_dataverse, 'My hdl')
 
-        assert_is_none(s)
+        self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
+        assert_equal(e.exception.code, 410)
 
     def test_get_bad_study(self):
         error = UnicodeDecodeError('utf-8', b'', 1, 2, 'jeepers')
         self.mock_study.get_state.side_effect = error
         self.mock_dataverse.get_study_by_doi.return_value = self.mock_study
 
-        s = get_study(self.mock_dataverse, 'My hdl')
+        with assert_raises(HTTPError) as e:
+            s = get_study(self.mock_dataverse, 'My hdl')
         self.mock_dataverse.get_study_by_doi.assert_called_once_with('My hdl')
-
-        assert_is_none(s)
+        assert_equal(e.exception.code, 406)
 
     def test_get_dataverses(self):
         released_dv = mock.create_autospec(Dataverse)

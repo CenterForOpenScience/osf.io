@@ -16,7 +16,7 @@ def dataverse_hgrid_root(node_addon, auth, state=None, **kwargs):
     node = node_addon.owner
     user_settings = node_addon.user_settings
 
-    default_state = 'released' if 'files' not in request.referrer else 'draft'
+    default_state = 'released'
     state = 'released' if not node.can_edit(auth) else state or default_state
 
     connection = connect_from_settings(user_settings)
@@ -103,7 +103,7 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
     user_settings = node_addon.user_settings
 
     state = request.args.get('state')
-    default_state = 'released' if 'files' not in request.referrer else 'draft'
+    default_state = 'released'
     state = 'released' if not node.can_edit(auth) else state or default_state
 
     released = state == 'released'

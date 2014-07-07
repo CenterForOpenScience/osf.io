@@ -159,27 +159,28 @@ class TestPublicNodes(SearchTestCase):
         docs = query('project:' + self.project.title)
         assert_equal(len(docs), 1)
 
-    def test_add_tag(self):
+    def test_add_tags(self):
 
-        tag_text = 'stonecoldcrazy'
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        docs = query(tag_text)
-        assert_equal(len(docs), 0)
+        for tag in tags:
+            docs = query(tag)
+            assert_equal(len(docs), 0)
+            self.project.add_tag(tag, self.consolidate_auth, save=True)
 
-        self.project.add_tag(tag_text, self.consolidate_auth, save=True)
-
-        docs = query(tag_text)
-        assert_equal(len(docs), 1)
+        for tag in tags:
+            docs = query(tag)
+            assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
 
-        tag_text = 'stonecoldcrazy'
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        self.project.add_tag(tag_text, self.consolidate_auth, save=True)
-        self.project.remove_tag(tag_text, self.consolidate_auth, save=True)
-
-        docs = query(tag_text)
-        assert_equal(len(docs), 0)
+        for tag in tags:
+            self.project.add_tag(tag, self.consolidate_auth, save=True)
+            self.project.remove_tag(tag, self.consolidate_auth, save=True)
+            docs = query(tag)
+            assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
         """Add text to a wiki page, then verify that project is found when

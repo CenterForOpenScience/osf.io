@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Dropbox addon."""
 
-from factory import SubFactory, Sequence
+from framework.auth import Auth
+
+from factory import SubFactory, Sequence, post_generation
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
 from website.addons.dropbox.model import (
@@ -29,3 +31,8 @@ class DropboxFileFactory(ModularOdmFactory):
 
     node = SubFactory(ProjectFactory)
     path = 'foo.txt'
+
+    @post_generation
+    def add_dropbox_addon(self, created, extracted):
+        self.node.add_addon('dropbox', auth=Auth(user=self.node.creator))
+        self.node.save()

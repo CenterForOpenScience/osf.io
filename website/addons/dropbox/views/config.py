@@ -5,7 +5,8 @@ import httplib as http
 
 from framework import request
 from framework.auth import get_current_user
-from website.project.decorators import (must_have_addon,
+from website.project.decorators import (
+    must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
@@ -56,6 +57,7 @@ def get_folders(client):
     folders = [root] + [serialize_folder(each)
                         for each in metadata['contents'] if each['is_dir']]
     return folders
+
 
 def serialize_urls(node_settings):
     node = node_settings.owner
@@ -116,10 +118,9 @@ def serialize_settings(node_settings, current_user, client=None):
 @must_not_be_registration
 @must_have_addon('dropbox', 'user')
 @must_have_addon('dropbox', 'node')
+@must_be_addon_authorizer('dropbox')
 def dropbox_config_put(node_addon, user_addon, auth, **kwargs):
     """View for changing a node's linked dropbox folder."""
-    if node_addon.user_settings.owner != auth.user:
-        raise HTTPError(http.FORBIDDEN)
     folder = request.json.get('selected')
     path = folder['path']
     node_addon.set_folder(path, auth=auth)

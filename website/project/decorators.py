@@ -3,6 +3,8 @@ import functools
 import logging
 
 from furl import furl
+import urlparse
+
 from framework import request, redirect, status
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
@@ -78,8 +80,7 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     """
     if user is None:
         return False
-    if not node.is_contributor(user) \
-            and api_node != node:
+    if not node.is_contributor(user) and api_node != node:
         if has_deleted_keys:
             status.push_status_message("The private links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
@@ -122,7 +123,7 @@ def has_deleted_keys(key_ring, node, user):
     return False
 
 
-def choose_key(key, key_ring, node, auth, api_node=None):
+def choose_key(key, key_ring, node, auth, api_node=None, scheme=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
@@ -136,9 +137,8 @@ def choose_key(key, key_ring, node, auth, api_node=None):
     #do a redirect to reappend the key to url only if the user
     # isn't a contributor
     if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-        new_url = add_key_to_url(request.path, auth.private_key)
+        new_url = add_key_to_url(request.path, scheme, auth.private_key)
         return redirect(new_url)
-
 
 
 def _must_be_contributor_factory(include_public):
@@ -208,9 +208,15 @@ def _must_be_contributor_factory(include_public):
                     #has intersection: check if the link is valid if not use other key
                     # in the key ring
                     else:
+                        scheme = (
+                            urlparse.urlparse(request.referrer).scheme
+                            if request.referrer
+                            else None
+                        )
                         response = choose_key(
                             key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node)
+                            auth=kwargs['auth'], api_node=api_node,
+                            scheme=scheme)
                 else:
                     kwargs['auth'].private_key = None
             return response or func(*args, **kwargs)
@@ -233,7 +239,7 @@ def must_have_addon(addon_name, model):
 
     :param str addon_name: Name of addon
     :param str model: Name of model
-    :return function: Decorator function
+    :returns: Decorator function
 
     """
     def wrapper(func):
@@ -242,7 +248,8 @@ def must_have_addon(addon_name, model):
         def wrapped(*args, **kwargs):
 
             if model == 'node':
-                owner = kwargs['node'] or kwargs['project']
+                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+                owner = kwargs.get('node') or kwargs.get('project')
             elif model == 'user':
                 owner = get_current_user()
                 if owner is None:
@@ -254,6 +261,42 @@ def must_have_addon(addon_name, model):
             if addon is None:
                 raise HTTPError(http.BAD_REQUEST)
             kwargs['{0}_addon'.format(model)] = addon
+
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
+
+
+def must_be_addon_authorizer(addon_name):
+    """
+
+    :param str addon_name: Name of addon
+    :returns: Decorator function
+
+    """
+    def wrapper(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            node_addon = kwargs.get('node_addon')
+            if not node_addon:
+                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+                node = kwargs.get('node') or kwargs.get('project')
+                node_addon = node.get_addon(addon_name)
+
+            if not node_addon:
+                raise HTTPError(http.BAD_REQUEST)
+
+            if not node_addon.user_settings:
+                raise HTTPError(http.BAD_REQUEST)
+
+            user = kwargs.get('user') or get_current_user()
+
+            if node_addon.user_settings.owner != user:
+                raise HTTPError(http.FORBIDDEN)
 
             return func(*args, **kwargs)
 

@@ -31,9 +31,9 @@ def get_public_projects(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category == 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
@@ -43,9 +43,9 @@ def get_public_components(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category != 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
@@ -273,8 +273,7 @@ def append_editable(data, auth, uid=None):
     data['editable'] = auth.user == target
 
 
-def serialize_social_addons(auth):
-    user = auth.user
+def serialize_social_addons(user):
     out = {}
     for user_settings in user.get_addons():
         config = user_settings.config
@@ -287,8 +286,9 @@ def serialize_social_addons(auth):
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     out = target.social
-    out['addons'] = serialize_social_addons(auth)
     append_editable(out, auth, uid)
+    if out['editable']:
+        out['addons'] = serialize_social_addons(target)
     return out
 
 
