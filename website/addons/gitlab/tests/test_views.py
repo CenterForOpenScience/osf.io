@@ -1,18 +1,18 @@
 import mock
 from nose.tools import *
+from webtest import Upload
 
-import base64
 import datetime
 import httplib as http
 
 from tests.base import fake
 
 from website.models import NodeLog
+from website.addons.base.services import fileservice
 
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.views import hooks
 from website.addons.gitlab import utils
-from website.addons.gitlab.api import GitlabError
 
 from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
@@ -280,17 +280,15 @@ class TestFileCommits(GitlabTestCase):
 
 class TestDownloadFile(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.client.getfile')
-    def test_download(self, mock_get_file):
-        mock_get_file.return_value = {
-            'content': base64.b64encode('pizza')
-        }
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.download')
+    def test_download(self, mock_download):
+        mock_download.return_value = 'pizza'
         path = 'pizza/reviews.rst'
         branch = 'master'
         res = self.app.get(
             self.project.web_url_for(
                 'gitlab_download_file',
-                path=path, branch=branch
+                path=path, branch=branch,
             ),
             auth=self.user.auth,
         )
@@ -299,14 +297,11 @@ class TestDownloadFile(GitlabTestCase):
             res.headers['Content-Disposition'],
             'attachment; filename=reviews.rst',
         )
-        mock_get_file.assert_called_with(
-            self.node_settings.project_id,
-            path, branch,
-        )
+        mock_download.assert_called_with(path, branch)
 
-    @mock.patch('website.addons.gitlab.views.crud.client.getfile')
-    def test_download_not_found(self, mock_get_file):
-        mock_get_file.side_effect = GitlabError('No good')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.download')
+    def test_download_not_found(self, mock_download):
+        mock_download.side_effect = fileservice.FileDownloadError
         path = 'pizza/reviews.rst'
         branch = 'master'
         res = self.app.get(
@@ -322,7 +317,7 @@ class TestDownloadFile(GitlabTestCase):
 
 class TestDeleteFile(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.client.deletefile')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.delete')
     def test_delete(self, mock_delete_file):
         path = 'frozen/pizza/reviews.txt'
         branch = 'develop'
@@ -333,14 +328,16 @@ class TestDeleteFile(GitlabTestCase):
             ),
             auth=self.user.auth,
         )
-        mock_delete_file.assert_called_with(
-            self.node_settings.project_id,
-            path, branch, gitlab_settings.MESSAGES['delete']
+        self.project.reload()
+        mock_delete_file.assert_called_with(path, branch)
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_REMOVED)
         )
 
-    @mock.patch('website.addons.gitlab.views.crud.client.deletefile')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.delete')
     def test_delete_gitlab_error(self, mock_delete_file):
-        mock_delete_file.side_effect = GitlabError('Terrible')
+        mock_delete_file.side_effect = fileservice.FileDeleteError()
         path = 'frozen/pizza/reviews.txt'
         branch = 'develop'
         res = self.app.delete(
@@ -352,3 +349,78 @@ class TestDeleteFile(GitlabTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+
+class TestUploadFile(GitlabTestCase):
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    def test_upload_error(self, mock_upload):
+        mock_upload.side_effect = fileservice.FileUploadError()
+        payload = {'file': Upload('myfile.rst', 'baz')}
+        res = self.app.post(
+            self.project.api_url_for(
+                'gitlab_upload_file',
+                path='path', branch='master',
+            ),
+            payload,
+            auth=self.user.auth,
+        )
+        assert_equal(
+            res.json,
+            {
+                'actionTaken': None,
+                'name': 'myfile.rst',
+            }
+        )
+        self.project.reload()
+        assert_not_in(
+            self.project.logs[-1].action,
+            [
+                'gitlab_{0}'.format(NodeLog.FILE_ADDED),
+                'gitlab_{0}'.format(NodeLog.FILE_UPDATED),
+            ]
+        )
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    def test_upload_create(self, mock_upload):
+        mock_upload.return_value = (
+            NodeLog.FILE_ADDED,
+            {'file_path': 'path'}
+        )
+        payload = {'file': Upload('myfile.rst', 'baz')}
+        res = self.app.post(
+            self.project.api_url_for(
+                'gitlab_upload_file',
+                path='path', branch='master',
+            ),
+            payload,
+            auth=self.user.auth,
+        )
+        self.project.reload()
+        assert_equal(res.status_code, http.CREATED)
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_ADDED),
+        )
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    def test_upload_update(self, mock_upload):
+        mock_upload.return_value = (
+            NodeLog.FILE_UPDATED,
+            {'file_path': 'path'}
+        )
+        payload = {'file': Upload('myfile.rst', 'baz')}
+        res = self.app.post(
+            self.project.api_url_for(
+                'gitlab_upload_file',
+                path='path', branch='master',
+            ),
+            payload,
+            auth=self.user.auth,
+        )
+        self.project.reload()
+        assert_equal(res.status_code, http.OK)
+        assert_equal(
+            self.project.logs[-1].action,
+            'gitlab_{0}'.format(NodeLog.FILE_UPDATED),
+        )

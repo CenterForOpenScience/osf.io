@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import re
 import time
@@ -18,11 +20,13 @@ from website.dates import FILE_MODIFIED
 
 from website.addons.base.utils import NodeLogger
 
-import settings as gitlab_settings
+from . import settings as gitlab_settings
 from website.addons.gitlab.api import client, GitlabError
+from website.addons.gitlab.services import hookservice
 
 
 logger = logging.getLogger(__name__)
+
 
 def translate_permissions(permissions):
     osf_permissions = reduce_permissions(permissions)
@@ -121,7 +125,9 @@ def create_node(node_settings, check_ready=False):
             raise AddonError('Project not ready')
 
     # Add web hook
-    node_settings.add_hook(save=True)
+    hook_service = hookservice.GitlabHookService(node_settings)
+    hook_service.create(save=True)
+    # node_settings.add_hook(save=True)
 
 
 def setup_user(user):

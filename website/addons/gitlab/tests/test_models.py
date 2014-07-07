@@ -26,62 +26,6 @@ class TestUserSettings(GitlabTestCase):
 
 class TestNodeSettings(GitlabTestCase):
 
-    def test_hook_url(self):
-        relative_url = self.node_lookup.api_url_for('gitlab_hook_callback')
-        absolute_url = urlparse.urljoin(
-            gitlab_settings.HOOK_DOMAIN,
-            relative_url
-        )
-        assert_equal(
-            self.node_settings.hook_url,
-            absolute_url
-        )
-
-    @mock.patch('website.addons.gitlab.model.client.addprojecthook')
-    def test_add_hook(self, mock_add_hook):
-        mock_add_hook.return_value = {
-            'id': 1,
-        }
-        self.node_settings.add_hook()
-        mock_add_hook.assert_called_with(
-            self.node_settings.project_id,
-            self.node_settings.hook_url
-        )
-
-    def test_add_hook_already_exists(self):
-        self.node_settings.hook_id = 1
-        with assert_raises(AddonError):
-            self.node_settings.add_hook()
-
-    @mock.patch('website.addons.gitlab.model.client.addprojecthook')
-    def test_add_hook_gitlab_error(self, mock_add_hook):
-        mock_add_hook.side_effect = GitlabError('Disaster')
-        with assert_raises(AddonError):
-            self.node_settings.add_hook()
-
-    @mock.patch('website.addons.gitlab.model.client.deleteprojecthook')
-    def test_remove_hook(self, mock_delete_hook):
-        self.node_settings.hook_id = 1
-        self.node_settings.remove_hook()
-        mock_delete_hook.assert_called_with(
-            self.node_settings.project_id,
-            1
-        )
-        assert_equal(
-            self.node_settings.hook_id,
-            None
-        )
-
-    def test_remove_hook_none_exists(self):
-        with assert_raises(AddonError):
-            self.node_settings.remove_hook()
-
-    @mock.patch('website.addons.gitlab.model.client.deleteprojecthook')
-    def test_remove_hook_gitlab_error(self, mock_delete_hook):
-        mock_delete_hook.side_effect = GitlabError('Catastrophe')
-        with assert_raises(AddonError):
-            self.node_settings.remove_hook()
-
     def test_get_or_create_exists(self):
         guid = GitlabGuidFileFactory(node=self.project)
         guid_count = GitlabGuidFile.find().count()

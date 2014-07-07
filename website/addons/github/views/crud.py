@@ -69,11 +69,9 @@ def get_cache_file(path, sha):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_view_file(**kwargs):
+def github_view_file(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
 
     path = get_path(kwargs)
     file_name = os.path.split(path)[1]
@@ -83,7 +81,7 @@ def github_view_file(**kwargs):
     sha = request.args.get('sha', branch)
     ref = sha or branch
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
 
     try:
         # If GUID has already been created, we won't redirect, and can check
@@ -95,7 +93,7 @@ def github_view_file(**kwargs):
     except ModularOdmException:
         # If GUID doesn't exist, check whether file exists before creating
         commits = connection.history(
-            node_settings.user, node_settings.repo, path, ref,
+            node_addon.user, node_addon.repo, path, ref,
         )
         if commits is None:
             raise HTTPError(http.NOT_FOUND)
@@ -111,13 +109,13 @@ def github_view_file(**kwargs):
 
     # Get default branch if neither SHA nor branch is provided
     if ref is None:
-        repo = connection.repo(node_settings.user, node_settings.repo)
+        repo = connection.repo(node_addon.user, node_addon.repo)
         ref = branch = repo.default_branch
 
     # Get file history; use SHA or branch if registered, else branch
     start_sha = ref if node.is_registration else branch
     commits = connection.history(
-        node_settings.user, node_settings.repo, path, sha=start_sha
+        node_addon.user, node_addon.repo, path, sha=start_sha
     )
 
     # Get current commit
@@ -147,17 +145,17 @@ def github_view_file(**kwargs):
     cache_file = get_cache_file(
         path, current_sha,
     )
-    rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_addon, cache_file)
     if rendered is None:
         _, data, size = connection.file(
-            node_settings.user, node_settings.repo, path, ref=sha,
+            node_addon.user, node_addon.repo, path, ref=sha,
         )
         # Skip if too large to be rendered.
         if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
             rendered = 'File too large to render; download file to view it'
         else:
             rendered = get_cache_content(
-                node_settings, cache_file, start_render=True,
+                node_addon, cache_file, start_render=True,
                 file_path=file_name, file_content=data, download_path=download_url,
             )
 
@@ -176,12 +174,10 @@ def github_view_file(**kwargs):
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_upload_file(**kwargs):
+def github_upload_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user = auth.user
-    node_settings = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
     path = get_path(kwargs, required=False) or ''
@@ -192,7 +188,7 @@ def github_upload_file(**kwargs):
     if branch is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -211,7 +207,7 @@ def github_upload_file(**kwargs):
     # GitHub API
     try:
         tree = connection.tree(
-            node_settings.user, node_settings.repo, sha=sha or branch
+            node_addon.user, node_addon.repo, sha=sha or branch
         ).tree
     except EmptyRepoError:
         tree = []
@@ -231,12 +227,12 @@ def github_upload_file(**kwargs):
 
     if existing:
         data = connection.update_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
             MESSAGES['update'], content, sha=sha, branch=branch, author=author
         )
     else:
         data = connection.create_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
             MESSAGES['update'], content, branch=branch, author=author
         )
 
@@ -267,8 +263,8 @@ def github_upload_file(**kwargs):
                     'download': download_url,
                 },
                 'github': {
-                    'user': node_settings.user,
-                    'repo': node_settings.repo,
+                    'user': node_addon.user,
+                    'repo': node_addon.repo,
                     'sha': data['commit'].sha,
                 },
             },
@@ -303,9 +299,10 @@ def github_upload_file(**kwargs):
             },
         }
 
-        return info, 201
+        return info, http.CREATED
 
     raise HTTPError(http.BAD_REQUEST)
+
 
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
@@ -361,15 +358,15 @@ def github_delete_file(auth, node_addon, **kwargs):
 # TODO Add me Test me
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_download_starball(**kwargs):
+def github_download_starball(node_addon, **kwargs):
 
-    node_settings = kwargs['node_addon']
+    node_addon = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
     headers, data = connection.starball(
-        node_settings.user, node_settings.repo, archive, ref
+        node_addon.user, node_addon.repo, archive, ref
     )
 
     resp = make_response(data)
@@ -382,13 +379,12 @@ def github_download_starball(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_get_rendered_file(**kwargs):
+def github_get_rendered_file(node_addon, **kwargs):
     """
 
     """
-    node_settings = kwargs['node_addon']
     path = get_path(kwargs)
     sha = request.args.get('sha')
 
     cache_file = get_cache_file(path, sha)
-    return get_cache_content(node_settings, cache_file)
+    return get_cache_content(node_addon, cache_file)
