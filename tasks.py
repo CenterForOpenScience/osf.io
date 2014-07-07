@@ -133,17 +133,17 @@ def mongodump(path):
         port=port,
         path=path,
         pty=True)
-    run(cmd)
+    run(cmd, echo=True)
 
-    print
-    print "To restore from the dumped database, run `invoke mongorestore {0}`".format(
-        os.path.join(path,settings.DB_NAME))
+    print()
+    print("To restore from the dumped database, run `invoke mongorestore {0}`".format(
+        os.path.join(path, settings.DB_NAME)))
 
 
 @task
 def mongorestore(path, drop=False):
     """Restores the running OSF database with the contents of the database at
-    the location given its argument. 
+    the location given its argument.
 
     By default, the contents of the specified database are added to
     the existing database. The `--drop` option will cause the existing database
@@ -151,8 +151,8 @@ def mongorestore(path, drop=False):
 
     A caveat: if you `invoke mongodump {path}`, you must restore with
     `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
-    database dump will be stored."""
-
+    database dump will be stored.
+    """
     db = settings.DB_NAME
     port = settings.DB_PORT
 
@@ -165,7 +165,8 @@ def mongorestore(path, drop=False):
         cmd += " --drop"
 
     cmd += " " + path
-    run(cmd)
+    run(cmd, echo=True)
+
 
 @task
 def celery_worker(level="debug"):
