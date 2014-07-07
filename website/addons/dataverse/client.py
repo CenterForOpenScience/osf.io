@@ -47,7 +47,7 @@ def delete_file(file):
 
 
 def upload_file(study, filename, content):
-    study.create_or_update(filename, content)
+    study.upload_file(filename, content)
 
 
 def get_file(study, filename, released=False):

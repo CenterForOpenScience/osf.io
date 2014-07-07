@@ -152,7 +152,7 @@ class TestClient(DataverseAddonTestCase):
 
     def test_upload_file(self):
         upload_file(self.mock_study, 'filename.txt', b'File Content')
-        self.mock_study.create_or_update.assert_called_once_with('filename.txt',
+        self.mock_study.upload_file.assert_called_once_with('filename.txt',
                                                              b'File Content')
 
     def test_get_file(self):
