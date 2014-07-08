@@ -73,15 +73,15 @@ def gitlab_upload_log(node, action, auth, data, branch):
 
 @must_have_permission(WRITE)
 @must_not_be_registration
-@must_have_addon('gitlab', 'user')
 @must_have_addon('gitlab', 'node')
-def gitlab_upload_file(auth, user_addon, node_addon, **kwargs):
+def gitlab_upload_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
     # Lazily configure Gitlab
     setup_user(auth.user)
     setup_node(node, check_ready=True)
+    user_addon = auth.user.get_addon('gitlab')
 
     path = kwargs_to_path(kwargs, required=False)
     branch = ref_or_default(node_addon, request.args)
