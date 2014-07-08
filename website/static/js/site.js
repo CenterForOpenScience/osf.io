@@ -68,7 +68,7 @@
                 backgroundColor: '#000',
                 '-webkit-border-radius': '10px',
                 '-moz-border-radius': '10px',
-                opacity: .5,
+                opacity: 0.5,
                 color: '#fff'
             },
             message: 'Please wait'
@@ -114,7 +114,7 @@
      */
     $.osf.urlParams = function(str) {
         return (str || document.location.search).replace(/(^\?)/,'').split('&')
-            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this}.bind({}))[0];
+            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this;}.bind({}))[0];
     };
 
     ///////////
@@ -182,7 +182,7 @@
             throw "Can't bind ViewModel to multiple elements.";
         }
         // Ensure that the bound element is shown
-        if ($elem.hasClass("scripted")){
+        if ($elem.hasClass('scripted')){
             $elem.show();
         }
         ko.applyBindings(viewModel, $elem[0]);
@@ -201,8 +201,8 @@
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
-    var LOCAL_DATEFORMAT = 'l h:mm A';
-    var UTC_DATEFORMAT = 'l H:mm UTC';
+    var LOCAL_DATEFORMAT = 'lll';
+    var UTC_DATEFORMAT = 'lll UTC';
     $.osf.FormattableDate = function(date) {
         if (typeof date === 'string') {
             // The date as a Date object
