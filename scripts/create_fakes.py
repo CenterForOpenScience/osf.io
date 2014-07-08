@@ -66,8 +66,7 @@ def parse_args():
 def create_fake_project(creator, n_users, privacy, n_components, name):
     auth = Auth(user=creator)
     project_title = name if name else fake.catch_phrase()
-    project = ProjectFactory.build(title=project_title,
-    project = ProjectFactory.build(title=fake.catch_phrase(), description=fake.bs(), creator=creator)
+    project = ProjectFactory.build(title=project_title, description=fake.bs(), creator=creator)
     project.set_privacy(privacy)
     for _ in range(n_users):
         contrib = create_fake_user()
