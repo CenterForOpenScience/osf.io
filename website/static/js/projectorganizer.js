@@ -663,6 +663,7 @@
                             if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]["url"];
                                 var postData = JSON.stringify(postInfo[copyMode]["json"]);
+                                var outerFolderID = draggable.grid.whichIsContainer(itemParentID,folder.id);
                                 $.ajax({
                                     type: "POST",
                                     url: url,
@@ -671,13 +672,18 @@
                                     dataType: 'json',
                                     complete: function () {
                                         if (copyMode == "move") {
-                                            itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                                            setReloadNextFolder(itemParentID, folder.id);
-                                            draggable.grid.reloadFolder(itemParent);
+                                            if(outerFolder == null) {
+                                                itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                                                setReloadNextFolder(itemParentID, folder.id);
+                                                draggable.grid.reloadFolder(itemParent);
+
+                                            } else {
+                                                var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
+                                                reloadFolder(draggable.grid, outerFolder);
+                                            }
 
                                         } else {
                                             reloadFolder(draggable.grid, folder);
-
                                         }
                                         copyMode = "none";
 

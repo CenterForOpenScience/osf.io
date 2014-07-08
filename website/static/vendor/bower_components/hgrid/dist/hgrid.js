@@ -440,6 +440,27 @@ this.HGrid = (function($) {
     return Boolean(this.getItem()._collapsed);
   };
 
+    /**
+     * @method getPathToRoot
+     * @param {Array} pathSoFar IDs of any path being passed in. Used by leafs.
+     * @return {Array} Node IDs from current to root
+     *
+     *
+     */
+    Tree.prototype.getPathToRoot = function(pathSoFar) {
+        var path = [];
+        if(typeof pathSoFar !== 'undefined' && pathSoFar instanceof Array){
+            path = pathSoFar;
+        }
+        var self = this;
+        var item = self.getItem();
+        do {
+            path.push(item.id);
+            item = self.dataView.getItemById(item.parentID);
+        } while (typeof item !== 'undefined' && item.parentID !== null);
+        return path;
+    };
+
   /**
    * Leaf representation
    * @class  HGrid.Leaf
@@ -475,7 +496,15 @@ this.HGrid = (function($) {
     }
     return leaf;
   };
+  /**
+   * @method getPathToRoot
+   * @return {Array} path of the leaf item to the root.
+   */
 
+    Leaf.prototype.getPathToRoot = function() {
+       var parent = this.dataView.getItemById(this.parentID)._node;
+       return parent.getPathToRoot([this.id]);
+    };
   /**
    * Get the leaf's corresponding item from the dataview.
    * @method  getItem
@@ -1125,7 +1154,7 @@ this.HGrid = (function($) {
   };
 
   /**
-   * Helper for retrieving JSON data usin AJAX.
+   * Helper for retrieving JSON data using AJAX.
    * @method  getFromServer
    * @param {String} url
    * @param {Function} done Callback that receives the JSON data and an
@@ -1168,7 +1197,7 @@ this.HGrid = (function($) {
   HGrid.prototype.init = function() {
     this.setHeight(this.options.height)
       .setWidth(this.options.width)
-      ._initSlickGrid.call(this)
+      ._initSlickGrid()
       ._initDataView();
 
     if (this.options.uploads) {
@@ -1296,7 +1325,7 @@ this.HGrid = (function($) {
   HGrid.prototype._initSlickGrid = function() {
     var self = this;
     // Convert column schemas to Slickgrid column definitions
-    var columns = self._makeSlickgridColumns.call(self, self.options.columns);
+    var columns = self._makeSlickgridColumns(self.options.columns);
     var options = $.extend({}, requiredSlickgridOptions, self.options.slickgridOptions);
     self.grid = new Slick.Grid(self.element.selector, self.tree.dataView,
       columns,
@@ -1326,6 +1355,31 @@ this.HGrid = (function($) {
       throw new HGrid.Error('Row element is not rendered in the DOM.');
     }
   };
+
+  HGrid.prototype.getPathToRoot = function(id) {
+      var node = this.getNodeByID(id);
+      return node.getPathToRoot();
+  };
+
+    /**
+     * Takes two element IDs and tries to determine if one contains the other. Returns the container or null if
+     * they are not directly related. Items contain themselves.
+     * @method whichIsContainer
+     * @param itemOneID {Number}
+     * @param itemTwoID {Number}
+     * @returns item ID or null
+     */
+    HGrid.prototype.whichIsContainer = function(itemOneID, itemTwoID){
+        var pathToOne = this.getPathToRoot(itemOneID);
+        var pathToTwo = this.getPathToRoot(itemTwoID);
+        if(pathToOne.indexOf(itemTwoID) > -1 ){
+            return itemTwoID;
+        } else if (pathToTwo.indexOf(itemOneID) > -1) {
+            return itemOneID;
+        } else {
+            return null;
+        }
+    };
 
   HGrid.prototype.addHighlight = function(item, highlightClass) {
     var cssClass = highlightClass || this.options.highlightClass;

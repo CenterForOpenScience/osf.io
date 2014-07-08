@@ -7,7 +7,7 @@ Drag-and-drop support for hgrid.js.
 - jQuery
 - HGrid >= 0.1.1
 
-## Usage 
+## Usage
 
 ```html
 <script src="hgrid.js"></script>
@@ -17,7 +17,7 @@ Drag-and-drop support for hgrid.js.
 ```js
 var draggable = new HGrid.Draggable({
   onDrag: function(event, items) {
-    # ... 
+    # ...
   },
   onDrop: function(event, items, folder) {
     # ...
