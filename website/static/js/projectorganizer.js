@@ -672,7 +672,7 @@
                                     dataType: 'json',
                                     complete: function () {
                                         if (copyMode == "move") {
-                                            if(outerFolder === null) {
+                                            if(typeof outerFolderID === 'undefined' || outerFolderID === null) {
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
                                                 setReloadNextFolder(itemParentID, folder.id);
                                                 draggable.grid.reloadFolder(itemParent);

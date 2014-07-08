@@ -7,7 +7,7 @@
     "bootstrap": "~3.1.1",
     "requirejs": "~2.1.11",
     "zeroclipboard": "~1.3.5",
-    "hgrid": "https://github.com/brianjgeiger/hgrid.git#a2fa93afe09f2faf6b1fbe1d26028ff1a5571ae9",
+    "hgrid": "https://github.com/brianjgeiger/hgrid.git#fa83b6beb7fb59d563c9b8fa50bb1acdb5b2c227",
       "qunit": "~1.14.0",
       "sinon": "~1.10.2",
       "jquery-mockjax": "1.5.3",

@@ -259,6 +259,7 @@ this.Draggable = (function($, HGrid) {
               var child = node.children[j];
               if (parent.id === child.id) {
                 self.clearTarget();
+                grid.removeHighlight();
                 return false;
               }
             }
@@ -269,6 +270,7 @@ this.Draggable = (function($, HGrid) {
         // NOTE: canAccept must return false to disallow dropping, not just a falsy value
         if (self.options.canAcceptDrop.call(self, movedItems, parent) === false) {
           self.clearTarget();
+          grid.removeHighlight();
           return false;
         }
         // set the folder target
