@@ -1,4 +1,4 @@
-QUnit.test("hello test", function (assert) {
+QUnit.test('1 equals "1"', function (assert) {
     assert.ok(1 == "1", "Passed!");
 });
 
@@ -7,318 +7,141 @@ QUnit.module("AJAX Tests", {
     setup: function () {
         $.mockjax({
             url: '/api/v1/dashboard/get_dashboard/',
+            responseTime: 0,
             contentType: 'text/json',
-            responseText: {
-                "data": [
-                    {
-                        "contributors": [{
-                            "url": "/uyi58/",
-                            "name": "Geiger"
-                        }],
-                        "isFolder": true,
-                        "children": [],
-                        "isDashboard": true,
-                        "modifiedDelta": -539726.450663,
-                        "modifiedBy": "Geiger",
-                        "registeredMeta": {},
-                        "dateModified": "2014-06-20T17:50:39.203000",
-                        "description": null,
-                        "isProject": true,
-                        "node_id": "v3uqf",
-                        "expand": true,
-                        "permissions": {
-                            "copyable": false,
-                            "edit": true,
-                            "acceptsCopies": true,
-                            "acceptsMoves": true,
-                            "acceptsFolders": true,
-                            "movable": false,
-                            "acceptsComponents": true,
-                            "view": true
-                        },
-                        "kind": "folder",
-                        "name": "Dashboard",
-                        "isComponent": false,
-                        "parentIsFolder": false,
-                        "isRegistration": false,
-                        "apiURL": "/api/v1/project/v3uqf/",
-                        "urls": {
-                            "upload": null,
-                            "fetch": null
-                        },
-                        "isFile": false,
-                        "isPointer": false,
-                        "isSmartFolder": false
-                    }
-                ]
-            }
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": true, "modifiedDelta": -5575.910912, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T16:06:19.301000", "description": null, "isProject": true, "node_id": "5wha8", "expand": true, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": false, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "Dashboard", "isComponent": false, "parentIsFolder": false, "isRegistration": false, "apiURL": "/api/v1/project/5wha8/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": false, "isSmartFolder": false}]}
         });
         $.mockjax({
-            url: '/api/v1/dashboard/get_dashboard/v3uqf',
+            url: '/api/v1/dashboard/get_dashboard/5wha8',
+            responseTime: 0,
             contentType: 'text/json',
-            responseText: {
-                "data": [
-                    {
-                        "apiURL": "/api/v1/project/bm6zi/",
-                        "children": [],
-                        "contributors": [
-                            {
-                                "name": "Geiger",
-                                "url": "/uyi58/"
-                            }
-                        ],
-                        "dateModified": "2014-06-21T00:18:20.509000",
-                        "description": null,
-                        "expand": true,
-                        "isComponent": false,
-                        "isDashboard": false,
-                        "isFile": false,
-                        "isFolder": true,
-                        "isPointer": true,
-                        "isProject": true,
-                        "isRegistration": false,
-                        "isSmartFolder": false,
-                        "kind": "folder",
-                        "modifiedBy": "Geiger",
-                        "modifiedDelta": -516836.597756,
-                        "name": "Two",
-                        "node_id": "bm6zi",
-                        "parentIsFolder": true,
-                        "permissions": {
-                            "acceptsComponents": true,
-                            "acceptsCopies": true,
-                            "acceptsFolders": true,
-                            "acceptsMoves": true,
-                            "copyable": false,
-                            "edit": true,
-                            "movable": true,
-                            "view": true
-                        },
-                        "registeredMeta": {},
-                        "urls": {
-                            "fetch": null,
-                            "upload": null
-                        }
-                    },
-                    {
-                        "apiURL": "/api/v1/project/uwkme/",
-                        "children": [],
-                        "contributors": [
-                            {
-                                "name": "Geiger",
-                                "url": "/uyi58/"
-                            }
-                        ],
-                        "dateModified": "2014-06-20T18:11:27.832000",
-                        "description": null,
-                        "expand": true,
-                        "isComponent": false,
-                        "isDashboard": false,
-                        "isFile": false,
-                        "isFolder": true,
-                        "isPointer": true,
-                        "isProject": true,
-                        "isRegistration": false,
-                        "isSmartFolder": false,
-                        "kind": "folder",
-                        "modifiedBy": "Geiger",
-                        "modifiedDelta": -538849.280825,
-                        "name": "One",
-                        "node_id": "uwkme",
-                        "parentIsFolder": true,
-                        "permissions": {
-                            "acceptsComponents": true,
-                            "acceptsCopies": true,
-                            "acceptsFolders": true,
-                            "acceptsMoves": true,
-                            "copyable": false,
-                            "edit": true,
-                            "movable": true,
-                            "view": true
-                        },
-                        "registeredMeta": {},
-                        "urls": {
-                            "fetch": null,
-                            "upload": null
-                        }
-                    },
-                    {
-                        "children": [],
-                        "contributors": [],
-                        "dateModified": null,
-                        "expand": false,
-                        "isDashboard": false,
-                        "isFolder": true,
-                        "isPointer": false,
-                        "isSmartFolder": true,
-                        "kind": "folder",
-                        "modifiedBy": null,
-                        "modifiedDelta": 0,
-                        "name": "All my projects",
-                        "node_id": "-amp",
-                        "parentIsFolder": true,
-                        "permissions": {
-                            "acceptsDrops": false,
-                            "copyable": false,
-                            "edit": false,
-                            "movable": false,
-                            "view": true
-                        },
-                        "urls": {
-                            "fetch": null,
-                            "upload": null
-                        }
-                    },
-                    {
-                        "children": [],
-                        "contributors": [],
-                        "dateModified": null,
-                        "expand": false,
-                        "isDashboard": false,
-                        "isFolder": true,
-                        "isPointer": false,
-                        "isSmartFolder": true,
-                        "kind": "folder",
-                        "modifiedBy": null,
-                        "modifiedDelta": 0,
-                        "name": "All my registrations",
-                        "node_id": "-amr",
-                        "parentIsFolder": true,
-                        "permissions": {
-                            "acceptsDrops": false,
-                            "copyable": false,
-                            "edit": false,
-                            "movable": false,
-                            "view": true
-                        },
-                        "urls": {
-                            "fetch": null,
-                            "upload": null
-                        }
-                    }
-                ]
-            }
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": false, "modifiedDelta": -25.646482, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T18:52:16.203000", "description": null, "isProject": true, "node_id": "9gm2w", "expand": false, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": true, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "2", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/9gm2w/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": true, "isSmartFolder": false}, {"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": false, "modifiedDelta": -5300.049998, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T17:24:21.804000", "description": null, "isProject": true, "node_id": "zp6ji", "expand": true, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": true, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "1", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/zp6ji/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": true, "isSmartFolder": false}, {"kind": "folder", "name": "All my projects", "contributors": [], "parentIsFolder": true, "isPointer": false, "isFolder": true, "dateModified": null, "modifiedDelta": 0, "node_id": "-amp", "modifiedBy": null, "isSmartFolder": true, "urls": {"upload": null, "fetch": null}, "isDashboard": false, "children": [], "expand": false, "permissions": {"edit": false, "acceptsDrops": false, "copyable": false, "movable": false, "view": true}}, {"kind": "folder", "name": "All my registrations", "contributors": [], "parentIsFolder": true, "isPointer": false, "isFolder": true, "dateModified": null, "modifiedDelta": 0, "node_id": "-amr", "modifiedBy": null, "isSmartFolder": true, "urls": {"upload": null, "fetch": null}, "isDashboard": false, "children": [], "expand": false, "permissions": {"edit": false, "acceptsDrops": false, "copyable": false, "movable": false, "view": true}}]}
         });
         $.mockjax({
-            url: 'http://localhost:5000/api/v1/dashboard/get_dashboard/-amp',
+            url: '/api/v1/dashboard/get_dashboard/-amp',
+            responseTime: 0,
             contentType: 'text/json',
-            responseText: [
-            {
-                "apiURL": "/api/v1/project/8jxuz/",
-                "children": [],
-                "contributors": [
-                    {
-                        "name": "Geiger",
-                        "url": "/uyi58/"
-                    },
-                    {
-                        "name": "Ryan",
-                        "url": "/bc4qw/"
-                    }
-                ],
-                "dateModified": "2014-06-17T15:42:14.287000",
-                "description": "maximize e-business content",
-                "expand": false,
-                "isComponent": false,
-                "isDashboard": false,
-                "isFile": false,
-                "isFolder": false,
-                "isPointer": false,
-                "isProject": true,
-                "isRegistration": false,
-                "isSmartFolder": false,
-                "kind": "folder",
-                "modifiedBy": "Geiger",
-                "modifiedDelta": -807733.576241,
-                "name": "User-friendly dynamic definition",
-                "node_id": "8jxuz",
-                "parentIsFolder": false,
-                "permissions": {
-                    "acceptsComponents": false,
-                    "acceptsCopies": true,
-                    "acceptsFolders": false,
-                    "acceptsMoves": false,
-                    "copyable": true,
-                    "edit": true,
-                    "movable": false,
-                    "view": true
-                },
-                "registeredMeta": {},
-                "urls": {
-                    "fetch": "/8jxuz/",
-                    "upload": null
-                }
-            }]
+            responseText: [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}, {"url": "/nqt8y/", "name": "Barrows"}], "isFolder": false, "children": [], "isDashboard": false, "modifiedDelta": -5425.354011, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T16:14:01.947000", "description": "optimize user-centric e-services", "isProject": true, "node_id": "i5yj3", "expand": true, "permissions": {"copyable": true, "edit": true, "acceptsCopies": true, "acceptsMoves": false, "acceptsFolders": false, "movable": false, "acceptsComponents": false, "view": true}, "kind": "folder", "name": "Right-sized demand-driven budgetarymanagement", "isComponent": false, "parentIsFolder": false, "isRegistration": false, "apiURL": "/api/v1/project/i5yj3/", "urls": {"upload": null, "fetch": "/i5yj3/"}, "isFile": false, "isPointer": false, "isSmartFolder": false}]
         });
         $.mockjax({
-            url: 'http://localhost:5000/api/v1/dashboard/get_dashboard/-amr',
+            url: '/api/v1/dashboard/get_dashboard/-amr',
+            responseTime: 0,
             contentType: 'text/json',
-            responseText: [{
-                "apiURL": "/api/v1/project/jn9sf/",
-                "children": [],
-                "contributors": [
-                    {
-                        "name": "Geiger",
-                        "url": "/uyi58/"
-                    },
-                    {
-                        "name": "Wuckert",
-                        "url": "/psezb/"
-                    }
-                ],
-                "dateModified": "2014-06-18T21:43:34.748000",
-                "description": "redefine impactful portals",
-                "expand": false,
-                "isComponent": false,
-                "isDashboard": false,
-                "isFile": false,
-                "isFolder": false,
-                "isPointer": false,
-                "isProject": true,
-                "isRegistration": true,
-                "isSmartFolder": false,
-                "kind": "folder",
-                "modifiedBy": "Geiger",
-                "modifiedDelta": -699832.9042,
-                "name": "Total 24hour opensystem",
-                "node_id": "jn9sf",
-                "parentIsFolder": false,
-                "permissions": {
-                    "acceptsComponents": false,
-                    "acceptsCopies": true,
-                    "acceptsFolders": false,
-                    "acceptsMoves": false,
-                    "copyable": true,
-                    "edit": false,
-                    "movable": false,
-                    "view": true
-                },
-                "registeredMeta": {
-                    "Open-Ended_Registration": "{\"summary\": \"test\"}"
-                },
-                "urls": {
-                    "fetch": "/jn9sf/",
-                    "upload": null
-                }
-            }]
+            responseText: [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}, {"url": "/nqt8y/", "name": "Barrows"}], "isFolder": false, "children": [], "isDashboard": false, "modifiedDelta": -5501.727837, "modifiedBy": "McTestperson", "registeredMeta": {"Open-Ended_Registration": "{\"summary\": \"Testing\"}"}, "dateModified": "2014-07-08T16:14:01.947000", "description": "optimize user-centric e-services", "isProject": true, "node_id": "f9nhw", "expand": true, "permissions": {"copyable": true, "edit": false, "acceptsCopies": true, "acceptsMoves": false, "acceptsFolders": false, "movable": false, "acceptsComponents": false, "view": true}, "kind": "folder", "name": "Right-sized demand-driven budgetarymanagement", "isComponent": false, "parentIsFolder": false, "isRegistration": true, "apiURL": "/api/v1/project/f9nhw/", "urls": {"upload": null, "fetch": "/f9nhw/"}, "isFile": false, "isPointer": false, "isSmartFolder": false}]
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/9gm2w',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": false, "modifiedDelta": -6843.890789, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T18:52:16.186000", "description": null, "isProject": true, "node_id": "39hen", "expand": false, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": true, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "2-1", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/39hen/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": true, "isSmartFolder": false}]}
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/zp6ji',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}, {"url": "/nqt8y/", "name": "Barrows"}], "isFolder": false, "children": [], "isDashboard": false, "modifiedDelta": -4213.664841, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T17:45:27.995000", "description": "optimize user-centric e-services", "isProject": true, "node_id": "i5yj3", "expand": true, "permissions": {"copyable": true, "edit": true, "acceptsCopies": true, "acceptsMoves": false, "acceptsFolders": false, "movable": true, "acceptsComponents": false, "view": true}, "kind": "folder", "name": "Right-sized demand-driven budgetarymanagement", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/i5yj3/", "urls": {"upload": null, "fetch": "/i5yj3/"}, "isFile": false, "isPointer": true, "isSmartFolder": false}, {"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": false, "modifiedDelta": -10167.873596, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T16:06:13.791000", "description": null, "isProject": true, "node_id": "4eyxz", "expand": true, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": true, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "1-1", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/4eyxz/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": true, "isSmartFolder": false}]}
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/i5yj3',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": false, "children": [], "isDashboard": false, "modifiedDelta": -4267.079385, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T17:45:28.024000", "description": "visualize compelling solutions", "isProject": false, "node_id": "bzny3", "expand": false, "permissions": {"copyable": true, "edit": true, "acceptsCopies": false, "acceptsMoves": false, "acceptsFolders": false, "movable": false, "acceptsComponents": false, "view": true}, "kind": "item", "name": "Devolved heuristic array", "isComponent": true, "parentIsFolder": false, "isRegistration": false, "apiURL": "/api/v1/project/i5yj3/node/bzny3/", "urls": {"upload": null, "fetch": "/bzny3/"}, "isFile": false, "isPointer": false, "isSmartFolder": false}]}
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/f9nhw',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": false, "children": [], "isDashboard": false, "modifiedDelta": -5875.182537, "modifiedBy": "McTestperson", "registeredMeta": {"Open-Ended_Registration": "{\"summary\": \"Testing\"}"}, "dateModified": "2014-07-08T16:14:01.947000", "description": "visualize compelling solutions", "isProject": false, "node_id": "5xnai", "expand": false, "permissions": {"copyable": true, "edit": false, "acceptsCopies": false, "acceptsMoves": false, "acceptsFolders": false, "movable": false, "acceptsComponents": false, "view": true}, "kind": "item", "name": "Devolved heuristic array", "isComponent": true, "parentIsFolder": false, "isRegistration": true, "apiURL": "/api/v1/project/f9nhw/node/5xnai/", "urls": {"upload": null, "fetch": "/5xnai/"}, "isFile": false, "isPointer": false, "isSmartFolder": false}]}
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/4eyxz',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: {"data": [{"contributors": [{"url": "/k62ps/", "name": "McTestperson"}], "isFolder": true, "children": [], "isDashboard": false, "modifiedDelta": -6423.257029, "modifiedBy": "McTestperson", "registeredMeta": {}, "dateModified": "2014-07-08T16:06:13.772000", "description": null, "isProject": true, "node_id": "ti847", "expand": true, "permissions": {"copyable": false, "edit": true, "acceptsCopies": true, "acceptsMoves": true, "acceptsFolders": true, "movable": true, "acceptsComponents": true, "view": true}, "kind": "folder", "name": "1-1-1", "isComponent": false, "parentIsFolder": true, "isRegistration": false, "apiURL": "/api/v1/project/ti847/", "urls": {"upload": null, "fetch": null}, "isFile": false, "isPointer": true, "isSmartFolder": false}]}
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/bzny3',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: { "data": [] }
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/39hen',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: { "data": [] }
+        });
+        $.mockjax({
+            url: '/api/v1/dashboard/get_dashboard/ti847',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: { "data": [] }
+        });
+        $.mockjax({
+            url: '/api/v1/project/9gm2w/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: ["39hen"]
+        });
+        $.mockjax({
+            url: '/api/v1/project/ti847/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: []
+        });
+        $.mockjax({
+            url: '/api/v1/project/4eyxz/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: ["ti847"]
+        });
+        $.mockjax({
+            url: '/api/v1/project/zp6ji/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: ["4eyxz", "i5yj3"]
+        });
+        $.mockjax({
+            url: '/api/v1/project/5wha8/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: ["zp6ji", "9gm2w"]
+        });
+        $.mockjax({
+            url: '/api/v1/project/39hen/get_folder_pointers/',
+            responseTime: 0,
+            contentType: 'text/json',
+            responseText: []
+        });
+        $.mockjax({
+            url: '/api/v1/project/*/collapse/',
+            responseTime: 0,
+            type: 'POST'
+        });
+        $.mockjax({
+            url: '/api/v1/project/*/expand/',
+            responseTime: 0,
+            type: 'POST'
         });
     }
 });
 
 
 QUnit.asyncTest("Creates hgrid", function (assert) {
-    var runAlready = false;
+    expect(2);
+    var runCount = 0;
     var $fixture = $('#qunit-fixutre');
     $fixture.append('<div id="project-grid" class="hgrid" ></div>');
     var projectbrowser = new ProjectOrganizer('#project-grid',
         {
             success: function () {
-
-                if (!runAlready) {
-                    runAlready = true;
+                var totalCallbacks = 4;
+                if (runCount >= totalCallbacks) {
                     QUnit.start();
-                    assert.ok(true, "Success callback called");
+                    assert.ok(true, 'Success callback called ' + totalCallbacks + ' times.');
                     assert.notEqual($('#project-grid'), "");
+                } else {
+                    runCount++;
                 }
             }
         });
