@@ -672,17 +672,20 @@
                                     dataType: 'json',
                                     complete: function () {
                                         if (copyMode == "move") {
-                                            if(outerFolder == null) {
+                                            if(outerFolder === null) {
+                                                console.log("Move between siblings");
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
                                                 setReloadNextFolder(itemParentID, folder.id);
                                                 draggable.grid.reloadFolder(itemParent);
 
                                             } else {
+                                                console.log("Move between parent/child");
                                                 var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
                                                 reloadFolder(draggable.grid, outerFolder);
                                             }
 
                                         } else {
+                                            console.log("Copy");
                                             reloadFolder(draggable.grid, folder);
                                         }
                                         copyMode = "none";
