@@ -93,11 +93,17 @@
 
 
         <p id="contributors">Contributors:
-            <span id="contributorsview"><div mod-meta='{
-                    "tpl": "util/render_contributors.mako",
-                    "uri": "${node["api_url"]}get_contributors/",
-                    "replace": true
-                }'></div></span>
+
+            % if node['anonymous'] and not node['is_public'] and not user['can_edit']:
+                <span id="contributorsview"><div mod-meta='{
+                        "tpl": "util/render_contributors.mako",
+                        "uri": "${node["api_url"]}get_contributors/",
+                        "replace": true
+                    }'></div></span>
+            % else:
+                <span>Anonymous Contributors</span>
+            % endif
+
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>

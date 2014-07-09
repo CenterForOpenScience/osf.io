@@ -241,7 +241,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('read')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -522,6 +522,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     recent_logs, has_more_logs= _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
+    link = auth.private_key or request.args.get('key', '').strip('/')
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -570,7 +571,8 @@ def _view_project(node, auth, primary=False):
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
-            'link': auth.private_key or request.args.get('key', '').strip('/'),
+            'link': link,
+            'anonymous': node.is_anonymous(link) if link else False,
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
