@@ -21,12 +21,12 @@
      */
     var Log = function(params) {
         var self = this;
+        self.anonymous = params.anonymous;
         self.action = params.action;
         self.date = new FormattableDate(params.date);
         self.nodeCategory = params.nodeCategory;
         self.nodeDescription = params.nodeDescription;
         self.nodeTitle = params.nodeTitle;
-        self.contributor = params.contributor;
         self.contributors = params.contributors;
         self.nodeUrl = params.nodeUrl;
         self.userFullName = params.userFullName;
@@ -52,20 +52,25 @@
          */
         self.displayContributors = ko.computed(function(){
             var ret = "";
-            for (var i=0; i < self.contributors.length; i++) {
-                var person = self.contributors[i];
-                if(i == self.contributors.length - 1 && self.contributors.length > 2){
-                    ret += " and ";
+            if (self.anonymous){
+                    ret += '<span><em>some anonymous contributor(s)</em></span>';
+            } else {
+                for (var i = 0; i < self.contributors.length; i++) {
+                    var person = self.contributors[i];
+                    if (i == self.contributors.length - 1 && self.contributors.length > 2) {
+                        ret += " and ";
+                    }
+                    if (person.registered)
+                        ret += self._asContribLink(person);
+                    else
+                        ret += '<span>' + person.fullname + '</span>';
+                    if (i < self.contributors.length - 1 && self.contributors.length > 2) {
+                        ret += ", ";
+                    } else if (i < self.contributors.length - 1 && self.contributors.length == 2) {
+                        ret += " and ";
+                    }
                 }
-                if (person.registered)
-                    ret += self._asContribLink(person);
-                else
-                    ret += '<span>' + person.fullname + '</span>';
-                if (i < self.contributors.length - 1 && self.contributors.length > 2){
-                    ret += ", ";
-                } else if (i < self.contributors.length - 1 && self.contributors.length == 2){
-                    ret += " and ";
-                }
+
             }
             return ret;
         })
@@ -124,10 +129,10 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
+                "anonymous": item.anonymous,
                 "action": item.action,
                 "date": item.date,
                 "nodeCategory": item.node.category,
-                "contributor": item.contributor,
                 "contributors": item.contributors,
                 "nodeUrl": item.node.url,
                 "userFullName": item.user.fullname,

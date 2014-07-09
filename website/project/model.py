@@ -373,7 +373,6 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
