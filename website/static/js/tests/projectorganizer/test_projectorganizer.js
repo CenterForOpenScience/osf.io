@@ -1,10 +1,51 @@
+   //////////////////////////////////
+  // Custom asserts and utilities //
+ //////////////////////////////////
+  function isTrue(expr, msg) {
+    return strictEqual(expr, true, msg || 'is true');
+  }
+
+  function isFalse(expr, msg) {
+    return strictEqual(expr, false, msg || 'is false');
+  }
+
+  /** Trigger a Slick.Event **/
+  function triggerSlick(evt, args, e) {
+    e = e || new Slick.EventData();
+    args = args || {};
+    args.grid = self;
+    return evt.notify(args, e, self);
+  }
+
+   /**
+   * Checks if the selected element contains given text
+   */
+  function containsText(selector, text, msg) {
+    var fullSelector = selector + ':contains(' + text + ')';
+    return isTrue($(fullSelector).length > 0, msg || '"' + text + '" found in element(s)');
+  }
+
+  /**
+   * Checks if the selected element does not contain given text
+   */
+  function notContainsText(selector, text, msg) {
+    var fullSelector = selector + ':contains(' + text + ')';
+    return equal($(fullSelector).length, 0, msg || '"' + text + '" found in element(s)');
+  }
+
+    //////////////////////////////////
+   //            Tests             //
+  //////////////////////////////////
+
+
+QUnit.module("Verifying QUnit works at all", {});
 QUnit.test('1 equals "1"', function (assert) {
     assert.ok(1 == "1", "Passed!");
 });
 
 
 QUnit.module("AJAX Tests", {
-    setup: function () {
+    setup: function (assert) {
         $.mockjax({
             url: '/api/v1/dashboard/get_dashboard/',
             responseTime: 0,
@@ -180,8 +221,8 @@ QUnit.asyncTest("Hgrid expands and collapses", function (assert) {
                     var folder = projectbrowser.grid.getData()[8];
                     projectbrowser.grid.expandItem(folder);
                 } if (runCount == expandCallbacks){
-                    runCount++;
                     QUnit.start();
+                    runCount++;
                     var data = projectbrowser.grid.grid.getData();
                     assert.equal(data.getLength(), 10, 'Data is proper length after expand');
                     folder = projectbrowser.grid.getData()[8];
