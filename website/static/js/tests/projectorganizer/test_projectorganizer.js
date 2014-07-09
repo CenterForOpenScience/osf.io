@@ -123,23 +123,72 @@ QUnit.module("AJAX Tests", {
             responseTime: 0,
             type: 'POST'
         });
+
+        var $fixture = $('#qunit-fixutre');
+        $fixture.append('<div id="project-grid" class="hgrid" ></div>');
+
     }
 });
-
 
 QUnit.asyncTest("Creates hgrid", function (assert) {
     expect(2);
     var runCount = 0;
-    var $fixture = $('#qunit-fixutre');
-    $fixture.append('<div id="project-grid" class="hgrid" ></div>');
     var projectbrowser = new ProjectOrganizer('#project-grid',
         {
             success: function () {
                 var totalCallbacks = 4;
-                if (runCount >= totalCallbacks) {
+                if (runCount == totalCallbacks) {
                     QUnit.start();
                     assert.ok(true, 'Success callback called ' + totalCallbacks + ' times.');
                     assert.notEqual($('#project-grid'), "");
+                } else {
+                    runCount++;
+                }
+            }
+        });
+});
+
+QUnit.asyncTest("Hgrid contents correct", function (assert) {
+    expect(1);
+    var runCount = 0;
+    var projectbrowser = new ProjectOrganizer('#project-grid',
+        {
+            success: function () {
+                var initialCallbacks = 4;
+                if (runCount == initialCallbacks) {
+                    QUnit.start();
+                    var data = projectbrowser.grid.grid.getData();
+                    assert.equal(data.getLength(), 9, 'Data is proper length');
+                } else {
+                    runCount++;
+                }
+            }
+        });
+});
+
+QUnit.asyncTest("Hgrid expands and collapses", function (assert) {
+    expect(2);
+    var runCount = 0;
+    var initialCallbacks = 4;
+    var expandCallbacks = 6;
+    var collapseCallbacks = 7;
+    var projectbrowser = new ProjectOrganizer('#project-grid',
+        {
+            success: function () {
+                if (runCount == initialCallbacks) {
+                    runCount++;
+                    var folder = projectbrowser.grid.getData()[8];
+                    projectbrowser.grid.expandItem(folder);
+                } if (runCount == expandCallbacks){
+                    runCount++;
+                    QUnit.start();
+                    var data = projectbrowser.grid.grid.getData();
+                    assert.equal(data.getLength(), 10, 'Data is proper length after expand');
+                    folder = projectbrowser.grid.getData()[8];
+                    projectbrowser.grid.collapseItem(folder);
+                } if (runCount == collapseCallbacks) {
+                    var data = projectbrowser.grid.grid.getData();
+                    assert.equal(data.getLength(), 9, 'Data is proper length after collapse');
                 } else {
                     runCount++;
                 }
