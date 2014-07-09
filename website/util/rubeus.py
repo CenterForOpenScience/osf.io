@@ -209,7 +209,7 @@ class NodeProjectCollector(object):
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         # test_children = self._collect_addons(node)
-        # children_count = len(node.nodes)
+        children_count = len(node.nodes)
         if node.resolve().parent_id is None:
             is_project = True
         else:
@@ -229,7 +229,7 @@ class NodeProjectCollector(object):
                 if can_view
                 else u'Private Component',
             'kind': FILE
-                if is_component
+                if is_component or (children_count == 0)
                 else FOLDER,
             'permissions': {
                 'edit': can_edit,
