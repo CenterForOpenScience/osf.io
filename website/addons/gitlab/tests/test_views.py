@@ -6,6 +6,7 @@ import datetime
 import httplib as http
 
 from tests.base import fake
+from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.models import NodeLog
 from website.addons.base.services import fileservice
@@ -353,18 +354,23 @@ class TestDeleteFile(GitlabTestCase):
 
 class TestUploadFile(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
-    def test_upload_error(self, mock_upload):
-        mock_upload.side_effect = fileservice.FileUploadError()
+    def upload_file(self, project=None, auth=None):
+        project = project or self.project
+        auth = auth or self.user.auth
         payload = {'file': Upload('myfile.rst', 'baz')}
-        res = self.app.post(
-            self.project.api_url_for(
+        return self.app.post(
+            project.api_url_for(
                 'gitlab_upload_file',
                 path='path', branch='master',
             ),
             payload,
-            auth=self.user.auth,
+            auth=auth,
         )
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    def test_upload_error(self, mock_upload):
+        mock_upload.side_effect = fileservice.FileUploadError()
+        res = self.upload_file()
         assert_equal(
             res.json,
             {
@@ -387,15 +393,7 @@ class TestUploadFile(GitlabTestCase):
             NodeLog.FILE_ADDED,
             {'file_path': 'path'}
         )
-        payload = {'file': Upload('myfile.rst', 'baz')}
-        res = self.app.post(
-            self.project.api_url_for(
-                'gitlab_upload_file',
-                path='path', branch='master',
-            ),
-            payload,
-            auth=self.user.auth,
-        )
+        res = self.upload_file()
         self.project.reload()
         assert_equal(res.status_code, http.CREATED)
         assert_equal(
@@ -409,18 +407,73 @@ class TestUploadFile(GitlabTestCase):
             NodeLog.FILE_UPDATED,
             {'file_path': 'path'}
         )
-        payload = {'file': Upload('myfile.rst', 'baz')}
-        res = self.app.post(
-            self.project.api_url_for(
-                'gitlab_upload_file',
-                path='path', branch='master',
-            ),
-            payload,
-            auth=self.user.auth,
-        )
+        res = self.upload_file()
         self.project.reload()
         assert_equal(res.status_code, http.OK)
         assert_equal(
             self.project.logs[-1].action,
             'gitlab_{0}'.format(NodeLog.FILE_UPDATED),
         )
+
+    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    def test_upload_no_gitlab_project(self,
+                                      mock_create_user,
+                                      mock_create_project):
+        # Mocks
+        mock_create_project.return_value = {
+            'id': 1,
+        }
+
+        # Setup
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        user_addon = user.get_or_add_addon('gitlab')
+        user_addon.user_id = 1
+        user_addon.save()
+        self.upload_file(project, user.auth)
+        user.reload()
+        project.reload()
+
+        # Assertions
+        assert_false(mock_create_user.called)
+        assert_true(mock_create_project.called)
+        node_addon = project.get_addon('gitlab')
+        node_addon.reload()
+        assert_true(node_addon is not None)
+        assert_equal(node_addon.project_id, 1)
+
+    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    def test_upload_no_gitlab_project_or_user(self,
+                                              mock_create_user,
+                                              mock_create_project):
+        # Mocks
+        mock_create_user.return_value = {
+            'id': 1,
+            'username': 'bob',
+        }
+        mock_create_project.return_value = {
+            'id': 1,
+        }
+
+        # Setup
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        self.upload_file(project, user.auth)
+        user.reload()
+        project.reload()
+
+        # User assertions
+        assert_true(mock_create_user.called)
+        user_addon = user.get_addon('gitlab')
+        user_addon.reload()
+        assert_true(user_addon is not None)
+        assert_equal(user_addon.user_id, 1)
+
+        # Project assertions
+        assert_true(mock_create_project.called)
+        node_addon = project.get_addon('gitlab')
+        node_addon.reload()
+        assert_true(node_addon is not None)
+        assert_equal(node_addon.project_id, 1)

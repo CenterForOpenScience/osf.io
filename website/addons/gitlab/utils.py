@@ -127,7 +127,6 @@ def create_node(node_settings, check_ready=False):
     # Add web hook
     hook_service = hookservice.GitlabHookService(node_settings)
     hook_service.create(save=True)
-    # node_settings.add_hook(save=True)
 
 
 def setup_user(user):
