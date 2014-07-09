@@ -802,6 +802,7 @@ def project_generate_private_link_post(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
+    anonymous = request.json.get('anonymous', False)
 
     if node_to_use._id not in node_ids:
         node_ids.insert(0, node_to_use._id)
@@ -809,7 +810,7 @@ def project_generate_private_link_post(auth, **kwargs):
     nodes = [Node.load(node_id) for node_id in node_ids]
 
     new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes
+        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
 
     return new_link

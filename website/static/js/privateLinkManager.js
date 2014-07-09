@@ -15,6 +15,7 @@
         self.url = url;
         self.title = ko.observable('');
         self.name = ko.observable(null);
+        self.anonymous = ko.observable(false);
         self.pageTitle = 'Generate New Link to Share Project';
         self.errorMsg = ko.observable('');
 
@@ -69,7 +70,8 @@
                     type: 'post',
                     data: JSON.stringify({
                         node_ids: self.nodesToChange(),
-                        name: self.name()
+                        name: self.name(),
+                        anonymous: self.anonymous()
                     }),
                     contentType: 'application/json',
                     dataType: 'json',

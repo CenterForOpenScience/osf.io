@@ -56,7 +56,7 @@ def new_node(category, title, user, description=None, project=None):
     return node
 
 
-def new_private_link(name, user, nodes):
+def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
 
     :param str name: private link name
@@ -75,7 +75,8 @@ def new_private_link(name, user, nodes):
         key=key,
         name=name,
         creator=user,
-        nodes=nodes
+        nodes=nodes,
+        anonymous=anonymous
     )
 
     private_link.save()

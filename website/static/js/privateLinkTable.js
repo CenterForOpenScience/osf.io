@@ -96,6 +96,15 @@
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
         });
 
+        self.anonymous = ko.computed(function(){
+            if(data.anonymous){
+                return "Yes";
+            }
+            else {
+                return "No";
+            }
+        });
+
         self.displayAllNodes = function() {
             self.nodesList(data.nodes);
             self.moreNode(false);

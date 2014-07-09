@@ -8,7 +8,6 @@
             <div class="modal-body">
 
                 <div>
-
                     <div>
                         Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
                         <div class="form-group">
@@ -18,11 +17,19 @@
 
                     <hr />
 
+                    <div>Do you want this link to be anonymous by hiding contributors?
+                        <input class="anonymous" type="checkbox" data-bind="checked: anonymous"/>
+                    </div>
+
+                    <hr />
+
                     <div style="margin-bottom:10px;">
                         Anyone with the private link can view, but not edit,
                         the components associated with the link.
                         Which components would you like to associate with this link?
                     </div>
+
+
 
                     <div class="row">
 
@@ -40,6 +47,7 @@
                         </div>
 
                         <div class="col-md-6">
+
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
                             </div>

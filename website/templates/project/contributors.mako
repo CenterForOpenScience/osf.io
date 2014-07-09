@@ -70,9 +70,11 @@
                     <tr>
                     <th class="col-sm-3">Link</th>
                     <th class="col-sm-4">What This Link Shares</th>
+
                     <th class="col-sm-2">Created Date</th>
                     <th class="col-sm-2">Created By</th>
-                    <th class="col-sm-1"></th>
+                    <th class="col-sm-1">Anonymous</th>
+                    <th class="col-sm-0"></th>
                     </tr>
                 </thead>
 
@@ -116,6 +118,9 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
+                            <span data-bind="text: anonymous"></span>
+                        </td>
+                        <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
                                 <i class="icon-remove text-danger"></i>
                             </a>

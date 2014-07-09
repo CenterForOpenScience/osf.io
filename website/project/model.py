@@ -2435,6 +2435,7 @@ class PrivateLink(StoredObject):
     key = fields.StringField(required=True)
     name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
+    anonymous = fields.BooleanField(default=False)
 
     nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
@@ -2465,5 +2466,6 @@ class PrivateLink(StoredObject):
             "name": self.name,
             "creator": self.creator.fullname,
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
+            "anonymous": self.anonymous
         }
 
