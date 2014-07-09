@@ -522,7 +522,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     recent_logs, has_more_logs= _get_logs(node, 10, auth)
     widgets, configs, js, css = _render_addon(node)
-    link = auth.private_key or request.args.get('key', '').strip('/')
+    link = auth.private_key or request.args.get('view_only', '').strip('/')
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
