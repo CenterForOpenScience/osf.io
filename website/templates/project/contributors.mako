@@ -178,11 +178,12 @@
             <!-- ko ifnot: $parent.canEdit -->
                 <!-- ko if: canRemove -->
                     <a
-                            class="btn btn-danger contrib-button btn-mini"
                             data-bind="click: removeSelf"
                             rel="tooltip"
                             title="Remove contributor"
-                        >-</a>
+                        >
+                        <i class="icon-remove text-danger"></i>
+                    </a>
                     <!-- /ko -->
             <!-- /ko -->
         </td>
