@@ -34,6 +34,7 @@
         </h4>
         <div class="list-group-item-text"></div>
 
+        %if not summary['anonymous']:
         <!-- Show abbreviated contributors list -->
         <div mod-meta='{
                 "tpl": "util/render_users_abbrev.mako",
@@ -43,7 +44,9 @@
                 },
                 "replace": true
             }'></div>
-
+        %else:
+         <div>Anonymous Contributors</div>
+        %endif
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
         <div class="user-activity-meter">
