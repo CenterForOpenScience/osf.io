@@ -73,7 +73,7 @@ Available variables:
 
 def make_shell_context():
     from framework import Q
-    from framework.auth import User
+    from framework.auth import User, Auth
     from framework import db
     from website.app import init_app
     from website.project.model import Node
@@ -84,6 +84,7 @@ def make_shell_context():
     context = {'app': app,
                 'db': db,
                 'User': User,
+                'Auth': Auth,
                 'Node': Node,
                 'Q': Q,
                 'models': models,
