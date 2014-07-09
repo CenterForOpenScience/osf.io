@@ -91,6 +91,7 @@
         });
         self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
         self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
+        self.removeLink = "Remove this link";
         self.hasMoreText = ko.computed(function(){
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
         });

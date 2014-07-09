@@ -116,7 +116,7 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <a  rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">
+                            <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
                                 <i class="icon-remove text-danger"></i>
                             </a>
                         </td>
@@ -163,9 +163,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
                         >
                                 <i class="icon-remove text-danger"></i>
                     </a>
