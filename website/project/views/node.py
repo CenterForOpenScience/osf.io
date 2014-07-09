@@ -520,9 +520,11 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs, has_more_logs= _get_logs(node, 10, auth)
-    widgets, configs, js, css = _render_addon(node)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = node.is_anonymous(link) if link else False
+    recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
+    widgets, configs, js, css = _render_addon(node)
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -572,7 +574,7 @@ def _view_project(node, auth, primary=False):
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': link,
-            'anonymous': node.is_anonymous(link) if link else False,
+            'anonymous': anonymous,
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,

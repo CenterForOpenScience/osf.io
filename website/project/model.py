@@ -365,7 +365,7 @@ class NodeLog(StoredObject):
         }
 
     # TODO: Move to separate utility function
-    def serialize(self):
+    def serialize(self, anonymous=False):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
@@ -378,7 +378,8 @@ class NodeLog(StoredObject):
             'action': self.action,
             'params': self.params,
             'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None
+            'node': self.node.serialize() if self.node else None,
+            'anonymous': anonymous
         }
 
 
