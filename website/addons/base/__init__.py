@@ -215,7 +215,6 @@ class AddonSettingsBase(StoredObject):
         pass
 
 
-
 class AddonUserSettingsBase(AddonSettingsBase):
 
     owner = fields.ForeignField('user', backref='addons')
@@ -234,8 +233,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
     # TODO: Test me @asmacdo
     @property
     def nodes_authorized(self):
-        """Get authorized, non-deleted nodes."""
-        schema = self.config.settings_models['node']
+        """Get authorized, non-deleted nodes. Returns an empty list if the
+        attached add-on does not include a node model.
+
+        """
+        try:
+            schema = self.config.settings_models['node']
+        except KeyError:
+            return []
         nodes_backref = self.get_backref_key(schema, 'authorized')
         return [
             node_addon.owner
