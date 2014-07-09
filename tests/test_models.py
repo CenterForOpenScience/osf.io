@@ -522,6 +522,18 @@ class TestMergingUsers(OsfTestCase):
         assert_true(project.is_contributor(self.master))
         assert_false(project.is_contributor(self.dupe))
 
+    def test_merging_dupe_who_is_contributor_on_same_projects(self):
+        # Both master and dupe are contributors on the same project
+        project = ProjectFactory()
+        project.add_contributor(contributor=self.master)
+        project.add_contributor(contributor=self.dupe)
+        project.save()
+        self._merge_dupe()  # perform the merge
+        assert_true(project.is_contributor(self.master))
+        assert_false(project.is_contributor(self.dupe))
+        assert_equal(len(project.contributors), 2) # creator and master
+                                                   # are the only contribs
+
 
 class TestGUID(OsfTestCase):
 
