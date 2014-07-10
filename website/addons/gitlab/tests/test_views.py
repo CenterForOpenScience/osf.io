@@ -415,15 +415,26 @@ class TestUploadFile(GitlabTestCase):
             'gitlab_{0}'.format(NodeLog.FILE_UPDATED),
         )
 
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
+    @mock.patch('website.addons.gitlab.utils.check_project_initialized')
     @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
     @mock.patch('website.addons.gitlab.utils.client.createuser')
     def test_upload_no_gitlab_project(self,
                                       mock_create_user,
-                                      mock_create_project):
+                                      mock_create_project,
+                                      mock_check_initialized,
+                                      mock_create_hook,
+                                      mock_upload):
         # Mocks
         mock_create_project.return_value = {
             'id': 1,
         }
+        mock_check_initialized.return_value = True
+        mock_upload.return_value = (
+            NodeLog.FILE_ADDED,
+            {'file_path': 'path'}
+        )
 
         # Setup
         user = AuthUserFactory()
@@ -443,11 +454,17 @@ class TestUploadFile(GitlabTestCase):
         assert_true(node_addon is not None)
         assert_equal(node_addon.project_id, 1)
 
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
+    @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
+    @mock.patch('website.addons.gitlab.utils.check_project_initialized')
     @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
     @mock.patch('website.addons.gitlab.utils.client.createuser')
     def test_upload_no_gitlab_project_or_user(self,
                                               mock_create_user,
-                                              mock_create_project):
+                                              mock_create_project,
+                                              mock_check_initialized,
+                                              mock_create_hook,
+                                              mock_upload):
         # Mocks
         mock_create_user.return_value = {
             'id': 1,
@@ -456,6 +473,11 @@ class TestUploadFile(GitlabTestCase):
         mock_create_project.return_value = {
             'id': 1,
         }
+        mock_check_initialized.return_value = True
+        mock_upload.return_value = (
+            NodeLog.FILE_ADDED,
+            {'file_path': 'path'}
+        )
 
         # Setup
         user = AuthUserFactory()
