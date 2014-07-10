@@ -75,7 +75,7 @@
             </div>
 
             <div class="modal-body">
-                <p>Two-factor authentication helps keep your account security by combining a traditional password ("something you know") with a second code generated on a mobile device, usually a smartphone ("something you have").</p>
+                <p>By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.</p>
                 <p>If you have enabled two-factor authentication on your account, enter the current verification code from your device in this field.</p>
             </div><!-- end modal-body -->
 
