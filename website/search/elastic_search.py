@@ -230,6 +230,14 @@ def update_node(node):
 
 
 def update_user(user):
+    if not user.is_active():
+        try:
+            elastic.delete('website', 'user', user._id, refresh=True)
+            logger.debug('User ' + user._id + ' successfully deleted')
+            return
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            logger.error(e)
+            return
 
     user_doc = {
         'id': user._id,
