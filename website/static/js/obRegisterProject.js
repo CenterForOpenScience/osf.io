@@ -14,10 +14,11 @@
     var namespace = 'RegisterProject';
 
     function ObRegisterProject(){
-        var typeaheadsearch  = new TypeaheadSearch(namespace, "Project", false);
+        var $addLink = $('#addLink' + namespace);
+        var typeaheadsearch3  = new TypeaheadSearch(namespace, 'Project', 0);
         // to  do any of this just edit the click functionality editing the name spaced add_linkk
-        $('#addLink'+ namespace).click(function() {
-            var url = '/'+ $('#addLink' + namespace).prop('linkID') + '/register'; 
+        $addLink.click(function() {
+            var url = '/'+ $addLink.prop('linkIDProject') + '/register'; 
             window.location = url;
         });
     }

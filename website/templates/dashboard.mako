@@ -25,8 +25,8 @@ z<%inherit file="base.mako"/>
            <div id="watchFeed">
                <div class="page-header">
 
-
 ########################################################################################################################
+
                     <h3>I want to...</h3>
                         <div id="logScope">
                         </div><!-- end #logScope -->
@@ -36,7 +36,7 @@ z<%inherit file="base.mako"/>
                     <!-- start #ob-newProject -->
                     <li id="obNewProject" class="ob-list list-group-item">
                         <div id="obNewProjectBtn" class="ob-reveal-btn">
-                            <div class="ob-heading" >Create a New Project</div>
+                            <h3 class="ob-heading">Create a New Project</h3>
                             <img class="ob-expand-icon" id="obIconNewProject" src="/static/img/plus.png">
                         </div><!-- end #ob-newProject-btn -->
                         <div class="ob-reveal" id="obRevealNewProject">
@@ -48,21 +48,17 @@ z<%inherit file="base.mako"/>
                     <!-- start #obRegisterProject -->
                     <li id="obRegisterProject" class="ob-list list-group-item"> 
                         <div id="obRegisterProjectBtn">
-                            <div class="ob-heading" >Register a Project</div>
+                            <h3 class="ob-heading" >Register a Project</h3>
                             <img class="ob-expand-icon" id="obIconRegisterProject" src="/static/img/plus.png">
                         </div><!-- end #obInputProject-btn -->
-                            <div class="ob-reveal" id="obRevealRegisterProject">
-                        <div  id="projectSearchProjectRegisterProject">
-                            <div>
-                                
-                        <div>
-                            <img class="clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
-                            <input class="typeahead" type="text" placeholder="Search projects" id = 'inputProjectRegisterProject'>
-                        </div>
-                                
-                            <span class="findBtn btn btn-default" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
-                        </div>
-                    </div>
+                        <div class="row">
+                            <div class="ob-reveal col-md-12" id="obRevealRegisterProject">
+                                <div style="position:relative;" class="projectSearchRegisterProject">
+                                    <img class="clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
+                                    <input class="typeahead" type="text" placeholder="Search projects" id = 'inputProjectRegisterProject'>
+                                </div>
+                                        <span class="findBtn btn btn-default pull-right" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
+                                </div>
                     </li> <!-- end #obInputProject" -->
 
                     <!-- start #ob-AddFile -->
@@ -91,7 +87,7 @@ z<%inherit file="base.mako"/>
                                     <h4> 2. Select a project</h4>
                                     <div style="position:relative;" class="projectSearchAddFile" >
                                         <img class="clear-button ob-reveal" id="clearInputProjectAddFile" src="/static/img/close2.png">
-                                        <input class="typeahead search-box-add-file" type="text" placeholder="Type to search"
+                                        <input class="typeahead" type="text" placeholder="Type to search"
                                          id='inputProjectAddFile'>
                                     </div>
                                 </div>
@@ -101,9 +97,10 @@ z<%inherit file="base.mako"/>
                                     <h4>3. (optional) Select a component</h4>
                                     <div style="position:relative;" class="projectSearchAddFile">
                                         <img class="clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">                        
-                                        <input class="typeahead search-box-add-file disabled-input" disabled="disabled" type="text" placeholder="Type to search" id='inputComponentAddFile'>
+                                        <input class="typeahead" disabled="disabled" type="text" placeholder="Type to search" id='inputComponentAddFile'>
                                     </div>
                                     <span class="findBtn btn btn-default pull-right" id="addLinkAddFile" disabled="disabled">Upload</span>
+                                    <span class="findBtn btn btn-default pull-right" id="fakeAddLinkAddFile" disabled="disabled">Upload</span>
                                 </div>
                             </div>
                         </div>

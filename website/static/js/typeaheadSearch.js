@@ -36,13 +36,13 @@ function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, names
             .attr('disabled', true)
             .css('border', '2px solid LightGreen');
 
-        addLink.prop('linkID', linkID)
+        addLink.prop('linkID' + nodeType, linkID)
             .removeAttr('disabled')
-            .prop('routeID', routeID);
+            .prop('routeID'+ nodeType, routeID);
         if(componentBool===1){
-            console.log('this');
+            
 
-            parent_node = $('#addLink' + namespace).prop('linkID');
+            parent_node = $('#addLink' + namespace).prop('linkID' + nodeType);
             $.getJSON('/api/v1/project/'+ parent_node +'/get_children/', function (projects) {
             var myProjects = projects.nodes.map(
                 function(item){return {
@@ -51,9 +51,15 @@ function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, names
                     'route': item.api_url,
                 };
             });
-              $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
-
-            $('#inputComponent' + namespace).attr('disabled', false);
+            
+            if(myProjects.length > 0){
+                $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
+                $('#inputComponent' + namespace).attr('disabled', false);    
+                $('#inputComponent' + namespace).focus();
+            }else{
+                $('#inputComponent' + namespace).attr('disabled', true);
+                $('#inputComponent' + namespace).attr('placeholder', 'Selected Project has no components');
+            }
             });
         }
     });
@@ -62,7 +68,6 @@ function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, names
 
 function TypeaheadAddListenter(clearInputProject, inputProject, addLink, namespace, nodeType, componentBool){
     clearInputProject[0].addEventListener('click', function() {
-
         clearInputProject.hide();
         
         inputProject.attr('disabled', false)
@@ -70,20 +75,26 @@ function TypeaheadAddListenter(clearInputProject, inputProject, addLink, namespa
             .css('border-color','#ccc')
             .val('');
 
-        addLink.removeProp('linkID')
-            .removeProp('routeID')
-            .attr('disabled', true);
+        addLink.removeProp('linkID' + nodeType)
+            .removeProp('routeID' + nodeType);
+
         if(componentBool===1){
-            $('#inputComponent' + namespace).attr('disabled', true);      
+            $('#clearInputComponent' + namespace).click();
+            $('#inputComponent' + namespace).attr('disabled', true);
+            $('#inputComponent' + namespace).attr('placeholder', 'Type to search');
+        }
+
+        if(nodeType==='Project'){
+            addLink.attr('disabled', true);
         }
     });
 }
 
 function TypeaheadLogic(nodeType, namespace, myProjects){
     $('#input' + nodeType + namespace).typeahead({
-        hint: true,
+        hint: false,
         highlight: true,
-        minLength: 1
+        minLength: 0
     },
     {
         name: 'projectSearch' + nodeType + namespace,
