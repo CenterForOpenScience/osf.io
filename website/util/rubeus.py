@@ -269,7 +269,7 @@ class NodeProjectCollector(object):
             'isDashboard': node.is_dashboard,
             'isFile': False,
             'dateModified': date_modified,
-            'modifiedDelta': modified_delta,
+            'modifiedDelta': max(1,modified_delta),
             'modifiedBy': modified_by,
             'parentIsFolder': parent_is_folder,
             'contributors': contributors,
