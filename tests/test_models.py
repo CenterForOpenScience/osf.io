@@ -153,7 +153,7 @@ class TestUser(OsfTestCase):
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert_false(update_search.called)
+        assert update_search.called
 
     @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
