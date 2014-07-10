@@ -229,7 +229,7 @@ class NodeProjectCollector(object):
                 if can_view
                 else u'Private Component',
             'kind': FILE
-                if is_component or (children_count == 0)
+                if not node.is_dashboard and (is_component or children_count == 0)
                 else FOLDER,
             'permissions': {
                 'edit': can_edit,
