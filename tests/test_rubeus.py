@@ -2,14 +2,19 @@
 import os
 import mock
 from nose.tools import *
+from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-    AuthFactory, PointerFactory)
+    AuthFactory, PointerFactory, DashboardFactory)
 
 from framework.auth import Auth
 from website.util import rubeus
 
+import website.app
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings'
+)
 
 class TestRubeus(OsfTestCase):
 
@@ -227,6 +232,97 @@ class TestRubeus(OsfTestCase):
         ret = serializer._serialize_node(pointer)
         assert_true(ret['isPointer'])
 
+class TestSerializingDashboard(OsfTestCase):
+
+    def setUp(self):
+        pass
+
+    smart_folder_types = {
+        'name': str,
+        'children': list,
+        'node_id': str
+    }
+    smart_folder_values = {
+        'kind': 'folder',
+        'contributors': [],
+        'parentIsFolder': True,
+        'isPointer': False,
+        'isFolder': True,
+        'dateModified': None,
+        'modifiedDelta': 0,
+        'modifiedBy': None,
+        'isSmartFolder': True,
+        'urls': {
+            'upload': None,
+            'fetch': None
+        },
+        'isDashboard': False,
+        'expand': False,
+        'permissions': {
+            'edit': False,
+            'acceptsDrops': False,
+            'copyable': False,
+            'movable': False,
+            'view': True
+        }
+    }
+    amp_str = 'All my projects'
+    amr_str = 'All my registrations'
+    def test_serialize_empty_dashboard(self):
+        dash = DashboardFactory()
+        auth = AuthFactory(user=dash.creator)
+
+        amp_str = self.amp_str
+        amr_str = self.amr_str
+
+        rv = rubeus.to_project_hgrid(dash, auth)
+
+        # there are only 2 folders
+        assert_equal(len(rv), 2)
+        # and the 2 smart folders are named thusly
+        assert_equal({amp_str, amr_str}, {v['name'] for v in rv})
+
+        # TODO rewrite this in a more readable way
+        amp, amr = None, None
+        for v in rv:
+            if v['name'] == amp_str:
+                amp = v
+            elif v['name'] == amr_str:
+                amr = v
+            else:
+                # TODO Represent this better :/
+                assert_true(False)
+
+        assert_equal(amp['node_id'], '-amp')
+        assert_equal(amr['node_id'], '-amr')
+
+        for v in rv:
+            assert_equal(v['children'], [])
+            for attr, correct_value in self.smart_folder_values.items():
+                # TODO this will fail if something is added to one of the dictionaries in rv, e.g. rv['permissions']
+                # Is that ok?
+                assert_equal(correct_value, v[attr])
+            for attr, correct_type in self.smart_folder_types.items():
+                assert_equal(correct_type, type(v[attr]))
+
+
+
+        # for v in rv:
+
+
+
+
+
+        # pass to rubeus.to_project_hgrid
+
+    # def test_serialize_folder_containing_folder(self):
+    #     pass
+    #
+    # def test_serialize_folder_containing_project(self):
+    #     pass
+
+
+
 
 # TODO: Make this more reusable across test modules
 mock_addon = mock.Mock()
@@ -299,3 +395,5 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             rubeus.collect_addon_js(self.project),
             {'foo.js', 'baz.js'}
         )
+
+
