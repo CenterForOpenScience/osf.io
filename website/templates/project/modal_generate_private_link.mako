@@ -17,8 +17,9 @@
 
                     <hr />
 
-                    <div>Do you want this link to be anonymous by hiding contributors?
+                    <div>
                         <input class="anonymous" type="checkbox" data-bind="checked: anonymous"/>
+                        Anonymize contributor list for this link (e.g., for blind peer review)
                     </div>
 
                     <hr />
