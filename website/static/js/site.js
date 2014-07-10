@@ -201,8 +201,8 @@
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
-    var LOCAL_DATEFORMAT = 'lll';
-    var UTC_DATEFORMAT = 'lll UTC';
+    var LOCAL_DATEFORMAT = 'YYYY-MM-DD LT';
+    var UTC_DATEFORMAT = 'YYYY-MM-DD LT UTC';
     $.osf.FormattableDate = function(date) {
         if (typeof date === 'string') {
             // The date as a Date object

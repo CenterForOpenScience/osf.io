@@ -726,7 +726,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'title': node.title,
             'category': node.project_or_component,
             'is_registration': node.is_registration,
-            'registered_date': node.registered_date.strftime('%b %d %Y %I:%M %p UTC')
+            'registered_date': node.registered_date.strftime('%Y-%m-%d %I:%M %p UTC')
                 if node.is_registration
                 else None,
             'nlogs': None,

@@ -32,4 +32,4 @@ class TestNodeSerializers(OsfTestCase):
         reg = RegistrationFactory()
         res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
         assert_equal(res['summary']['registered_date'],
-                    reg.registered_date.strftime('%b %d %Y %I:%M %p UTC'))
+                reg.registered_date.strftime('%Y-%m-%d %I:%M %p UTC'))
