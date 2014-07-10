@@ -46,6 +46,8 @@ QUnit.test('1 equals "1"', function (assert) {
 
 QUnit.module("AJAX Tests", {
     setup: function (assert) {
+        $.mockjaxClear();
+
         $.mockjax({
             url: '/api/v1/dashboard/get_dashboard/',
             responseTime: 0,

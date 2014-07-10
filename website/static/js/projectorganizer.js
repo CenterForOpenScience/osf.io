@@ -126,7 +126,6 @@
     ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
 
 
-
     var dateModifiedColumn = {
         id: 'date-modified',
         text: 'Modified',
@@ -234,7 +233,6 @@
         self.myProjects = [];
         self.publicProjects = [];
         self.grid.registerPlugin(draggable);
-
         // Expand/collapse All functions
         $(".pg-expand-all").click(function () {
             expandAllInHGrid(self.grid);
