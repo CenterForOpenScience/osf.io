@@ -794,7 +794,7 @@
     function ProjectOrganizer(selector, options) {
         var self = this;
         var baseHGridOptions = {
-            width: '550',
+            width: '100%',
             height: '600',
             columns: [
                 ProjectOrganizer.Col.Name,

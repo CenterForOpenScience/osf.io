@@ -22,14 +22,14 @@
         {{#if theItem.isFolder}}
         <div class = "organize-project-controls">
             <div id = "buttons{{theItem.node_id}}">
-            <div class = "organizeBtn btn btn-default" id="add-item-{{theItem.node_id}}">Add Project</div>
-            <div id="add-folder-{{theItem.node_id}}" class = "organizeBtn btn btn-default">Add a Folder</div>
+            <div class = "organizeBtn btn btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
+            <div id="add-folder-{{theItem.node_id}}" class = "organizeBtn btn btn-default">New Folder</div>
                 {{#unless theItem.isDashboard}}
                     <div class = "organizeBtn btn btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
                 {{/unless}}
             </div>
             <div id="findNode{{theItem.node_id}}">
-            <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Project Name">
+            <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find">
             <span class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled">Add the project</span>
             <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
                 <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
