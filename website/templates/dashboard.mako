@@ -2,7 +2,7 @@
 <%def name="title()">Dashboard</%def>
 <%def name="content()">
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-7">
         <div class="page-header">
             <div class="pull-right"><a class="btn btn-default" href="/folder/new/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <div class="pull-right"><a class="btn btn-default" href="/project/new/">New Project</a></div>
@@ -19,7 +19,7 @@
     <%include file='log_templates.mako'/>
     </div><div class="project-details"></div>
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-5">
            <div id="watchFeed">
                <div class="page-header">
                     <h3>Watched Projects</h3>
@@ -35,7 +35,7 @@
 
 %if 'badges' in addons_enabled:
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="page-header">
               <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
                 <h3>Your Badges</h3>
@@ -46,7 +46,7 @@
                      "replace": true
                 }'></div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-5">
             <div class="page-header">
                 <h3>Badges You've Awarded</h3>
             </div>
