@@ -75,6 +75,27 @@
         return toReload;
     }
 
+        /**
+     * Takes two element IDs and tries to determine if one contains the other. Returns the container or null if
+     * they are not directly related. Items contain themselves.
+     * @method whichIsContainer
+     * @param hgrid {Object: Hgrid}
+     * @param itemOneID {Number}
+     * @param itemTwoID {Number}
+     * @returns item ID or null
+     */
+    function whichIsContainer(hgrid, itemOneID, itemTwoID){
+        var pathToOne = hgrid.getPathToRoot(itemOneID);
+        var pathToTwo = hgrid.getPathToRoot(itemTwoID);
+        if(pathToOne.indexOf(itemTwoID) > -1 ){
+            return itemTwoID;
+        } else if (pathToTwo.indexOf(itemOneID) > -1) {
+            return itemOneID;
+        } else {
+            return null;
+        }
+    }
+
     function createProjectDetailHTMLFromTemplate(theItem) {
         var detailTemplateSource = $("#project-detail-template").html();
         Handlebars.registerHelper('commalist', function (items, options) {
@@ -183,6 +204,9 @@
     ProjectOrganizer.Col.Name.selectable = true;
     ProjectOrganizer.Col.Name.sortable = false;
     ProjectOrganizer.Col.Name.behavior = "move";
+    ProjectOrganizer.Col.Name.showExpander = function(row, args) {
+        return (row.childrenCount > 0 || row.isSmartFolder);
+    };
     ProjectOrganizer.Col.Name.itemView = function (row) {
         var name = row.name.toString();
 
@@ -661,7 +685,7 @@
                             if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]["url"];
                                 var postData = JSON.stringify(postInfo[copyMode]["json"]);
-                                var outerFolderID = draggable.grid.whichIsContainer(itemParentID,folder.id);
+                                var outerFolderID = whichIsContainer(draggable.grid, itemParentID,folder.id);
                                 $.ajax({
                                     type: "POST",
                                     url: url,

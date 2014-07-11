@@ -238,3 +238,46 @@ QUnit.asyncTest("Hgrid expands and collapses", function (assert) {
             }
         });
 });
+
+/*   QUnit.module("Helper function tests",{});
+
+       test('whichIsContainer', function() {
+        var dat = {
+          data: [{
+            kind: HGrid.FOLDER,
+            name: '1',
+            children: [{
+              kind: HGrid.FOLDER,
+              name: '1-1',
+              children: [{
+                  kind: HGrid.FOLDER,
+                  name: '1-1-1',
+                  children: [{
+                      kind: HGrid.ITEM,
+                      name: 'item'
+                    }]
+                }]
+            },{
+              kind: HGrid.FOLDER,
+              name: '1-2'
+            }]
+          }]
+        };
+        var grid = new HGrid('#myGrid', {
+          data: dat
+        });
+        var data = grid.getData();
+        equal(data[0].name, '1');
+        equal(data[1].name, '1-1');
+        equal(data[2].name, '1-1-1');
+        equal(data[3].name, 'item');
+        equal(data[4].name, '1-2');
+        equal(grid.whichIsContainer(0,1), 0, 'parent is container');
+        equal(grid.whichIsContainer(1,0), 0, 'parent is container, reverse order of parameters');
+        equal(grid.whichIsContainer(1,1), 1, 'item contains itself');
+        equal(grid.whichIsContainer(0,2), 0, 'grandparent is container');
+        equal(grid.whichIsContainer(2,3), 2, 'folder contains leaf');
+        equal(grid.whichIsContainer(1,3), 1, 'grandparent contains leaf');
+        equal(grid.whichIsContainer(2,4), null, 'nobody contains cousins');
+        equal(grid.whichIsContainer(1,4), null, 'nobody contains siblings');
+    });*/

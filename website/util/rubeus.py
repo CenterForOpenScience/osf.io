@@ -229,7 +229,7 @@ class NodeProjectCollector(object):
                 if can_view
                 else u'Private Component',
             'kind': FILE
-                if not node.is_dashboard and (is_component or children_count == 0)
+                if is_component
                 else FOLDER,
             'permissions': {
                 'edit': can_edit,
@@ -279,6 +279,7 @@ class NodeProjectCollector(object):
             'isRegistration': node.is_registration,
             'description': node.description,
             'registeredMeta': node.registered_meta,
+            'childrenCount': children_count,
         }
 
     def _collect_addons(self, node):
