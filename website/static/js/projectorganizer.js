@@ -735,11 +735,20 @@
             done();
         },
         canAcceptDrop: function(items, folder) {
+            // folder is the drop target.
+            // items is an array of things to go into the drop target.
+
             if (folder.isSmartFolder || !folder.isFolder){
                 return false;
             }
+            // if the folder is contained by the item, return false
 
-            var itemParentNodeId = getItemParentNodeId(draggable.grid, items[0]);
+            var representativeItem = items[0];
+            if (draggable.grid.folderContains(representativeItem.id,folder.id)){
+                return false;
+            }
+
+            var itemParentNodeId = getItemParentNodeId(draggable.grid, representativeItem);
             if (itemParentNodeId == folder.node_id){
                 return false;
             }
