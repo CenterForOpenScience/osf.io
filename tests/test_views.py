@@ -277,7 +277,7 @@ class TestProjectViews(OsfTestCase):
         project.add_contributors(
             [
                 {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -295,7 +295,7 @@ class TestProjectViews(OsfTestCase):
                     {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
                     {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                     {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': False},
                 ]
             },
             auth=self.auth,
@@ -307,6 +307,11 @@ class TestProjectViews(OsfTestCase):
             # Note: Cast ForeignList to list for comparison
             list(project.contributors),
             [project.creator, reg_user1, unregistered_user, reg_user2]
+        )
+
+        assert_equal(
+            project.visible_contributors,
+            [project.creator, reg_user1, unregistered_user]
         )
 
     def test_project_remove_contributor(self):
