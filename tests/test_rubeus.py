@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+from types import NoneType
+from xmlrpclib import DateTime
 import mock
 from nose.tools import *
 from webtest_plus import TestApp
@@ -232,94 +234,7 @@ class TestRubeus(OsfTestCase):
         ret = serializer._serialize_node(pointer)
         assert_true(ret['isPointer'])
 
-class TestSerializingDashboard(OsfTestCase):
 
-    def setUp(self):
-        pass
-
-    smart_folder_types = {
-        'name': str,
-        'children': list,
-        'node_id': str
-    }
-    smart_folder_values = {
-        'kind': 'folder',
-        'contributors': [],
-        'parentIsFolder': True,
-        'isPointer': False,
-        'isFolder': True,
-        'dateModified': None,
-        'modifiedDelta': 0,
-        'modifiedBy': None,
-        'isSmartFolder': True,
-        'urls': {
-            'upload': None,
-            'fetch': None
-        },
-        'isDashboard': False,
-        'expand': False,
-        'permissions': {
-            'edit': False,
-            'acceptsDrops': False,
-            'copyable': False,
-            'movable': False,
-            'view': True
-        }
-    }
-    amp_str = 'All my projects'
-    amr_str = 'All my registrations'
-    def test_serialize_empty_dashboard(self):
-        dash = DashboardFactory()
-        auth = AuthFactory(user=dash.creator)
-
-        amp_str = self.amp_str
-        amr_str = self.amr_str
-
-        rv = rubeus.to_project_hgrid(dash, auth)
-
-        # there are only 2 folders
-        assert_equal(len(rv), 2)
-        # and the 2 smart folders are named thusly
-        assert_equal({amp_str, amr_str}, {v['name'] for v in rv})
-
-        # TODO rewrite this in a more readable way
-        amp, amr = None, None
-        for v in rv:
-            if v['name'] == amp_str:
-                amp = v
-            elif v['name'] == amr_str:
-                amr = v
-            else:
-                # TODO Represent this better :/
-                assert_true(False)
-
-        assert_equal(amp['node_id'], '-amp')
-        assert_equal(amr['node_id'], '-amr')
-
-        for v in rv:
-            assert_equal(v['children'], [])
-            for attr, correct_value in self.smart_folder_values.items():
-                # TODO this will fail if something is added to one of the dictionaries in rv, e.g. rv['permissions']
-                # Is that ok?
-                assert_equal(correct_value, v[attr])
-            for attr, correct_type in self.smart_folder_types.items():
-                assert_equal(correct_type, type(v[attr]))
-
-
-
-        # for v in rv:
-
-
-
-
-
-        # pass to rubeus.to_project_hgrid
-
-    # def test_serialize_folder_containing_folder(self):
-    #     pass
-    #
-    # def test_serialize_folder_containing_project(self):
-    #     pass
 
 
 
@@ -395,5 +310,128 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             rubeus.collect_addon_js(self.project),
             {'foo.js', 'baz.js'}
         )
+
+class TestSerializingEmptyDashboard(OsfTestCase):
+
+    AMP = 'All my projects'
+    AMP_ID = '-amp'
+    AMR = 'All my registrations'
+    AMR_ID = '-amr'
+
+    def setUp(self):
+        self.dash = DashboardFactory()
+        self.auth = AuthFactory(user=self.dash.creator)
+        self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+
+
+    def test_empty_dashboard_hgrid_is_list(self):
+        assert_is_instance(self.dash_hgrid, list)
+
+
+    def test_empty_dashboard_smart_folders_correct_number(self):
+        assert_equal(len(self.dash_hgrid), 2)
+
+
+    def test_empty_dashboard_smart_folders_correct_names_and_ids(self):
+        for node_hgrid in self.dash_hgrid:
+            assert_in(node_hgrid['name'], (self.AMP, self.AMR))
+        for node_hgrid in self.dash_hgrid:
+            if node_hgrid['name'] == self.AMP:
+                assert_equal(node_hgrid['node_id'], self.AMP_ID)
+            elif node_hgrid['name'] == self.AMR:
+                assert_equal(node_hgrid['node_id'], self.AMR_ID)
+
+
+    def test_empty_dashboard_smart_folders_empty(self):
+        for node_hgrid in self.dash_hgrid:
+            assert_equal(node_hgrid['children'], [])
+
+
+    def test_empty_dashboard_valid_folders(self):
+        for node in self.dash_hgrid:
+            assert_valid_hgrid_folder(node)
+
+
+    def test_empty_dashboard_valid_folders(self):
+        for node in self.dash_hgrid:
+            assert_valid_hgrid_smart_folder(node)
+
+class testSerializingPopulatedDashboard(OsfTestCase):
+
+    def setUp(self):
+        self.dash = DashboardFactory()
+        self.auth = AuthFactory(user=self.dash.creator)
+        # self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+
+
+    def test_serialize_folder_containing_folder(self):
+
+        pass
+
+    def test_serialize_folder_containing_project(self):
+        pass
+
+def assert_valid_hgrid_folder(node_hgrid):
+    folder_types = {
+        'name': str,
+        'children': list,
+        'contributors': list,
+        'dateModified': (DateTime, NoneType),
+        'node_id': str,
+        'modifiedDelta': int,
+        'modifiedBy': (dict, NoneType),
+        'urls': dict,
+        'isDashboard': bool,
+        'expand': bool,
+        'permissions': dict,
+        'isSmartFolder': bool,
+    }
+    keys_types = {
+        'urls': (str, NoneType),
+        'permissions': bool,
+    }
+    folder_values = {
+        'parentIsFolder': True,
+        'isPointer': False,
+        'isFolder': True,
+        'kind': 'folder',
+    }
+
+    # TODO: test keys of permissions and urls?
+
+    assert_is_instance(node_hgrid, dict)
+
+    for key, correct_type in folder_types.items():
+        assert_is_instance(node_hgrid[key], correct_type)
+
+    for key, correct_type in keys_types.items():
+        for inner_key, inner_value in node_hgrid[key].items():
+            assert_is_instance(inner_value, correct_type)
+
+
+def assert_valid_hgrid_smart_folder(node_hgrid):
+    smart_folder_values = {
+        'contributors': [],
+        'isPointer': False,
+        'dateModified': None,
+        'modifiedDelta': 0,
+        'modifiedBy': None,
+        'isSmartFolder': True,
+        'urls': {
+            'upload': None,
+            'fetch': None
+        },
+        'isDashboard': False,
+        'permissions': {
+            'edit': False,
+            'acceptsDrops': False,
+            'copyable': False,
+            'movable': False,
+            'view': True
+        }
+    }
+    assert_valid_hgrid_folder(node_hgrid)
+    for attr, correct_value in smart_folder_values.items():
+        assert_equal(correct_value, node_hgrid[attr])
 
 
