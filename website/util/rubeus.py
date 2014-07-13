@@ -210,13 +210,9 @@ class NodeProjectCollector(object):
         modified_by = node.logs[-1].user.family_name
         # test_children = self._collect_addons(node)
         children_count = len(node.nodes)
-        if node.resolve().parent_id is None:
-            is_project = True
-        else:
-            is_project = False
         is_pointer = not node.primary
-        is_component = node.resolve().primary and not is_project
-
+        is_component = node.category != "project" and node.primary
+        is_project = node.category == "project"
         if node.is_dashboard:
             to_expand = True
         elif parent_is_folder:
@@ -269,7 +265,7 @@ class NodeProjectCollector(object):
             'isDashboard': node.is_dashboard,
             'isFile': False,
             'dateModified': date_modified,
-            'modifiedDelta': max(1,modified_delta),
+            'modifiedDelta': max(1, modified_delta),
             'modifiedBy': modified_by,
             'parentIsFolder': parent_is_folder,
             'contributors': contributors,

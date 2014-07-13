@@ -75,7 +75,7 @@
         return toReload;
     }
 
-        /**
+     /**
      * Takes two element IDs and tries to determine if one contains the other. Returns the container or null if
      * they are not directly related. Items contain themselves.
      * @method whichIsContainer
@@ -127,6 +127,18 @@
             altKey = false;
         }
     });
+
+    function addFormKeyBindings(divID){
+        $("#"+divID).keyup(function (e){
+            if(e.which == 13){ //return
+
+
+            } else if (e.which == 27) {//esc
+
+
+            }
+        });
+    }
 
     var collapseAllInHGrid = function (grid) {
         grid.collapseAll();
