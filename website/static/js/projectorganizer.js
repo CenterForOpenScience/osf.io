@@ -158,7 +158,6 @@
     ProjectOrganizer.Col = {};
     ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
 
-
     var dateModifiedColumn = {
         id: 'date-modified',
         text: 'Modified',
@@ -216,6 +215,7 @@
     ProjectOrganizer.Col.Name.selectable = true;
     ProjectOrganizer.Col.Name.sortable = false;
     ProjectOrganizer.Col.Name.behavior = "move";
+    ProjectOrganizer.Col.Name.indent = 20;
     ProjectOrganizer.Col.Name.showExpander = function(row, args) {
         return (row.childrenCount > 0 || row.isSmartFolder);
     };
