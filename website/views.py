@@ -126,15 +126,16 @@ def index(auth, **kwargs):
         return redirect(web_url_for('dashboard'))
     return {}
 
+
 def find_dashboard(user):
     dashboard_folder = user.node__contributed.find(
-        Q('is_dashboard','eq', True)
+        Q('is_dashboard', 'eq', True)
     )
 
     if dashboard_folder.count() == 0:
         new_dashboard(user)
         dashboard_folder = user.node__contributed.find(
-            Q('is_dashboard','eq', True)
+            Q('is_dashboard', 'eq', True)
         )
     return dashboard_folder
 
@@ -165,7 +166,9 @@ def get_all_projects_smart_folder(**kwargs):
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
-        Q('is_folder','eq', False)
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
@@ -180,7 +183,9 @@ def get_all_registrations_smart_folder(**kwargs):
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
-        Q('is_folder','eq', False)
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
     return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
@@ -190,7 +195,7 @@ def get_all_registrations_smart_folder(**kwargs):
 def get_dashboard_nodes(auth, **kwargs):
     user = auth.user
 
-    contributed = user.node__contributed  # nodes user cotributed to
+    contributed = user.node__contributed  # nodes user contributed to
 
     nodes = contributed.find(
         Q('category', 'eq', 'project') &
