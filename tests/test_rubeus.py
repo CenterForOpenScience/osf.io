@@ -2,6 +2,7 @@
 import os
 from types import NoneType
 from xmlrpclib import DateTime
+from flask import Flask
 import mock
 from nose.tools import *
 from webtest_plus import TestApp
@@ -11,9 +12,12 @@ from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
     AuthFactory, PointerFactory, DashboardFactory, FolderFactory, AuthUserFactory)
 
 from framework.auth import Auth
-from website.util import rubeus
+from website.project import Node
+from website.util import rubeus, api_url_for
 
 import website.app
+from website.views import get_all_projects_smart_folder
+
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
 )
@@ -401,12 +405,52 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         len_with_folder = len(self.init_dash_hgrid) + 1
         assert_equal(len(dash_hgrid), len_with_folder)
 
+class TestSmartFolderViews(OsfTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.dash = DashboardFactory()
+        self.user = self.dash.creator
+        self.auth = AuthFactory(user=self.user)
+
+    # TODO: necessary? this should be existing functionality
+    # def test_expanding_all_projects_then_adding_project(self):
+    #     pass
+    #
+    # def test_adding_project_then_expanding_folder(self):
+    #     pass
+
+    # todo: parallel test for all registrations?
+    @mock.patch('website.project.decorators.get_api_key')
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_adding_project_then_expanding_all_projects(self, mock_from_kwargs, mock_get_api_key):
+        mock_get_api_key.return_value = 'api_keys_lol'
+        mock_from_kwargs.return_value = Auth(user=self.user)
+
+        with app.test_request_context():
+            url = api_url_for('get_dashboard')
+
+        #TODO: this fails if '-amp/' is appended. is that correct?
+        res = self.app.get(url + '-amp')
+        print res
+        assert_equal(len(res), 0)
+
+        project = ProjectFactory(creator=self.user)
+        res = self.app.get(url + '-amp')
+        print res
+        assert_equal(len(res), 1)
+
+
+
+
+    def test_expanding_all_projects_then_adding_project(self):
+        assert False
+
     def test_serialize_folder_containing_folder(self):
+        assert False
 
-        pass
 
-    def test_serialize_folder_containing_project(self):
-        pass
+
 
 def assert_valid_hgrid_folder(node_hgrid):
     folder_types = {
