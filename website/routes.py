@@ -183,6 +183,7 @@ def make_url_map(app):
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
         Rule([
                  '/dashboard/get_dashboard/<nid>',
+                 '/dashboard/get_dashboard/<nid>/',
                  '/dashboard/get_dashboard/',
                  ],
              'get', website_views.get_dashboard, json_renderer),

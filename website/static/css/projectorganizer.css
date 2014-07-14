@@ -99,15 +99,11 @@ div.project-details span.title {
     border-bottom: 1px solid #ebebeb;
     border-radius: 5px 5px 0 0;
     width: 100%;
-    /*margin-top: 20px;*/
-    /*margin-bottom: 10px;*/
     display: block;
-    /*font-size: 1.17em;*/
     -webkit-margin-before: 0em;
     -webkit-margin-after: 0em;
     -webkit-margin-start: 0px;
     -webkit-margin-end: 0px;
-    /*font-weight: bold;*/
 }
 
 div.project-detail-content {
@@ -116,8 +112,6 @@ div.project-detail-content {
 
 div.project-details {
     width: 450px;
-    /*border: 2px solid black;*/
-    /*background-color: white;*/
     float: right;
     margin-left: 35%;
     margin-top: 130px;
@@ -125,9 +119,6 @@ div.project-details {
     z-index: 9999999;
     display: none;
     overflow: visible;
-    /*border-radius: 10px;*/
-    /*padding: 8px;*/
-    /*box-shadow: 10px 10px 12px #888888;*/
 
     padding: 1px;
     text-align: left;
@@ -135,7 +126,6 @@ div.project-details {
     background-color: #fff;
     -webkit-background-clip: padding-box;
     background-clip: padding-box;
-    /*border: 1px solid #ccc;*/
     border: 1px solid rgba(0,0,0,.2);
     border-radius: 6px;
     -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.7);
