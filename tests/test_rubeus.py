@@ -421,6 +421,9 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 class TestSmartFolderViews(OsfTestCase):
 
+    AMP_ID = '-amp'
+    AMR_ID = '-amr'
+
     def setUp(self):
         self.app = TestApp(app)
         self.dash = DashboardFactory()
@@ -436,11 +439,11 @@ class TestSmartFolderViews(OsfTestCase):
         with app.test_request_context():
             url = api_url_for('get_dashboard')
 
-        res = self.app.get(url + '-amp')
+        res = self.app.get(url + self.AMP_ID)
         init_len = len(res.json)
 
         ProjectFactory(creator=self.user)
-        res = self.app.get(url + '-amp')
+        res = self.app.get(url + self.AMP_ID)
         assert_equal(len(res.json), init_len + 1)
 
 
@@ -453,11 +456,11 @@ class TestSmartFolderViews(OsfTestCase):
         with app.test_request_context():
             url = api_url_for('get_dashboard')
 
-        res = self.app.get(url + '-amr')
+        res = self.app.get(url + self.AMR_ID)
         init_len = len(res.json)
 
         RegistrationFactory(creator=self.user)
-        res = self.app.get(url + '-amr')
+        res = self.app.get(url + self.AMR_ID)
         assert_equal(len(res.json), init_len + 1)
 
 
