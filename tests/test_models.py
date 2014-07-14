@@ -768,6 +768,13 @@ class TestNode(OsfTestCase):
             assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
                 nid=self.node._primary_key))
 
+    def test_category_display(self):
+        node = NodeFactory(category='hypothesis')
+        assert_equal(node.category_display, 'Hypothesis')
+        node2 = NodeFactory(category='methods and measures')
+        assert_equal(node2.category_display, 'Methods and Measures')
+
+
     def test_api_url_for(self):
         with app.test_request_context():
             result = self.parent.api_url_for('view_project')
