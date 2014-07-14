@@ -402,8 +402,22 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         self.folder.add_pointer(project,self.auth)
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
-        len_with_folder = len(self.init_dash_hgrid) + 1
-        assert_equal(len(dash_hgrid), len_with_folder)
+        assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
+
+
+    def test_serialize_folder_containing_folder(self):
+        outer_folder = FolderFactory(creator=self.auth)
+
+        folder_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
+
+        inner_folder = FolderFactory(creator=self.auth)
+        outer_folder.add_pointer(inner_folder, self.auth)
+
+        outer_folder.expand(self.auth)
+
+        assert_equal(len(folder_hgrid), len(rubeus.to_project_hgrid(outer_folder, self.auth)) + 1)
+
+
 
 class TestSmartFolderViews(OsfTestCase):
 
@@ -415,7 +429,7 @@ class TestSmartFolderViews(OsfTestCase):
 
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_project_then_expanding_all_projects(self, mock_from_kwargs, mock_get_api_key):
+    def test_adding_project_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -423,15 +437,30 @@ class TestSmartFolderViews(OsfTestCase):
             url = api_url_for('get_dashboard')
 
         res = self.app.get(url + '-amp')
-        orig_len = len(res)
+        init_len = len(res.json)
 
         ProjectFactory(creator=self.user)
         res = self.app.get(url + '-amp')
-        assert_equal(len(res), orig_len + 1)
+        assert_equal(len(res.json), init_len + 1)
 
 
-    def test_serialize_folder_containing_folder(self):
-        assert False
+    @mock.patch('website.project.decorators.get_api_key')
+    @mock.patch('website.project.decorators.Auth.from_kwargs')
+    def test_adding_registration_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
+        mock_get_api_key.return_value = 'api_keys_lol'
+        mock_from_kwargs.return_value = Auth(user=self.user)
+
+        with app.test_request_context():
+            url = api_url_for('get_dashboard')
+
+        res = self.app.get(url + '-amr')
+        init_len = len(res.json)
+
+        RegistrationFactory(creator=self.user)
+        res = self.app.get(url + '-amr')
+        assert_equal(len(res.json), init_len + 1)
+
+
 
 
 def assert_valid_hgrid_folder(node_hgrid):
