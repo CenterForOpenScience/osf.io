@@ -25,7 +25,6 @@ from website.project import utils
 
 from website.addons.base.services.fileservice import FileServiceError
 
-from website.addons.gitlab.api import client
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
     setup_user, setup_node,

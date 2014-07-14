@@ -13,24 +13,28 @@ data must be migrated to GitLab.
     * [On app server]
         * cd /opt/apps/osf
         * python -m scripts.gitlab.migrate_mongo
-4. Clone backed-up repos to bare repos in GitLab directory
+4. Clone OSF repo to GitLab machine
+    * [On Gitlab server]
+        * git clone https://github.com/jmcarp/osf
+        * git checkout feature/gitlab
+5. Copy backed-up repos to bare repos in GitLab directory
 	* [On GitLab server]
 	    * Verify SOURCE_PATH and DEST_PATH in scripts/gitlab/migrate_files.py
 		* cd /root/osf
-		* sudo -u git python -m scripts.gitlab.migrate_files
+		* sudo -u git -H python scripts/gitlab/migrate_files.py
 		    * Must run as user git for permissions happiness
-5. Migrate file GUIDs from OSF files to GitLab
+6. Migrate file GUIDs from OSF files to GitLab
 	* On app server
 		* cd /opt/apps/osf
 		* python -m scripts.gitlab.migrate_guids
-6. Build routing table to preserve old URLs
+7. Build routing table to preserve old URLs
 	* On app server
 		* cd /opt/apps/osf
 		* sudo env/bin/python -m scripts.gitlab.routing_table
-7. Migrate download counts from OSF files to GitLab
+8. Migrate download counts from OSF files to GitLab
 	* On app server
 		* cd /opt/apps/osf
 		* python -m scripts.gitlab.migrate_counts
-8. Finalize settings
+9. Finalize settings
     * In website/settings/local.py remove 'osffiles' from `ADDONS_REQUESTED`.
     * In website/addons/gitlab/settings/defaults.py switch `ROUTE` from 'gitlab' to 'osffiles'.

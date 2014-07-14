@@ -4,6 +4,7 @@ from website.settings import BASE_PATH, DOMAIN
 
 
 ROUTE = 'gitlab'
+# ROUTE = 'osffiles'
 
 HOST = None
 TOKEN = None
