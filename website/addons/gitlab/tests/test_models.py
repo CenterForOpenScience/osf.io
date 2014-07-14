@@ -1,15 +1,10 @@
 import mock
 from nose.tools import *
 
-import urlparse
-
 from website.addons.gitlab.tests import GitlabTestCase
-from website.addons.gitlab.api import GitlabError
-from website.addons.gitlab import settings as gitlab_settings
 
 from website.addons.base import AddonError
 from website.addons.gitlab.model import GitlabGuidFile
-from website.addons.gitlab.api import client
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
 
 
@@ -46,7 +41,7 @@ class TestNodeSettings(GitlabTestCase):
         mock_list.return_value = True
         guid_count = GitlabGuidFile.find().count()
         retrieved_guid = GitlabGuidFile.get_or_create(
-            self.node_settings, 'foo.txt', 'master', client=client,
+            self.node_settings, 'foo.txt', 'master',
         )
         assert_equal(
             retrieved_guid.node._id,
@@ -66,7 +61,7 @@ class TestNodeSettings(GitlabTestCase):
         mock_list.return_value = []
         with assert_raises(AddonError):
             GitlabGuidFile.get_or_create(
-                self.node_settings, 'bar.txt', 'master', client=client,
+                self.node_settings, 'bar.txt', 'master',
             )
 
     @mock.patch('website.addons.gitlab.model.client.listrepositorycommits')
@@ -74,5 +69,5 @@ class TestNodeSettings(GitlabTestCase):
         mock_list.side_effect = AddonError('Ack!')
         with assert_raises(AddonError):
             GitlabGuidFile.get_or_create(
-                self.node_settings, 'baz.txt', 'master', client=client,
+                self.node_settings, 'baz.txt', 'master',
             )

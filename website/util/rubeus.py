@@ -158,7 +158,7 @@ class NodeFileCollector(object):
                 else u'Private Component',
             'kind': FOLDER,
             'permissions': {
-                'edit': False,
+                'edit': True,
                 'view': can_view,
             },
             'urls': {

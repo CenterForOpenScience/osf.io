@@ -20,6 +20,8 @@ from website.addons.gitlab.utils import (
 )
 from website.addons.gitlab import settings as gitlab_settings
 
+from website.addons.gitlab.services import fileservice
+
 
 logger = logging.getLogger(__name__)
 
@@ -189,13 +191,12 @@ class GitlabGuidFile(GuidFile):
         return os.path.join(gitlab_settings.ROUTE, 'files', self.path)
 
     @classmethod
-    def get_or_create(cls, node_settings, path, ref=None, client=None):
+    def get_or_create(cls, node_settings, path, ref=None):
         """
 
         :param GitlabAddonNodeSettings node_settings:
         :param str path: Path to file
         :param str ref: Branch or SHA
-        :param Gitlab client: GitLab client
         :returns: Retrieved or created GUID
 
         """
@@ -212,17 +213,12 @@ class GitlabGuidFile(GuidFile):
 
         except ModularOdmException:
 
-            if client is None:
-                return None
-
             # If GUID doesn't exist, check whether file exists; we know the
             # file exists if it has at least one commit
+            file_service = fileservice.GitlabFileService(node_settings)
             try:
-                commits = client.listrepositorycommits(
-                    node_settings.project_id,
-                    ref_name=ref, path=path, per_page=1
-                )
-            except GitlabError:
+                commits = file_service.list_commits(ref, path, per_page=1)
+            except fileservice.ListCommitsError:
                 raise AddonError('File not found')
             if not commits:
                 raise AddonError('File not found')

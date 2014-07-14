@@ -146,7 +146,6 @@ CELERY_IMPORTS = (
 ADDONS_REQUESTED = [
     'wiki',
     'osffiles',
-    'gitlab',
     'github',
     's3',
     'figshare',
@@ -154,6 +153,7 @@ ADDONS_REQUESTED = [
     'dataverse',
     'badges',
     'forward',
+    'gitlab',
 ]
 
 ADDON_CATEGORIES = [

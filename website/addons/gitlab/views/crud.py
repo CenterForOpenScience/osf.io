@@ -48,14 +48,12 @@ def get_cache_file(path, sha):
     )
 
 
-def get_guid(node_settings, path, ref):
+def get_guid(node_addon, path, ref):
     """
 
     """
     try:
-        return GitlabGuidFile.get_or_create(
-            node_settings, path, ref, client=client
-        )
+        return GitlabGuidFile.get_or_create(node_addon, path, ref)
     except AddonError:
         raise HTTPError(http.NOT_FOUND)
 
@@ -123,20 +121,21 @@ def gitlab_upload_file(auth, node_addon, **kwargs):
     return grid_data, status
 
 
-def gitlab_hgrid_root(node_settings, auth, **kwargs):
+def gitlab_hgrid_root(node_addon, auth, **kwargs):
     """
 
     """
-    node = node_settings.owner
+    node = node_addon.owner
 
     #
     branch, sha = gitlab_settings.DEFAULT_BRANCH, None
     branches = []
 
     #
-    if node_settings.project_id is not None:
+    if node_addon.project_id is not None:
         # TODO: Improve error handling
-        gitlab_branches = client.listbranches(node_settings.project_id)
+        file_service = fileservice.GitlabFileService(node_addon)
+        gitlab_branches = file_service.list_branches()
         if not gitlab_branches:
             return None
         branches = [
@@ -144,7 +143,7 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
             for each in branches
         ]
         if branches:
-            branch, sha = get_branch_and_sha(node_settings, kwargs)
+            branch, sha = get_branch_and_sha(node_addon, kwargs)
 
     permissions = {
         'edit': node.can_edit(auth=auth) and not node.is_registration,
@@ -158,7 +157,7 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
     extra = render_branch_picker(branch, sha, branches)
 
     return [rubeus.build_addon_root(
-        node_settings,
+        node_addon,
         name=None,
         urls=urls,
         permissions=permissions,
@@ -194,9 +193,12 @@ def gitlab_list_files(node_addon, auth, path='', **kwargs):
     branch = request.args.get('branch')
     sha = request.args.get('sha')
 
-    tree = client.listrepositorytree(
-        node_addon.project_id, path=path, ref_name=sha or branch
-    )
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        tree = file_service.list(path, sha, branch)
+    except FileServiceError:
+        raise HTTPError(http.BAD_REQUEST)
+
     permissions = {
         'view': True,
         'edit': (
@@ -230,9 +232,11 @@ def gitlab_file_commits(node_addon, **kwargs):
     path = kwargs_to_path(kwargs, required=True)
     guid = get_guid(node_addon, path, ref)
 
-    commits = client.listrepositorycommits(
-        node_addon.project_id, ref_name=branch, path=path
-    )
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        commits = file_service.list_commits(branch, path)
+    except fileservice.ListCommitsError:
+        raise HTTPError(http.BAD_REQUEST)
     sha = sha or commits[0]['id']
 
     commit_data = [

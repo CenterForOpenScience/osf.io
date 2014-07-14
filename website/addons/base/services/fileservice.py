@@ -12,6 +12,10 @@ class FileService(BaseService):
         pass
 
     @abc.abstractmethod
+    def list(self, path):
+        pass
+
+    @abc.abstractmethod
     def download(self, path, **kwargs):
         pass
 
@@ -33,6 +37,10 @@ class FileEmptyError(FileServiceError):
 
 
 class FileUploadError(FileServiceError):
+    pass
+
+
+class ListFilesError(FileServiceError):
     pass
 
 

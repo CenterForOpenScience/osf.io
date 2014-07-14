@@ -45,6 +45,14 @@ def create_or_update(addon_model, user_addon, path, content, branch):
             raise fileservice.FileUploadError()
 
 
+class ListBranchesError(fileservice.FileServiceError):
+    pass
+
+
+class ListCommitsError(fileservice.FileServiceError):
+    pass
+
+
 class GitlabFileService(fileservice.FileService):
 
     def upload(self, path, filelike, branch, user_addon):
@@ -74,6 +82,16 @@ class GitlabFileService(fileservice.FileService):
             branch=branch,
         )
 
+    def list(self, path, sha, branch):
+        try:
+            return client.listrepositorytree(
+                self.addon_model.project_id,
+                path=path,
+                ref_name=sha or branch,
+            )
+        except GitlabError:
+            raise fileservice.ListFilesError()
+
     def download(self, path, ref):
         """
 
@@ -99,3 +117,35 @@ class GitlabFileService(fileservice.FileService):
             )
         except GitlabError:
             raise fileservice.FileDeleteError()
+
+    def list_branches(self):
+        """
+
+        :raises: ListBranchesError
+
+        """
+        try:
+            return client.listbranches(
+                self.addon_model.project_id
+            )
+        except GitlabError:
+            raise ListBranchesError()
+
+    def list_commits(self, ref, path=None, **kwargs):
+        """
+
+        :param str ref: Git reference
+        :param str path: Path to file; if ``None``, list commits for entire
+            repo
+        :param kwargs: Optional arguments to `listrepositorycommits`
+
+        :raises: ListCommitsError
+
+        """
+        try:
+            return client.listrepositorycommits(
+                self.addon_model.project_id, ref_name=ref, path=path,
+                **kwargs
+            )
+        except GitlabError:
+            raise ListCommitsError()
