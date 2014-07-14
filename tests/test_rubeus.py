@@ -413,14 +413,6 @@ class TestSmartFolderViews(OsfTestCase):
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 
-    # TODO: necessary? this should be existing functionality
-    # def test_expanding_all_projects_then_adding_project(self):
-    #     pass
-    #
-    # def test_adding_project_then_expanding_folder(self):
-    #     pass
-
-    # todo: parallel test for all registrations?
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_project_then_expanding_all_projects(self, mock_from_kwargs, mock_get_api_key):
@@ -430,26 +422,16 @@ class TestSmartFolderViews(OsfTestCase):
         with app.test_request_context():
             url = api_url_for('get_dashboard')
 
-        #TODO: this fails if '-amp/' is appended. is that correct?
         res = self.app.get(url + '-amp')
-        print res
-        assert_equal(len(res), 0)
+        orig_len = len(res)
 
-        project = ProjectFactory(creator=self.user)
+        ProjectFactory(creator=self.user)
         res = self.app.get(url + '-amp')
-        print res
-        assert_equal(len(res), 1)
+        assert_equal(len(res), orig_len + 1)
 
-
-
-
-    def test_expanding_all_projects_then_adding_project(self):
-        assert False
 
     def test_serialize_folder_containing_folder(self):
         assert False
-
-
 
 
 def assert_valid_hgrid_folder(node_hgrid):
