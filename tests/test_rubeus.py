@@ -8,7 +8,7 @@ from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-    AuthFactory, PointerFactory, DashboardFactory)
+    AuthFactory, PointerFactory, DashboardFactory, FolderFactory, AuthUserFactory)
 
 from framework.auth import Auth
 from website.util import rubeus
@@ -358,11 +358,48 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
 class testSerializingPopulatedDashboard(OsfTestCase):
 
+    AMP_ID = '-amp'
+    AMR_ID = '-amr'
+
     def setUp(self):
         self.dash = DashboardFactory()
-        self.auth = AuthFactory(user=self.dash.creator)
-        # self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+        self.user = self.dash.creator
+        self.auth = AuthFactory(user=self.user)
 
+        self.init_dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+
+    def addFolder(self):
+        self.folder = FolderFactory(creator=self.user)
+        self.dash.add_pointer(self.folder, self.auth)
+
+    def addProject(self):
+        self.project = ProjectFactory(creator=self.user)
+
+
+    def test_dashboard_1_folder_size(self):
+        self.addFolder()
+        dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+        assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
+
+
+    def test_dashboard_1_folder_titles(self):
+        self.addFolder()
+        dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+
+        assert_true(
+            {'All my projects', 'All my registrations', self.folder.title} <=
+            {node_hgrid['name'] for node_hgrid in dash_hgrid}
+        )
+
+
+    def test_dashboard_1_folder_containing_project_size(self):
+        self.addFolder()
+        project = ProjectFactory(creator=self.user)
+        self.folder.add_pointer(project,self.auth)
+
+        dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
+        len_with_folder = len(self.init_dash_hgrid) + 1
+        assert_equal(len(dash_hgrid), len_with_folder)
 
     def test_serialize_folder_containing_folder(self):
 
