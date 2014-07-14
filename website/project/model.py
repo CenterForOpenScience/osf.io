@@ -2356,11 +2356,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    # TODO: Deprecate this; it duplicates much of what serialize_project already
+    # does
     def serialize(self):
+        """Dictionary representation of node that is nested within a NodeLog's
+        representation.
+        """
         # TODO: incomplete implementation
         return {
             'id': str(self._primary_key),
-            'category': self.project_or_component,
+            'category': self.category,
+            'node_type': self.project_or_component,
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),

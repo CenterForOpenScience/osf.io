@@ -2172,7 +2172,9 @@ class TestNodeLog(OsfTestCase):
         node.save()
         d = log.serialize()
         assert_equal(d['action'], log.action)
-        assert_equal(d['node']['category'], 'component')
+        assert_equal(d['node']['node_type'], 'component')
+        assert_equal(d['node']['category'], 'hypothesis')
+
         assert_equal(d['node']['url'], log.node.url)
         assert_equal(d['date'], utils.rfcformat(log.date))
         assert_in('contributors', d)
