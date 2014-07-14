@@ -372,22 +372,19 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
         self.init_dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
-    def addFolder(self):
-        self.folder = FolderFactory(creator=self.user)
-        self.dash.add_pointer(self.folder, self.auth)
-
-    def addProject(self):
-        self.project = ProjectFactory(creator=self.user)
-
 
     def test_dashboard_1_folder_size(self):
-        self.addFolder()
+        folder = FolderFactory(creator=self.user)
+        self.dash.add_pointer(folder, self.auth)
+
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
 
     def test_dashboard_1_folder_titles(self):
-        self.addFolder()
+        folder = FolderFactory(creator=self.user)
+        self.dash.add_pointer(folder, self.auth)
+
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
         assert_true(
@@ -397,7 +394,10 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_dashboard_1_folder_containing_project_size(self):
-        self.addFolder()
+        folder = FolderFactory(creator=self.user)
+        self.dash.add_pointer(folder, self.auth)
+
+        project = ProjectFactory(creator=self.user)
         project = ProjectFactory(creator=self.user)
         self.folder.add_pointer(project,self.auth)
 
