@@ -329,14 +329,26 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
 
     def test_empty_dashboard_hgrid_is_list(self):
+        """
+        Tests that the hgrid representation of the initial dashboard is a list.
+        """
         assert_is_instance(self.dash_hgrid, list)
 
 
     def test_empty_dashboard_smart_folders_correct_number(self):
+        """
+        Tests that the size of the hgrid representation of the initial dashboard is 2.
+        In practice, these should be the 2 smart folders (tested in
+        test_empty_dashboard_smart_folders_correct_names_and_ids)
+        """
         assert_equal(len(self.dash_hgrid), 2)
 
 
     def test_empty_dashboard_smart_folders_correct_names_and_ids(self):
+        """
+        Tests that the hgrid representation of the initial dashboard contains each of the two smart folders
+        and that they each have the correct id.
+        """
         for node_hgrid in self.dash_hgrid:
             assert_in(node_hgrid['name'], (self.AMP, self.AMR))
         for node_hgrid in self.dash_hgrid:
@@ -347,16 +359,27 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
 
     def test_empty_dashboard_smart_folders_empty(self):
+        """
+        Tests that all the folders in the initial dashboard are empty.
+        """
         for node_hgrid in self.dash_hgrid:
             assert_equal(node_hgrid['children'], [])
 
 
     def test_empty_dashboard_valid_folders(self):
+        """
+        Tests that all the nodes in the initial dashboard are valid folders,
+        as specified in assert_valid_hgrid_folder.
+        """
         for node in self.dash_hgrid:
             assert_valid_hgrid_folder(node)
 
 
     def test_empty_dashboard_valid_folders(self):
+        """
+        Tests that all the nodes in the initial dashboard are valid folders,
+        as specified in assert_valid_hgrid_smart_folder.
+        """
         for node in self.dash_hgrid:
             assert_valid_hgrid_smart_folder(node)
 
@@ -374,6 +397,9 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_dashboard_1_folder_size(self):
+        """
+        Tests that adding a folder to the dashboard makes the dashboard hgrid contain one more element.
+        """
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
@@ -382,6 +408,9 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_dashboard_1_folder_titles(self):
+        """
+        Tests that a dashboard still contains each of the two smart folders after having a folder added to it.
+        """
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
