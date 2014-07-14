@@ -64,7 +64,7 @@
         }
     }
 
-    function setItemToExpand(item) {
+    function setItemToExpand(item, callback) {
         var expandUrl = item.apiURL + 'expand/';
         var postData = JSON.stringify({});
         $.ajax({
@@ -75,6 +75,9 @@
             dataType: 'json'
         }).done(function() {
             item.expand = false;
+            if (typeof callback !== "undefined") {
+                callback();
+            }
         });
     }
 
@@ -149,9 +152,11 @@
             if(e.which == 13){ //return
                 // Find visible submit-button in this div and activate it
                 $("#ptd-"+nodeID).find(".submit-button-"+nodeID).filter(":visible").click();
+                return false;
             } else if (e.which == 27) {//esc
                 // Find visible cancel-button in this div and activate it
                 $("#ptd-"+nodeID).find(".cancel-button-"+nodeID).filter(":visible").click();
+                return false;
             }
         });
     }
@@ -440,17 +445,19 @@
                                 pointerID: linkID,
                                 toNodeID: theItem.node_id
                             });
-                        setItemToExpand(theItem);
-                        $.ajax({
-                            type: "POST",
-                            url: url,
-                            data: postData,
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function () {
-                                reloadFolder(self.grid, theItem, theParentNode);
-                            }
+                        setItemToExpand(theItem, function() {
+                            $.ajax({
+                                type: "POST",
+                                url: url,
+                                data: postData,
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function () {
+                                    reloadFolder(self.grid, theItem, theParentNode);
+                                }
+                            });
                         });
+
                     });
 
                     $('#remove-link-' + theItem.node_id).click(function () {
@@ -507,17 +514,19 @@
                             node_id: theItem.node_id,
                             title: $.trim($('#add-folder-input' + theItem.node_id).val())
                         });
-                        setItemToExpand(theItem);
-                        $.ajax({
-                            type: "PUT",
-                            url: url,
-                            data: postData,
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function () {
-                                reloadFolder(self.grid, theItem, theParentNode);
-                            }
+                        setItemToExpand(theItem, function() {
+                            $.ajax({
+                                type: "PUT",
+                                url: url,
+                                data: postData,
+                                contentType: 'application/json',
+                                dataType: 'json',
+                                success: function () {
+                                    reloadFolder(self.grid, theItem, theParentNode);
+                                }
+                            });
                         });
+
                     });
                     $('#rename-node-' + theItem.node_id).click(function () {
                         $('#buttons' + theItem.node_id).hide();
@@ -700,40 +709,41 @@
                         if (copyMode === "copy" || copyMode === "move") {
                             // Remove all the duplicated pointers
                             deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
-                            setItemToExpand(folder);
-                            if (itemsToMove.length > 0) {
-                                var url = postInfo[copyMode]["url"];
-                                var postData = JSON.stringify(postInfo[copyMode]["json"]);
-                                var outerFolderID = whichIsContainer(draggable.grid, itemParentID,folder.id);
+                            setItemToExpand(folder, function() {
+                                if (itemsToMove.length > 0) {
+                                    var url = postInfo[copyMode]["url"];
+                                    var postData = JSON.stringify(postInfo[copyMode]["json"]);
+                                    var outerFolderID = whichIsContainer(draggable.grid, itemParentID,folder.id);
 
-                                $.ajax({
-                                    type: "POST",
-                                    url: url,
-                                    data: postData,
-                                    contentType: 'application/json',
-                                    dataType: 'json',
-                                    complete: function () {
-                                        if (copyMode == "move") {
-                                            if(typeof outerFolderID === 'undefined' || outerFolderID === null) {
-                                                itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
-                                                setReloadNextFolder(itemParentID, folder.id);
-                                                draggable.grid.reloadFolder(itemParent);
+                                    $.ajax({
+                                        type: "POST",
+                                        url: url,
+                                        data: postData,
+                                        contentType: 'application/json',
+                                        dataType: 'json',
+                                        complete: function () {
+                                            if (copyMode == "move") {
+                                                if(typeof outerFolderID === 'undefined' || outerFolderID === null) {
+                                                    itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
+                                                    setReloadNextFolder(itemParentID, folder.id);
+                                                    draggable.grid.reloadFolder(itemParent);
+
+                                                } else {
+                                                    var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
+                                                    reloadFolder(draggable.grid, outerFolder);
+                                                }
 
                                             } else {
-                                                var outerFolder = draggable.grid.grid.getData().getItemById(outerFolderID);
-                                                reloadFolder(draggable.grid, outerFolder);
+                                                reloadFolder(draggable.grid, folder);
                                             }
+                                            copyMode = "none";
 
-                                        } else {
-                                            reloadFolder(draggable.grid, folder);
                                         }
-                                        copyMode = "none";
-
-                                    }
-                                });
-                            } else { // From:  if(itemsToMove.length > 0)
-                                reloadFolder(draggable.grid, itemParent);
-                            }
+                                    });
+                                } else { // From:  if(itemsToMove.length > 0)
+                                    reloadFolder(draggable.grid, itemParent);
+                                }
+                            });
                         } // From: if (copyMode === "copy" || copyMode === "move")
                     });
                 } else{
