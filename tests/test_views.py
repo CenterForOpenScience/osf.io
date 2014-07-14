@@ -292,10 +292,10 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
                     {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': False},
+                    {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -306,12 +306,12 @@ class TestProjectViews(OsfTestCase):
         assert_equal(
             # Note: Cast ForeignList to list for comparison
             list(project.contributors),
-            [project.creator, reg_user1, unregistered_user, reg_user2]
+            [reg_user2, project.creator, unregistered_user, reg_user1]
         )
 
         assert_equal(
             project.visible_contributors,
-            [project.creator, reg_user1, unregistered_user]
+            [project.creator, unregistered_user, reg_user1]
         )
 
     def test_project_remove_contributor(self):
