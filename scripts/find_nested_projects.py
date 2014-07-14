@@ -10,9 +10,14 @@ from tests.factories import ProjectFactory
 
 
 def find_nested_projects():
-    return [node for node in Node.find()
-            if node.category == 'project'
-            and node.parent_node is not None]
+    return Node.find(
+            Q('__backrefs.parent.node.nodes.0', 'exists', True) &
+            Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False)
+    )
+    #return [node for node in Node.find()
+            #if node.category == 'project'
+            #and node.parent_node is not None]
 
 class TestFindNestedProjects(OsfTestCase):
 
@@ -29,6 +34,15 @@ class TestFindNestedProjects(OsfTestCase):
     def test_unnested_project(self):
         project = ProjectFactory()
         assert project not in find_nested_projects()
+
+    def test_deleted_projects_excluded(self):
+        project = ProjectFactory.build()
+        deleted = ProjectFactory(is_deleted=True)
+        project.nodes.append(deleted)
+        project.save()
+
+        result = find_nested_projects()
+        assert deleted not in result
 
 
 def main():
