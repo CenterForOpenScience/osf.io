@@ -194,7 +194,9 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url
         res = self.app.get(url, auth=self.auth)
         data = res.json
-        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['category'], 'Project')
+        assert_equal(data['node']['node_type'], 'project')
+
         assert_equal(data['node']['title'], self.project.title)
         assert_equal(data['node']['is_public'], self.project.is_public)
         assert_equal(data['node']['is_registration'], False)
@@ -2075,7 +2077,7 @@ class TestSearchViews(OsfTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-       
+
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
