@@ -176,11 +176,9 @@ input.typeahead.tt-input {
 /* ----------- */
 
 .typeahead,
-.tt-query,
-.tt-hint {
+.tt-query {
     width: 100%;
     height: 30px;
-    padding: 21px 12px;
     font-size: 18px;
     border: 2px solid #ccc;
     -webkit-border-radius: 8px;
@@ -205,7 +203,6 @@ input.typeahead.tt-input {
 
 .tt-hint {
     color: #999;
-	padding-top: 21px;
 }
 h3.category {
     font-size: 18px;
