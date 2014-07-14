@@ -688,10 +688,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def visible_contributors(self):
+        visible_id_set = set(self.visible_contributor_ids)
         return [
             user for user
             in self.contributors
-            if user._id in self.visible_contributor_ids
+            if user._id in visible_id_set
         ]
 
     def get_visible(self, user):
