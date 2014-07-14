@@ -743,13 +743,16 @@
             if (folder.isSmartFolder || !folder.isFolder){
                 return false;
             }
+
+
             // if the folder is contained by the item, return false
 
             var representativeItem = items[0];
-            if (draggable.grid.folderContains(representativeItem.id,folder.id)){
+            if (draggable.grid.folderContains(representativeItem.id, folder.id)){
                 return false;
             }
 
+            // If trying to drop on the folder it came from originally, return false
             var itemParentNodeId = getItemParentNodeId(draggable.grid, representativeItem);
             if (itemParentNodeId == folder.node_id){
                 return false;

@@ -90,25 +90,47 @@ span.rename-container{
 }
 
 div.project-details span.title {
-    font-size: 18px;
-    font-weight: bold;
+    padding: 8px 14px;
+    margin: 0;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #ebebeb;
+    border-radius: 5px 5px 0 0;
+    width: 100%;
+    display: block;
+    -webkit-margin-before: 0em;
+    -webkit-margin-after: 0em;
+    -webkit-margin-start: 0px;
+    -webkit-margin-end: 0px;
+}
+
+div.project-detail-content {
+    padding:9px 14px;
 }
 
 div.project-details {
     width: 450px;
-    border: 2px solid black;
-    background-color: white;
     float: right;
-    margin-right: -100px;
-    margin-left: 550px;
+    margin-left: 35%;
     margin-top: 130px;
     position: fixed;
     z-index: 9999999;
     display: none;
     overflow: visible;
-    border-radius: 10px;
-    padding: 8px;
-    box-shadow: 10px 10px 12px #888888;
+
+    padding: 1px;
+    text-align: left;
+    white-space: normal;
+    background-color: #fff;
+    -webkit-background-clip: padding-box;
+    background-clip: padding-box;
+    border: 1px solid rgba(0,0,0,.2);
+    border-radius: 6px;
+    -webkit-box-shadow: 0 5px 10px rgba(0,0,0,.7);
+    box-shadow: 0 5px 10px rgba(0,0,0,.7);
+
 }
 
 .organize-project-controls {
@@ -154,11 +176,9 @@ input.typeahead.tt-input {
 /* ----------- */
 
 .typeahead,
-.tt-query,
-.tt-hint {
+.tt-query {
     width: 100%;
     height: 30px;
-    padding: 21px 12px;
     font-size: 18px;
     border: 2px solid #ccc;
     -webkit-border-radius: 8px;
@@ -183,7 +203,6 @@ input.typeahead.tt-input {
 
 .tt-hint {
     color: #999;
-	padding-top: 21px;
 }
 h3.category {
     font-size: 18px;
