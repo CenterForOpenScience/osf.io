@@ -211,11 +211,22 @@ class NodeProjectCollector(object):
         # test_children = self._collect_addons(node)
         children_count = len(node.nodes)
         is_pointer = not node.primary
-        is_component = node.category != "project" and node.primary
+        is_component = node.category != "project"
         is_project = node.category == "project"
+        is_file = False
+        type = "project"
+        if is_file:
+            type = "file"
+        if is_pointer and not parent_is_folder:
+            type = "pointer"
+        if node.is_folder:
+            type = "folder"
+        if is_component:
+            type = "component"
+
         if node.is_dashboard:
             to_expand = True
-        elif parent_is_folder:
+        elif type != "pointer":
             to_expand = expanded
         else:
             to_expand = False
@@ -255,6 +266,7 @@ class NodeProjectCollector(object):
                     if not node.is_folder
                     else None,
             },
+            'type': type,
             'children': children,
             'expand': to_expand,
             # TODO: (bgeiger) replace these flags with a Kind property or something
@@ -263,7 +275,7 @@ class NodeProjectCollector(object):
             'isComponent': is_component,
             'isFolder': node.is_folder,
             'isDashboard': node.is_dashboard,
-            'isFile': False,
+            'isFile': is_file,
             'dateModified': date_modified,
             'modifiedDelta': max(1, modified_delta),
             'modifiedBy': modified_by,

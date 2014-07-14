@@ -114,6 +114,8 @@
         };
         var displayHTML = detailTemplate(detailTemplateContext);
         $(".project-details").html(displayHTML);
+        addFormKeyBindings(theItem.node_id);
+
     }
 
     var altKey = false;
@@ -128,14 +130,14 @@
         }
     });
 
-    function addFormKeyBindings(divID){
-        $("#"+divID).keyup(function (e){
+    function addFormKeyBindings(nodeID){
+        $("#ptd-"+nodeID).keyup(function (e){
             if(e.which == 13){ //return
-
-
+                // Find visible submit-button in this div and activate it
+                $("#ptd-"+nodeID).find(".submit-button-"+nodeID).filter(":visible").click();
             } else if (e.which == 27) {//esc
-
-
+                // Find visible cancel-button in this div and activate it
+                $("#ptd-"+nodeID).find(".cancel-button-"+nodeID).filter(":visible").click();
             }
         });
     }
@@ -229,25 +231,13 @@
             linkString = '<a href="' + url + '">' + name + '</a>';
         }
 
-        var type = "project";
-        if (row.isFile){
-            type = "file"
-        }
-        if (row.isPointer && !row.parentIsFolder) {
-            type = "pointer"
-        }
-        if (row.isFolder) {
-            type = "folder";
-            if (!row.isSmartFolder) {
-                extraClass = " dropzone";
-            }
-        }
+        var type = row.type;
+
         if (row.isSmartFolder) {
+            type = "folder";
             extraClass += " smart-folder";
         }
-        if (row.isComponent) {
-            type = "component"
-        }
+
         var regType = "";
         if(row.isRegistration){
             regType = "reg-";
@@ -546,7 +536,7 @@
                             }
                         });
                     });
-                    $('.cancel-button' + theItem.node_id).click(function() {
+                    $('.cancel-button-' + theItem.node_id).click(function() {
                         $('#afc-' + theItem.node_id).hide();
                         $('#rnc-' + theItem.node_id).hide();
                         $('#findNode' + theItem.node_id).hide();
@@ -844,7 +834,7 @@
                 var self = this;
                 item.expand = false;
                 self.emptyFolder(item);
-                if(typeof event !== 'undefined' && typeof item.apiURL !== "undefined" && item.parentIsFolder) {
+                if(typeof event !== 'undefined' && typeof item.apiURL !== "undefined" && item.type !== "pointer") {
                     var expandUrl = item.apiURL + 'expand/';
                     var postData = JSON.stringify({});
                     $.ajax({
@@ -861,7 +851,7 @@
             },
             onCollapse: function(event, item) {
                 item.expand = false;
-                if(typeof event !== 'undefined' && typeof item.apiURL !== "undefined" && item.parentIsFolder) {
+                if(typeof event !== 'undefined' && typeof item.apiURL !== "undefined" && item.type !== "pointer") {
                     var collapseUrl = item.apiURL + 'collapse/';
                     var postData = JSON.stringify({});
                     $.ajax({
