@@ -2080,7 +2080,7 @@ class TestSearchViews(OsfTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-       
+
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
