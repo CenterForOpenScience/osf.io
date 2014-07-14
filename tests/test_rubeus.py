@@ -465,8 +465,6 @@ class TestSmartFolderViews(OsfTestCase):
         assert_equal(len(res.json), init_len + 1)
 
 
-
-
 def assert_valid_hgrid_folder(node_hgrid):
     folder_types = {
         'name': str,
