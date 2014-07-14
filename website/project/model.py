@@ -688,11 +688,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def visible_contributors(self):
-        visible_id_set = set(self.visible_contributor_ids)
         return [
-            user for user
-            in self.contributors
-            if user._id in visible_id_set
+            User.load(_id)
+            for _id in self.visible_contributor_ids
         ]
 
     def get_visible(self, user):
@@ -2106,7 +2104,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-
+        # Update list of visible IDs
+        self.update_visible_ids()
         if save:
             self.save()
 
