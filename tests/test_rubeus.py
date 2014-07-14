@@ -491,8 +491,6 @@ def assert_valid_hgrid_folder(node_hgrid):
         'kind': 'folder',
     }
 
-    # TODO: test keys of permissions and urls?
-
     assert_is_instance(node_hgrid, dict)
 
     for key, correct_type in folder_types.items():
@@ -501,6 +499,9 @@ def assert_valid_hgrid_folder(node_hgrid):
     for key, correct_type in keys_types.items():
         for inner_key, inner_value in node_hgrid[key].items():
             assert_is_instance(inner_value, correct_type)
+
+    for key, correct_value in folder_values.items():
+        assert_equal(node_hgrid[key], correct_value)
 
 
 def assert_valid_hgrid_smart_folder(node_hgrid):
