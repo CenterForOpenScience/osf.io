@@ -413,8 +413,6 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         inner_folder = FolderFactory(creator=self.auth)
         outer_folder.add_pointer(inner_folder, self.auth)
 
-        outer_folder.expand(self.auth)
-
         # TODO: Not sure I understand this behavior
         assert_equal(len(folder_hgrid), len(rubeus.to_project_hgrid(outer_folder, self.auth)))
 
