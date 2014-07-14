@@ -104,21 +104,23 @@
             % endif
         </div>
 
-    % endif
     <h2>Components</h2>
+    % endif
 </div>
 
-% if node['children']:
-    <div id="containment">
-        <div mod-meta='{
-                "tpl": "util/render_nodes.mako",
-                "uri": "${node["api_url"]}get_children/",
-                "replace": true,
-                "kwargs": {"sortable" : true}
-            }'></div>
-    </div>
-% else:
+% if node['node_type'] == 'project':
+  % if node['children']:
+      <div id="containment">
+          <div mod-meta='{
+                  "tpl": "util/render_nodes.mako",
+                  "uri": "${node["api_url"]}get_children/",
+                  "replace": true,
+                  "kwargs": {"sortable" : true}
+              }'></div>
+      </div>
+  % else:
     <p>No components have been added to this project.</p>
+  % endif
 % endif
 
 % for name, capabilities in addon_capabilities.iteritems():
