@@ -99,8 +99,7 @@ div.project-details {
     border: 2px solid black;
     background-color: white;
     float: right;
-    margin-right: -100px;
-    margin-left: 550px;
+    margin-left: 35%;
     margin-top: 130px;
     position: fixed;
     z-index: 9999999;

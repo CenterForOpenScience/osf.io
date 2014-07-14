@@ -3,6 +3,7 @@
 <%def name="content()">
 <div class="row">
     <div class="col-md-7">
+        <div class="project-details"></div>
         <div class="page-header">
             <div class="pull-right"><a class="btn btn-primary" href="/project/new/">New Project</a></div>
             <div class="pull-right"><a class="btn btn-default" href="/folder/new/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
@@ -17,7 +18,7 @@
 
 
     <%include file='log_templates.mako'/>
-    </div><div class="project-details"></div>
+    </div>
     <div class="row">
         <div class="col-md-5">
            <div id="watchFeed">
