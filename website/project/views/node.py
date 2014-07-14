@@ -532,7 +532,7 @@ def _view_project(node, auth, primary=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
-            'category': node.category,
+            'category': node.category_display,
             'node_type': node.project_or_component,
             'description': node.description or '',
             'url': node.url,

@@ -96,7 +96,7 @@
 
 <%def name="children()">
 <div class="page-header">
-    % if node['category'] == 'project':
+    % if node['node_type'] == 'project':
         <div class="pull-right btn-group">
             % if 'write' in user['permissions'] and not node['is_registration']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
