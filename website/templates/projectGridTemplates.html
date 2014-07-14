@@ -18,8 +18,9 @@
           </span>
 
         </span>
+        <div class = "project-detail-content">
         {{#unless theItem.isFolder}}
-        <br /><span class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a>{{/commalist}}</span>
+        <span class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a>{{/commalist}}</span>
         {{/unless}}
         {{#if theItem.description}}<br /><span class="description">Description: {{ theItem.description }}</span>{{/if}}
         {{#if theItem.isFolder}}
@@ -62,6 +63,7 @@
                 {{/unless}}
             {{/if}}
         {{/unless}}
+        </div>
         </div>
 </script>
 
