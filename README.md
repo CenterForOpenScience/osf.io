@@ -40,6 +40,18 @@ $ pip install invoke
 $ invoke setup
 ```
 
+- Optionally, you may install the requirements for the Modular File Renderer:
+
+```bash
+$ invoke mfr_requirements
+```
+
+and for addons:
+
+```bash
+$ invoke addon_requirements
+```
+
 - On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
 - If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 

@@ -1,7 +1,7 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
-services: 
+services:
     - mongodb
     - elasticsearch
 
@@ -16,7 +16,7 @@ install:
     - travis_retry pip install invoke==0.8.1
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements
-    - travis_retry invoke addon_requirements --mfr 0
+    - travis_retry invoke addon_requirements
     - travis_retry invoke encryption
 
 script: invoke test_all

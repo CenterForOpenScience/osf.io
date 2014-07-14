@@ -73,7 +73,7 @@ Available variables:
 
 def make_shell_context():
     from framework.mongo import Q, db
-    from framework.auth import User
+    from framework.auth import User, Auth
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
@@ -83,6 +83,7 @@ def make_shell_context():
     context = {'app': app,
                 'db': db,
                 'User': User,
+                'Auth': Auth,
                 'Node': Node,
                 'Q': Q,
                 'models': models,
@@ -157,6 +158,52 @@ def mongoshell():
 
 
 @task
+def mongodump(path):
+    """Back up the contents of the running OSF database"""
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongodump --db {db} --port {port} --out {path}".format(
+        db=db,
+        port=port,
+        path=path,
+        pty=True)
+    run(cmd, echo=True)
+
+    print()
+    print("To restore from the dumped database, run `invoke mongorestore {0}`".format(
+        os.path.join(path, settings.DB_NAME)))
+
+
+@task
+def mongorestore(path, drop=False):
+    """Restores the running OSF database with the contents of the database at
+    the location given its argument.
+
+    By default, the contents of the specified database are added to
+    the existing database. The `--drop` option will cause the existing database
+    to be dropped.
+
+    A caveat: if you `invoke mongodump {path}`, you must restore with
+    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
+    database dump will be stored.
+    """
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongorestore --db {db} --port {port}".format(
+        db=db,
+        port=port,
+        pty=True)
+
+    if drop:
+        cmd += " --drop"
+
+    cmd += " " + path
+    run(cmd, echo=True)
+
+
+@task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
     run("celery worker -A framework.tasks -l {0}".format(level))
@@ -207,15 +254,12 @@ def mailserver(port=1025):
 
 
 @task
-def requirements(all=False, addons=False):
+def requirements(all=False):
     '''Install dependencies.'''
+    run("pip install --upgrade -r dev-requirements.txt", pty=True)
     if all:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
         addon_requirements()
-    elif addons:
-        addon_requirements()
-    else:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        mfr_requirements()
 
 
 @task
@@ -260,7 +304,7 @@ def test_all():
     test_module('website/addons')
 
 @task
-def addon_requirements(mfr=1):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -277,8 +321,6 @@ def addon_requirements(mfr=1):
                 )
             except IOError:
                 pass
-    if mfr:
-        mfr_requirements()
     print('Finished')
 
 

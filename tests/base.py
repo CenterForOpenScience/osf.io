@@ -49,7 +49,7 @@ class DbTestCase(unittest.TestCase):
     # DB settings
     db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
     db_host = getattr(settings, 'MONGO_HOST', 'localhost')
-    db_port = int(getattr(settings, 'DB_PORT', '20771'))
+    db_port = int(getattr(settings, 'DB_PORT', '27017'))
 
     @classmethod
     def setUpClass(cls):
