@@ -64,6 +64,20 @@
         }
     }
 
+    function setItemToExpand(item) {
+        var expandUrl = item.apiURL + 'expand/';
+        var postData = JSON.stringify({});
+        $.ajax({
+            type: "POST",
+            url: expandUrl,
+            data: postData,
+            contentType: 'application/json',
+            dataType: 'json'
+        }).done(function() {
+            item.expand = false;
+        });
+    }
+
     function reloadFolder(hgrid, theItem, theParentNode) {
         var toReload = theItem;
         if(typeof theParentNode !== "undefined" || theItem.kind !== 'folder') {
@@ -426,6 +440,7 @@
                                 pointerID: linkID,
                                 toNodeID: theItem.node_id
                             });
+                        setItemToExpand(theItem);
                         $.ajax({
                             type: "POST",
                             url: url,
@@ -492,6 +507,7 @@
                             node_id: theItem.node_id,
                             title: $.trim($('#add-folder-input' + theItem.node_id).val())
                         });
+                        setItemToExpand(theItem);
                         $.ajax({
                             type: "PUT",
                             url: url,
@@ -684,10 +700,12 @@
                         if (copyMode === "copy" || copyMode === "move") {
                             // Remove all the duplicated pointers
                             deleteMultiplePointersFromFolder(null, itemsNotToMove, itemParent);
+                            setItemToExpand(folder);
                             if (itemsToMove.length > 0) {
                                 var url = postInfo[copyMode]["url"];
                                 var postData = JSON.stringify(postInfo[copyMode]["json"]);
                                 var outerFolderID = whichIsContainer(draggable.grid, itemParentID,folder.id);
+
                                 $.ajax({
                                     type: "POST",
                                     url: url,
@@ -838,18 +856,7 @@
                 item.expand = false;
                 self.emptyFolder(item);
                 if(typeof event !== 'undefined' && typeof item.apiURL !== "undefined" && item.type !== "pointer") {
-                    var expandUrl = item.apiURL + 'expand/';
-                    var postData = JSON.stringify({});
-                    $.ajax({
-                        type: "POST",
-                        url: expandUrl,
-                        data: postData,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    }).done(function() {
-
-                        item.expand = false;
-                    });
+                    setItemToExpand(item);
                 }
             },
             onCollapse: function(event, item) {
