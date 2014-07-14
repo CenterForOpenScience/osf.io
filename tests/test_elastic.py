@@ -12,10 +12,11 @@ from framework.auth.core import Auth
 from website.models import User
 from website import settings
 
-#if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
+# if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
 #    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-#reload(search)
+# reload(search)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
@@ -69,6 +70,19 @@ class TestUserUpdate(SearchTestCase):
 
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
+
+    def test_merged_user(self):
+        user = UserFactory(fullname='Annie Lennox')
+        merged_user = UserFactory(fullname='Lisa Stansfield')
+        user.save()
+        merged_user.save()
+        assert_equal(len(query_user(user.fullname)), 1)
+        assert_equal(len(query_user(merged_user.fullname)), 1)
+
+        user.merge_user(merged_user)
+
+        assert_equal(len(query_user(user.fullname)), 1)
+        assert_equal(len(query_user(merged_user.fullname)), 0)
 
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')

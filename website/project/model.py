@@ -2104,7 +2104,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-
+        # Update list of visible IDs
+        self.update_visible_ids()
         if save:
             self.save()
 
