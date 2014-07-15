@@ -375,7 +375,7 @@ class TestSerializingEmptyDashboard(OsfTestCase):
             assert_valid_hgrid_folder(node)
 
 
-    def test_empty_dashboard_valid_folders(self):
+    def test_empty_dashboard_valid_smart_folders(self):
         """
         Tests that all the nodes in the initial dashboard are valid folders,
         as specified in assert_valid_hgrid_smart_folder.
