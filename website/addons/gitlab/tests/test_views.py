@@ -143,7 +143,7 @@ class TestHookLog(GitlabTestCase):
 
 class TestListFiles(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.client.listrepositorytree')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list')
     def test_list_files_no_id(self, mock_list):
         self.node_settings.project_id = None
         self.node_settings.save()
@@ -154,7 +154,7 @@ class TestListFiles(GitlabTestCase):
         assert_equal(res.json, [])
         assert_false(mock_list.called)
 
-    @mock.patch('website.addons.gitlab.views.crud.client.listrepositorytree')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list')
     def test_list_files(self, mock_list):
         mock_list.return_value = [
             {
@@ -164,7 +164,7 @@ class TestListFiles(GitlabTestCase):
                 'type': 'blob',
             }
         ]
-        path='frozen/pizza/reviews.txt'
+        path ='frozen/pizza/reviews.txt'
         branch = 'master'
         sha = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
         permissions = {
@@ -183,15 +183,12 @@ class TestListFiles(GitlabTestCase):
             permissions=permissions, branch=branch, sha=sha
         )
         assert_equal(res.json, expected)
-        mock_list.assert_called_with(
-            self.node_settings.project_id, path=path,
-            ref_name=sha
-        )
+        mock_list.assert_called_with(path, sha, branch)
 
 
 class TestFileCommits(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.client.listrepositorycommits')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_commits')
     def test_commits_sha_given(self, mock_commits):
         mock_commits.return_value = [
             {
@@ -230,12 +227,9 @@ class TestFileCommits(GitlabTestCase):
                 'commits': serialized,
             }
         )
-        mock_commits.assert_called_with(
-            self.node_settings.project_id,
-            path=path, ref_name=branch
-        )
+        mock_commits.assert_called_with(branch, path)
 
-    @mock.patch('website.addons.gitlab.views.crud.client.listrepositorycommits')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_commits')
     def test_commits_sha_not_given(self, mock_commits):
         mock_commits.return_value = [
             {
@@ -273,10 +267,7 @@ class TestFileCommits(GitlabTestCase):
                 'commits': serialized,
             }
         )
-        mock_commits.assert_called_with(
-            self.node_settings.project_id,
-            path=path, ref_name=branch,
-        )
+        mock_commits.assert_called_with(branch, path)
 
 
 class TestDownloadFile(GitlabTestCase):
