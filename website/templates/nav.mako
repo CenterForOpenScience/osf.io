@@ -15,7 +15,7 @@
         <ul class="nav navbar-nav">
           <li class="visible-xs"><a href="/">Home</a></li>
           %if user_name:
-          <li><a rel="tooltip" title="My Dashboard" href="${ web_url_for('dashboard') }">Dashboard</a></li>
+          <li><a rel="tooltip" title="My Dashboard" href="${ web_url_for('dashboard') }">My Dashboard</a></li>
           %endif
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
