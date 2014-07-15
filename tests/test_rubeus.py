@@ -541,6 +541,7 @@ def assert_valid_hgrid_folder(node_hgrid):
         'isPointer': False,
         'isFolder': True,
         'kind': 'folder',
+        'type': 'folder'
     }
 
     assert_is_instance(node_hgrid, dict)
