@@ -166,6 +166,7 @@ class NodeProjectCollector(object):
                 'fetch': None,
             },
             'children': [],
+            'type': 'folder',
             'expand': False,
             'isPointer': False,
             'isFolder': True,
