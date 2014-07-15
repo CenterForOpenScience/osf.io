@@ -7,14 +7,20 @@ var substringMatcher = function(strs) {
     // regex used to determine if a string contains the substring `q`
 
     var substrRegex = new RegExp(q, 'i');
-
+    var count = 0;
     // iterate through the pool of strings and for any string that
     // contains the substring `q`, add it to the `matches` array
     $.each(strs, function(i, str) {
       if (substrRegex.test(str.name)) {
+        count += 1;
         // the typeahead jQuery plugin expects suggestions to a
         // JavaScript object, refer to typeahead docs for more info
         matches.push({ value: str });
+
+        //alex's hack to limit number of results
+        if(count > 14){
+            return false;
+        }
         // above you can return name or a dict of name/node id, 
       }
       // add an event to the input box -- listens for keystrokes and if there is a keystroke then it should clearrr
@@ -58,14 +64,14 @@ function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, names
                 $('#inputComponent' + namespace).focus();
             }else{
                 $('#inputComponent' + namespace).attr('disabled', true);
-                $('#inputComponent' + namespace).attr('placeholder', 'Selected Project has no components');
+                $('#inputComponent' + namespace).attr('placeholder', 'Selected project has no components');
             }
             });
         }
     });
 }
 
-
+// add listeners to clear inputs
 function TypeaheadAddListenter(clearInputProject, inputProject, addLink, namespace, nodeType, componentBool){
     clearInputProject[0].addEventListener('click', function() {
         clearInputProject.hide();
@@ -103,9 +109,9 @@ function TypeaheadLogic(nodeType, namespace, myProjects){
     },
         source: substringMatcher(myProjects)
     });
-    // $('#input' + nodeType + namespace).data('typeahead');
 }
 
+// logic for typeahead searching user's projects
 function TypeaheadComponent(namespace, nodeType, componentBool){
         var myProjects = [];
         var $addLink = $('#addLink' + namespace);
@@ -117,6 +123,7 @@ function TypeaheadComponent(namespace, nodeType, componentBool){
         TypeaheadLogic(nodeType, namespace, myProjects);
 }
 
+// logic for typeahead searching a project's componenets
 function TypeaheadProject(namespace, nodeType, componentBool){
     $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
 

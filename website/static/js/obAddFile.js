@@ -17,12 +17,9 @@
     var $obDropzoneSelected = $('#obDropzoneSelected');
     var $uploadProgress = $('#uploadProgress');
     var $addLink = $('#addLink'+ namespace);
-    var $fakeAddLink = $('#fakeAddLinkAddFile');
-    var uploadCounter = 1;
+    var $fakeAddLink = $('#fakeAddLinkAddFile'); // perm disabled button until file uploaded, button is enabled by project 
+    var uploadCounter = 1; // used to track upload count while uploading
 
-    // var $clearInputProjectAddFile = $('#clearInputProjectAddFile');
-    // var $clearInputComponentAddFile = $('#clearInputComponentAddFile');
-    
     var $uploadIcon = $('#uploadIcon');
     var $obDropzoneFilename = $('#obDropzoneFilename');
     var $inputProjectAddFile = $('#inputProjectAddFile');
@@ -34,6 +31,7 @@
         //over
         maxFiles:9000,
         uploadMultiple: false,
+        maxFilesize: 2,
 
         uploadprogress: function(file, progress) { // progress bar update
             $('#uploadProgress').attr('value', Math.round(progress));
@@ -43,84 +41,65 @@
             var submitButton = document.querySelector('#addLink' + namespace);
             myDropzone = this;
 
-            // this.on('maxfilesexceeded', function(file){
-            //     // this.removeFile(file);
-            // });
-
+            // Submit logic
             submitButton.addEventListener('click', function() {
                 var projectRoute = get_route($addLink);
                 
                 $addLink.attr('disabled', true);
                 $uploadProgress.show();
+
                 myDropzone.options.url = projectRoute + 'osffiles/';
                 myDropzone.processQueue(); // Tell Dropzone to process all queued files.
             });
 
-            var clearButton = document.querySelector('#clearDropzone');
+            // clear dropzone logic
+            var clearButton = document.querySelector('#clearDropzone');            
             clearButton.addEventListener('click', function() {
+
+                $obDropzone.show(); // swap filedisplay with file dropzone
                 $obDropzoneSelected.hide();
-                $addLink.hide();
-                $obDropzone.show();
+                
+                $addLink.hide(); // swap active link with pseudo button
                 $fakeAddLink.show();
+
                 myDropzone.removeAllFiles();
             });
 
+            // upload and process queue logic
             this.on('success',function(){
                 $obDropzoneFilename.text(uploadCounter + ' / ' + myDropzone.files.length + ' files');
-                 myDropzone.processQueue();
+                 myDropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
                  uploadCounter+= 1;
-                 if(uploadCounter> myDropzone.files.length){
+                 if(uploadCounter> myDropzone.files.length){ // when finished redirect to project/component page where uploaded. 
+                    
+                    //redirect to project or componenet
                     if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
-                        var url = '/'+ $addLink.prop('linkIDComponent'); 
-                        if(url !== '/undefined'){
-                        window.location = url;
-                        }
+                        redirect_to_poc('Component');
                     }else{
-                        var url = '/'+ $addLink.prop('linkIDProject'); 
-                        if(url !== '/undefined'){
-                            window.location = url;
-                        }
+                        redirect_to_poc('Project');
                     }
-                 }
+                }
             });
-            // This reloads the window to the project you uploaded the file to...
-            // this.on('complete', function () {
-            //     if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
-            //         var url = '/'+ $addLink.prop('linkIDComponent'); 
-            //         if(url !== '/undefined'){
-            //             // window.location = url;
-            //         }
-            //     }else{
-            //         var url = '/'+ $addLink.prop('linkIDProject'); 
-            //         if(url !== '/undefined'){
-            //             // window.location = url;
-            //         }
-            //     }
-            // });
 
-            // You might want to show the submit button only when 
-            // files are dropped here:
-
+            // add file logic and dropzone to file display swap
             this.on('addedfile', function() {
                 if(myDropzone.files.length>1){
-                    var icon_url = '/static/img/upload_icons/multiple_blank.png';
-                    $uploadIcon.attr('src', icon_url);
+                    $uploadIcon.attr('src', '/static/img/upload_icons/multiple_blank.png');
                     $obDropzoneFilename.text(myDropzone.files.length + ' files');
                 }else{
                     var file_name = truncateFilename(myDropzone.files[0].name);
-                    var icon_url = '/static/img/upload_icons/' + get_dz_icon(file_name);
-                    $uploadIcon.attr('src', icon_url);
+                    $uploadIcon.attr('src', '/static/img/upload_icons/' + get_dz_icon(file_name));
                     $obDropzoneFilename.text(file_name);
                 }
-
-                // var icon_url = 'url(/static/img/upload_icons/' + get_dz_icon(file_name) + ')';
                 
+                if ($('#obDropzone > div.field-item:contains("File is too big")').length > 0){
+                   alert('file too big!!!');
+                }
 
-                // $('#obDropzoneReveal').fadeIn();
-                $obDropzone.hide();
+                $obDropzone.hide(); // swap dropzone with file display
                 $obDropzoneSelected.show();
 
-                $fakeAddLink.hide();
+                $fakeAddLink.hide(); // swap fake with real
                 $addLink.show();
                 
                 $inputProjectAddFile.focus();
@@ -195,6 +174,16 @@
     'zip'
     ];
 
+
+// Helper Functions
+    // redictor to project or component
+    function redirect_to_poc(poc){ // str project or componenet (poc)
+        var url = '/'+ $addLink.prop('linkID' + poc); 
+            if(url !== '/undefined'){
+            window.location = url;
+        }
+    }
+
     // ensure it is not 
     function get_route(addLink){
         if(typeof addLink.prop('routeIDComponent')!=='undefined'){
@@ -226,8 +215,8 @@
     // truncate long file names
     function truncateFilename(string){
         var ext = getStringEnd(string);
-        if (string.length > 50){
-            return string.substring(0, 50-ext.length-3) + '...' + ext;
+        if (string.length > 40){
+            return string.substring(0, 40-ext.length-3) + '...' + ext;
         }else{
             return string;
         }
@@ -236,10 +225,7 @@
     function ObAddFile(){
         var typeaheadsearch1  = new TypeaheadSearch(namespace, 'Project', 1);
         var typeaheadsearch2  = new TypeaheadSearch(namespace, 'Component',0);
-
     }
 
     return ObAddFile;
 }));
-
-

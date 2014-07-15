@@ -13,14 +13,24 @@
     'use strict';
     var namespace = 'RegisterProject';
 
+    function redirect_to_poc(poc){
+        window.location = '/'+ $('#addLink' + namespace).prop('linkID' + poc) + '/register';
+    }
+
     function ObRegisterProject(){
         var $addLink = $('#addLink' + namespace);
-        var typeaheadsearch3  = new TypeaheadSearch(namespace, 'Project', 0);
-        // to  do any of this just edit the click functionality editing the name spaced add_linkk
+        var typeaheadsearch3  = new TypeaheadSearch(namespace, 'Project', 1);
+        var typeaheadsearch4  = new TypeaheadSearch(namespace, 'Component', 0);
+
+        // to  do any of this just edit the click functionality editing the name spaced add_link
         $addLink.click(function() {
-            var url = '/'+ $addLink.prop('linkIDProject') + '/register'; 
-            window.location = url;
+            if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
+                redirect_to_poc('Component');
+            }else{
+                redirect_to_poc('Project');
+            }
         });
     }
+
     return ObRegisterProject;
 }));

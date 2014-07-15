@@ -13,7 +13,7 @@ li.ob-list {
 }
 
 .ob-expand-icon{
-	float: right;
+	margin-top:6px;
 	height: 14px;
 }
 
@@ -49,15 +49,24 @@ li.ob-list {
 	border: solid 2px #ccc;
 }
 
-.clear-button{
+.ob-clear-button{
 	position:absolute;
 	z-index: 1;
 	top: -12px;
 	right: -12px;
 }
 
+.ob-unselectable{
+	-webkit-user-select: none; /* Chrome/Safari */        
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE10+ */
 
-.clear-button:hover{
+	/* Rules below not implemented in browsers yet */
+	-o-user-select: none;
+	user-select: none;
+}
+
+.ob-clear-button:hover{
 	cursor: pointer;
 }
 
@@ -76,35 +85,26 @@ li.ob-list {
 	display: block !important;
 }
 
-
-
 #inputProjectRegisterProject{
 	width:100%;
-}
-
-
-#inputProjectRegisterProject{
-	margin-top: 20px;
-}
-
-/*#projectSearchRegisterProject{
-	position:relative;
-	text-align: center; 
-}
-*/
-#clearInputProjectRegisterProject{
-	margin-top:20px;
 }
 
 #addLinkRegisterProject {
 	margin-top:20px;
 }
 
+#obRegisterProjectBtn:hover{
+	cursor: pointer;
+	}
+
+#obNewProjectBtn:hover{
+	cursor: pointer;
+	}
+
 #obDropzoneFilename{
 	margin-top:10px;
 	font-family: "Lucida Console", Monaco, monospace;	
 }
-
 
 #obDropzone{
 	background-image: url("/static/img/upload.png");	
@@ -147,5 +147,3 @@ li.ob-list {
 	margin-top: 20px;
 	disabled="disabled";
 }
-
-
