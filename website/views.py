@@ -148,9 +148,9 @@ def get_dashboard(nid=None, **kwargs):
         dashboard_projects = [rubeus.to_project_root(node, **kwargs) for node in nodes]
         return_value = {'data': dashboard_projects}
     elif nid == '-amp':
-        return_value = get_all_projects_smart_folder(**kwargs)
+        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == '-amr':
-        return_value = get_all_registrations_smart_folder(**kwargs)
+        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
     else:
         node = Node.load(nid)
         dashboard_projects = rubeus.to_project_hgrid(node, **kwargs)
