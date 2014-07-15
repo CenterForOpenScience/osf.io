@@ -1,5 +1,5 @@
 """
-Scripts to identify corrupted git repos using `git fsck`.
+Scripts to identify and repair corrupted git repos using ``git fsck``.
 """
 
 import os
@@ -19,6 +19,13 @@ app = init_app('website.settings', set_backends=True, routes=True)
 
 
 def fsck_node(node):
+    """Check whether a node's git repo has been corrupted.
+
+    :param Node node:
+
+    :returns: Status code if corrupted, else ``False``
+
+    """
     path = os.path.join(settings.UPLOADS_PATH, node._id)
     if not os.path.exists(path):
         return False
@@ -36,6 +43,8 @@ def fsck_node(node):
 def fsck_nodes(restore=False):
     """List and optionally store corrupted git repos.
 
+    :param bool restore: Attempt to restore corrupted repos
+
     """
     errors = {}
     for node in Node.find():
@@ -51,4 +60,12 @@ def fsck_nodes(restore=False):
 
 
 if __name__ == '__main__':
-    fsck_nodes()
+
+    # Collect arguments
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--restore', action='store_true')
+    args = parser.parse_args()
+
+    # Run
+    fsck_nodes(args.restore)

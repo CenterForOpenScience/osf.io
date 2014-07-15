@@ -65,6 +65,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
     hook_id = fields.IntegerField()
 
     # TODO: Delete after migration
+    # TODO: Should be updated when permissions change
     _migration_done = fields.BooleanField(default=False)
 
     #############

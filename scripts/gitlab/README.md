@@ -8,7 +8,8 @@ data must be migrated to GitLab.
     * In website/settings/local.py add 'gitlab' to `ADDONS_REQUESTED`.
     * In website/addons/gitlab/settings/defaults.py set ROUTE to 'gitlab'.
 2. Copy all git data from the app server to a backup directory on the GitLab server
-    * sudo rsync -vaz /opt/data/uploads root@50.116.57.122:/opt/data/backup
+    * sudo rsync -aP /opt/data/uploads root@50.116.57.122:/opt/data/backup
+    * sudo rsync -aP --checksum /opt/data/uploads root@50.116.57.122:/opt/data/backup
 3. Create GitLab users and projects corresponding to OSF users and components
     * [On app server]
         * cd /opt/apps/osf
@@ -18,6 +19,8 @@ data must be migrated to GitLab.
         * git clone https://github.com/jmcarp/osf
         * git checkout feature/gitlab
 5. Copy backed-up repos to bare repos in GitLab directory
+    * OSF must be down
+    * Repeat #2, #3
 	* [On GitLab server]
 	    * Verify SOURCE_PATH and DEST_PATH in scripts/gitlab/migrate_files.py
 		* cd /root/osf
