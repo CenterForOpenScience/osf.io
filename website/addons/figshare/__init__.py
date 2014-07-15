@@ -38,4 +38,3 @@ WIDGET_HELP = 'FigShare Add-on Alpha'
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.hgrid.figshare_hgrid_data
 GET_HGRID_URLS = views.hgrid.figshare_hgrid_urls
-

@@ -1,59 +1,92 @@
-<%inherit file="../../project/addon/node_settings.mako" />
-
 <script src="/static/addons/s3/s3-node-settings.js"></script>
 
-% if bucket_list is not None:
+<form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
 
-    % if node_has_auth:
-        <div class="well well-sm">
-            Authorized by <a href="${owner_url}">${owner}</a>
-            <a id="s3RemoveToken" class="text-danger pull-right" style="cursor: pointer">Deauthorize</a>
-        </div>
-    % endif
+    <div>
+        <h4 class="addon-title">
+            Amazon S3
 
-    <div class="form-group">
+            <small class="authorized-by">
+                % if node_has_auth:
+                    authorized by
+                    <a href="${owner_url}" target="_blank">
+                        ${owner}
+                    </a>
+                    <a id="s3RemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                % elif user_has_auth:
+                    <a id="s3ImportToken" class="text-primary pull-right addon-auth">Import Credentials</a>
+                % endif
+            </small>
 
-        <div class="row">
+        </h4>
+    </div>
 
-            <div class="col-md-6">
+    % if bucket_list is not None:
 
-                <select class="form-control" id="s3_bucket" name="s3_bucket" ${'' if user_has_auth and (owner is None or is_owner) and not is_registration else 'disabled'}>
-                    <option value="">-----</option>
-                    % for bucket_name in bucket_list or []:
-                        <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>${bucket_name}</option>
-                    % endfor
-                </select>
+        <div class="form-group">
+
+            <p> <strong>Current Bucket:</strong></p>
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <select class="form-control" id="s3_bucket" name="s3_bucket"
+                        ${'' if user_has_auth and user_is_owner and not is_registration else 'disabled'}>
+                        <option value="">-----</option>
+                        % for bucket_name in bucket_list or []:
+                            <option value="${bucket_name}" ${'selected' if bucket_name == bucket else ''}>
+                                ${bucket_name}
+                            </option>
+                        % endfor
+                    </select>
+
+                </div>
+
+                % if user_has_auth and user_is_owner and not is_registration:
+                    <div class="col-md-6">
+                        <a class="btn btn-default" id="newBucket">Create Bucket</a>
+
+                        <button class="btn btn-primary addon-settings-submit pull-right">
+                            Submit
+                        </button>
+                    </div>
+                % endif
 
             </div>
 
-            % if user_has_auth and (owner is None or is_owner) and not is_registration:
-                <div class="col-md-6">
-                    <a class="btn btn-default" id="newBucket">Create Bucket</a>
-                </div>
-            % endif
+        </div> <!-- End form group -->
 
+    % elif node_has_auth and bucket_list is None:
+
+        <div>
+            <i class="icon-spinner icon-large icon-spin"></i>
+            <span class="text-info">
+                S3 access keys loading. Please wait a moment and refresh the page.
+            </span>
         </div>
 
-    </div> <!-- End form group -->
+    % elif not node_has_auth and not user_has_auth:
 
-% elif user_has_auth and bucket_list is None:
+        <div class="form-group">
+            <label for="s3Addon">Access Key</label>
+            <input class="form-control" id="access_key" name="access_key"/>
+        </div>
+        <div class="form-group">
+            <label for="s3Addon">Secret Key</label>
+            <input type="password" class="form-control" id="secret_key" name="secret_key"/>
+        </div>
 
-    <div class="well well-sm">
-        S3 access keys loading. Please wait a moment and refresh the page.
-    </div>
+        <button class="btn btn-success addon-settings-submit">
+            Submit
+        </button>
+    % endif
 
-% else:
+    ${self.on_submit()}
 
-    <div class="form-group">
-        <label for="s3Addon">Access Key</label>
-        <input class="form-control" id="access_key" name="access_key"/>
-    </div>
-    <div class="form-group">
-        <label for="s3Addon">Secret Key</label>
-        <input type="password" class="form-control" id="secret_key" name="secret_key"/>
-    </div>
+    <div class="addon-settings-message" style="display: none; padding-top: 10px;"></div>
 
-% endif
+</form>
 
 <%def name="on_submit()">
 
@@ -104,7 +137,11 @@
 
     % else:
 
-        ${parent.on_submit()}
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $('#addonSettings${addon_short_name.capitalize()}').on('submit', AddonHelper.onSubmitSettings);
+            });
+        </script>
 
     % endif
 

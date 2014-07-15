@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from framework.auth.decorators import Auth
+from framework.auth import Auth
 from tests.base import OsfTestCase, URLLookup
 from tests.factories import AuthUserFactory, ProjectFactory
+
 
 class AddonTestCase(OsfTestCase):
     """General Addon TestCase that automatically sets up a user and node with
@@ -82,7 +83,6 @@ class AddonTestCase(OsfTestCase):
             setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
         self.set_node_settings(self.node_settings)
         self.node_settings.save()
-
 
     def setUp(self):
 

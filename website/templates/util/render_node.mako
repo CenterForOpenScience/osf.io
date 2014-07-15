@@ -11,7 +11,11 @@
         <h4 class="list-group-item-heading">
             <span class="overflow" style="display:inline-block;">
             % if not summary['primary']:
-                <i class="icon-hand-right" data-toggle="tooltip" title="Linked ${summary['category']}"></i>
+              <i class="icon-hand-right" data-toggle="tooltip" title="Linked ${summary['node_type']}"></i>
+            % endif
+
+            % if not summary['is_public']:
+                <span class="icon icon-lock" data-toggle="tooltip" title="This project is private"></span>
             % endif
             <a href="${summary['url']}">${summary['title']}</a>
 
@@ -19,10 +23,11 @@
                 | Registered: ${summary['registered_date']}
             % endif
             </span>
+
             <div class="pull-right">
                 % if not summary['primary'] and 'admin' in user['permissions']:
                     <i class="icon-remove remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
-                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['category']} into ${node['category']} ${node['title']}"></i>
+                    <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
                 <i id="icon-${summary['id']}" class="icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
             </div>

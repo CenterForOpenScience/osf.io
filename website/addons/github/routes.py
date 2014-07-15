@@ -67,7 +67,7 @@ settings_routes = {
         Rule(
             [
                 '/project/<pid>/github/hook/',
-                '/project/<pid>/node/<nid>github/hook/',
+                '/project/<pid>/node/<nid>/github/hook/',
             ],
             'post',
             views.hooks.github_hook_callback,
@@ -112,9 +112,12 @@ settings_routes = {
             [
                 '/project/<pid>/github/oauth/',
                 '/project/<pid>/node/<nid>/github/oauth/',
+                '/project/<pid>/github/config/',
+                '/project/<pid>/node/<nid>/github/config/'
+
             ],
             'delete',
-            views.auth.github_oauth_delete_node,
+            views.auth.github_oauth_deauthorize_node,
             json_renderer,
         ),
 

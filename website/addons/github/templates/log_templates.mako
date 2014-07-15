@@ -4,7 +4,7 @@ added file
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> to
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -14,7 +14,7 @@ updated file
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -23,7 +23,7 @@ removed file <span class="overflow" data-bind="text: params.path"></span> from
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> from
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -31,7 +31,7 @@ GitHub repo
 selected GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> for
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -39,6 +39,18 @@ selected GitHub repo
 un-selected GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> from
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="github_node_authorized">
+authorized the GitHub addon for {{ nodeType }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<script type="text/html" id="github_node_deauthorized">
+deauthorized the GitHub addon for {{ nodeType }}
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>

@@ -67,5 +67,10 @@ class NodeWikiPage(GuidStoredObject):
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            self.node.update_solr()
+            self.node.update_search() 
         return rv
+
+    def rename(self, new_name, save=True):
+        self.page_name = new_name
+        if save:
+            self.save()

@@ -27,7 +27,12 @@ def generate_signed_url(mime, file_name, s3):
     signed = urllib.quote_plus(base64.encodestring(
         hmac.new(str(s3.user_settings.secret_key), request_to_sign, sha).digest()).strip())
 
-    return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(url=url, access_key=s3.user_settings.access_key, expires=expires, signed=signed),
+    return '{url}?AWSAccessKeyId={access_key}&Expires={expires}&Signature={signed}'.format(
+        url=url,
+        access_key=s3.user_settings.access_key,
+        expires=expires,
+        signed=signed,
+    ),
     #/blackhttpmagick
 
 

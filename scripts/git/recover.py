@@ -26,7 +26,11 @@ def get_backup_path(node):
 
 
 def collect_commits(node):
-    
+    """Fetch all `NodeFile` records from a node, ordered by file by version.
+
+    :returns: List of `NodeFile` records
+
+    """
     commits = []
 
     for name, versions in node.files_versions.iteritems():
@@ -40,11 +44,24 @@ def collect_commits(node):
 
 
 def restore_from_commit(commit, old_path, new_path):
-    
+    """Copy a commit from a backed-up repo to a fresh repo.
+
+    :param NodeFile commit:
+    :param str old_path:
+    :param str new_path:
+
+    """
     out_name = os.path.join(new_path, commit.filename)
     with open(out_name, 'w') as fp:
         subprocess.call(
-            ['git', 'show', '{0}:{1}'.format(commit.git_commit, commit.filename)],
+            [
+                'git',
+                'show',
+                '{0}:{1}'.format(
+                    commit.git_commit,
+                    commit.filename
+                )
+            ],
             cwd=old_path,
             stdout=fp,
         )
@@ -54,12 +71,15 @@ def get_current_hash(path):
     return subprocess.check_output(
         ['git', 'rev-parse', 'HEAD'],
         cwd=path,
-
     ).strip()
 
 
 def get_committers(commit, path):
-    
+    """Get parsed committer information for a commit.
+
+    :returns: Tuple of (committer, author)
+
+    """
     output = subprocess.check_output(
         [
             'git', 'show', 
@@ -75,7 +95,14 @@ def get_committers(commit, path):
 
 
 def apply_commit(commit, old_path, new_path):
-    
+    """Commit a file copied by `restore_from_commit`, preserving date and
+    author; write new SHA to `NodeFile` record.
+
+    :param NodeFile commit:
+    :param str old_path:
+    :param str new_path:
+
+    """
     subprocess.call(
         ['git', 'add', commit.filename],
         cwd=new_path,
@@ -118,7 +145,6 @@ def apply_commit(commit, old_path, new_path):
 
 
 def mkdir_safe(path):
-
     try:
         os.makedirs(path)
     except OSError:
@@ -126,7 +152,17 @@ def mkdir_safe(path):
 
 
 def restore_repo(node):
+    """Attempt to restore a corrupted repo.
 
+    :param Node node:
+
+    Recovery procedure:
+    * Move repo to recovery path
+    * Initialize a fresh repo at the original repo path
+    * Get all known commits by SHA from MongoDB
+    * Replay and re-commit each commit onto the fresh repo
+
+    """
     node_path = get_node_path(node)
     backup_path = get_backup_path(node)
 

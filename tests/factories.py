@@ -17,16 +17,18 @@ import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from framework.mongo import StoredObject
-from framework.auth import User, Q
-from framework.auth.decorators import Auth
-from framework.auth.utils import parse_name
+from framework.auth import User
+from framework.auth import Auth
+from framework.auth.utils import impute_names_model
+
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, MetaSchema, Pointer, Comment, PrivateLink
+    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink
 )
 
 from website.addons.wiki.model import NodeWikiPage
 
 from tests.base import fake
+
 
 def FakerAttribute(func_name, **kwargs):
     """An attribute that uses the Faker libary to lazily generate values. The first
@@ -42,6 +44,7 @@ def FakerAttribute(func_name, **kwargs):
     """
     faker_func = getattr(fake, func_name)
     return LazyAttribute(lambda x: faker_func(**kwargs))
+
 
 # TODO: This is a hack. Check whether FactoryBoy can do this better
 def save_kwargs(**kwargs):
@@ -87,7 +90,7 @@ class UserFactory(ModularOdmFactory):
 
     @post_generation
     def set_names(self, create, extracted):
-        parsed = parse_name(self.fullname)
+        parsed = impute_names_model(self.fullname)
         for key, value in parsed.items():
             setattr(self, key, value)
         if create:
@@ -123,6 +126,7 @@ class ApiKeyFactory(ModularOdmFactory):
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
+    name = "link"
     key = "foobarblaz"
     creator = SubFactory(AuthUserFactory)
 
@@ -225,6 +229,7 @@ class UnregUserFactory(ModularOdmFactory):
         instance.save()
         return instance
 
+
 class UnconfirmedUserFactory(ModularOdmFactory):
     """Factory for a user that has not yet confirmed their primary email
     address (username).
@@ -286,8 +291,8 @@ class ProjectWithAddonFactory(ProjectFactory):
         instance.save()
         return instance
 
-# Deprecated unregistered user factory, used mainly for testing migration
 
+# Deprecated unregistered user factory, used mainly for testing migration
 class DeprecatedUnregUser(object):
     '''A dummy "model" for an unregistered user.'''
     def __init__(self, nr_name, nr_email):
@@ -319,6 +324,7 @@ class DeprecatedUnregUserFactory(base.Factory):
         return target_class(*args, **kwargs).to_dict()
 
     _build = _create
+
 
 class CommentFactory(ModularOdmFactory):
 

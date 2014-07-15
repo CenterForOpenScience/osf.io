@@ -10,7 +10,7 @@ from pymongo import MongoClient
 from faker import Factory
 
 from framework.mongo import storage, set_up_storage
-from framework.auth.model import User
+from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from website.project.model import (ApiKey, Node, NodeLog,
@@ -49,24 +49,27 @@ class DbTestCase(unittest.TestCase):
     # DB settings
     db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
     db_host = getattr(settings, 'MONGO_HOST', 'localhost')
-    db_port = int(getattr(settings, 'DB_PORT', '20771'))
+    db_port = int(getattr(settings, 'DB_PORT', '27017'))
 
     @classmethod
-    def setUpClass(klass):
+    def setUpClass(cls):
         '''Before running this TestCase, set up a temporary MongoDB database'''
-        klass._client = MongoClient(host=klass.db_host, port=klass.db_port)
-        klass.db = klass._client[klass.db_name]
+        cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
+        cls.db = cls._client[cls.db_name]
         # Set storage backend to MongoDb
         set_up_storage(
             website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, db=klass.db,
+            addons=settings.ADDONS_AVAILABLE, db=cls.db,
         )
-        klass._client.drop_database(klass.db)
+        cls._client.drop_database(cls.db)
+        cls.context = test_app.test_request_context()
+        cls.context.push()
 
     @classmethod
-    def tearDownClass(klass):
+    def tearDownClass(cls):
         '''Drop the database when all tests finish.'''
-        klass._client.drop_database(klass.db)
+        cls.context.pop()
+        cls._client.drop_database(cls.db)
 
 
 class OsfTestCase(DbTestCase):
@@ -147,6 +150,7 @@ class AppTestCase(unittest.TestCase):
     def tearDown(self):
         self.ctx.pop()
 
+
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
     """Testing utility for capturing blinker signals.
@@ -205,12 +209,12 @@ class URLLookup(object):
     Usage: ::
 
         from website.app import init_app
-        from tests.base import DbTestCase, URLLookup
+        from tests.base import OsfTestCase, URLLookup
 
         app = init_app()
         lookup = URLLookup(app)
 
-        class TestProjectViews(DbTestCase):
+        class TestProjectViews(OsfTestCase):
             ...
             def test_project_endpoint(self):
                 url = lookup('web', 'view_project', pid=self.project._primary_key)
@@ -237,6 +241,7 @@ class URLLookup(object):
             return self.web_url_for(view_name, *args, **kwargs)
         else:
             return self.api_url_for(view_name, *args, **kwargs)
+
 
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg

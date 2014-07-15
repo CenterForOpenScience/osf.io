@@ -2,29 +2,28 @@ import urllib
 import datetime
 import httplib as http
 from flask import request, redirect
+from boto.exception import S3ResponseError, BotoClientError
 
 from framework.mongo import Q
 from framework.exceptions import HTTPError
+from website.models import NodeLog
 
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_not_be_registration
-from website.project.decorators import must_have_addon
+from website.addons.base.views import check_file_guid
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.decorators import (
+    must_have_permission, must_be_contributor_or_public,
+    must_not_be_registration, must_have_addon
+)
 
-from ..model import S3GuidFile
-from website.addons.base.views import check_file_guid
-
-from ..api import S3Wrapper
-
-# TODO: Rename at least one utils module; could be confusing later on
-from .utils import get_cache_file_name, generate_signed_url
-from ..utils import create_version_list, build_urls
-
-from website import models
-
+from website.addons.s3.model import S3GuidFile
 from website.addons.s3.settings import MAX_RENDER_SIZE
+from website.addons.s3.api import S3Wrapper, create_bucket
+
+from website.addons.s3.utils import (
+    create_version_list, build_urls, get_cache_file_name, generate_signed_url,
+    validate_bucket_name
+)
 
 
 @must_be_contributor_or_public
@@ -46,21 +45,20 @@ def s3_download(**kwargs):
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('s3', 'node')
-def s3_delete(**kwargs):
+def s3_delete(node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
     dfile = urllib.unquote(kwargs['path'])
 
-    connect = S3Wrapper.from_addon(node_settings)
+    connect = S3Wrapper.from_addon(node_addon)
     connect.delete_file(dfile)
 
     node.add_log(
-        action='s3_' + models.NodeLog.FILE_REMOVED,
+        action='s3_' + NodeLog.FILE_REMOVED,
         params={
             'project': node.parent_id,
             'node': node._id,
-            'bucket': node_settings.bucket,
+            'bucket': node_addon.bucket,
             'path': dfile,
         },
         auth=kwargs['auth'],
@@ -71,7 +69,7 @@ def s3_delete(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_view(**kwargs):
+def s3_view(auth, node_addon, **kwargs):
 
     path = kwargs.get('path')
     vid = request.args.get('vid')
@@ -81,11 +79,9 @@ def s3_view(**kwargs):
     if vid == 'Pre-versioning':
         vid = 'null'
 
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
-    wrapper = S3Wrapper.from_addon(node_settings)
+    wrapper = S3Wrapper.from_addon(node_addon)
     key = wrapper.get_wrapped_key(urllib.unquote(path), vid=vid)
 
     if key is None:
@@ -114,11 +110,11 @@ def s3_view(**kwargs):
         render = 'File too large to render; download file to view it'
     else:
         # Check to see if the file has already been rendered.
-        render = get_cache_content(node_settings, cache_name)
+        render = get_cache_content(node_addon, cache_name)
         if render is None:
             file_contents = key.s3Key.get_contents_as_string()
             render = get_cache_content(
-                node_settings, cache_name, start_render=True,
+                node_addon, cache_name, start_render=True,
                 file_content=file_contents, download_path=urls['download'],
                 file_path=path,
             )
@@ -139,23 +135,21 @@ def s3_view(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def ping_render(**kwargs):
-    node_settings = kwargs['node_addon']
+def ping_render(node_addon, **kwargs):
     path = kwargs.get('path')
     etag = request.args.get('etag')
 
     cache_file = get_cache_file_name(path, etag)
 
-    return get_cache_content(node_settings, cache_file)
+    return get_cache_content(node_addon, cache_file)
 
 
 @must_have_permission('write')
 @must_not_be_registration
 @must_have_addon('s3', 'node')
-def s3_upload(**kwargs):
+def s3_upload(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    s3 = kwargs['node_addon']
 
     file_name = request.json.get('name')
     if file_name is None:
@@ -163,18 +157,37 @@ def s3_upload(**kwargs):
     file_name = urllib.quote_plus(file_name.encode('utf-8'))
     mime = request.json.get('type') or 'application/octet-stream'
 
-    update = S3Wrapper.from_addon(s3).does_key_exist(file_name)
+    update = S3Wrapper.from_addon(node_addon).does_key_exist(file_name)
     node.add_log(
-        action='s3_' + (models.NodeLog.FILE_UPDATED if update else models.NodeLog.FILE_ADDED),
+        action='s3_' +
+        (NodeLog.FILE_UPDATED if update else NodeLog.FILE_ADDED),
         params={
             'project': node.parent_id,
             'node': node._primary_key,
-            'bucket': s3.bucket,
+            'bucket': node_addon.bucket,
             'path': file_name,
             'urls': build_urls(node, file_name),
         },
-        auth=kwargs['auth'],
+        auth=auth,
         log_date=datetime.datetime.utcnow(),
     )
 
-    return generate_signed_url(mime, file_name, s3)
+    return generate_signed_url(mime, file_name, node_addon)
+
+
+@must_be_contributor_or_public
+@must_have_addon('s3', 'node')
+def create_new_bucket(auth, **kwargs):
+    user = auth.user
+    user_settings = user.get_addon('s3')
+    bucket_name = request.json.get('bucket_name')
+
+    if not validate_bucket_name(bucket_name):
+        return {'message': 'That bucket name is not valid.'}, http.NOT_ACCEPTABLE
+    try:
+        create_bucket(user_settings, request.json.get('bucket_name'))
+        return {}
+    except BotoClientError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE
+    except S3ResponseError as e:
+        return {'message': e.message}, http.NOT_ACCEPTABLE

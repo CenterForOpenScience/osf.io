@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from flask import request
 from urllib import unquote
 import httplib as http
@@ -5,7 +7,9 @@ import httplib as http
 from framework.exceptions import HTTPError
 
 from website.util import rubeus
-from website.project.decorators import must_be_contributor_or_public, must_have_addon
+from website.project.decorators import (
+    must_be_contributor_or_public, must_have_addon,
+)
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import wrapped_key_to_json
 
@@ -27,18 +31,14 @@ def s3_hgrid_data(node_settings, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_hgrid_data_contents(**kwargs):
-
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
-    s3_node_settings = node.get_addon('s3')
-    auth = kwargs['auth']
+def s3_hgrid_data_contents(auth, node_addon, **kwargs):
+    node = node_addon.owner
     path = unquote(kwargs.get('path', None)) + '/' if kwargs.get('path', None) else None
 
     can_edit = node.can_edit(auth) and not node.is_registration
     can_view = node.can_view(auth)
 
-    s3wrapper = S3Wrapper.from_addon(s3_node_settings)
+    s3wrapper = S3Wrapper.from_addon(node_addon)
 
     if s3wrapper is None:
         raise HTTPError(http.BAD_REQUEST)
@@ -62,8 +62,6 @@ def s3_hgrid_data_contents(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('s3', 'node')
-def s3_dummy_folder(**kwargs):
-    node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
+def s3_dummy_folder(auth, node_addon, **kwargs):
     data = request.args.to_dict()
-    return s3_hgrid_data(node_settings, auth, **data)
+    return s3_hgrid_data(node_addon, auth, **data)

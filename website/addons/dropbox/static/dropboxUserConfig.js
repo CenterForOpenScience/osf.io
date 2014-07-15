@@ -17,6 +17,7 @@
 
     function ViewModel(url) {
         self.userHasAuth = ko.observable(false);
+        self.dropboxName = ko.observable();
         self.urls = ko.observable({});
         // Whether the initial data has been loaded.
         self.loaded = ko.observable(false);
@@ -26,6 +27,7 @@
             success: function(response) {
                 var data = response.result;
                 self.userHasAuth(data.userHasAuth);
+                self.dropboxName(data.dropboxName);
                 self.urls(data.urls);
                 self.loaded(true);
             },
@@ -41,15 +43,20 @@
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
+
         /** Send DELETE request to deauthorize Dropbox */
         function sendDeauth() {
             return $.ajax({
                 url: self.urls().delete,
                 type: 'DELETE',
                 success: function() {
-                    // User no longer has auth; update viewmodel
-                    self.userHasAuth(false);
-                    self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+                    // Page must be refreshed to remove the list of authorized nodes
+                    location.reload()
+
+                    // KO logic. Uncomment if page ever doesn't need refreshing
+                    // self.userHasAuth(false);
+                    // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+
                 },
                 error: function() {
                     self.changeMessage(language.deauthError, 'text-danger');
@@ -83,7 +90,6 @@
                 }
             });
         };
-
     }
 
     function DropboxUserConfig(selector, url) {

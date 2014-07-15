@@ -6,14 +6,13 @@ is written to website/compat_file_routes.json.
 """
 
 import os
-import json
 import logging
+import pymongo
 
-from framework.mongo import StoredObject
+from framework.mongo import StoredObject, db
 
 from website.app import init_app
 from website.models import Node
-from website import settings
 
 from . import utils
 
@@ -21,7 +20,7 @@ from . import utils
 app = init_app()
 logger = logging.getLogger(__name__)
 
-ROUTE_PATH = os.path.join(settings.BASE_PATH, 'compat_file_routes.json')
+route_collection = db['gitlab-compat-routes']
 
 
 def build_node_urls(node):
@@ -57,12 +56,13 @@ def build_node_urls(node):
             continue
 
         # Map version id => sha
-        table[file] = {
-            idx + 1: commit
+        # Note: Must stringify keys for MongoDB
+        table[clean_file] = {
+            str(idx + 1): commit
             for idx, commit in enumerate(commits)
         }
         # Route URLs with no version to latest commit
-        table[file][None] = commits[-1]
+        table[clean_file]['None'] = commits[-1]
 
     # Prevent cache from exploding
     StoredObject._clear_caches()
@@ -70,28 +70,36 @@ def build_node_urls(node):
     return table
 
 
-def build_nodes_urls(outfile):
+def build_nodes_urls(clear=False):
     """Write a json file mapping node IDs to the routing table for that node's
     files.
 
+    :param bool clear: Clear routing collection
+
     """
-    table = {}
+    if clear:
+        route_collection.remove()
 
     for node in Node.find():
 
         logger.warn('Building node {0}'.format(node._id))
 
-        subtable = build_node_urls(node)
+        table = build_node_urls(node)
 
-        if subtable:
-            table[node._id] = subtable
-
-    with open(outfile, 'w') as fp:
-        json.dump(table, fp, indent=4)
-
-    return table
+        try:
+            route_collection.insert({
+                '_id': node._id,
+                'routes': table,
+            })
+        except pymongo.errors.DuplicateKeyError as error:
+            logger.exception(error)
 
 
 if __name__ == '__main__':
 
-    build_nodes_urls(outfile=ROUTE_PATH)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--clear', action='store_true')
+    args = parser.parse_args()
+
+    build_nodes_urls(clear=args.clear)

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 import logging
 from flask import request
 
+from framework.auth import Auth
 from framework.auth import get_current_user, get_api_key, get_current_node
-from framework.auth.decorators import collect_auth, Auth
+from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 
 from website.project.model import NodeLog
@@ -64,15 +66,14 @@ def _get_logs(node, count, auth, offset=0):
 
 @collect_auth
 @must_be_valid_project
-def get_logs(**kwargs):
+def get_logs(auth, **kwargs):
     """
 
     """
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
 
-    if not node_to_use.can_view(auth):
+    if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     if 'count' in request.args:
@@ -87,5 +88,5 @@ def get_logs(**kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, has_more_logs = _get_logs(node_to_use, count, auth, offset)
+    logs, has_more_logs = _get_logs(node, count, auth, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}

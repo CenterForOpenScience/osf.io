@@ -1,20 +1,17 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import logging
-import urlparse
 
 from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import fields, Q
 
 from website.addons.base import (
-    AddonUserSettingsBase, AddonNodeSettingsBase,
-    GuidFile
+    AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile,
 )
 from website.util.permissions import READ
+
 from website.addons.base import AddonError
 
 from website.addons.gitlab.api import client, GitlabError
@@ -22,6 +19,8 @@ from website.addons.gitlab.utils import (
     setup_user, translate_permissions
 )
 from website.addons.gitlab import settings as gitlab_settings
+
+from website.addons.gitlab.services import fileservice
 
 
 logger = logging.getLogger(__name__)
@@ -65,44 +64,9 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
     project_id = fields.IntegerField()
     hook_id = fields.IntegerField()
 
-    # Temporary migration flag; delete after migration is complete
+    # TODO: Delete after migration
+    # TODO: Should be updated when permissions change
     _migration_done = fields.BooleanField(default=False)
-
-    @property
-    def hook_url(self):
-        """Absolute URL for hook callback."""
-        relative_url = self.owner.api_url_for(
-            'gitlab_hook_callback'
-        )
-        return urlparse.urljoin(
-            gitlab_settings.HOOK_DOMAIN,
-            relative_url
-        )
-
-    def add_hook(self, save=True):
-        if self.hook_id is not None:
-            raise AddonError('Hook already exists')
-        try:
-            status = client.addprojecthook(
-                self.project_id,
-                self.hook_url
-            )
-            self.hook_id = status['id']
-            if save:
-                self.save()
-        except GitlabError:
-            raise AddonError('Could not add hook')
-
-    def remove_hook(self, save=True):
-        if self.hook_id is None:
-            raise AddonError('No hook to delete')
-        try:
-            client.deleteprojecthook(self.project_id, self.hook_id)
-            self.hook_id = None
-            if save:
-                self.save()
-        except GitlabError:
-            raise AddonError('Could not delete hook')
 
     #############
     # Callbacks #
@@ -173,7 +137,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        """Copy Gitlab project as fork,
+        """Copy Gitlab project as registration.
 
         """
         # Call superclass method
@@ -216,6 +180,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
 
         return clone, message
 
+
 class GitlabGuidFile(GuidFile):
 
     path = fields.StringField(index=True)
@@ -227,13 +192,12 @@ class GitlabGuidFile(GuidFile):
         return os.path.join(gitlab_settings.ROUTE, 'files', self.path)
 
     @classmethod
-    def get_or_create(cls, node_settings, path, ref=None, client=None):
+    def get_or_create(cls, node_settings, path, ref=None):
         """
 
         :param GitlabAddonNodeSettings node_settings:
         :param str path: Path to file
         :param str ref: Branch or SHA
-        :param Gitlab client: GitLab client
         :returns: Retrieved or created GUID
 
         """
@@ -250,24 +214,16 @@ class GitlabGuidFile(GuidFile):
 
         except ModularOdmException:
 
-            if client is None:
-                return None
-
             # If GUID doesn't exist, check whether file exists; we know the
             # file exists if it has at least one commit
+            file_service = fileservice.GitlabFileService(node_settings)
             try:
-                commits = client.listrepositorycommits(
-                    node_settings.project_id,
-                    ref_name=ref, path=path, per_page=1
-                )
-            except GitlabError:
+                commits = file_service.list_commits(ref, path, per_page=1)
+            except fileservice.ListCommitsError:
                 raise AddonError('File not found')
             if not commits:
                 raise AddonError('File not found')
-            guid = cls(
-                node=node,
-                path=path,
-            )
+            guid = cls(node=node, path=path)
             guid.save()
 
         return guid

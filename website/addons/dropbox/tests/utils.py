@@ -158,7 +158,7 @@ class MockDropbox(object):
 
 
 @contextmanager
-def patch_client(target):
+def patch_client(target, mock_client=None):
     """Patches a function that returns a DropboxClient, returning an instance
     of MockDropbox instead.
 
@@ -168,6 +168,6 @@ def patch_client(target):
             # test view that uses the dropbox client.
     """
     with mock.patch(target) as client_getter:
-        client = MockDropbox()
+        client = mock_client or MockDropbox()
         client_getter.return_value = client
         yield client

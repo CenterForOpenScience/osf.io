@@ -1,11 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import os
-import base64
 import urllib
 import logging
 import httplib as http
 from mako.template import Template
 from flask import request, redirect, make_response
 
+from framework.mongo import db
 from framework.exceptions import HTTPError
 from framework.analytics import update_counters
 
@@ -22,10 +24,11 @@ from website.addons.base import AddonError
 from website.addons.base.views import check_file_guid
 from website.project import utils
 
-from website.addons.gitlab.api import client, GitlabError
+from website.addons.base.services.fileservice import FileServiceError
+
 from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.utils import (
-    setup_user, setup_node, gitlab_slugify,
+    setup_user, setup_node,
     kwargs_to_path, build_full_urls, build_guid_urls,
     item_to_hgrid, gitlab_to_hgrid,
     serialize_commit, ref_or_default, get_branch_and_sha,
@@ -33,7 +36,10 @@ from website.addons.gitlab.utils import (
     GitlabNodeLogger
 )
 from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.services import fileservice
 
+
+route_collection = db['gitlab-compat-routes']
 
 logger = logging.getLogger(__name__)
 
@@ -44,20 +50,20 @@ def get_cache_file(path, sha):
     )
 
 
-def get_guid(node_settings, path, ref):
+def get_guid(node_addon, path, ref):
     """
 
     """
     try:
-        return GitlabGuidFile.get_or_create(
-            node_settings, path, ref, client=client
-        )
+        return GitlabGuidFile.get_or_create(node_addon, path, ref)
     except AddonError:
         raise HTTPError(http.NOT_FOUND)
 
 
 def gitlab_upload_log(node, action, auth, data, branch):
+    """
 
+    """
     node_logger = GitlabNodeLogger(
         node, auth=auth, path=data['file_path'],
         branch=branch,
@@ -65,87 +71,39 @@ def gitlab_upload_log(node, action, auth, data, branch):
     node_logger.log(action)
 
 
-# TODO: Test me @jmcarp
-def create_or_update(node_settings, user_settings, method_name, action,
-                     filename, branch, content, auth):
-    """
-    
-    """
-    node = node_settings.owner
-
-    if method_name not in ['createfile', 'updatefile']:
-        raise ValueError(
-            'Argument `method_name` must be one of '
-            '("createfile", "updatefile")'
-        )
-    method = getattr(client, method_name)
-
-    try:
-        response = method(
-            node_settings.project_id, filename, branch, content,
-            gitlab_settings.MESSAGES['add'], encoding='base64',
-            user_id=user_settings.user_id
-        )
-    except GitlabError:
-        return False
-
-    gitlab_upload_log(node, action, auth, response, branch)
-    return response
-
-
 @must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('gitlab', 'node')
-def gitlab_upload_file(**kwargs):
+def gitlab_upload_file(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
 
     # Lazily configure Gitlab
     setup_user(auth.user)
     setup_node(node, check_ready=True)
-
-    user_settings = auth.user.get_addon('gitlab')
+    user_addon = auth.user.get_addon('gitlab')
 
     path = kwargs_to_path(kwargs, required=False)
-    branch = ref_or_default(node_settings, request.args)
+    branch = ref_or_default(node_addon, request.args)
 
     upload = request.files.get('file')
-    content = upload.read()
 
-    if not content:
-        return {'message': 'Cannot upload empty file'}, http.BAD_REQUEST
-
-    content = base64.b64encode(content)
-
-    # Check max file size
-    upload.seek(0, os.SEEK_END)
-    size = upload.tell()
-    if size > node_settings.config.max_file_size * 1024 * 1024:
-        raise HTTPError(http.BAD_REQUEST)
-
-    filename = os.path.join(path, upload.filename)
-    slug = gitlab_slugify(filename)
-
-    # Attempt to create file; if fails, update
-    # TODO: Add an update or create endpoint to GitLab
-    response = create_or_update(
-        node_settings, user_settings, 'createfile', NodeLog.FILE_ADDED,
-        slug, branch, content, auth
-    )
-    response = response or create_or_update(
-        node_settings, user_settings, 'updatefile', NodeLog.FILE_UPDATED,
-        slug, branch, content, auth
-    )
-
-    # No action taken if create and upload both fail
-    # TODO: Make error handling more specific
-    if not response:
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        action, response = file_service.upload(
+            path,
+            upload,
+            branch=branch,
+            user_addon=user_addon,
+        )
+    except FileServiceError:
         return {
             'actionTaken': None,
-            'name': filename,
+            'name': upload.filename,
         }
+
+    status = http.CREATED if action == NodeLog.FILE_ADDED else http.OK
+    gitlab_upload_log(node, action, auth, response, branch)
 
     # File created or modified
     head, tail = os.path.split(response['file_path'])
@@ -162,27 +120,32 @@ def gitlab_upload_file(**kwargs):
         },
         branch=branch
     )
-    return grid_data, http.CREATED
+    return grid_data, status
 
 
-def gitlab_hgrid_root(node_settings, auth, **kwargs):
+def gitlab_hgrid_root(node_addon, auth, **kwargs):
     """
 
     """
-    node = node_settings.owner
+    node = node_addon.owner
 
     #
     branch, sha = gitlab_settings.DEFAULT_BRANCH, None
     branches = []
 
     #
-    if node_settings.project_id is not None:
+    if node_addon.project_id is not None:
+        # TODO: Improve error handling
+        file_service = fileservice.GitlabFileService(node_addon)
+        gitlab_branches = file_service.list_branches()
+        if not gitlab_branches:
+            return None
         branches = [
             each['name']
-            for each in client.listbranches(node_settings.project_id)
+            for each in branches
         ]
         if branches:
-            branch, sha = get_branch_and_sha(node_settings, kwargs)
+            branch, sha = get_branch_and_sha(node_addon, kwargs)
 
     permissions = {
         'edit': node.can_edit(auth=auth) and not node.is_registration,
@@ -196,7 +159,7 @@ def gitlab_hgrid_root(node_settings, auth, **kwargs):
     extra = render_branch_picker(branch, sha, branches)
 
     return [rubeus.build_addon_root(
-        node_settings,
+        node_addon,
         name=None,
         urls=urls,
         permissions=permissions,
@@ -232,9 +195,12 @@ def gitlab_list_files(node_addon, auth, path='', **kwargs):
     branch = request.args.get('branch')
     sha = request.args.get('sha')
 
-    tree = client.listrepositorytree(
-        node_addon.project_id, path=path, ref_name=sha or branch
-    )
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        tree = file_service.list(path, sha, branch)
+    except FileServiceError:
+        raise HTTPError(http.BAD_REQUEST)
+
     permissions = {
         'view': True,
         'edit': (
@@ -268,9 +234,11 @@ def gitlab_file_commits(node_addon, **kwargs):
     path = kwargs_to_path(kwargs, required=True)
     guid = get_guid(node_addon, path, ref)
 
-    commits = client.listrepositorycommits(
-        node_addon.project_id, ref_name=branch, path=path
-    )
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        commits = file_service.list_commits(branch, path)
+    except fileservice.ListCommitsError:
+        raise HTTPError(http.BAD_REQUEST)
     sha = sha or commits[0]['id']
 
     commit_data = [
@@ -286,11 +254,9 @@ def gitlab_file_commits(node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
-def gitlab_view_file(**kwargs):
+def gitlab_view_file(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
-    node_settings = kwargs['node_addon']
-    node = node_settings.owner
+    node = node_addon.owner
 
     path = kwargs_to_path(kwargs, required=True)
     _, filename = os.path.split(path)
@@ -301,17 +267,20 @@ def gitlab_view_file(**kwargs):
     # below
     sha = (
         request.args.get('sha')
-        or get_default_file_sha(node_settings, path=path)
+        or get_default_file_sha(node_addon, path=path)
     )
 
-    guid = get_guid(node_settings, path, sha)
+    guid = get_guid(node_addon, path, sha)
 
     redirect_url = check_file_guid(guid)
     if redirect_url:
         return redirect(redirect_url)
 
-    contents = client.getfile(node_settings.project_id, path, sha)
-    contents_decoded = base64.b64decode(contents['content'])
+    file_service = fileservice.GitlabFileService(node_addon)
+    try:
+        contents = file_service.download(path, sha)
+    except FileServiceError:
+        raise HTTPError(http.NOT_FOUND)
 
     # Get file URL
     commits_url = node.api_url_for(
@@ -326,12 +295,12 @@ def gitlab_view_file(**kwargs):
 
     # Get or create rendered file
     cache_file = get_cache_file(path, sha)
-    rendered = get_cache_content(node_settings, cache_file)
+    rendered = get_cache_content(node_addon, cache_file)
     if rendered is None:
         # TODO: Skip large files
         rendered = get_cache_content(
-            node_settings, cache_file, start_render=True,
-            file_path=filename, file_content=contents_decoded,
+            node_addon, cache_file, start_render=True,
+            file_path=filename, file_content=contents,
             download_path=guid_urls['download'],
         )
 
@@ -352,19 +321,16 @@ def gitlab_view_file(**kwargs):
 @update_counters('download:{nid}:{path}:{sha}')
 @update_counters('download:{pid}:{path}')
 @update_counters('download:{nid}:{path}')
-def gitlab_download_file(**kwargs):
-
-    node_settings = kwargs['node_addon']
+def gitlab_download_file(node_addon, **kwargs):
 
     path = kwargs_to_path(kwargs, required=True)
-    ref = ref_or_default(node_settings, request.args)
+    ref = ref_or_default(node_addon, request.args)
 
+    file_service = fileservice.GitlabFileService(node_addon)
     try:
-        contents = client.getfile(node_settings.project_id, path, ref)
-    except GitlabError:
+        contents = file_service.download(path, ref)
+    except FileServiceError:
         raise HTTPError(http.NOT_FOUND)
-
-    contents = base64.b64decode(contents['content'])
 
     # Build response
     resp = make_response(contents)
@@ -383,29 +349,23 @@ def gitlab_download_file(**kwargs):
 @must_have_permission(WRITE)
 @must_not_be_registration
 @must_have_addon('gitlab', 'node')
-def gitlab_delete_file(**kwargs):
+def gitlab_delete_file(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    node_settings = kwargs['node_addon']
-
     path = kwargs_to_path(kwargs, required=True)
-    branch = ref_or_default(node_settings, request.args)
+    branch = ref_or_default(node_addon, request.args)
 
+    file_service = fileservice.GitlabFileService(node_addon)
     try:
-        client.deletefile(
-            node_settings.project_id, path, branch,
-            gitlab_settings.MESSAGES['delete']
-        )
-
-        node_logger = GitlabNodeLogger(
-            node, auth=auth, path=path,
-            branch=branch,
-        )
-        node_logger.log(NodeLog.FILE_REMOVED)
-
-    except GitlabError:
+        file_service.delete(path, branch)
+    except FileServiceError:
         raise HTTPError(http.BAD_REQUEST)
+
+    node_logger = GitlabNodeLogger(
+        node, auth=auth, path=path,
+        branch=branch,
+    )
+    node_logger.log(NodeLog.FILE_REMOVED)
 
 
 @must_be_contributor_or_public
@@ -436,17 +396,26 @@ def gitlab_osffiles_url(project, node=None, fid=None, vid=None, **kwargs):
     node = node or project
 
     if vid is None:
-        return redirect(node.web_url_for('gitlab_download_file', path=fid))
+        return redirect(
+            node.web_url_for(
+                'gitlab_download_file',
+                path=fid
+            )
+        )
 
-    node_routes = gitlab_settings.COMPAT_ROUTES.get(node._id, {})
-    file_versions = node_routes.get(fid, {})
+    fid_clean = fid.replace('.', '_')
+    route_record = route_collection.find_one({'_id': node._id}) or {}
+    route_data = route_record.get('routes', {})
+    file_versions = route_data.get(fid_clean, {})
+    # Note: Must stringify keys for MongoDB
     try:
+        version_key = str(vid)
         return redirect(
             node.web_url_for(
                 'gitlab_download_file',
                 path=fid,
                 branch='master',
-                sha=file_versions[vid],
+                sha=file_versions[version_key],
             )
         )
     except KeyError:

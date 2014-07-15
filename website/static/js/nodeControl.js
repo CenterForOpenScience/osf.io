@@ -32,21 +32,48 @@
     var PRIVATE = 'private';
 
     function setPermissions(permissions) {
+
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
-        bootbox.confirm({
-            title: 'Warning',
-            message: MESSAGES[msgKey],
-            callback: function(result) {
-                if (result) {
-                    $.osf.postJSON(URLS[urlKey], {permissions: permissions},
-                        function(data){
-                            window.location.href = data.redirect_url;
-                        }
-                    );
+        var message = MESSAGES[msgKey];
+
+        var confirmModal = function (message) {
+            bootbox.confirm({
+                title: 'Warning',
+                message: message,
+                callback: function(result) {
+                    if (result) {
+                        $.osf.postJSON(
+                            URLS[urlKey],
+                            {permissions: permissions},
+                            function(data) {
+                                window.location.reload();
+                            }
+                        );
+                    }
                 }
-            }
-        });
+            });
+        };
+
+        if (permissions === PUBLIC) {
+            $.getJSON(
+                window.nodeApiUrl + 'permissions/beforepublic/',
+                {},
+                function(data) {
+                    var alerts = '';
+                    var addonMessages = data.prompts;
+                        for(var i=0; i<addonMessages.length; i++) {
+                            alerts += '<div class="alert alert-warning">' +
+                                       addonMessages[i] + '</div>';
+                        }
+                    confirmModal(alerts + message);
+                }
+            )
+        } else {
+            confirmModal(message);
+        }
+
+
     }
 
 

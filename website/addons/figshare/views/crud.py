@@ -123,7 +123,7 @@ def figshare_upload(*args, **kwargs):
     if not item:
         raise HTTPError(http.BAD_REQUEST)
 
-    resp = connect.upload_file(node, figshare, item['items'][0], upload)
+    resp = connect.create_or_update(node, figshare, item['items'][0], upload)
     #TODO Clean me up
     added = True
     if figshare.figshare_type == 'project' and not kwargs.get('aid', None):
@@ -170,7 +170,7 @@ def figshare_upload_file_as_article(*args, **kwargs):
 
     article = connect.create_article(figshare, file_as_article(upload))
 
-    rv = connect.upload_file(node, figshare, article['items'][0], upload)
+    rv = connect.create_or_update(node, figshare, article['items'][0], upload)
     if rv:
         node.add_log(
             action='figshare_file_added',
@@ -254,7 +254,7 @@ def figshare_upload_file_to_article(*args, **kwargs):
 
     upload = request.files['file']
 
-    rv = connect.upload_file(
+    rv = connect.create_or_update(
         node,
         figshare,
         article,

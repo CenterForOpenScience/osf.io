@@ -18,6 +18,7 @@ app.test_request_context().push()
 
 email_regex = re.compile(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$', re.I)
 
+
 def migrate_node(node):
 
     logging.warn('Migrating node {0}'.format(node._id))
@@ -30,7 +31,7 @@ def migrate_node(node):
         return
 
     # Ensure GitLab add-on added to node
-    node_settings = node.get_or_add_addon('gitlab', log=False)
+    node.get_or_add_addon('gitlab', log=False)
 
     # Quit if no files
     if not node.files_current:

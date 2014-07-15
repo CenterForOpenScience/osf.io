@@ -5,21 +5,25 @@
 import os
 import urlparse
 import itertools
+import httplib as http
 
 from github3 import GitHubError
 
 from framework.mongo import fields
+from framework.auth import Auth
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
-from website.addons.base import AddonError
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import ApiError, NotFoundError
 from website.addons.github.api import GitHub
+from website.addons.github import utils
+
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
+
 
 class GithubGuidFile(GuidFile):
 
@@ -30,6 +34,7 @@ class GithubGuidFile(GuidFile):
         if self.path is None:
             raise ValueError('Path field must be defined.')
         return os.path.join('github', 'file', self.path)
+
 
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
@@ -43,6 +48,10 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     def has_auth(self):
         return self.oauth_access_token is not None
 
+    @property
+    def public_id(self):
+        return self.github_user
+
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
@@ -53,12 +62,11 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-
         connection = GitHub.from_settings(self)
         try:
             connection.revoke_token()
         except GitHubError as error:
-            if error.code == 401:
+            if error.code == http.UNAUTHORIZED:
                 return (
                     'Your GitHub credentials were removed from the OSF, but we '
                     'were unable to revoke your access token from GitHub. Your '
@@ -67,27 +75,25 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             else:
                 raise
 
-    def clear_auth(self):
-
-        self.revoke_token()
-
-        self.oauth_access_token = None
-        self.oauth_token_type = None
-        self.save()
-
-    def delete(self, save=True):
-        super(AddonGitHubUserSettings, self).delete()
-        self.clear_auth()
+    def clear_auth(self, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.delete(save=False)
-            node_settings.user_settings = None
-            node_settings.save()
+            node_settings.deauthorize(save=True)
+        self.revoke_token()
+        self.oauth_access_token, self.oauth_token_type = None, None
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        self.clear_auth(save=False)
+        super(AddonGitHubUserSettings, self).delete(save=save)
+
 
 class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
     hook_id = fields.StringField()
+    hook_secret = fields.StringField()
 
     user_settings = fields.ForeignField(
         'addongithubusersettings', backref='authorized'
@@ -95,12 +101,37 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
     registration_data = fields.DictionaryField()
 
-    def delete(self, save=True):
-        super(AddonGitHubNodeSettings, self).delete(save=False)
+    def authorize(self, user_settings, save=False):
+        self.user_settings = user_settings
+        self.owner.add_log(
+            action='github_node_authorized',
+            params={
+                'project': self.owner.parent_id,
+                'node': self.owner._id,
+            },
+            auth=Auth(user_settings.owner),
+        )
+        if save:
+            self.save()
+
+    def deauthorize(self, auth=None, log=True, save=False):
         self.delete_hook(save=False)
-        self.user = None
-        self.repo = None
-        self.user_settings = None
+        self.user, self.repo, self.user_settings = None, None, None
+        if log:
+            self.owner.add_log(
+                action='github_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+        if save:
+            self.save()
+
+    def delete(self, save=False):
+        super(AddonGitHubNodeSettings, self).delete(save=False)
+        self.deauthorize(save=False, log=False)
         if save:
             self.save()
 
@@ -123,6 +154,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.user_settings and self.user_settings.has_auth
         )
 
+    @property
+    def is_private(self):
+        connection = GitHub.from_settings(self.user_settings)
+        return connection.repo(user=self.user, repo=self.repo).private
+
+
+    # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
         user_settings = user.get_addon('github')
@@ -379,7 +417,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         """
         if self.user_settings and self.user_settings.has_auth:
             return (
-                'Registering {cat} "{title}" will copy the authentication for its '
+                u'Registering {cat} "{title}" will copy the authentication for its '
                 'GitHub add-on to the registered {cat}.'
             ).format(
                 cat=node.project_or_component,
@@ -420,11 +458,25 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         return clone, message
 
+    def before_make_public(self, node):
+        if self.is_private:
+            return (
+                'This {cat} is connected to a private GitHub repository. Users '
+                '(other than contributors) will not be able to see the '
+                'contents of this repo unless it is made public on GitHub.'
+            ).format(
+                cat=node.project_or_component,
+            )
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), log=True, save=True)
+
     #########
     # Hooks #
     #########
 
-    # TODO Should Events be added here?
+    # TODO: Should Events be added here?
+    # TODO: Move hook logic to service
     def add_hook(self, save=True):
 
         if self.user_settings:
@@ -438,12 +490,15 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         os.path.join(
                             self.owner.api_url, 'github', 'hook/'
                         )
-                    )
+                    ),
+                    'content_type': github_settings.HOOK_CONTENT_TYPE,
+                    'secret': utils.make_hook_secret(),
                 }
             )
 
             if hook:
                 self.hook_id = hook.id
+                self.hook_secret = hook.config['secret']
                 if save:
                     self.save()
 

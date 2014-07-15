@@ -115,10 +115,6 @@ class TestSlugify(unittest.TestCase):
 
 class TestBuildUrls(GitlabTestCase):
 
-    def setUp(self):
-        super(TestBuildUrls, self).setUp()
-        self.app.app.test_request_context().push()
-
     def test_tree(self):
 
         item = {
@@ -205,10 +201,6 @@ class TestBuildUrls(GitlabTestCase):
 
 class TestGridSerializers(GitlabTestCase):
 
-    def setUp(self):
-        super(TestGridSerializers, self).setUp()
-        self.app.app.test_request_context().push()
-
     def test_item_to_hgrid(self):
 
         item = {
@@ -280,9 +272,9 @@ class TestSetupNode(GitlabTestCase):
         super(TestSetupNode, self).setUp()
         self.node_settings.project_id = None
 
-    @mock.patch('website.addons.gitlab.model.GitlabNodeSettings.add_hook')
+    @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
     @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
-    def test_setup_node(self, mock_create_project, mock_add_hook):
+    def test_setup_node(self, mock_create_project, mock_create_hook):
         mock_create_project.return_value = {
             'id': 1,
         }
@@ -290,7 +282,7 @@ class TestSetupNode(GitlabTestCase):
         mock_create_project.assert_called_with(
             self.user_settings.user_id, self.project._id
         )
-        mock_add_hook.assert_called_with(save=True)
+        mock_create_hook.assert_called_with(save=True)
 
     @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
     def test_setup_node_gitlab_error(self, mock_create_node):
