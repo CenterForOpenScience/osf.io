@@ -194,7 +194,9 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url
         res = self.app.get(url, auth=self.auth)
         data = res.json
-        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['category'], 'Project')
+        assert_equal(data['node']['node_type'], 'project')
+
         assert_equal(data['node']['title'], self.project.title)
         assert_equal(data['node']['is_public'], self.project.is_public)
         assert_equal(data['node']['is_registration'], False)
