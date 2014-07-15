@@ -375,7 +375,7 @@ class TestSerializingEmptyDashboard(OsfTestCase):
             assert_valid_hgrid_folder(node)
 
 
-    def test_empty_dashboard_valid_folders(self):
+    def test_empty_dashboard_valid_smart_folders(self):
         """
         Tests that all the nodes in the initial dashboard are valid folders,
         as specified in assert_valid_hgrid_smart_folder.
@@ -423,18 +423,39 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_dashboard_1_folder_containing_project_size(self):
+        """
+        Tests that the length of a dashboard's hgrid representation is properly incremented after adding one folder.
+        """
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
-        project = ProjectFactory(creator=self.user)
         project = ProjectFactory(creator=self.user)
         folder.add_pointer(project,self.auth)
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
+class TestSerializingFolders(OsfTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.auth = AuthFactory(user=self.user)
+
+
+    def test_serialized_folder_is_valid_folder(self):
+        """
+        Tests that the hgrid representation of an initialized folder is valid.
+        """
+        folder = FolderFactory(creator=self.user)
+
+        folder_hgrid = rubeus.to_project_hgrid(folder, self.auth)
+
+        assert_valid_hgrid_folder(folder_hgrid)
 
     def test_serialize_folder_containing_folder(self):
+        """
+        Tests that the length of a folder's hgrid representation is properly incremented after adding one folder.
+        """
         outer_folder = FolderFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
@@ -442,7 +463,6 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         inner_folder = FolderFactory(creator=self.user)
         outer_folder.add_pointer(inner_folder, self.auth)
 
-        # TODO: Not sure I understand this behavior
         new_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
         assert_equal(len(folder_hgrid) + 1, len(new_hgrid))
 
@@ -462,6 +482,9 @@ class TestSmartFolderViews(OsfTestCase):
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_project_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
+        """
+        Tests that the length of the json returned by '/get_dashboard/$AMP_ID' increases after adding a project.
+        """
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -479,6 +502,10 @@ class TestSmartFolderViews(OsfTestCase):
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_registration_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
+        """
+        Tests that the length of the json returned by '/get_dashboard/$AMR_ID' increases after adding a registration.
+        """
+
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -517,9 +544,13 @@ def assert_valid_hgrid_folder(node_hgrid):
         'isPointer': False,
         'isFolder': True,
         'kind': 'folder',
+        'type': 'folder'
     }
 
     assert_is_instance(node_hgrid, dict)
+
+    for key, correct_value in folder_values.items():
+        assert_equal(node_hgrid[key], correct_value)
 
     for key, correct_type in folder_types.items():
         assert_is_instance(node_hgrid[key], correct_type)
@@ -528,8 +559,10 @@ def assert_valid_hgrid_folder(node_hgrid):
         for inner_key, inner_value in node_hgrid[key].items():
             assert_is_instance(inner_value, correct_type)
 
-    for key, correct_value in folder_values.items():
-        assert_equal(node_hgrid[key], correct_value)
+
+    valid_keys = set(folder_types.keys()).union(folder_values.keys())
+    for key in node_hgrid.keys():
+        assert_in(key, valid_keys)
 
 
 def assert_valid_hgrid_smart_folder(node_hgrid):
