@@ -154,7 +154,7 @@ ADDONS_REQUESTED = [
     'dataverse',
     'badges',
     'forward',
-    # 'gitlab',
+    'gitlab',
 ]
 
 ADDON_CATEGORIES = [
