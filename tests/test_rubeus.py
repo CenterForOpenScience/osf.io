@@ -423,10 +423,12 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_dashboard_1_folder_containing_project_size(self):
+        """
+        Tests that the length of a dashboard's hgrid representation is properly incremented after adding one folder.
+        """
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
-        project = ProjectFactory(creator=self.user)
         project = ProjectFactory(creator=self.user)
         folder.add_pointer(project,self.auth)
 
@@ -435,6 +437,9 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
 
     def test_serialize_folder_containing_folder(self):
+        """
+        Tests that the length of a folder's hgrid representation is properly incremented after adding one folder.
+        """
         outer_folder = FolderFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
@@ -442,7 +447,6 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         inner_folder = FolderFactory(creator=self.user)
         outer_folder.add_pointer(inner_folder, self.auth)
 
-        # TODO: Not sure I understand this behavior
         new_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
         assert_equal(len(folder_hgrid) + 1, len(new_hgrid))
 
@@ -462,6 +466,9 @@ class TestSmartFolderViews(OsfTestCase):
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_project_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
+        """
+        Tests that the length of the json returned by '/get_dashboard/$AMP_ID' increases after adding a project.
+        """
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -479,6 +486,10 @@ class TestSmartFolderViews(OsfTestCase):
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_registration_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
+        """
+        Tests that the length of the json returned by '/get_dashboard/$AMR_ID' increases after adding a registration.
+        """
+
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
