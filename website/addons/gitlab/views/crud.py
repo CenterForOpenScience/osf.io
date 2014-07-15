@@ -396,18 +396,26 @@ def gitlab_osffiles_url(project, node=None, fid=None, vid=None, **kwargs):
     node = node or project
 
     if vid is None:
-        return redirect(node.web_url_for('gitlab_download_file', path=fid))
+        return redirect(
+            node.web_url_for(
+                'gitlab_download_file',
+                path=fid
+            )
+        )
 
+    fid_clean = fid.replace('.', '_')
     route_record = route_collection.find_one({'_id': node._id}) or {}
     route_data = route_record.get('routes', {})
-    file_versions = route_data.get(fid, {})
+    file_versions = route_data.get(fid_clean, {})
+    # Note: Must stringify keys for MongoDB
     try:
+        version_key = str(vid)
         return redirect(
             node.web_url_for(
                 'gitlab_download_file',
                 path=fid,
                 branch='master',
-                sha=file_versions[vid],
+                sha=file_versions[version_key],
             )
         )
     except KeyError:

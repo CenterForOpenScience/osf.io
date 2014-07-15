@@ -56,12 +56,13 @@ def build_node_urls(node):
             continue
 
         # Map version id => sha
-        table[file] = {
-            idx + 1: commit
+        # Note: Must stringify keys for MongoDB
+        table[clean_file] = {
+            str(idx + 1): commit
             for idx, commit in enumerate(commits)
         }
         # Route URLs with no version to latest commit
-        table[file][None] = commits[-1]
+        table[clean_file]['None'] = commits[-1]
 
     # Prevent cache from exploding
     StoredObject._clear_caches()
@@ -69,11 +70,16 @@ def build_node_urls(node):
     return table
 
 
-def build_nodes_urls():
+def build_nodes_urls(clear=False):
     """Write a json file mapping node IDs to the routing table for that node's
     files.
 
+    :param bool clear: Clear routing collection
+
     """
+    if clear:
+        route_collection.remove()
+
     for node in Node.find():
 
         logger.warn('Building node {0}'.format(node._id))
@@ -90,4 +96,10 @@ def build_nodes_urls():
 
 
 if __name__ == '__main__':
-    build_nodes_urls()
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--clear', action='store_true')
+    args = parser.parse_args()
+
+    build_nodes_urls(clear=args.clear)
