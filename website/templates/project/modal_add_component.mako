@@ -15,6 +15,7 @@
                     <div class='form-group'>
                         <select id="category" name="category" class='form-control'>
                             <option disabled selected value=''>-- Category--</option>
+                            ## TODO: Remove hardcoded category values here and use the values from Node.CATEGORY_MAP
                             %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
                             <option>${i}</option>
                             %endfor

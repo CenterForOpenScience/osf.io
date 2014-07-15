@@ -424,6 +424,10 @@ class TestComponents(OsfTestCase):
             res
         )
 
+    def test_components_shouldnt_have_component_list(self):
+        res = self.app.get(self.component.url, auth=self.user.auth)
+        assert_not_in('Components', res)
+
 
 class TestMergingAccounts(OsfTestCase):
 

@@ -23,7 +23,7 @@
         var self = this;
         self.action = params.action;
         self.date = new FormattableDate(params.date);
-        self.nodeCategory = params.nodeCategory;
+        self.nodeType = params.nodeType;
         self.nodeDescription = params.nodeDescription;
         self.nodeTitle = params.nodeTitle;
         self.contributor = params.contributor;
@@ -126,7 +126,10 @@
             return new Log({
                 "action": item.action,
                 "date": item.date,
-                "nodeCategory": item.node.category,
+                // The node type, either 'project' or 'component'
+                // NOTE: This is NOT the component category (e.g. 'hypothesis')
+                "nodeType": item.node.node_type,
+                'nodeCategory': item.node.category,
                 "contributor": item.contributor,
                 "contributors": item.contributors,
                 "nodeUrl": item.node.url,
