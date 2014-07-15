@@ -46,11 +46,15 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
+                            <!-- start making changes -->
+
                             <table>
                                 <thead data-bind="visible: foundResults">
                                     <th></th>
                                     <th></th>
-                                    <th>Name</th>
+                                    <th>
+                                        Name
+                                    </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -65,13 +69,21 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td>
-                                            <span data-bind="text: contributor.fullname"></span>
+                                        <td >
+
+                                            <span   data-bind="text: contributor.fullname" ></span>
+                                            <br><span  data-bind="text: contributor.employment"></span><br>
+                                            <span   data-bind="text: contributor.education"></span>
+
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+
                                         </td>
+
                                     </tr>
+
+
                                 </tbody>
                             </table>
                             <!-- Link to add non-registered contributor -->

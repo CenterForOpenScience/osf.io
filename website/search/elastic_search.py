@@ -448,12 +448,15 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
         if user.is_active():  # exclude merged, unregistered, etc.
             users.append({
                 'fullname': doc['user'],
+                'employment': user.jobs[0]['institution'],
+                'education': user.schools[0]['institution'],
                 'id': doc['id'],
                 'gravatar_url': gravatar(
                     user,
