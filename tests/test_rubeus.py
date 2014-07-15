@@ -443,6 +443,9 @@ class TestSerializingFolders(OsfTestCase):
 
 
     def test_serialized_folder_is_valid_folder(self):
+        """
+        Tests that the hgrid representation of an initialized folder is valid.
+        """
         folder = FolderFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(folder, self.auth)
