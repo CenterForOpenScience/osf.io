@@ -444,6 +444,15 @@ class Pointer(StoredObject):
         )
 
 
+def validate_category(value):
+    """Validator for Node#category. Makes sure that the value is one of the
+    categories defined in CATEGORY_MAP.
+    """
+    if value not in Node.CATEGORY_MAP.keys():
+        raise ValidationValueError('Invalid value for category.')
+    return True
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -507,7 +516,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     description = fields.StringField()
     # TODO: Add validator for this field (must be one of the keys in
     # CATEGORY_MAP
-    category = fields.StringField()
+    category = fields.StringField(validate=validate_category)
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)

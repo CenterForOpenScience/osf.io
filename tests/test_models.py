@@ -30,6 +30,7 @@ from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
+from website.project.model import Node
 
 from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
@@ -758,6 +759,10 @@ class TestNode(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
+
+    def test_validate_categories(self):
+        with assert_raises(ValidationError):
+            Node(category='invalid').save()  # an invalid category
 
     def test_web_url_for(self):
         with app.test_request_context():
