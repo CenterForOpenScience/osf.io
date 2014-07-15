@@ -435,6 +435,19 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
+class TestSerializingFolders(OsfTestCase):
+
+    def setUp(self):
+        self.user = UserFactory()
+        self.auth = AuthFactory(user=self.user)
+
+
+    def test_serialized_folder_is_valid_folder(self):
+        folder = FolderFactory(creator=self.user)
+
+        folder_hgrid = rubeus.to_project_hgrid(folder, self.auth)
+
+        assert_valid_hgrid_folder(folder_hgrid)
 
     def test_serialize_folder_containing_folder(self):
         """
