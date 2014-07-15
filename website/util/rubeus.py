@@ -128,13 +128,13 @@ def build_addon_button(text, action):
 class NodeProjectCollector(object):
 
     """A utility class for creating rubeus formatted node data for project organization"""
-    def __init__(self, node, auth, **kwargs):
+    def __init__(self, node, auth, just_one_level=False, **kwargs):
         self.node = node
         self.auth = auth
         self.extra = kwargs
         self.can_view = node.can_view(auth)
         self.can_edit = node.can_edit(auth) and not node.is_registration
-        self.just_one_level = kwargs.get('just_one_level', False)
+        self.just_one_level = just_one_level
 
     def _collect_components(self, node, visited):
         rv = []
