@@ -799,7 +799,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         first_save = not self._is_loaded
         if first_save and self.is_dashboard:
             existing_dashboards = self.creator.node__contributed.find(
-                Q('is_dashboard','eq',True)
+                Q('is_dashboard', 'eq', True)
             )
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
