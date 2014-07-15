@@ -4,6 +4,10 @@ The GitLab add-on has been implemented as a drop-in replacement for the
 original OSF storage, meaning that all OSF files and their associated meta-
 data must be migrated to GitLab.
 
+0. Handle corrupted git repos
+    * [On app server]
+        * cd /opt/apps/osf
+        * sudo env/bin/python -m scripts.git.fscheck --restore
 1. Configure settings
     * In website/settings/local.py add 'gitlab' to `ADDONS_REQUESTED`.
     * In website/addons/gitlab/settings/defaults.py set ROUTE to 'gitlab'.

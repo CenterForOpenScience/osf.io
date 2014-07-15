@@ -7,6 +7,7 @@ import httplib as http
 from mako.template import Template
 from flask import request, redirect, make_response
 
+from framework.mongo import db
 from framework.exceptions import HTTPError
 from framework.analytics import update_counters
 
@@ -37,6 +38,8 @@ from website.addons.gitlab.utils import (
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.services import fileservice
 
+
+route_collection = db['gitlab-compat-routes']
 
 logger = logging.getLogger(__name__)
 
@@ -395,8 +398,9 @@ def gitlab_osffiles_url(project, node=None, fid=None, vid=None, **kwargs):
     if vid is None:
         return redirect(node.web_url_for('gitlab_download_file', path=fid))
 
-    node_routes = gitlab_settings.COMPAT_ROUTES.get(node._id, {})
-    file_versions = node_routes.get(fid, {})
+    route_record = route_collection.find_one({'_id': node._id}) or {}
+    route_data = route_record.get('routes', {})
+    file_versions = route_data.get(fid, {})
     try:
         return redirect(
             node.web_url_for(

@@ -33,10 +33,3 @@ MESSAGES = {
     'update': 'Updated {0}'.format(MESSAGE_BASE),
     'delete': 'Deleted {0}'.format(MESSAGE_BASE),
 }
-
-# Load routing table for download URLs if available
-try:
-    compat_file = os.path.join(BASE_PATH, 'compat_file_routes.json')
-    COMPAT_ROUTES = json.load(open(compat_file))
-except IOError:
-    COMPAT_ROUTES = {}
