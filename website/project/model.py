@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-import subprocess
-import uuid
-import hashlib
+from HTMLParser import HTMLParser
+from collections import OrderedDict
 import calendar
 import datetime
+import hashlib
+import logging
 import os
 import re
+import subprocess
 import unicodedata
 import urllib
 import urlparse
-import logging
-from HTMLParser import HTMLParser
+import uuid
 
 import pytz
 from dulwich.repo import Repo
@@ -443,6 +444,15 @@ class Pointer(StoredObject):
         )
 
 
+def validate_category(value):
+    """Validator for Node#category. Makes sure that the value is one of the
+    categories defined in CATEGORY_MAP.
+    """
+    if value not in Node.CATEGORY_MAP.keys():
+        raise ValidationValueError('Invalid value for category.')
+    return True
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -462,6 +472,22 @@ class Node(GuidStoredObject, AddonModelMixin):
         'is_deleted',
         'wiki_pages_current',
     }
+
+    # Maps category identifier => Human-readable representation for use in
+    # titles, menus, etc.
+    # Use an OrderedDict so that menu items show in the correct order
+    CATEGORY_MAP = OrderedDict([
+        ('', 'Uncategorized'),
+        ('project', 'Project'),
+        ('hypothesis', 'Hypothesis'),
+        ('methods and measures', 'Methods and Measures'),
+        ('procedure', 'Procedure'),
+        ('instrumentation', 'Instrumentation'),
+        ('data', 'Data'),
+        ('analysis', 'Analysis'),
+        ('communication', 'Communication'),
+        ('other', 'Other')
+        ])
 
     _id = fields.StringField(primary=True)
 
@@ -493,7 +519,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     title = fields.StringField()
     description = fields.StringField()
-    category = fields.StringField()
+    # TODO: Add validator for this field (must be one of the keys in
+    # CATEGORY_MAP
+    category = fields.StringField(validate=validate_category)
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
@@ -552,6 +580,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+    @property
+    def category_display(self):
+        """The human-readable representation of this node's category."""
+        return self.CATEGORY_MAP[self.category]
 
     @property
     def private_links(self):
@@ -2197,7 +2229,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-
+        # Update list of visible IDs
+        self.update_visible_ids()
         if save:
             self.save()
 
@@ -2449,11 +2482,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    # TODO: Deprecate this; it duplicates much of what serialize_project already
+    # does
     def serialize(self):
+        """Dictionary representation of node that is nested within a NodeLog's
+        representation.
+        """
         # TODO: incomplete implementation
         return {
             'id': str(self._primary_key),
-            'category': self.project_or_component,
+            'category': self.category_display,
+            'node_type': self.project_or_component,
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),

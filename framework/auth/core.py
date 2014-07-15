@@ -163,6 +163,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'merged_by',
     }
 
     _id = fields.StringField(primary=True)
@@ -575,9 +576,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        if self.is_active():
-            if self.SEARCH_UPDATE_FIELDS.intersection(rv):
-                self.update_search()
+        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+            self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
@@ -587,8 +587,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def update_search(self):
         from website.search import search
-        if self.is_active():
-            search.update_user(self)
+        search.update_user(self)
 
     @classmethod
     def find_by_email(cls, email):
