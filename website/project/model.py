@@ -516,7 +516,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     description = fields.StringField()
     # TODO: Add validator for this field (must be one of the keys in
     # CATEGORY_MAP
-    category = fields.StringField()
+    category = fields.StringField(validate=validate_category)
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
