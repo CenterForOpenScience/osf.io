@@ -5,6 +5,7 @@ import logging
 from tests.base import OsfTestCase
 from tests.factories import NodeFactory
 
+from website.app import init_app
 from website.project.model import Node
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,9 @@ MIGRATE_MAP = {
     'measure': 'methods and measures',
 }
 
+def main():
+    init_app()
+    migrate_nodes()
 
 def migrate_category(node):
     """Migrate legacy, invalid category to new, valid category. Return whether
