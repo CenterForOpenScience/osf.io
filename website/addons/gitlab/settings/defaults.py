@@ -1,6 +1,4 @@
-import os
-import json
-from website.settings import BASE_PATH, DOMAIN
+from website.settings import DOMAIN
 
 
 ROUTE = 'gitlab'
