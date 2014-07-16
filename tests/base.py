@@ -17,7 +17,6 @@ from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig)
 from website import settings
 
-from website.addons.osffiles.model import NodeFile
 from website.addons.wiki.model import NodeWikiPage
 
 import website.models
@@ -39,7 +38,7 @@ for logger_name in SILENT_LOGGERS:
 fake = Factory.create()
 
 # All Models
-MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
+MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 

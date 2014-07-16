@@ -3,11 +3,9 @@ from HTMLParser import HTMLParser
 from collections import OrderedDict
 import calendar
 import datetime
-import hashlib
 import logging
 import os
 import re
-import subprocess
 import unicodedata
 import urllib
 import urlparse
@@ -16,7 +14,6 @@ import uuid
 import pytz
 from bson import ObjectId
 from dulwich.repo import Repo
-from dulwich.object_store import tree_lookup_path
 import blinker
 
 from modularodm.validators import MaxLengthValidator
@@ -29,7 +26,6 @@ from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
-from framework.git.exceptions import FileNotModified
 from framework.mongo import StoredObject, fields, Q
 from framework import utils
 from framework.guid.model import GuidStoredObject
@@ -527,8 +523,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
-    files_current = fields.DictionaryField()
-    files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
 
@@ -893,8 +887,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.visible_contributor_ids = []
 
         # Clear quasi-foreign fields
-        new.files_current = {}
-        new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
         new.fork_list = []
@@ -1303,11 +1295,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `files_current` and
-        # `wiki_pages_current` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its file and wiki objects to
-        # build the correct URLs to that content.
+        # Note: Cloning a node copies its `wiki_pages_current` field, but does
+        # not clone the underlying database objects to which these dictionaries
+        # refer. This means that the cloned node must pass itself to its wiki
+        # objects to build the correct URLs to that content.
         forked = original.clone()
 
         forked.logs = self.logs
@@ -1383,11 +1374,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         original = self.load(self._primary_key)
 
-        # Note: Cloning a node copies its `files_current` and
-        # `wiki_pages_current` fields, but does not clone the underlying
-        # database objects to which these dictionaries refer. This means that
-        # the cloned node must pass itself to its file and wiki objects to
-        # build the correct URLs to that content.
+        # Note: Cloning a node copies its `wiki_pages_current` field, but does
+        # not clone the underlying database objects to which these dictionaries
+        # refer. This means that the cloned node must pass itself to its wiki
+        # objects to build the correct URLs to that content.
         registered = original.clone()
 
         registered.is_registration = True
@@ -1483,243 +1473,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
             if save:
                 self.save()
-
-    def get_file(self, path, version=None):
-        from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-                repo = Repo(folder_name)
-                tree = repo.commit(file_object.git_commit).tree
-                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
-                return repo[sha].data, file_object.content_type
-        return None, None
-
-    def get_file_object(self, path, version=None):
-        from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(directory, '.git')):
-                return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-            # TODO: Raise exception here
-        return None, None # TODO: Raise exception here
-
-    def remove_file(self, auth, path):
-        '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
-
-        :param auth: All the auth informtion including user, API key.
-        :param path:
-
-        :return: True on success, False on failure
-        '''
-        from website.addons.osffiles.model import NodeFile
-
-        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
-        file_name_key = path.replace('.', '_')
-
-        repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-
-        # TODO make sure it all works, otherwise rollback as needed
-        # Do a git delete, which also removes from working filesystem.
-        try:
-            subprocess.check_output(
-                ['git', 'rm', path],
-                cwd=repo_path,
-                shell=False
-            )
-
-            repo = Repo(repo_path)
-
-            message = '{path} deleted'.format(path=path)
-            committer = self._get_committer(auth)
-
-            repo.do_commit(message, committer)
-
-        except subprocess.CalledProcessError as error:
-            # This exception can be ignored if the file has already been
-            # deleted, e.g. if two users attempt to delete a file at the same
-            # time. If another subprocess error is raised, fail.
-            if error.returncode == 128 and 'did not match any files' in error.output:
-                logger.warning(
-                    'Attempted to delete file {0}, but file was not found.'.format(
-                        path
-                    )
-                )
-                return True
-            return False
-
-        if file_name_key in self.files_current:
-            nf = NodeFile.load(self.files_current[file_name_key])
-            nf.is_deleted = True
-            nf.save()
-            self.files_current.pop(file_name_key, None)
-
-        if file_name_key in self.files_versions:
-            for i in self.files_versions[file_name_key]:
-                nf = NodeFile.load(i)
-                nf.is_deleted = True
-                nf.save()
-            self.files_versions.pop(file_name_key)
-
-        self.add_log(
-            action=NodeLog.FILE_REMOVED,
-            params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'path':path
-            },
-            auth=auth,
-            log_date=nf.date_modified,
-            save=False,
-        )
-
-        # Updates self.date_modified
-        self.save()
-
-        return True
-
-    @staticmethod
-    def _get_committer(auth):
-
-        user = auth.user
-        api_key = auth.api_key
-
-        if api_key:
-            commit_key_msg = ':{}'.format(api_key.label)
-            if api_key.user:
-                commit_name = api_key.user.fullname
-                commit_id = api_key.user._primary_key
-                commit_category = 'user'
-            if api_key.node:
-                commit_name = api_key.node.title
-                commit_id = api_key.node._primary_key
-                commit_category = 'node'
-
-        elif user:
-            commit_key_msg = ''
-            commit_name = user.fullname
-            commit_id = user._primary_key
-            commit_category = 'user'
-
-        else:
-            raise Exception('Must provide either user or api_key.')
-
-        committer = u'{name}{key_msg} <{category}-{id}@osf.io>'.format(
-            name=commit_name,
-            key_msg=commit_key_msg,
-            category=commit_category,
-            id=commit_id,
-        )
-
-        committer = normalize_unicode(committer)
-
-        return committer
-
-    def add_file(self, auth, file_name, content, size, content_type):
-        """
-        Instantiates a new NodeFile object, and adds it to the current Node as
-        necessary.
-        """
-        from website.addons.osffiles.model import NodeFile
-        # TODO: Reading the whole file into memory is not scalable. Fix this.
-
-        # This node's folder
-        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-
-        # TODO: This should be part of the build phase, not here.
-        # verify the upload root exists
-        if not os.path.isdir(settings.UPLOADS_PATH):
-            os.mkdir(settings.UPLOADS_PATH)
-
-        # Make sure the upload directory contains a git repo.
-        if os.path.exists(folder_name):
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                repo = Repo(folder_name)
-            else:
-                # ... or create one
-                repo = Repo.init(folder_name)
-        else:
-            # if the Node's folder isn't there, create it.
-            os.mkdir(folder_name)
-            repo = Repo.init(folder_name)
-
-        # Is this a new file, or are we updating an existing one?
-        file_is_new = not os.path.exists(os.path.join(folder_name, file_name))
-
-        if not file_is_new:
-            # Get the hash of the old file
-            old_file_hash = hashlib.md5()
-            with open(os.path.join(folder_name, file_name), 'rb') as f:
-                for chunk in iter(
-                        lambda: f.read(128 * old_file_hash.block_size),
-                        b''
-                ):
-                    old_file_hash.update(chunk)
-
-            # If the file hasn't changed
-            if old_file_hash.digest() == hashlib.md5(content).digest():
-                raise FileNotModified()
-
-        # Write the content of the temp file into a new file
-        with open(os.path.join(folder_name, file_name), 'wb') as f:
-            f.write(content)
-
-        # Deal with git
-        repo.stage([file_name])
-
-        committer = self._get_committer(auth)
-
-        commit_id = repo.do_commit(
-            message=unicode(file_name +
-                            (' added' if file_is_new else ' updated')),
-            committer=committer,
-        )
-
-        # Deal with creating a NodeFile in the database
-        node_file = NodeFile(
-            path=file_name,
-            filename=file_name,
-            size=size,
-            node=self,
-            uploader=auth.user,
-            git_commit=commit_id,
-            content_type=content_type,
-        )
-        node_file.save()
-
-        # Add references to the NodeFile to the Node object
-        file_name_key = node_file.clean_filename
-
-        # Reference the current file version
-        self.files_current[file_name_key] = node_file._primary_key
-
-        # Create a version history if necessary
-        if not file_name_key in self.files_versions:
-            self.files_versions[file_name_key] = []
-
-        # Add reference to the version history
-        self.files_versions[file_name_key].append(node_file._primary_key)
-
-        self.add_log(
-            action=NodeLog.FILE_ADDED if file_is_new else NodeLog.FILE_UPDATED,
-            params={
-                'project': self.parent_id,
-                'node': self._primary_key,
-                'path': node_file.path,
-                'version': len(self.files_versions),
-                'urls': {
-                    'view': node_file.url(self),
-                    'download': node_file.download_url(self),
-                },
-            },
-            auth=auth,
-            log_date=node_file.date_uploaded,
-            save=False,
-        )
-        self.save()
-
-        return node_file
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None

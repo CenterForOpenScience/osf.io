@@ -19,7 +19,6 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework import utils
 from framework.bcrypt import check_password_hash
-from framework.git.exceptions import FileNotModified
 
 from website import filters, language, settings
 from website.exceptions import NodeStateError
@@ -28,7 +27,6 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
 )
 from website.app import init_app
-from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.addons.base import AddonError
 
@@ -571,98 +569,6 @@ class TestGUID(OsfTestCase):
             )
 
 
-class TestNodeFile(OsfTestCase):
-
-    def setUp(self):
-        # Create a project with a NodeFile
-        self.node = ProjectFactory()
-        self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
-        self.node.files_versions[self.node_file.clean_filename] = [self.node_file._primary_key]
-        self.node.save()
-
-    def test_url(self):
-        assert_equal(
-            self.node_file.api_url(self.node),
-            '{0}osffiles/{1}/'.format(self.node.api_url, self.node_file.filename),
-        )
-
-    def test_clean(self):
-        assert_equal(self.node_file.clean_filename, 'foo_py')
-
-    def test_latest_version_number(self):
-        assert_equal(self.node_file.latest_version_number(self.node), 1)
-
-    def test_download_url(self):
-        assert_equal(
-            self.node_file.download_url(self.node),
-            self.node.url + 'osffiles/{0}/version/1/download/'.format(self.node_file.filename)
-        )
-
-
-class TestAddFile(OsfTestCase):
-
-    def setUp(self):
-        # Create a project
-        self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
-        self.user2 = UserFactory()
-        self.consolidate_auth2 = Auth(user=self.user2)
-        self.project = ProjectFactory(creator=self.user)
-        # Add a file
-        self.file_name = 'foo.py'
-        self.file_key = self.file_name.replace('.', '_')
-        self.node_file = self.project.add_file(
-            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
-        )
-        self.project.save()
-
-    def test_added(self):
-        assert_equal(len(self.project.files_versions), 1)
-
-    def test_component_add_file(self):
-        # Add exact copy of parent project's file to component
-        component = NodeFactory(project=self.project, creator=self.user)
-        component_file = component.add_file(
-            self.consolidate_auth, self.file_name, 'Content', 128, 'Type'
-        )
-        # File is correctly assigned to component
-        assert_equal(component_file.node, component)
-        # File does not overwrite parent project's version
-        assert_equal(len(self.project.files_versions), 1)
-
-    def test_uploader_is_user(self):
-        assert_equal(self.node_file.uploader, self.user)
-
-    def test_revise_content(self):
-        user2 = UserFactory()
-        consolidate_auth2 = Auth(user=user2)
-        updated_file = self.project.add_file(
-            consolidate_auth2,
-            self.file_name,
-            'Content 2',
-            129,
-            'Type 2',
-        )
-        # There are two versions of the file
-        assert_equal(len(self.project.files_versions[self.file_key]), 2)
-        assert_equal(self.node_file.filename, updated_file.filename)
-        # Each version has the correct user, size, and type
-        assert_equal(self.node_file.uploader, self.user)
-        assert_equal(updated_file.uploader, user2)
-        assert_equal(self.node_file.size, 128)
-        assert_equal(updated_file.size, 129)
-        assert_equal(self.node_file.content_type, 'Type')
-        assert_equal(updated_file.content_type, 'Type 2')
-
-
-    @raises(FileNotModified)
-    def test_not_modified(self):
-
-        # Modify user, size, and type, but not content
-        self.project.add_file(self.consolidate_auth2, self.file_name, 'Content', 256,
-                              'Type 2')
-
-
 class TestApiKey(OsfTestCase):
 
     def test_factory(self):
@@ -856,7 +762,7 @@ class TestNode(OsfTestCase):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
         with assert_raises(AddonError):
-            self.node.add_addon('osffiles', self.consolidate_auth)
+            self.node.add_addon('gitlab', self.consolidate_auth)
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count
@@ -1022,10 +928,6 @@ class TestNode(OsfTestCase):
     def test_fork_pointer_component(self):
         component = NodeFactory(creator=self.user)
         self._fork_pointer(component)
-
-    def test_add_file(self):
-        #todo Add file series of tests
-        pass
 
 
 class TestRemoveNode(OsfTestCase):
@@ -1682,24 +1584,6 @@ class TestTemplateNode(OsfTestCase):
                     new_node.title,
                 )
 
-    def test_template_files_not_copied(self):
-        self.project.add_file(
-            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
-        )
-        new = self.project.use_as_template(
-            auth=self.consolidate_auth
-        )
-        assert_equal(
-            len(self.project.files_current),
-            1
-        )
-        assert_equal(
-            len(self.project.files_versions),
-            1
-        )
-        assert_equal(new.files_current, {})
-        assert_equal(new.files_versions, {})
-
     def test_template_wiki_pages_not_copied(self):
         self.project.update_node_wiki(
             'template', 'lol',
@@ -1811,21 +1695,6 @@ class TestForkNode(OsfTestCase):
         assert_true((fork_date - fork.date_created) < datetime.timedelta(seconds=30))
         assert_not_equal(fork.forked_date, original.date_created)
 
-        # Test that files were copied correctly
-        for fname in original.files_versions:
-            assert_true(fname in original.files_versions)
-            assert_true(fname in fork.files_versions)
-            assert_equal(
-                len(original.files_versions[fname]),
-                len(fork.files_versions[fname]),
-             )
-            for vidx in range(len(original.files_versions[fname])):
-                file_original = NodeFile.load(original.files_versions[fname][vidx])
-                file_fork = NodeFile.load(original.files_versions[fname][vidx])
-                data_original = original.get_file(file_original.path, vidx)
-                data_fork = fork.get_file(file_fork.path, vidx)
-                assert_equal(data_original, data_fork)
-
         # Test that pointers were copied correctly
         assert_equal(
             [pointer.node for pointer in original.nodes_pointer],
@@ -1857,17 +1726,6 @@ class TestForkNode(OsfTestCase):
         # Make some children
         self.component = NodeFactory(creator=self.user, project=self.project)
         self.subproject = ProjectFactory(creator=self.user, project=self.project)
-
-        # Add files to test copying
-        self.project.add_file(
-            self.consolidate_auth, 'test.txt', 'test content', 4, 'text/plain'
-        )
-        self.component.add_file(
-            self.consolidate_auth, 'test2.txt', 'test content2', 4, 'text/plain'
-        )
-        self.subproject.add_file(
-            self.consolidate_auth, 'test3.txt', 'test content3', 4, 'text/plain'
-        )
 
         # Add pointers to test copying
         pointee = ProjectFactory()
