@@ -1,4 +1,5 @@
 from nose.tools import *
+from webtest.app import AppError
 from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
@@ -35,4 +36,17 @@ class TestViews(OsfTestCase):
         assert_true(self.user_settings.is_confirmed)
         assert_equal(res.status_code, 200)
 
+    def test_confirm_code_failure(self):
+        with assert_raises(AppError) as error:
+            res = self.app.post_json(
+                '/api/v1/settings/twofactor/',
+                {'code': '000000'},
+                auth=self.user.auth
+            )
 
+            assert_in('403 FORBIDDEN', error.message)
+
+        # reload the user settings object from the DB
+        self.user_settings.reload()
+
+        assert_false(self.user_settings.is_confirmed)
