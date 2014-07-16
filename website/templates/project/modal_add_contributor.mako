@@ -46,8 +46,7 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-                            <!-- start making changes -->
-
+                            
                             <table>
                                 <thead data-bind="visible: foundResults">
                                     <th></th>
