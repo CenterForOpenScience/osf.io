@@ -21,18 +21,8 @@
      */
     var Log = function(params) {
         var self = this;
-        self.action = params.action;
-        self.date = new $.osf.FormattableDate(params.date);
-        self.nodeCategory = params.nodeCategory;
-        self.nodeDescription = params.nodeDescription;
-        self.nodeTitle = params.nodeTitle;
-        self.contributor = params.contributor;
-        self.contributors = params.contributors;
-        self.nodeUrl = params.nodeUrl;
-        self.userFullName = params.userFullName;
-        self.userURL = params.userURL;
-        self.apiKey = params.apiKey;
-        self.params = params.params; // Extra log params
+        $.extend(self, params);
+        self.date = new FormattableDate(params.date);
         self.wikiUrl = ko.computed(function() {
             return self.nodeUrl + 'wiki/' + self.params.page;
         });
@@ -124,6 +114,7 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
+<<<<<<< HEAD
                 'action': item.action,
                 'date': item.date,
                 'nodeCategory': item.node.category,
@@ -137,6 +128,24 @@
                 'nodeTitle': item.node.title,
                 'nodeDescription': item.params.description_new
             });
+=======
+                "action": item.action,
+                "date": item.date,
+                // The node type, either 'project' or 'component'
+                // NOTE: This is NOT the component category (e.g. 'hypothesis')
+                "nodeType": item.node.node_type,
+                'nodeCategory': item.node.category,
+                "contributor": item.contributor,
+                "contributors": item.contributors,
+                "nodeUrl": item.node.url,
+                "userFullName": item.user.fullname,
+                "userURL": item.user.url,
+                "apiKey": item.api_key,
+                "params": item.params,
+                "nodeTitle": item.node.title,
+                "nodeDescription": item.params.description_new
+            })
+>>>>>>> develop
         });
         return mappedLogs;
     };

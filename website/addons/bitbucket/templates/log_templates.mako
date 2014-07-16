@@ -4,7 +4,7 @@ added file
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
@@ -13,6 +13,6 @@ removed file <span class="overflow" data-bind="text: params.path"></span> from
 GitHub repo
 <span data-bind="text: params.github.user"></span> /
 <span data-bind="text: params.github.repo"></span> in
-<span data-bind="text: nodeCategory"></span>
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
