@@ -535,7 +535,8 @@ def _view_project(node, auth, primary=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category_display,
+            'node_type': node.project_or_component,
             'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
@@ -663,7 +664,7 @@ def private_link_table(**kwargs):
 def get_editable_children(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    
+
     if not node.can_edit(auth):
         return
 
@@ -728,7 +729,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category,
+            'node_type': node.project_or_component,
             'is_registration': node.is_registration,
             'anonymous': node.is_anonymous(view_only_link),
             'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')

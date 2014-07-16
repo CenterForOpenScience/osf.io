@@ -194,7 +194,9 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url
         res = self.app.get(url, auth=self.auth)
         data = res.json
-        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['category'], 'Project')
+        assert_equal(data['node']['node_type'], 'project')
+
         assert_equal(data['node']['title'], self.project.title)
         assert_equal(data['node']['is_public'], self.project.is_public)
         assert_equal(data['node']['is_registration'], False)
@@ -277,7 +279,7 @@ class TestProjectViews(OsfTestCase):
         project.add_contributors(
             [
                 {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -292,10 +294,10 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': False},
                     {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                     {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -306,7 +308,12 @@ class TestProjectViews(OsfTestCase):
         assert_equal(
             # Note: Cast ForeignList to list for comparison
             list(project.contributors),
-            [project.creator, reg_user1, unregistered_user, reg_user2]
+            [reg_user2, project.creator, unregistered_user, reg_user1]
+        )
+
+        assert_equal(
+            project.visible_contributors,
+            [project.creator, unregistered_user, reg_user1]
         )
 
     def test_project_remove_contributor(self):
@@ -2075,7 +2082,7 @@ class TestSearchViews(OsfTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-       
+
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')

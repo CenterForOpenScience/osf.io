@@ -30,6 +30,7 @@ from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
+from website.project.model import Node
 
 from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
@@ -153,7 +154,7 @@ class TestUser(OsfTestCase):
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert_false(update_search.called)
+        assert update_search.called
 
     @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
@@ -771,6 +772,10 @@ class TestNode(OsfTestCase):
         self.parent = ProjectFactory(creator=self.user)
         self.node = NodeFactory(creator=self.user, project=self.parent)
 
+    def test_validate_categories(self):
+        with assert_raises(ValidationError):
+            Node(category='invalid').save()  # an invalid category
+
     def test_web_url_for(self):
         with app.test_request_context():
             result = self.parent.web_url_for('view_project')
@@ -779,6 +784,13 @@ class TestNode(OsfTestCase):
             result2 = self.node.web_url_for('view_project')
             assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
                 nid=self.node._primary_key))
+
+    def test_category_display(self):
+        node = NodeFactory(category='hypothesis')
+        assert_equal(node.category_display, 'Hypothesis')
+        node2 = NodeFactory(category='methods and measures')
+        assert_equal(node2.category_display, 'Methods and Measures')
+
 
     def test_api_url_for(self):
         with app.test_request_context():
@@ -2184,7 +2196,9 @@ class TestNodeLog(OsfTestCase):
         node.save()
         d = log.serialize()
         assert_equal(d['action'], log.action)
-        assert_equal(d['node']['category'], 'component')
+        assert_equal(d['node']['node_type'], 'component')
+        assert_equal(d['node']['category'], 'Hypothesis')
+
         assert_equal(d['node']['url'], log.node.url)
         assert_equal(d['date'], utils.rfcformat(log.date))
         assert_in('contributors', d)

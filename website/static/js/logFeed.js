@@ -24,7 +24,7 @@
         self.anonymous = params.anonymous;
         self.action = params.action;
         self.date = new FormattableDate(params.date);
-        self.nodeCategory = params.nodeCategory;
+        self.nodeType = params.nodeType;
         self.nodeDescription = params.nodeDescription;
         self.nodeTitle = params.nodeTitle;
         self.contributors = params.contributors;
@@ -132,7 +132,10 @@
                 "anonymous": item.anonymous,
                 "action": item.action,
                 "date": item.date,
-                "nodeCategory": item.node.category,
+                // The node type, either 'project' or 'component'
+                // NOTE: This is NOT the component category (e.g. 'hypothesis')
+                "nodeType": item.node.node_type,
+                'nodeCategory': item.node.category,
                 "contributors": item.contributors,
                 "nodeUrl": item.node.url,
                 "userFullName": item.user.fullname,
