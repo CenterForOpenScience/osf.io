@@ -21,18 +21,8 @@
      */
     var Log = function(params) {
         var self = this;
-        self.action = params.action;
+        $.extend(self, params);
         self.date = new FormattableDate(params.date);
-        self.nodeType = params.nodeType;
-        self.nodeDescription = params.nodeDescription;
-        self.nodeTitle = params.nodeTitle;
-        self.contributor = params.contributor;
-        self.contributors = params.contributors;
-        self.nodeUrl = params.nodeUrl;
-        self.userFullName = params.userFullName;
-        self.userURL = params.userURL;
-        self.apiKey = params.apiKey;
-        self.params = params.params; // Extra log params
         self.wikiUrl = ko.computed(function() {
             return self.nodeUrl + 'wiki/' + self.params.page;
         });
