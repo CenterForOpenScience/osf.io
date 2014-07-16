@@ -71,7 +71,7 @@ def get_logs(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = node.is_anonymous(link)
+    anonymous = node.has_anonymous_link(link)
 
     if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)

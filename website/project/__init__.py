@@ -62,6 +62,7 @@ def new_private_link(name, user, nodes, anonymous):
     :param str name: private link name
     :param User user: User object
     :param list Node node: a list of node object
+    :param bool anonymous: make link anonymous or not
     :return PrivateLink: Created private link
 
     """

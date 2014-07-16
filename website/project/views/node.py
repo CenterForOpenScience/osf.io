@@ -521,7 +521,7 @@ def _view_project(node, auth, primary=False):
 
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = node.is_anonymous(view_only_link) if view_only_link else False
+    anonymous = node.has_anonymous_link(view_only_link) if view_only_link else False
     recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
     widgets, configs, js, css = _render_addon(node)
 
@@ -732,7 +732,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             'category': node.category,
             'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-            'anonymous': node.is_anonymous(view_only_link),
+            'anonymous': node.has_anonymous_link(view_only_link),
             'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
                 if node.is_registration
                 else None,
