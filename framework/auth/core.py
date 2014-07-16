@@ -683,11 +683,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return self.get_recent_log_ids(since=midnight)
 
     def merge_user(self, user, save=False):
-        '''Merge a registered user into this account. This user will be
+        """Merge a registered user into this account. This user will be
         a contributor on any project
 
         :param user: A User object to be merged.
-        '''
+        """
         # Inherit emails
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
