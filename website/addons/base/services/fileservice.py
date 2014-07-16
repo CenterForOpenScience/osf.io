@@ -12,15 +12,15 @@ class FileService(BaseService):
         pass
 
     @abc.abstractmethod
-    def list(self, path):
-        pass
-
-    @abc.abstractmethod
     def download(self, path, **kwargs):
         pass
 
     @abc.abstractmethod
     def delete(self, path, **kwargs):
+        pass
+
+    @abc.abstractmethod
+    def list_files(self, path):
         pass
 
 

@@ -37,11 +37,11 @@ data must be migrated to GitLab.
 7. Build routing table to preserve old URLs
 	* On app server
 		* cd /opt/apps/osf
-		* sudo env/bin/python -m scripts.gitlab.routing_table
+		* sudo env/bin/python -m scripts.gitlab.routing_table --clear
 8. Migrate download counts from OSF files to GitLab
 	* On app server
 		* cd /opt/apps/osf
-		* python -m scripts.gitlab.migrate_counts
+		* sudo env/bin/python -m scripts.gitlab.migrate_counts
 9. Finalize settings
     * In website/settings/local.py remove 'osffiles' from `ADDONS_REQUESTED`.
     * In website/addons/gitlab/settings/defaults.py switch `ROUTE` from 'gitlab' to 'osffiles'.

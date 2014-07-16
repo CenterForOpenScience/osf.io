@@ -143,7 +143,7 @@ class TestHookLog(GitlabTestCase):
 
 class TestListFiles(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_files')
     def test_list_files_no_id(self, mock_list):
         self.node_settings.project_id = None
         self.node_settings.save()
@@ -154,7 +154,7 @@ class TestListFiles(GitlabTestCase):
         assert_equal(res.json, [])
         assert_false(mock_list.called)
 
-    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list')
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_files')
     def test_list_files(self, mock_list):
         mock_list.return_value = [
             {

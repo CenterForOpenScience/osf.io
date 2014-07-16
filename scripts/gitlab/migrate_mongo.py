@@ -52,7 +52,7 @@ def migrate_node(node):
         return
 
     # Ensure Gitlab project
-    user_settings = setup_user(node.contributors[0])
+    user_settings = setup_user(owner)
     node_settings = setup_node(node, check_ready=False)
 
     if node_settings._migration_done:

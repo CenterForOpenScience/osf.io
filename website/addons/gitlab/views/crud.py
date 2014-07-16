@@ -197,7 +197,7 @@ def gitlab_list_files(node_addon, auth, path='', **kwargs):
 
     file_service = fileservice.GitlabFileService(node_addon)
     try:
-        tree = file_service.list(path, sha, branch)
+        tree = file_service.list_files(path, sha, branch)
     except FileServiceError:
         raise HTTPError(http.BAD_REQUEST)
 

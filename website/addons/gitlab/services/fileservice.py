@@ -82,16 +82,6 @@ class GitlabFileService(fileservice.FileService):
             branch=branch,
         )
 
-    def list(self, path, sha, branch):
-        try:
-            return client.listrepositorytree(
-                self.addon_model.project_id,
-                path=path,
-                ref_name=sha or branch,
-            )
-        except GitlabError:
-            raise fileservice.ListFilesError()
-
     def download(self, path, ref):
         """
 
@@ -117,6 +107,16 @@ class GitlabFileService(fileservice.FileService):
             )
         except GitlabError:
             raise fileservice.FileDeleteError()
+
+    def list_files(self, path, sha, branch):
+        try:
+            return client.listrepositorytree(
+                self.addon_model.project_id,
+                path=path,
+                ref_name=sha or branch,
+            )
+        except GitlabError:
+            raise fileservice.ListFilesError()
 
     def list_branches(self):
         """
