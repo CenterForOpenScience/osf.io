@@ -87,13 +87,11 @@ def serialize_contributors(contribs, node):
 
 def add_contributor_json(user, current_user=None):
 
-    # get user projects
+    # get shared projects
     if current_user:
-        current_user_projects = set(current_user.node__contributed)
+        projects_in_common = current_user.get_projects_in_common(user)
     else:
-        current_user_projects = set()
-
-    projects_in_common = len(current_user_projects.intersection(set(user.node__contributed)))
+        projects_in_common = 0
 
     current_employment = None
     education = None

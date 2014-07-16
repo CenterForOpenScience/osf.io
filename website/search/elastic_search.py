@@ -452,18 +452,15 @@ def search_contributor(query, exclude=None, current_user=None):
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
 
-    # get user projects
-    if current_user:
-        current_user_projects = set(current_user.node__contributed)
-    else:
-        current_user_projects = set()
-
-
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
-        projects_in_common = len(current_user_projects.intersection(set(user.node__contributed)))
+
+        if current_user:
+            projects_in_common = current_user.get_projects_in_common(user)
+        else:
+            projects_in_common = 0
 
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
