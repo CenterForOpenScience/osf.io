@@ -2445,7 +2445,7 @@ def validate_permissions(schema, instance):
 
     """
     node = instance
-    contributor_ids = set([user._id for user in node.contributors])
+    contributor_ids = set([user._id for user in node.contributors if user])
     permission_ids = set(node.permissions.keys())
     mismatched_contributors = contributor_ids.difference(permission_ids)
     if mismatched_contributors:
