@@ -78,7 +78,11 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         """
         user_settings = setup_user(added)
         permissions = node.get_permissions(added)
-        access_level = translate_permissions(permissions)
+        try:
+            access_level = translate_permissions(permissions)
+        except ValueError as error:
+            logger.exception(error)
+            return
         client.addprojectmember(
             self.project_id, user_settings.user_id,
             access_level=access_level
