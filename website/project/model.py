@@ -60,6 +60,9 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
+def has_anonymous_link(node, link):
+    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
@@ -594,9 +597,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def private_link_keys_deleted(self):
         return [x.key for x in self.private_links if x.is_deleted]
-
-    def has_anonymous_link(self, link):
-        return any([x.anonymous for x in self.private_links_active if x.key == link])
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.

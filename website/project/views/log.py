@@ -7,7 +7,7 @@ from framework.auth import Auth, get_current_user, get_api_key, get_current_node
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 
-from website.project.model import NodeLog
+from website.project.model import NodeLog, has_anonymous_link
 from website.project.decorators import must_be_valid_project
 
 
@@ -71,7 +71,7 @@ def get_logs(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     page_num = int(request.args.get('pageNum', '').strip('/') or 0)
     link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = node.has_anonymous_link(link)
+    anonymous = has_anonymous_link(node, link)
 
     if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
