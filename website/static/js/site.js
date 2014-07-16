@@ -176,10 +176,10 @@
     $.osf.applyBindings = function(viewModel, selector) {
         var $elem = $(selector);
         if ($elem.length === 0) {
-            throw "No elements matching selector '" + selector + "'";
+            throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
         }
         if ($elem.length > 1) {
-            throw "Can't bind ViewModel to multiple elements.";
+            throw "Can't bind ViewModel to multiple elements."; // jshint ignore: line
         }
         // Ensure that the bound element is shown
         if ($elem.hasClass('scripted')){
@@ -201,8 +201,8 @@
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
-    var LOCAL_DATEFORMAT = 'YYYY-MM-DD LT';
-    var UTC_DATEFORMAT = 'YYYY-MM-DD LT UTC';
+    var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
+    var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
     $.osf.FormattableDate = function(date) {
         if (typeof date === 'string') {
             // The date as a Date object
