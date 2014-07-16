@@ -4,17 +4,23 @@ Create GitLab users and projects.
 
 import re
 import logging
+from modularodm import Q, signals
 
 from framework.mongo import StoredObject
 
-from website.models import Node
+from website.models import User, Node
 from website.app import init_app
+from website.project import model as project_model
 
 from website.addons.gitlab.api import client
 from website.addons.gitlab.utils import setup_user, setup_node
 
 app = init_app('website.settings', set_backends=True, routes=True)
 app.test_request_context().push()
+
+# Disconnect `Node` validators to avoid crashes due to invalid data
+signals.before_save.disconnect(project_model.validate_permissions)
+signals.before_save.disconnect(project_model.validate_visible_contributors)
 
 email_regex = re.compile(r'^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$', re.I)
 
@@ -35,6 +41,14 @@ def migrate_node(node):
 
     # Quit if no files
     if not node.files_current:
+        return
+
+    owner = node.contributors[0]
+
+    # Check for duplicate email addresses
+    email_duplicates = User.find(Q('username', 'eq', owner.username))
+    if email_duplicates.count() > 1:
+        logging.error('Duplicate email address: {0}'.format(owner.username))
         return
 
     # Ensure Gitlab project
@@ -76,3 +90,4 @@ def migrate_nodes():
 
 if __name__ == '__main__':
     migrate_nodes()
+
