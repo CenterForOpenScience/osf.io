@@ -114,9 +114,11 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
-<<<<<<< HEAD
                 'action': item.action,
                 'date': item.date,
+                // The node type, either 'project' or 'component'
+                // NOTE: This is NOT the component category (e.g. 'hypothesis')
+                'nodeType': item.node.node_type,
                 'nodeCategory': item.node.category,
                 'contributor': item.contributor,
                 'contributors': item.contributors,
@@ -128,24 +130,6 @@
                 'nodeTitle': item.node.title,
                 'nodeDescription': item.params.description_new
             });
-=======
-                "action": item.action,
-                "date": item.date,
-                // The node type, either 'project' or 'component'
-                // NOTE: This is NOT the component category (e.g. 'hypothesis')
-                "nodeType": item.node.node_type,
-                'nodeCategory': item.node.category,
-                "contributor": item.contributor,
-                "contributors": item.contributors,
-                "nodeUrl": item.node.url,
-                "userFullName": item.user.fullname,
-                "userURL": item.user.url,
-                "apiKey": item.api_key,
-                "params": item.params,
-                "nodeTitle": item.node.title,
-                "nodeDescription": item.params.description_new
-            })
->>>>>>> develop
         });
         return mappedLogs;
     };
