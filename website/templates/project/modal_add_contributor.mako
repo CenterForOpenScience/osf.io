@@ -70,10 +70,41 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
                                         <td >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" >
+                                                <span data-bind= "text:contributor.fullname"></span>
+                                            </a><br>
 
-                                            <span   data-bind="text: contributor.fullname" ></span>
-                                            <br><span  data-bind="text: contributor.employment"></span><br>
-                                            <span   data-bind="text: contributor.education"></span>
+
+                                                <span data-bind="if: contributor.employment">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind="text: contributor.employment">
+                                                    </span><br>
+                                                </span>
+
+
+                                                <span data-bind="if: contributor.education">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind= "text: contributor.education">
+                                                    </span><br>
+                                                </span>
+
+                                                <span data-bind="if: contributor.projects_in_common == 1">
+                                                    <span class = 'small'>
+                                                        <p><b class= 'small'
+                                                              data-bind= "text: contributor.projects_in_common"></b>
+                                                              project in common</p>
+                                                    </span>
+                                                </span>
+
+                                                <span data-bind="if: contributor.projects_in_common != 1">
+                                                    <span class = 'small'>
+                                                        <p><b class = 'small'
+                                                              data-bind= "text: contributor.projects_in_common"></b>
+                                                              projects in common</p>
+                                                    </span>
+                                                </span>
 
                                             <span
                                                     class='text-muted'
@@ -134,16 +165,15 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
-                                            <a href="#" class='text-muted'
-                                                    data-bind="
-                                                        visible: !contributor.registered,
-                                                        click: $root.goToPage.bind($data, 'invite')">(unregistered)
-                                            </a>
-                                        </td>
+
                                         <td>
-                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                            <span   data-bind="text: contributor.fullname"></span>
+
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
+
                                     </tr>
                                 </tbody>
                             </table>
@@ -242,3 +272,4 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
+
