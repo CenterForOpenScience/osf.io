@@ -101,7 +101,7 @@ class AddonModelMixin(StoredObject):
         addon = self.get_addon(addon_name)
         if addon:
             return addon
-        return self.add_addon(addon_name, auth=auth, log=True, override=override)
+        return self.add_addon(addon_name, auth=auth, log=log, override=override)
 
     def delete_addon(self, addon_name, auth=None):
         """Delete an add-on from the owner.
