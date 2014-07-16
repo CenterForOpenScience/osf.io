@@ -227,6 +227,7 @@ $(document).ready(function() {
         'data-content', visibilityInfoHtml
     ).popover();
 
+
     ////////////////////
     // Event Handlers //
     ////////////////////

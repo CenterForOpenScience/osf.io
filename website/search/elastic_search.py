@@ -410,13 +410,13 @@ def _format_result(result, parent, parent_info):
     return formatted_result
 
 
-def search_contributor(query, exclude=None):
+def search_contributor(query, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
-    :param: Search query
-    :return: List of dictionaries, each containing the ID, full name, and
-        gravatar URL of an OSF user
+    :param: Search query, current_user
+    :return: List of dictionaries, each containing the ID, full name,
+        most recent employment and education, gravatar URL of an OSF user
 
     """
     query.replace(" ", "_")
@@ -452,24 +452,49 @@ def search_contributor(query, exclude=None):
     if exclude:
         docs = (x for x in docs if x.get('id') not in exclude)
 
+    # get user projects
+    if current_user:
+        current_user_projects = set(current_user.node__contributed)
+    else:
+        current_user_projects = set()
+
+
     users = []
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+        projects_in_common = len(current_user_projects.intersection(set(user.node__contributed)))
+
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
         if user.is_active():  # exclude merged, unregistered, etc.
+            current_employment = None
+            education = None
+
+            if user.jobs:
+                current_employment = user.jobs[0]['institution']
+
+            if user.schools:
+                education = user.schools[0]['institution']
+
             users.append({
                 'fullname': doc['user'],
                 'id': doc['id'],
+                'employment': current_employment,
+                'education': education,
+                'projects_in_common': projects_in_common,
                 'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
                 ),
+                'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active()
+
             })
+
+
 
     return {'users': users}
