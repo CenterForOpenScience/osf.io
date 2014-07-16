@@ -11,7 +11,7 @@
         define(['jquery', 'knockout', 'knockout-punches', 'osfutils'], factory);
     } else {
         global.LogFeed = factory($, global.ko);
-        if (typeof $script === 'function') { $script.done('logFeed')};
+        if (typeof $script === 'function') { $script.done('logFeed');}
     }
 }(this, function($, ko) {
     'use strict';
@@ -21,18 +21,9 @@
      */
     var Log = function(params) {
         var self = this;
-        self.anonymous = params.anonymous;
-        self.action = params.action;
+
+        $.extend(self, params);
         self.date = new FormattableDate(params.date);
-        self.nodeType = params.nodeType;
-        self.nodeDescription = params.nodeDescription;
-        self.nodeTitle = params.nodeTitle;
-        self.contributors = params.contributors;
-        self.nodeUrl = params.nodeUrl;
-        self.userFullName = params.userFullName;
-        self.userURL = params.userURL;
-        self.apiKey = params.apiKey;
-        self.params = params.params; // Extra log params
         self.wikiUrl = ko.computed(function() {
             return self.nodeUrl + 'wiki/' + self.params.page;
         });
@@ -41,8 +32,7 @@
          * Given an item in self.contributors, return its anchor element representation.
          */
         self._asContribLink = function(person) {
-            return '<a class="contrib-link" href="/profile/' + person.id + '/">'
-                    + person.fullname + "</a>"
+            return '<a class="contrib-link" href="/profile/' + person.id + '/">' + person.fullname + '</a>';
         };
 
         /**
@@ -73,7 +63,7 @@
 
             }
             return ret;
-        })
+        });
     };
 
     /**
@@ -97,7 +87,7 @@
                 data:{
                     pageNum:pageNum
                 },
-                type: "get",
+                type: 'get',
                 cache: false,
                 success: function(response){
                     // Initialize LogViewModel
@@ -130,21 +120,21 @@
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
                 "anonymous": item.anonymous,
-                "action": item.action,
-                "date": item.date,
+                'action': item.action,
+                'date': item.date,
                 // The node type, either 'project' or 'component'
                 // NOTE: This is NOT the component category (e.g. 'hypothesis')
-                "nodeType": item.node.node_type,
+                'nodeType': item.node.node_type,
                 'nodeCategory': item.node.category,
-                "contributors": item.contributors,
-                "nodeUrl": item.node.url,
-                "userFullName": item.user.fullname,
-                "userURL": item.user.url,
-                "apiKey": item.api_key,
-                "params": item.params,
-                "nodeTitle": item.node.title,
-                "nodeDescription": item.params.description_new
-            })
+                'contributors': item.contributors,
+                'nodeUrl': item.node.url,
+                'userFullName': item.user.fullname,
+                'userURL': item.user.url,
+                'apiKey': item.api_key,
+                'params': item.params,
+                'nodeTitle': item.node.title,
+                'nodeDescription': item.params.description_new
+            });
         });
         return mappedLogs;
     };
@@ -163,7 +153,7 @@
         self.logs = createLogs(logs);
         self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
         self.init();
-    }
+    };
     /**
      * A log list feed.
      * @param {string} selector

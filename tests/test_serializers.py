@@ -2,7 +2,7 @@
 
 from nose.tools import *  # PEP8 asserts
 
-from tests.factories import ProjectFactory, UserFactory
+from tests.factories import ProjectFactory, UserFactory, RegistrationFactory
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
@@ -26,3 +26,10 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have id and primary
         assert_equal(result['summary']['id'], node._primary_key)
         assert_true(result['summary']['primary'], True)
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
+    def test_get_summary_for_registration_uses_correct_date_format(self):
+        reg = RegistrationFactory()
+        res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
+        assert_equal(res['summary']['registered_date'],
+                reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
