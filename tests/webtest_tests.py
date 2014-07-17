@@ -15,7 +15,7 @@ from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory, PrivateLinkFactory)
+                             UnregUserFactory, UnconfirmedUserFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -427,7 +427,6 @@ class TestComponents(OsfTestCase):
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_not_in('Components', res)
-
 
 
 class TestMergingAccounts(OsfTestCase):
