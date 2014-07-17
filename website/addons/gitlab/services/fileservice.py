@@ -58,13 +58,11 @@ class GitlabFileService(fileservice.FileService):
     def upload(self, path, filelike, branch, user_addon):
         """
 
-        :raises: FileEmptyError, FileTooLargeError, FileUploadError
+        :raises: FileTooLargeError, FileUploadError
 
         """
         content = filelike.read()
 
-        if not content:
-            raise fileservice.FileEmptyError()
         check_file_size(self.addon_model, filelike, at_end=True)
 
         content = base64.b64encode(content)

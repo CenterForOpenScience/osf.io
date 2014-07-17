@@ -77,15 +77,6 @@ class TestFileService(GitlabTestCase):
             self.node_settings
         )
 
-    def test_upload_empty(self):
-        with assert_raises(fileservice.FileEmptyError):
-            self.file_service.upload(
-                'path',
-                StringIO(''),
-                'master',
-                self.user_settings
-            )
-
     def test_upload_too_large(self):
         nchar = self.node_settings.config.max_file_size * 1024 * 1024 * 2
         sio = StringIO('q' * nchar)
