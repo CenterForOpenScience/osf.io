@@ -169,6 +169,12 @@ def mongodump(path):
         port=port,
         path=path,
         pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
+
     run(cmd, echo=True)
 
     print()
@@ -196,6 +202,11 @@ def mongorestore(path, drop=False):
         db=db,
         port=port,
         pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
 
     if drop:
         cmd += " --drop"
