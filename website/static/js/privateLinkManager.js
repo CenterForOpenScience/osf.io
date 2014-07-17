@@ -35,8 +35,9 @@
         }
 
         function onFetchError() {
-          //TODO
-          console.log('an error occurred');
+            bootbox.alert('Could not retrieve settings. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
         }
 
         function fetch() {
