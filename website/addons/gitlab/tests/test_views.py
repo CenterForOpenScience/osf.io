@@ -141,10 +141,78 @@ class TestHookLog(GitlabTestCase):
         assert_true(mock_add_log.called)
 
 
+class TestHGridRoot(GitlabTestCase):
+
+    def test_hgrid_no_project_id(self):
+        self.node_settings.project_id = None
+        self.node_settings.save()
+        url = self.project.api_url_for('gitlab_hgrid_root_public')
+        res = self.app.get(
+            url,
+            auth=self.user.auth
+        )
+        urls = utils.build_full_urls(
+            self.project, {'type': 'tree'}, path='',
+            branch=gitlab_settings.DEFAULT_BRANCH, sha=None,
+        )
+        assert_equal(urls, res.json[0]['urls'])
+        extra = utils.render_branch_picker(
+            gitlab_settings.DEFAULT_BRANCH,
+            None,
+            [gitlab_settings.DEFAULT_BRANCH],
+        )
+        assert_equal(extra, res.json[0]['extra'])
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_branches')
+    def test_hgrid_no_branches(self, mock_list_branches):
+        mock_list_branches.return_value = []
+        url = self.project.api_url_for('gitlab_hgrid_root_public')
+        res = self.app.get(
+            url,
+            auth=self.user.auth
+        )
+        urls = utils.build_full_urls(
+            self.project, {'type': 'tree'}, path='',
+            branch=gitlab_settings.DEFAULT_BRANCH, sha=None,
+        )
+        assert_equal(urls, res.json[0]['urls'])
+        extra = utils.render_branch_picker(
+            gitlab_settings.DEFAULT_BRANCH, None,
+            [gitlab_settings.DEFAULT_BRANCH],
+        )
+        assert_equal(extra, res.json[0]['extra'])
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_branches')
+    @mock.patch('website.addons.gitlab.views.crud.gitlab_utils.get_branch_and_sha')
+    def test_hgrid(self, mock_get_refs, mock_list_branches):
+        branch = 'master'
+        sha = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
+        mock_get_refs.return_value = [branch, sha]
+        mock_list_branches.return_value = [
+            {'name': 'master'},
+            {'name': 'develop'},
+        ]
+        url = self.project.api_url_for('gitlab_hgrid_root_public')
+        res = self.app.get(
+            url,
+            auth=self.user.auth
+        )
+        urls = utils.build_full_urls(
+            self.project, {'type': 'tree'}, path='',
+            branch=branch, sha=sha,
+        )
+        assert_equal(urls, res.json[0]['urls'])
+        extra = utils.render_branch_picker(
+            branch, sha,
+            ['master', 'develop'],
+        )
+        assert_equal(extra, res.json[0]['extra'])
+
+
 class TestListFiles(GitlabTestCase):
 
     @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_files')
-    def test_list_files_no_id(self, mock_list):
+    def test_list_files_no_project_id(self, mock_list):
         self.node_settings.project_id = None
         self.node_settings.save()
         res = self.app.get(
@@ -153,6 +221,15 @@ class TestListFiles(GitlabTestCase):
         )
         assert_equal(res.json, [])
         assert_false(mock_list.called)
+
+    @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_files')
+    def test_list_files_error(self, mock_list):
+        mock_list.side_effect = fileservice.FileUploadError()
+        res = self.app.get(
+            self.project.api_url_for('gitlab_list_files'),
+            auth=self.user.auth
+        )
+        assert_equal(res.json, [])
 
     @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_files')
     def test_list_files(self, mock_list):

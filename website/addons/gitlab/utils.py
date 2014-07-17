@@ -7,20 +7,20 @@ import urllib
 import logging
 import httplib as http
 from slugify import Slugify
+from mako.template import Template
 from dateutil.parser import parse as parse_date
 
 from framework.exceptions import HTTPError
 from framework.auth import get_user
 from framework.analytics import get_basic_counters
 
-
+from website import settings
 from website.addons.base import AddonError
+from website.addons.base.utils import NodeLogger
 from website.profile.utils import reduce_permissions
 from website.dates import FILE_MODIFIED
 
-from website.addons.base.utils import NodeLogger
-
-from . import settings as gitlab_settings
+from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.api import client, GitlabError
 from website.addons.gitlab.services import hookservice
 
@@ -468,3 +468,13 @@ def get_branch_and_sha(node_settings, data):
     branch = branch or get_default_branch(node_settings)
 
     return branch, sha
+
+
+template_path = os.path.join(
+    settings.BASE_PATH, 'addons', 'gitlab', 'templates', 'branch_picker.mako'
+)
+branch_picker_template = Template(open(template_path).read())
+
+
+def render_branch_picker(branch, sha, branches):
+    return branch_picker_template.render(**locals())
