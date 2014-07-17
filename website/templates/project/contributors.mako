@@ -118,7 +118,7 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <span data-bind="text: anonymous"></span>
+                            <span data-bind="text: anonymousDisplay"></span>
                         </td>
                         <td class="col-sm-0">
                             <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">

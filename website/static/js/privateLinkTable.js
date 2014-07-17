@@ -96,7 +96,7 @@
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
         });
 
-        self.anonymous = ko.computed(function(){
+        self.anonymousDisplay = ko.computed(function(){
             if(data.anonymous){
                 return "Yes";
             }
