@@ -39,7 +39,7 @@
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
                             <div data-bind="foreach:nodes">
-                                <div data-bind="style:{'margin-left':margin}">
+                                <div data-bind="style:{'marginLeft':margin}">
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <span data-bind="text:title"></span>
                                 </div>
