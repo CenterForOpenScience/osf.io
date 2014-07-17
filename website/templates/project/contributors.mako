@@ -229,7 +229,7 @@
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
 
-    $("body").on('click', ".link-url", function(e) { e.target.select() });
+    $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
 
     </script>
 </%def>
