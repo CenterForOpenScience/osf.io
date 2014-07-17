@@ -532,7 +532,8 @@ def _view_project(node, auth, primary=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category_display,
+            'node_type': node.project_or_component,
             'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
@@ -544,15 +545,15 @@ def _view_project(node, auth, primary=False):
                 'chicago': node.citation_chicago,
             },
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node.logs else '',
+            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
+            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %I:%M %p') if node.is_registration else '',
+            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -659,7 +660,7 @@ def private_link_table(**kwargs):
 def get_editable_children(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    
+
     if not node.can_edit(auth):
         return
 
@@ -724,9 +725,10 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category,
+            'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
+            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
                 if node.is_registration
                 else None,
             'nlogs': None,

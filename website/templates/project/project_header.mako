@@ -1,9 +1,9 @@
 <%
     import json
-    is_project = node['category'] == 'project'
+    is_project = node['node_type'] == 'project'
 %>
 % if node['is_registration']:
-    <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
+  <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
     </div>
     <style type="text/css">
     .watermarked {
@@ -14,7 +14,7 @@
 % endif
 
 % if node['link'] and not node['is_public'] and not user['can_edit']:
-    <div class="alert alert-info">This ${node['category']} is being viewed through the read-only, private link. Anyone with the link can view this project. Keep the link safe.
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through the read-only, private link. Anyone with the link can view this project. Keep the link safe.
     </div>
 % endif
 
@@ -123,7 +123,7 @@
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <a class="navbar-brand collapse visible-xs">
-                ${'Project' if node['category'] == 'project' else 'Component'} Navigation
+              ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
             </a>
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
               <span class="sr-only">Toggle navigation</span>
