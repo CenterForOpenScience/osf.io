@@ -203,7 +203,7 @@ class NodeProjectCollector(object):
         visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
         expanded = node.is_expanded(auth=self.auth)
-        can_view = True # node.can_view(auth=self.auth)
+        can_view = node.can_view(auth=self.auth)
         children = []
         modified_delta = delta_date(node.date_modified)
         date_modified = node.date_modified.isoformat()
