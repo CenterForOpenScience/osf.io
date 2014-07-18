@@ -479,9 +479,11 @@
         $(document).click(function (e) {
             var container = $("#project-grid");
             var altContainer = $(".project-details");
+            var gridBackground = $(".grid-canvas");
 
-            if (!container.is(e.target) && !altContainer.is(e.target) // if the target of the click isn't the container...
-                && container.has(e.target).length === 0 && altContainer.has(e.target).length === 0)// ... nor a descendant of the container
+            if ((!container.is(e.target) && !altContainer.is(e.target) // if the target of the click isn't the container...
+                && container.has(e.target).length === 0 && altContainer.has(e.target).length === 0) // ... nor a descendant of the container
+                || gridBackground.is(e.target)) // or the target of the click is the background of the hgrid div
             {
                 self.grid.grid.setSelectedRows([]);
                 self.grid.grid.resetActiveCell();
