@@ -157,14 +157,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_check_user_access_if_user_is_None(self):
         assert_false(check_can_access(self.project, None))
 
-    def test_anonymous_link_hide_contributor(self):
-        link2 = PrivateLinkFactory(anonymous=True)
-        link2.nodes.append(self.project)
-        link2.save()
-
-        res = self.app.get(self.project_url, {'view_only': link2.key})
-        assert_in("Anonymous Contributors", res.body)
-        assert_not_in(self.user.fullname, res)
 
 class TestProjectViews(OsfTestCase):
 
