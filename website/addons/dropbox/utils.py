@@ -59,17 +59,20 @@ class DropboxNodeLogger(NodeLogger):
             })
         return params
 
+
 def is_subdir(path, directory):
     if not (path and directory):
         return False
     #make both absolute
-    abs_directory = os.path.abspath(directory)
-    abs_path = os.path.abspath(path)
+    abs_directory = os.path.abspath(directory).lower()
+    abs_path = os.path.abspath(path).lower()
     return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
+
 
 def is_authorizer(auth, node_addon):
     """Return if the auth object's user is the same as the authorizer of the node."""
     return auth.user == node_addon.user_settings.owner
+
 
 def abort_if_not_subdir(path, directory):
     """Check if path is a subdirectory of directory. If not, abort the current
