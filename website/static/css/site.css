@@ -1409,22 +1409,26 @@ div#logScope a.moreLogs{
 }
 /* Contributors list */
 
-ol#contributorsview {
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors ol {
     margin:0;
     padding:0;
     display:inline;
 }
 
-ol#contributorsview li {
+#contributors ol li {
     list-style-type:none;
     display:inline;
 }
 
-ol#contributorsview li a:after {
+#contributors ol li:after {
     content: ",";
 }
 
-ol#contributorsview li:last-child a:after {
+#contributors ol li:last-child:after {
     content: "";
 }
 

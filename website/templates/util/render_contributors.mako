@@ -4,9 +4,8 @@
                 ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}
                 ${'contributor-self' if user['id'] == contributor['id'] else ''}">
         % if contributor['registered']:
-        <a class='userProfile' href="/${contributor['id']}/">${contributor['fullname']}</a>
+        <a class='userProfile' href="/${contributor['id']}/">${contributor['fullname']}</a></li>
         % else:
-        <span>${contributor['fullname']}</span>
+        <span>${contributor['fullname']}</span></li>
         %endif
-    </li>
 % endfor
