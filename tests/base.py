@@ -82,15 +82,14 @@ class OsfTestCase(DbTestCase):
             self.start_gitlab_patches()
 
     def start_gitlab_patches(self):
-
         edit_user_patch = mock.patch(
-            'website.addons.gitlab.model.client.edituser'
+            'website.addons.gitlab.services.userservice.GitlabUserService.edit'
         )
         edit_user_mock = edit_user_patch.start()
         edit_user_mock.return_value = {}
 
         create_patch = mock.patch(
-            'website.addons.gitlab.utils.client.createuser'
+            'website.addons.gitlab.services.userservice.GitlabUserService.create'
         )
         create_mock = create_patch.start()
         create_mock.return_value = {
@@ -107,25 +106,25 @@ class OsfTestCase(DbTestCase):
         setup_user_mock.return_value = setup_user_rv
 
         add_member_patch = mock.patch(
-            'website.addons.gitlab.model.client.addprojectmember'
+            'website.addons.gitlab.services.projectservice.GitlabProjectService.add_member'
         )
         add_member_mock = add_member_patch.start()
         add_member_mock.return_value = True
 
         edit_member_patch = mock.patch(
-            'website.addons.gitlab.model.client.editprojectmember'
+            'website.addons.gitlab.services.projectservice.GitlabProjectService.edit_member'
         )
         edit_member_mock = edit_member_patch.start()
         edit_member_mock.return_value = True
 
         copy_patch = mock.patch(
-            'website.addons.gitlab.model.client.createcopy'
+            'website.addons.gitlab.services.projectservice.GitlabProjectService.copy'
         )
         copy_mock = copy_patch.start()
         copy_mock.return_value = {'id': 1}
 
         branches_patch = mock.patch(
-            'website.addons.gitlab.utils.client.listbranches'
+            'website.addons.gitlab.services.fileservice.GitlabFileService.list_branches'
         )
         branches_mock = branches_patch.start()
         branches_mock.return_value = [

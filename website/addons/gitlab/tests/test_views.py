@@ -107,7 +107,7 @@ class TestHookLog(GitlabTestCase):
         )
 
     @mock.patch('website.addons.gitlab.views.hooks.add_diff_log')
-    @mock.patch('website.addons.gitlab.views.hooks.client.listrepositorycommitdiff')
+    @mock.patch('website.addons.gitlab.views.hooks.fileservice.GitlabFileService.get_commit_diff')
     def test_add_log_from_osf(self, mock_list_diff, mock_add_log):
         payload = {
             'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
@@ -123,7 +123,7 @@ class TestHookLog(GitlabTestCase):
         assert_false(mock_add_log.called)
 
     @mock.patch('website.addons.gitlab.views.hooks.add_diff_log')
-    @mock.patch('website.addons.gitlab.views.hooks.client.listrepositorycommitdiff')
+    @mock.patch('website.addons.gitlab.views.hooks.fileservice.GitlabFileService.get_commit_diff')
     def test_add_log_from_non_osf_user(self, mock_list_diff, mock_add_log):
         name, email = fake.name(), fake.email()
         payload = {
@@ -183,7 +183,7 @@ class TestHGridRoot(GitlabTestCase):
         assert_equal(extra, res.json[0]['extra'])
 
     @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.list_branches')
-    @mock.patch('website.addons.gitlab.views.crud.gitlab_utils.get_branch_and_sha')
+    @mock.patch('website.addons.gitlab.views.crud.utils_files.get_branch_and_sha')
     def test_hgrid(self, mock_get_refs, mock_list_branches):
         branch = 'master'
         sha = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
@@ -486,8 +486,8 @@ class TestUploadFile(GitlabTestCase):
     @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
     @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
     @mock.patch('website.addons.gitlab.utils.check_project_initialized')
-    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
-    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    @mock.patch('website.addons.gitlab.utils.projectservice.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.userservice.client.createuser')
     def test_upload_no_gitlab_project(self,
                                       mock_create_user,
                                       mock_create_project,
@@ -525,8 +525,8 @@ class TestUploadFile(GitlabTestCase):
     @mock.patch('website.addons.gitlab.views.crud.fileservice.GitlabFileService.upload')
     @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
     @mock.patch('website.addons.gitlab.utils.check_project_initialized')
-    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
-    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    @mock.patch('website.addons.gitlab.utils.projectservice.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.userservice.client.createuser')
     def test_upload_no_gitlab_project_or_user(self,
                                               mock_create_user,
                                               mock_create_project,

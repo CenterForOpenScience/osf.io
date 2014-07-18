@@ -11,8 +11,8 @@ from website.project.decorators import must_be_valid_project
 from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
-from website.addons.gitlab.api import client
 from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.services import fileservice
 from website.addons.gitlab.utils import (
     resolve_gitlab_hook_author, GitlabNodeLogger
 )
@@ -69,9 +69,8 @@ def add_hook_log(node_settings, commit, save=False):
     date = parse_date(commit['timestamp'])
     gitlab_user = resolve_gitlab_hook_author(commit['author'])
 
-    diffs = client.listrepositorycommitdiff(
-        node_settings.project_id, commit['id']
-    )
+    file_service = fileservice.GitlabFileService(node_settings)
+    diffs = file_service.get_commit_diff(commit['id'])
 
     for diff in diffs:
         add_diff_log(node, diff, sha, date, gitlab_user, save=False)

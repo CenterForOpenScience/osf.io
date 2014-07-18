@@ -12,6 +12,7 @@ app = init_app(
 class GitlabTestCase(AddonTestCase):
 
     TEST_FOR = settings.ADDONS_AVAILABLE_DICT['gitlab']
+    PATCH_GITLAB = False
 
     def create_app(self):
         return TestApp(app)

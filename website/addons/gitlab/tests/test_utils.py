@@ -18,8 +18,8 @@ from website.dates import FILE_MODIFIED
 from website.addons.gitlab.tests import GitlabTestCase
 from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
 
-from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab import utils
+from website.addons.gitlab import utils_files
 from website.addons.gitlab.api import GitlabError
 
 
@@ -234,32 +234,24 @@ class TestSetupUser(GitlabTestCase):
         super(TestSetupUser, self).setUp()
         self.user_settings.user_id = None
 
-    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    @mock.patch('website.addons.gitlab.utils.userservice.client.createuser')
     def test_setup_user(self, mock_create_user):
         mock_create_user.return_value = {
             'id': 1,
             'username': 'freddie'
         }
         utils.setup_user(self.user)
-        mock_create_user.assert_called_with(
-            name=self.user.fullname,
-            username=self.user._id,
-            password=None,
-            email=self.user.username,
-            encrypted_password=self.user.password,
-            skip_confirmation=True,
-            projects_limit=gitlab_settings.PROJECTS_LIMIT,
-        )
+        assert_true(mock_create_user.called)
         assert_equal(self.user_settings.user_id, 1)
         assert_equal(self.user_settings.username, 'freddie')
 
-    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    @mock.patch('website.addons.gitlab.utils.userservice.client.createuser')
     def test_setup_user_gitlab_error(self, mock_create_user):
         mock_create_user.side_effect = GitlabError('Failed')
         with assert_raises(AddonError):
             utils.setup_user(self.user)
 
-    @mock.patch('website.addons.gitlab.utils.client.createuser')
+    @mock.patch('website.addons.gitlab.utils.userservice.GitlabUserService.create')
     def test_setup_user_already_exists(self, mock_create_user):
         self.user_settings.user_id = 1
         utils.setup_user(self.user)
@@ -273,31 +265,32 @@ class TestSetupNode(GitlabTestCase):
         self.node_settings.project_id = None
 
     @mock.patch('website.addons.gitlab.utils.hookservice.GitlabHookService.create')
-    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.projectservice.GitlabProjectService.create')
     def test_setup_node(self, mock_create_project, mock_create_hook):
         mock_create_project.return_value = {
             'id': 1,
         }
         utils.setup_node(self.project)
         mock_create_project.assert_called_with(
-            self.user_settings.user_id, self.project._id
+            self.user_settings,
+            self.project._id,
         )
         mock_create_hook.assert_called_with(save=True)
 
-    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.projectservice.client.createprojectuser')
     def test_setup_node_gitlab_error(self, mock_create_node):
         mock_create_node.side_effect = GitlabError('Failed')
         with assert_raises(AddonError):
             utils.setup_node(self.project)
 
-    @mock.patch('website.addons.gitlab.utils.client.createprojectuser')
+    @mock.patch('website.addons.gitlab.utils.projectservice.GitlabProjectService.create')
     def test_setup_node_already_exists(self, mock_create_project):
         self.node_settings.project_id = 1
         utils.setup_node(self.project)
         assert_false(mock_create_project.called)
 
 
-class TestResolveGitlabCommitAuthor(OsfTestCase):
+class TestResolveGitlabCommitAuthor(GitlabTestCase):
 
     def setUp(self):
         super(TestResolveGitlabCommitAuthor, self).setUp()
@@ -333,7 +326,7 @@ class TestResolveGitlabCommitAuthor(OsfTestCase):
         )
 
 
-class TestResolveGitlabHookAuthor(OsfTestCase):
+class TestResolveGitlabHookAuthor(GitlabTestCase):
 
     def setUp(self):
         super(TestResolveGitlabHookAuthor, self).setUp()
@@ -391,10 +384,11 @@ class TestSerializeCommit(GitlabTestCase):
             }
         )
 
+
 class TestRefOrDefault(GitlabTestCase):
 
     def test_get_ref_branch_and_sha(self):
-        ref = utils.ref_or_default(
+        ref = utils_files.ref_or_default(
             self.node_settings,
             {
                 'sha': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
@@ -404,56 +398,55 @@ class TestRefOrDefault(GitlabTestCase):
         assert_equal(ref, '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
 
     def test_get_ref_branch(self):
-        ref = utils.ref_or_default(self.node_settings, {'branch': 'master'})
+        ref = utils_files.ref_or_default(self.node_settings, {'branch': 'master'})
         assert_equal(ref, 'master')
 
-    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    @mock.patch('website.addons.gitlab.utils.projectservice.GitlabProjectService.get')
     def test_get_ref_project_id(self, mock_get_project):
         mock_get_project.return_value = {
             'default_branch': 'master',
         }
-        ref = utils.ref_or_default(self.node_settings, {})
+        ref = utils_files.ref_or_default(self.node_settings, {})
         assert_equal(ref, 'master')
 
     def test_get_ref_no_id_no_refs(self):
         self.node_settings.project_id = None
         with assert_raises(AddonError):
-            utils.ref_or_default(self.node_settings, {})
+            utils_files.ref_or_default(self.node_settings, {})
+
 
 class TestDefaultRefs(GitlabTestCase):
 
-    @mock.patch('website.addons.gitlab.utils.client.getproject')
+    @mock.patch('website.addons.gitlab.utils.projectservice.GitlabProjectService.get')
     def test_get_default_branch(self, mock_get_project):
         mock_get_project.return_value = {
             'default_branch': 'master',
         }
         assert_equal(
-            utils.get_default_branch(self.node_settings),
+            utils_files.get_default_branch(self.node_settings),
             'master'
         )
 
-    @mock.patch('website.addons.gitlab.utils.client.listrepositorycommits')
+    @mock.patch('website.addons.gitlab.utils_files.fileservice.GitlabFileService.list_commits')
     def test_get_default_file_sha(self, mock_commits):
         mock_commits.return_value = [
             {
                 'id': '47b79b37ef1cf6f944f71ea13c6667ddd98b9804',
             }
         ]
-        utils.get_default_file_sha(
-            self.node_settings,
-            'pizza.py', branch='master',
+        utils_files.get_default_file_sha(
+            self.node_settings, 'pizza.py', 'master',
         )
         mock_commits.assert_called_with(
-            self.node_settings.project_id,
-            ref_name='master', path='pizza.py',
+            'master', 'pizza.py'
         )
 
     def test_get_default_file_sha_no_project_id(self):
         self.node_settings.project_id = None
         with assert_raises(AddonError):
-            utils.get_default_file_sha(self.node_settings, path='pizza.py')
+            utils_files.get_default_file_sha(self.node_settings, path='pizza.py')
 
-    @mock.patch('website.addons.gitlab.utils.client.listbranch')
+    @mock.patch('website.addons.gitlab.utils_files.fileservice.GitlabFileService.list_branch')
     def test_get_branch_id(self, mock_list_branch):
         mock_list_branch.return_value = {
             'name': 'master',
@@ -462,11 +455,11 @@ class TestDefaultRefs(GitlabTestCase):
             }
         }
         assert_equal(
-            utils.get_branch_id(self.node_settings, 'master'),
+            utils_files.get_branch_id(self.node_settings, 'master'),
             '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
         )
 
-    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    @mock.patch('website.addons.gitlab.utils_files.fileservice.GitlabFileService.list_branches')
     def test_get_default_branch_and_sha_one_branch(self, mock_list_branches):
         mock_list_branches.return_value = [
             {
@@ -477,12 +470,12 @@ class TestDefaultRefs(GitlabTestCase):
             }
         ]
         assert_equal(
-            utils.get_default_branch_and_sha(self.node_settings),
+            utils_files.get_default_branch_and_sha(self.node_settings),
             ('master', '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
         )
 
-    @mock.patch('website.addons.gitlab.utils.client.getproject')
-    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    @mock.patch('website.addons.gitlab.utils_files.projectservice.GitlabProjectService.get')
+    @mock.patch('website.addons.gitlab.utils_files.fileservice.GitlabFileService.list_branches')
     def test_get_default_branch_and_sha_multi_branch(self, mock_list_branches, mock_get_project):
         mock_list_branches.return_value = [
             {
@@ -502,12 +495,12 @@ class TestDefaultRefs(GitlabTestCase):
             'default_branch': 'develop',
         }
         assert_equal(
-            utils.get_default_branch_and_sha(self.node_settings),
+            utils_files.get_default_branch_and_sha(self.node_settings),
             ('develop', '0c015ac47ee16eb0fc17c0a6417d57622bbf142d')
         )
 
-    @mock.patch('website.addons.gitlab.utils.client.getproject')
-    @mock.patch('website.addons.gitlab.utils.client.listbranches')
+    @mock.patch('website.addons.gitlab.utils_files.projectservice.GitlabProjectService.get')
+    @mock.patch('website.addons.gitlab.utils_files.fileservice.GitlabFileService.list_branches')
     def test_get_default_branch_and_sha_multi_branch_not_found(self, mock_list_branches, mock_get_project):
         mock_list_branches.return_value = [
             {
@@ -527,11 +520,11 @@ class TestDefaultRefs(GitlabTestCase):
             'default_branch': 'feature/gitlab',
         }
         with assert_raises(AddonError):
-            utils.get_default_branch_and_sha(self.node_settings)
+            utils_files.get_default_branch_and_sha(self.node_settings)
 
     def test_get_branch_and_sha_both_provided(self):
         assert_equal(
-            utils.get_branch_and_sha(
+            utils_files.get_branch_and_sha(
                 self.node_settings,
                 {
                     'branch': 'master',
@@ -541,11 +534,11 @@ class TestDefaultRefs(GitlabTestCase):
             ('master', '47b79b37ef1cf6f944f71ea13c6667ddd98b9804')
         )
 
-    @mock.patch('website.addons.gitlab.utils.get_branch_id')
+    @mock.patch('website.addons.gitlab.utils_files.get_branch_id')
     def test_get_branch_and_sha_branch_provided(self, mock_branch_id):
         mock_branch_id.return_value = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
         assert_equal(
-            utils.get_branch_and_sha(
+            utils_files.get_branch_and_sha(
                 self.node_settings,
                 {
                     'branch': 'master',
@@ -556,19 +549,19 @@ class TestDefaultRefs(GitlabTestCase):
 
     def test_get_branch_and_sha_sha_provided(self):
         with assert_raises(ValueError):
-            utils.get_branch_and_sha(
+            utils_files.get_branch_and_sha(
                 self.node_settings,
                 {
                     'sha': '2e84e78b5dfdb4a72132e08c9684b0e1a7e97bc2'
                 }
             )
 
-    @mock.patch('website.addons.gitlab.utils.get_default_branch_and_sha')
+    @mock.patch('website.addons.gitlab.utils_files.get_default_branch_and_sha')
     def test_get_branch_and_sha_none_provided(self, mock_defaults):
         mock_defaults.return_value = (
             'master', '2e84e78b5dfdb4a72132e08c9684b0e1a7e97bc2'
         )
         assert_equal(
-            utils.get_branch_and_sha(self.node_settings, {}),
+            utils_files.get_branch_and_sha(self.node_settings, {}),
             mock_defaults.return_value
         )

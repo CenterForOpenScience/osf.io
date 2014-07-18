@@ -14,13 +14,14 @@ from website.util.permissions import READ
 
 from website.addons.base import AddonError
 
-from website.addons.gitlab.api import client, GitlabError
 from website.addons.gitlab.utils import (
     setup_user, translate_permissions
 )
 from website.addons.gitlab import settings as gitlab_settings
 
-from website.addons.gitlab.services import fileservice
+from website.addons.gitlab.services import (
+    fileservice, userservice, projectservice,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,10 @@ class GitlabUserSettings(AddonUserSettingsBase):
     user_id = fields.IntegerField()
     username = fields.StringField()
 
+    @property
+    def provisioned(self):
+        return self.user_id is not None
+
     #############
     # Callbacks #
     #############
@@ -44,9 +49,10 @@ class GitlabUserSettings(AddonUserSettingsBase):
         """Update GitLab password when OSF password changes.
 
         """
+        user_service = userservice.GitlabUserService(self)
         try:
-            client.edituser(self.user_id, encrypted_password=user.password)
-        except GitlabError:
+            user_service.edit(encrypted_password=user.password)
+        except userservice.UserServiceError:
             logger.error(
                 'Could not set GitLab password for user {0}'.format(
                     user._id
@@ -68,6 +74,10 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
     # TODO: Should be updated when permissions change
     _migration_done = fields.BooleanField(default=False)
 
+    @property
+    def provisioned(self):
+        return self.project_id is not None
+
     #############
     # Callbacks #
     #############
@@ -83,10 +93,19 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         except ValueError as error:
             logger.exception(error)
             return
-        client.addprojectmember(
-            self.project_id, user_settings.user_id,
-            access_level=access_level
-        )
+        project_service = projectservice.GitlabProjectService(self)
+        try:
+            project_service.add_member(
+                user_settings,
+                access_level=access_level,
+            )
+        except projectservice.ProjectServiceError:
+            logger.error(
+                'Could not add Gitlab user {0} on node {1}'.format(
+                    added._id,
+                    node._id,
+                )
+            )
 
     def after_set_permissions(self, node, user, permissions):
         """Update GitLab permissions.
@@ -96,10 +115,19 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
             return
         user_settings = setup_user(user)
         access_level = translate_permissions(permissions)
-        client.editprojectmember(
-            self.project_id, user_settings.user_id,
-            access_level=access_level
-        )
+        project_service = projectservice.GitlabProjectService(self)
+        try:
+            project_service.edit_member(
+                user_settings,
+                access_level=access_level,
+            )
+        except projectservice.ProjectServiceError:
+            logger.error(
+                u'Could not update GitLab permissions on user {0} on node{1}'.format(
+                    user._id,
+                    self.owner._id,
+                )
+            )
 
     def after_remove_contributor(self, node, removed):
         """Remove user from GitLab project.
@@ -108,7 +136,16 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         if self.project_id is None:
             return
         user_settings = removed.get_addon('gitlab')
-        client.deleteprojectmember(self.project_id, user_settings.user_id)
+        project_service = projectservice.GitlabProjectService(self)
+        try:
+            project_service.delete_member(user_settings)
+        except projectservice.ProjectServiceError:
+            logger.error(
+                'Could not remove user {0} from node {1}'.format(
+                    removed._id,
+                    self.owner._id,
+                )
+            )
 
     def after_fork(self, node, fork, user, save=True):
         """Copy Gitlab project as fork.
@@ -123,14 +160,15 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         user_settings = user.get_or_add_addon('gitlab')
 
         # Copy project
+        project_service = projectservice.GitlabProjectService(self)
         try:
-            copy = client.createcopy(
-                self.project_id, user_settings.user_id, fork._id
+            copy = project_service.copy(user_settings, fork.id)
+        except projectservice.ProjectServiceError:
+            raise AddonError(
+                'Could not copy project on node {0}'.format(
+                    node._id,
+                )
             )
-            if copy['id'] is None:
-                raise AddonError('Could not copy project')
-        except GitlabError:
-            raise AddonError('Could not copy project')
 
         clone.project_id = copy['id']
 
@@ -152,31 +190,48 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         # Get user settings
         user_settings = user.get_or_add_addon('gitlab')
 
+        project_service = projectservice.GitlabProjectService(self)
+
         # Copy project
         try:
-            copy = client.createcopy(
-                self.project_id, user_settings.user_id, registration._id
+            copy = project_service.copy(user_settings, registration.id)
+        except projectservice.ProjectServiceError:
+            raise AddonError(
+                'Could not copy project on node {0}'.format(
+                    node._id,
+                )
             )
-            if copy['id'] is None:
-                raise AddonError('Could not copy project')
-        except GitlabError:
-            raise AddonError('Could not copy project')
 
         clone.project_id = copy['id']
 
         # Grant all contributors read-only permissions
         # TODO: Patch Gitlab so this can be done with one API call
-        permission = translate_permissions(READ)
-        client.editprojectmember(
-            clone.project_id, user_settings.user_id, permission
-        )
+        access_level = translate_permissions(READ)
+        try:
+            project_service.edit_member(
+                user_settings,
+                access_level=access_level,
+            )
+        except projectservice.ProjectServiceError:
+            logger.error(
+                'Could not set GitLab permission for user {0} on node {1}'.format(
+                    user._id,
+                    node._id,
+                )
+            )
         for contrib in registration.contributors:
             if contrib == user:
                 continue
             contrib_settings = contrib.get_or_add_addon('gitlab')
-            client.addprojectmember(
-                clone.project_id, contrib_settings.user_id, permission
-            )
+            try:
+                project_service.add_member(contrib_settings, access_level)
+            except projectservice.ProjectServiceError:
+                logger.error(
+                    'Could not add GitLab user for user {0} on node {1}'.format(
+                        user._id,
+                        node._id,
+                    )
+                )
 
         # Optionally save changes
         if save:

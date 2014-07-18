@@ -20,9 +20,12 @@ from website.addons.base.utils import NodeLogger
 from website.profile.utils import reduce_permissions
 from website.dates import FILE_MODIFIED
 
+from website.addons.base.services.base import ServiceConfigurationError
+
 from website.addons.gitlab import settings as gitlab_settings
-from website.addons.gitlab.api import client, GitlabError
-from website.addons.gitlab.services import hookservice
+from website.addons.gitlab.services import (
+    userservice, projectservice, hookservice
+)
 
 
 logger = logging.getLogger(__name__)
@@ -76,29 +79,21 @@ def create_user(user_settings):
     user = user_settings.owner
 
     # Create Gitlab user
+    user_service = userservice.GitlabUserService(user_settings)
     try:
-        status = client.createuser(
-            name=user.fullname,
-            username=user._id,
-            password=None,
-            email=user.username,
-            encrypted_password=user.password,
-            skip_confirmation=True,
-            projects_limit=gitlab_settings.PROJECTS_LIMIT,
+        user_service.create()
+    except userservice.UserServiceError:
+        raise AddonError(
+            'Could not create GitLab user on {0}'.format(
+                user._id,
+            )
         )
-    except GitlabError:
-        raise AddonError('Could not create GitLab user')
-
-    # Save changes to settings model
-    user_settings.user_id = status['id']
-    user_settings.username = status['username']
-    user_settings.save()
 
 
 def create_node(node_settings, check_ready=False):
     """Provision GitLab project.
 
-    :param GitlabNodeSettings node_settings: GitLab node model
+    :param GitlabNodeSettings node_settings: GitLab node l
 
     """
     # Quit if OSF node is already linked to a Gitlab project
@@ -108,15 +103,12 @@ def create_node(node_settings, check_ready=False):
     node = node_settings.owner
     user_settings = node.contributors[0].get_or_add_addon('gitlab')
 
+    project_service = projectservice.GitlabProjectService(node_settings)
+
     # Create Gitlab project
     try:
-        status = client.createprojectuser(
-            user_settings.user_id, node._id
-        )
-        node_settings.creator_osf_id = node.creator._id
-        node_settings.project_id = status['id']
-        node_settings.save()
-    except GitlabError:
+        project_service.create(user_settings, node._id)
+    except projectservice.ProjectServiceError:
         raise AddonError('Could not create project')
 
     if check_ready:
@@ -163,13 +155,11 @@ def check_project_initialized(node_settings, tries=20, delay=0.1):
     :returns: Project ready
 
     """
+    project_service = projectservice.GitlabProjectService(node_settings)
     for _ in range(tries):
-        try:
-            status = client.getprojectready(node_settings.project_id)
-            if status['ready']:
-                return True
-        except GitlabError:
-            pass
+        ready = project_service.ready()
+        if ready:
+            return True
         logger.info('GitLab project not initialized.')
         time.sleep(delay)
     return False
@@ -365,109 +355,6 @@ def serialize_commit(node, path, commit, guid, branch):
         'downloads': total or 0,
         'urls': build_guid_urls(guid, branch=branch, sha=commit['id'])
     }
-
-
-def ref_or_default(node_settings, data):
-    """Get the git reference (SHA or branch) from view arguments; return the
-    default reference if none is supplied.
-
-    :param GitlabNodeSettings node_settings: Gitlab node settings
-    :param dict data: View arguments
-    :returns: SHA or branch if reference found, else None
-
-    """
-    return (
-        data.get('sha')
-        or data.get('branch')
-        or get_default_branch(node_settings)
-    )
-
-
-def get_default_file_sha(node_settings, path, branch=None):
-    if node_settings.project_id is None:
-        raise AddonError('No project ID attached to settings')
-    commits = client.listrepositorycommits(
-        node_settings.project_id,
-        ref_name=branch, path=path,
-    )
-    return commits[0]['id']
-
-
-def get_default_branch(node_settings):
-    """Get default branch of GitLab project.
-
-    :param GitlabNodeSettings node_settings: Node settings object
-    :returns: Name of default branch
-
-    """
-    if node_settings.project_id is None:
-        raise AddonError('No project ID attached to settings')
-    project = client.getproject(node_settings.project_id)
-    return project['default_branch']
-
-
-def get_branch_id(node_settings, branch):
-    """Get latest commit SHA for branch of GitLab project.
-
-    :param GitlabNodeSettings node_settings: Node settings object
-    :param str branch: Branch name
-    :returns: SHA of branch
-
-    """
-    branch_json = client.listbranch(node_settings.project_id, branch)
-    return branch_json['commit']['id']
-
-
-def get_default_branch_and_sha(node_settings):
-    """Get default branch and SHA for GitLab project.
-
-    :param GitlabNodeSettings node_settings: Node settings object
-    :returns: Tuple of (branch, SHA)
-
-    """
-    branches_json = client.listbranches(node_settings.project_id)
-    if len(branches_json) == 1:
-        branch = branches_json[0]['name']
-        sha = branches_json[0]['commit']['id']
-    else:
-        branch = get_default_branch(node_settings)
-        branch_json = [
-            each
-            for each in branches_json
-            if each['name'] == branch
-        ]
-        if not branch_json:
-            raise AddonError('Could not find branch')
-        sha = branch_json[0]['commit']['id']
-    return branch, sha
-
-
-def get_branch_and_sha(node_settings, data):
-    """Get branch and SHA from dictionary of view data.
-
-    :param GitlabNodeSettings node_settings: Node settings
-    :param dict data: Dictionary of view data; `branch` and `sha` keys will
-        be checked
-    :returns: Tuple of (branch, SHA)
-    :raises: ValueError if SHA but not branch provided
-
-    """
-    branch = data.get('branch')
-    sha = data.get('sha')
-
-    # Can't infer branch from SHA
-    if sha and not branch:
-        raise ValueError('Cannot provide sha without branch')
-
-    if sha is None:
-        if branch:
-            sha = get_branch_id(node_settings, branch)
-        else:
-            branch, sha = get_default_branch_and_sha(node_settings)
-
-    branch = branch or get_default_branch(node_settings)
-
-    return branch, sha
 
 
 template_path = os.path.join(

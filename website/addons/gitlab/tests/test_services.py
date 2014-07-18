@@ -177,13 +177,13 @@ class TestHookService(GitlabTestCase):
         with assert_raises(hookservice.HookExistsError):
             self.hook_service.create()
 
-    @mock.patch('website.addons.gitlab.model.client.addprojecthook')
+    @mock.patch('website.addons.gitlab.services.hookservice.client.addprojecthook')
     def test_add_hook_gitlab_error(self, mock_add_hook):
         mock_add_hook.side_effect = GitlabError('Disaster')
         with assert_raises(hookservice.HookServiceError):
             self.hook_service.create()
 
-    @mock.patch('website.addons.gitlab.model.client.deleteprojecthook')
+    @mock.patch('website.addons.gitlab.services.hookservice.client.deleteprojecthook')
     def test_remove_hook(self, mock_delete_hook):
         self.node_settings.hook_id = 1
         self.hook_service.delete()
@@ -200,7 +200,7 @@ class TestHookService(GitlabTestCase):
         with assert_raises(hookservice.HookServiceError):
             self.hook_service.delete()
 
-    @mock.patch('website.addons.gitlab.model.client.deleteprojecthook')
+    @mock.patch('website.addons.gitlab.services.hookservice.client.deleteprojecthook')
     def test_remove_hook_gitlab_error(self, mock_delete_hook):
         self.node_settings.hook_id = 1
         mock_delete_hook.side_effect = GitlabError('Catastrophe')

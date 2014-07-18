@@ -24,17 +24,10 @@ from website.project import utils
 
 from website.addons.base.services.fileservice import FileServiceError
 
-from website.addons.gitlab.model import GitlabGuidFile
+from website.addons.gitlab import utils_files
 from website.addons.gitlab import utils as gitlab_utils
-# from website.addons.gitlab.utils import (
-#     setup_user, setup_node,
-#     kwargs_to_path, build_full_urls, build_guid_urls,
-#     item_to_hgrid, gitlab_to_hgrid,
-#     serialize_commit, ref_or_default, get_branch_and_sha,
-#     get_default_file_sha,
-#     GitlabNodeLogger, render_branch_picker
-# )
 from website.addons.gitlab import settings as gitlab_settings
+from website.addons.gitlab.model import GitlabGuidFile
 from website.addons.gitlab.services import fileservice
 
 
@@ -83,7 +76,7 @@ def gitlab_upload_file(auth, node_addon, **kwargs):
     user_addon = auth.user.get_addon('gitlab')
 
     path = gitlab_utils.kwargs_to_path(kwargs, required=False)
-    branch = gitlab_utils.ref_or_default(node_addon, request.args)
+    branch = utils_files.ref_or_default(node_addon, request.args)
 
     upload = request.files.get('file')
 
@@ -142,7 +135,7 @@ def gitlab_hgrid_root(node_addon, auth, **kwargs):
                 each['name']
                 for each in gitlab_branches
             ]
-            branch, sha = gitlab_utils.get_branch_and_sha(node_addon, kwargs)
+            branch, sha = utils_files.get_branch_and_sha(node_addon, kwargs)
 
     permissions = {
         'edit': node.can_edit(auth=auth) and not node.is_registration,
@@ -219,7 +212,7 @@ def gitlab_file_commits(node_addon, **kwargs):
     """
     branch = request.args.get('branch')
     sha = request.args.get('sha')
-    ref = gitlab_utils.ref_or_default(node_addon, request.args)
+    ref = utils_files.ref_or_default(node_addon, request.args)
 
     path = gitlab_utils.kwargs_to_path(kwargs, required=True)
     guid = get_guid(node_addon, path, ref)
@@ -259,7 +252,7 @@ def gitlab_view_file(auth, node_addon, **kwargs):
     # below
     sha = (
         request.args.get('sha')
-        or gitlab_utils.get_default_file_sha(node_addon, path=path)
+        or utils_files.get_default_file_sha(node_addon, path=path)
     )
 
     guid = get_guid(node_addon, path, sha)
@@ -316,7 +309,7 @@ def gitlab_view_file(auth, node_addon, **kwargs):
 def gitlab_download_file(node_addon, **kwargs):
 
     path = gitlab_utils.kwargs_to_path(kwargs, required=True)
-    ref = gitlab_utils.ref_or_default(node_addon, request.args)
+    ref = utils_files.ref_or_default(node_addon, request.args)
 
     file_service = fileservice.GitlabFileService(node_addon)
     try:
@@ -345,7 +338,7 @@ def gitlab_delete_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
     path = gitlab_utils.kwargs_to_path(kwargs, required=True)
-    branch = gitlab_utils.ref_or_default(node_addon, request.args)
+    branch = utils_files.ref_or_default(node_addon, request.args)
 
     file_service = fileservice.GitlabFileService(node_addon)
     try:
@@ -371,7 +364,7 @@ def gitlab_get_rendered_file(**kwargs):
 
     sha = (
         request.args.get('sha')
-        or gitlab_utils.get_default_file_sha(node_settings, path)
+        or utils_files.get_default_file_sha(node_settings, path)
     )
 
     cache_file = get_cache_file(path, sha)
