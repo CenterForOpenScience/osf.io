@@ -22,7 +22,7 @@ import website.search.search as search
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
-        search.delete_all() 
+        search.delete_all()
 
 
 def query(term):
