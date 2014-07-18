@@ -537,7 +537,6 @@
         //
 
         self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
-            console.log(e);
             var selectedRows = self.grid.grid.getSelectedRows();
             var multipleItems = false;
             if (selectedRows.length == 1) {

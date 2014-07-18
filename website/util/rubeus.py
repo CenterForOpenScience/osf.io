@@ -140,7 +140,7 @@ class NodeProjectCollector(object):
     def _collect_components(self, node, visited):
         rv = []
         for child in reversed(node.nodes): #(child.resolve()._id not in visited or node.is_folder) and
-            if not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
+            if child is not None and not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
         return rv
