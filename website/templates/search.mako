@@ -87,7 +87,7 @@
                             <div class="description">
                                 % if result['description']:
                                     <h5>
-                                        ${result['description']}
+                                        ${result['description'][:500]}...
                                     </h5>
                                 % endif
                             </div>
