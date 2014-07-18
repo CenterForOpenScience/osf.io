@@ -841,8 +841,8 @@
             height: '600',
             columns: [
                 ProjectOrganizer.Col.Name,
-                dateModifiedColumn,
-                contributorsColumn
+                contributorsColumn,
+                dateModifiedColumn
             ],
             slickgridOptions: {
                 editable: true,
