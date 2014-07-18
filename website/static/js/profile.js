@@ -354,7 +354,7 @@
             self.scholar,
             self.linkedIn,
             self.github
-        ]
+        ];
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
