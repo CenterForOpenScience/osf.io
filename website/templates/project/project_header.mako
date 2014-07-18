@@ -93,7 +93,7 @@
 
 
         <div id="contributors">Contributors:
-            <ol id="contributorsview"><div mod-meta='{
+            <ol><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
