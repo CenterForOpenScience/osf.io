@@ -6,9 +6,14 @@
 
         <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
-                <div class="text-align">Drag and drop contributors to change listing order.</div>
+                <p>Drag and drop contributors to change listing order.</p>
             % endif
             <div id="manageContributors" class="scripted">
+            <!-- ko if: canEdit -->
+            <a href="#addContributors" data-toggle="modal" class="btn btn-primary">
+                Add Contributors
+            </a>
+            <!-- /ko -->
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -33,16 +38,10 @@
                                     data-html="true"
                                 ></i>
                         </th>
-                        <th class="col-md-1"></th>
+                        <th class="col-md-1">
+                        </th>
                         </tr>
                     </thead>
-                    <tr data-bind="if: canEdit">
-                        <td colspan="3">
-                            <a href="#addContributors" data-toggle="modal">
-                                Add a contributor
-                            </a>
-                        </td>
-                    </tr>
                     <tbody data-bind="sortable: {
                             template: 'contribTpl',
                             data: contributors,
@@ -163,6 +162,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
+                            class="pull-right"
                             data-bind="click: remove, clickBubble: false"
                             rel="tooltip"
                             title="Remove contributor"
