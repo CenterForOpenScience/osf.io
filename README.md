@@ -40,6 +40,26 @@ $ pip install invoke
 $ invoke setup
 ```
 
+
+- If you don't have bower installed (see below for more details)
+```bash
+$ npm install -g bower
+```
+
+
+- If the bower installation complains about permissions
+```bash
+$ sudo npm install -g bower
+```
+
+
+- To install all of our bower-managed Javascript components
+
+```bash
+$ bower install
+```
+
+
 - Optionally, you may install the requirements for the Modular File Renderer:
 
 ```bash
