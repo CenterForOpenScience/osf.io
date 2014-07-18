@@ -927,7 +927,7 @@ def get_folder_pointers(**kwargs):
     return [
         node.resolve()._id
         for node in node_to_use.nodes
-        if not node.is_deleted and not node.primary
+        if node is not None and not node.is_deleted and not node.primary
     ]
 
 @must_be_contributor_or_public
