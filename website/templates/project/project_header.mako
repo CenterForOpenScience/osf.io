@@ -27,12 +27,12 @@
                 %if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> /
+                            <a href="${parent_node['url']}">${parent_node['title']}</a>&nbsp;/
 
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">
-                             <span>Private Project</span> /
+                             <span>Private Project</span>&nbsp;/
                          </h1>
                     %endif
                 %endif
