@@ -33,6 +33,7 @@ class GitlabProjectService(fileservice.BaseService):
         self.addon_model.creator_osf_id = user_addon.owner._id
         self.addon_model.project_id = response['id']
         self.addon_model.save()
+        return response
 
     def ready(self):
         utils.assert_provisioned(self.addon_model, True)
@@ -54,6 +55,7 @@ class GitlabProjectService(fileservice.BaseService):
         )
         if response['id'] is None:
             raise ProjectServiceError()
+        return response
 
     def add_member(self, user_addon, access_level):
         utils.assert_provisioned(user_addon, True)
