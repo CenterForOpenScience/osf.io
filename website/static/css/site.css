@@ -1422,6 +1422,7 @@ div#logScope a.moreLogs{
 #contributors ol li {
     list-style-type:none;
     display:inline;
+    white-space: nowrap;
 }
 
 #contributors ol li:after {
