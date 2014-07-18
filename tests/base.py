@@ -81,6 +81,11 @@ class OsfTestCase(DbTestCase):
         if self.PATCH_GITLAB:
             self.start_gitlab_patches()
 
+    def tearDown(self):
+        super(OsfTestCase, self).tearDown()
+        if self.PATCH_GITLAB:
+            mock.patch.stopall()
+
     def start_gitlab_patches(self):
         edit_user_patch = mock.patch(
             'website.addons.gitlab.services.userservice.GitlabUserService.edit'

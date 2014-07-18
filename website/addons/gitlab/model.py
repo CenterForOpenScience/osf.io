@@ -162,7 +162,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         # Copy project
         project_service = projectservice.GitlabProjectService(self)
         try:
-            copy = project_service.copy(user_settings, fork.id)
+            copy = project_service.copy(user_settings, fork._id)
         except projectservice.ProjectServiceError:
             raise AddonError(
                 'Could not copy project on node {0}'.format(
@@ -194,7 +194,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
 
         # Copy project
         try:
-            copy = project_service.copy(user_settings, registration.id)
+            copy = project_service.copy(user_settings, registration._id)
         except projectservice.ProjectServiceError:
             raise AddonError(
                 'Could not copy project on node {0}'.format(
