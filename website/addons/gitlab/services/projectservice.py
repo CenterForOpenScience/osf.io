@@ -74,7 +74,7 @@ class GitlabProjectService(fileservice.BaseService):
         utils.assert_provisioned(self.addon_model, True)
         try:
             client.editprojectmember(
-                self.project_id,
+                self.addon_model.project_id,
                 user_addon.user_id,
                 access_level=access_level,
             )
