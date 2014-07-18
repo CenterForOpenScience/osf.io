@@ -41,23 +41,23 @@
          * e.g. "Dasher and Dancer", "Comet, Cupid, and Blitzen"
          */
         self.displayContributors = ko.computed(function(){
-            var ret = "";
+            var ret = '';
             if (self.anonymous){
                     ret += '<span><em>some anonymous contributor(s)</em></span>';
             } else {
                 for (var i = 0; i < self.contributors.length; i++) {
                     var person = self.contributors[i];
-                    if (i == self.contributors.length - 1 && self.contributors.length > 2) {
-                        ret += " and ";
+                    if (i === self.contributors.length - 1 && self.contributors.length > 2) {
+                        ret += ' and ';
                     }
                     if (person.registered)
                         ret += self._asContribLink(person);
                     else
                         ret += '<span>' + person.fullname + '</span>';
                     if (i < self.contributors.length - 1 && self.contributors.length > 2) {
-                        ret += ", ";
-                    } else if (i < self.contributors.length - 1 && self.contributors.length == 2) {
-                        ret += " and ";
+                        ret += ', ';
+                    } else if (i < self.contributors.length - 1 && self.contributors.length === 2) {
+                        ret += ' and ';
                     }
                 }
 
