@@ -233,9 +233,8 @@ class NodeProjectCollector(object):
         child_nodes = node.nodes
         readable_children = []
         for child in child_nodes:
-            child_node = child.resolve()
-            if child_node is not None:
-                if child_node.can_view(auth=self.auth):
+            if child is not None:
+                if child.resolve().can_view(auth=self.auth):
                     readable_children.append(child)
         children_count = len(readable_children)
         is_pointer = not node.primary
