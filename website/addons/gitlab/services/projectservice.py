@@ -45,7 +45,7 @@ class GitlabProjectService(fileservice.BaseService):
         return False
 
     def copy(self, user_addon, copy_id):
-        utils.assert_provisioned(self.user_addon, True)
+        utils.assert_provisioned(user_addon, True)
         utils.assert_provisioned(self.addon_model, True)
         response = client.createcopy(
             self.addon_model.project_id,
@@ -56,7 +56,7 @@ class GitlabProjectService(fileservice.BaseService):
             raise ProjectServiceError()
 
     def add_member(self, user_addon, access_level):
-        utils.assert_provisioned(self.user_addon, True)
+        utils.assert_provisioned(user_addon, True)
         utils.assert_provisioned(self.addon_model, True)
         try:
             client.addprojectmember(
@@ -68,7 +68,7 @@ class GitlabProjectService(fileservice.BaseService):
             raise ProjectServiceError()
 
     def edit_member(self, user_addon, access_level):
-        utils.assert_provisioned(self.user_addon, True)
+        utils.assert_provisioned(user_addon, True)
         utils.assert_provisioned(self.addon_model, True)
         try:
             client.editprojectmember(
@@ -80,7 +80,7 @@ class GitlabProjectService(fileservice.BaseService):
             raise ProjectServiceError()
 
     def delete_member(self, user_addon):
-        utils.assert_provisioned(self.user_addon, True)
+        utils.assert_provisioned(user_addon, True)
         utils.assert_provisioned(self.addon_model, True)
         try:
             client.deleteprojectmember(
