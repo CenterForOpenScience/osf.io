@@ -6,6 +6,7 @@ import os
 import hurry
 import datetime
 from framework.auth.decorators import Auth
+from modularodm import Q
 
 FOLDER = 'folder'
 FILE = 'item'
@@ -139,18 +140,36 @@ class NodeProjectCollector(object):
     def _collect_components(self, node, visited):
         rv = []
         for child in reversed(node.nodes): #(child.resolve()._id not in visited or node.is_folder) and
-            if not child.is_deleted and node.can_view(self.auth):
+            if not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
         return rv
 
-    def get_all_projects_smart_folder(self):
-        return self.make_smart_folder('All my projects', '-amp')
+    def collect_all_projects_smart_folder(self):
+        all_my_projects = self.auth.user.node__contributed.find(
+            Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False) &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'eq', None)
+        )
+        children_count = all_my_projects.count()
+        return self.make_smart_folder('All my projects', '-amp', children_count)
 
-    def get_all_registrations_smart_folder(self):
-        return self.make_smart_folder('All my registrations', '-amr')
+    def collect_all_registrations_smart_folder(self):
+        all_my_registrations = self.auth.user.node__contributed.find(
+            Q('category', 'eq', 'project') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', True) &
+            Q('is_folder', 'eq', False) &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'eq', None)
+        )
+        children_count = all_my_registrations.count()
+        return self.make_smart_folder('All my registrations', '-amr', children_count)
 
-    def make_smart_folder(self, title, node_id):
+    def make_smart_folder(self, title, node_id, children_count=0):
         return_value = {
             'name': title,
             'kind': FOLDER,
@@ -178,6 +197,7 @@ class NodeProjectCollector(object):
             'isDashboard': False,
             'contributors': [],
             'node_id': node_id,
+            'childrenCount': children_count,
         }
         return return_value
 
@@ -192,8 +212,8 @@ class NodeProjectCollector(object):
         # This will be important soon: self._collect_addons(self.node) +
         root = self._collect_components(self.node, visited=None)
         if self.node.is_dashboard:
-            root.append(self.get_all_projects_smart_folder())
-            root.append(self.get_all_registrations_smart_folder())
+            root.append(self.collect_all_projects_smart_folder())
+            root.append(self.collect_all_registrations_smart_folder())
         return root
 
     def _serialize_node(self, node, visited=None, parent_is_folder=False):
@@ -210,7 +230,12 @@ class NodeProjectCollector(object):
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
         modified_by = node.logs[-1].user.family_name
         # test_children = self._collect_addons(node)
-        children_count = len(node.nodes)
+        child_nodes = node.nodes
+        readable_children = []
+        for child in child_nodes:
+            if child.resolve().can_view(auth=self.auth):
+                readable_children.append(child)
+        children_count = len(readable_children)
         is_pointer = not node.primary
         is_component = node.category != "project"
         is_project = node.category == "project"

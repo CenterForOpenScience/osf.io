@@ -30,6 +30,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
+from website.util.sanitize import deep_clean
 
 from .log import _get_logs
 
@@ -144,7 +145,7 @@ def rename_folder(**kwargs):
 def add_folder(**kwargs):
     auth = kwargs['auth']
     user = auth.user
-    title = sanitize(request.json.get('title'))
+    title = deep_clean(request.json.get('title'))
     node_id = request.json.get('node_id')
     node = Node.load(node_id)
     if node.is_deleted or node.is_registration or not node.is_folder:

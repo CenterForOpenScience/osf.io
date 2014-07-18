@@ -426,7 +426,7 @@
     ProjectOrganizer.Col.Name.behavior = "move";
     ProjectOrganizer.Col.Name.indent = 20;
     ProjectOrganizer.Col.Name.showExpander = function(row, args) {
-        return (row.childrenCount > 0 || row.isSmartFolder);
+        return (row.childrenCount > 0);
     };
     ProjectOrganizer.Col.Name.itemView = function (row) {
         var name = row.name.toString();
@@ -536,7 +536,8 @@
         // to Knockout.js
         //
 
-        self.grid.grid.onSelectedRowsChanged.subscribe(function () {
+        self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
+            console.log(e);
             var selectedRows = self.grid.grid.getSelectedRows();
             var multipleItems = false;
             if (selectedRows.length == 1) {
