@@ -115,7 +115,7 @@
                   "tpl": "util/render_nodes.mako",
                   "uri": "${node["api_url"]}get_children/",
                   "replace": true,
-                  "kwargs": {"sortable" : true}
+		  "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
               }'></div>
       </div>
   % else:
