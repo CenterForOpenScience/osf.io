@@ -16,8 +16,7 @@
 <%include file='log_templates.mako'/>
 </ul>
 <script>
-
-    % if not node['is_registration'] and sortable and 'write' in user['permissions']:
+% if sortable and 'write' in user['permissions']:
 
         $(function(){
             $('.sortable').sortable({
@@ -35,7 +34,7 @@
             });
         });
 
-    % endif
+% endif
 
 </script>
 
