@@ -86,6 +86,7 @@
         if(typeof theParentNode !== "undefined" || theItem.kind !== 'folder') {
             toReload = theParentNode;
         }
+        toReload.childrenCount = toReload.children.length;
         hgrid.reloadFolder(toReload);
         hgrid.grid.setSelectedRows([]);
         hgrid.grid.resetActiveCell();
@@ -248,6 +249,8 @@
                                             if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
                                                 setReloadNextFolder(itemParentID, folder.id);
+                                                itemParent.childrenCount = itemParent.children.length;
+                                                folder.childrenCount = folder.children.length;
                                                 draggable.grid.reloadFolder(itemParent);
 
                                             } else {
@@ -256,17 +259,15 @@
                                             }
 
                                         } else {
-                                            if(folder.parentID !== null) {
-                                                reloadFolder(draggable.grid, draggable.grid.grid.getData().getItemById(folder.parentID));
-                                            } else {
-                                                reloadFolder(draggable.grid, folder);
-                                            }
+                                            reloadFolder(draggable.grid, folder);
+
                                         }
                                         copyMode = "none";
 
                                     }
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
+                                folder.childrenCount = folder.children.length;
                                 reloadFolder(draggable.grid, itemParent);
                             }
                         });
@@ -864,15 +865,18 @@
                 return '/api/v1/dashboard/get_dashboard/' + folder.node_id;
             },
             fetchSuccess: function(newData, item){
+
                 if(reloadNewFolder) {
                     reloadNewFolder = false;
                     var toReloadItem = draggable.grid.grid.getData().getItemById(rnfToReload);
                     if (rnfPrevItem !== rnfToReload && typeof toReloadItem !== "undefined") {
+                        toReloadItem.childrenCount = toReloadItem.children.length;
                         draggable.grid.reloadFolder(toReloadItem);
                     }
                     draggable.grid.grid.setSelectedRows([]);
                     draggable.grid.grid.resetActiveCell();
                 }
+                item.childrenCount = newData.data.length;
                 self.options.success.call();
             },
             getExpandState: function(folder) {
