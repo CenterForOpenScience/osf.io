@@ -419,9 +419,23 @@ def packages():
 
 
 @task
+def npm_bower():
+    print('Installing bower')
+    run('npm install -g bower')
+
+
+@task
+def bower_install():
+    print('Installing bower-managed packages')
+    run('bower install')
+
+
+@task
 def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
     requirements(all=True)
     encryption()
+    npm_bower()
+    bower_install()
