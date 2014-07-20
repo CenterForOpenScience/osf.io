@@ -256,7 +256,11 @@
                                             }
 
                                         } else {
-                                            reloadFolder(draggable.grid, folder);
+                                            if(folder.parentID !== null) {
+                                                reloadFolder(draggable.grid, draggable.grid.grid.getData().getItemById(folder.parentID));
+                                            } else {
+                                                reloadFolder(draggable.grid, folder);
+                                            }
                                         }
                                         copyMode = "none";
 
