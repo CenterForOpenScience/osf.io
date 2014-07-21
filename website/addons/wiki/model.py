@@ -3,6 +3,9 @@
 """
 
 import datetime
+
+from bleach import linkify
+from bleach.callbacks import nofollow
 import markdown
 from markdown.extensions import wikilinks
 
@@ -56,7 +59,13 @@ class NodeWikiPage(GuidStoredObject):
             ]
         )
 
-        return sanitize(html_output, **settings.WIKI_WHITELIST)
+        # linkify gets called after santize, because we're adding rel="nofollow"
+        #   to <a> elements - but don't want to allow them for other elements.
+        return linkify(
+            sanitize(html_output, **settings.WIKI_WHITELIST),
+            [nofollow, ],
+        )
+
 
     @property
     def raw_text(self):
