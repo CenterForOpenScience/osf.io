@@ -327,7 +327,7 @@
         };
         var displayHTML = detailTemplate(detailTemplateContext);
         $(".project-details").html(displayHTML);
-       // addFormKeyBindings(theItem.node_id);
+       addFormKeyBindings(theItem.node_id);
 
     }
 
@@ -343,19 +343,19 @@
         }
     });
 
-/*    function addFormKeyBindings(nodeID){
+    function addFormKeyBindings(nodeID){
         $("#ptd-"+nodeID).keyup(function (e){
-            if(e.which == 13){ //return
+            /*if(e.which == 13){ //return
                 // Find visible submit-button in this div and activate it
                 $("#ptd-"+nodeID).find(".submit-button-"+nodeID).filter(":visible").click();
                 return false;
-            } else if (e.which == 27) {//esc
+            } else*/ if (e.which == 27) {//esc
                 // Find visible cancel-button in this div and activate it
                 $("#ptd-"+nodeID).find(".cancel-button-"+nodeID).filter(":visible").click();
                 return false;
             }
         });
-    }*/
+    }
 
     var collapseAllInHGrid = function (grid) {
         grid.collapseAll();
