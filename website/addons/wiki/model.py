@@ -7,7 +7,7 @@ import datetime
 from bleach import linkify
 from bleach.callbacks import nofollow
 import markdown
-from markdown.extensions import wikilinks
+from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from framework.forms.utils import sanitize
 from framework import fields
@@ -55,7 +55,11 @@ class NodeWikiPage(GuidStoredObject):
             extensions=[
                 wikilinks.WikiLinkExtension(
                     configs=[('base_url', ''), ('end_url', '')]
-                )
+                ),
+                fenced_code.FencedCodeExtension(),
+                codehilite.CodeHiliteExtension(
+                    (('css_class', 'highlight'), )
+                ),
             ]
         )
 
