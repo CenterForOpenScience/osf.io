@@ -439,3 +439,8 @@ def setup():
     encryption()
     npm_bower()
     bower_install()
+
+
+@task
+def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
