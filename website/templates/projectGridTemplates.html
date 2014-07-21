@@ -10,11 +10,13 @@
           {{/if}}{{/unless}}{{/unless}}
           </span>
           <span class="rename-container" id="rnc-{{theItem.node_id}}">
+              <form action="#">
               <fieldset class="project-detail-fields">
                 <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}">
-                <span class = "renameNodeBtn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled">Rename</span>
-                <span class = "btn btn-default cancel-button-{{ theItem.node_id }}">Cancel</span>
+                <input type="submit" class = "renameNodeBtn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
               </fieldset>
+              </form>
           </span>
 
         </span>
@@ -33,19 +35,23 @@
                 {{/unless}}
             </div>
             <div id="findNode{{theItem.node_id}}">
+                <form action="#">
                 <fieldset class="project-detail-fields">
                     <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find">
-                    <span class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled">Add the project</span>
-                    <span class = "btn btn-default cancel-button-{{ theItem.node_id }}">Cancel</span>
+                    <input type="submit" class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add the project">
+                    <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                     <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
                 </fieldset>
+                    </form>
             </div>
             <div class="add-folder-container" id="afc-{{theItem.node_id}}">
+                <form action="#">
                 <fieldset class="project-detail-fields">
                     <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name">
-                    <span class = "addFolderBtn btn btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled">Add the folder</span>
-                    <span class = "btn btn-default cancel-button-{{ theItem.node_id }}">Cancel</span>
+                    <input type="submit" class = "addFolderBtn btn btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add the folder">
+                    <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
                 </fieldset>
+                    </form>
             </div>
 
 

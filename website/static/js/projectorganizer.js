@@ -327,7 +327,7 @@
         };
         var displayHTML = detailTemplate(detailTemplateContext);
         $(".project-details").html(displayHTML);
-        addFormKeyBindings(theItem.node_id);
+       // addFormKeyBindings(theItem.node_id);
 
     }
 
@@ -343,7 +343,7 @@
         }
     });
 
-    function addFormKeyBindings(nodeID){
+/*    function addFormKeyBindings(nodeID){
         $("#ptd-"+nodeID).keyup(function (e){
             if(e.which == 13){ //return
                 // Find visible submit-button in this div and activate it
@@ -355,7 +355,7 @@
                 return false;
             }
         });
-    }
+    }*/
 
     var collapseAllInHGrid = function (grid) {
         grid.collapseAll();
