@@ -553,6 +553,42 @@
             if (selectedRows.length == 1) {
                 self.myProjects.initialize();
                 self.publicProjects.initialize();
+
+
+                // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
+
+                var mySourceWithEmptySelectable = function(q, cb) {
+                  var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
+                  self.myProjects.get(q, injectEmptySelectable);
+
+                  function injectEmptySelectable(suggestions) {
+                    if (suggestions.length === 0) {
+                      cb(emptyMyProjects);
+                    }
+
+                    else {
+                      cb(suggestions);
+                    }
+                  }
+
+                };
+
+                var publicSourceWithEmptySelectable = function(q, cb) {
+                  var emptyPublicProjects = { error: 'There are no matching public projects.' };
+                  self.publicProjects.get(q, injectEmptySelectable);
+
+                  function injectEmptySelectable(suggestions) {
+                    if (suggestions.length === 0) {
+                      cb([emptyPublicProjects]);
+                    }
+
+                    else {
+                      cb(suggestions);
+                    }
+                  }
+
+                };
+
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
@@ -586,13 +622,17 @@
                             displayKey: function (data) {
                                 return data.name;
                             },
-                            source: self.myProjects.ttAdapter(),
+                            source: mySourceWithEmptySelectable,
                             templates: {
                                 header: function () {
                                     return '<h3 class="category">My Projects</h3>'
                                 },
                                 suggestion: function (data) {
-                                    return '<p>' + data.name + '</p>';
+                                    if(typeof data.name !== 'undefined') {
+                                        return '<p>' + data.name + '</p>';
+                                    } else {
+                                        return '<p>' + data.error + '</p>';
+                                    }
                                 }
                             }
                         },
@@ -601,13 +641,17 @@
                             displayKey: function (data) {
                                 return data.name;
                             },
-                            source: self.publicProjects.ttAdapter(),
+                            source: publicSourceWithEmptySelectable,
                             templates: {
                                 header: function () {
                                     return '<h3 class="category">Public Projects</h3>'
                                 },
                                 suggestion: function (data) {
-                                    return '<p>' + data.name + '</p>';
+                                    if(typeof data.name !== 'undefined') {
+                                        return '<p>' + data.name + '</p>';
+                                    } else {
+                                        return '<p>' + data.error + '</p>';
+                                    }
                                 }
                             }
                         });
