@@ -425,3 +425,8 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
+
+
+@task
+def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
