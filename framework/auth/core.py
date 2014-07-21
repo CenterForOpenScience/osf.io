@@ -719,11 +719,20 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    # returns the number of "shared projects" (projects that both users are contributors for)
-    def get_projects_in_common(self, user):
-        projects_contributed_to = set(self.node__contributed._to_primary_keys())
-        return len(projects_contributed_to.intersection(user.node__contributed._to_primary_keys()))
+    def get_projects_in_common(self, other_user, primary_keys= True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.node__contributed._to_primary_keys())
+            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+        else:
+            projects_contributed_to = set(self.node__contributed())
+            return projects_contributed_to.intersection(other_user.node__contributed())
 
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
 
 
 def _merge_into_reversed(*iterables):

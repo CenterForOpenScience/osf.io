@@ -458,7 +458,7 @@ def search_contributor(query, exclude=None, current_user=None):
         user = User.load(doc['id'])
 
         if current_user:
-            projects_in_common = current_user.get_projects_in_common(user)
+            projects_in_common = current_user.n_projects_in_common(user)
         else:
             projects_in_common = 0
 
