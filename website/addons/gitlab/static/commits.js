@@ -14,7 +14,7 @@
 
     function Commit(data) {
         $.extend(this, data);
-        this.modified = new $.osf.FormattableDate(data.modified);
+        this.modified = new $.osf.FormattableDate(data.date);
     }
 
     function CommitViewModel(url) {
