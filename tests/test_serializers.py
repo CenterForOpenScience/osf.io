@@ -44,6 +44,8 @@ class TestAddContributorJson(OsfTestCase):
         self.user = UserFactory()
         self.profile = self.user.profile_url
         self.user_id = self.user._primary_key
+        self.fullname = self.user.fullname
+        self.username = self.user.username
 
         self.jobs = [{
             'institution': 'School of Lover Boys',
@@ -64,62 +66,66 @@ class TestAddContributorJson(OsfTestCase):
 
     def test_add_contributor_json(self):
         # User with no employment or education info listed
+        user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(utils.add_contributor_json(self.user)['fullname'], 'Freddie Mercury0')
-        assert_equal(utils.add_contributor_json(self.user)['email'], 'fred0@example.com')
-        assert_equal(utils.add_contributor_json(self.user)['id'], self.user_id)
-        assert_equal(utils.add_contributor_json(self.user)['employment'], None)
-        assert_equal(utils.add_contributor_json(self.user)['education'], None)
-        assert_equal(utils.add_contributor_json(self.user)['projects_in_common'], 0)
-        assert_equal(utils.add_contributor_json(self.user)['registered'], True)
-        assert_equal(utils.add_contributor_json(self.user)['active'], True)
-        assert_in('secure.gravatar.com', utils.add_contributor_json(self.user)['gravatar_url'])
-        assert_equal(utils.add_contributor_json(self.user)['profile_url'], self.profile)
+        assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(user_info['email'], self.username)
+        assert_equal(user_info['id'], self.user_id)
+        assert_equal(user_info['employment'], None)
+        assert_equal(user_info['education'], None)
+        assert_equal(user_info['projects_in_common'], 0)
+        assert_equal(user_info['registered'], True)
+        assert_equal(user_info['active'], True)
+        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_edu(self):
         # Test user with only education information
         self.user.schools = self.schools
+        user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(utils.add_contributor_json(self.user)['fullname'], 'Freddie Mercury1')
-        assert_equal(utils.add_contributor_json(self.user)['email'], 'fred1@example.com')
-        assert_equal(utils.add_contributor_json(self.user)['id'], self.user_id)
-        assert_equal(utils.add_contributor_json(self.user)['employment'], None)
-        assert_equal(utils.add_contributor_json(self.user)['education'], 'Queens University')
-        assert_equal(utils.add_contributor_json(self.user)['projects_in_common'], 0)
-        assert_equal(utils.add_contributor_json(self.user)['registered'], True)
-        assert_equal(utils.add_contributor_json(self.user)['active'], True)
-        assert_in('secure.gravatar.com', utils.add_contributor_json(self.user)['gravatar_url'])
-        assert_equal(utils.add_contributor_json(self.user)['profile_url'], self.profile)
+        assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(user_info['email'], self.username)
+        assert_equal(user_info['id'], self.user_id)
+        assert_equal(user_info['employment'], None)
+        assert_equal(user_info['education'], self.user.schools[0]['institution'])
+        assert_equal(user_info['projects_in_common'], 0)
+        assert_equal(user_info['registered'], True)
+        assert_equal(user_info['active'], True)
+        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_equal(user_info['profile_url'], self.profile)
 
 
     def test_add_contributor_json_with_job(self):
         # Test user with only employment information
         self.user.jobs = self.jobs
+        user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(utils.add_contributor_json(self.user)['fullname'], 'Freddie Mercury2')
-        assert_equal(utils.add_contributor_json(self.user)['email'], 'fred2@example.com')
-        assert_equal(utils.add_contributor_json(self.user)['id'], self.user_id)
-        assert_equal(utils.add_contributor_json(self.user)['employment'], 'School of Lover Boys')
-        assert_equal(utils.add_contributor_json(self.user)['education'], None)
-        assert_equal(utils.add_contributor_json(self.user)['projects_in_common'], 0)
-        assert_equal(utils.add_contributor_json(self.user)['registered'], True)
-        assert_equal(utils.add_contributor_json(self.user)['active'], True)
-        assert_in('secure.gravatar.com', utils.add_contributor_json(self.user)['gravatar_url'])
-        assert_equal(utils.add_contributor_json(self.user)['profile_url'], self.profile)
+        assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(user_info['email'], self.username)
+        assert_equal(user_info['id'], self.user_id)
+        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
+        assert_equal(user_info['education'], None)
+        assert_equal(user_info['projects_in_common'], 0)
+        assert_equal(user_info['registered'], True)
+        assert_equal(user_info['active'], True)
+        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_equal(user_info['profile_url'], self.profile)
 
     def test_add_contributor_json_with_job_and_edu(self):
         # User with both employment and education information
         self.user.jobs = self.jobs
         self.user.schools = self.schools
+        user_info = utils.add_contributor_json(self.user)
 
-        assert_equal(utils.add_contributor_json(self.user)['fullname'], 'Freddie Mercury3')
-        assert_equal(utils.add_contributor_json(self.user)['email'], 'fred3@example.com')
-        assert_equal(utils.add_contributor_json(self.user)['id'], self.user_id)
-        assert_equal(utils.add_contributor_json(self.user)['employment'], 'School of Lover Boys')
-        assert_equal(utils.add_contributor_json(self.user)['education'], 'Queens University')
-        assert_equal(utils.add_contributor_json(self.user)['projects_in_common'], 0)
-        assert_equal(utils.add_contributor_json(self.user)['registered'], True)
-        assert_equal(utils.add_contributor_json(self.user)['active'], True)
-        assert_in('secure.gravatar.com', utils.add_contributor_json(self.user)['gravatar_url'])
-        assert_equal(utils.add_contributor_json(self.user)['profile_url'], self.profile)
+        assert_equal(user_info['fullname'], self.fullname)
+        assert_equal(user_info['email'], self.username)
+        assert_equal(user_info['id'], self.user_id)
+        assert_equal(user_info['employment'], self.user.jobs[0]['institution'])
+        assert_equal(user_info['education'], self.user.schools[0]['institution'])
+        assert_equal(user_info['projects_in_common'], 0)
+        assert_equal(user_info['registered'], True)
+        assert_equal(user_info['active'], True)
+        assert_in('secure.gravatar.com', user_info['gravatar_url'])
+        assert_equal(user_info['profile_url'], self.profile)
 
