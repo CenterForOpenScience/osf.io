@@ -319,6 +319,9 @@
         ajaxOptions: {
             cache: false  // Prevent caching in IE
         },
+        preprocessFilename: function(filename) {
+            return $(filename).text();
+        },
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
