@@ -87,6 +87,7 @@
             toReload = theParentNode;
         }
         toReload.childrenCount = toReload.children.length;
+        hgrid.refreshData();
         hgrid.reloadFolder(toReload);
         hgrid.grid.setSelectedRows([]);
         hgrid.grid.resetActiveCell();
@@ -268,6 +269,7 @@
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
                                 folder.childrenCount = folder.children.length;
+                                draggable.grid.refreshData();
                                 reloadFolder(draggable.grid, itemParent);
                             }
                         });
@@ -439,9 +441,9 @@
         var url = row.urls.fetch;
         var linkString = name;
         var extraClass = "";
-        if (url != null) {
-            linkString = '<a href="' + url + '">' + name + '</a>';
-        }
+//        if (url != null) {
+//            linkString = '<a href="' + url + '">' + name + '</a>';
+//        }
 
         var type = row.type;
 
@@ -877,6 +879,7 @@
                     draggable.grid.grid.resetActiveCell();
                 }
                 item.childrenCount = newData.data.length;
+                draggable.grid.refreshData();
                 self.options.success.call();
             },
             getExpandState: function(folder) {
@@ -903,6 +906,7 @@
                         dataType: 'json'
                     }).done(function() {
                         item.expand = false;
+                        draggable.grid.refreshData();
                     });
                 }
             },
