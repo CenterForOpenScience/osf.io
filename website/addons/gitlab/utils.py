@@ -273,13 +273,15 @@ def get_download_count(node, path, sha=None):
     return get_basic_counters(key)
 
 
-def item_to_hgrid(node, item, path, permissions, branch=None, sha=None):
+def item_to_hgrid(node, item, path, permissions, branch=None, sha=None,
+                  action_taken=None):
     fullpath = os.path.join(path, item['name'])
     out = {
         'name': item['name'],
         'kind': type_to_kind[item['type']],
         'permissions': permissions,
         'urls': build_full_urls(node, item, fullpath, branch, sha),
+        'actionTaken': action_taken,
     }
     if item['type'] == 'blob':
         unique, total = get_download_count(node, fullpath)

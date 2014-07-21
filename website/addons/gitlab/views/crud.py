@@ -95,6 +95,7 @@ def gitlab_upload_file(auth, node_addon, **kwargs):
         }
 
     status = http.CREATED if action == NodeLog.FILE_ADDED else http.OK
+    action_taken = 'file_added' if action == NodeLog.FILE_ADDED else 'file_updated'
     gitlab_upload_log(node, action, auth, response, branch)
 
     # File created or modified
@@ -110,7 +111,8 @@ def gitlab_upload_file(auth, node_addon, **kwargs):
             'view': True,
             'edit': True,
         },
-        branch=branch
+        branch=branch,
+        action_taken=action_taken,
     )
     return grid_data, status
 
