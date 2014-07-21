@@ -7,6 +7,9 @@ from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from website.project.views.node import _get_summary
+from website.profile import utils
+from website.filters import gravatar
+from website import settings
 
 
 class TestNodeSerializers(OsfTestCase):
@@ -26,3 +29,103 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have id and primary
         assert_equal(result['summary']['id'], node._primary_key)
         assert_true(result['summary']['primary'], True)
+
+
+class TestAddContributorJson(OsfTestCase):
+
+    def test_add_contributor_json(self):
+        user = UserFactory()
+        user2 = UserFactory()
+
+        profile = user.profile_url
+        user_id = user._primary_key
+
+        profile2 = user2.profile_url
+        user_id2 = user2._primary_key
+
+        jobs = [{
+            'institution': 'School of Lover Boys',
+            'department': 'Fancy Patter',
+            'position': 'Lover Boy',
+            'start': None,
+            'end': None,
+                }]
+
+        schools = [{
+             'degree': 'Vibing',
+             'institution': 'Queens University',
+             'department': '',
+             'location': '',
+             'start': None,
+             'end': None,
+                }]
+
+        # User with no employment or education info listed
+        user_info = {
+            'fullname': 'Freddie Mercury0',
+            'email': 'fred0@example.com',
+            'id': user_id,
+            'employment': None,
+            'education': None,
+            'projects_in_common': 0,
+            'registered': True,
+            'active': True,
+            'gravatar_url': 'https://secure.gravatar.com/avatar/fff8c77ae8f4caa3edc5ea7e7cb5533c?d=identicon&size=40',
+            'profile_url': profile
+        }
+
+        assert_equal(utils.add_contributor_json(user), user_info)
+
+        # User with only education information
+        user.schools = schools
+        user_with_school_info = {
+            'fullname': 'Freddie Mercury0',
+            'email': 'fred0@example.com',
+            'id': user_id,
+            'employment': None,
+            'education': 'Queens University',
+            'projects_in_common': 0,
+            'registered': True,
+            'active': True,
+            'gravatar_url': 'https://secure.gravatar.com/avatar/fff8c77ae8f4caa3edc5ea7e7cb5533c?d=identicon&size=40',
+            'profile_url': profile
+        }
+
+        assert_equal(utils.add_contributor_json(user), user_with_school_info)
+
+
+        # User with only employment information
+        user2.jobs = jobs
+        user_with_job_info = {
+            'fullname': 'Freddie Mercury1',
+            'email': 'fred1@example.com',
+            'id': user_id2,
+            'employment': 'School of Lover Boys',
+            'education': None,
+            'projects_in_common': 0,
+            'registered': True,
+            'active': True,
+            'gravatar_url': 'https://secure.gravatar.com/avatar/25c3085f6199613c7493a5c5183e7890?d=identicon&size=40',
+            'profile_url': profile2
+        }
+
+        assert_equal(utils.add_contributor_json(user2), user_with_job_info)
+
+
+        # User with both employment and education information
+        user.jobs = jobs
+        user.schools = schools
+        user_with_both = {
+            'fullname': 'Freddie Mercury0',
+            'email': 'fred0@example.com',
+            'id': user_id,
+            'employment': 'School of Lover Boys',
+            'education': 'Queens University',
+            'projects_in_common': 0,
+            'registered': True,
+            'active': True,
+            'gravatar_url': 'https://secure.gravatar.com/avatar/fff8c77ae8f4caa3edc5ea7e7cb5533c?d=identicon&size=40',
+            'profile_url': profile
+        }
+
+        assert_equal(utils.add_contributor_json(user), user_with_both)
