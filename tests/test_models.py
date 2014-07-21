@@ -467,14 +467,28 @@ class TestUser(OsfTestCase):
 
     def test_get_projects_in_common(self):
         user2 = UserFactory()
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.save()
+
+        project_keys = set(self.user.node__contributed._to_primary_keys())
+        projects = set(self.user.node__contributed)
+
+        assert_equal(self.user.get_projects_in_common(user2, primary_keys=True),
+                     project_keys.intersection(user2.node__contributed._to_primary_keys()))
+        assert_equal(self.user.get_projects_in_common(user2, primary_keys=False),
+                     projects.intersection(user2.node__contributed))
+
+    def test_n_projects_in_common(self):
+        user2 = UserFactory()
         user3 = UserFactory()
         project = ProjectFactory(creator=self.user)
 
         project.add_contributor(contributor=user2, auth=self.consolidate_auth)
         project.save()
 
-        assert_equal(self.user.get_projects_in_common(user2), 1)
-        assert_equal(self.user.get_projects_in_common(user3), 0)
+        assert_equal(self.user.n_projects_in_common(user2), 1)
+        assert_equal(self.user.n_projects_in_common(user3), 0)
 
 
 class TestUserParse(unittest.TestCase):

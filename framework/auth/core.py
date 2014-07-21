@@ -727,8 +727,8 @@ class User(GuidStoredObject, AddonModelMixin):
             projects_contributed_to = set(self.node__contributed._to_primary_keys())
             return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
         else:
-            projects_contributed_to = set(self.node__contributed())
-            return projects_contributed_to.intersection(other_user.node__contributed())
+            projects_contributed_to = set(self.node__contributed)
+            return projects_contributed_to.intersection(other_user.node__contributed)
 
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
