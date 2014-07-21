@@ -14,6 +14,7 @@
     }
 }(this, function ($, HGrid, ko) {
     'use strict';
+    $.ajaxSetup({ cache: false });
 
     //
     // Globals
@@ -610,6 +611,7 @@
                                 }
                             }
                         });
+
 
                     $('#input' + theItem.node_id).bind('keyup', function (event) {
                         var key = event.keyCode || event.which;
