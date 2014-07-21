@@ -83,10 +83,7 @@
         $script.ready(['projectorganizer'], function() {
             var projectbrowser = new ProjectOrganizer('#project-grid');
         });
-##        $script(['/static/js/projectorganizer-ko.js']);
-##        $script.ready(['projectorganizer-ko'], function() {
-##            var projectbrowser = new ProjectOrganizer('#projectOrganizerScope');
-##        });
+
 
     </script>
 </%def>
