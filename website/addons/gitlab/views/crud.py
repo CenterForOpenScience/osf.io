@@ -3,6 +3,7 @@
 import os
 import urllib
 import logging
+import unicodedata
 import httplib as http
 from flask import request, redirect, make_response
 
@@ -37,9 +38,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_cache_file(path, sha):
-    return '{0}_{1}.html'.format(
-        urllib.quote_plus(path), sha,
-    )
+    return u'{0}_{1}.html'.format(path, sha)
 
 
 def get_guid(node_addon, path, ref):
@@ -304,10 +303,10 @@ def gitlab_view_file(auth, node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
-@update_counters('download:{pid}:{path}:{sha}')
-@update_counters('download:{nid}:{path}:{sha}')
-@update_counters('download:{pid}:{path}')
-@update_counters('download:{nid}:{path}')
+@update_counters(u'download:{pid}:{path}:{sha}')
+@update_counters(u'download:{nid}:{path}:{sha}')
+@update_counters(u'download:{pid}:{path}')
+@update_counters(u'download:{nid}:{path}')
 def gitlab_download_file(node_addon, **kwargs):
 
     path = gitlab_utils.kwargs_to_path(kwargs, required=True)
@@ -321,8 +320,14 @@ def gitlab_download_file(node_addon, **kwargs):
 
     # Build response
     resp = make_response(contents)
+
+    # Build headers
+    # Note: Response headers must be in latin-1 encoding, which requires
+    # unicode to be normalized to composite form.
     _, filename = os.path.split(path)
-    disposition = 'attachment; filename={0}'.format(filename)
+    normalized_filename = unicodedata.normalize('NFKC', filename)
+    encoded_filename = normalized_filename.encode('latin-1', 'ignore')
+    disposition = 'attachment; filename={0}'.format(encoded_filename)
     resp.headers['Content-Disposition'] = disposition
 
     # Add binary MIME type if extension missing

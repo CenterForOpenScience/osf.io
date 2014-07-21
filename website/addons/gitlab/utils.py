@@ -5,6 +5,7 @@ import re
 import time
 import urllib
 import logging
+import unicodedata
 import httplib as http
 from slugify import Slugify
 from mako.template import Template
@@ -125,7 +126,7 @@ def setup_user(user):
     """Ensure user add-on model and provision GitLab user account.
 
     :param User user: OSF user
-    :returns: User add-on model
+    :return: User add-on model
 
     """
     user_settings = user.get_or_add_addon('gitlab')
@@ -138,7 +139,7 @@ def setup_node(node, check_ready=False):
 
     :param Node node: OSF node
     :param bool check_ready: Wait until GitLab project is ready
-    :returns: Node add-on model
+    :return: Node add-on model
 
     """
     node_settings = node.get_or_add_addon('gitlab')
@@ -152,7 +153,7 @@ def check_project_initialized(node_settings, tries=20, delay=0.1):
     :param GitlabNodeSettings node_settings: Node settings object
     :param int tries: Maximum number of tries
     :param float delay: Delay between tries
-    :returns: Project ready
+    :return: Project ready
 
     """
     project_service = projectservice.GitlabProjectService(node_settings)
@@ -172,12 +173,19 @@ type_to_kind = {
 
 
 def kwargs_to_path(kwargs, required=True):
-    """
+    """Extract git path from kwargs.
+
+    :param dict kwargs: Keyword arguments from request
+    :param bool required: Path is required
+    :raise: `HTTPError` if path is both required and missing
 
     """
     path = kwargs.get('path')
     if path:
-        return urllib.unquote_plus(path).rstrip('/')
+        unquoted = urllib.unquote_plus(path).rstrip('/')
+        # Note: GitLab expects unicode in paths to be in decomposed form.
+        normalized = unicodedata.normalize('NFKD', unquoted)
+        return normalized
     elif required:
         raise HTTPError(http.BAD_REQUEST)
     return ''
@@ -205,10 +213,10 @@ def build_full_urls(node, item, path, branch=None, sha=None):
     :param str path: Path to file or folder
     :param str branch: Optional branch name
     :param str sha: Optional commit SHA
-    :returns: Dict of URLs
+    :return: Dict of URLs
 
     """
-    quote_path = urllib.quote_plus(path.encode('utf-8'))
+    quote_path = path.encode('utf-8')
     quote_path = None if not quote_path else quote_path
 
     if item['type'] == 'tree':
@@ -254,6 +262,17 @@ def build_full_urls(node, item, path, branch=None, sha=None):
 gitlab_slugify = Slugify(safe_chars='.')
 gitlab_slugify._pretranslate = lambda value: re.sub(r'\.git$', '', value)
 
+# from unidecode import unidecode
+# forbidden_chars_regex = re.compile(r'[^a-z0-9?._-]', flags=re.I)
+# dot_git_regex = re.compile(r'\.git$', flags=re.I)
+#
+#
+# def gitlab_slugify(value, repl='-'):
+#     value = unidecode(value)
+#     value = forbidden_chars_regex.sub(repl, value)
+#     value = dot_git_regex.sub(repl, value)
+#     return value
+
 
 def get_download_count(node, path, sha=None):
     """Get unique and total download counts for a file by path and optional
@@ -262,7 +281,7 @@ def get_download_count(node, path, sha=None):
     :param Node node: Node object
     :param str path: Path to file
     :param str sha: Commit ID
-    :returns: Tuple of (unique, total)
+    :return: Tuple of (unique, total)
 
     """
     clean_path = path.replace('.', '_')
@@ -301,7 +320,7 @@ def resolve_gitlab_hook_author(author):
     """Resolve GitLab author information to OSF user.
 
     :param dict author: Author dictionary from GitLab
-    :returns: User if email found in OSF, else email address
+    :return: User if email found in OSF, else email address
 
     """
     return get_user(username=author['email']) or author['name']
@@ -312,7 +331,7 @@ def resolve_gitlab_commit_author(commit):
     if available.
 
     :param dict commit: JSON commit data
-    :returns: Dict of committer name and URL
+    :return: Dict of committer name and URL
 
     """
     committer_user = get_user(username=commit['author_email'])
@@ -345,7 +364,7 @@ def serialize_commit(node, path, commit, guid, branch):
     :param dict commit: GitLab commit data
     :param str guid: File GUID
     :param str branch: Branch name
-    :returns: Dict of commit data
+    :return: Dict of commit data
 
     """
     committer = resolve_gitlab_commit_author(commit)

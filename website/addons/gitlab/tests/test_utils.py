@@ -62,8 +62,8 @@ class TestKwargsToPath(unittest.TestCase):
 
     def test_kwargs_to_path(self):
         assert_equal(
-            utils.kwargs_to_path({'path': 'foo/bar/baz'}),
-            urllib.unquote_plus('foo/bar/baz')
+            utils.kwargs_to_path({'path': u'foo/bar/baz'}),
+            u'foo/bar/baz',
         )
 
     def test_kwargs_to_path_required(self):
