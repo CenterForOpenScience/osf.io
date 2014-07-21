@@ -458,9 +458,9 @@ def search_contributor(query, exclude=None, current_user=None):
         user = User.load(doc['id'])
 
         if current_user:
-            projects_in_common = current_user.n_projects_in_common(user)
+            n_projects_in_common = current_user.n_projects_in_common(user)
         else:
-            projects_in_common = 0
+            n_projects_in_common = 0
 
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
@@ -480,7 +480,7 @@ def search_contributor(query, exclude=None, current_user=None):
                 'id': doc['id'],
                 'employment': current_employment,
                 'education': education,
-                'projects_in_common': projects_in_common,
+                'n_projects_in_common': n_projects_in_common,
                 'gravatar_url': gravatar(
                     user,
                     use_ssl=True,

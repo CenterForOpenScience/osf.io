@@ -89,9 +89,9 @@ def add_contributor_json(user, current_user=None):
 
     # get shared projects
     if current_user:
-        projects_in_common = current_user.n_projects_in_common(user)
+        n_projects_in_common = current_user.n_projects_in_common(user)
     else:
-        projects_in_common = 0
+        n_projects_in_common = 0
 
     current_employment = None
     education = None
@@ -108,7 +108,7 @@ def add_contributor_json(user, current_user=None):
         'id': user._primary_key,
         'employment': current_employment,
         'education': education,
-        'projects_in_common': projects_in_common,
+        'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
         'active': user.is_active(),
         'gravatar_url': gravatar(
