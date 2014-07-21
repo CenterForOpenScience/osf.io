@@ -537,6 +537,7 @@ def assert_valid_hgrid_folder(node_hgrid):
         'expand': bool,
         'permissions': dict,
         'isSmartFolder': bool,
+        'childrenCount': int,
     }
     keys_types = {
         'urls': (str, NoneType),
