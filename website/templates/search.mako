@@ -38,9 +38,9 @@
         </h4><h4>
                 <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Projects: ${counts['projects']}</a>
         </h4><h4>
-                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Components: ${counts['components']}</a> 
+                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Components: ${counts['components']}</a>
         </h4><h4>
-                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Registrations: ${counts['registrations']}</a> 
+                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Registrations: ${counts['registrations']}</a>
         </h4>
 
             % endif
@@ -83,15 +83,15 @@
                                     % endif
                                 </h4>
                             </div><!-- end title -->
-            
+
                             <div class="description">
                                 % if result['description']:
                                     <h5>
-                                        ${result['description']}
+                                      ${result['description'][:500]}${'...' if len(result['description']) > 500 else ''}
                                     </h5>
                                 % endif
                             </div>
-                            
+
     ##                            jeff's nice logic for displaying users
                             <div class="contributors">
                                 % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):

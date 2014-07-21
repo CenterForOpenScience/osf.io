@@ -27,12 +27,12 @@
                 %if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> /
+                            <a href="${parent_node['url']}">${parent_node['title']}</a>&nbsp;/
 
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">
-                             <span>Private Project</span> /
+                             <span>Private Project</span>&nbsp;/
                          </h1>
                     %endif
                 %endif
@@ -92,12 +92,12 @@
         </div><!-- end row -->
 
 
-        <p id="contributors">Contributors:
-            <span id="contributorsview"><div mod-meta='{
+        <div id="contributors">Contributors:
+            <ol><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
-                }'></div></span>
+                }'></div></ol>
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
@@ -119,7 +119,7 @@
             % elif node['description'] or 'write' in user['permissions']:
                  <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
             % endif
-        </p>
+        </div>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <a class="navbar-brand collapse visible-xs">
@@ -134,7 +134,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
-                        <li><a href="${node['url']}">My Projects</a></li>
+                        <li><a href="${node['url']}">Project Dashboard</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->

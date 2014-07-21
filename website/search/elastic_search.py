@@ -2,7 +2,7 @@
 
 import logging
 import pyelasticsearch
-import re 
+import re
 import copy
 
 from website import settings
@@ -18,7 +18,7 @@ TYPES = ['project', 'component', 'user', 'registration']
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-        settings.ELASTIC_URI, 
+        settings.ELASTIC_URI,
         timeout=settings.ELASTIC_TIMEOUT
     )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
