@@ -20,6 +20,8 @@ DEFAULT_BRANCH = 'master'
 # TODO: Change me to `True` after GitLab migration
 VERIFY_SSL = False
 
+MISSING_FILE_NAME = 'untitled'
+
 # `HOOK_DOMAIN` defaults to `DOMAIN`, which should be the value used in
 # production. This can be changed in local.py for use with services like
 # ngrok or localtunnel.

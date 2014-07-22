@@ -7,7 +7,7 @@ import urllib
 import datetime
 import urlparse
 
-from tests.base import OsfTestCase, fake
+from tests.base import fake
 from tests.factories import UserFactory
 
 from framework.exceptions import HTTPError
@@ -21,6 +21,7 @@ from website.addons.gitlab.tests.factories import GitlabGuidFileFactory
 from website.addons.gitlab import utils
 from website.addons.gitlab import utils_files
 from website.addons.gitlab.api import GitlabError
+from website.addons.gitlab import settings as gitlab_settings
 
 
 def normalize_query_string(url):
@@ -103,13 +104,19 @@ class TestSlugify(unittest.TestCase):
     def test_replace_special(self):
         assert_equal(
             utils.gitlab_slugify('foo&bar_baz'),
-            'foo-bar-baz'
+            'foo_bar_baz'
         )
 
     def test_replace_git(self):
         assert_equal(
             utils.gitlab_slugify('foo.git'),
             'foo'
+        )
+
+    def test_replace_all_repl_char(self):
+        assert_equal(
+            utils.gitlab_slugify('&&&'),
+            gitlab_settings.MISSING_FILE_NAME,
         )
 
 

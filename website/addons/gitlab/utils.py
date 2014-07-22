@@ -7,7 +7,7 @@ import urllib
 import logging
 import unicodedata
 import httplib as http
-from slugify import Slugify
+from unidecode import unidecode
 from mako.template import Template
 from dateutil.parser import parse as parse_date
 
@@ -20,8 +20,6 @@ from website.addons.base import AddonError
 from website.addons.base.utils import NodeLogger
 from website.profile.utils import reduce_permissions
 from website.dates import FILE_MODIFIED
-
-from website.addons.base.services.base import ServiceConfigurationError
 
 from website.addons.gitlab import settings as gitlab_settings
 from website.addons.gitlab.services import (
@@ -255,23 +253,25 @@ def build_full_urls(node, item, path, branch=None, sha=None):
 
 # Gitlab file names can only contain alphanumeric and [_.-?] and must not end
 # with ".git"
-# See https://github.com/gitlabhq/gitlabhq/blob/master/lib/gitlab/regex.rb#L52
-# Hack: `Slugify::set_pretranslate` is currently broken and doesn't accept
-# callables; until our PR is accepted, set the _pretranslate attribute
-# directly.
-gitlab_slugify = Slugify(safe_chars='.')
-gitlab_slugify._pretranslate = lambda value: re.sub(r'\.git$', '', value)
+forbidden_chars_regex = re.compile(r'[^a-z0-9?._-]', flags=re.I)
+dot_git_regex = re.compile(r'\.git$', flags=re.I)
 
-# from unidecode import unidecode
-# forbidden_chars_regex = re.compile(r'[^a-z0-9?._-]', flags=re.I)
-# dot_git_regex = re.compile(r'\.git$', flags=re.I)
-#
-#
-# def gitlab_slugify(value, repl='-'):
-#     value = unidecode(value)
-#     value = forbidden_chars_regex.sub(repl, value)
-#     value = dot_git_regex.sub(repl, value)
-#     return value
+
+def gitlab_slugify(value, repl='_'):
+    """Strip forbidden characters from filename. If result is empty or
+    comprised entirely of replacement characters, return missing file string.
+
+    :param str value: String to slugify
+    :param str repl: Replacement character
+    :return: Slugified string or missing file value if empty
+
+    """
+    value = unidecode(value)
+    value = forbidden_chars_regex.sub(repl, value)
+    value = dot_git_regex.sub('', value)
+    if not value or not value.replace(repl, ''):
+        value = gitlab_settings.MISSING_FILE_NAME
+    return value
 
 
 def get_download_count(node, path, sha=None):
