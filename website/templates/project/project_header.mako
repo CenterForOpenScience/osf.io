@@ -93,11 +93,17 @@
 
 
         <div id="contributors">Contributors:
+            % if node['anonymous'] and not node['is_public'] and not user['can_edit']:
+                <ol>Anonymous Contributors</ol>
+
+            % else:
             <ol><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
                 }'></div></ol>
+            % endif
+        
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
