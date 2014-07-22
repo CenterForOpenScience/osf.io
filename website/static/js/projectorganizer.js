@@ -952,7 +952,7 @@
                         dataType: 'json'
                     }).done(function() {
                         item.expand = false;
-                        draggable.grid.refreshData();
+                        draggable.grid.resetLoadedState(item);
                     });
                 }
             },
