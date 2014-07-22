@@ -17,7 +17,7 @@
 
                     <hr />
 
-                    <div>
+                    <div class="checkbox">
                         <label>
                             <input type="checkbox" data-bind="checked: anonymous"/>
                             Anonymize contributor list for this link (e.g., for blind peer review)
