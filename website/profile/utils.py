@@ -33,6 +33,7 @@ def serialize_user(user, node=None, full=False):
     :param bool full: Include complete user properties
 
     """
+
     rv = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
@@ -84,17 +85,37 @@ def serialize_contributors(contribs, node):
     ]
 
 
-def add_contributor_json(user):
+def add_contributor_json(user, current_user=None):
+
+    # get shared projects
+    if current_user:
+        n_projects_in_common = current_user.n_projects_in_common(user)
+    else:
+        n_projects_in_common = 0
+
+    current_employment = None
+    education = None
+
+    if user.jobs:
+        current_employment = user.jobs[0]['institution']
+
+    if user.schools:
+        education = user.schools[0]['institution']
+
     return {
         'fullname': user.fullname,
         'email': user.username,
         'id': user._primary_key,
+        'employment': current_employment,
+        'education': education,
+        'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
         'active': user.is_active(),
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
+        'profile_url': user.profile_url
     }
 
 def serialize_unregistered(fullname, email):

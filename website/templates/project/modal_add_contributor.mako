@@ -46,11 +46,15 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
+                            <!-- start making changes -->
+
                             <table>
                                 <thead data-bind="visible: foundResults">
                                     <th></th>
                                     <th></th>
-                                    <th>Name</th>
+                                    <th>
+                                        Name
+                                    </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -65,13 +69,40 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td>
-                                            <span data-bind="text: contributor.fullname"></span>
+                                        <td >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" >
+                                                <span data-bind= "text:contributor.fullname"></span>
+                                            </a><br>
+
+
+                                                <span data-bind="if: contributor.employment">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind="text: contributor.employment">
+                                                    </span><br>
+                                                </span>
+
+
+                                                <span data-bind="if: contributor.education">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind= "text: contributor.education">
+                                                    </span><br>
+                                                </span>
+
+                                                <span class= 'small'
+                                                      data-bind= "text: contributor.displayProjectsInCommon">
+                                                </span>
+
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+
                                         </td>
+
                                     </tr>
+
+
                                 </tbody>
                             </table>
                             <!-- Link to add non-registered contributor -->
@@ -122,16 +153,15 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
-                                            <a href="#" class='text-muted'
-                                                    data-bind="
-                                                        visible: !contributor.registered,
-                                                        click: $root.goToPage.bind($data, 'invite')">(unregistered)
-                                            </a>
-                                        </td>
+
                                         <td>
-                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                            <span   data-bind="text: contributor.fullname"></span>
+
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
+
                                     </tr>
                                 </tbody>
                             </table>
@@ -230,3 +260,4 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
+

@@ -80,6 +80,18 @@
             self.page(page);
         };
 
+        function Contributor(data) {
+            $.extend(this, data);
+            if (data['n_projects_in_common'] === 1) {
+                this.displayProjectsInCommon = data['n_projects_in_common'] + ' project in common';
+            } else if (data['n_projects_in_common'] !== 0) {
+                this.displayProjectsInCommon = data['n_projects_in_common'] + ' projects in common';
+            } else {
+                this.displayProjectsInCommon = '';
+            }
+        }
+
+
         self.search = function() {
             self.notification(false);
             if (self.query()) {
@@ -90,7 +102,11 @@
                         excludeNode: nodeId,
                     },
                     function(result) {
-                        self.results(result['users']);
+                        var users = [];
+                        for (var i=0; i< result.users.length; i++) {
+                            users.push(new Contributor(result.users[i]))
+                        }
+                        self.results(users);
                     }
                 )
             } else {
@@ -127,7 +143,11 @@
                             'level': 'info'
                         });
                     }
-                    self.results(result['contributors']);
+                    var contribs = [];
+                    for (var i=0; i< result.contributors.length; i++) {
+                        contribs.push(new Contributor(result.contributors[i]))
+                    }
+                    self.results(contribs);
                 }
             )
         };
