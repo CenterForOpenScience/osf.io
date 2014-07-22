@@ -251,6 +251,15 @@ $ brew update && brew install node
 $ npm install -g bower
 ```
 
+Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
+
+```bash
+sudo apt-get install nodejs
+sudo ln -s /usr/bin/nodejs /usr/bin/node
+node --version      # v0.10.25
+```
+
 To install a library:
 
 ```bash
