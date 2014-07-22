@@ -18,5 +18,7 @@ install:
     - travis_retry invoke requirements
     - travis_retry invoke addon_requirements
     - travis_retry invoke encryption
+    - npm install -g bower
+    - bower install
 
 script: invoke test_all

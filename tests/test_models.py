@@ -30,7 +30,6 @@ from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.project.model import Node
 
 from tests.base import OsfTestCase, Guid, fake, URLLookup
 from tests.factories import (
@@ -133,8 +132,8 @@ class TestUser(OsfTestCase):
 
     def test_non_registered_user_is_not_active(self):
         u = User(username=fake.email(),
-            fullname='Freddie Mercury',
-            is_registered=False)
+                 fullname='Freddie Mercury',
+                 is_registered=False)
         u.set_password('killerqueen')
         u.save()
         assert_false(u.is_active())
@@ -142,7 +141,7 @@ class TestUser(OsfTestCase):
     def test_create_unregistered(self):
         name, email = fake.name(), fake.email()
         u = User.create_unregistered(email=email,
-            fullname=name)
+                                     fullname=name)
         u.save()
         assert_equal(u.username, email)
         assert_false(u.is_registered)
@@ -158,7 +157,7 @@ class TestUser(OsfTestCase):
 
     @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
-        u = UserFactory(is_registered=True)
+        UserFactory(is_registered=True)
         assert_true(update_search.called)
 
     def test_create_unregistered_raises_error_if_already_in_db(self):
