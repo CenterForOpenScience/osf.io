@@ -8,8 +8,6 @@ from tests.base import OsfTestCase
 from framework.auth import Auth
 from website.project.views.node import _get_summary
 from website.profile import utils
-from website.filters import gravatar
-from website import settings
 
 
 class TestNodeSerializers(OsfTestCase):
