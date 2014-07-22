@@ -108,11 +108,10 @@
                         excludeNode: nodeId,
                     },
                     function(result) {
-                        var users = [];
-                        for (var i=0; i< result.users.length; i++) {
-                            users.push(new Contributor(result.users[i]));
-                        }
-                        self.results(users);
+                        var contributors = result.users.map(function(userData) {
+                            return new Contributor(userData);
+                        });
+                        self.results(contributors);
                     }
                 );
             } else {
