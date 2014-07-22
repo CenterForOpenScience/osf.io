@@ -90,20 +90,8 @@
                                                     </span><br>
                                                 </span>
 
-                                                <span data-bind="if: contributor.projects_in_common == 1">
-                                                    <span class = 'small'>
-                                                        <p><b class= 'small'
-                                                              data-bind= "text: contributor.projects_in_common"></b>
-                                                              project in common</p>
-                                                    </span>
-                                                </span>
-
-                                                <span data-bind="if: contributor.projects_in_common != 1">
-                                                    <span class = 'small'>
-                                                        <p><b class = 'small'
-                                                              data-bind= "text: contributor.projects_in_common"></b>
-                                                              projects in common</p>
-                                                    </span>
+                                                <span class= 'small'
+                                                      data-bind= "text: contributor.displayProjectsInCommon">
                                                 </span>
 
                                             <span
