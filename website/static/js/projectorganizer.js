@@ -925,7 +925,7 @@
                     draggable.grid.grid.resetActiveCell();
                 }
                 item.childrenCount = newData.data.length;
-                draggable.grid.refreshData();
+//                draggable.grid.refreshData();
                 self.options.success.call();
             },
             getExpandState: function(folder) {
@@ -954,6 +954,8 @@
                         item.expand = false;
                         draggable.grid.resetLoadedState(item);
                     });
+                }else if(typeof event !== 'undefined') {
+                    draggable.grid.resetLoadedState(item);
                 }
             },
 
