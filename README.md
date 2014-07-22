@@ -32,6 +32,9 @@ $ cp website/settings/local-dist.py website/settings/local.py
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
+    - Install npm
+    - Install bower
+    - Use bower to install Javascript components
 
 - To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
@@ -39,6 +42,7 @@ $ cp website/settings/local-dist.py website/settings/local.py
 $ pip install invoke
 $ invoke setup
 ```
+
 
 - Optionally, you may install the requirements for the Modular File Renderer:
 
@@ -237,7 +241,8 @@ $ invoke elasticsearch
 
 ## Using Bower for front-end dependencies
 
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries.
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
 
 To get the bower CLI, you must have Node installed.
 
