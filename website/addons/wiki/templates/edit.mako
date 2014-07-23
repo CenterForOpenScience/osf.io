@@ -32,6 +32,11 @@
     <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
     <script>
+        $(window).on('beforeunload', function() {
+            return 'There are unsaved changes to your wiki.';
+        });
+    </script>
+    <script>
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
         editor1.run();
