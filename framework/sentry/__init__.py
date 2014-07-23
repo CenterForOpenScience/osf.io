@@ -9,6 +9,11 @@ sentry = Sentry(dsn=settings.SENTRY_DSN)
 
 def log_exception():
     sentry.captureException(extra={
-        'session': get_session().data
+        'session': get_session().data,
     })
 
+
+def log_message(message):
+    sentry.captureMessage(message, extra={
+        'session': get_session().data,
+    })
