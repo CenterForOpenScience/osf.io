@@ -247,6 +247,7 @@ be installed with `invoke setup` (above)
 To get the bower CLI, you must have Node installed.
 
 ```bash
+# For MacOSX
 $ brew update && brew install node
 $ npm install -g bower
 ```
@@ -255,12 +256,22 @@ Installing Node and Bower on Ubuntu is slightly more complicated. Node is instal
 the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
 
 ```bash
-sudo apt-get install nodejs
-sudo ln -s /usr/bin/nodejs /usr/bin/node
-node --version      # v0.10.25
+# For Ubuntu
+$ sudo apt-get install nodejs
+$ sudo ln -s /usr/bin/nodejs /usr/bin/node
+$ node --version      # v0.10.25
+$ npm install -g bower
 ```
 
-To install a library:
+**To update existing front-end dependencies**:
+
+This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
+
+```bash
+$ bower install
+```
+
+To install a new library:
 
 ```bash
 $ bower install zeroclipboard --save
