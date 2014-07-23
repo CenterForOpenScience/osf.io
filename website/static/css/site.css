@@ -600,6 +600,15 @@ h4 {
 .footer a i {
     color: #666666;
 }
+/*custom col-md - width between that of col-md-1 and col-md-2*/
+.col-md-1-2 {
+    width: 12.5%;
+    float: left;
+    position: relative;
+    min-height: 1px;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
 
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
