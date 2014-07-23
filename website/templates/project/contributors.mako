@@ -60,7 +60,7 @@
 
     % if 'admin' in user['permissions']:
         <h2>View-only Links</h2>
-        <div class="text-align">Create a link to share this project so those who have the link can view but not edit the project</div>
+        <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
