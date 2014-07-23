@@ -262,9 +262,8 @@ class NodeProjectCollector(object):
             'name': node.title
                 if can_view
                 else u'Private Component',
-            'kind': FILE
-                if is_component
-                else FOLDER,
+            'kind': FOLDER,
+            # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
