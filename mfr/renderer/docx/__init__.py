@@ -1,5 +1,5 @@
 from .. import FileRenderer
-import os.path
+from website.util.files import get_extension
 import pydocx
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -17,7 +17,7 @@ class DocxRenderer(FileRenderer):
         return docx_sig in tail
 
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         if ext.lower() == '.docx':
             return self.is_openxml(file_pointer)
         return False

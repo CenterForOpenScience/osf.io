@@ -1,5 +1,5 @@
 from .. import FileRenderer
-import os.path
+from website.util.files import get_extension
 import pygments
 import pygments.lexers
 import pygments.formatters
@@ -113,7 +113,7 @@ KNOWN_EXTENSIONS = [
 
 class CodeRenderer(FileRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() in KNOWN_EXTENSIONS
 
     def _render(self, file_pointer, url):

@@ -1,5 +1,5 @@
 from .. import FileRenderer
-import os.path
+from website.util.files import get_extension
 import imghdr
 
 import logging
@@ -17,7 +17,7 @@ class ImageRenderer(FileRenderer):
         :return: Can file be rendered? (bool)
 
         """
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         if ext.lower() in ['.jpeg', '.jpg', '.png', '.bmp', '.gif']:
             if imghdr.what(file_pointer):
                 return True

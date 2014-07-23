@@ -1,10 +1,10 @@
 import os
 import inspect
 import logging
-from hurry.filesize import size
 from mako.lookup import TemplateLookup
 
 logger = logging.getLogger(__name__)
+
 
 class FileMeta(type):
 

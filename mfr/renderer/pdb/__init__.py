@@ -1,5 +1,6 @@
 from .. import FileRenderer
 
+
 class PdbRenderer(FileRenderer):
 
     def _detect(self, fp):

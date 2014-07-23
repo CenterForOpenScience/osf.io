@@ -1,6 +1,6 @@
 from .. import FileRenderer
+from website.util.files import get_extension
 import re
-import os.path
 from IPython.config import Config
 # from IPython.nbconvert import export_python
 from IPython.nbconvert.exporters import HTMLExporter
@@ -20,7 +20,7 @@ class NbFormatError(Exception):
 
 class IPynbRenderer(FileRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() == '.ipynb'
 
     def _render(self, file_pointer, **kwargs):

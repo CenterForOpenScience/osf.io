@@ -1,7 +1,6 @@
 from .. import FileRenderer
 import PyPDF2
-import os.path
-
+from website.util.files import get_extension
 
 
 class PdfRenderer(FileRenderer):
@@ -10,7 +9,7 @@ class PdfRenderer(FileRenderer):
         # using pydf2, if it can it accepts it as a valid pdf
 
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         if ext.lower() == ".pdf":
             try:
                 PyPDF2.PdfFileReader(file_pointer)

@@ -1,6 +1,6 @@
 from .. import FileRenderer
 from docutils.core import publish_parts
-import os.path
+from website.util.files import get_extension
 
 
 class RstRenderer(FileRenderer):
@@ -9,7 +9,7 @@ class RstRenderer(FileRenderer):
         # using docutils. If it can it accepts it as a valid file
 
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() == ".rst"
 
     def _render(self, file_pointer, url=None, **kwargs):

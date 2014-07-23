@@ -1,4 +1,3 @@
-import os.path
 import pandas as pd
 import xlrd
 import rpy2.robjects as robjects
@@ -12,10 +11,12 @@ from pandas.parser import CParserError
 from rpy2.rinterface import RRuntimeError
 from xlrd.biffh import XLRDError
 
+from website.util.files import get_extension
+
 
 class CSVRenderer(TabularRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() == ".csv"
 
     def _build_df(self, file_pointer):
@@ -27,7 +28,7 @@ class CSVRenderer(TabularRenderer):
 
 class STATARenderer(TabularRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() == ".dta"
 
     def _build_df(self, file_pointer):
@@ -39,7 +40,7 @@ class STATARenderer(TabularRenderer):
 
 class ExcelRenderer(TabularRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() in [".xls", ".xlsx"]
 
     def _build_df(self, file_pointer):
@@ -64,7 +65,7 @@ class ExcelRenderer(TabularRenderer):
 
 class SPSSRenderer(TabularRenderer):
     def _detect(self, file_pointer):
-        _, ext = os.path.splitext(file_pointer.name)
+        ext = get_extension(file_pointer.name)
         return ext.lower() == ".sav"
 
     def _build_df(self, file_pointer):
@@ -76,5 +77,3 @@ class SPSSRenderer(TabularRenderer):
             return {"dataframe":com.load_data('x')}
         except (RRuntimeError, TypeError):
             raise BlankOrCorruptTableError("Is this a valid SPSS file?")
-
-

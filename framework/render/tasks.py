@@ -8,6 +8,7 @@ from mfr.renderer import FileRenderer
 import mfr
 import tempfile
 from mfr.renderer.exceptions import MFRError
+from website.util.files import get_extension
 from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
 
 
@@ -64,7 +65,7 @@ def _build_rendered_html(file_name, file_content, cache_dir, cache_file_name,
     # Else create temporary file with content
     else:
         file_pointer = tempfile.NamedTemporaryFile(
-            suffix=os.path.splitext(file_name)[1],
+            suffix=get_extension(file_name),
         )
         file_pointer.write(file_content)
         file_pointer.seek(0)
