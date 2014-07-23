@@ -263,7 +263,7 @@ $ node --version      # v0.10.25
 $ npm install -g bower
 ```
 
-**To update existing front-end dependencies**:
+### To update existing front-end dependencies
 
 This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
 
@@ -271,7 +271,9 @@ This will be the most common command you will use with `bower`. It will update a
 $ bower install
 ```
 
-To install a new library:
+### To add a new front-end library
+
+Use this command when adding a new front-end dependency
 
 ```bash
 $ bower install zeroclipboard --save
