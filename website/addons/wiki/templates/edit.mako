@@ -9,7 +9,10 @@
                     <div id="wmd-button-bar"></div>
                     <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
                 </div>
-                <input type="submit" class="btn btn-primary pull-right" value="Save">
+                <div class="pull-right">
+                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    <input type="submit" class="btn btn-primary" value="Save">
+                </div>
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
             </form>
