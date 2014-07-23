@@ -10,7 +10,7 @@
                     <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
                 </div>
                 <div class="pull-right">
-                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default" onclick=$(window).off('beforeunload')>Cancel</a>
                     <input type="submit" class="btn btn-primary" value="Save">
                 </div>
                 <p class="help-block">Preview</p>
@@ -31,11 +31,13 @@
     <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
+
     <script>
         $(window).on('beforeunload', function() {
-            return 'There are unsaved changes to your wiki.';
+            return 'There are unsaved changes to your wiki.'
         });
     </script>
+
     <script>
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
