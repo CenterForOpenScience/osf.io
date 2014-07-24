@@ -35,8 +35,9 @@
 
         // Forward configuration
         self.url = ko.observable().extend({
-            required: true,
-            url: true
+            ensureHttp: true,
+            url: true,
+            required: true
         });
         ko.validation.addAnonymousRule(
             self.url,

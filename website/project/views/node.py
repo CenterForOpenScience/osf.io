@@ -18,12 +18,12 @@ from website import language
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
-    must_be_contributor,
     must_be_contributor_or_public,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
+from website.project.model import has_anonymous_link
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -241,7 +241,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('read')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -520,8 +520,11 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs, has_more_logs= _get_logs(node, 10, auth)
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
     widgets, configs, js, css = _render_addon(node)
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -545,15 +548,15 @@ def _view_project(node, auth, primary=False):
                 'chicago': node.citation_chicago,
             },
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node.logs else '',
+            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
+            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %I:%M %p') if node.is_registration else '',
+            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -571,7 +574,8 @@ def _view_project(node, auth, primary=False):
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
-            'link': auth.private_key or request.args.get('key', '').strip('/'),
+            'link': view_only_link,
+            'anonymous': anonymous,
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
@@ -709,7 +713,7 @@ def get_recent_logs(**kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_only_link=None):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -728,7 +732,9 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'category': node.category,
             'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
+
+            'anonymous': has_anonymous_link(node, view_only_link),
+            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
                 if node.is_registration
                 else None,
             'nlogs': None,
@@ -764,9 +770,10 @@ def get_summary(**kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id
+        node, auth, rescale_ratio, primary=primary, link_id=link_id, view_only_link=view_only_link
     )
 
 
@@ -804,6 +811,7 @@ def project_generate_private_link_post(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
+    anonymous = request.json.get('anonymous', False)
 
     if node_to_use._id not in node_ids:
         node_ids.insert(0, node_to_use._id)
@@ -811,7 +819,7 @@ def project_generate_private_link_post(auth, **kwargs):
     nodes = [Node.load(node_id) for node_id in node_ids]
 
     new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes
+        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
 
     return new_link

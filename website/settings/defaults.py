@@ -110,7 +110,7 @@ WIKI_WHITELIST = {
     ],
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
-        'height', 'href', 'src', 'style', 'title', 'type', 'width',
+        'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
         'salign', 'align', 'wmode', 'target',
     ],

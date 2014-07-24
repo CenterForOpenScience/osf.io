@@ -61,7 +61,7 @@
         self.visible = ko.observable(contributor.visible);
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
-
+        self.removeContributor = "Remove contributor";
         self.pageOwner = pageOwner;
         self.serialize = function() {
             return ko.toJS(self);

@@ -168,6 +168,12 @@ def mongodump(path):
         port=port,
         path=path,
         pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
+
     run(cmd, echo=True)
 
     print()
@@ -195,6 +201,11 @@ def mongorestore(path, drop=False):
         db=db,
         port=port,
         pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
 
     if drop:
         cmd += " --drop"
@@ -398,9 +409,28 @@ def packages():
 
 
 @task
+def npm_bower():
+    print('Installing bower')
+    run('npm install -g bower')
+
+
+@task
+def bower_install():
+    print('Installing bower-managed packages')
+    run('bower install')
+
+
+@task
 def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
     requirements(all=True)
     encryption()
+    npm_bower()
+    bower_install()
+
+
+@task
+def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
