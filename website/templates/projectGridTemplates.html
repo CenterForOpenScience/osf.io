@@ -1,5 +1,5 @@
 <script id="project-detail-template" type="text/x-handlebars-template">
-    <div id="ptd-{{ theItem.node_id }}">
+    <div class="project-detail-box" id="ptd-{{ theItem.node_id }}">
     <span class = "title">
           <span class = "name-container" id="nc-{{theItem.node_id}}">
           {{#if theItem.isFolder}}{{ theItem.name }}{{/if}}
@@ -74,8 +74,10 @@
 </script>
 
 <script id="project-detail-multi-item-template" type="text/x-handlebars-template">
-    <span class="title">Selection of {{ itemsCount }} items.</span>
-    <div class = "project-detail-content">
-        <p><div class="organizeBtn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
+    <div class="project-detail-box" id="ptd-multi">
+        <span class="title">Selection of {{ itemsCount }} items.</span>
+        <div class = "project-detail-content">
+            <p><div class="organizeBtn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
+        </div>
     </div>
 </script>

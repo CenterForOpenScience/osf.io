@@ -553,8 +553,6 @@
             if (selectedRows.length == 1) {
                 self.myProjects.initialize();
                 self.publicProjects.initialize();
-
-
                 // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
 
                 var mySourceWithEmptySelectable = function(q, cb) {
@@ -570,7 +568,6 @@
                       cb(suggestions);
                     }
                   }
-
                 };
 
                 var publicSourceWithEmptySelectable = function(q, cb) {
@@ -866,7 +863,14 @@
 
 
     var draggable = new HGrid.Draggable({
+        onBeforeDrag: function(){
+            $(".project-details").hide();
+        },
+        onBeforeDrop: function(){
+            $(".project-details").show();
+        },
         onDrag: function (event, items) {
+
             dragLogic(event, items);
         },
         onDrop: function (event, items, folder) {
