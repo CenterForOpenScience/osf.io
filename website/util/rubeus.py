@@ -185,7 +185,7 @@ class NodeProjectCollector(object):
                 'fetch': None,
             },
             'children': [],
-            'type': 'folder',
+            'type': 'smart-folder',
             'expand': False,
             'isPointer': False,
             'isFolder': True,

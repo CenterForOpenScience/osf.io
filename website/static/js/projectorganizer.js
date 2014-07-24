@@ -449,7 +449,6 @@
         var type = row.type;
 
         if (row.isSmartFolder) {
-            type = "folder";
             extraClass += " smart-folder";
         }
 
