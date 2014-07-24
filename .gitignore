@@ -60,7 +60,6 @@ website/mfrcache/*
 website/gpg/*
 # Local settings
 */settings/local.py
-website/static/vendor/bower_components/*
 
 # Add-ons
 #######################
