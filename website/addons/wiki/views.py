@@ -169,7 +169,7 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
+            'pages': sorted(child.wiki_pages_current.keys()) if child.wiki_pages_current else [],
             'url': get_wiki_url(child, page=HOME),
             'is_pointer': not child.primary,
             'link': auth.private_key
@@ -180,6 +180,8 @@ def serialize_wiki_toc(project, auth):
         if child.has_addon('wiki')
     ]
     return toc
+
+
 
 
 @must_be_valid_project # returns project
