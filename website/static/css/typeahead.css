@@ -27,7 +27,7 @@ input.typeahead.tt-input {
     width: 100%;
     height: 30px;
     padding: 8px 12px;
-    font-size: 18px;
+    font-size: 14px;
     border: 2px solid #ccc;
     -webkit-border-radius: 8px;
     -moz-border-radius: 8px;
@@ -73,7 +73,7 @@ input.typeahead.tt-input {
 
 .tt-suggestion {
     padding: 3px 20px;
-    font-size: 18px;
+    font-size: 14px;
     line-height: 24px;
 }
 

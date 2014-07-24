@@ -18,11 +18,12 @@
     var $uploadProgress = $('#uploadProgress');
     var $addLink = $('#addLink'+ namespace);
     var $fakeAddLink = $('#fakeAddLinkAddFile'); // perm disabled button until file uploaded, button is enabled by project 
-    var uploadCounter = 1; // used to track upload count while uploading
-
+    var $obDropzoneError = $('#obDropzoneError');
     var $uploadIcon = $('#uploadIcon');
     var $obDropzoneFilename = $('#obDropzoneFilename');
     var $inputProjectAddFile = $('#inputProjectAddFile');
+
+    var uploadCounter = 1; // used to track upload count while uploading
 
     var myDropzone = new Dropzone('div#obDropzone', { 
         url: '/', // specified per upload
@@ -31,7 +32,7 @@
         //over
         maxFiles:9000,
         uploadMultiple: false,
-        maxFilesize: 2,
+        maxFilesize: 1,
 
         uploadprogress: function(file, progress) { // progress bar update
             $('#uploadProgress').attr('value', Math.round(progress));
@@ -52,6 +53,13 @@
                 myDropzone.processQueue(); // Tell Dropzone to process all queued files.
             });
 
+            var clearError = document.querySelector('#obDropzone');            
+            clearError.addEventListener('click', function() {
+               $obDropzoneError.empty(); // remove any lingering errors on click
+
+            });
+
+
             // clear dropzone logic
             var clearButton = document.querySelector('#clearDropzone');            
             clearButton.addEventListener('click', function() {
@@ -63,6 +71,37 @@
                 $fakeAddLink.show();
 
                 myDropzone.removeAllFiles();
+                $('#obDropzoneError').empty();
+
+            });
+
+            // file add error logic
+            this.on('error', function(file){
+                var file_name = file.name;
+                var file_size = file.size;
+                myDropzone.removeFile(file);
+                if(myDropzone.files.length===0){
+                    $obDropzone.show(); // swap filedisplay with file dropzone
+                    $obDropzoneSelected.hide();
+                    
+                    $addLink.hide(); // swap active link with pseudo button
+                    $fakeAddLink.show();
+
+                    myDropzone.removeAllFiles();
+                }
+
+                if(file_size > myDropzone.options.maxFilesize){
+
+                    $obDropzoneError.append('<div>' + file_name + ' is too big (max = ' + myDropzone.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
+                    $obDropzoneError.show();
+                }else{
+                    $obDropzoneError.text(file_name + 'could not be added to the upload queue'); // I don't know if this will ever be called, just a back up error handling
+                    $obDropzoneError.show();
+                }
+            });
+
+            this.on('drop',function(){ // clear errors on drop or click 
+                $('#obDropzoneError').empty();
             });
 
             // upload and process queue logic
@@ -87,13 +126,10 @@
                     $uploadIcon.attr('src', '/static/img/upload_icons/multiple_blank.png');
                     $obDropzoneFilename.text(myDropzone.files.length + ' files');
                 }else{
+                    // $('#obDropzone').click();
                     var file_name = truncateFilename(myDropzone.files[0].name);
                     $uploadIcon.attr('src', '/static/img/upload_icons/' + get_dz_icon(file_name));
                     $obDropzoneFilename.text(file_name);
-                }
-                
-                if ($('#obDropzone > div.field-item:contains("File is too big")').length > 0){
-                   alert('file too big!!!');
                 }
 
                 $obDropzone.hide(); // swap dropzone with file display

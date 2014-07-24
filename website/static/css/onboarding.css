@@ -89,8 +89,15 @@ li.ob-list {
 	width:100%;
 }
 
+#obTabHead {padding-bottom:9px;margin:20px 0 30px;}
+
 #addLinkRegisterProject {
 	margin-top:20px;
+}
+
+#obDropzoneError{
+	color:red;
+	text-align:center;
 }
 
 #obRegisterProjectBtn:hover{
@@ -109,6 +116,8 @@ li.ob-list {
 #obDropzone{
 	background-image: url("/static/img/upload.png");	
 	background-repeat:no-repeat;
+	background-size: 60px 60px;
+
 	background-position:center;
 }
 

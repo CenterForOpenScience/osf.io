@@ -62,6 +62,7 @@ function TypeaheadSelectedOption(inputProject, clearInputProject, addLink, names
                 $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
                 $('#inputComponent' + namespace).attr('disabled', false);    
                 $('#inputComponent' + namespace).focus();
+                $('#inputComponent' + namespace).attr('placeholder', 'Type to search');
             }else{
                 $('#inputComponent' + namespace).attr('disabled', true);
                 $('#inputComponent' + namespace).attr('placeholder', 'Selected project has no components');
@@ -87,7 +88,7 @@ function TypeaheadAddListenter(clearInputProject, inputProject, addLink, namespa
         if(componentBool===1){
             $('#clearInputComponent' + namespace).click();
             $('#inputComponent' + namespace).attr('disabled', true);
-            $('#inputComponent' + namespace).attr('placeholder', 'Type to search');
+            $('#inputComponent' + namespace).attr('placeholder', 'First select a project');
         }
 
         if(nodeType==='Project'){
