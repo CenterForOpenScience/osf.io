@@ -80,11 +80,8 @@
             <div class="tags">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
-        %else:
-            <p>No tags have been added to this project.</p>
-        %endif
 
-        <hr/>
+        <hr />
 
         <div class="logs">
             <div id='logScope'>
@@ -206,8 +203,8 @@ ${parent.javascript_bottom()}
             });
         % endif
 
-    });
 
+    });
     $script.ready(['rubeus'], function() {
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
