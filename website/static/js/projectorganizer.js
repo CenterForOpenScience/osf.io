@@ -87,8 +87,6 @@
         if(typeof theParentNode !== "undefined" || theItem.kind !== 'folder') {
             toReload = theParentNode;
         }
-        toReload.childrenCount = toReload.children.length;
-        hgrid.refreshData();
         hgrid.reloadFolder(toReload);
         hgrid.grid.setSelectedRows([]);
         hgrid.grid.resetActiveCell();
@@ -250,8 +248,6 @@
                                             if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
                                                 setReloadNextFolder(itemParentID, folder.id);
-                                                itemParent.childrenCount = itemParent.children.length;
-                                                folder.childrenCount = folder.children.length;
                                                 draggable.grid.reloadFolder(itemParent);
 
                                             } else {
@@ -268,7 +264,7 @@
                                     }
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
-                                folder.childrenCount = folder.children.length;
+//                                folder.childrenCount = folder.children.length;
                                 draggable.grid.refreshData();
                                 reloadFolder(draggable.grid, itemParent);
                             }
@@ -433,7 +429,8 @@
     ProjectOrganizer.Col.Name.behavior = "move";
     ProjectOrganizer.Col.Name.indent = 20;
     ProjectOrganizer.Col.Name.showExpander = function(row, args) {
-        return (row.childrenCount > 0);
+        return (row.childrenCount > 0 &&
+                !row._processing && !row.isDashboard);
     };
     ProjectOrganizer.Col.Name.itemView = function (row) {
         var name = row.name.toString();
@@ -920,14 +917,16 @@
                     reloadNewFolder = false;
                     var toReloadItem = draggable.grid.grid.getData().getItemById(rnfToReload);
                     if (rnfPrevItem !== rnfToReload && typeof toReloadItem !== "undefined") {
-                        toReloadItem.childrenCount = toReloadItem.children.length;
                         draggable.grid.reloadFolder(toReloadItem);
                     }
                     draggable.grid.grid.setSelectedRows([]);
                     draggable.grid.grid.resetActiveCell();
                 }
                 item.childrenCount = newData.data.length;
-//                draggable.grid.refreshData();
+
+                var row = draggable.grid.getDataView().getRowById(item.id);
+                draggable.grid.grid.invalidateRow(row);
+                draggable.grid.grid.render();
                 self.options.success.call();
             },
             getExpandState: function(folder) {
