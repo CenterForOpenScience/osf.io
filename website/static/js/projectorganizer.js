@@ -145,17 +145,16 @@
         return canDrop;
     }
 
-    function dragLogic(event, items){
+    function dragLogic(event, items, folder){
         var canCopy = true;
         var canMove = true;
-
         items.forEach(function (item) {
             canCopy = canCopy && item.permissions.copyable;
             canMove = canMove && item.permissions.movable;
         });
 
         // Check through possible move and copy options, and set the copyMode appropriately.
-        if (!(canMove || canCopy)) {
+        if (!(canMove && canCopy && canAcceptDrop(items, folder))) {
             copyMode = "forbidden"
         }
         else if (canMove && canCopy) {
@@ -868,9 +867,9 @@
         onBeforeDrop: function(){
             $(".project-details").show();
         },
-        onDrag: function (event, items) {
+        onDrag: function (event, items, folder) {
 
-            dragLogic(event, items);
+            dragLogic(event, items, folder);
         },
         onDrop: function (event, items, folder) {
             dropLogic(event, items, folder);
