@@ -11,6 +11,7 @@ from framework import must_be_logged_in, request, status
 import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
+from framework.auth.core import get_current_user
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -42,7 +43,7 @@ def search_search():
     # the document, highlight,
     # and spellcheck suggestions are returned to us
     try:
-        results_search, tags, total = search.search(query, start)
+        results_search, tags, counts = search.search(query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -54,6 +55,7 @@ def search_search():
     # results so that it is easier for us to display
     # Whether or not the user is searching for users
     searching_users = query.startswith("user:")
+    total = counts if not isinstance(counts, dict) else counts['total']
     return {
         'highlight': [],
         'results': results_search,
@@ -63,7 +65,8 @@ def search_search():
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'tags': tags,
-        'searching_users': searching_users
+        'searching_users': searching_users,
+        'counts': counts
     }
 
 
@@ -125,4 +128,4 @@ def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    return search.search_contributor(query, exclude)
+    return search.search_contributor(query, exclude, get_current_user())

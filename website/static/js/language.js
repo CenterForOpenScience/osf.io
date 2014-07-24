@@ -28,7 +28,16 @@
                 deauthSuccess: 'Unlinked your Dataverse account.',
                 authError: 'There was a problem connecting to the Dataverse.',
                 authInvalid: 'Your Dataverse username or password is invalid.',
-                authSuccess: 'Your dataverse account was linked.'
+                authSuccess: 'Your Dataverse account was linked.',
+                studyDeaccessioned: 'This study has already been deaccessioned on the Dataverse ' +
+                    'and cannot be connected to the OSF.',
+                forbiddenCharacters: 'This study cannot be connected due to forbidden characters ' +
+                    'in one or more of the study\'s file names. This issue has been forwarded to our ' +
+                    'development team.',
+                setStudyError: 'Could not connect to this study.',
+                widgetInvalid: 'The Dataverse credentials associated with ' +
+                    'this node appear to be invalid.',
+                widgetError: 'There was a problem connecting to the Dataverse.'
             },
             dropbox: {
                 // Shown on clicking "Delete Access Token" for dropbox

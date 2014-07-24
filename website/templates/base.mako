@@ -4,7 +4,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Open Science Framework | ${self.title()}</title>
+    <title>OSF | ${self.title()}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
@@ -163,6 +163,7 @@
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
+##    <script src="/static/js/koHelpers.js"></script>
 
     % for url in js_all:
     <script src="${url}"></script>

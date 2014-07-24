@@ -14,11 +14,16 @@
 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
     <dd class="log-content">
-        <span data-bind="if: log.userURL">
-            <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+        <span data-bind="if:log.anonymous">
+            <span><em>A user</em></span>
         </span>
-        <span data-bind="ifnot: log.userURL">
-            <span data-bind="text: log.userFullName"></span>
+        <span data-bind="ifnot:log.anonymous">
+            <span data-bind="if: log.userURL">
+                <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+            </span>
+            <span data-bind="ifnot: log.userURL">
+                <span data-bind="text: log.userFullName"></span>
+            </span>
         </span>
         <!-- Log actions are the same as their template name -->
         <span data-bind="template: {name: log.action, data: log}"></span>

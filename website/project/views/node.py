@@ -18,12 +18,12 @@ from website import language
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
-    must_be_contributor,
     must_be_contributor_or_public,
     must_be_valid_project,
     must_have_permission,
     must_not_be_registration,
 )
+from website.project.model import has_anonymous_link
 from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -37,20 +37,16 @@ logger = logging.getLogger(__name__)
 @must_be_valid_project  # returns project
 @must_have_permission('write')
 @must_not_be_registration
-def edit_node(**kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    auth = kwargs['auth']
-    node_to_use = node or project
+def edit_node(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = sanitize(post_data.get("value"))
-    if value:
-        if edited_field == 'title':
-            node_to_use.set_title(value, auth=auth)
-        elif edited_field == 'description':
-            node_to_use.set_description(value, auth=auth)
-        node_to_use.save()
+    value = sanitize(post_data.get('value', ''))
+    if edited_field == 'title':
+        node.set_title(value, auth=auth)
+    elif edited_field == 'description':
+        node.set_description(value, auth=auth)
+    node.save()
     return {'status': 'success'}
 
 
@@ -70,17 +66,25 @@ def project_new_post(**kwargs):
     form = NewProjectForm(request.form)
     if form.validate():
         if form.template.data:
+            # Create a project from a template
             original_node = Node.load(form.template.data)
+
+            project_changes = {
+                'title': form.title.data
+            }
+
+            # If the user entered a description, use it instead of the source's
+            if form.description.data:
+                project_changes['description'] = form.description.data
+
             project = original_node.use_as_template(
                 auth=kwargs['auth'],
                 changes={
-                    form.template.data: {
-                        'title': form.title.data,
-                    }
+                    form.template.data: project_changes
                 }
             )
-                # node._fields['date_created'].__set__(new_date, safe=True)
         else:
+            # Create a new project
             project = new_node(
                 'project', form.title.data, user, form.description.data
             )
@@ -92,7 +96,7 @@ def project_new_post(**kwargs):
 
 @must_be_logged_in
 @must_be_valid_project
-def project_new_from_template(*args, **kwargs):
+def project_new_from_template(**kwargs):
     original_node = kwargs.get('node')
     new_node = original_node.use_as_template(
         auth=kwargs['auth'],
@@ -137,8 +141,7 @@ def project_before_fork(**kwargs):
 
     prompts = node.callback('before_fork', user=user)
 
-    pointers = node.get_pointers()
-    if pointers:
+    if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_FORK_HAS_POINTERS.format(
                 category=node.project_or_component
@@ -238,7 +241,7 @@ def node_choose_addons(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor
+@must_have_permission('read')
 def node_contributors(**kwargs):
 
     auth = kwargs['auth']
@@ -341,59 +344,70 @@ def project_statistics(**kwargs):
 
 @must_be_valid_project
 @must_have_permission('admin')
-def project_set_privacy(**kwargs):
+def project_before_set_public(**kwargs):
+    node = kwargs['node'] or kwargs['project']
 
-    auth = kwargs['auth']
-    permissions = kwargs['permissions']
-    node_to_use = kwargs['node'] or kwargs['project']
+    return {
+        'prompts': node.callback('before_make_public')
+    }
 
-    node_to_use.set_privacy(permissions, auth)
+@must_be_valid_project
+@must_have_permission('admin')
+def project_set_privacy(auth, **kwargs):
+
+    permissions = kwargs.get('permissions')
+    if permissions is None:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = kwargs['node'] or kwargs['project']
+
+    node.set_privacy(permissions, auth)
 
     return {
         'status': 'success',
         'permissions': permissions,
-        'redirect_url': node_to_use.url
-    }, None, None
+    }
 
 
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def watch_post(**kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
-    watch_config = WatchConfig(node=node_to_use,
+    watch_config = WatchConfig(node=node,
                                digest=request.json.get('digest', False),
                                immediate=request.json.get('immediate', False))
     try:
         user.watch(watch_config)
     except ValueError:  # Node is already being watched
         raise HTTPError(http.BAD_REQUEST)
-    watch_config.save()
+
     user.save()
+
     return {
         'status': 'success',
-        'watchCount': len(node_to_use.watchconfig__watched)
+        'watchCount': len(node.watchconfig__watched)
     }
-
 
 
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public
 @must_not_be_registration
 def unwatch_post(**kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
-    watch_config = WatchConfig(node=node_to_use,
-                                digest=request.json.get('digest', False),
-                                immediate=request.json.get('immediate', False))
+    watch_config = WatchConfig(node=node,
+                               digest=request.json.get('digest', False),
+                               immediate=request.json.get('immediate', False))
     try:
-        user.unwatch(watch_config, save=True)
+        user.unwatch(watch_config)
     except ValueError:  # Node isn't being watched
         raise HTTPError(http.BAD_REQUEST)
+
     return {
         'status': 'success',
-        'watchCount': len(node_to_use.watchconfig__watched)
+        'watchCount': len(node.watchconfig__watched)
     }
 
 
@@ -402,6 +416,7 @@ def unwatch_post(**kwargs):
 @must_not_be_registration
 def togglewatch_post(**kwargs):
     '''View for toggling watch mode for a node.'''
+    # TODO: refactor this, watch_post, unwatch_post (@mambocab)
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     watch_config = WatchConfig(
@@ -416,6 +431,10 @@ def togglewatch_post(**kwargs):
             user.watch(watch_config, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
+
+    watch_config.save()
+    user.save()
+
     return {
         'status': 'success',
         'watchCount': len(node.watchconfig__watched),
@@ -443,6 +462,7 @@ def component_remove(**kwargs):
                 'message_long': 'Could not delete component: ' + e.message
             },
         )
+    node_to_use.save()
 
     message = '{} deleted'.format(
         node_to_use.project_or_component.capitalize()
@@ -500,8 +520,11 @@ def _view_project(node, auth, primary=False):
     user = auth.user
 
     parent = node.parent_node
-    recent_logs, has_more_logs= _get_logs(node, 10, auth)
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
     widgets, configs, js, css = _render_addon(node)
+
     # Before page load callback; skip if not primary call
     if primary:
         for addon in node.get_addons():
@@ -512,7 +535,8 @@ def _view_project(node, auth, primary=False):
         'node': {
             'id': node._primary_key,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category_display,
+            'node_type': node.project_or_component,
             'description': node.description or '',
             'url': node.url,
             'api_url': node.api_url,
@@ -524,15 +548,15 @@ def _view_project(node, auth, primary=False):
                 'chicago': node.citation_chicago,
             },
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %I:%M %p UTC') if node.logs else '',
+            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
+            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %I:%M %p') if node.is_registration else '',
+            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -550,7 +574,8 @@ def _view_project(node, auth, primary=False):
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
-            'link': auth.private_key or request.args.get('key', '').strip('/'),
+            'link': view_only_link,
+            'anonymous': anonymous,
             'logs': recent_logs,
             'has_more_logs': has_more_logs,
             'points': node.points,
@@ -620,30 +645,6 @@ def _get_children(node, auth, indent=0):
 
     return children
 
-@must_be_valid_project # returns project
-@must_have_permission('admin')
-def private_link_config(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-
-    if not node.can_edit(auth):
-        return
-    children = _get_children(node, auth)
-
-    parent = node.parent_node
-    rv = {
-        'result': {
-            'node': {
-                'title': node.title,
-                'parentId': parent._primary_key if parent else '',
-                'parentTitle': parent.title if parent else '',
-                },
-            'children': children,
-            }
-    }
-
-    return rv
-
 
 @must_be_valid_project # returns project
 @must_have_permission('admin')
@@ -660,17 +661,19 @@ def private_link_table(**kwargs):
 
 @collect_auth
 @must_be_valid_project
-def get_editable_children(**kwargs):
+def get_editable_children(auth, **kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
 
-    if not node_to_use.can_edit(auth):
+    if not node.can_edit(auth):
         return
 
-    children = _get_children(node_to_use, auth)
+    children = _get_children(node, auth)
 
-    return {'children': children}
+    return {
+        'node': {'title': node.title,},
+        'children': children,
+    }
 
 
 def _get_user_activity(node, auth, rescale_ratio):
@@ -710,7 +713,7 @@ def get_recent_logs(**kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_only_link=None):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -726,9 +729,12 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
             'primary': primary,
             'api_url': node.api_url,
             'title': node.title,
-            'category': node.project_or_component,
+            'category': node.category,
+            'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-            'registered_date': node.registered_date.strftime('%m/%d/%y %I:%M %p')
+
+            'anonymous': has_anonymous_link(node, view_only_link),
+            'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
                 if node.is_registration
                 else None,
             'nlogs': None,
@@ -764,9 +770,10 @@ def get_summary(**kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id
+        node, auth, rescale_ratio, primary=primary, link_id=link_id, view_only_link=view_only_link
     )
 
 
@@ -798,27 +805,35 @@ def get_registrations(**kwargs):
 
 @must_be_valid_project # returns project
 @must_have_permission('admin')
-def project_generate_private_link_post(*args, **kwargs):
+def project_generate_private_link_post(auth, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
 
     node_to_use = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     node_ids = request.json.get('node_ids', [])
-    note = request.json.get('note', '')
-    nodes=[]
+    name = request.json.get('name', '')
+    anonymous = request.json.get('anonymous', False)
 
     if node_to_use._id not in node_ids:
         node_ids.insert(0, node_to_use._id)
 
-    for node_id in node_ids:
-        node = Node.load(node_id)
-        nodes.append(node)
+    nodes = [Node.load(node_id) for node_id in node_ids]
 
-    new_private_link(
-        note =note, user=auth.user, nodes=nodes
+    new_link = new_private_link(
+        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
 
-    return {'status': 'success'}, 201
+    return new_link
+
+
+@must_be_valid_project # returns project
+@must_have_permission('admin')
+def project_private_link_edit(auth, **kwargs):
+    new_name = request.json.get('value', '')
+    private_link_id = request.json.get('pk','')
+    private_link = PrivateLink.load(private_link_id)
+    if private_link:
+        private_link.name = new_name
+        private_link.save()
 
 
 def _serialize_node_search(node):
@@ -939,7 +954,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth)
+        node.rm_pointer(pointer, auth=auth, save=False)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 

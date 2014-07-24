@@ -6,7 +6,7 @@
         // TODO: Use require to load dependencies (jquery, knockout, etc.)
         define(['knockout'], factory);
     } else {
-        global.PointerManager = factory(global.ko);
+        global.Pointers = factory(global.ko);
     }
 }(this, function(ko) {
     'use strict';
@@ -121,11 +121,36 @@
 
     };
 
+
+    var LinksViewModel = function($elm) {
+
+        var self = this;
+        self.links = ko.observableArray([]);
+
+        $elm.on('shown.bs.modal', function() {
+            if (self.links().length == 0) {
+                $.ajax({
+                    type: 'GET',
+                    url: nodeApiUrl + 'pointer/',
+                    dataType: 'json',
+                    success: function(response) {
+                        self.links(response.pointed);
+                    },
+                    error: function() {
+                        $elm.modal('hide');
+                        bootbox.alert('Could not get links');
+                    }
+                });
+            }
+        });
+
+    };
+
     ////////////////
     // Public API //
     ////////////////
 
-    function PointerManager (selector, nodeName) {
+    function PointerManager(selector, nodeName) {
         var self = this;
         self.selector = selector;
         self.$element = $(self.selector);
@@ -137,11 +162,20 @@
     PointerManager.prototype.init = function() {
         var self = this;
         ko.applyBindings(self.viewModel, self.$element[0]);
-        self.$element.on('hidden.bs.modal'), function() {
+        self.$element.on('hidden.bs.modal', function() {
             self.viewModel.clear();
-        };
+        });
     };
 
-    return PointerManager;
+    function PointerDisplay(selector) {
+        this.selector = selector;
+        this.$element = $(selector);
+        this.viewModel = new LinksViewModel(this.$element);
+    }
+
+    return {
+        PointerManager: PointerManager,
+        PointerDisplay: PointerDisplay
+    };
 
 }));

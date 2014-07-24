@@ -13,7 +13,7 @@ from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
 from website.addons.dataverse.views.crud import fail_if_unauthorized
 from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_dvn_file, DataverseAddonTestCase, app, mock_responses, \
+    create_mock_draft_file, DataverseAddonTestCase, mock_responses, \
     create_mock_study
 
 
@@ -489,7 +489,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.delete_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file_by_id',
-                side_effect=[create_mock_dvn_file('54321'), None])
+                side_effect=[create_mock_draft_file('54321'), None])
     def test_delete_file(self, mock_get, mock_delete, mock_connection):
         mock_get.return_value = None
         mock_connection.return_value = create_mock_connection()
@@ -506,7 +506,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.upload_file')
     @mock.patch('website.addons.dataverse.views.crud.get_file',
-                side_effect=[None, create_mock_dvn_file()])
+                side_effect=[None, create_mock_draft_file()])
     def test_upload_file(self, mock_get, mock_upload, mock_connection):
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
@@ -540,7 +540,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.get_file_by_id')
     def test_upload_existing(self, mock_get_by_id, mock_get, mock_delete,
                              mock_upload, mock_connection):
-        mock_get.return_value = create_mock_dvn_file()  # File already exists
+        mock_get.return_value = create_mock_draft_file()  # File already exists
         mock_get_by_id.return_value = None  # To confirm deletion happened
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
@@ -576,7 +576,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.get_file')
     def test_upload_too_small(self, mock_get, mock_delete, mock_upload,
                              mock_connection):
-        mock_get.return_value = create_mock_dvn_file() # File already exists
+        mock_get.return_value = create_mock_draft_file() # File already exists
         mock_upload.return_value = {}
         mock_connection.return_value = create_mock_connection()
 
@@ -603,7 +603,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.get_files')
     def test_dataverse_view_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_get_files.return_value = [create_mock_dvn_file('foo')]
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
 
         url = web_url_for('dataverse_view_file',
                           pid=self.project._primary_key, path='foo')
@@ -614,10 +614,10 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
     @mock.patch('website.addons.dataverse.views.crud.get_files')
     def test_download_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
-        mock_get_files.return_value = [create_mock_dvn_file('foo')]
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
 
         path = 'foo'
-        url = api_url_for('dataverse_download_file',
+        url = web_url_for('dataverse_download_file',
                           pid=self.project._primary_key, path=path)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(
@@ -655,14 +655,14 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.get_files')
     def test_fail_if_unauthorized_forbidden(self, mock_get_files):
-        mock_get_files.return_value = [create_mock_dvn_file('foo')]
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
         with assert_raises(HTTPError) as error:
             fail_if_unauthorized(self.node_settings, self.user.auth, 'bar')
             assert_equal(error.code, http.FORBIDDEN)
 
     @mock.patch('website.addons.dataverse.views.crud.get_files',
-                side_effect=[[create_mock_dvn_file('released')],
-                             [create_mock_dvn_file('draft')]])
+                side_effect=[[create_mock_draft_file('released')],
+                             [create_mock_draft_file('draft')]])
     def test_fail_if_unauthorized_unauthorized(self, mock_get_files):
         with assert_raises(HTTPError) as error:
             user2 = AuthUserFactory()

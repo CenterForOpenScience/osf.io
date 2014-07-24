@@ -12,60 +12,6 @@
 
     'use strict';
 
-    /*
-     * Miscellaneous helpers
-     */
-
-    var printDate = function(date, dlm) {
-        dlm = dlm || '-';
-        var formatted = date.getFullYear() + dlm + (date.getMonth() + 1);
-        if (date.getDate()) {
-            formatted += dlm + date.getDate()
-        }
-        return formatted;
-    };
-
-    var addExtender = function(label, interceptor) {
-        ko.extenders[label] = function(target, options) {
-            var result = ko.computed({
-                read: target,
-                write: function(value) {
-                    var current = target();
-                    var toWrite = interceptor(value, options);
-                    if (current !== toWrite) {
-                        target(toWrite);
-                    } else {
-                        if (current !== value) {
-                            target.notifySubscribers(toWrite);
-                        }
-                    }
-                }
-            }).extend({
-                notify: 'always'
-            });
-            result(target());
-            return result;
-        };
-    };
-
-    addExtender('asDate', function(value, options) {
-        var out;
-        if (value) {
-            var date;
-            if (value.match(/^\d{4}$/)) {
-                date = new Date(value, 0, 1);
-            } else {
-                date = new Date(value);
-            }
-            out = date != 'Invalid Date' ? printDate(date) : value;
-        }
-        return out;
-    });
-
-    var sanitize = function(value) {
-        return value.replace(/<\/?[^>]+>/g, '');
-    };
-
     var socialRules = {
         orcid: /orcid\.org\/([-\d]+)/i,
         researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
@@ -84,55 +30,6 @@
             return value;
         }
     };
-
-    addExtender('cleanup', function(value, cleaner) {
-        return !!value ? cleaner(value) : '';
-    });
-
-    var sanitizedObservable = function(value) {
-        return ko.observable(value).extend({
-            cleanup: sanitize
-        });
-    };
-
-    ko.validation.rules['minDate'] = {
-        validator: function (val, minDate) {
-            // Skip if values empty
-            var uwVal = ko.utils.unwrapObservable(val);
-            var uwMin = ko.utils.unwrapObservable(minDate);
-            if (uwVal === null || uwMin === null) {
-                return true;
-            }
-            // Skip if dates invalid
-            var dateVal = new Date(uwVal);
-            var dateMin = new Date(uwMin);
-            if (dateVal == 'Invalid Date' || dateMin == 'Invalid Date') {
-                return true;
-            }
-            // Compare dates
-            return dateVal >= dateMin;
-        },
-        message: 'Date must be greater than or equal to {0}.'
-    };
-
-    var makeRegexValidator = function(regex, message) {
-        return {
-            validator: function(value, options) {
-                return ko.validation.utils.isEmptyVal(value) ||
-                    regex.test(ko.utils.unwrapObservable(value))
-            },
-            message: message
-        };
-    };
-
-    ko.validation.rules['url'] = makeRegexValidator(
-        /^(ftp|http|https):\/\/[^ "]+$/,
-        'Please enter a valid URL.'
-    );
-
-    /*
-     * End helpers
-     */
 
     var SerializeMixin = function() {};
 
@@ -161,6 +58,43 @@
         self.viewable = $.inArray('view', modes) >= 0;
         self.editable = ko.observable(false);
         self.mode = ko.observable(self.viewable ? 'view' : 'edit');
+
+        self.original = ko.observable();
+        self.tracked = [];  // Define for each view model that inherits
+
+        self.setOriginal = function() {
+            self.original(ko.toJSON(self.tracked));
+        };
+
+        self.dirty = ko.computed(function() {
+            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
+        });
+
+        // Must be set after isValid is defined in inherited view models
+        // Necessary for enableSubmit to subscribe to isValid
+        self.hasValidProperty = ko.observable(false);
+
+        self.enableSubmit = ko.computed(function() {
+            return self.hasValidProperty() && self.isValid() && self.dirty();
+        });
+
+        // Warn on URL change if dirty
+        $(window).on('beforeunload', function() {
+            if (self.dirty()) {
+                return 'There are unsaved changes to your settings.';
+            }
+        });
+
+        // Warn on tab change if dirty
+        $('body').on('show.bs.tab', function() {
+            if (self.dirty()) {
+                bootbox.alert('There are unsaved changes to your settings. ' +
+                    'Please save or discard your changes before switching ' +
+                    'tabs.');
+                return false;
+            }
+            return true;
+        });
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
@@ -209,7 +143,7 @@
             type: 'GET',
             url: this.urls.crud,
             dataType: 'json',
-            success: this.unserialize.bind(this),
+            success: [this.unserialize.bind(this), this.setOriginal],
             error: this.handleError.bind(this, 'Could not fetch data')
         });
     };
@@ -226,7 +160,7 @@
     };
 
     BaseViewModel.prototype.submit = function() {
-        if (this.isValid() === false) {
+        if (this.enableSubmit() === false) {
             return
         }
         $.ajax({
@@ -235,7 +169,7 @@
             data: this.serialize(),
             contentType: 'application/json',
             dataType: 'json',
-            success: this.handleSuccess.bind(this),
+            success: [this.handleSuccess.bind(this), this.setOriginal],
             error: this.handleError.bind(this)
         });
     };
@@ -245,18 +179,27 @@
         var self = this;
         BaseViewModel.call(self, urls, modes);
 
-        self.full = sanitizedObservable().extend({
+        self.full = $.osf.ko.sanitizedObservable().extend({
             required: true
         });
-        self.given = sanitizedObservable();
-        self.middle = sanitizedObservable();
-        self.family = sanitizedObservable();
-        self.suffix = sanitizedObservable();
+        self.given = $.osf.ko.sanitizedObservable();
+        self.middle = $.osf.ko.sanitizedObservable();
+        self.family = $.osf.ko.sanitizedObservable();
+        self.suffix = $.osf.ko.sanitizedObservable();
+
+        self.tracked = [
+            self.full,
+            self.given,
+            self.middle,
+            self.family,
+            self.suffix
+        ];
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.citations = ko.observable();
 
@@ -370,12 +313,17 @@
         self.addons = ko.observableArray();
 
         self.personal = extendLink(
-            ko.observable().extend({url: true}),
+            // Note: Apply extenders in reverse order so that `ensureHttp` is
+            // applied before `url`.
+            ko.observable().extend({
+                url: true,
+                ensureHttp: true
+            }),
             self, 'personal'
         );
         self.orcid = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.orcid)}),
-            self, 'orcid', 'http://orcid.com/'
+            self, 'orcid', 'http://orcid.org/'
         );
         self.researcherId = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.researcherId)}),
@@ -398,10 +346,21 @@
             self, 'github', 'https://github.com/'
         );
 
+        self.tracked = [
+            self.personal,
+            self.orcid,
+            self.researcherId,
+            self.twitter,
+            self.scholar,
+            self.linkedIn,
+            self.github
+        ];
+
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
+        self.hasValidProperty(true);
 
         self.values = ko.computed(function() {
             return [
@@ -439,6 +398,8 @@
         self.ContentModel = ContentModel;
         self.contents = ko.observableArray();
 
+        self.tracked = self.contents;
+
         self.canRemove = ko.computed(function() {
             return self.contents().length > 1;
         });
@@ -451,6 +412,10 @@
             }
             return true;
         });
+        self.hasMultiple = ko.computed(function() {
+            return self.contents().length > 1;
+        });
+        self.hasValidProperty(true);
 
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);

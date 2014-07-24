@@ -73,6 +73,7 @@ page_routes = {
             OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako')),
         ),
 
+
         # Compare
         Rule(
             [
@@ -114,6 +115,17 @@ api_routes = {
             '/project/<pid>/wiki/<wid>/edit/',
             '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
         ], 'post', views.project_wiki_edit_post, json_renderer),
+
+        # Rename
+        Rule(
+            [
+                '/project/<pid>/wiki/<wid>/rename/',
+                '/project/<pid>/node/<nid>/wiki/<wid>/rename/',
+            ],
+            'put',
+            views.project_wiki_rename,
+            json_renderer,
+        ),
 
         # Compare
         Rule([

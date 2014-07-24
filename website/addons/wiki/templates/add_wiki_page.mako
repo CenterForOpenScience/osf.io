@@ -53,7 +53,11 @@
           else{
               var url=document.location.href;
               var url_root = url.substr(0, url.indexOf('wiki')+5);
-              document.location= url_root + $("#data").val() + '/edit/';
+              var wikiName = $("#data").val()
+              if (wikiName.indexOf("/") != -1){
+                  wikiName = wikiName.split("/").join("|");
+              }
+              document.location= url_root + wikiName+ '/edit/';
           }
      });
 

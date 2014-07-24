@@ -57,6 +57,21 @@
         });
     };
 
+    function importNodeAuth() {
+        $.ajax({
+            type: 'POST',
+            url: nodeApiUrl + 's3/import-auth/',
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function(response) {
+                window.location.reload();
+            },
+            error: function(xhr) {
+                //TODO Do something here
+            }
+        });
+    }
+
     $(document).ready(function() {
 
         $('#newBucket').on('click', function() {
@@ -71,6 +86,10 @@
                     }
                 }
             );
+        });
+
+        $('#s3ImportToken').on('click', function() {
+            importNodeAuth();
         });
 
         $('#addonSettingsS3 .addon-settings-submit').on('click', function() {

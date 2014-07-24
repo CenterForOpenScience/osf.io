@@ -23,7 +23,7 @@
     /**
      * Knockout view model for the Forward node settings widget.
      */
-    var ViewModel = function(url) {
+    var ViewModel = function(url, nodeId) {
 
         var self = this;
 
@@ -31,14 +31,23 @@
         self.boolLabels = {
             true: 'Yes',
             false: 'No'
-        }
+        };
 
         // Forward configuration
         self.url = ko.observable().extend({
-            required: true,
-            // From https://gist.github.com/searls/1033143
-            pattern: /\b((?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/i
+            ensureHttp: true,
+            url: true,
+            required: true
         });
+        ko.validation.addAnonymousRule(
+            self.url,
+            $.osf.ko.makeRegexValidator(
+                new RegExp(nodeId, 'i'),
+                'Components cannot link to themselves',
+                false
+            )
+        );
+	    self.label = $.osf.ko.sanitizedObservable();
         self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
         self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
             required: true,
@@ -65,6 +74,7 @@
          */
         self.updateFromData = function(data) {
             self.url(data.url);
+	    self.label(data.label);
             self.redirectBool(data.redirectBool);
             self.redirectSecs(data.redirectSecs);
         };
@@ -100,7 +110,7 @@
             );
         }
 
-        function onSubmitError() {
+        function onSubmitError(xhr, status) {
             self.changeMessage(
                 'Could not change settings. Please try again later.',
                 'text-danger'
@@ -136,9 +146,9 @@
     };
 
     // Public API
-    function ForwardConfig(selector, url) {
+    function ForwardConfig(selector, url, nodeId) {
         var self = this;
-        self.viewModel = new ViewModel(url);
+        self.viewModel = new ViewModel(url, nodeId);
         $.osf.applyBindings(self.viewModel, selector);
     }
 

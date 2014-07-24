@@ -3,8 +3,11 @@
 """
 
 import datetime
+
+from bleach import linkify
+from bleach.callbacks import nofollow
 import markdown
-from markdown.extensions import wikilinks
+from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from framework.forms.utils import sanitize
 from framework import fields
@@ -52,11 +55,21 @@ class NodeWikiPage(GuidStoredObject):
             extensions=[
                 wikilinks.WikiLinkExtension(
                     configs=[('base_url', ''), ('end_url', '')]
-                )
+                ),
+                fenced_code.FencedCodeExtension(),
+                codehilite.CodeHiliteExtension(
+                    (('css_class', 'highlight'), )
+                ),
             ]
         )
 
-        return sanitize(html_output, **settings.WIKI_WHITELIST)
+        # linkify gets called after santize, because we're adding rel="nofollow"
+        #   to <a> elements - but don't want to allow them for other elements.
+        return linkify(
+            sanitize(html_output, **settings.WIKI_WHITELIST),
+            [nofollow, ],
+        )
+
 
     @property
     def raw_text(self):
@@ -69,3 +82,8 @@ class NodeWikiPage(GuidStoredObject):
         if self.node:
             self.node.update_search() 
         return rv
+
+    def rename(self, new_name, save=True):
+        self.page_name = new_name
+        if save:
+            self.save()

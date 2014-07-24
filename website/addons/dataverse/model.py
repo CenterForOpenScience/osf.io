@@ -1,4 +1,5 @@
 import os
+import logging
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -9,6 +10,7 @@ from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
 
+logging.getLogger('sword2').setLevel(logging.WARNING)
 
 class DataverseFile(GuidFile):
 
@@ -60,9 +62,9 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
 
         self.encrypted_password = encrypt(value)
 
-    def delete(self):
+    def delete(self, save=True):
         self.clear()
-        super(AddonDataverseUserSettings, self).delete()
+        super(AddonDataverseUserSettings, self).delete(save)
 
     def clear(self):
         """Clear settings and deauthorize any associated nodes.
@@ -76,6 +78,7 @@ class AddonDataverseUserSettings(AddonUserSettingsBase):
             node_settings.save()
         return self
 
+
 class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     dataverse_alias = fields.StringField()
@@ -88,13 +91,17 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     )
 
     @property
+    def is_fully_configured(self):
+        return bool(self.has_auth and self.study_hdl is not None)
+
+    @property
     def has_auth(self):
         """Whether a dataverse account is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def delete(self):
-        self.deauthorize(Auth(self.user_settings.owner), add_log=False)
-        super(AddonDataverseNodeSettings, self).delete()
+    def delete(self, save=True):
+        self.deauthorize(add_log=False)
+        super(AddonDataverseNodeSettings, self).delete(save)
 
     def set_user_auth(self, user_settings):
         node = self.owner
@@ -108,7 +115,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             }
         )
 
-    def deauthorize(self, auth, add_log=True):
+    def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         self.dataverse_alias = None
         self.dataverse = None
@@ -229,3 +236,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()

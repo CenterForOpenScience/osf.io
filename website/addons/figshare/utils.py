@@ -1,4 +1,6 @@
+from framework.auth import get_current_user
 from website.util import rubeus
+
 
 def options_to_hgrid(node, fs_options):
     permissions = {
@@ -10,22 +12,42 @@ def options_to_hgrid(node, fs_options):
         fid = int(parts[1])
         o['name'] = o['label']
         o[rubeus.KIND] = rubeus.FOLDER
-        o['urls'] = {'fetch': node.api_url_for('figshare_hgrid_data_contents', type=ftype, id=fid)}
+        o['urls'] = {
+            'fetch': node.api_url_for(
+                'figshare_hgrid_data_contents',
+                type=ftype,
+                id=fid,
+                foldersOnly=1)
+        }
         o['permissions'] = permissions
         o['addon'] = 'figshare'        
         o['type'] = ftype
         o['id'] = fid
     return fs_options
 
-def project_to_hgrid(node, project, expand=False):
+
+def project_to_hgrid(node, project, expand=False, folders_only=False):
     if project:
         if not project.get('articles') or len(project['articles']) == 0:
             return []
-        return [article_to_hgrid(node, article, expand) for article in project['articles']]
+        out = []
+        for article in project['articles']:
+            hgrid = article_to_hgrid(node, article, expand, folders_only)
+            if hgrid:
+                out.append(hgrid)
+        return out
     return []
 
-def article_to_hgrid(node, article, expand=False):
+
+def article_to_hgrid(node, article, expand=False, folders_only=False):
+    if node.is_public:
+        user = get_current_user()
+        if not node.is_contributor(user):
+            if article.get('status') in ['Drafts', None]:
+                return None
     if article['defined_type'] == 'fileset' or not article['files']:
+        if folders_only:
+            return None
         if expand:
             return [file_to_hgrid(node, article, item) for item in article['files']]
         return {
@@ -35,6 +57,7 @@ def article_to_hgrid(node, article, expand=False):
                 'upload': '{base}figshare/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'delete': '' if article['status'] == 'public' else node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
                 'download': '',
+                # TODO: This endpoint isn't defined
                 'fetch': '{base}figshare/hgrid/article/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'view': ''
             },
@@ -45,6 +68,8 @@ def article_to_hgrid(node, article, expand=False):
             }
         }
     else:
+        if folders_only:
+            return None
         return file_to_hgrid(node, article, article['files'][0])
 
 

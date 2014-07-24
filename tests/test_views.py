@@ -67,38 +67,38 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_has_private_link_key(self):
-        res = self.app.get(self.project_url,{'key': self.link.key})
+        res = self.app.get(self.project_url,{'view_only': self.link.key})
         assert_equal(res.status_code, 200)
 
     def test_not_logged_in_no_key(self):
-        res = self.app.get(self.project_url, {'key': None})
+        res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
         res = res.follow()
         assert_equal(res.request.path, lookup('web', 'auth_login'))
 
     def test_logged_in_no_private_key(self):
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'key': self.link.key}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     def test_logged_in_has_key_ring(self):
         self.user.private_links.append(self.link)
         self.user.save()
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth)
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth)
         assert_is_redirect(res)
         redirected = res.follow()
-        assert_equal(redirected.request.GET['key'], self.link.key)
+        assert_equal(redirected.request.GET['view_only'], self.link.key)
         assert_equal(redirected.status_code, 200)
 
     def test_logged_in_with_no_key_ring(self):
         #check if key_ring works
-        res = self.app.get(self.project_url, {'key': None}, auth=self.user.auth,
+        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
             expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
@@ -107,11 +107,11 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.user.save()
         #check if key_ring works
         link2 = PrivateLinkFactory(key="123456")
-        res = self.app.get(self.project_url, {'key': link2.key}, auth=self.user.auth)
-        assert_equal(res.request.GET['key'], link2.key)
+        res = self.app.get(self.project_url, {'view_only': link2.key}, auth=self.user.auth)
+        assert_equal(res.request.GET['view_only'], link2.key)
         assert_equal(res.status_code, 302)
         res2 = res.maybe_follow(auth=self.user.auth)
-        assert_equal(res2.request.GET['key'], self.link.key)
+        assert_equal(res2.request.GET['view_only'], self.link.key)
         assert_equal(res2.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
@@ -194,7 +194,9 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url
         res = self.app.get(url, auth=self.auth)
         data = res.json
-        assert_equal(data['node']['category'], 'project')
+        assert_equal(data['node']['category'], 'Project')
+        assert_equal(data['node']['node_type'], 'project')
+
         assert_equal(data['node']['title'], self.project.title)
         assert_equal(data['node']['is_public'], self.project.is_public)
         assert_equal(data['node']['is_registration'], False)
@@ -277,7 +279,7 @@ class TestProjectViews(OsfTestCase):
         project.add_contributors(
             [
                 {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -292,10 +294,10 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
+                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': False},
                     {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                     {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -306,7 +308,12 @@ class TestProjectViews(OsfTestCase):
         assert_equal(
             # Note: Cast ForeignList to list for comparison
             list(project.contributors),
-            [project.creator, reg_user1, unregistered_user, reg_user2]
+            [reg_user2, project.creator, unregistered_user, reg_user1]
+        )
+
+        assert_equal(
+            project.visible_contributors,
+            [project.creator, unregistered_user, reg_user1]
         )
 
     def test_project_remove_contributor(self):
@@ -525,6 +532,17 @@ class TestProjectViews(OsfTestCase):
         assert_in('url', res.json)
         assert_equal(res.json['url'], '/dashboard/')
 
+    def test_private_link_edit_name(self):
+        link = PrivateLinkFactory()
+        link.nodes.append(self.project)
+        link.save()
+        assert_equal(link.name, "link")
+        url = self.project.api_url + 'private_link/edit/'
+        self.app.put_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
+        self.project.reload()
+        link.reload()
+        assert_equal(link.name, "new name")
+
     def test_remove_private_link(self):
         link = PrivateLinkFactory()
         link.nodes.append(self.project)
@@ -565,6 +583,84 @@ class TestProjectViews(OsfTestCase):
 
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
+
+
+class TestUserProfile(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfile, self).setUp()
+        self.app = TestApp(app)
+        self.user = AuthUserFactory()
+
+    def test_unserialize_social(self):
+        url = api_url_for('unserialize_social')
+        payload = {
+            'personal': 'http://frozen.pizza.com/reviews',
+            'twitter': 'howtopizza',
+            'github': 'frozenpizzacode',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        for key, value in payload.iteritems():
+            assert_equal(self.user.social[key], value)
+        assert_true(self.user.social['researcherId'] is None)
+
+    def test_serialize_social_editable(self):
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_true(res.json['editable'])
+
+    def test_serialize_social_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.social['twitter'] = 'howtopizza'
+        self.user.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_true(res.json.get('github') is None)
+        assert_false(res.json['editable'])
+
+    def test_serialize_social_addons_editable(self):
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(
+            res.json['addons']['github'],
+            'howtogithub'
+        )
+
+    def test_serialize_social_addons_not_editable(self):
+        user2 = AuthUserFactory()
+        self.user.add_addon('github')
+        user_github = self.user.get_addon('github')
+        user_github.github_user = 'howtogithub'
+        user_github.save()
+        url = api_url_for('serialize_social', uid=self.user._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        )
+        assert_not_in('addons', res.json)
 
 
 class TestAddingContributorViews(OsfTestCase):
@@ -1986,7 +2082,7 @@ class TestSearchViews(OsfTestCase):
         assert_in('gravatar_url', freddie)
         assert_equal(freddie['registered'], self.contrib1.is_registered)
         assert_equal(freddie['active'], self.contrib1.is_active())
-       
+
     def test_search_projects(self):
         with app.test_request_context():
             url = web_url_for('search_search')
