@@ -20,7 +20,7 @@ from website.project import model
 from website import settings
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.views')
 
 
 def _rescale_ratio(nodes):

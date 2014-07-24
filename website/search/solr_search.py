@@ -10,8 +10,7 @@ import sunburnt
 from .utils import clean_solr_doc 
 import socket
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.search.solr_search')
 
 try:
     solr = sunburnt.SolrInterface(settings.SOLR_URI)
@@ -140,7 +139,6 @@ def search(query, start=0):
         'hl.preserveMulti': 'true',
         'spellcheck': 'true', 'spellcheck.collate': 'true',
         'start': start, 'rows': 10}
-    import logging
     encoded_args = urllib.urlencode(_encoded_dict(query_args))
     url = '{}spell?{}&wt=python'.format(settings.SOLR_URI, encoded_args)
     # post to the url

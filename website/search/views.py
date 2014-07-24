@@ -13,8 +13,7 @@ from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('search.routes')
+logger = logging.getLogger('website.search.views')
 
 
 def search_search():

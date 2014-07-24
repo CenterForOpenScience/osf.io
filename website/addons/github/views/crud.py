@@ -27,7 +27,7 @@ from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
 
 
-logger = logging.getLevelName(__name__)
+logger = logging.getLevelName('website.addons.github.views.crud')
 
 
 @must_be_contributor_or_public

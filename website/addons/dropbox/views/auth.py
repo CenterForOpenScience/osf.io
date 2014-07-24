@@ -21,7 +21,7 @@ from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.addons.dropbox.views.auth')
 debug = logger.debug
 
 

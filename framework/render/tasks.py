@@ -11,7 +11,7 @@ from mfr.renderer.exceptions import MFRError
 from website.language import ERROR_PREFIX, STATA_VERSION_ERROR, BLANK_OR_CORRUPT_TABLE_ERROR
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('framework.render')
 
 config = {}
 FileRenderer.STATIC_PATH = '/static/mfr'

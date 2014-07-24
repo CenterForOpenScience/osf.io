@@ -27,7 +27,7 @@ from website.util import rubeus, permissions
 
 from .model import NodeFile, OsfGuidFile
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.addons.osffiles.views')
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "

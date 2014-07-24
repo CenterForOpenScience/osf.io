@@ -46,7 +46,7 @@ from website.util import web_url_for, api_url_for
 
 html_parser = HTMLParser()
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.project.model')
 
 
 def utc_datetime_to_timestamp(dt):
@@ -341,7 +341,7 @@ class NodeLog(StoredObject):
         # missing dates; return None and log error if date missing
         if self.date:
             return self.date.replace(tzinfo=pytz.UTC)
-        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
+        logger.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
@@ -1756,7 +1756,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def absolute_url(self):
         if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            logger.error("Node {0} has a parent that is not a project".format(self._id))
             return None
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
@@ -1769,7 +1769,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def api_url(self):
         if not self.url:
-            logging.error('Node {0} has a parent that is not a project'.format(self._id))
+            logger.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return '/api/v1{0}'.format(self.deep_url)
 
@@ -1783,7 +1783,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     self.parent_id,
                     self._primary_key
                 )
-        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        logger.error("Node {0} has a parent that is not a project".format(self._id))
 
     def author_list(self, and_delim='&'):
         author_names = [

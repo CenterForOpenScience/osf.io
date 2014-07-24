@@ -5,7 +5,7 @@ from webassets import Environment, Bundle
 
 from website import settings
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.assets')
 
 env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 

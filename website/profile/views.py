@@ -22,7 +22,7 @@ from website import settings
 from website.profile import utils as profile_utils
 from website.util.sanitize import deep_clean
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.profile.views')
 
 
 def get_public_projects(uid=None, user=None):

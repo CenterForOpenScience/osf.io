@@ -14,7 +14,7 @@ from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, Gu
 from website.addons.dropbox.client import get_node_addon_client
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.addons.dropbox.model')
 debug = logger.debug
 
 

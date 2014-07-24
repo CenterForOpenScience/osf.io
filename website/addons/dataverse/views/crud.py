@@ -24,7 +24,7 @@ from website.addons.base.views import check_file_guid
 
 import httplib as http
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.addons.dataverse.views.crud')
 
 session = requests.Session()
 

@@ -18,7 +18,7 @@ from website.addons.github.utils import get_refs, check_permissions
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('website.addons.github.views.hgrid')
 
 logging.getLogger('github3').setLevel(logging.WARNING)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)
@@ -132,7 +132,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
-            logging.error('Could not access GitHub repo')
+            logger.error('Could not access GitHub repo')
             return None
         if repo.private:
             return None

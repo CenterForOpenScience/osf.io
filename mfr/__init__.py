@@ -3,7 +3,7 @@ import importlib
 from .renderer.exceptions import NoRendererError
 from mfr.renderer import FileRenderer
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('mfr')
 
 modules = [
     'image', 'pdf', 'pdb', 'code', 'ipynb', 'docx', 'audio',
