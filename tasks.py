@@ -13,7 +13,6 @@ from invoke.exceptions import Failure
 
 from website import settings
 
-SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
 
 try:
     run('pip freeze | grep rednose', hide='both')
@@ -219,15 +218,6 @@ def rabbitmq():
     '''
     run("rabbitmq-server", pty=True)
 
-
-@task
-def solr():
-    '''Start a local solr server.
-
-    NOTE: Requires that Java and Solr are installed. See README for more instructions.
-    '''
-    os.chdir(SOLR_DEV_PATH)
-    run("java -jar start.jar", pty=True)
 
 @task
 def elasticsearch():

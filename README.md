@@ -174,30 +174,6 @@ invoke celery_worker
 
 ## Using Search
 
-### Solr
-- Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
-
-- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
-
-```python
-SEARCH_ENGINE = 'solr'
-```
-
-- Start the Solr server and migrate the models.
-
-```bash
-$ invoke solr
-$ invoke migrate_search
-```
-
-#### Starting A Local Solr Server
-
-```bash
-$ invoke solr
-```
-
-This will start a Solr server on port 8983.
-
 ### Elasticsearch
 
 - Install Elasticsearch
@@ -266,7 +242,7 @@ invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
 invoke rabbitmq
 invoke celery_worker
-invoke solr
+invoke elastic_search
 invoke server
 ```
 
