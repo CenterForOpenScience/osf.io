@@ -10,6 +10,7 @@
                     <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
                 </div>
                 <div class="pull-right">
+                    <!-- clicking "Cancel" overrides unsaved changes check -->
                     <a href="${node['url']}wiki/${pageName}/" class="btn btn-default" onclick=$(window).off('beforeunload')>Cancel</a>
                     <input type="submit" class="btn btn-primary" value="Save">
                 </div>
@@ -34,7 +35,7 @@
 
     <script>
         $(window).on('beforeunload', function() {
-            return 'There are unsaved changes to your wiki.'
+          return 'There are unsaved changes to your wiki.';
         });
     </script>
 
