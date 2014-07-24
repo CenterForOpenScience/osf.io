@@ -75,11 +75,16 @@
             ${children()}
         % endif
 
-        <div class="tags">
-            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-        </div>
 
-        <hr />
+        %if node['tags'] or 'write' in user['permissions']:
+            <div class="tags">
+                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            </div>
+        %else:
+            <p>No tags have been added to this project.</p>
+        %endif
+
+        <hr/>
 
         <div class="logs">
             <div id='logScope'>
@@ -193,15 +198,16 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-        % if 'write' not in user['permissions']:
+
+       % if 'write' not in user['permissions']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
 
-
     });
+
     $script.ready(['rubeus'], function() {
         // Initialize filebrowser
         var filebrowser = new Rubeus('#myGrid', {
