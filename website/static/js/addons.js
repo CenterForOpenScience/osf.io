@@ -26,7 +26,7 @@ var AddonHelper = (function() {
 
         var url = owner == 'user'
             ? '/api/v1/settings/' + addon + '/'
-            : nodeApiUrl + addon + '/settings/';
+            : nodeApiUrl + addon + '/settings/ ';
 
         $.ajax({
             url: url,
