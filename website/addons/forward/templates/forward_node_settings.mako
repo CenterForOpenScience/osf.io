@@ -46,21 +46,20 @@
                     />
             </div>
 
-            <div class="pull-right">
-                <input
-                        type="submit"
-                        class="btn btn-primary"
-                        value="Submit"
-                        data-bind="disable: !validators.isValid()"
+            <div class="row">
+                <div class="col-md-10">
+                    <p data-bind="html: message, attr.class: messageClass"></p>
+                </div>
+                <div class="col-md-2">
+                    <input type="submit"
+                           class="btn btn-primary pull-right"
+                           value="Submit"
+                           data-bind="disable: !validators.isValid()"
                     />
+                </div>
             </div>
 
         </form>
-
-        <!-- Flashed Messages -->
-        <div class="help-block">
-            <p data-bind="html: message, attr.class: messageClass"></p>
-        </div>
 
     </div><!-- end .forward-settings -->
 
