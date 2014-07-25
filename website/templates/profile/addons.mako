@@ -131,12 +131,35 @@
     }
 
     // Set up submission for addon selection form
+    var preFormCheckedData = {};
+        $('#selectAddonsForm').find('input').each(function(idx, elm) {
+            var $elm = $(elm);
+            if($elm.is(':checked')) {
+                preFormCheckedData[$elm.attr('name')] = $elm.is(':checked');
+            }
+        });
+
     $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
+        var postFormUncheckedData = {};
         $('#selectAddonsForm').find('input').each(function(idx, elm) {
             var $elm = $(elm);
             formData[$elm.attr('name')] = $elm.is(':checked');
+            if(! $elm.is(':checked')) {
+                postFormUncheckedData[$elm.attr('name')] = $elm.is(':checked');
+            }
+        });
+
+        console.log(preFormCheckedData);
+        console.log(postFormUncheckedData);
+
+        $.each(preFormCheckedData, function(preKey, preValue) {
+            $.each(postFormUncheckedData, function(postKey, postValue) {
+                if(preKey == postKey && preValue && !postValue) {
+                   console.log('bootbox here');
+                }
+            });
         });
 
         $.ajax({
