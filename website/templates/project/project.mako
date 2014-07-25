@@ -80,6 +80,7 @@
             <div class="tags">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
+        %endif
 
         <hr />
 
@@ -195,7 +196,6 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-
        % if 'write' not in user['permissions']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
