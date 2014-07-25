@@ -23,7 +23,7 @@
         <div class="row">
             <div class="col-md-12">
                 <h4> 2. Select a project</h4>
-                <div style="position: relative;" class="projectSearchAddFile" >
+                <div class="ob-search" class="projectSearchAddFile" >
                     <img class="ob-clear-button ob-reveal" id="clearInputProjectAddFile" src="/static/img/close2.png">
                     <input class="typeahead" type="text" placeholder="Type to search"
                      id='inputProjectAddFile'>
@@ -34,7 +34,7 @@
         <div class="row">
             <div class="col-md-12">
                 <h4>3. Select a component (optional)</h4>
-                <div style="position:relative;" class="projectSearchAddFile">
+                <div class="ob-search" class="projectSearchAddFile">
                     <img class="ob-clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">         
                     <input class="typeahead" disabled="disabled" type="text" placeholder="First select a project" id='inputComponentAddFile'>
                 </div>

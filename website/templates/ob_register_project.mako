@@ -10,7 +10,7 @@
         <div class="row">
             <div class="col-md-12" >
                 <h4>1. Select Project</h4>
-                <div style="position:relative;" class="projectSearchRegisterProject">
+                <div class="ob-search" class="projectSearchRegisterProject">
                     <img class="ob-clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
                     <input class="typeahead" type="text" placeholder="Type to search" id = 'inputProjectRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->
@@ -20,7 +20,7 @@
         <div class="row">
             <div class="col-md-12">
                 <h4>2. Select a component (optional)</h4>
-                <div style="position:relative;" id="projectSearchRegisterProject">
+                <div class="ob-search" id="projectSearchRegisterProject">
                     <img class="ob-clear-button ob-reveal" id="clearInputComponentRegisterProject" src="/static/img/close2.png">
                     <input class="typeahead" type="text" placeholder="First select a project" disabled="disabled" id = 'inputComponentRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->

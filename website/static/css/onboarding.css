@@ -12,6 +12,10 @@ li.ob-list {
 	margin-bottom: 20px;
 }
 
+.ob-search{
+	position:relative;
+}
+
 .ob-expand-icon{
 	margin-top:6px;
 	height: 14px;
