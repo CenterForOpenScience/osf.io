@@ -23,9 +23,9 @@
                 <ul class="nav nav-tabs" role="tablist">
                 <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
                 <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
-                %if 'badges' in addons_enabled:
-                <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>
-                %endif
+                ## %if 'badges' in addons_enabled:
+                ## <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>
+                ## %endif
                 </ul>
 
             </div><!-- end #obTabHead -->
@@ -44,9 +44,9 @@
                 </div><!-- end #logScope -->
 
                 </div>
-                %if 'badges' in addons_enabled:
-                    <%include file="dashboard_badges.mako"/>
-                %endif
+                ## %if 'badges' in addons_enabled:
+                   ## <%include file="dashboard_badges.mako"/>
+                ## %endif
             </div>
         </div>
     </div>
