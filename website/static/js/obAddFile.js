@@ -30,9 +30,10 @@
         autoProcessQueue: false, 
         createImageThumbnails: false,
         //over
-        maxFiles:9000,
+        maxFiles:9001,
         uploadMultiple: false,
-        maxFilesize: 1,
+        //in mib
+        maxFilesize: 128,
 
         uploadprogress: function(file, progress) { // progress bar update
             $('#uploadProgress').attr('value', Math.round(progress));
