@@ -5,8 +5,9 @@ formatted hgrid list/folders.
 import os
 import hurry
 import datetime
-from framework.auth.decorators import Auth
 from modularodm import Q
+from framework.auth.decorators import Auth
+
 
 FOLDER = 'folder'
 FILE = 'item'
