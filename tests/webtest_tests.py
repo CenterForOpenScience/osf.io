@@ -137,7 +137,8 @@ class TestAUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
-        assert_in('Watched Projects', res)
+        assert_in('Watchlist', res)
+
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -201,7 +202,6 @@ class TestAUser(OsfTestCase):
         # Goes to dashboard (already logged in)
         res = res.click('Dashboard', index=0)
         # Clicks New Project
-        res = res.click('New Project').maybe_follow()
         # Fills out the form
         form = res.forms['projectForm']
         form['title'] = 'My new project'
