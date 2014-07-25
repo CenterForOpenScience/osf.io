@@ -357,7 +357,8 @@ def create_result(results, counts):
             # Check if parent has already been visited, if so, delete it
             if parent and visited_nodes.get(parent_info['id']):
                 for i in range(visited_nodes.get(parent_info['id']) - num_deleted, len(formatted_results)):
-                    if formatted_results[i]['url'] == parent_info['url']:
+                    result_url = formatted_results[i].get('url')
+                    if result_url and result_url == parent_info['url']:
                         del formatted_results[i]
                         num_deleted += 1
                         break
