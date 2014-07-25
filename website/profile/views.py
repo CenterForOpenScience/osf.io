@@ -310,6 +310,7 @@ def serialize_school(school):
         'degree': school.get('degree'),
         'start': fmt_date_or_none(school.get('start')),
         'end': fmt_date_or_none(school.get('end')),
+        'ongoing': school.get('ongoing')
     }
 
 
@@ -397,6 +398,7 @@ def unserialize_school(school):
         'degree': school.get('degree'),
         'start': date_or_none(school.get('start')),
         'end': date_or_none(school.get('end')),
+        'ongoing': school.get('ongoing')
     }
 
 
