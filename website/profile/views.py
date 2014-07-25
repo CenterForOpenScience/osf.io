@@ -299,6 +299,7 @@ def serialize_job(job):
         'title': job.get('title'),
         'start': fmt_date_or_none(job.get('start')),
         'end': fmt_date_or_none(job.get('end')),
+        'ongoing': job.get('ongoing'),
     }
 
 
@@ -385,6 +386,7 @@ def unserialize_job(job):
         'title': job.get('title'),
         'start': date_or_none(job.get('start')),
         'end': date_or_none(job.get('end')),
+        'ongoing': job.get('ongoing'),
     }
 
 

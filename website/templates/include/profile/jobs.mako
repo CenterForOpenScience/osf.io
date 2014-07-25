@@ -45,9 +45,14 @@
                         <input class="form-control" data-bind="value: start" />
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
                         <input class="form-control" data-bind="value: end" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ongoing</label>
+                        <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
@@ -115,7 +120,7 @@
                         <td>{{ department }}</td>
                         <td>{{ title }}</td>
                         <td>{{ start }}</td>
-                        <td>{{ end }}</td>
+                        <td>{{ endView }}</td>
 
                     </tr>
 
