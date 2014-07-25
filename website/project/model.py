@@ -1145,10 +1145,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         :return: pointer_id
 
         """
-        for node in self.nodes_pointer:
-            node_id = node.node._id
+        for pointer in self.nodes_pointer:
+            node_id = pointer.node._id
             if node_id == pointed_node_id:
-                return node._id
+                return pointer._id
         return None
 
     @property
