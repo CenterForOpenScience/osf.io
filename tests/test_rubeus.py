@@ -548,7 +548,7 @@ def assert_valid_hgrid_folder(node_hgrid):
         'isPointer': False,
         'isFolder': True,
         'kind': 'folder',
-        'type': 'folder'
+        'type': 'smart-folder'
     }
 
     print node_hgrid
