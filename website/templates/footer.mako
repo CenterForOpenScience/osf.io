@@ -1,7 +1,7 @@
 <footer class="footer">
     <div class="container">
         <div class="row">
-             <div class="col-md-1 col-md-offset-2">
+             <div class="col-md-1 custom-offset-left">
                 <h4>OSF</h4>
                 <ul>
                     <li><a href="/4znzp/wiki/home">About</a></li>
@@ -11,7 +11,7 @@
                     <li><script type="text/javascript">document.write("<n uers=\"znvygb:pbagnpg@bfs.vb\" ery=\"absbyybj\">Pbagnpg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Contact OSF: <span class="obfuscated-email-noscript"><strong><u>cont<span style="display:none;">null</span>act@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
                 </ul>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-3 left-margin">
                 <h4>Center for Open Science</h4>
                 <ul>
                     <li><a href="http://cos.io">Home</a></li>
@@ -26,7 +26,7 @@
                     <li><a href="/qb0du/">Developer API</a></li>
                 </ul>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-2 custom-offset-right">
                 <h4>Socialize</h4>
                 <a href="http://twitter.com/OSFramework"><i class="icon-twitter icon-2x"></i></a>
                 <a href="https://www.facebook.com/OpenScienceFramework"><i class="icon-facebook icon-2x"></i></a>
