@@ -209,7 +209,7 @@ def update_node(node):
             'title': node.title,
             'category': node.category,
             'public': node.is_public,
-            'tags': [x._id for x in node.tags],
+            'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
