@@ -24,7 +24,7 @@ from website import filters, language, settings
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
 from website.project.model import (
-    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas
+    ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
 )
 from website.app import init_app
 from website.addons.osffiles.model import NodeFile
@@ -464,6 +464,31 @@ class TestUser(OsfTestCase):
             auth=Auth(project.creator))
         project.save()
         assert_equal(u.display_full_name(node=project), name)
+
+    def test_get_projects_in_common(self):
+        user2 = UserFactory()
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.save()
+
+        project_keys = set(self.user.node__contributed._to_primary_keys())
+        projects = set(self.user.node__contributed)
+
+        assert_equal(self.user.get_projects_in_common(user2, primary_keys=True),
+                     project_keys.intersection(user2.node__contributed._to_primary_keys()))
+        assert_equal(self.user.get_projects_in_common(user2, primary_keys=False),
+                     projects.intersection(user2.node__contributed))
+
+    def test_n_projects_in_common(self):
+        user2 = UserFactory()
+        user3 = UserFactory()
+        project = ProjectFactory(creator=self.user)
+
+        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.save()
+
+        assert_equal(self.user.n_projects_in_common(user2), 1)
+        assert_equal(self.user.n_projects_in_common(user3), 0)
 
 
 class TestUserParse(unittest.TestCase):
@@ -1369,6 +1394,16 @@ class TestProject(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
         assert_in(link, self.project.private_links)
+
+    def test_has_anonymous_link(self):
+        link1 = PrivateLinkFactory(anonymous=True, key="link1")
+        link1.nodes.append(self.project)
+        link1.save()
+        link2 = PrivateLinkFactory(key="link2")
+        link2.nodes.append(self.project)
+        link2.save()
+        assert_true(has_anonymous_link(self.project, "link1"))
+        assert_false(has_anonymous_link(self.project, "link2"))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),

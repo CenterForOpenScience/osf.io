@@ -1150,6 +1150,7 @@ h1.unavailable {
     padding-right: 10px;
 }
 
+
 /* Markdown editing */
 
 .wmd-panel
@@ -1407,6 +1408,7 @@ div#logScope a.moreLogs{
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
 }
+
 /* Contributors list */
 
 #contributors {

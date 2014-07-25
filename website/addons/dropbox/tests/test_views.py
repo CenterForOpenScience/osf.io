@@ -20,6 +20,7 @@ from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
 from website.addons.dropbox.views.config import serialize_settings
+from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
 
 mock_client = MockDropbox()
@@ -282,6 +283,20 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     @unittest.skip('finish this')
     def test_dropbox_addon_folder(self):
         assert 0, 'finish me'
+
+    def test_dropbox_addon_folder_if_folder_is_none(self):
+        # Something is returned on normal circumstances
+        root = dropbox_addon_folder(
+            node_settings=self.node_settings, auth=self.user.auth)
+        assert_true(root)
+
+        # Nothing is returned when there is no folder linked
+        self.node_settings.folder = None
+        self.node_settings.save()
+        root = dropbox_addon_folder(
+            node_settings=self.node_settings, auth=self.user.auth)
+        assert_is_none(root)
+
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):

@@ -60,6 +60,9 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
+def has_anonymous_link(node, link):
+    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
 unreg_contributor_added = signals.signal('unreg-contributor-added')
@@ -366,7 +369,7 @@ class NodeLog(StoredObject):
         }
 
     # TODO: Move to separate utility function
-    def serialize(self):
+    def serialize(self, anonymous=False):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
@@ -374,12 +377,12 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
             'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None
+            'node': self.node.serialize() if self.node else None,
+            'anonymous': anonymous
         }
 
 
@@ -2567,6 +2570,7 @@ class PrivateLink(StoredObject):
     key = fields.StringField(required=True)
     name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
+    anonymous = fields.BooleanField(default=False)
 
     nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
@@ -2597,5 +2601,6 @@ class PrivateLink(StoredObject):
             "name": self.name,
             "creator": self.creator.fullname,
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
+            "anonymous": self.anonymous
         }
 
