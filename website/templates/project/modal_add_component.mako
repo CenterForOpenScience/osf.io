@@ -2,7 +2,7 @@
   <div class="modal fade" id="newComponent">
     <div class="modal-dialog">
         <div class="modal-content">
-        <form class="form" role="form" action="${node['url']}newnode/" method="post">
+        <form class="form" role="form" action="${node['url']}newnode/" method="post" id="componentForm">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
               <h3 class="modal-title">Add Component</h3>
@@ -32,11 +32,31 @@
     </div><!-- end modal -->
 <script type="text/javascript">
         $(document).ready(function() {
-            $('#confirm').on('click',function(){
+            $('#confirm').on('click', function () {
                 $("#alert").text("");
                 $("#title").val("");
                 $("#category").val("");
-            })
 
+            });
+
+            $('#add-component-submit').on('click', function (event) {
+                event.preventDefault();
+                $('#newComponent').modal('hide');
+                var currentForm = this;
+                var box = bootbox.dialog({
+                    message: "Successfully created new component.",
+                    buttons: {
+                        success: {
+                            label: "OK",
+                            className: "btn-success",
+                            callback: function () {
+                                $('#componentForm').submit();
+                            }
+                        }
+                    }
+                });
+
+            });
         });
+
 </script>
