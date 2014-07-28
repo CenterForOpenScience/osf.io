@@ -40,8 +40,14 @@ def update_counters(rex):
     def wrapped(func, *args, **kwargs):
         date = datetime.utcnow()
         date = date.strftime('%Y/%m/%d')
+        target_node = kwargs.get('node') or kwargs.get('project')
+        target_id = target_node._id
+        data = {
+            'target_id': target_id,
+        }
+        data.update(kwargs)
         try:
-            page = rex.format(**kwargs).replace('.', '_')
+            page = rex.format(**data).replace('.', '_')
         except KeyError:
             return func(*args, **kwargs)
 
@@ -90,6 +96,6 @@ def get_basic_counters(page):
             unique = result['unique']
         if 'total' in result:
             total = result['total']
-        return (unique, total)
+        return unique, total
     else:
-        return (None, None)
+        return None, None
