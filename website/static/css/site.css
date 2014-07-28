@@ -601,6 +601,20 @@ h4 {
     color: #666666;
 }
 
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
+}
+
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
     background-position: top;
