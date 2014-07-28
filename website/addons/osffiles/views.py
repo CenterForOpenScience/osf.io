@@ -338,10 +338,8 @@ def download_file(**kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@update_counters('download:{pid}:{fid}:{vid}')
-@update_counters('download:{nid}:{fid}:{vid}')
-@update_counters('download:{pid}:{fid}')
-@update_counters('download:{nid}:{fid}')
+@update_counters('download:{target_id}:{fid}:{vid}')
+@update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
     node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
