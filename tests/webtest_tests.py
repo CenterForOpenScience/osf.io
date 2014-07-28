@@ -16,7 +16,8 @@ from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory)
+                             UnregUserFactory, UnconfirmedUserFactory,
+                             PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -24,10 +25,13 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website.app import init_app
+import website.app
 
-app = init_app(set_backends=False, routes=True)
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings',
+)
 
+lookup = URLLookup(app)
 
 class TestAnUnregisteredUser(OsfTestCase):
 
@@ -383,6 +387,7 @@ class TestComponents(OsfTestCase):
         self.component.set_privacy('public', self.consolidate_auth)
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_can_create_component_from_a_project(self):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
@@ -428,6 +433,25 @@ class TestComponents(OsfTestCase):
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_not_in('Components', res)
+
+
+class TestPrivateLinkView(OsfTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+        self.user = AuthUserFactory()  # Is NOT a contributor
+        self.project = ProjectFactory(is_public=False)
+        self.link = PrivateLinkFactory(anonymous=True)
+        self.link.nodes.append(self.project)
+        self.link.save()
+
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_anonymous_link_hide_contributor(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_in("Anonymous Contributors", res.body)
+        assert_not_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(OsfTestCase):

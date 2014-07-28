@@ -60,7 +60,7 @@
 
     % if 'admin' in user['permissions']:
         <h2>View-only Links</h2>
-        <div class="text-align">Create a link to share this project so those who have the link can view but not edit the project</div>
+        <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
@@ -69,9 +69,11 @@
                     <tr>
                     <th class="col-sm-3">Link</th>
                     <th class="col-sm-4">What This Link Shares</th>
+
                     <th class="col-sm-2">Created Date</th>
                     <th class="col-sm-2">Created By</th>
-                    <th class="col-sm-1"></th>
+                    <th class="col-sm-1">Anonymous</th>
+                    <th class="col-sm-0"></th>
                     </tr>
                 </thead>
 
@@ -115,7 +117,10 @@
                         </td>
                         <td class="col-sm-2" data-bind="text: creator"></td>
                         <td class="col-sm-1">
-                            <a  rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">
+                            <span data-bind="text: anonymousDisplay"></span>
+                        </td>
+                        <td class="col-sm-0">
+                            <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
                                 <i class="icon-remove text-danger"></i>
                             </a>
                         </td>
@@ -162,10 +167,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            class="pull-right"
-                            data-bind="click: remove, clickBubble: false"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
                         >
                                 <i class="icon-remove text-danger"></i>
                     </a>
@@ -226,7 +228,7 @@
         var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
     });
 
-    $("body").on('click', ".link-url", function(e) { e.target.select() });
+    $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
 
     </script>
 </%def>

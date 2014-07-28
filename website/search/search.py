@@ -43,6 +43,6 @@ def delete_all():
 
 
 @requires_search
-def search_contributor(query, exclude=None):
-    result = search_engine.search_contributor(query, exclude)
+def search_contributor(query, exclude=None, current_user = None):
+    result = search_engine.search_contributor(query, exclude, current_user)
     return result

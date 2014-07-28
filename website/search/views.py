@@ -13,6 +13,7 @@ from framework import status
 import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
+from framework.auth.core import get_current_user
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -129,4 +130,4 @@ def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    return search.search_contributor(query, exclude)
+    return search.search_contributor(query, exclude, get_current_user())

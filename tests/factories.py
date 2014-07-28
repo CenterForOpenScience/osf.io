@@ -128,6 +128,7 @@ class PrivateLinkFactory(ModularOdmFactory):
 
     name = "link"
     key = "foobarblaz"
+    anonymous = False
     creator = SubFactory(AuthUserFactory)
 
 class AbstractNodeFactory(ModularOdmFactory):
