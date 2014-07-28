@@ -432,7 +432,6 @@ def togglewatch_post(**kwargs):
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
-    watch_config.save()
     user.save()
 
     return {

@@ -627,7 +627,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    def unwatch(self, watch_config):
+    def unwatch(self, watch_config, save=False):
         """Unwatch a node by removing its WatchConfig from this user's ``watched``
         list. Raises ``ValueError`` if the node is not already being watched.
 
@@ -638,6 +638,8 @@ class User(GuidStoredObject, AddonModelMixin):
         for each in self.watched:
             if watch_config.node._id == each.node._id:
                 each.__class__.remove_one(each)
+                if save:
+                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
