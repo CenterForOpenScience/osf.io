@@ -148,7 +148,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
             )
 
     def after_fork(self, node, fork, user, save=True):
-        """Copy Gitlab project as fork.
+        """Copy GitLab project as fork.
 
         """
         # Call superclass method
@@ -179,7 +179,7 @@ class GitlabNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        """Copy Gitlab project as registration.
+        """Copy GitLab project as registration.
 
         """
         # Call superclass method

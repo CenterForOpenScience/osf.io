@@ -31,11 +31,11 @@ app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings',
 )
 
-lookup = URLLookup(app)
 
 class TestAnUnregisteredUser(OsfTestCase):
 
     def setUp(self):
+        super(TestAnUnregisteredUser, self).setUp()
         self.app = TestApp(app)
 
     def test_can_register(self):
@@ -93,6 +93,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 class TestAUser(OsfTestCase):
 
     def setUp(self):
+        super(TestAUser, self).setUp()
         self.app = TestApp(app)
         self.user = UserFactory()
         self.user.set_password('science')
@@ -300,6 +301,7 @@ class TestAUser(OsfTestCase):
 class TestRegistrations(OsfTestCase):
 
     def setUp(self):
+        super(TestRegistrations, self).setUp()
         ensure_schemas()
         self.app = TestApp(app)
         self.user = UserFactory()
@@ -372,6 +374,7 @@ class TestRegistrations(OsfTestCase):
 class TestComponents(OsfTestCase):
 
     def setUp(self):
+        super(TestComponents, self).setUp()
         self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -387,7 +390,7 @@ class TestComponents(OsfTestCase):
         self.component.set_privacy('public', self.consolidate_auth)
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
-        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+        self.project_url = self.project.web_url_for('view_project')
 
     def test_can_create_component_from_a_project(self):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
@@ -438,6 +441,7 @@ class TestComponents(OsfTestCase):
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
+        super(TestPrivateLinkView, self).setUp()
         self.app = TestApp(app)
 
         self.user = AuthUserFactory()  # Is NOT a contributor
@@ -446,7 +450,7 @@ class TestPrivateLinkView(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
 
-        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+        self.project_url = self.project.web_url_for('view_project')
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -457,6 +461,7 @@ class TestPrivateLinkView(OsfTestCase):
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
+        super(TestMergingAccounts, self).setUp()
         self.app = TestApp(app)
         self.user = UserFactory.build()
         self.user.set_password('science')
@@ -569,6 +574,7 @@ class TestSearching(OsfTestCase):
     '''
 
     def setUp(self):
+        super(TestSearching, self).setUp()
         import website.search.search as search
         search.delete_all()
         self.app = TestApp(app)
@@ -608,6 +614,7 @@ class TestSearching(OsfTestCase):
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
+        super(TestShortUrls, self).setUp()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -682,6 +689,7 @@ class TestShortUrls(OsfTestCase):
 @requires_piwik
 class TestPiwik(OsfTestCase):
     def setUp(self):
+        super(TestPiwik, self).setUp()
         self.app = TestApp(app)
         self.users = [
             AuthUserFactory()
@@ -737,6 +745,7 @@ class TestPiwik(OsfTestCase):
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
+        super(TestClaiming, self).setUp()
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
@@ -902,6 +911,7 @@ class TestClaiming(OsfTestCase):
 
 class TestConfirmingEmail(OsfTestCase):
     def setUp(self):
+        super(TestConfirmingEmail, self).setUp()
         self.app = TestApp(app)
         self.user = UnconfirmedUserFactory()
         self.confirmation_url = self.user.get_confirmation_url(self.user.username,
@@ -966,9 +976,11 @@ class TestConfirmingEmail(OsfTestCase):
         # Sees alert message
         assert_in('already been confirmed', res)
 
+
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
+        super(TestClaimingAsARegisteredUser, self).setUp()
         self.app = TestApp(app)
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
