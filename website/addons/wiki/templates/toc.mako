@@ -7,52 +7,41 @@
 
         % for item in toc:
          <li>
-
-            <a href="${item['url']}">
-                % if item['is_pointer']:
-                    <i class="icon-hand-right"></i>
+            % for k in pages_current:
+               %if k == 'home':
+                     <a href="/${node['id']}/wiki/${k}">
+                        ${'home'}
+                     </a>
                 %endif
+            %endfor
 
-                ${'home'}
-                % if item['category']:
-                    ${item['category']}
-                % endif
-            </a>
-
-
-            <ul style="list-style-type: none;">
             % for k in pages_current:
                 % if k != 'home':
                     <li>
                      <a href="/${node['id']}/wiki/${k}">${k}</a>
-
                     </li>
                 % endif
              %endfor
-             </ul>
-        </li>
         %endfor
-    </ul>
 
 
-
+        <hr />
+        <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
 
         % if category == 'project':
-            <hr />
-            <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
+
 
             % for child in toc:
                 <li>
-
                     <a href="${child['url']}">
                         % if child['is_pointer']:
-                            <i class="icon-hand-right"></i>
+                            <i class=""></i>
                         % endif
 
                         ${child['title']}
-                        % if child['category']:
-                            (${child['category']})
-                        % endif
+                            % if child['category']:
+                                (${child['category']})
+                            % endif
                     </a>
 
                     <ul style="list-style-type: none;">
@@ -60,13 +49,12 @@
                             % if k != 'home':
                                 <li class="">
                                     <a href="/${node['id']}/node/${child['id']}/wiki/${k}">${k}</a>
-
                                 </li>
                             % endif
                         % endfor
                     </ul>
-
                 </li>
             % endfor
         % endif
+    </ul>
 </div>
