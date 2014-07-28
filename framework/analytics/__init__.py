@@ -99,6 +99,6 @@ def get_basic_counters(page):
             unique = result['unique']
         if 'total' in result:
             total = result['total']
-        return (unique, total)
+        return unique, total
     else:
-        return (None, None)
+        return None, None

@@ -61,12 +61,6 @@ website/gpg/*
 # Local settings
 */settings/local.py
 
-# Solr
-#######################
-scripts/solr-dev/logs/*
-scripts/solr-dev/solr-webapp/*
-scripts/solr-dev/solr/collection1/data/*
-
 # Add-ons
 #######################
 website/addons/*/settings/local.py
