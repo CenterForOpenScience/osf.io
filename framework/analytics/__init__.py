@@ -42,7 +42,11 @@ def update_counters(rex):
     def wrapped(func, *args, **kwargs):
         date = datetime.utcnow()
         date = date.strftime('%Y/%m/%d')
-        data = {}
+        target_node = kwargs.get('node') or kwargs.get('project')
+        target_id = target_node._id
+        data = {
+            'target_id': target_id,
+        }
         data.update(kwargs)
         data.update(request.args.to_dict())
         try:

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import urllib
 import logging
 import unicodedata
 import httplib as http
@@ -303,10 +302,8 @@ def gitlab_view_file(auth, node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('gitlab', 'node')
-@update_counters(u'download:{pid}:{path}:{sha}')
-@update_counters(u'download:{nid}:{path}:{sha}')
-@update_counters(u'download:{pid}:{path}')
-@update_counters(u'download:{nid}:{path}')
+@update_counters(u'download:{target_id}:{path}:{sha}')
+@update_counters(u'download:{target_id}:{path}')
 def gitlab_download_file(node_addon, **kwargs):
 
     path = gitlab_utils.kwargs_to_path(kwargs, required=True)
