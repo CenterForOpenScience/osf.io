@@ -133,13 +133,6 @@
     // Set up submission for addon selection form
     var checkedOnLoad = $("#selectAddonsForm input:checked");
 
-##    $('#selectAddonsForm').find('input').each(function(idx, elm) {
-##        var $elm = $(elm);
-##        if($elm.is(':checked')) {
-##            preFormCheckedData[$elm.attr('name')] = $elm.is(':checked');
-##        }
-##    });
-
     $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
