@@ -216,12 +216,12 @@ def project_wiki_page(*args, **kwargs):
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
-        'pages_current': [
+        'pages_current': sorted([
             from_mongo(version)
             for version in node_to_use.wiki_pages_versions
-        ],
+        ]),
         'toc': toc,
-        'url': node_to_use.url,
+        'url': get_wiki_url(node_to_use, page=HOME),
         'category': node_to_use.category
     }
 
