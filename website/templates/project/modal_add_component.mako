@@ -42,8 +42,7 @@
             $('#add-component-submit').on('click', function (event) {
                 event.preventDefault();
                 $('#newComponent').modal('hide');
-                var currentForm = this;
-                var box = bootbox.dialog({
+                bootbox.dialog({
                     message: "Successfully created new component.",
                     buttons: {
                         success: {
