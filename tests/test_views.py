@@ -584,6 +584,15 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
 
+    def test_watch_and_unwatch(self):
+        url = self.project.api_url_for('togglewatch_post')
+        self.app.post_json(url, {}, auth=self.auth)
+        res = self.app.get(self.project.api_url, auth=self.auth)
+        assert_equal(res.json['node']['watched_count'], 1)
+        self.app.post_json(url, {}, auth=self.auth)
+        res = self.app.get(self.project.api_url, auth=self.auth)
+        assert_equal(res.json['node']['watched_count'], 0)
+
 
 class TestUserProfile(OsfTestCase):
 
