@@ -426,13 +426,12 @@ def togglewatch_post(**kwargs):
     )
     try:
         if user.is_watching(node):
-            user.unwatch(watch_config, save=True)
+            user.unwatch(watch_config)
         else:
-            user.watch(watch_config, save=True)
+            user.watch(watch_config)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
-    watch_config.save()
     user.save()
 
     return {
