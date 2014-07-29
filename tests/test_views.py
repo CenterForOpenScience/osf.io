@@ -593,6 +593,7 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
