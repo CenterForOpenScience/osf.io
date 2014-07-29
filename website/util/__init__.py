@@ -46,4 +46,5 @@ def web_url_for(view_name, _absolute=False, *args, **kwargs):
 
 def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
-    return 'application/json' in framework.flask.request.content_type
+    content_type = framework.flask.request.content_type
+    return content_type and ('application/json' in content_type)
