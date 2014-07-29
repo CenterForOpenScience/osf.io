@@ -5,6 +5,7 @@
 import os
 import cgi
 import time
+import hashlib
 from cStringIO import StringIO
 import httplib as http
 import logging
@@ -392,7 +393,8 @@ def delete_file(**kwargs):
 
 def get_cache_file(fid, vid):
     return '{0}_v{1}.html'.format(
-        fid.replace('.', '_'), vid,
+        hashlib.md5(fid).hexdigest(),
+        vid,
     )
 
 @must_be_valid_project
