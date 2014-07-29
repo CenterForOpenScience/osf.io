@@ -585,7 +585,7 @@ class TestProjectViews(OsfTestCase):
         assert_false(node.is_deleted)
 
     def test_watch_and_unwatch(self):
-        url = self.project.api_url + 'togglewatch/'
+        url = self.project.api_url_for('togglewatch_post')
         self.app.post_json(url, {}, auth=self.auth)
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 1)
