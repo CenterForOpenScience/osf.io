@@ -73,8 +73,8 @@ def wiki_widget(*args, **kwargs):
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
 def project_wiki_home(*args, **kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
-    return {}, None, None, '{}wiki/home/'.format(node_to_use.url)
+    node = kwargs['node'] or kwargs['project']
+    return {}, None, None, '{}wiki/home/'.format(node.url)
 
 
 def _get_wiki_versions(node, wid):
@@ -102,19 +102,15 @@ def _get_wiki_versions(node, wid):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('wiki', 'node')
-def project_wiki_compare(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    auth = kwargs['auth']
+def project_wiki_compare(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
 
-    node_to_use = node or project
-
-    wiki_page = node_to_use.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:
         compare_id = kwargs['compare_id']
-        comparison_page = node_to_use.get_wiki_page(wid, compare_id)
+        comparison_page = node.get_wiki_page(wid, compare_id)
         if comparison_page:
             current = wiki_page.content
             comparison = comparison_page.content
@@ -124,12 +120,12 @@ def project_wiki_compare(*args, **kwargs):
             rv = {
                 'pageName': wid,
                 'wiki_content': content,
-                'versions': _get_wiki_versions(node_to_use, wid),
+                'versions': _get_wiki_versions(node, wid),
                 'is_current': True,
                 'is_edit': True,
                 'version': wiki_page.version,
             }
-            rv.update(_view_project(node_to_use, auth, primary=True))
+            rv.update(_view_project(node, auth, primary=True))
             return rv
     raise HTTPError(http.NOT_FOUND)
 
@@ -137,16 +133,12 @@ def project_wiki_compare(*args, **kwargs):
 @must_be_valid_project # returns project
 @must_have_permission('write') # returns user, project
 @must_have_addon('wiki', 'node')
-def project_wiki_version(*args, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node']
-    auth = kwargs['auth']
+def project_wiki_version(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
     vid = kwargs['vid']
 
-    node_to_use = node or project
-
-    wiki_page = node_to_use.get_wiki_page(wid, version=vid)
+    wiki_page = node.get_wiki_page(wid, version=vid)
 
     if wiki_page:
         rv = {
@@ -157,7 +149,7 @@ def project_wiki_version(*args, **kwargs):
             'is_current': wiki_page.is_current,
             'is_edit': False,
         }
-        rv.update(_view_project(node_to_use, auth, primary=True))
+        rv.update(_view_project(node, auth, primary=True))
         return rv
 
     raise HTTPError(http.NOT_FOUND)
@@ -187,13 +179,12 @@ def serialize_wiki_toc(project, auth):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_page(*args, **kwargs):
+def project_wiki_page(auth, **kwargs):
 
     wid = kwargs['wid']
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    wiki_page = node_to_use.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(wid)
 
     # todo breaks on /<script>; why?
 
@@ -206,7 +197,7 @@ def project_wiki_page(*args, **kwargs):
         is_current = False
         content = '<p><em>No wiki content</em></p>'
 
-    toc = serialize_wiki_toc(node_to_use, auth=auth)
+    toc = serialize_wiki_toc(node, auth=auth)
 
     rv = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
@@ -218,14 +209,14 @@ def project_wiki_page(*args, **kwargs):
         'is_edit': False,
         'pages_current': sorted([
             from_mongo(version)
-            for version in node_to_use.wiki_pages_versions
+            for version in node.wiki_pages_versions
         ]),
         'toc': toc,
-        'url': get_wiki_url(node_to_use, page=HOME),
-        'category': node_to_use.category
+        'url': node.url,
+        'category': node.category
     }
 
-    rv.update(_view_project(node_to_use, auth, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
@@ -233,15 +224,13 @@ def project_wiki_page(*args, **kwargs):
 @must_have_permission('write') # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_edit(*args, **kwargs):
+def project_wiki_edit(auth, **kwargs):
     project = kwargs['project']
-    node = kwargs['node']
-    auth = kwargs['auth']
+    node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
 
-    node_to_use = node or project
 
-    wiki_page = node_to_use.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:
         version = wiki_page.version
@@ -255,12 +244,12 @@ def project_wiki_edit(*args, **kwargs):
         'pageName': wid,
         'page': wiki_page,
         'version': version,
-        'versions': _get_wiki_versions(node_to_use, wid),
+        'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': True,
     }
-    rv.update(_view_project(node_to_use, auth, primary=True))
+    rv.update(_view_project(node, auth, primary=True))
     return rv
 
 
@@ -268,10 +257,9 @@ def project_wiki_edit(*args, **kwargs):
 @must_have_permission('write') # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_edit_post(*args, **kwargs):
+def project_wiki_edit_post(auth, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user = auth.user
     wid = kwargs['wid']
     logging.debug(

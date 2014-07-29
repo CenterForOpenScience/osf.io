@@ -2,40 +2,37 @@
 
     <ul class="nav bs-sidenav">
 
-        <h4 style="margin-left: 10px;">Project Wiki Pages</h4>
 
+    <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
 
-        % for item in toc:
-         <li>
+        <li>
             % for k in pages_current:
-               %if k == 'home':
-                     <a href="/${node['id']}/wiki/${k}">
+                %if k == 'home':
+                    <a href="/${node['id']}/wiki/${k}">
                         ${'home'}
-                     </a>
+                    </a>
                 %endif
             %endfor
 
             % for k in pages_current:
                 % if k != 'home':
                     <li>
-                     <a href="/${node['id']}/wiki/${k}">${k}</a>
+                    <a href="/${node['id']}/wiki/${k}">${k}</a>
                     </li>
                 % endif
-             %endfor
-        %endfor
+            %endfor
 
+
+    % if category == 'project':
 
         <hr />
         <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
-
-        % if category == 'project':
-
 
             % for child in toc:
                 <li>
                     <a href="${child['url']}">
                         % if child['is_pointer']:
-                            <i class=""></i>
+                            <i class="icon-hand-right"></i>
                         % endif
 
                         ${child['title']}
@@ -55,6 +52,6 @@
                     </ul>
                 </li>
             % endfor
-        % endif
     </ul>
+   %endif
 </div>
