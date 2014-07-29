@@ -131,6 +131,8 @@
     }
 
     // Set up submission for addon selection form
+    var checkedOnLoad = $("#selectAddonsForm input:checked");
+
     $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
@@ -139,16 +141,29 @@
             formData[$elm.attr('name')] = $elm.is(':checked');
         });
 
-        $.ajax({
-            type: 'POST',
-            url: '/api/v1/settings/addons/',
-            data: JSON.stringify(formData),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
-                window.location.reload();
-            }
-        });
+        var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
+
+        if(unchecked.length > 0) {
+            bootbox.confirm(
+                "Are you sure you want to remove the add-ons you have deselected?",
+                function(result) {
+                    if(result) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/api/v1/settings/addons/',
+                            data: JSON.stringify(formData),
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            )
+        }
+
+
 
         return false;
 
