@@ -470,11 +470,11 @@
 
         self.clearEnd = function() {
             self.end('');
-            return true
+            return true;
         };
 
         self.endView = ko.computed(function() {
-            if (self.ongoing()) {return 'ongoing'} else {return self.end()}
+            return (self.ongoing() ? 'ongoing' : self.end())
         }, self);
 
         var validated = ko.validatedObservable(self);
@@ -508,7 +508,7 @@
 
         self.clearEnd = function() {
             self.end('');
-            return true
+            return true;
         };
 
         self.endView = ko.computed(function() {
