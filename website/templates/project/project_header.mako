@@ -13,6 +13,11 @@
     </style>
 % endif
 
+% if node['anonymous'] and user['is_contributor']:
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through the anonymous view-only link. You can remove the link from the url to view the project as a contributor
+    </div>
+% endif
+
 % if node['link'] and not node['is_public'] and not user['can_edit']:
   <div class="alert alert-info">This ${node['node_type']} is being viewed through the read-only, private link. Anyone with the link can view this project. Keep the link safe.
     </div>
@@ -93,7 +98,7 @@
 
 
         <div id="contributors">Contributors:
-            % if node['anonymous'] and not node['is_public'] and not user['can_edit']:
+            % if node['anonymous'] and not node['is_public']:
                 <ol>Anonymous Contributors</ol>
 
             % else:
