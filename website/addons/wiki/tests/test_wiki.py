@@ -8,7 +8,8 @@ from website.app import init_app
 from webtest_plus import TestApp
 from tests.base import OsfTestCase
 from tests.factories import (
-    UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory
+    UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
+    AuthUserFactory, NodeWikiFactory,
 )
 
 from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
@@ -123,7 +124,27 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
 
         with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(
+                self.url,
+                {'value': new_name, 'pk': self.wiki._id},
+                auth=self.auth,
+            )
 
             e = cm.exception
             assert_equal(e, 409)
+
+
+class TestWikiLinks(OsfTestCase):
+
+    def test_links(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        wiki = NodeWikiFactory(
+            content='[[wiki2]]',
+            user=user,
+            node=project,
+        )
+        assert_in(
+            project.web_url_for('project_wiki_page', wid='wiki2'),
+            wiki.html(project),
+        )

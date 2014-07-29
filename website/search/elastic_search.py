@@ -221,7 +221,7 @@ def update_node(node):
             NodeWikiPage.load(x)
             for x in node.wiki_pages_current.values()
         ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text
+            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         try:
             elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)

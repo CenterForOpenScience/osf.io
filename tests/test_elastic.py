@@ -207,7 +207,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -219,7 +220,8 @@ class TestPublicNodes(SearchTestCase):
         """
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
         self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)
