@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
+import hashlib
 import logging
 import urllib
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
-from slugify import slugify
 
 from framework import fields
 from framework.auth import Auth
@@ -89,7 +89,12 @@ class DropboxFile(GuidFile):
             revision = metadata['rev']
         else:
             revision = rev
-        return u"{slug}_{rev}.html".format(slug=slugify(self.path), rev=revision)
+        # Note: Use hash of file path instead of file path in case paths are
+        # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
+        return u'{digest}_{rev}.html'.format(
+            digest=hashlib.md5(self.path).hexdigest(),
+            rev=revision,
+        )
 
     @classmethod
     def get_or_create(cls, node, path):

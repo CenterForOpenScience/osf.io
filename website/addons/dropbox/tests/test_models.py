@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
+import hashlib
 
 from nose.tools import *  # PEP8 asserts
-from slugify import slugify
 
 from framework.auth import Auth
 from website.addons.dropbox.model import (
@@ -251,7 +251,6 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_true(self.node_settings.folder is None)
 
 
-
 class TestDropboxGuidFile(OsfTestCase):
 
     def test_verbose_url(self):
@@ -278,8 +277,13 @@ class TestDropboxGuidFile(OsfTestCase):
         file_obj.save()
 
         result = file_obj.get_cache_filename(client=mock_client)
-        assert_equal(result, "{0}_{1}.html".format(slugify(file_obj.path),
-            file_obj.metadata['rev']))
+        assert_equal(
+            result,
+            '{0}_{1}.html'.format(
+                hashlib.md5(file_obj.path).hexdigest(),
+                file_obj.metadata['rev'],
+            )
+        )
 
     def test_download_url(self):
         file_obj = DropboxFileFactory()
