@@ -21,6 +21,7 @@
         self.url = url;
         self.urls = ko.observable();
         self.dataverseUsername = ko.observable();
+        self.dataversePassword = ko.observable();
 
         self.ownerName = ko.observable();
         self.nodeHasAuth = ko.observable(false);
@@ -29,6 +30,7 @@
         self.connected = ko.observable(false);
         self.loadedSettings = ko.observable(false);
         self.loadedStudies = ko.observable(false);
+        self.submitting = ko.observable(false);
 
         self.dataverses = ko.observableArray([]);
         self.studies = ko.observableArray([]);
@@ -38,6 +40,7 @@
         self.savedStudyTitle = ko.observable();
         self.savedDataverseAlias = ko.observable();
         self.savedDataverseTitle = ko.observable();
+        self.studyWasFound = ko.observable(false);
 
         self.savedStudyUrl = ko.computed(function() {
             return (self.urls()) ? self.urls().studyPrefix + self.savedStudyHdl() : null;
@@ -80,18 +83,30 @@
         self.showLinkDataverse = ko.computed(function() {
             return self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
         });
-        self.showCreateButton = ko.computed(function() {
-            return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
+        self.credentialsChanged = ko.computed(function() {
+           return self.nodeHasAuth() && !self.connected();
+        });
+        self.showInputCredentials = ko.computed(function() {
+            return  (self.credentialsChanged() && self.userIsOwner()) ||
+                (!self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings());
         });
         self.hasDataverses = ko.computed(function() {
            return self.dataverses().length > 0;
         });
-        self.credentialsChanged = ko.computed(function() {
-           return self.nodeHasAuth() && !self.connected();
-        });
         self.hasBadStudies = ko.computed(function() {
             return self.badStudies().length > 0;
         });
+        self.showNotFound = ko.computed(function() {
+            return self.savedStudyHdl() && self.loadedStudies() && !self.studyWasFound();
+        });
+        self.showSubmitStudy = ko.computed(function() {
+            return self.nodeHasAuth() && self.connected() && self.userIsOwner();
+        })
+        self.enableSubmitStudy = ko.computed(function() {
+            return !self.submitting() && self.dataverseHasStudies() &&
+                self.savedStudyHdl() !== self.selectedStudyHdl();
+        });
+
         /**
          * Update the view model from data returned from the server.
          */
@@ -112,7 +127,9 @@
                 self.savedStudyHdl(data.savedStudy.hdl);
                 self.savedStudyTitle(data.savedStudy.title);
                 self.connected(data.connected);
-                self.getStudies(); // Sets studies, selectedStudyHdl
+                if (self.userIsOwner()) {
+                    self.getStudies(); // Sets studies, selectedStudyHdl
+                }
             }
         };
 
@@ -135,6 +152,7 @@
         self.messageClass = ko.observable('text-info')
 
         self.setInfo = function() {
+            self.submitting(true);
             return $.ajax({
                 url: self.urls().set,
                 type: 'POST',
@@ -145,16 +163,34 @@
                 contentType: 'application/json',
                 dataType: 'json',
                 success: function(response) {
+                    self.submitting(false);
                     self.savedDataverseAlias(self.selectedDataverseAlias());
                     self.savedDataverseTitle(self.selectedDataverseTitle());
                     self.savedStudyHdl(self.selectedStudyHdl());
                     self.savedStudyTitle(self.selectedStudyTitle());
+                    self.studyWasFound(true);
                     self.changeMessage('Settings updated.', 'text-success', 5000);
                 },
-                error: function() {
-                    self.changeMessage('The study could not be set at this time.', 'text-danger');
+                error: function(xhr) {
+                    self.submitting(false);
+                    var errorMessage = (xhr.status === 410) ? language.studyDeaccessioned :
+                        (xhr.status = 406) ? language.forbiddenCharacters : language.setStudyError;
+                    self.changeMessage(errorMessage, 'text-danger');
                 }
             });
+        }
+
+        /**
+         * Looks for study in list of studies when first loaded.
+         * This prevents an additional request to the server, but requires additional logic.
+         */
+        self.findStudy = function() {
+            for (var i in self.studies()) {
+                if (self.studies()[i].hdl === self.savedStudyHdl()) {
+                    self.studyWasFound(true);
+                    return;
+                }
+            }
         }
 
         self.getStudies = function() {
@@ -172,9 +208,31 @@
                     self.badStudies(response.badStudies);
                     self.loadedStudies(true);
                     self.selectedStudyHdl(self.savedStudyHdl());
+                    self.findStudy();
                 },
                 error: function() {
                     self.changeMessage('Could not load studies', 'text-danger');
+                }
+            });
+        }
+
+        /** Send POST request to authorize Dataverse */
+        self.sendAuth = function() {
+            return $.ajax({
+                url: self.urls().create,
+                data: ko.toJSON({
+                    dataverse_username: self.dataverseUsername,
+                    dataverse_password: self.dataversePassword
+                }),
+                contentType: 'application/json',
+                type: 'POST',
+                success: function() {
+                    // User now has auth
+                    authorizeNode();
+                },
+                error: function(xhr, textStatus, error) {
+                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+                    self.changeMessage(errorMessage, 'text-danger');
                 }
             });
         }
@@ -229,6 +287,7 @@
                 success: function() {
                     self.nodeHasAuth(false);
                     self.userIsOwner(false);
+                    self.connected(false);
                     self.changeMessage(language.deauthSuccess, 'text-success', 5000);
                 },
                 error: function() {

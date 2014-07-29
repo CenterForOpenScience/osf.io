@@ -22,7 +22,7 @@
     </div>
     <div id="grid" style="width: 100%;"></div>
 
-    % if not meeting.get('info_url'):
+    % if meeting['active'] and not meeting.get('info_url'):
         <hr />
         <div id="submit">
             <h3>Add your poster or talk</h3>

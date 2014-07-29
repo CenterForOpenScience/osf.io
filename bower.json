@@ -3,10 +3,10 @@
   "dependencies": {
     "jQuery": ">=2.1.0",
     "jquery-ui": "~1.10.4",
-    "momentjs": "~2.5.1",
     "bootstrap": "~3.1.1",
     "requirejs": "~2.1.11",
     "zeroclipboard": "~1.3.5",
-    "hgrid": "git@github.com:CenterForOpenScience/hgrid.git#958ab661b80b39b2be7c67672572be9f4651ed16"
+    "hgrid": "https://github.com/CenterForOpenScience/hgrid.git#f0efa5807e21f9894fa38f1d4f0c7d9d86f8b23e",
+    "moment": "~2.7.0"
   }
 }

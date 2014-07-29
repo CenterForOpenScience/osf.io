@@ -23,8 +23,9 @@
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
-    var ViewModel = function(url, folderPicker) {
+    var ViewModel = function(url, selector, folderPicker) {
         var self = this;
+        self.selector = selector;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         // whether current user is authorizer of the addon
@@ -107,7 +108,7 @@
                 self.currentDisplay(null);
             } else {
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
                 self.currentDisplay(self.SHARE);
                 self.activateShare();
             }
@@ -183,7 +184,7 @@
             // Update folder in ViewModel
             self.folder(response.result.folder);
             self.urls(response.result.urls);
-            self.selected(null);
+            self.cancelSelection();
         }
 
         function onSubmitError() {
@@ -198,8 +199,12 @@
                 onSubmitSuccess, onSubmitError);
         };
 
+        /**
+         * Must be used to update radio buttons and knockout view model simultaneously
+         */
         self.cancelSelection = function() {
             self.selected(null);
+            $(selector + ' input[type="radio"]').prop('checked', false);
         };
 
         /** Change the flashed message. */
@@ -226,7 +231,7 @@
                 success: function() {
                     // Update observables
                     self.nodeHasAuth(false);
-                    self.selected(null);
+                    self.cancelSelection();
                     self.currentDisplay(null);
                     self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
@@ -345,7 +350,7 @@
             } else {
                 self.currentDisplay(null);
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
             }
         };
     };
@@ -355,8 +360,9 @@
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
-        self.viewModel = new ViewModel(url, folderPicker);
+        self.viewModel = new ViewModel(url, selector, folderPicker);
         $.osf.applyBindings(self.viewModel, selector);
+        window.bobob = self.viewModel;
     }
 
     return DropboxNodeConfig;

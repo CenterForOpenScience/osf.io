@@ -164,6 +164,17 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, None)
         assert_equals(self.user_settings.secret_key, None)
+        assert_equals(mock_access.call_count, 1)
+
+    @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
+    def test_s3_remove_user_settings_none(self, mock_access):
+        self.user_settings.access_key = None
+        self.user_settings.secret_key = None
+        self.user_settings.save()
+        url = '/api/v1/settings/s3/'
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+        assert_equals(mock_access.call_count, 0)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     def test_user_settings_no_auth(self, mock_access):

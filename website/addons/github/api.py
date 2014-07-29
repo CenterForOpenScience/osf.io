@@ -7,17 +7,17 @@ import urllib
 import itertools
 
 import github3
+import cachecontrol
 from dateutil.parser import parse
-from httpcache import CachingHTTPAdapter
 from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
 
 # Initialize caches
-http_cache = CachingHTTPAdapter()
-https_cache = CachingHTTPAdapter()
+https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
+
 
 class GitHub(object):
 
@@ -173,10 +173,10 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        return self.repo(user, repo).contents(path, ref)
+        return self.repo(user, repo).contents(path.encode("utf-8", ref))
 
-    # TODO
-    def starball(self, user, repo, archive='tar', ref=None):
+    # TODO: Test
+    def starball(self, user, repo, archive='tar', ref='master'):
         """Get link for archive download.
 
         :param str user: GitHub user name
@@ -187,7 +187,12 @@ class GitHub(object):
 
         """
 
-        return self.repo(user, repo).archive(archive + 'ball', ref=None)
+        # github3 archive method writes file to disk
+        repository = self.repo(user, repo)
+        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
+        resp = repository._get(url, allow_redirects=True, stream=True)
+
+        return resp.headers, resp.content
 
     def set_privacy(self, user, repo, private):
         """Set privacy of GitHub repo.
@@ -272,6 +277,7 @@ class GitHub(object):
         if self.access_token:
             return self.gh3.revoke_authorization(self.access_token)
 
+
 def ref_to_params(branch=None, sha=None):
 
     params = urllib.urlencode({
@@ -286,10 +292,11 @@ def ref_to_params(branch=None, sha=None):
         return '?' + params
     return ''
 
+
 # TODO: Use Node#api_url_for and Node#web_url_for
 def build_github_urls(item, node_url, node_api_url, branch, sha):
 
-    quote_path = urllib.quote_plus(item.path)
+    quote_path = urllib.quote_plus(item.path.encode('utf-8'))
     params = ref_to_params(branch, sha)
 
     if item.type in ['tree', 'dir']:

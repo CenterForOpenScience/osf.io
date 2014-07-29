@@ -3,7 +3,9 @@
 """
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from website.addons.dataverse.views.widget import dataverse_get_widget_contents, \
+    dataverse_widget
+from website.routes import OsfWebRenderer, notemplate
 
 from . import views
 
@@ -23,6 +25,8 @@ settings_routes = {
         Rule([
             '/project/<pid>/dataverse/deauthorize/',
             '/project/<pid>/node/<nid>/dataverse/deauthorize/',
+            '/project/<pid>/dataverse/config/',
+            '/project/<pid>/node/<nid>/dataverse/config/',
         ], 'delete', views.auth.deauthorize_dataverse, json_renderer),
 
         # User Settings
@@ -78,7 +82,7 @@ page_routes = {
             ],
             'get',
             views.crud.dataverse_download_file,
-            json_renderer,
+            notemplate,
         ),
     ],
 }
@@ -144,6 +148,33 @@ api_routes = {
             ],
             'put',
             views.crud.dataverse_release_study,
+            json_renderer,
+        ),
+        Rule(
+            [
+            '/project/<pid>/dataverse/widget/',
+            '/project/<pid>/node/<nid>/dataverse/widget/',
+            ],
+            'get',
+            dataverse_widget,
+            OsfWebRenderer('../addons/dataverse/templates/dataverse_widget.mako'),
+        ),
+        Rule(
+            [
+            '/project/<pid>/dataverse/widget/contents/',
+            '/project/<pid>/node/<nid>/dataverse/widget/contents/',
+            ],
+            'get',
+            dataverse_get_widget_contents,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/dataverse/files/<path:path>/info/',
+                '/project/<pid>/node/<nid>/dataverse/files/<path:path>/info/',
+            ],
+            'get',
+            views.crud.dataverse_get_file_info,
             json_renderer,
         ),
     ],

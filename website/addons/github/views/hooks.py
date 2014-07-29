@@ -48,24 +48,21 @@ def add_hook_log(node, github, action, path, date, committer, url=None,
 @must_be_valid_project
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_hook_callback(**kwargs):
+def github_hook_callback(node_addon, **kwargs):
     """Add logs for commits from outside OSF.
 
     """
     if request.json is None:
         return {}
 
-    node_settings = kwargs['node_addon']
-
     # Fail if hook signature is invalid
     utils.verify_hook_signature(
-        node_settings,
+        node_addon,
         request.data,
         request.headers,
     )
 
     node = kwargs['node'] or kwargs['project']
-    github = kwargs['node_addon']
 
     payload = request.json
 
@@ -84,17 +81,17 @@ def github_hook_callback(**kwargs):
         # Add logs
         for path in commit.get('added', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_ADDED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_ADDED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('modified', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_UPDATED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_UPDATED,
                 path, date, committer, url=True, sha=_id,
             )
         for path in commit.get('removed', []):
             add_hook_log(
-                node, github, 'github_' + models.NodeLog.FILE_REMOVED,
+                node, node_addon, 'github_' + models.NodeLog.FILE_REMOVED,
                 path, date, committer,
             )
 

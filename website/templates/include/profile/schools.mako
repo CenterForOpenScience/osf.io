@@ -4,43 +4,55 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <div data-bind="foreach: contents">
+            <div data-bind="sortable: {
+                    data: contents,
+                    options: {
+                        handle: '.sort-handle'
+                    }
+                }">
 
-                <div class="well well-sm">
-                    Position {{ $index() + 1 }}
-                    <a
-                            class="text-danger pull-right"
-                            data-bind="click: $parent.removeContent,
-                                       visible: $parent.canRemove"
-                        >Remove</a>
+                <div>
+
+                    <div class="well well-sm sort-handle">
+                        <span>Position {{ $index() + 1 }}</span>
+                        <span data-bind="visible: $parent.hasMultiple()">
+                            [ drag to reorder ]
+                        </span>
+                        <a
+                                class="text-danger pull-right"
+                                data-bind="click: $parent.removeContent,
+                                           visible: $parent.canRemove"
+                            >Remove</a>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Institution</label>
+                        <input class="form-control" data-bind="value: institution" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input class="form-control" data-bind="value: department" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Degree</label>
+                        <input class="form-control" data-bind="value: degree" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input class="form-control" data-bind="value: start" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>End Date</label>
+                        <input class="form-control" data-bind="value: end" />
+                    </div>
+
+                    <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
+
                 </div>
-
-                <div class="form-group">
-                    <label>Institution</label>
-                    <input class="form-control" data-bind="value: institution" />
-                </div>
-
-                <div class="form-group">
-                    <label>Department</label>
-                    <input class="form-control" data-bind="value: department" />
-                </div>
-
-                <div class="form-group">
-                    <label>Degree</label>
-                    <input class="form-control" data-bind="value: degree" />
-                </div>
-
-                <div class="form-group">
-                    <label>Start Date</label>
-                    <input class="form-control" data-bind="value: start" />
-                </div>
-
-                <div class="form-group">
-                    <label>End Date</label>
-                    <input class="form-control" data-bind="value: end" />
-                </div>
-
-                <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 
             </div>
 
@@ -61,7 +73,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: isValid"
+                        data-bind="enable: enableSubmit"
                     >Submit</button>
 
             </div>

@@ -1,6 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 
-<%def name="title()">Project</%def>
+<%def name="title()">${node['title']}</%def>
 
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />
@@ -75,9 +75,12 @@
             ${children()}
         % endif
 
-        <div class="tags">
-            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-        </div>
+
+        %if node['tags'] or 'write' in user['permissions']:
+            <div class="tags">
+                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            </div>
+        %endif
 
         <hr />
 
@@ -96,7 +99,7 @@
 
 <%def name="children()">
 <div class="page-header">
-    % if node['category'] == 'project':
+    % if node['node_type'] == 'project':
         <div class="pull-right btn-group">
             % if 'write' in user['permissions'] and not node['is_registration']:
                 <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
@@ -104,21 +107,23 @@
             % endif
         </div>
 
-    % endif
     <h2>Components</h2>
+    % endif
 </div>
 
-% if node['children']:
-    <div id="containment">
-        <div mod-meta='{
-                "tpl": "util/render_nodes.mako",
-                "uri": "${node["api_url"]}get_children/",
-                "replace": true,
-                "kwargs": {"sortable" : true}
-            }'></div>
-    </div>
-% else:
+% if node['node_type'] == 'project':
+  % if node['children']:
+      <div id="containment">
+          <div mod-meta='{
+                  "tpl": "util/render_nodes.mako",
+                  "uri": "${node["api_url"]}get_children/",
+                  "replace": true,
+		  "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
+              }'></div>
+      </div>
+  % else:
     <p>No components have been added to this project.</p>
+  % endif
 % endif
 
 % for name, capabilities in addon_capabilities.iteritems():
@@ -172,7 +177,8 @@ ${parent.javascript_bottom()}
         // Tag input
         $('#node-tags').tagsInput({
             width: "100%",
-            interactive:${'true' if user["can_edit"] else 'false'},
+            interactive: ${'true' if user["can_edit"] else 'false'},
+            maxChars: 128,
             onAddTag: function(tag){
                 $.ajax({
                     url: "${node['api_url']}" + "addtag/" + tag + "/",
@@ -190,7 +196,7 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-        % if 'write' not in user['permissions']:
+       % if 'write' not in user['permissions']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))

@@ -61,7 +61,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
 def dropbox_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth:
+    if not node_settings.has_auth or not node_settings.folder:
         return None
     node = node_settings.owner
     path = clean_path(node_settings.folder)

@@ -10,27 +10,6 @@
 }(this, function(Rubeus) {
 
     // Private members
-
-    function getCitation(item) {
-        bootbox.alert(
-            '<table>' +
-                '<tr>'+
-                    '<td><b>Title: </b></td> <td>' + item.study + '</td>' +
-                '</tr>' +
-                '<tr>'+
-                    '<td><b>Study Global ID: &nbsp&nbsp&nbsp</b></td> <td><a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' + item.doi + '</a></td>' +
-                '</tr>' +
-                '<tr>'+
-                    '<td><b>Dataverse: </b></td> <td>' + item.dataverse + '</td>' +
-                '</tr>' +
-                '<tr><td>&nbsp</td></tr>' +
-                '<tr>'+
-                    '<td><b>Citation: </b></td> <td>' + item.citation + '</td>' +
-                '</tr>' +
-            '</table>'
-        )
-    }
-
     function refreshDataverseTree(grid, item, state) {
         var data = item.data || {};
         data.state = state;
@@ -94,13 +73,6 @@
                     var $this = $(evt.target);
                     var state = $this.val();
                     refreshDataverseTree(grid, row, state);
-                }
-            },
-            {
-                on: 'click',
-                selector: '#dataverseGetCitation',
-                callback: function(evt, row) {
-                    getCitation(row)
                 }
             }
         ],

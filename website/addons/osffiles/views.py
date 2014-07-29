@@ -9,7 +9,6 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-
 from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
@@ -200,15 +199,52 @@ def upload_file_public(**kwargs):
 
     return file_info, 201
 
+@must_be_valid_project #returns project
+@must_be_contributor_or_public # returns user, project
+@must_have_addon('osffiles', 'node')
+def file_info(**kwargs):
+    versions = []
+    node = kwargs['node'] or kwargs['project']
+    file_name = kwargs['fid']
+
+    file_name_clean = file_name.replace('.', '_')
+
+    try:
+        files_versions = node.files_versions[file_name_clean]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+    for idx, version in enumerate(list(reversed(files_versions))):
+        node_file = NodeFile.load(version)
+        number = len(files_versions) - idx
+        unique, total = get_basic_counters('download:{}:{}:{}'.format(
+            node._primary_key,
+            file_name_clean,
+            number,
+        ))
+        versions.append({
+            'file_name': file_name,
+            'download_url': node_file.download_url(node),
+            'version_number': number,
+            'display_number': number if idx > 0 else 'current',
+            'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
+            'downloads': total if total else 0,
+            'committer_name': node_file.uploader.fullname,
+            'committer_url': node_file.uploader.url,
+        })
+    return {
+        'files_url': node.url + "files/",
+        'node_title': node.title,
+        'file_name': file_name,
+        'versions': versions,
+    }
+
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('osffiles', 'node')
-def view_file(**kwargs):
+def view_file(auth, **kwargs):
 
-    auth = kwargs['auth']
     node_settings = kwargs['node_addon']
     node = kwargs['node'] or kwargs['project']
-
 
     file_name = kwargs['fid']
     file_name_clean = file_name.replace('.', '_')
@@ -258,32 +294,6 @@ def view_file(**kwargs):
         logger.error('File {} not found on disk.'.format(file_path))
         raise HTTPError(http.NOT_FOUND)
 
-    versions = []
-
-    try:
-        files_versions = node.files_versions[file_name_clean]
-    except KeyError:
-        raise HTTPError(http.NOT_FOUND)
-
-    for idx, version in enumerate(list(reversed(files_versions))):
-        node_file = NodeFile.load(version)
-        number = len(files_versions) - idx
-        unique, total = get_basic_counters('download:{}:{}:{}'.format(
-            node._primary_key,
-            file_name_clean,
-            number,
-        ))
-        versions.append({
-            'file_name': file_name,
-            'download_url': node_file.download_url(node),
-            'number': number,
-            'display_number': number if idx > 0 else 'current',
-            'date_uploaded': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
-            'total': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
-        })
-
     _, file_ext = os.path.splitext(file_path.lower())
 
     # Get or create rendered file
@@ -300,7 +310,7 @@ def view_file(**kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'versions': versions,
+        'info_url': file_object.api_url(node) + 'info/',
     }
 
     rv.update(_view_project(node, auth))
@@ -313,7 +323,6 @@ def download_file(**kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-    key = kwargs['auth'].private_key
 
     try:
         vid = len(node_to_use.files_versions[filename.replace('.', '_')])
@@ -329,23 +338,21 @@ def download_file(**kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@update_counters('download:{pid}:{fid}:{vid}')
-@update_counters('download:{nid}:{fid}:{vid}')
-@update_counters('download:{pid}:{fid}')
-@update_counters('download:{nid}:{fid}')
+@update_counters('download:{target_id}:{fid}:{vid}')
+@update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
 
     version_number = int(kwargs['vid']) - 1
-    current_version = len(node_to_use.files_versions[filename.replace('.', '_')]) - 1
+    current_version = len(node.files_versions[filename.replace('.', '_')]) - 1
 
-    content, content_type = node_to_use.get_file(filename, version=version_number)
+    content, content_type = node.get_file(filename, version=version_number)
     if content is None:
         raise HTTPError(http.NOT_FOUND)
 
     if version_number == current_version:
-        file_path = os.path.join(settings.UPLOADS_PATH, node_to_use._primary_key, filename)
+        file_path = os.path.join(settings.UPLOADS_PATH, node._primary_key, filename)
         return send_file(
             file_path,
             mimetype=content_type,
@@ -353,7 +360,7 @@ def download_file_by_version(**kwargs):
             attachment_filename=filename,
         )
 
-    file_object = node_to_use.get_file_object(filename, version=version_number)
+    file_object = node.get_file_object(filename, version=version_number)
     filename_base, file_extension = os.path.splitext(file_object.path)
     returned_filename = '{base}_{tmstp}{ext}'.format(
         base=filename_base,

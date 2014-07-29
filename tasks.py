@@ -9,10 +9,16 @@ import code
 import platform
 
 from invoke import task, run
+from invoke.exceptions import Failure
 
 from website import settings
 
-SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
+
+try:
+    run('pip freeze | grep rednose', hide='both')
+    TEST_CMD = 'nosetests --rednose'
+except Failure:
+    TEST_CMD = 'nosetests'
 
 
 @task
@@ -22,6 +28,39 @@ def server():
 
 SHELL_BANNER = """
 {version}
+
++--------------------------------------------------+
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
+|ccccccccccccccccccccccOOOOOOOccccccccccccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccOOOOOOOOOOOOccccccccccccccccccc|
+|cccccccccOOOOOOOcccOOOOOOOOOOOOcccOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOccOOOOOsssOOOOcOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOccOOssssssOOccOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOsOcOssssssOOOOOOOOOOOOOOOccccccc|
+|cccccccOOOOOOOOOOOssccOOOOOOcOssOOOOOOOOOOcccccccc|
+|cccccccccOOOOOOOsssOccccccccccOssOOOOOOOcccccccccc|
+|cccccOOOccccOOssssOccccccccccccOssssOccccOOOcccccc|
+|ccOOOOOOOOOOOOOccccccccccccccccccccOOOOOOOOOOOOccc|
+|cOOOOOOOOssssssOcccccccccccccccccOOssssssOOOOOOOOc|
+|cOOOOOOOssssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOsssssssOccccccccccccccccOsssssssOOOOOOOOc|
+|cOOOOOOOOOssssOOccccccccccccccccccOsssssOOOOOOOOcc|
+|cccOOOOOOOOOOOOOOOccccccccccccccOOOOOOOOOOOOOOOccc|
+|ccccccccccccOOssssOOccccccccccOssssOOOcccccccccccc|
+|ccccccccOOOOOOOOOssOccccOOcccOsssOOOOOOOOccccccccc|
+|cccccccOOOOOOOOOOOsOcOOssssOcOssOOOOOOOOOOOccccccc|
+|ccccccOOOOOOOOOOOOOOOsssssssOcOOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOOcOssssssssOcOOOOOOOOOOOOOcccccc|
+|ccccccOOOOOOOOOOOOcccOssssssOcccOOOOOOOOOOOccccccc|
+|ccccccccOOOOOOOOOcccOOOOOOOOOOcccOOOOOOOOOcccccccc|
+|ccccccccccOOOOcccccOOOOOOOOOOOcccccOOOOccccccccccc|
+|ccccccccccccccccccccOOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccOOOOOOOOOcccccccccccccccccccc|
+|cccccccccccccccccccccccOOOOccccccccccccccccccccccc|
+|cccccccccccccccccccccccccccccccccccccccccccccccccc|
++--------------------------------------------------+
 
 Welcome to the OSF Python Shell. Happy hacking!
 
@@ -33,16 +72,18 @@ Available variables:
 
 def make_shell_context():
     from framework import Q
-    from framework.auth.model import User
+    from framework.auth import User, Auth
     from framework import db
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
+    from website import settings
     import requests
     app = init_app()
     context = {'app': app,
                 'db': db,
                 'User': User,
+                'Auth': Auth,
                 'Node': Node,
                 'Q': Q,
                 'models': models,
@@ -50,7 +91,8 @@ def make_shell_context():
                 'rget': requests.get,
                 'rpost': requests.post,
                 'rdelete': requests.delete,
-                'rput': requests.put
+                'rput': requests.put,
+                'settings': settings,
     }
     try:  # Add a fake factory for generating fake names, emails, etc.
         from faker import Factory
@@ -116,6 +158,63 @@ def mongoshell():
 
 
 @task
+def mongodump(path):
+    """Back up the contents of the running OSF database"""
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongodump --db {db} --port {port} --out {path}".format(
+        db=db,
+        port=port,
+        path=path,
+        pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
+
+    run(cmd, echo=True)
+
+    print()
+    print("To restore from the dumped database, run `invoke mongorestore {0}`".format(
+        os.path.join(path, settings.DB_NAME)))
+
+
+@task
+def mongorestore(path, drop=False):
+    """Restores the running OSF database with the contents of the database at
+    the location given its argument.
+
+    By default, the contents of the specified database are added to
+    the existing database. The `--drop` option will cause the existing database
+    to be dropped.
+
+    A caveat: if you `invoke mongodump {path}`, you must restore with
+    `invoke mongorestore {path}/{settings.DB_NAME}, as that's where the
+    database dump will be stored.
+    """
+    db = settings.DB_NAME
+    port = settings.DB_PORT
+
+    cmd = "mongorestore --db {db} --port {port}".format(
+        db=db,
+        port=port,
+        pty=True)
+
+    if settings.DB_USER:
+        cmd += ' --username {0}'.format(settings.DB_USER)
+    if settings.DB_PASS:
+        cmd += ' --password {0}'.format(settings.DB_PASS)
+
+    if drop:
+        cmd += " --drop"
+
+    cmd += " " + path
+    run(cmd, echo=True)
+
+
+@task
 def celery_worker(level="debug"):
     '''Run the Celery process.'''
     run("celery worker -A framework.tasks -l {0}".format(level))
@@ -132,15 +231,6 @@ def rabbitmq():
 
 
 @task
-def solr():
-    '''Start a local solr server.
-
-    NOTE: Requires that Java and Solr are installed. See README for more instructions.
-    '''
-    os.chdir(SOLR_DEV_PATH)
-    run("java -jar start.jar", pty=True)
-
-@task
 def elasticsearch():
     '''Start a local elasticsearch server
 
@@ -155,9 +245,9 @@ def elasticsearch():
         print("Your system is not recognized, you will have to start elasticsearch manually")
 
 @task
-def migrate_search():
+def migrate_search(python='python'):
     '''Migrate the search-enabled models.'''
-    run("python -m website.search_migration.migrate")
+    run("{0} -m website.search_migration.migrate".format(python))
 
 @task
 def mailserver(port=1025):
@@ -166,15 +256,12 @@ def mailserver(port=1025):
 
 
 @task
-def requirements(all=False, addons=False):
+def requirements(all=False):
     '''Install dependencies.'''
+    run("pip install --upgrade -r dev-requirements.txt", pty=True)
     if all:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
         addon_requirements()
-    elif addons:
-        addon_requirements()
-    else:
-        run("pip install --upgrade -r dev-requirements.txt", pty=True)
+        mfr_requirements()
 
 
 @task
@@ -182,12 +269,11 @@ def test_module(module=None, verbosity=2):
     """
     Helper for running tests.
     """
-    test_cmd = 'nosetests'
     # Allow selecting specific submodule
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
-    run(test_cmd + args, pty=True)
+    run(TEST_CMD + args, pty=True)
 
 
 @task
@@ -220,7 +306,7 @@ def test_all():
     test_addons()
 
 @task
-def addon_requirements(mfr=1):
+def addon_requirements():
     """Install all addon requirements."""
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
@@ -237,8 +323,6 @@ def addon_requirements(mfr=1):
                 )
             except IOError:
                 pass
-    if mfr:
-        mfr_requirements()
     print('Finished')
 
 
@@ -253,7 +337,7 @@ def mfr_requirements():
 @task
 def encryption(owner=None):
     """Generate GnuPG key.
-    
+
     For local development:
     > invoke encryption
     On Linode:
@@ -325,9 +409,28 @@ def packages():
 
 
 @task
+def npm_bower():
+    print('Installing bower')
+    run('npm install -g bower')
+
+
+@task
+def bower_install():
+    print('Installing bower-managed packages')
+    run('bower install')
+
+
+@task
 def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
     requirements(all=True)
     encryption()
+    npm_bower()
+    bower_install()
+
+
+@task
+def clear_mfr_cache():
+    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)

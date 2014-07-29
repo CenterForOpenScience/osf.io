@@ -84,7 +84,7 @@ def get_bucket_drop_down(user_settings):
             for bucket in get_bucket_list(user_settings)
         ]
     except BotoServerError:
-        return False
+        return None
 
 
 def _key_type_to_rubeus(key_type):
@@ -121,7 +121,7 @@ def create_osf_user(access_key, secret_key, name):
 
     connection = IAMConnection(access_key, secret_key)
 
-    user_name = u'osf-{0}-{1}'.format(name, ObjectId())
+    user_name = u'osf-{0}'.format(ObjectId())
 
     try:
         connection.get_user(user_name)

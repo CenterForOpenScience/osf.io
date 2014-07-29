@@ -94,6 +94,9 @@
 
  }
 
+#conferenceViewTable td {
+    vertical-align: middle;
+}
 
 /*CSS Johanna added for front page*/
 
@@ -190,10 +193,10 @@
     margin-top: 40px;
     float: right;
 }
-.center {
+.text-center {
     text-align: center;
 }
-.right {
+.text-right {
     text-align: right;
 }
 
@@ -408,6 +411,10 @@ li.pointer {
     cursor: pointer;
 }
 
+.addon-auth {
+    margin-top: 4.8px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
@@ -594,6 +601,20 @@ h4 {
     color: #666666;
 }
 
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
+}
+
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
     background-position: top;
@@ -641,6 +662,10 @@ h4 {
     font-size: 50px;
 }
 
+.table-less {
+    max-height: 140px;
+    overflow-y: hidden;
+}
 
 /* RESPONSIVE CSS */
 
@@ -845,8 +870,6 @@ border-radius: 6px;
 
 /*****************************************************/
 table.table.table-plain th, table.table.table-plain td {
-  padding: 8px;
-  line-height: 10px;
   text-align: left;
   border-top: 0px solid #ddd;
 }
@@ -1012,8 +1035,7 @@ form.form-horizontal.form-horizontal-narrow .control-group {
   -webkit-border-radius: 4px;
      -moz-border-radius: 4px;
           border-radius: 4px;
-}
-.subnav .nav {
+}5.subnav .nav {
   margin-bottom: 0;
 }
 .subnav .nav > li > a {
@@ -1126,12 +1148,22 @@ h1.unavailable {
         padding:25px;
         font-size: 18px;
     }
-
-/* Searh Contributors */
+.title h4
+    {
+        padding: 0px;
+        margin: 0px;
+    }
+.description h5
+    {
+        padding: 5px;
+        margin: 0px;
+    }
+/* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
 }
+
 
 /* Markdown editing */
 
@@ -1348,33 +1380,73 @@ div#logScope a.moreLogs{
 }
 
 /* private_link*/
+
 .narrow-list{
-    padding: 0px 0px;
     margin: 0px 0px;
+    list-style: none;
 }
 
 #generate-private-link {
     margin: 20px 20px;
 }
 
-.private-link-label{
-    width: 60%;
+.text-align{
+    margin-left: 7px;
 }
 
-.link-name{
-    width: 55%;
+.private-link-name{
+    width: 60%
 }
 
-.link-label{
-    width: 15%;
+.list-overflow{
+    max-height: 200px;
+    overflow-y: auto;
 }
 
-.link-date{
-    width: 15%;
+#privateLinkTable .tooltip{
+    word-wrap: break-word;
 }
 
-.link-creator{
-    width: 20%;
+.more-link-node{
+    margin-top: 5px;
+}
+
+.link-url{
+    padding: 1px;
+    border-left: 0px;
+    border-top-right-radius: 5px 5px;
+    border-bottom-right-radius: 5px 5px;
+    color: grey;
+}
+
+#privateLinkTable .btn-group .btn-mini{
+    padding:5px;
+}
+
+/* Contributors list */
+
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors ol {
+    margin:0;
+    padding:0;
+    display:inline;
+}
+
+#contributors ol li {
+    list-style-type:none;
+    display:inline;
+    white-space: nowrap;
+}
+
+#contributors ol li:after {
+    content: ",";
+}
+
+#contributors ol li:last-child:after {
+    content: "";
 }
 
 /* Contributor page */
@@ -1521,6 +1593,14 @@ a {
   background-color: #F3F3F3;
 }
 
+.collapse-button {
+   color: #b0b0b0;
+}
+
+.collapse-button:hover {
+    color: #505050;
+}
+
 /* jQuery UI Autocomplete (WTForms Widget) */
 .ui-autocomplete-category { font-weight: bold }
 
@@ -1568,3 +1648,20 @@ a {
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
+
+@media (max-width:991px){
+    #features-nav, [role=complementary] {
+        display:none
+    }
+}
+
+#duplicateModal h4 {
+    line-height: 34px;
+}
+
+.well-inline {
+    padding:6px 12px;
+    line-height:20px;
+    font-weight:normal;
+    font-size:14px;
+}

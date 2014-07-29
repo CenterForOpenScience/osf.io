@@ -66,7 +66,7 @@ def dropbox_oauth_start(**kwargs):
     user = get_current_user()
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
-    nid = kwargs.get('pid') or kwargs.get('nid')
+    nid = kwargs.get('nid') or kwargs.get('pid')
     if nid:
         session.data['dropbox_auth_nid'] = nid
     if not user:
@@ -138,6 +138,6 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'result': {
             'userHasAuth': user_addon.has_auth,
             'dropboxName': info['display_name'] if info else None,
-            'urls': urls
+            'urls': urls,
         },
     }, http.OK

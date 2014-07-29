@@ -15,7 +15,7 @@ from framework.sessions import session
 
 from website import mails, language
 from website.project.model import unreg_contributor_added
-from website.models import Node
+from website.models import Node, User
 from website.profile import utils
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
@@ -24,7 +24,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
     must_be_contributor_or_public, must_have_permission,
 )
-
+from framework.auth.core import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +125,7 @@ def get_recently_added_contributors(auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils.add_contributor_json(contrib)
+        utils.add_contributor_json(contrib, get_current_user())
         for contrib in auth.user.recently_added
         if contrib.is_active()
         if contrib._id not in node.contributors

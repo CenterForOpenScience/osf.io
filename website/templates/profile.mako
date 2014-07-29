@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">${profile["fullname"]}'s Profile</%def>
+<%def name="title()">${profile["fullname"]}</%def>
 
 <%def name="javascript_bottom()">
 
@@ -63,11 +63,11 @@
                   <td class="fullname">${profile["fullname"]}</td>
                 </tr>
                 <tr>
-                  <td>Member Since</td>
+                  <td>Member&nbsp;Since</td>
                   <td>${profile['date_registered']}</td>
                 </tr>
                 <tr>
-                  <td>Public Profile</td>
+                  <td>Public&nbsp;Profile</td>
                   <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
                 </tr>
             </table>

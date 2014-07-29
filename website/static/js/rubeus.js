@@ -232,6 +232,9 @@
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         },
         RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
+        UNKNOWN_ERROR: 'An unknown error occurred. If this issue persists, ' +
+            'please report it to <a href=\"mailto:support@osf.io\">' +
+            'support@osf.io</a>.'
     };
 
     var statusType = {
@@ -319,6 +322,9 @@
         ajaxOptions: {
             cache: false  // Prevent caching in IE
         },
+        preprocessFilename: function(filename) {
+            return $('<div>').text(filename).html();
+        },
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
@@ -398,8 +404,16 @@
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            var cfgOption = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
-            bootbox.alert(cfgOption || message);
+            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            if (!messageText) {
+                try {
+                    var messageData = JSON.parse(message);
+                    messageText = messageData.message_long;
+                } catch (error) {
+                    messageText = default_status.UNKNOWN_ERROR;
+                }
+            }
+            bootbox.alert(messageText);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
@@ -581,4 +595,3 @@
 
     return Rubeus;
 }));
-

@@ -33,7 +33,6 @@
                                 if category in addon.categories
                             ]
                         %>
-
                         % if addons:
                             <h3>${category.capitalize()}</h3>
                             % for addon in addons:
@@ -60,9 +59,7 @@
 
             </div>
         </div>
-
         % if addon_enabled_settings:
-
             <div id="configureAddons" class="panel panel-default">
                 <div class="panel-heading"><h3 class="panel-title">Configure Add-ons</h3></div>
                 <div class="panel-body">
@@ -73,23 +70,20 @@
                                 "tpl": "../addons/${name}/templates/${name}_user_settings.mako",
                                 "uri": "${user_api_url}${name}/settings/"
                             }'></div>
-
                         % if not loop.last:
                             <hr />
                         % endif
 
                     % endfor
-
                 </div>
             </div>
-
-        % endif
-
+            % endif
     </div>
 
 </div>
 
 <script type="text/javascript">
+
 
     // TODO: Move all this to its own module
     function formToObj(form) {
@@ -137,6 +131,8 @@
     }
 
     // Set up submission for addon selection form
+    var checkedOnLoad = $("#selectAddonsForm input:checked");
+
     $('#selectAddonsForm').on('submit', function() {
 
         var formData = {};
@@ -145,16 +141,29 @@
             formData[$elm.attr('name')] = $elm.is(':checked');
         });
 
-        $.ajax({
-            type: 'POST',
-            url: '/api/v1/settings/addons/',
-            data: JSON.stringify(formData),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
-                window.location.reload();
-            }
-        });
+        var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
+
+        if(unchecked.length > 0) {
+            bootbox.confirm(
+                "Are you sure you want to remove the add-ons you have deselected?",
+                function(result) {
+                    if(result) {
+                        $.ajax({
+                            type: 'POST',
+                            url: '/api/v1/settings/addons/',
+                            data: JSON.stringify(formData),
+                            contentType: 'application/json',
+                            dataType: 'json',
+                            success: function() {
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+            )
+        }
+
+
 
         return false;
 

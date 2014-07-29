@@ -2,6 +2,8 @@ import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
+from modularodm.exceptions import ValidationError
+
 from framework import (
     get_user,
     must_be_logged_in,
@@ -29,9 +31,9 @@ def get_public_projects(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category == 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
@@ -41,9 +43,9 @@ def get_public_components(uid=None, user=None):
         node
         for node in user.node__contributed
         if node.category != 'project'
-            and node.is_public
-            and not node.is_registration
-            and not node.is_deleted
+        and node.is_public
+        and not node.is_registration
+        and not node.is_deleted
     ])
 
 
@@ -125,7 +127,6 @@ def user_profile(auth, **kwargs):
         'user_api_url': user.api_url,
     }
 
-
 @must_be_logged_in
 def user_addons(auth, **kwargs):
 
@@ -152,7 +153,6 @@ def user_addons(auth, **kwargs):
     ]
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
-
     return out
 
 
@@ -273,8 +273,7 @@ def append_editable(data, auth, uid=None):
     data['editable'] = auth.user == target
 
 
-def serialize_social_addons(auth):
-    user = auth.user
+def serialize_social_addons(user):
     out = {}
     for user_settings in user.get_addons():
         config = user_settings.config
@@ -287,8 +286,9 @@ def serialize_social_addons(auth):
 def serialize_social(auth, uid=None, **kwargs):
     target = get_target_user(auth, uid)
     out = target.social
-    out['addons'] = serialize_social_addons(auth)
     append_editable(out, auth, uid)
+    if out['editable']:
+        out['addons'] = serialize_social_addons(target)
     return out
 
 
@@ -372,7 +372,10 @@ def unserialize_social(auth, **kwargs):
     user.social['scholar'] = json_data.get('scholar')
     user.social['linkedIn'] = json_data.get('linkedIn')
 
-    user.save()
+    try:
+        user.save()
+    except ValidationError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 def unserialize_job(job):

@@ -13,7 +13,7 @@ ${next.body()}
 <%include file="modal_add_contributor.mako"/>
 <%include file="modal_add_pointer.mako"/>
 <%include file="modal_show_links.mako"/>
-% if node['category'] == 'project':
+% if node['node_type'] == 'project':
     <%include file="modal_add_component.mako"/>
     <%include file="modal_duplicate.mako"/>
 % endif
@@ -87,14 +87,11 @@ ${next.body()}
             }
         );
 
-        var linksModal = $('#showLinks')[0];
-        var linksVM = new LinksViewModel(linksModal);
-        ko.applyBindings(linksVM, linksModal);
-        
     });
 
     $script.ready('pointers', function() {
-        var pointerManager = new PointerManager('#addPointer', contextVars.node.title);
+        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
     });
 
     // Make unregistered contributors claimable

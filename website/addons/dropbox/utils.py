@@ -3,6 +3,8 @@ import os
 import logging
 import httplib as http
 
+from dropbox.rest import ErrorResponse
+
 from framework import make_response
 from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
@@ -76,17 +78,20 @@ class DropboxNodeLogger(object):
         if save:
             self.node.save()
 
+
 def is_subdir(path, directory):
     if not (path and directory):
         return False
     #make both absolute
-    abs_directory = os.path.abspath(directory)
-    abs_path = os.path.abspath(path)
+    abs_directory = os.path.abspath(directory).lower()
+    abs_path = os.path.abspath(path).lower()
     return os.path.commonprefix([abs_path, abs_directory]) == abs_directory
+
 
 def is_authorizer(auth, node_addon):
     """Return if the auth object's user is the same as the authorizer of the node."""
     return auth.user == node_addon.user_settings.owner
+
 
 def abort_if_not_subdir(path, directory):
     """Check if path is a subdirectory of directory. If not, abort the current
@@ -142,8 +147,17 @@ def render_dropbox_file(file_obj, client=None, rev=None):
     rendered = get_cache_content(node_settings, cache_name)
     if rendered is None:  # not in MFR cache
         dropbox_client = client or get_node_addon_client(node_settings)
-        file_response, metadata = dropbox_client.get_file_and_metadata(
-            file_obj.path, rev=rev)
+        try:
+            file_response, metadata = dropbox_client.get_file_and_metadata(
+                file_obj.path, rev=rev)
+        except ErrorResponse as err:
+            logger.error(err.body['error'])
+            if err.status == 461:
+                message = ('This file is no longer available due to a takedown request '
+                    'under the Digital Millennium Copyright Act.')
+            else:
+                message = 'This Dropbox file cannot be rendered.'
+            return ''.join(['<p class="text-danger">', message, '</p>'])
         rendered = get_cache_content(
             node_settings=node_settings,
             cache_file=cache_name,

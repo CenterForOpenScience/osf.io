@@ -44,7 +44,7 @@ def get_wiki_url(node, page=HOME):
 
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def wiki_widget(*args, **kwargs):
+def wiki_widget(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki = node.get_addon('wiki')
     wiki_page = node.get_wiki_page('home')
@@ -72,7 +72,7 @@ def wiki_widget(*args, **kwargs):
 
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
-def project_wiki_home(*args, **kwargs):
+def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {}, None, None, '{}wiki/home/'.format(node.url)
 
@@ -142,7 +142,7 @@ def project_wiki_version(auth, **kwargs):
 
     if wiki_page:
         rv = {
-            'wiki_id': wiki_page._primary_key if wiki_page else None,
+            'wiki_id': wiki_page._id if wiki_page else None,
             'pageName': wid,
             'wiki_content': wiki_page.html,
             'version': wiki_page.version,
@@ -213,6 +213,7 @@ def project_wiki_page(auth, **kwargs):
         ]),
         'toc': toc,
         'url': node.url,
+        'api_url': node.api_url,
         'category': node.category
     }
 
@@ -225,11 +226,8 @@ def project_wiki_page(auth, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, **kwargs):
-    project = kwargs['project']
-    node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
-
-
+    node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:
@@ -285,3 +283,33 @@ def project_wiki_edit_post(auth, **kwargs):
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
     else:
         return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+
+
+@must_not_be_registration
+@must_have_permission('write')
+@must_have_addon('wiki', 'node')
+def project_wiki_rename(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    wid = request.json.get('pk', None)
+    page = NodeWikiPage.load(wid)
+    new_name = request.json.get('value', None)
+    if new_name != sanitize(new_name):
+        raise HTTPError(http.UNPROCESSABLE_ENTITY)
+
+    if page and new_name:
+        try:
+            exist_check = node.wiki_pages_versions[new_name.lower()]
+        except KeyError:
+            exist_check = None
+        if exist_check:
+            raise HTTPError(http.CONFLICT)
+
+        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
+        del node.wiki_pages_versions[page.page_name.lower()]
+        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page.page_name.lower()]
+        node.save()
+        page.rename(new_name)
+        return {'message': new_name}
+
+    raise HTTPError(http.BAD_REQUEST)

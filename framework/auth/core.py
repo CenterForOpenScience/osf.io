@@ -147,7 +147,7 @@ class Auth(object):
         user = request_args.get('user') or kwargs.get('user') or get_current_user()
         api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
         api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
-        private_key = request_args.get('key')
+        private_key = request_args.get('view_only')
         return cls(
             user=user,
             api_key=api_key,
@@ -163,6 +163,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'merged_by',
     }
 
     _id = fields.StringField(primary=True)
@@ -328,6 +329,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = dt.datetime.utcnow()
+        self.update_search()
+        self.update_search_nodes()
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
@@ -471,9 +474,19 @@ class User(GuidStoredObject, AddonModelMixin):
             # Note: We must manually update search here because the fullname
             # field has not changed
             self.update_search()
+            self.update_search_nodes()
             return True
         else:
             return False
+
+    def update_search_nodes(self):
+        """Call `update_search` on all nodes on which the user is a
+        contributor. Needed to add self to contributor lists in search upon
+        registration or claiming.
+
+        """
+        for node in self.node__contributed:
+            node.update_search()
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -563,9 +576,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        if self.is_active():
-            if self.SEARCH_UPDATE_FIELDS.intersection(rv):
-                self.update_search()
+        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+            self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
@@ -574,9 +586,6 @@ class User(GuidStoredObject, AddonModelMixin):
         return rv
 
     def update_search(self):
-        if not settings.SEARCH_ENGINE:
-            return
-
         from website.search import search
         search.update_user(self)
 
@@ -602,33 +611,33 @@ class User(GuidStoredObject, AddonModelMixin):
     ###### OSF-Specific methods ######
 
     def watch(self, watch_config, save=False):
-        '''Watch a node by adding its WatchConfig to this user's ``watched``
+        """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
         :param watch_config: The WatchConfig to add.
         :param save: Whether to save the user.
-        '''
+
+        """
         watched_nodes = [each.node for each in self.watched]
         if watch_config.node in watched_nodes:
-            raise ValueError("Node is already being watched.")
+            raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
         if save:
             self.save()
         return None
 
-    def unwatch(self, watch_config, save=False):
-        '''Unwatch a node by removing its WatchConfig from this user's ``watched``
+    def unwatch(self, watch_config):
+        """Unwatch a node by removing its WatchConfig from this user's ``watched``
         list. Raises ``ValueError`` if the node is not already being watched.
 
         :param watch_config: The WatchConfig to remove.
         :param save: Whether to save the user.
-        '''
+
+        """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
                 each.__class__.remove_one(each)
-                if save:
-                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
@@ -674,11 +683,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return self.get_recent_log_ids(since=midnight)
 
     def merge_user(self, user, save=False):
-        '''Merge a registered user into this account. This user will be
+        """Merge a registered user into this account. This user will be
         a contributor on any project
 
         :param user: A User object to be merged.
-        '''
+        """
         # Inherit emails
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
@@ -686,7 +695,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
-                visible=node.is_visible_contributor(user),
+                visible=node.get_visible(user),
                 log=False,
             )
             try:
@@ -709,6 +718,21 @@ class User(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
         return None
+
+    def get_projects_in_common(self, other_user, primary_keys= True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.node__contributed._to_primary_keys())
+            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+        else:
+            projects_contributed_to = set(self.node__contributed)
+            return projects_contributed_to.intersection(other_user.node__contributed)
+
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
 
 
 def _merge_into_reversed(*iterables):

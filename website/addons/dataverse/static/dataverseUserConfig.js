@@ -74,7 +74,7 @@
                     self.changeMessage(language.authSuccess, 'text-info', 5000);
                 },
                 error: function(xhr, textStatus, error) {
-                    var errorMessage = (xhr.status === 403) ? language.authInvalid : language.authError;
+                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
                     self.changeMessage(errorMessage, 'text-danger');
                 }
             });
@@ -99,12 +99,15 @@
                 url: self.urls().delete,
                 type: 'DELETE',
                 success: function() {
-                    // User no longer has auth; update viewmodel
-                    self.userHasAuth(false);
-                    self.connected(false)
-                    self.dataverseUsername('');
-                    self.dataversePassword('');
-                    self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+                    // Page must be refreshed to remove the list of authorized nodes
+                    location.reload()
+
+                    // KO logic. Uncomment if page ever doesn't need refreshing
+                    // self.userHasAuth(false);
+                    // self.connected(false);
+                    // self.dataverseUsername('');
+                    // self.dataversePassword('');
+                    // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
                 },
                 error: function() {
                     self.changeMessage(language.deauthError, 'text-danger');

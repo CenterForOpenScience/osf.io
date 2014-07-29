@@ -11,11 +11,12 @@ from webtest_plus import TestApp
 
 from framework import Q
 from framework.auth import User, Auth
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase, fake, URLLookup
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
-                             UnregUserFactory, UnconfirmedUserFactory)
+                             UnregUserFactory, UnconfirmedUserFactory,
+                             PrivateLinkFactory)
 from tests.test_features import requires_piwik
 from website import settings, language
 from website.project.metadata.schemas import OSF_META_SCHEMAS
@@ -23,10 +24,13 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website.app import init_app
+import website.app
 
-app = init_app(set_backends=False, routes=True)
+app = website.app.init_app(
+    routes=True, set_backends=False, settings_module='website.settings',
+)
 
+lookup = URLLookup(app)
 
 class TestAnUnregisteredUser(OsfTestCase):
 
@@ -212,13 +216,13 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/', auto_follow=True)
         title = res.html.title.string
         # page title is correct
-        assert_equal('Open Science Framework | Home', title)
+        assert_equal('OSF | Home', title)
 
     def test_sees_correct_title_on_dashboard(self):
         # User goes to dashboard
         res = self.app.get('/dashboard/', auth=self.auth, auto_follow=True)
         title = res.html.title.string
-        assert_equal('Open Science Framework | Dashboard', title)
+        assert_equal('OSF | Dashboard', title)
 
     def test_can_see_make_public_button_if_admin(self):
         # User is a contributor on a project
@@ -280,14 +284,14 @@ class TestAUser(OsfTestCase):
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, self.user.display_absolute_url)
 
     def test_sees_another_profile(self):
         user2 = UserFactory()
         res = self.app.get(user2.url, auth=self.auth)
-        td1 = res.html.find('td', text=re.compile(r'Public Profile'))
+        td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
         td2 = td1.find_next_sibling('td')
         assert_equal(td2.text, user2.display_absolute_url)
 
@@ -315,13 +319,12 @@ class TestRegistrations(OsfTestCase):
         res = self.app.get(self.project.url + 'settings/', auth=self.auth).maybe_follow()
         assert_not_in('Delete project', res)
 
-
     def test_can_see_contributor(self):
         # Goes to project's page
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_in('Contributors', subnav.text)
+        assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
 
@@ -383,6 +386,7 @@ class TestComponents(OsfTestCase):
         self.component.set_privacy('public', self.consolidate_auth)
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_can_create_component_from_a_project(self):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
@@ -424,6 +428,29 @@ class TestComponents(OsfTestCase):
             'Delete {0}'.format(self.component.project_or_component),
             res
         )
+
+    def test_components_shouldnt_have_component_list(self):
+        res = self.app.get(self.component.url, auth=self.user.auth)
+        assert_not_in('Components', res)
+
+
+class TestPrivateLinkView(OsfTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+
+        self.user = AuthUserFactory()  # Is NOT a contributor
+        self.project = ProjectFactory(is_public=False)
+        self.link = PrivateLinkFactory(anonymous=True)
+        self.link.nodes.append(self.project)
+        self.link.save()
+
+        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_anonymous_link_hide_contributor(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_in("Anonymous Contributors", res.body)
+        assert_not_in(self.user.fullname, res)
 
 
 class TestMergingAccounts(OsfTestCase):
@@ -541,6 +568,8 @@ class TestSearching(OsfTestCase):
     '''
 
     def setUp(self):
+        import website.search.search as search
+        search.delete_all()
         self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
@@ -558,7 +587,8 @@ class TestSearching(OsfTestCase):
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
         # No results, so clicks Search Users
-        res = res.click('Search users')
+
+        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 

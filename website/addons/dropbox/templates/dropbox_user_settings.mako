@@ -12,15 +12,13 @@
                     authorized
                     <span data-bind="if: dropboxName()">by {{ dropboxName }}</span>
                     <a data-bind="click: deleteKey"
-                       class="text-danger pull-right"
-                       style="margin-top: 4.8px">Delete Access Token</a>
+                       class="text-danger pull-right addon-auth">Delete Access Token</a>
             </span>
 
             <!-- Create Access Token Button -->
             <span data-bind="if: !userHasAuth() && loaded()">
                 <a data-bind="attr: {href: urls().create}"
-                   class="text-primary pull-right"
-                   style="margin-top: 4.8px">Create Access Token</a>
+                   class="text-primary pull-right addon-auth">Create Access Token</a>
             </span>
         </small>
     </h4>
@@ -31,6 +29,7 @@
     </div>
 </div>
 
+<%include file="profile/addon_permissions.mako" />
 
 <script>
     $script(['/static/addons/dropbox/dropboxUserConfig.js'], function() {

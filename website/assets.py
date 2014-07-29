@@ -34,10 +34,16 @@ css = Bundle(
 js = Bundle(
     # Vendorized libraries that are already minified
     Bundle(
+        # For unknown reasons, moment must be first
+        "vendor/bower_components/moment/min/moment-with-langs.min.js",
         "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
     ),
+    'vendor/knockout-sortable/knockout-sortable.js',
+    'js/site.js',
+    'js/koHelpers.js',
+    'js/language.js',
     output="public/js/common.js"
 )
 
@@ -47,21 +53,18 @@ js_bottom = Bundle(
     "vendor/jquery-tagsinput/js/jquery.tagsinput.min.js",
     "vendor/jquery-tagcloud/jquery.tagcloud.js",
     "vendor/jquery-tagit/js/tag-it.js",
-    "vendor/bower_components/momentjs/min/moment.min.js",
     "vendor/jquery-blockui/jquery.blockui.js",
-    'vendor/knockout-sortable/knockout-sortable.js',
     # 'vendor/dropzone/dropzone.js',
     # 'vendor/hgrid/hgrid.js',
     'vendor/autosize/jquery.autosize.min.js',
     # Site-specific JS
-    Bundle('js/site.js',
-            'js/language.js',
-            'js/project.js',
-            'js/app.js',
-            'js/addons.js',
-            # 'js/dropzone-patch.js',
-            # 'js/rubeus.js'
-            ),
+    Bundle(
+        'js/project.js',
+        'js/app.js',
+        'js/addons.js',
+        # 'js/dropzone-patch.js',
+        # 'js/rubeus.js'
+    ),
     filters='jsmin',
     output='public/js/site.js'
 )

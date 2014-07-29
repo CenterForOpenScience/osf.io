@@ -9,6 +9,7 @@ from framework.exceptions import HTTPError
 from website import models
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_have_addon
+from website.util import web_url_for
 
 from ..auth import oauth_start_url, oauth_get_token
 
@@ -69,16 +70,6 @@ def figshare_oauth_delete_node(auth, node_addon, **kwargs):
     return {}
 
 
-@must_have_addon('figshare', 'user')
-def figshare_oauth_delete_user(user_addon, **kwargs):
-
-    user_addon.oauth_access_token = None
-    user_addon.oauth_token_type = None
-    user_addon.save()
-
-    return {}
-
-
 def figshare_oauth_callback(**kwargs):
 
     user = get_current_user()
@@ -121,7 +112,8 @@ def figshare_oauth_callback(**kwargs):
 
     if node:
         return redirect(os.path.join(node.url, 'settings'))
-    return redirect('/settings/')
+
+    return redirect(web_url_for('user_addons'))
 
 
 @must_have_permission('write')
@@ -143,16 +135,9 @@ def figshare_add_user_auth(auth, **kwargs):
 
     return {}
 
-# TODO: Expose this
 
-
-def figshare_oauth_delete_user(**kwargs):
-
-    user = get_current_user()
-    figshare_user = user.get_addon('figshare')
-
-    figshare_user.oauth_access_token = None
-    figshare_user.oauth_token_type = None
-    figshare_user.save()
-
+@must_be_logged_in
+@must_have_addon('figshare', 'user')
+def figshare_oauth_delete_user(user_addon, **kwargs):
+    user_addon.remove_auth(save=True)
     return {}

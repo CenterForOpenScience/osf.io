@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
-import subprocess
-import uuid
-import hashlib
+from HTMLParser import HTMLParser
+from collections import OrderedDict
 import calendar
 import datetime
+import hashlib
+import logging
 import os
 import re
+import subprocess
 import unicodedata
 import urllib
 import urlparse
-import logging
-from HTMLParser import HTMLParser
+import uuid
 
 import pytz
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
@@ -57,6 +59,9 @@ def normalize_unicode(ustr):
     return unicodedata.normalize('NFKD', ustr)\
         .encode('ascii', 'ignore')
 
+
+def has_anonymous_link(node, link):
+    return any([x.anonymous for x in node.private_links_active if x.key == link])
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -158,7 +163,10 @@ class Comment(GuidStoredObject):
                 'comment': comment._id,
             },
             auth=auth,
+            save=False,
         )
+
+        comment.node.save()
 
         return comment
 
@@ -174,6 +182,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -189,6 +198,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -204,6 +214,7 @@ class Comment(GuidStoredObject):
                 'comment': self._id,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -315,6 +326,9 @@ class NodeLog(StoredObject):
     COMMENT_REMOVED = 'comment_removed'
     COMMENT_UPDATED = 'comment_updated'
 
+    MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
+    MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
+
     @property
     def node(self):
         return (
@@ -355,7 +369,7 @@ class NodeLog(StoredObject):
         }
 
     # TODO: Move to separate utility function
-    def serialize(self):
+    def serialize(self, anonymous=False):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
@@ -363,18 +377,18 @@ class NodeLog(StoredObject):
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
             'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'contributor': self._render_log_contributor(self.params.get("contributor")),
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
             'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None
+            'node': self.node.serialize() if self.node else None,
+            'anonymous': anonymous
         }
 
 
 class Tag(StoredObject):
 
-    _id = fields.StringField(primary=True)
+    _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
 
@@ -410,7 +424,7 @@ class Pointer(StoredObject):
     def register_node(self, *args, **kwargs):
         return self._clone()
 
-    def use_as_template(self, auth, changes=None, top_level=False):
+    def use_as_template(self, *args, **kwargs):
         return self._clone()
 
     def resolve(self):
@@ -433,6 +447,15 @@ class Pointer(StoredObject):
         )
 
 
+def validate_category(value):
+    """Validator for Node#category. Makes sure that the value is one of the
+    categories defined in CATEGORY_MAP.
+    """
+    if value not in Node.CATEGORY_MAP.keys():
+        raise ValidationValueError('Invalid value for category.')
+    return True
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -444,7 +467,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         'title',
         'category',
         'description',
-        'contributors',
+        'visible_contributor_ids',
         'tags',
         'is_fork',
         'is_registration',
@@ -452,6 +475,22 @@ class Node(GuidStoredObject, AddonModelMixin):
         'is_deleted',
         'wiki_pages_current',
     }
+
+    # Maps category identifier => Human-readable representation for use in
+    # titles, menus, etc.
+    # Use an OrderedDict so that menu items show in the correct order
+    CATEGORY_MAP = OrderedDict([
+        ('', 'Uncategorized'),
+        ('project', 'Project'),
+        ('hypothesis', 'Hypothesis'),
+        ('methods and measures', 'Methods and Measures'),
+        ('procedure', 'Procedure'),
+        ('instrumentation', 'Instrumentation'),
+        ('data', 'Data'),
+        ('analysis', 'Analysis'),
+        ('communication', 'Communication'),
+        ('other', 'Other')
+        ])
 
     _id = fields.StringField(primary=True)
 
@@ -476,9 +515,11 @@ class Node(GuidStoredObject, AddonModelMixin):
     is_fork = fields.BooleanField(default=False)
     forked_date = fields.DateTimeField()
 
-    title = fields.StringField(versioned=True)
+    title = fields.StringField()
     description = fields.StringField()
-    category = fields.StringField()
+    # TODO: Add validator for this field (must be one of the keys in
+    # CATEGORY_MAP
+    category = fields.StringField(validate=validate_category)
 
     registration_list = fields.StringField(list=True)
     fork_list = fields.StringField(list=True)
@@ -531,11 +572,15 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         if self.creator:
             self.contributors.append(self.creator)
-            self.set_visible(self.creator, visible=True)
+            self.set_visible(self.creator, visible=True, log=False)
 
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+    @property
+    def category_display(self):
+        """The human-readable representation of this node's category."""
+        return self.CATEGORY_MAP[self.category]
 
     @property
     def private_links(self):
@@ -683,21 +728,53 @@ class Node(GuidStoredObject, AddonModelMixin):
             for _id in self.visible_contributor_ids
         ]
 
-    def is_visible_contributor(self, user):
-        return user and user._id in self.visible_contributor_ids
-
     def get_visible(self, user):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         return user._id in self.visible_contributor_ids
 
-    def set_visible(self, user, visible):
+    def update_visible_ids(self, save=False):
+        """Update the order of `visible_contributor_ids`. Updating on making
+        a contributor visible is more efficient than recomputing order on
+        accessing `visible_contributors`.
+
+        """
+        self.visible_contributor_ids = [
+            contributor._id
+            for contributor in self.contributors
+            if contributor._id in self.visible_contributor_ids
+        ]
+        if save:
+            self.save()
+
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and user._id not in self.visible_contributor_ids:
             self.visible_contributor_ids.append(user._id)
+            self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
             self.visible_contributor_ids.remove(user._id)
+        else:
+            return
+        message = (
+            NodeLog.MADE_CONTRIBUTOR_VISIBLE
+            if visible
+            else NodeLog.MADE_CONTRIBUTOR_INVISIBLE
+        )
+        if log:
+            self.add_log(
+                message,
+                params={
+                    'project': self.parent_id,
+                    'node': self._id,
+                    'contributors': [user._id],
+                },
+                auth=auth,
+                save=False,
+            )
+        if save:
+            self.save()
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
@@ -977,6 +1054,19 @@ class Node(GuidStoredObject, AddonModelMixin):
         ]
 
     @property
+    def has_pointers_recursive(self):
+        """Recursively checks whether the current node or any of its nodes
+        contains a pointer.
+
+        """
+        if self.nodes_pointer:
+            return True
+        for node in self.nodes_primary:
+            if node.has_pointers_recursive:
+                return True
+        return False
+
+    @property
     def pointed(self):
         return getattr(self, '_pointed', [])
 
@@ -1015,14 +1105,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.nodes[index] = forked
 
-        # Optionally save changes
-        if save:
-            self.save()
-            # Garbage-collect pointer. Note: Must save current node before
-            # removing pointer, else remove will fail when trying to remove
-            # backref from self to pointer.
-            Pointer.remove_one(pointer)
-
         # Add log
         self.add_log(
             NodeLog.POINTER_FORKED,
@@ -1037,7 +1119,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
             },
             auth=auth,
+            save=False,
         )
+
+        # Optionally save changes
+        if save:
+            self.save()
+            # Garbage-collect pointer. Note: Must save current node before
+            # removing pointer, else remove will fail when trying to remove
+            # backref from self to pointer.
+            Pointer.remove_one(pointer)
 
         # Return forked content
         return forked
@@ -1068,6 +1159,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth information including user, API key.
 
         """
+        if not title:
+            return
         original_title = self.title
         self.title = title
         self.add_log(
@@ -1079,6 +1172,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'title_original': original_title,
             },
             auth=auth,
+            save=False,
         )
         if save:
             self.save()
@@ -1094,8 +1188,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         original = self.description
         self.description = description
-        if save:
-            self.save()
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
@@ -1105,7 +1197,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'description_original': original
             },
             auth=auth,
+            save=False,
         )
+        if save:
+            self.save()
         return None
 
     def update_search(self):
@@ -1125,12 +1220,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
-
         if not self.can_edit(auth):
             raise PermissionsError()
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
+
+        # After delete callback
+        for addon in self.get_addons():
+            message = addon.after_delete(self, auth.user)
+            if message:
+                status.push_status_message(message)
 
         log_date = date or datetime.datetime.utcnow()
 
@@ -1143,6 +1243,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
                 auth=auth,
                 log_date=log_date,
+                save=True,
             )
 
         # Remove self from parent registration list
@@ -1253,7 +1354,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :template: Template name
         :data: Form data
 
@@ -1322,6 +1423,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=when,
+            save=False,
         )
         original.registration_list.append(registered._id)
         original.save()
@@ -1341,6 +1443,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'tag':tag,
                 },
                 auth=auth,
+                save=False,
             )
             if save:
                 self.save()
@@ -1363,6 +1466,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'tag': tag,
                 },
                 auth=auth,
+                save=False,
             )
             if save:
                 self.save()
@@ -1445,9 +1549,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 nf.save()
             self.files_versions.pop(file_name_key)
 
-        # Updates self.date_modified
-        self.save()
-
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
@@ -1457,7 +1558,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=nf.date_modified,
+            save=False,
         )
+
+        # Updates self.date_modified
+        self.save()
 
         return True
 
@@ -1596,8 +1701,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 },
             },
             auth=auth,
-            log_date=node_file.date_uploaded
+            log_date=node_file.date_uploaded,
+            save=False,
         )
+        self.save()
 
         return node_file
 
@@ -1794,7 +1901,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'addon': config.full_name,
                 },
                 auth=auth,
+                save=False,
             )
+            self.save() # TODO: here, or outside the conditional? @mambocab
         return rv
 
     def delete_addon(self, addon_name, auth):
@@ -1816,7 +1925,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'addon': config.full_name,
                 },
                 auth=auth,
+                save=False,
             )
+            self.save()
+            # TODO: save here or outside the conditional? @mambocab
         return rv
 
     def callback(self, callback, recursive=False, *args, **kwargs):
@@ -1845,12 +1957,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                     )
 
         return messages
-
-    def get_pointers(self):
-        pointers = self.nodes_pointer
-        for node in self.nodes:
-            pointers.extend(node.get_pointers())
-        return pointers
 
     def replace_contributor(self, old, new):
         for i, contrib in enumerate(self.contributors):
@@ -1898,8 +2004,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Clear permissions for removed user
         self.permissions.pop(contributor._id, None)
 
-        self.save()
-
         # After remove callback
         for addon in self.get_addons():
             message = addon.after_remove_contributor(self, contributor)
@@ -1915,7 +2019,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributor': contributor._id,
                 },
                 auth=auth,
+                save=False,
             )
+
+        self.save()
 
         return True
 
@@ -1939,7 +2046,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributors': removed,
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
 
         if save:
@@ -1976,7 +2083,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             if set(permissions) != set(self.get_permissions(user)):
                 self.set_permissions(user, permissions, save=False)
                 permissions_changed[user._id] = permissions
-            self.set_visible(user, user_dict['visible'])
+            self.set_visible(user, user_dict['visible'], auth=auth)
             users.append(user)
 
         to_retain = [
@@ -2013,7 +2120,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     ],
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
 
         if to_remove:
@@ -2030,9 +2137,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                     'contributors': permissions_changed,
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
-
+        # Update list of visible IDs
+        self.update_visible_ids()
         if save:
             self.save()
 
@@ -2057,7 +2165,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
             self.contributors.append(contrib_to_add)
             if visible:
-                self.set_visible(contrib_to_add, visible=True)
+                self.set_visible(contrib_to_add, visible=True, log=False)
 
             # Add default contributor permissions
             permissions = permissions or DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -2082,7 +2190,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                         'contributors': [contrib_to_add._primary_key],
                     },
                     auth=auth,
-                    save=save,
+                    save=False,
                 )
             if save:
                 self.save()
@@ -2118,7 +2226,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     ],
                 },
                 auth=auth,
-                save=save,
+                save=False,
             )
         if save:
             self.save()
@@ -2154,8 +2262,9 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            log=True, save=save,
+            log=True, save=False,
         )
+        self.save()
         return contributor
 
     def set_privacy(self, permissions, auth=None):
@@ -2189,7 +2298,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'node':self._primary_key,
             },
             auth=auth,
+            save=False,
         )
+        self.save()
         return True
 
     # TODO: Move to wiki add-on
@@ -2281,11 +2392,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         else:
             return get_basic_counters('node:%s' % self._primary_key)
 
+    # TODO: Deprecate this; it duplicates much of what serialize_project already
+    # does
     def serialize(self):
+        """Dictionary representation of node that is nested within a NodeLog's
+        representation.
+        """
         # TODO: incomplete implementation
         return {
             'id': str(self._primary_key),
-            'category': self.project_or_component,
+            'category': self.category_display,
+            'node_type': self.project_or_component,
             'url': self.url,
             # TODO: Titles shouldn't contain escaped HTML in the first place
             'title': html_parser.unescape(self.title),
@@ -2358,19 +2475,39 @@ class PrivateLink(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     key = fields.StringField(required=True)
-    note = fields.StringField()
+    name = fields.StringField()
     is_deleted = fields.BooleanField(default=False)
+    anonymous = fields.BooleanField(default=False)
 
     nodes = fields.ForeignField('node', list=True, backref='shared')
     creator = fields.ForeignField('user', backref='created')
+
+    @property
+    def node_ids(self):
+        node_ids = [node._id for node in self.nodes]
+        return node_ids
+
+    def node_scale(self, node):
+        if node.parent_id not in self.node_ids:
+            return -40
+        else:
+            return 20 + self.node_scale(node.parent_node)
+
+    def node_icon(self, node):
+        if node.category == 'project':
+            node_type = "reg-project" if node.is_registration else "project"
+        else:
+            node_type = "reg-component" if node.is_registration else "component"
+        return "/static/img/hgrid/{0}.png".format(node_type)
 
     def to_json(self):
         return {
             "id": self._id,
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
-            "note": self.note,
+            "name": self.name,
             "creator": self.creator.fullname,
-            "nodes": [x.title for x in self.nodes],
+            "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
+            "anonymous": self.anonymous
         }
 
