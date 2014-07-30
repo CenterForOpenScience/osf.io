@@ -1,0 +1,54 @@
+/**
+ * Prompts the use to save wiki changes
+ */
+;(function (global, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define(['knockout', 'jquery', 'osfutils'], factory);
+    } else {
+        global.DirtyWiki  = factory(ko, jQuery);
+    }
+}(this, function(ko, $) {
+    'use strict';
+
+    function ViewModel(url) {
+        var self = this;
+
+        self.initText = "";
+        self.wikiText = ko.observable();
+
+        self.changed = ko.computed(function() {
+            return self.initText != self.wikiText();
+        });
+
+        self.init = function() {
+             $.ajax({
+                type: 'GET',
+                url: url,
+                dataType: 'json',
+                success: function(response) {
+                    self.initText = response.wiki_content;
+                    self.wikiText(response.wiki_content);
+                },
+                error: function(xhr, textStatus, error) {
+                    console.error(textStatus);
+                    console.error(error);
+                    alert('Could not get wiki content.');
+                }
+            });
+
+            $(window).on('beforeunload', function() {
+                if (self.changed())
+                    return 'There are unsaved changes to your wiki.';
+            });
+        }
+        self.init();
+    }
+
+    function DirtyWiki(selector, url) {
+        // var self = this;
+        window.viewModel = new ViewModel(url);
+        $.osf.applyBindings(viewModel, selector);
+    }
+
+    return DirtyWiki;
+}));

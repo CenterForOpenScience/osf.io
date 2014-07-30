@@ -197,7 +197,7 @@ def project_wiki_page(auth, **kwargs):
 
     toc = serialize_wiki_toc(node, auth=auth)
 
-    rv = {
+    ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'pageName': wid,
         'page': wiki_page,
@@ -215,8 +215,21 @@ def project_wiki_page(auth, **kwargs):
         'category': node.category
     }
 
-    rv.update(_view_project(node, auth, primary=True))
-    return rv
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
+def wiki_page_content(wid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    wiki_page = node.get_wiki_page(wid)
+
+    return {
+        'wiki_content': wiki_page.content
+    }
 
 
 @must_be_valid_project # returns project
