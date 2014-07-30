@@ -115,7 +115,9 @@
                         <td class="col-sm-2">
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
-                        <td class="col-sm-2" data-bind="text: creator"></td>
+                        <td class="col-sm-2" >
+                            <a data-bind="text: creator.fullname, attr: {href: creator.url}"></a>
+                        </td>
                         <td class="col-sm-1">
                             <span data-bind="text: anonymousDisplay"></span>
                         </td>
