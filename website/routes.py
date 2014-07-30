@@ -251,6 +251,16 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/viewedComments/',
+                '/project/<pid>/node/<nid>/viewedComments/',
+            ],
+            'post',
+            project_views.comment.viewed_comments,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],

@@ -584,7 +584,6 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-
         },
         'parent_node': {
             'id': parent._primary_key if parent else '',
@@ -606,6 +605,7 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'viewed_comments': user.comments_viewed_timestamp.get(node._id, '') if user else None,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

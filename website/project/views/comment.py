@@ -7,6 +7,7 @@ from framework import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from framework.forms.utils import sanitize
+from framework.auth.core import get_current_user
 
 from website import settings
 from website.filters import gravatar
@@ -62,7 +63,6 @@ def comment_discussion(**kwargs):
                     user, use_ssl=True,
                     size=settings.GRAVATAR_SIZE_DISCUSSION,
                 ),
-
             }
             for user in sorted_users
         ]
@@ -209,6 +209,23 @@ def undelete_comment(**kwargs):
 
     return {}
 
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def viewed_comments(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    user = get_current_user()
+    comments = list_comments(**kwargs)['comments']
+    latest_comment_time= comments[len(comments)-1]['dateCreated']
+
+    for comment in comments:
+        if comment['dateModified'] > latest_comment_time:
+            latest_comment_time = comment['dateModified']
+
+    user.comments_viewed_timestamp[node._id] = latest_comment_time
+    user.save()
+
+    return {}
 
 @must_be_logged_in
 @must_be_contributor_or_public

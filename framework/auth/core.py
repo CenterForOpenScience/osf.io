@@ -176,6 +176,7 @@ class User(GuidStoredObject, AddonModelMixin):
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_links = fields.ForeignField('privatelink', list=True)
+    comments_viewed_timestamp = fields.DictionaryField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -733,6 +734,9 @@ class User(GuidStoredObject, AddonModelMixin):
     def n_projects_in_common(self, other_user):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
+
+    def viewedComments(self):
+        self.viewedComments = True
 
 
 def _merge_into_reversed(*iterables):

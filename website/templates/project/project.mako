@@ -3,7 +3,7 @@
 <%def name="title()">${node['title']}</%def>
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako" />
+    <%include file="include/comment_template.mako"/>
 % endif
 
 <div class="row">
@@ -147,21 +147,21 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
-
     var $comments = $('#comments');
     var userName = '${user_full_name}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
+    var node = '${node['id']}';
+    var lastOpened = "${user['viewed_comments']}";
 
     if ($comments.length) {
-
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
-        $script.ready('comments', function () {
+        $script.ready('comments', function() {
             var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
+            var commentListModel = Comment.init('#comments', userName, canComment, hasChildren);
+            commentListModel.lastViewed(lastOpened);
         });
-
     }
 
 </script>

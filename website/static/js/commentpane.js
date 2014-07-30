@@ -48,6 +48,9 @@
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
+                $.osf.postJSON(
+                    nodeApiUrl + 'viewedComments/'
+                );
             }
             $toggleElm.animate(
                 {width: width},

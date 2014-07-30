@@ -78,6 +78,8 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
+        self.unreadComments = ko.observable(5);
+        self.lastViewed = ko.observable();
 
         self.replyNotEmpty = ko.computed(function() {
             return notEmpty(self.replyContent());
@@ -131,10 +133,19 @@
                 );
                 deferred.resolve(self.comments());
                 self._loaded = true;
+
+                var count = 0;
+                for (var i=0; i< self.comments().length; i++) {
+                    if (self.comments()[i].dateCreated() > self.lastViewed() || self.comments()[i].dateModified() > self.lastViewed()) {
+                        count+= 1;
+                    }
+                }
+                self.unreadComments(count);
             }
         );
         return deferred;
     };
+
 
     BaseComment.prototype.submitReply = function() {
         var self = this;
@@ -212,6 +223,7 @@
 
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
+
 
         exclusifyGroup(
             self.editing, self.replying, self.reporting, self.deleting,
@@ -406,6 +418,7 @@
         this.showChildren(true);
     };
 
+
     /*
      *
      */
@@ -462,6 +475,8 @@
         }
         ko.applyBindings(viewModel, $elm[0]);
         viewModel.initListeners();
+
+        return viewModel;
     };
 
     return {
