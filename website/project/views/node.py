@@ -521,7 +521,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
-    recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
+    recent_logs, has_more_logs= _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
 
     # Before page load callback; skip if not primary call
