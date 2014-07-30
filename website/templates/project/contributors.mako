@@ -231,5 +231,6 @@
 
         $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
     % endif
+
     </script>
 </%def>
