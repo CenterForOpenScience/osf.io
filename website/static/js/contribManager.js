@@ -78,7 +78,7 @@
             // Allow default action
             return true;
         };
-
+        self.profile_url = ko.observable(contributor.url);
         self.notDeleteStaged = ko.computed(function() {
             return !self.deleteStaged();
         });

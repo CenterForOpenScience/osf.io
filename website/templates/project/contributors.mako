@@ -140,7 +140,12 @@
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
-            <span data-bind="text: contributor.fullname"></span>
+            <span data-bind="ifnot: profile_url">
+                <span data-bind="text: contributor.fullname"></span>
+            </span>
+            <span data-bind="if: profile_url">
+                <a data-bind="text: contributor.fullname, attr:{href: profile_url}"></a>
+            </span>
         </td>
         <td>
             <!-- ko if: $parent.canEdit -->
