@@ -25,7 +25,7 @@ from website.project.views.file import prepare_file
 from website.util.sanitize import deep_clean
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
-logger = logging.getLogger('website.project.views.email')
+logger = logging.getLogger(__name__)
 
 
 def request_to_data():

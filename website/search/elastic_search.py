@@ -9,7 +9,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 
-logger = logging.getLogger('website.search.elastic_search')
+logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database

@@ -1,7 +1,7 @@
 import logging
 from .defaults import *
 
-logger = logging.getLogger('website.addons.figshare')
+logger = logging.getLogger(__name__)
 
 try:
     from .local import *

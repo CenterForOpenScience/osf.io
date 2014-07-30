@@ -3,7 +3,7 @@ import logging
 
 
 # Abstracts search away from solr
-logger = logging.getLogger('website.search.search')
+logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE == 'solr':
     import solr_search as search_engine

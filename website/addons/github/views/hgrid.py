@@ -18,7 +18,7 @@ from website.addons.github.utils import get_refs, check_permissions
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError
 
 
-logger = logging.getLogger('website.addons.github.views.hgrid')
+logger = logging.getLogger(__name__)
 
 logging.getLogger('github3').setLevel(logging.WARNING)
 logging.getLogger('requests.packages.urllib3.connectionpool').setLevel(logging.WARNING)

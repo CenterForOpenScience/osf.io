@@ -2,7 +2,7 @@ import logging
 from .defaults import *
 
 
-logger = logging.getLogger('website.addons.github')
+logger = logging.getLogger(__name__)
 
 try:
     from .local import *

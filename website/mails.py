@@ -32,7 +32,7 @@ framework_send_email = (
         else send_email
 )
 
-logger = logging.getLogger('website.mails')
+logger = logging.getLogger(__name__)
 
 EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 

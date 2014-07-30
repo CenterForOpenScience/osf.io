@@ -5,7 +5,7 @@ from email.mime.text import MIMEText
 from framework.tasks import celery
 from website import settings  # TODO: Use framework's config module instead
 
-logger = logging.getLogger('framework.email.tasks')
+logger = logging.getLogger(__name__)
 
 
 @celery.task

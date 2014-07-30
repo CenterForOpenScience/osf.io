@@ -11,7 +11,7 @@ from website.project.model import NodeLog
 from website.project.decorators import must_be_valid_project
 
 
-logger = logging.getLogger('website.project.views.log')
+logger = logging.getLogger(__name__)
 
 
 def get_log(log_id):

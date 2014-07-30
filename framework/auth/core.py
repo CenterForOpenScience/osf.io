@@ -32,7 +32,7 @@ name_formatters = {
    ),
 }
 
-logger = logging.getLogger('framework.auth.core')
+logger = logging.getLogger(__name__)
 
 # Hide implementation of token generation
 def generate_confirm_token():

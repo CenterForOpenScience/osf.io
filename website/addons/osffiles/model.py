@@ -11,7 +11,7 @@ from framework.analytics import get_basic_counters
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
-logger = logging.getLogger('website.addons.osffiles.model')
+logger = logging.getLogger(__name__)
 
 
 class AddonFilesNodeSettings(AddonNodeSettingsBase):

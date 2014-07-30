@@ -19,7 +19,7 @@ from framework.flask import app, redirect
 from framework import sentry
 from website import settings
 
-logger = logging.getLogger('framework.routing')
+logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
 _tpl_lookup = TemplateLookup(

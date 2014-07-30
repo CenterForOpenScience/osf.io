@@ -10,7 +10,7 @@ import sunburnt
 from .utils import clean_solr_doc 
 import socket
 
-logger = logging.getLogger('website.search.solr_search')
+logger = logging.getLogger(__name__)
 
 try:
     solr = sunburnt.SolrInterface(settings.SOLR_URI)

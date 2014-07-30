@@ -32,7 +32,7 @@ from website.profile import utils
 
 from .log import _get_logs
 
-logger = logging.getLogger('website.project.views.node')
+logger = logging.getLogger(__name__)
 
 @must_be_valid_project  # returns project
 @must_have_permission('write')

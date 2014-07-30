@@ -46,7 +46,7 @@ from website.util import web_url_for, api_url_for
 
 html_parser = HTMLParser()
 
-logger = logging.getLogger('website.project.model')
+logger = logging.getLogger(__name__)
 
 
 def utc_datetime_to_timestamp(dt):

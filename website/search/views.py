@@ -13,7 +13,7 @@ from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 
 
-logger = logging.getLogger('website.search.views')
+logger = logging.getLogger(__name__)
 
 
 def search_search():

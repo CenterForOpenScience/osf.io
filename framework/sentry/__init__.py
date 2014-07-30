@@ -6,7 +6,7 @@ from framework.sessions import get_session
 
 from website import settings
 
-logger = logging.getLogger('framework.sentry')
+logger = logging.getLogger(__name__)
 
 sentry = Sentry(dsn=settings.SENTRY_DSN)
 
