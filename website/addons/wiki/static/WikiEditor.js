@@ -32,19 +32,20 @@
             error: function(xhr, textStatus, error) {
                 console.error(textStatus);
                 console.error(error);
-                alert('Could not get wiki content.');
+                bootbox.alert('Could not get wiki content.');
             }
         });
 
         $(window).on('beforeunload', function() {
-            if (self.changed())
+            if (self.changed()) {
                 return 'There are unsaved changes to your wiki.';
+            }
         });
     }
 
     function WikiEditor(selector, url) {
         // var self = this;
-        window.viewModel = new ViewModel(url);
+        //window.viewModel = new ViewModel(url);
         $.osf.applyBindings(viewModel, selector);
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
