@@ -34,7 +34,7 @@
     <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
     <script>
-        $script('/static/addons/wiki/wikiChanged.js', function() {
+      $script('/static/addons/wiki/WikiEditor.js', function() {
           WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
         });
 
