@@ -38,24 +38,6 @@
                 $("#category").val("");
 
             });
-
-            $('#add-component-submit').on('click', function (event) {
-                event.preventDefault();
-                $('#newComponent').modal('hide');
-                bootbox.dialog({
-                    message: "Successfully created new component.",
-                    buttons: {
-                        success: {
-                            label: "OK",
-                            className: "btn-success",
-                            callback: function () {
-                                $('#componentForm').submit();
-                            }
-                        }
-                    }
-                });
-
-            });
         });
 
 </script>
