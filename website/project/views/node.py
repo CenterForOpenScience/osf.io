@@ -124,9 +124,9 @@ def project_new_node(**kwargs):
             category=form.category.data,
             project=project,
         )
-        status.push_status_message('Your component was created successfully. You can keep working on the component '
-                                   'page below, or return to the ' + '<a href="' + project.url + '">Project Page.</a>',
-                                   'info')
+        status.push_status_message('Your component was created successfully. You can keep working on the '
+                                   'component page below, or return to the '
+                                   + '<u><a href="' + project.url + '">Project Page</a></u>' + '.', 'info')
         return {
             'status': 'success',
         }, 201, None, node.url
