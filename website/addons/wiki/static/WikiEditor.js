@@ -1,5 +1,6 @@
 /**
- * Prompts the use to save wiki changes
+ * Initializes the pagedown editor and prompts the user if
+ * leaving the page with unsaved changes.
  */
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -44,9 +45,7 @@
     }
 
     function WikiEditor(selector, url) {
-        // var self = this;
-        //window.viewModel = new ViewModel(url);
-        viewModel = new ViewModel(url);
+        var viewModel = new ViewModel(url);
         $.osf.applyBindings(viewModel, selector);
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
