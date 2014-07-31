@@ -1,14 +1,13 @@
 <div id="commentPane">
 
-    <div class="cp-handle">
-        <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style="">
-        </i>
-
+    <div class="cp-handle" data-bind="click:removeCount">
+        <p data-bind="text: unreadComments, style: {fontSize: 'medium', color: 'white', paddingLeft: '27px', marginBottom: '-20px', marginLeft: '10px'}"></p>
+        <i class="icon-comments-alt icon-white icon-2x comment-handle-icon"
+           style=""></i>
     </div>
     <div class="cp-bar"></div>
 
     <div id="comments" class="cp-sidebar">
-        <p data-bind="text: unreadComments()"></p>
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
@@ -186,3 +185,4 @@
     </div>
 
 </script>
+

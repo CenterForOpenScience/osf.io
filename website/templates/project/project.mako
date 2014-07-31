@@ -159,8 +159,9 @@ ${parent.javascript_bottom()}
 
         $script.ready('comments', function() {
             var commentPane = new CommentPane('#commentPane');
-            var commentListModel = Comment.init('#comments', userName, canComment, hasChildren);
+            var commentListModel = Comment.init('#commentPane', userName, canComment, hasChildren);
             commentListModel.lastViewed(lastOpened);
+
         });
     }
 

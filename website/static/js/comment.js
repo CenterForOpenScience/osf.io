@@ -78,8 +78,20 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
-        self.unreadComments = ko.observable(5);
+        self.unreadComments = ko.observable();
         self.lastViewed = ko.observable();
+
+        self.displayCount = ko.computed(function() {
+            if (self.unreadComments() !=0) {
+                return self.unreadComments();
+            } else {
+                return ' ';
+            }
+        });
+
+        self.removeCount = function() {
+            self.unreadComments(0);
+        };
 
         self.replyNotEmpty = ko.computed(function() {
             return notEmpty(self.replyContent());
@@ -223,7 +235,6 @@
 
         self.editing = ko.observable(false);
         self.editVerb = self.modified ? 'edited' : 'posted';
-
 
         exclusifyGroup(
             self.editing, self.replying, self.reporting, self.deleting,

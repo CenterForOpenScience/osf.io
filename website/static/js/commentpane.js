@@ -59,7 +59,6 @@
         };
 
         var init = function(){
-
             // Bind drag & drop handlers
             $bar.on('mousedown', function() {
                 makeAllElementsUnselectable();
@@ -94,9 +93,7 @@
             });
 
         };
-
         init();
-
     };
 
     if ((typeof module !== 'undefined') && module.exports) {
