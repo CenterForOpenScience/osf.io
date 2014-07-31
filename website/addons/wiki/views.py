@@ -228,7 +228,7 @@ def wiki_page_content(wid, **kwargs):
     wiki_page = node.get_wiki_page(wid)
 
     return {
-        'wiki_content': wiki_page.content
+        'wiki_content': wiki_page.content if wiki_page else ''
     }
 
 

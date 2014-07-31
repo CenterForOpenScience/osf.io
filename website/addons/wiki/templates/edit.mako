@@ -7,7 +7,7 @@
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText">${wiki_content}</textarea>
+                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
@@ -35,11 +35,8 @@
 
     <script>
         $script('/static/addons/wiki/wikiChanged.js', function() {
-            DirtyWiki('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+          WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
         });
 
-        var converter1 = Markdown.getSanitizingConverter();
-        var editor1 = new Markdown.Editor(converter1);
-        editor1.run();
-    </script>
+   </script>
 </%def>
