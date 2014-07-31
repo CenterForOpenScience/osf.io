@@ -1495,6 +1495,10 @@ li.contributor-list-item a.name {
     margin-left:30px;
 }
 
+.contributor-anonymous {
+    font-style: italic;
+}
+
 /* Handle popovers inside modals */
 .popover {
     z-index: 999999;
