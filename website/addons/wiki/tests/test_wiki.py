@@ -47,8 +47,8 @@ class TestWikiViews(OsfTestCase):
     def test_wiki_content_returns_200(self):
         with app.test_request_context():
             node = ProjectFactory()
-            url = node.api_url_for('wiki_page_content')
-            res = self.app.get(url)
+            url = node.api_url_for('wiki_page_content', wid='somerandomid')
+            res = self.app.get(url).follow()
             assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
