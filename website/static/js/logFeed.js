@@ -36,6 +36,13 @@
         };
 
         /**
+         * Return whether a knockout template exists for the log.
+         */
+        self.hasTemplate = ko.computed(function() {
+            return $('script#' + self.action).length > 0;
+        });
+
+        /**
          * Return the html for a comma-delimited list of contributor links, formatted
          * with correct list grammar.
          * e.g. "Dasher and Dancer", "Comet, Cupid, and Blitzen"
@@ -50,17 +57,17 @@
                     if (i === self.contributors.length - 1 && self.contributors.length > 2) {
                         ret += ' and ';
                     }
-                    if (person.registered)
+                    if (person.registered) {
                         ret += self._asContribLink(person);
-                    else
+                    } else {
                         ret += '<span>' + person.fullname + '</span>';
+                    }
                     if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                         ret += ', ';
                     } else if (i < self.contributors.length - 1 && self.contributors.length === 2) {
                         ret += ' and ';
                     }
                 }
-
             }
             return ret;
         });
@@ -119,7 +126,7 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
-                "anonymous": item.anonymous,
+                'anonymous': item.anonymous,
                 'action': item.action,
                 'date': item.date,
                 // The node type, either 'project' or 'component'
