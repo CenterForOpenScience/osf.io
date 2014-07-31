@@ -50,8 +50,8 @@ def wiki_widget(**kwargs):
     wiki_page = node.get_wiki_page('home')
 
     more = False
-    if wiki_page and wiki_page.html:
-        wiki_html = wiki_page.html
+    if wiki_page and wiki_page.html(node):
+        wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
             more = True
@@ -144,7 +144,7 @@ def project_wiki_version(auth, **kwargs):
         rv = {
             'wiki_id': wiki_page._id if wiki_page else None,
             'pageName': wid,
-            'wiki_content': wiki_page.html,
+            'wiki_content': wiki_page.html(node),
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
             'is_edit': False,
@@ -189,7 +189,7 @@ def project_wiki_page(auth, **kwargs):
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
-        content = wiki_page.html
+        content = wiki_page.html(node)
     else:
         version = 'NA'
         is_current = False

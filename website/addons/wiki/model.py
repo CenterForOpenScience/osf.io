@@ -3,6 +3,8 @@
 """
 
 import datetime
+import functools
+
 import markdown
 from markdown.extensions import wikilinks
 
@@ -18,6 +20,10 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return {}
+
+
+def build_wiki_url(node, label, base, end):
+    return node.web_url_for('project_wiki_page', wid=label)
 
 
 class NodeWikiPage(GuidStoredObject):
@@ -43,26 +49,27 @@ class NodeWikiPage(GuidStoredObject):
     def url(self):
         return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
-    @property
-    def html(self):
+    def html(self, node):
         """The cleaned HTML of the page"""
 
         html_output = markdown.markdown(
             self.content,
             extensions=[
                 wikilinks.WikiLinkExtension(
-                    configs=[('base_url', ''), ('end_url', '')]
+                    configs=[(
+                        'build_url',
+                        functools.partial(build_wiki_url, node)
+                    )]
                 )
             ]
         )
 
         return sanitize(html_output, **settings.WIKI_WHITELIST)
 
-    @property
-    def raw_text(self):
+    def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
 
-        return sanitize(self.html, tags=[], strip=True)
+        return sanitize(self.html(node), tags=[], strip=True)
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
