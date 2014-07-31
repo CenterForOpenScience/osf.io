@@ -6,4 +6,3 @@ webtest-plus
 invoke==0.8.1
 mock
 fake-factory
-colorlog==2.3.1
