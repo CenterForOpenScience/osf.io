@@ -66,7 +66,7 @@ CLAIMED_CONTRIBUTOR = '''
 # ###########
 
 # Shown at error page if an expired/revokes email confirmation link is clicked
-LINK_EXPIRED ='This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
+LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log in</a> to continue.'
 
 # Node Actions
 
@@ -85,22 +85,21 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-<p>Registration creates a frozen version of the project that can never be edited 
+<p>Registration creates a frozen version of the project that can never be edited
 or deleted. You can register your project by selecting a registration form,  entering
 information about your project, and then confirming. You will be
-able to continue editing the original project, however, and the frozen version with 
+able to continue editing the original project, however, and the frozen version with
 time stamps will always be linked to the original.</p>
 
 <ul>
 
-    <li>Registrations are private by default. You can make your registration
-    public after completing the registration process.</li>
+    <li>A registration takes the same privacy settings as the project, e.g. a public project results in a public registration.</li>
 
     <li>Before initiating a registration, make sure that the project is in the
     state that you wish to freeze. Consider turning links into forks.</li>
 
     <li>Start by selecting a registration form from the list below. You can
-    hit your browser's back button if the selected form is not 
+    hit your browser's back button if the selected form is not
     appropriate for your use.</li>
 
 </ul>
