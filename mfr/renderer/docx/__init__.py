@@ -1,8 +1,6 @@
 from .. import FileRenderer
 import os.path
 import pydocx
-import logging
-logging.basicConfig(level=logging.DEBUG)
 
 
 class DocxRenderer(FileRenderer):

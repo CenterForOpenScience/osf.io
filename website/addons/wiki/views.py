@@ -1,7 +1,6 @@
 """
 
 """
-import logging
 import httplib as http
 import difflib
 
@@ -21,8 +20,6 @@ from website.project.decorators import (
 )
 
 from .model import NodeWikiPage
-
-logger = logging.getLogger(__name__)
 
 HOME = 'home'
 

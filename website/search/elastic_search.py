@@ -9,7 +9,6 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
