@@ -412,7 +412,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once
+        mock_put_file.assert_called_once()
         first_argument = mock_put_file.call_args[0][0]
         second_arg = mock_put_file.call_args[0][1]
         assert_equal(first_argument, '{0}/{1}'.format('foo', 'myfile.rst'))
@@ -427,7 +427,7 @@ class TestCRUDViews(DropboxAddonTestCase):
                 path='')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once
+        mock_put_file.assert_called_once()
         first_argument = mock_put_file.call_args[0][0]
         node_settings = self.project.get_addon('dropbox')
         expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
@@ -442,7 +442,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             auth=self.user.auth,
         )
 
-        mock_file_delete.assert_called_once
+        mock_file_delete.assert_called_once()
         assert_equal(path, mock_file_delete.call_args[0][0])
 
     @unittest.skip('Finish this')
@@ -543,7 +543,6 @@ class TestCRUDViews(DropboxAddonTestCase):
         # Compare with second precision
         assert_equal(res.json['registered'][:19],
             self.project.registered_date.isoformat()[:19])
-
 
     def test_dropbox_view_file(self):
         url = web_url_for('dropbox_view_file', pid=self.project._primary_key,

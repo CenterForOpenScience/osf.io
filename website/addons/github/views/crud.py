@@ -1,5 +1,5 @@
 import os
-import urllib
+import hashlib
 import logging
 import datetime
 import httplib as http
@@ -63,7 +63,8 @@ def github_download_file(**kwargs):
 
 def get_cache_file(path, sha):
     return '{0}_{1}.html'.format(
-        urllib.quote_plus(path.encode("utf-8")), sha,
+        hashlib.md5(path.encode('utf-8', 'ignore')).hexdigest(),
+        sha,
     )
 
 
