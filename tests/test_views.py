@@ -25,7 +25,7 @@ from framework.auth.utils import impute_names_model
 
 import website.app
 from website.models import Node, Pointer, NodeLog
-from website.project.model import ensure_schemas
+from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
     send_claim_email,
     deserialize_contributors
@@ -65,6 +65,15 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.save()
 
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+
+    def test_not_anonymous_for_public_project(self):
+        anonymous_link = PrivateLinkFactory(anonymous=True)
+        anonymous_link.nodes.append(self.project)
+        anonymous_link.save()
+        self.project.set_privacy('public')
+        self.project.save()
+        self.project.reload()
+        assert_false(has_anonymous_link(self.project, anonymous_link.key))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url,{'view_only': self.link.key})
@@ -583,6 +592,15 @@ class TestProjectViews(OsfTestCase):
 
         assert_equal(res.status_code, http.FORBIDDEN)
         assert_false(node.is_deleted)
+
+    def test_watch_and_unwatch(self):
+        url = self.project.api_url_for('togglewatch_post')
+        self.app.post_json(url, {}, auth=self.auth)
+        res = self.app.get(self.project.api_url, auth=self.auth)
+        assert_equal(res.json['node']['watched_count'], 1)
+        self.app.post_json(url, {}, auth=self.auth)
+        res = self.app.get(self.project.api_url, auth=self.auth)
+        assert_equal(res.json['node']['watched_count'], 0)
 
 
 class TestUserProfile(OsfTestCase):

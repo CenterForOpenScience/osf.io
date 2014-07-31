@@ -601,6 +601,20 @@ h4 {
     color: #666666;
 }
 
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
+}
+
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
     background-position: top;
@@ -1150,6 +1164,7 @@ h1.unavailable {
     padding-right: 10px;
 }
 
+
 /* Markdown editing */
 
 .wmd-panel
@@ -1407,6 +1422,33 @@ div#logScope a.moreLogs{
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
 }
+
+/* Contributors list */
+
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors ol {
+    margin:0;
+    padding:0;
+    display:inline;
+}
+
+#contributors ol li {
+    list-style-type:none;
+    display:inline;
+    white-space: nowrap;
+}
+
+#contributors ol li:after {
+    content: ",";
+}
+
+#contributors ol li:last-child:after {
+    content: "";
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {

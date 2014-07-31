@@ -28,8 +28,7 @@ ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
 ALLOW_CLAIMING = True
 
-SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
-SOLR_URI = 'http://localhost:8983/solr/'
+SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'http://localhost:9200'
 ELASTIC_TIMEOUT = 10
 # Sessions
@@ -111,7 +110,7 @@ WIKI_WHITELIST = {
     ],
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
-        'height', 'href', 'src', 'style', 'title', 'type', 'width',
+        'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
         'salign', 'align', 'wmode', 'target',
     ],

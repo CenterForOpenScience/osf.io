@@ -20,6 +20,7 @@ from website.addons.dropbox.tests.utils import (
     DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
 )
 from website.addons.dropbox.views.config import serialize_settings
+from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
 
 mock_client = MockDropbox()
@@ -283,6 +284,20 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     def test_dropbox_addon_folder(self):
         assert 0, 'finish me'
 
+    def test_dropbox_addon_folder_if_folder_is_none(self):
+        # Something is returned on normal circumstances
+        root = dropbox_addon_folder(
+            node_settings=self.node_settings, auth=self.user.auth)
+        assert_true(root)
+
+        # Nothing is returned when there is no folder linked
+        self.node_settings.folder = None
+        self.node_settings.save()
+        root = dropbox_addon_folder(
+            node_settings=self.node_settings, auth=self.user.auth)
+        assert_is_none(root)
+
+
     @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
@@ -397,7 +412,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             path='foo')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once
+        mock_put_file.assert_called_once()
         first_argument = mock_put_file.call_args[0][0]
         second_arg = mock_put_file.call_args[0][1]
         assert_equal(first_argument, '{0}/{1}'.format('foo', 'myfile.rst'))
@@ -412,7 +427,7 @@ class TestCRUDViews(DropboxAddonTestCase):
                 path='')
         res = self.app.post(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, httplib.CREATED)
-        mock_put_file.assert_called_once
+        mock_put_file.assert_called_once()
         first_argument = mock_put_file.call_args[0][0]
         node_settings = self.project.get_addon('dropbox')
         expected_path = os.path.join(node_settings.folder, 'rootfile.rst')
@@ -427,7 +442,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             auth=self.user.auth,
         )
 
-        mock_file_delete.assert_called_once
+        mock_file_delete.assert_called_once()
         assert_equal(path, mock_file_delete.call_args[0][0])
 
     @unittest.skip('Finish this')
@@ -528,7 +543,6 @@ class TestCRUDViews(DropboxAddonTestCase):
         # Compare with second precision
         assert_equal(res.json['registered'][:19],
             self.project.registered_date.isoformat()[:19])
-
 
     def test_dropbox_view_file(self):
         url = web_url_for('dropbox_view_file', pid=self.project._primary_key,

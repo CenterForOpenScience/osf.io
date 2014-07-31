@@ -2,7 +2,7 @@
 
 import logging
 import pyelasticsearch
-import re 
+import re
 import copy
 
 from website import settings
@@ -18,7 +18,7 @@ TYPES = ['project', 'component', 'user', 'registration']
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-        settings.ELASTIC_URI, 
+        settings.ELASTIC_URI,
         timeout=settings.ELASTIC_TIMEOUT
     )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
@@ -209,7 +209,7 @@ def update_node(node):
             'title': node.title,
             'category': node.category,
             'public': node.is_public,
-            'tags': [x._id for x in node.tags],
+            'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
@@ -357,7 +357,8 @@ def create_result(results, counts):
             # Check if parent has already been visited, if so, delete it
             if parent and visited_nodes.get(parent_info['id']):
                 for i in range(visited_nodes.get(parent_info['id']) - num_deleted, len(formatted_results)):
-                    if formatted_results[i]['url'] == parent_info['url']:
+                    result_url = formatted_results[i].get('url')
+                    if result_url and result_url == parent_info['url']:
                         del formatted_results[i]
                         num_deleted += 1
                         break
@@ -410,13 +411,13 @@ def _format_result(result, parent, parent_info):
     return formatted_result
 
 
-def search_contributor(query, exclude=None):
+def search_contributor(query, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
-    :param: Search query
-    :return: List of dictionaries, each containing the ID, full name, and
-        gravatar URL of an OSF user
+    :param: Search query, current_user
+    :return: List of dictionaries, each containing the ID, full name,
+        most recent employment and education, gravatar URL of an OSF user
 
     """
     query.replace(" ", "_")
@@ -456,20 +457,42 @@ def search_contributor(query, exclude=None):
     for doc in docs:
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
+
+        if current_user:
+            n_projects_in_common = current_user.n_projects_in_common(user)
+        else:
+            n_projects_in_common = 0
+
         if user is None:
             logger.error('Could not load user {0}'.format(doc['id']))
             continue
         if user.is_active():  # exclude merged, unregistered, etc.
+            current_employment = None
+            education = None
+
+            if user.jobs:
+                current_employment = user.jobs[0]['institution']
+
+            if user.schools:
+                education = user.schools[0]['institution']
+
             users.append({
                 'fullname': doc['user'],
                 'id': doc['id'],
+                'employment': current_employment,
+                'education': education,
+                'n_projects_in_common': n_projects_in_common,
                 'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
                     size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
                 ),
+                'profile_url': user.profile_url,
                 'registered': user.is_registered,
                 'active': user.is_active()
+
             })
+
+
 
     return {'users': users}

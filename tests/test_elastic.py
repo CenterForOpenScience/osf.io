@@ -22,7 +22,7 @@ import website.search.search as search
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
-        search.delete_all() 
+        search.delete_all()
 
 
 def query(term):
@@ -41,7 +41,7 @@ class TestUserUpdate(SearchTestCase):
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
-        # Verify that user has been added to Solr
+        # Verify that user has been added to Elastic Search
         docs = query_user(self.user.fullname)
         assert_equal(len(docs), 1)
 
@@ -93,13 +93,13 @@ class TestProject(SearchTestCase):
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Solr.
+        """Verify that a private project is not present in Elastic Search.
         """
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Solr.
+        """Make project public, and verify that it is present in Elastic Search.
         """
         self.project.set_privacy('public')
         docs = query(self.project.title)

@@ -610,7 +610,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     ###### OSF-Specific methods ######
 
-    def watch(self, watch_config, save=False):
+    def watch(self, watch_config):
         """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
@@ -623,8 +623,6 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
-        if save:
-            self.save()
         return None
 
     def unwatch(self, watch_config):
@@ -718,6 +716,21 @@ class User(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
         return None
+
+    def get_projects_in_common(self, other_user, primary_keys= True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.node__contributed._to_primary_keys())
+            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+        else:
+            projects_contributed_to = set(self.node__contributed)
+            return projects_contributed_to.intersection(other_user.node__contributed)
+
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
 
 
 def _merge_into_reversed(*iterables):

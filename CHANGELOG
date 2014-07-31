@@ -1,0 +1,21 @@
+*********
+Changelog
+*********
+
+0.15.0 (unreleased)
+===================
+
+Scheduled 2014-07-30
+
+- View-only links: Add option to anonymize contributors.
+- Wiki: Add support for fenced code blocks; syntax highlighting; allow ID attributes in tags.
+- Improvements to "Add contributors" UI: Identicons; show projects in common.
+- Non-contributors don't see tags input if there are no tags on a project.
+- Add prompt if there are unsaved wiki changes.
+- Wiki logs link to wiki pages.
+- Add confirmation dialog when deselecting addons from the user profile page.
+- Developers: All deprecated Solr code removed.
+- Developers: Bower components are no longer added to the git tree. Use `bower
+install` to installthem.
+- Various bugfixes and minor UI improvements.
+
