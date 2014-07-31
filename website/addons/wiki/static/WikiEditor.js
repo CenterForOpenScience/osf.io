@@ -46,7 +46,7 @@
     function WikiEditor(selector, url) {
         // var self = this;
         //window.viewModel = new ViewModel(url);
-        viewModel = new viewModel(url);
+        viewModel = new ViewModel(url);
         $.osf.applyBindings(viewModel, selector);
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
