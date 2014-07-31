@@ -17,7 +17,7 @@
 
         <!-- ko if: log.hasTemplate() -->
         <span data-bind="if:log.anonymous">
-            <span><em>A user</em></span>
+          <span class="contributor-anonymous">A user</span>
         </span>
         <span data-bind="ifnot:log.anonymous">
             <span data-bind="if: log.userURL">
