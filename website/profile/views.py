@@ -248,6 +248,7 @@ def serialize_names(**kwargs):
     user = kwargs['auth'].user
     return {
         'full': user.fullname,
+        'username': user.username,
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
@@ -347,6 +348,7 @@ def unserialize_names(**kwargs):
     user.middle_names = json_data.get('middle')
     user.family_name = json_data.get('family')
     user.suffix = json_data.get('suffix')
+    user.username = json_data.get('username')
     user.save()
 
 
