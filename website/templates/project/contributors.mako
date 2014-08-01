@@ -227,7 +227,7 @@
             var tableUrl = nodeApiUrl + 'private_link/';
             var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
         });
-    
+
         $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
     % endif
 
