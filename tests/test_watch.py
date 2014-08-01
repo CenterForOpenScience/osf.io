@@ -46,7 +46,7 @@ class TestWatching(OsfTestCase):
         n_watched_then = len(self.user.watched)
         # A user watches a WatchConfig
         config = WatchConfigFactory(node=self.project)
-        self.user.watch(config, save=True)
+        self.user.watch(config)
         n_watched_now = len(self.user.watched)
         assert_equal(n_watched_now, n_watched_then + 1)
         assert_true(self.user.is_watching(self.project))

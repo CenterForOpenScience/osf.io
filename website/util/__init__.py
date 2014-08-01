@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from flask import url_for, request
 from . import rubeus  # Keep me: Makes rubeus importable from website.util
+# Keep me: Makes rubeus importable from website.util
+from . import rubeus  # noqa
 
 from website import settings
 
@@ -45,4 +47,6 @@ def web_url_for(view_name, _absolute=False, *args, **kwargs):
 
 def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
-    return request.content_type == 'application/json'
+    content_type = request.content_type
+    return content_type and ('application/json' in content_type)
+

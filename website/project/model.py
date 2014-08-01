@@ -61,6 +61,8 @@ def normalize_unicode(ustr):
 
 
 def has_anonymous_link(node, link):
+    if node.is_public:
+        return False
     return any([x.anonymous for x in node.private_links_active if x.key == link])
 
 signals = blinker.Namespace()
