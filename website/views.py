@@ -51,6 +51,7 @@ def _render_node(node):
 
     """
     return {
+        'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
