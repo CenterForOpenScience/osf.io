@@ -474,7 +474,7 @@
         };
 
         self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.end())
+            return (self.ongoing() ? 'ongoing' : self.end());
         }, self);
 
         var validated = ko.validatedObservable(self);
@@ -512,7 +512,7 @@
         };
 
         self.endView = ko.computed(function() {
-            if (self.ongoing()) {return 'ongoing'} else {return self.end()}
+            return (self.ongoing() ? 'ongoing' : self.end());
         }, self);
 
         var validated = ko.validatedObservable(self);
