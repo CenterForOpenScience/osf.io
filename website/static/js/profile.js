@@ -186,13 +186,15 @@
         self.middle = $.osf.ko.sanitizedObservable();
         self.family = $.osf.ko.sanitizedObservable();
         self.suffix = $.osf.ko.sanitizedObservable();
+        self.username = $.osf.ko.sanitizedObservable();
 
         self.tracked = [
             self.full,
             self.given,
             self.middle,
             self.family,
-            self.suffix
+            self.suffix,
+            self.username
         ];
 
         var validated = ko.validatedObservable(self);

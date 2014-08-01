@@ -3,6 +3,11 @@
     <form role="form" data-bind="submit: submit">
 
         <div class="form-group">
+            <label>Account email address:</label>
+            <input class="form-control" data-bind="value: username" />
+        </div>
+
+        <div class="form-group">
             <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
             <input class="form-control" data-bind="value: full" />
         </div>
