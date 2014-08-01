@@ -67,9 +67,13 @@
 ##                    users are different results than anything associated with projects
                         % if 'user' in result:
                             <div class="user">
-                            <a href=${result['user_url']}>${result['user']}</a>
+                                <h4>
+                                    % if not 'user:' in cleaned_query:
+                                        <small>[ User ]</small>
+                                    % endif
+                                    <a href=${result['user_url']}>${result['user']}</a>
+                                </h4>
                             </div>
-                    </div><!-- end result -->
                         % else:
                             <div class="title">
                                 <h4>
@@ -148,9 +152,9 @@
                                     % endfor
                                 % endif
                             </div>
+                    %endif
                     </div><!-- end result-->
                     <br>
-                    %endif
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">

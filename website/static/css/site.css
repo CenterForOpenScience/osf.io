@@ -1150,6 +1150,11 @@ h1.unavailable {
         padding-bottom: 5px;
         margin: 0px;
     }
+.user h4
+    {
+        padding: 0px;
+        margin: 0px;
+    }
 .description h5
     {
         padding: 0px;
