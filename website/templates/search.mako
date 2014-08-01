@@ -95,9 +95,11 @@
                                       % if result['parent_url']:
                                           <a href=${result['parent_url']}>${result['parent_title']}</a>
                                       % else:
-                                          <span style="font-weight: normal; font-style: italic">${result['parent_title']}</span>
+                                          <span style="font-style: italic">${result['parent_title']}</span>
                                       % endif
                                     </h5>
+                                % else:
+                                    <h5 style="color: #909090">No description</h5>
                                 % endif
                             </div>
 

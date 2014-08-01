@@ -1139,10 +1139,6 @@ h1.unavailable {
 }
 
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
@@ -1151,12 +1147,14 @@ h1.unavailable {
 .title h4
     {
         padding: 0px;
+        padding-bottom: 5px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
     }
 /* Search Contributors */
 
