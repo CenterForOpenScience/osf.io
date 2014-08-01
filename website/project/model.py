@@ -69,17 +69,12 @@ def has_anonymous_link(node, link, auth=None):
     for valid_link in (x for x in node.private_links_active if x.key == link):
         return valid_link.anonymous
 
-    #get the intersection of user's key_ring and node's private_key
     key_ring = set(auth.user.private_link_keys)
     valid_key = key_ring.intersection(node.private_link_keys_active)
 
-    #any key in intersection that anonymous is false
-    anonymous = True
     if valid_key:
-        for key in valid_key:
-            anonymous = anonymous and (x.anonymous for x in node.private_links_active if x.key == key)
-
-    return anonymous
+        return all((x.anonymous for x in node.private_links_active if x.key in valid_key))
+    return False
 
 
 signals = blinker.Namespace()
@@ -2181,6 +2176,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add not in self.contributors:
+
+            if contrib_to_add._id:
+                key_ring = set(contrib_to_add.private_links)
+                keys_to_remove = key_ring.intersection(self.private_links_active)
+                for key in keys_to_remove:
+                    contrib_to_add.private_links.remove(key)
 
             self.contributors.append(contrib_to_add)
             if visible:
