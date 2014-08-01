@@ -1,6 +1,5 @@
 """Views for the node settings page."""
 # -*- coding: utf-8 -*-
-import logging
 import httplib as http
 
 from modularodm.exceptions import ValidationError
@@ -14,9 +13,6 @@ from website.project.decorators import (must_have_addon,
 )
 
 from website.addons.forward.utils import serialize_settings
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_be_valid_project

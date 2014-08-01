@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import logging
 import time
 
 from modularodm.exceptions import ValidationValueError
@@ -25,9 +24,6 @@ from website.project.decorators import (
     must_be_contributor_or_public, must_have_permission,
 )
 from framework.auth.core import get_current_user
-
-logger = logging.getLogger(__name__)
-
 
 @collect_auth
 @must_be_valid_project

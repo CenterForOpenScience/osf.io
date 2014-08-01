@@ -17,5 +17,6 @@ Scheduled 2014-07-30
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.
+- Developers: Various improvements to logging.
 - Various bugfixes and minor UI improvements.
 
