@@ -6,12 +6,29 @@ var GithubConfigHelper = (function() {
         $('#githubRepo').val($.trim(repoParts[1]));
     };
 
+    var displayError = function(msg) {
+        $('#addonSettingsGithub').find('.addon-settings-message')
+            .text('Error: ' + msg)
+            .removeClass('text-success').addClass('text-danger')
+            .fadeOut(100).fadeIn();
+    };
+
     var createRepo = function() {
 
         var $elm = $('#addonSettingsGithub');
         var $select = $elm.find('select');
 
         bootbox.prompt('Name your new repo', function(repoName) {
+
+            // Return if cancelled
+            if (repoName === null)
+                return;
+
+            if (repoName === '') {
+                displayError('Your repo must have a name');
+                return;
+            }
+
             $.ajax({
                 type: 'POST',
                 url: '/api/v1/github/repo/create/',
@@ -25,10 +42,7 @@ var GithubConfigHelper = (function() {
                     updateHidden(repoName);
                 },
                 error: function() {
-                    $('#addonSettingsGithub').find('.addon-settings-message')
-                        .text('Could not create repository')
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
+                    displayError('Could not create repository');
                 }
             });
         });

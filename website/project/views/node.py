@@ -426,13 +426,12 @@ def togglewatch_post(**kwargs):
     )
     try:
         if user.is_watching(node):
-            user.unwatch(watch_config, save=True)
+            user.unwatch(watch_config)
         else:
-            user.watch(watch_config, save=True)
+            user.watch(watch_config)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
-    watch_config.save()
     user.save()
 
     return {
@@ -732,7 +731,6 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             'category': node.category,
             'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-
             'anonymous': has_anonymous_link(node, view_only_link),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
                 if node.is_registration

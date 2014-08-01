@@ -1,6 +1,5 @@
 import httplib as http
 import functools
-import logging
 
 from furl import furl
 import urlparse
@@ -10,10 +9,6 @@ from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
-
-logger = logging.getLogger(__name__)
-
-debug = logger.debug
 
 
 def _kwargs_to_nodes(kwargs):
@@ -71,7 +66,7 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def check_can_access(node, user, api_node=None, has_deleted_keys=False):
+def check_can_access(node, user, api_node=None):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -81,8 +76,6 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     if user is None:
         return False
     if not node.is_contributor(user) and api_node != node:
-        if has_deleted_keys:
-            status.push_status_message("The private links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
     return True
 
@@ -179,7 +172,7 @@ def _must_be_contributor_factory(include_public):
                             response = redirect(redirect_url)
 
             #for login user
-            else:
+            elif not node.is_contributor(user) and api_node != node:
                 #key first time show up record it in the key ring
                 if key not in kwargs['auth'].user.private_link_keys:
                     for node_link in node.private_links_active:
@@ -194,16 +187,10 @@ def _must_be_contributor_factory(include_public):
                 # if no intersction check other privilege
                 if not node.is_public or not include_public:
                     if key_ring.isdisjoint(node.private_link_keys_active):
-                        delete_key_check = has_deleted_keys(
-                            key_ring=key_ring, node=node, user=kwargs['auth'].user)
-
-                        if not check_can_access(node=node, user=user, has_deleted_keys=delete_key_check,
-                                api_node=api_node):
-                            url = '/login/?next={0}'.format(request.path)
-                            redirect_url = check_key_expired(key=key, node=node, url = url)
-                            response = redirect(redirect_url)
-
-                        kwargs['auth'].private_key = None
+                        if has_deleted_keys(key_ring=key_ring, node=node,
+                                            user=kwargs['auth'].user):
+                            status.push_status_message("The view-only links you used are expired.")
+                        raise HTTPError(http.FORBIDDEN)
 
                     #has intersection: check if the link is valid if not use other key
                     # in the key ring
@@ -217,8 +204,7 @@ def _must_be_contributor_factory(include_public):
                             key=key, key_ring=key_ring, node=node,
                             auth=kwargs['auth'], api_node=api_node,
                             scheme=scheme)
-                else:
-                    kwargs['auth'].private_key = None
+
             return response or func(*args, **kwargs)
 
         return wrapped

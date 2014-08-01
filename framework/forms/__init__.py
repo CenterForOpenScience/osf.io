@@ -71,7 +71,7 @@ class JqueryAutocomplete(TextInput):
                         input = $('<div class="input-group">' +
                                 '<input class="form-control"/>' +
                                 '<span class="input-group-btn">' +
-                                    '<button class="btn btn-default">' +
+                                    '<button class="btn btn-default" type="button">' +
                                         '<span class="caret"/>' +
                                     '</button>' +
                                 '</span>' +

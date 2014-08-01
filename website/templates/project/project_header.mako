@@ -13,8 +13,12 @@
     </style>
 % endif
 
+% if node['anonymous'] and user['is_contributor']:
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link.</div>
+% endif
+
 % if node['link'] and not node['is_public'] and not user['can_edit']:
-  <div class="alert alert-info">This ${node['node_type']} is being viewed through the read-only, private link. Anyone with the link can view this project. Keep the link safe.
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.
     </div>
 % endif
 
@@ -93,7 +97,7 @@
 
 
         <div id="contributors">Contributors:
-            % if node['anonymous'] and not node['is_public'] and not user['can_edit']:
+            % if node['anonymous'] and not node['is_public']:
                 <ol>Anonymous Contributors</ol>
 
             % else:
@@ -103,7 +107,7 @@
                     "replace": true
                 }'></div></ol>
             % endif
-        
+
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>

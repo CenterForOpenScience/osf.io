@@ -41,7 +41,7 @@ class TestUserUpdate(SearchTestCase):
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
-        # Verify that user has been added to Solr
+        # Verify that user has been added to Elastic Search
         docs = query_user(self.user.fullname)
         assert_equal(len(docs), 1)
 
@@ -93,13 +93,13 @@ class TestProject(SearchTestCase):
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Solr.
+        """Verify that a private project is not present in Elastic Search.
         """
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Solr.
+        """Make project public, and verify that it is present in Elastic Search.
         """
         self.project.set_privacy('public')
         docs = query(self.project.title)
@@ -207,7 +207,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -219,7 +220,8 @@ class TestPublicNodes(SearchTestCase):
         """
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
         self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)

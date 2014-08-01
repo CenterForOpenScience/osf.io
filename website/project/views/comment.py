@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import collections
 import httplib as http
 
@@ -15,8 +14,6 @@ from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 
-
-logger = logging.getLogger(__name__)
 
 def resolve_target(node, guid):
 

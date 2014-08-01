@@ -2,16 +2,13 @@ from website import settings
 import logging
 
 
-# Abstracts search away from solr
 logger = logging.getLogger(__name__)
 
-if settings.SEARCH_ENGINE == 'solr':
-    import solr_search as search_engine
-elif settings.SEARCH_ENGINE == 'elastic':
+if settings.SEARCH_ENGINE == 'elastic':
     import elastic_search as search_engine
 else:
     search_engine = None
-    logger.warn('Neither elastic or solr are set to load')
+    logger.warn('Elastic search is not set to load')
 
 
 def requires_search(func):

@@ -29,10 +29,20 @@ test_app = init_app(
     settings_module='website.settings', routes=False, set_backends=False
 )
 
-# Silence some 3rd-party logging
-SILENT_LOGGERS = ['factory.generate', 'factory.containers']
+
+logger = logging.getLogger()
+logger.setLevel(logging.CRITICAL)
+
+# Silence some 3rd-party logging and some "loud" internal loggers
+SILENT_LOGGERS = [
+    'factory.generate',
+    'factory.containers',
+    'website.search.elastic_search',
+    'framework.auth.core',
+    'website.mails',
+]
 for logger_name in SILENT_LOGGERS:
-    logging.getLogger(logger_name).setLevel(logging.WARNING)
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 # Fake factory
 fake = Factory.create()

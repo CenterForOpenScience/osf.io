@@ -13,7 +13,10 @@ Scheduled 2014-07-30
 - Non-contributors don't see tags input if there are no tags on a project.
 - Add prompt if there are unsaved wiki changes.
 - Wiki logs link to wiki pages.
+- Add confirmation dialog when deselecting addons from the user profile page.
+- Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.
+- Developers: Various improvements to logging.
 - Various bugfixes and minor UI improvements.
 

@@ -111,7 +111,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
                 query = query & query_part
             user = User.find_one(query)
         except Exception as err:
-            logging.error(err)
+            logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -125,7 +125,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         user = User.find_one(query)
         return user
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         return None
 
 
@@ -615,7 +615,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     ###### OSF-Specific methods ######
 
-    def watch(self, watch_config, save=False):
+    def watch(self, watch_config):
         """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
@@ -628,8 +628,6 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
-        if save:
-            self.save()
         return None
 
     def unwatch(self, watch_config):

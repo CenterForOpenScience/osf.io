@@ -14,8 +14,7 @@ from website.project.views.contributor import get_node_contributors_abbrev
 from framework.auth.core import get_current_user
 
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('search.routes')
+logger = logging.getLogger(__name__)
 
 
 def search_search():
