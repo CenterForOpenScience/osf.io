@@ -353,16 +353,7 @@ def create_result(results, counts):
             parent = Node.load(result['parent_id'])
             parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
 
-            # Check if parent has already been visited, if so, delete it
-            if parent and visited_nodes.get(parent_info['id']):
-                for i in range(visited_nodes.get(parent_info['id']) - num_deleted, len(formatted_results)):
-                    result_url = formatted_results[i].get('url')
-                    if result_url and result_url == parent_info['url']:
-                        del formatted_results[i]
-                        num_deleted += 1
-                        break
-                visited_nodes[parent_info['id']] = index
-            elif visited_nodes.get(result['id']):
+            if visited_nodes.get(result['id']):
                 # If node already visited, it should not be returned as a result
                 continue
             elif parent_info['id']:
@@ -379,33 +370,23 @@ def create_result(results, counts):
 
 def _format_result(result, parent, parent_info):
     formatted_result = {
-        'contributors': result['contributors'] if parent is None
-            else parent_info['contributors'],
-        'wiki_link': result['url'] + 'wiki/' if parent is None
-            else parent_info['wiki_url'],
-        'title': result['title'] if parent is None
-            else parent_info['title'],
-        'url': result['url'] if parent is None else parent_info['url'],
-        'nest': {
-            result['id']:{#Nested components have all their own attributes
-                'title': result['title'],
-                'url': result['url'],
-                'wiki_link': result['url'] + 'wiki/',
-                'contributors': result['contributors'],
-                'contributors_url': result['contributors_url'],
-                'highlight': [],
-                'description': result['description'],
-            }
-        } if parent is not None else {},
-        'tags': result['tags'] if parent is None else parent_info['tags'],
-        'contributors_url': result['contributors_url'] if parent is None
-            else parent_info['contributors_url'],
+        'contributors': result['contributors'],
+        'wiki_link': result['url'] + 'wiki/',
+        'title': result['title'],
+        'url': result['url'],
+        'is_component': False if parent is None else True,
+        'parent_title': parent_info['title'] if parent is not None else None,
+        'parent_url': parent_info['url'] if parent is not None else None,
+        'parent_is_registration': parent_info['is_registration'] if parent
+            is not None else None,
+        'tags': result['tags'],
+        'contributors_url': result['contributors_url'],
         'is_registration': result['registeredproject'] if parent is None
-            else parent_info['is_registration'],
+            else False,
         'highlight': [],
-        'description': result['description'] if parent is None
-            else parent_info['description'],
+        'description': result['description'] if parent is None else None,
     }
+    print(str(formatted_result['is_component']))
 
     return formatted_result
 
