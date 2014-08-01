@@ -332,7 +332,6 @@ def create_result(results, counts):
     formatted_results = []
     word_cloud = {}
     visited_nodes = {}  # For making sure projects are only returned once
-    num_deleted = 0  # For making deleting projects from the list faster
     index = 0  # For keeping track of what index a project is stored
     for result in results:
         # User results are handled specially
@@ -377,16 +376,13 @@ def _format_result(result, parent, parent_info):
         'is_component': False if parent is None else True,
         'parent_title': parent_info['title'] if parent is not None else None,
         'parent_url': parent_info['url'] if parent is not None else None,
-        'parent_is_registration': parent_info['is_registration'] if parent
-            is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
         'is_registration': result['registeredproject'] if parent is None
-            else False,
+            else parent_info['is_registration'],
         'highlight': [],
         'description': result['description'] if parent is None else None,
     }
-    print(str(formatted_result['is_component']))
 
     return formatted_result
 
