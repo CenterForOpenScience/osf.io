@@ -60,10 +60,27 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, link, auth=None):
+    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
+    #if link is valid use link else check key_ring
+    for valid_link in (x for x in node.private_links_active if x.key == link):
+        return valid_link.anonymous
+
+    #get the intersection of user's key_ring and node's private_key
+    key_ring = set(auth.user.private_link_keys)
+    valid_key = key_ring.intersection(node.private_link_keys_active)
+
+    #any key in intersection that anonymous is false
+    anonymous = True
+    if valid_key:
+        for key in valid_key:
+            anonymous = anonymous and (x.anonymous for x in node.private_links_active if x.key == key)
+
+    return anonymous
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
