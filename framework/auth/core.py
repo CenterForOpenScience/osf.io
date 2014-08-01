@@ -176,7 +176,6 @@ class User(GuidStoredObject, AddonModelMixin):
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
     private_links = fields.ForeignField('privatelink', list=True)
-    comments_viewed_timestamp = fields.DictionaryField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -255,6 +254,11 @@ class User(GuidStoredObject, AddonModelMixin):
     date_last_login = fields.DateTimeField()
 
     date_confirmed = fields.DateTimeField()
+
+    # Format: {
+    #   'node_id': 'timestamp'
+    # }
+    comments_viewed_timestamp = fields.DictionaryField()
 
     _meta = {'optimistic' : True}
 

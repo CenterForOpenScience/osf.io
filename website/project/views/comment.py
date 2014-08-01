@@ -13,6 +13,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
+from datetime import datetime
 
 
 logger = logging.getLogger(__name__)
@@ -212,11 +213,14 @@ def undelete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def viewed_comments(**kwargs):
+def view_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     user = get_current_user()
+    latest_comment_time = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S')
     comments = list_comments(**kwargs)['comments']
-    latest_comment_time= comments[len(comments)-1]['dateCreated']
+
+    if len(comments) != 0:
+        latest_comment_time = comments[len(comments)-1]['dateCreated']
 
     for comment in comments:
         if comment['dateModified'] > latest_comment_time:

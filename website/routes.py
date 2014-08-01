@@ -251,11 +251,11 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/viewedComments/',
-                '/project/<pid>/node/<nid>/viewedComments/',
+                '/project/<pid>/viewComments/',
+                '/project/<pid>/node/<nid>/viewComments/',
             ],
             'post',
-            project_views.comment.viewed_comments,
+            project_views.comment.view_comments,
             json_renderer,
         ),
 

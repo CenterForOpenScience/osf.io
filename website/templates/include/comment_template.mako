@@ -1,7 +1,7 @@
 <div id="commentPane">
 
     <div class="cp-handle" data-bind="click:removeCount">
-        <p data-bind="text: displayCount" class="cp-handle-unread-comments-count"></p>
+        <p data-bind="text: displayCount" class="unread-comments-count"></p>
         <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style=""></i>
     </div>
     <div class="cp-bar"></div>

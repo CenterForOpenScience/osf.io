@@ -412,7 +412,7 @@ li.pointer {
     position: relative;
 }
 
-.cp-handle-unread-comments-count {
+.unread-comments-count {
     font-size: medium;
     color: white;
     position: absolute;

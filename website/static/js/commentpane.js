@@ -49,7 +49,7 @@
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
                 $.osf.postJSON(
-                    nodeApiUrl + 'viewedComments/'
+                    nodeApiUrl + 'viewComments/'
                 );
             }
             $toggleElm.animate(
