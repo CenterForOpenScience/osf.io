@@ -10,7 +10,7 @@
           {{/if}}{{/unless}}{{/unless}}
           </span>
           <span class="rename-container" id="rnc-{{theItem.node_id}}">
-              <form action="#">
+              <form action="">
               <fieldset class="project-detail-fields">
                 <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}" autofocus>
                 <input type="submit" class = "renameNodeBtn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
@@ -35,7 +35,7 @@
                 {{/unless}}
             </div>
             <div id="findNode{{theItem.node_id}}">
-                <form action="#">
+                <form action="">
                 <fieldset class="project-detail-fields">
                     <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
                     <input type="submit" class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add the project">
@@ -45,7 +45,7 @@
                     </form>
             </div>
             <div class="add-folder-container" id="afc-{{theItem.node_id}}">
-                <form action="#">
+                <form action="">
                 <fieldset class="project-detail-fields">
                     <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
                     <input type="submit" class = "addFolderBtn btn btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add the folder">

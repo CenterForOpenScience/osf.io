@@ -693,7 +693,7 @@
                                 }
                             });
                         });
-
+                        return false;
                     });
 
                     $('#remove-link-' + theItem.node_id).click(function () {
@@ -762,7 +762,7 @@
                                 }
                             });
                         });
-
+                        return false;
                     });
                     $('#rename-node-' + theItem.node_id).click(function () {
                         $('#buttons' + theItem.node_id).hide();
@@ -796,6 +796,7 @@
                                 reloadFolder(self.grid, theParentNode);
                             }
                         });
+                        return false;
                     });
                     $('.cancel-button-' + theItem.node_id).click(function() {
                         $('#afc-' + theItem.node_id).hide();
