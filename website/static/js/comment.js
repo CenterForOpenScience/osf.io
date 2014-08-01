@@ -82,7 +82,7 @@
         self.lastViewed = ko.observable();
 
         self.displayCount = ko.computed(function() {
-            if (self.unreadComments() !=0) {
+            if (self.unreadComments() !== 0) {
                 return self.unreadComments();
             } else {
                 return ' ';
@@ -90,7 +90,7 @@
         });
 
         self.removeCount = function() {
-            self.unreadComments(0);
+            self.unreadComments(' ');
         };
 
         self.replyNotEmpty = ko.computed(function() {

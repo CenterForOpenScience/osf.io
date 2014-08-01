@@ -223,7 +223,6 @@ def viewed_comments(**kwargs):
             latest_comment_time = comment['dateModified']
 
     user.comments_viewed_timestamp[node._id] = latest_comment_time
-    user.is_comments_pane_open = True
     user.save()
 
     return {}

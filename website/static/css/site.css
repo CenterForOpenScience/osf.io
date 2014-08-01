@@ -409,6 +409,14 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+    position: relative;
+}
+
+.cp-handle-unread-comments-count {
+    font-size: medium;
+    color: white;
+    position: absolute;
+    margin-left: 40px;
 }
 
 .addon-auth {
