@@ -16,8 +16,7 @@ from framework.auth.core import get_current_user
 from framework.exceptions import HTTPError
 import httplib as http
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('search.routes')
+logger = logging.getLogger(__name__)
 
 
 def search_search():

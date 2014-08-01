@@ -5,6 +5,7 @@ import httplib as http
 from flask import request, redirect
 from modularodm import Q
 
+from framework import sentry
 from framework.exceptions import HTTPError
 from framework.forms import utils
 from framework.routing import proxy_url
@@ -12,6 +13,7 @@ from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
+from framework.guid.model import Guid, GuidStoredObject
 
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
@@ -218,7 +220,6 @@ def get_dashboard_nodes(auth, **kwargs):
     return _render_nodes(list(nodes) + list(comps))
 
 
-
 @must_be_logged_in
 def dashboard(**kwargs):
     auth = kwargs['auth']
@@ -334,6 +335,19 @@ def resolve_guid(guid, suffix=None):
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
+
+        # verify that the object is a GuidStoredObject descendant. If a model
+        #   was once a descendant but that relationship has changed, it's
+        #   possible to have referents that are instances of classes that don't
+        #   have a redirect_mode attribute or otherwise don't behave as
+        #   expected.
+        if not isinstance(guid_object.referent, GuidStoredObject):
+            sentry.log_message(
+                'Guid `{}` resolved to non-guid object'.format(guid)
+            )
+
+            raise HTTPError(http.NOT_FOUND)
+
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))

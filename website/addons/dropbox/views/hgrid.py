@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import httplib as http
 
 from framework.exceptions import HTTPError
@@ -15,9 +14,6 @@ from website.addons.dropbox.utils import (
     abort_if_not_subdir,
     is_authorizer,
 )
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_be_contributor_or_public

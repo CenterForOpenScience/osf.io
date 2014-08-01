@@ -14,8 +14,10 @@
 <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
     <dd class="log-content">
+
+        <!-- ko if: log.hasTemplate() -->
         <span data-bind="if:log.anonymous">
-            <span><em>A user</em></span>
+          <span class="contributor-anonymous">A user</span>
         </span>
         <span data-bind="ifnot:log.anonymous">
             <span data-bind="if: log.userURL">
@@ -27,6 +29,14 @@
         </span>
         <!-- Log actions are the same as their template name -->
         <span data-bind="template: {name: log.action, data: log}"></span>
+        <!-- /ko -->
+
+        <!-- For debugging purposes: If a log template for a the Log can't be found, show
+              an error message with its log action. -->
+        <!-- ko ifnot: log.hasTemplate() -->
+        <span class="text-warning">Could not render log: "<span data-bind="text: log.action"></span>"</span>
+        <!-- /ko -->
+
     </dd>
 </dl><!-- end foreach logs -->
 

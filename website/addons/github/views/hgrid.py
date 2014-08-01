@@ -132,7 +132,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
-            logging.error('Could not access GitHub repo')
+            logger.error('Could not access GitHub repo')
             return None
         if repo.private:
             return None
