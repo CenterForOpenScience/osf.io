@@ -737,9 +737,6 @@ class User(GuidStoredObject, AddonModelMixin):
         """Returns number of "shared projects" (projects that both users are contributors for)"""
         return len(self.get_projects_in_common(other_user, primary_keys=True))
 
-    def viewedComments(self):
-        self.viewedComments = True
-
 
 def _merge_into_reversed(*iterables):
     '''Merge multiple sorted inputs into a single output in reverse order.
