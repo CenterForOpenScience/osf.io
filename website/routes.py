@@ -510,7 +510,7 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule(
             [

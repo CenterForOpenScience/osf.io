@@ -61,37 +61,37 @@ def project_new(**kwargs):
 
 
 @must_be_logged_in
-def project_new_post(**kwargs):
-    user = kwargs['auth'].user
-    form = NewProjectForm(request.form)
-    if form.validate():
-        if form.template.data:
-            # Create a project from a template
-            original_node = Node.load(form.template.data)
+def project_new_post(auth, **kwargs):
+    user = auth.user
 
-            project_changes = {
-                'title': form.title.data
-            }
+    try:
+        title = request.json['title']
+        description = request.json['description']
+        template = request.json.get('template')
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
 
-            # If the user entered a description, use it instead of the source's
-            if form.description.data:
-                project_changes['description'] = form.description.data
+    if template:
+        original_node = Node.load(template)
+        changes = {
+            'title': title
+        }
 
-            project = original_node.use_as_template(
-                auth=kwargs['auth'],
-                changes={
-                    form.template.data: project_changes
-                }
-            )
-        else:
-            # Create a new project
-            project = new_node(
-                'project', form.title.data, user, form.description.data
-            )
-        return {}, 201, None, project.url
+        if description:
+            changes['description']= description
+
+        project = original_node.use_as_template(
+            auth=auth,
+            changes = {
+                template: changes
+            })
+
     else:
-        push_errors_to_status(form.errors)
-    return {}, http.BAD_REQUEST
+        project = new_node('project', title, user, description)
+
+    return {
+        'projectUrl': project.url
+    }, http.CREATED
 
 
 @must_be_logged_in
