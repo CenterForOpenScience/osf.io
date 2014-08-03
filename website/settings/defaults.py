@@ -164,3 +164,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+
+
+# TODO: Delete me after merging GitLab
+MISSING_FILE_NAME = 'untitled'
