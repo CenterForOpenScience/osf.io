@@ -171,7 +171,7 @@ def _must_be_contributor_factory(include_public):
                             redirect_url = check_key_expired(key=key, node=node, url = url)
                             response = redirect(redirect_url)
 
-            #for login user
+            #for login user who is not a contributor
             elif not node.is_contributor(user) and api_node != node:
                 #key first time show up record it in the key ring
                 if key not in kwargs['auth'].user.private_link_keys:

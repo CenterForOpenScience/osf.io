@@ -60,10 +60,23 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, link, auth=None):
+    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
+    #if link is valid use link else check key_ring
+    for valid_link in (x for x in node.private_links_active if x.key == link):
+        return valid_link.anonymous
+
+    if not node.is_contributor(auth.user):
+        key_ring = set(auth.user.private_link_keys)
+        valid_key = key_ring.intersection(node.private_link_keys_active)
+
+        if valid_key:
+            return all((x.anonymous for x in node.private_links_active if x.key in valid_key))
+    return False
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -2164,6 +2177,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add not in self.contributors:
+
+            if contrib_to_add._id:
+                key_ring = set(contrib_to_add.private_links)
+                keys_to_remove = key_ring.intersection(self.private_links_active)
+                for key in keys_to_remove:
+                    contrib_to_add.private_links.remove(key)
 
             self.contributors.append(contrib_to_add)
             if visible:
