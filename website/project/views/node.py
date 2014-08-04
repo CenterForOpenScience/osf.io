@@ -66,7 +66,7 @@ def project_new_post(auth, **kwargs):
 
     try:
         title = request.json['title']
-        description = request.json['description']
+        description = request.json.get('description')
         template = request.json.get('template')
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
