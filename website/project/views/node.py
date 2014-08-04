@@ -30,7 +30,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard
 from website.profile import utils
 from website.project import new_folder
-from website.util.sanitize import deep_clean
+from website.util.sanitize import deep_clean, scrub_html
 
 from .log import _get_logs
 
@@ -129,7 +129,7 @@ def folder_new_post(auth, nid, **kwargs):
         if node.is_deleted or node.is_registration or not node.is_folder:
             raise HTTPError(http.BAD_REQUEST)
         folder = new_folder(
-            form.title.data, user
+            scrub_html(form.title.data), user
         )
         folders = [folder]
         _add_pointers(node, folders, auth)
@@ -145,7 +145,7 @@ def rename_folder(**kwargs):
 def add_folder(**kwargs):
     auth = kwargs['auth']
     user = auth.user
-    title = deep_clean(request.json.get('title'))
+    title = scrub_html(request.json.get('title'))
     node_id = request.json.get('node_id')
     node = Node.load(node_id)
     if node.is_deleted or node.is_registration or not node.is_folder:
