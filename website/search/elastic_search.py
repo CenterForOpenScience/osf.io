@@ -271,28 +271,12 @@ def _load_parent(parent):
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
-        parent_info['wiki_url'] = parent.url + 'wiki/'
-        parent_info['contributors'] = [
-            contributor.fullname
-            for contributor in parent.visible_contributors
-        ]
-        parent_info['tags'] = [tag._id for tag in parent.tags]
-        parent_info['contributors_url'] = [
-            contributor.url
-            for contributor in parent.visible_contributors
-        ]
         parent_info['is_registration'] = parent.is_registration
-        parent_info['description'] = parent.description
         parent_info['id'] = parent._id
     else:
         parent_info['title'] = '-- private project --'
         parent_info['url'] = ''
-        parent_info['wiki_url'] = ''
-        parent_info['contributors'] = []
-        parent_info['tags'] = []
-        parent_info['contributors_url'] = []
         parent_info['is_registration'] = None
-        parent_info['description'] = ''
         parent_info['id'] = None
     return parent_info
 
@@ -321,12 +305,14 @@ def create_result(results, counts):
         'wiki_link': '{LINK TO WIKIS}',
         'title': '{TITLE TEXT}',
         'url': '{URL FOR NODE}',
-        'nest': {Nested node attributes},
+        'is_component': {TRUE OR FALSE},
+        'parent_title': {TITLE TEXT OF PARENT NODE},
+        'parent_url': {URL FOR PARENT NODE},
         'tags': [{LIST OF TAGS}],
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
         'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}]
-        'description': {PROJECT DESCRIPTION}
+        'highlight': [{No longer used, need to phase out}],
+        'description': {PROJECT DESCRIPTION},
     }
     '''
     formatted_results = []
@@ -355,8 +341,6 @@ def create_result(results, counts):
             if visited_nodes.get(result['id']):
                 # If node already visited, it should not be returned as a result
                 continue
-            elif parent_info['id']:
-                visited_nodes[parent_info['id']] = index
             else:
                 visited_nodes[result['id']] = index
 
