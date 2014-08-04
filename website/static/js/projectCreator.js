@@ -12,9 +12,7 @@
     self.url = url;
     self.title = ko.observable();
     self.description = ko.observable();
-    self.selectedTemplate = ko.observable();
-    self.templates = ko.observableArray([]);
-    self.otherTemplates = ko.observableArray([]);
+    self.templates = [];
 
     self.createProject = function() {
       $.osf.postJSON(self.createUrl, self.serialize(), self.createSuccess, self.createFailure);
@@ -31,16 +29,16 @@
       return {
         title: self.title(),
         description: self.description(),
-        template: self.selectedTemplate()
+        template: $('#templates').val()
       };
     };
 
     self.ownProjects = function(q) {
       var results = [];
       if (q==='') {
-        results = self.templates();
+        results = self.templates;
       } else {
-        results =  self.templates().filter(function(item) {
+        results =  self.templates.filter(function(item) {
           return q === '' || item.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
         });
       }
@@ -78,30 +76,27 @@
             return true;
           });
 
-          var more = (fetched.length + local.length === 0);
+          var results = [];
 
           if (fetched.length > 0) {
-            var results = [
-              {text: 'Your Projects', children: local},
-              {text: 'Other Projects', children: fetched}
-            ];
-          } else {
-            var results = [
-              {text: 'Your Projects', children: local},
-            ];
+            results.push({text: 'Other Projects', children: fetched});
           }
-          cb({more: more, results: results});
-        }
-      );
+
+          if (local.length > 0) {
+            results.push({text: 'Your Projects', children: local});
+          }
+
+          cb({results: results});
+        });
     };
 
     function fetchSuccess(ret) {
-      self.templates(ko.utils.arrayMap(ret.nodes, function(item) {
+      self.templates = ko.utils.arrayMap(ret.nodes, function(item) {
          return {
            text: item.title,
            id: item.id
          };
-       }));
+       });
 
        $('#templates').select2({
          allowClear: true,
