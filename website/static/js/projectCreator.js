@@ -23,6 +23,7 @@
     };
 
     self.createFailure = function() {
+      bootbox.alert('Could not create a new project. Please try again later.');
     };
 
     self.serialize = function() {
@@ -35,11 +36,11 @@
 
     self.ownProjects = function(q) {
       var results = [];
-      if (q==='') {
+      if (q === '') {
         results = self.templates;
       } else {
         results =  self.templates.filter(function(item) {
-          return q === '' || item.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+          return item.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
         });
       }
 
@@ -120,8 +121,10 @@
   }
 
   function ProjectCreator(selector, url) {
-    window.viewModel = new ProjectCreatorViewModel(url);
-    $.osf.applyBindings(window.viewModel, selector);
+    var viewModel = new ProjectCreatorViewModel(url);
+    // Uncomment for debuggin
+    //window.viewModel = viewModel;
+    $.osf.applyBindings(viewModel, selector);
   }
 
   return ProjectCreator;
