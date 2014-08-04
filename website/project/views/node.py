@@ -43,7 +43,7 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = sanitize(post_data.get('value', ''))
+    value = scrub_html(post_data.get('value', ''))
     if edited_field == 'title':
         node.set_title(value, auth=auth)
     elif edited_field == 'description':
