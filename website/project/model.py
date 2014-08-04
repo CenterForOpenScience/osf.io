@@ -61,6 +61,15 @@ def normalize_unicode(ustr):
 
 
 def has_anonymous_link(node, link, auth):
+    """check if the node is anonymous to the user
+
+    :param Node node: Node which the user wants to visit
+    :param str link: any view-only link in the current url
+    :param Auth auth: Auth of the user who wants to visit the node
+    :return bool anonymous: Whether the node is anonymous to the user or not
+
+    """
+
     #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
