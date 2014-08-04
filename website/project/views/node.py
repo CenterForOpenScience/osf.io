@@ -10,7 +10,6 @@ from framework import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 import framework.status as status
 from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
 from website import language
@@ -27,10 +26,10 @@ from website.project.model import has_anonymous_link
 from website.project.forms import NewProjectForm, NewNodeForm, NewFolderForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard
+from website.views import _render_nodes
 from website.profile import utils
 from website.project import new_folder
-from website.util.sanitize import deep_clean, scrub_html
+from website.util.sanitize import scrub_html
 
 from .log import _get_logs
 
