@@ -610,6 +610,43 @@ class TestUserProfile(OsfTestCase):
         self.app = TestApp(app)
         self.user = AuthUserFactory()
 
+    def test_unserialize_names(self):
+        url = api_url_for('unserialize_names')
+        payload = {
+            'full': 'Elvis Presley',
+            'username': 'hounddog@graceland.com',
+            'given': 'Elvis',
+            'middle': 'Aaron',
+            'family': 'Presley',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        assert_equal(self.user.fullname, 'Elvis Presley')
+        assert_equal(self.user.given_name, 'Elvis')
+        assert_equal(self.user.family_name, 'Presley')
+        assert_equal(self.user.middle_names, 'Aaron')
+        assert_equal(self.user.username, 'hounddog@graceland.com')
+        assert_false(self.user.suffix)
+
+    def test_serialize_names(self):
+        self.user.fullname = 'Thomas Jefferson'
+        self.user.username = 'thomasjefferson@wahoowa.com'
+        self.user.middle_names = 'Twizzler'
+        self.user.save()
+        url = api_url_for('serialize_names')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.json.get('full'), 'Thomas Jefferson')
+        assert_equal(res.json.get('username'), 'thomasjefferson@wahoowa.com')
+        assert_equal(res.json.get('middle'), 'Twizzler')
+        assert_false(res.json.get('suffix'))
+
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
         payload = {
