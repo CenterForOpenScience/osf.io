@@ -1161,6 +1161,10 @@ h1.unavailable {
         margin: 0px;
         font-weight: normal;
     }
+.tags
+    {
+        padding-top: 2px;
+    }
 /* Search Contributors */
 
 .search-contributor-result td {
