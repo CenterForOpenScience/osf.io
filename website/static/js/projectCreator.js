@@ -1,10 +1,10 @@
 ;(function (global, factory) {
   if (typeof define === 'function' && define.amd) {
-    define(['knockout', 'osfutils'], factory);
+    define(['knockout', 'jquery', 'osfutils'], factory);
   } else {
-    global.ProjectCreator = factory(ko);
+    global.ProjectCreator = factory(ko, jQuery);
   }
-}(this, function(ko) {
+}(this, function(ko, $) {
   'use strict';
 
   function ProjectCreatorViewModel(url) {
