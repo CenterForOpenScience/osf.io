@@ -14,7 +14,7 @@
         Addons: {
             dataverse: {
                 userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                     'problem persists.',
                 confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
                   'account? This will revoke access to Dataverse for all ' +
