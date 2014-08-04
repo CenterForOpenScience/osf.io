@@ -209,7 +209,6 @@ def _must_be_contributor_factory(include_public):
                                 scheme=scheme)
                     else:
                         kwargs['auth'].private_key = key
-                        print key_ring
                 else:
                     kwargs['auth'].private_key = None
 
