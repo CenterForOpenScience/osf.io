@@ -65,7 +65,6 @@
         };
 
         self.submit = function() {
-            $.blockUI();
             $.ajax(
                 nodeApiUrl + 'private_link/',
                 {

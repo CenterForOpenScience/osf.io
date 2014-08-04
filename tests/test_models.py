@@ -1327,8 +1327,8 @@ class TestProject(OsfTestCase):
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
-        assert_true(has_anonymous_link(self.project, "link1"))
-        assert_false(has_anonymous_link(self.project, "link2"))
+        assert_true(has_anonymous_link(self.project, "link1", self.consolidate_auth))
+        assert_false(has_anonymous_link(self.project, "link2", self.consolidate_auth))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),

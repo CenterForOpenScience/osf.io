@@ -82,7 +82,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
-        'canEdit': comment.user == auth.user,
+        'canEdit': comment.user == auth.user ,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
         'isAbuse': auth.user and auth.user._id in comment.reports,
@@ -154,7 +154,7 @@ def list_comments(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, view_only_link, auth) if view_only_link else False
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 
