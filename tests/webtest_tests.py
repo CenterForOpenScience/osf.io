@@ -603,6 +603,17 @@ class TestSearching(OsfTestCase):
         # A link to the project is shown as a result
         assert_in('Foobar Project', res)
 
+    def test_a_public_component_from_home_page(self):
+        component = NodeFactory(title='Foobar Component', is_public=True)
+        # Searches a part of the name
+        res = self.app.get('/').maybe_follow()
+        component.reload()
+        form = res.forms['searchBar']
+        form['q'] = 'Foobar'
+        res = form.submit().maybe_follow()
+        # A link to the component is shown as a result
+        assert_in('Foobar Component', res)
+
 
 class TestShortUrls(OsfTestCase):
 
