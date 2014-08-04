@@ -38,9 +38,10 @@ def collect_discussion(target, users=None):
 def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-
+    auth = kwargs['auth']
     users = collect_discussion(node)
-
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link, auth) if view_only_link else False
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -52,14 +53,14 @@ def comment_discussion(**kwargs):
     return {
         'discussion': [
             {
-                'id': user._id,
-                'url': user.url,
-                'fullname': user.fullname,
+                'id': user._id if not anonymous else '',
+                'url': user.url if not anonymous else '',
+                'fullname': user.fullname if not anonymous else '',
                 'isContributor': node.is_contributor(user),
                 'gravatarUrl': gravatar(
                     user, use_ssl=True,
                     size=settings.GRAVATAR_SIZE_DISCUSSION,
-                ),
+                )if not anonymous else '',
 
             }
             for user in sorted_users
