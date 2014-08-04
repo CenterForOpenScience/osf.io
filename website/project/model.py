@@ -88,7 +88,7 @@ def has_anonymous_link(node, link, auth):
         valid_key = key_ring.intersection(node.private_link_keys_active)
 
         if valid_key:
-            return all((x.anonymous for x in node.private_links_active if x.key in valid_key))
+            return all(x.anonymous for x in node.private_links_active if x.key in valid_key)
     return False
 
 
