@@ -2178,12 +2178,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if contrib_to_add not in self.contributors:
 
-            if contrib_to_add._id:
-                key_ring = set(contrib_to_add.private_links)
-                keys_to_remove = key_ring.intersection(self.private_links_active)
-                for key in keys_to_remove:
-                    contrib_to_add.private_links.remove(key)
-
             self.contributors.append(contrib_to_add)
             if visible:
                 self.set_visible(contrib_to_add, visible=True, log=False)
