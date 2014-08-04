@@ -2162,6 +2162,56 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json['nodes']), 1)
 
+class TestProjectCreation(OsfTestCase):
+
+    def setUp(self):
+        self.app = TestApp(app)
+        self.creator = AuthUserFactory()
+        self.url = lookup('api', 'project_new_post')
+
+    def test_needs_title(self):
+        res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_only_needs_title(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+
+    def test_creates_a_project(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/',''))
+        assert_true(node)
+        assert_true(node.title, 'Im a real title')
+
+    def test_description_works(self):
+        payload = {
+            'title': 'Im a real title',
+            'description': 'I describe things!'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/',''))
+        assert_true(node)
+        assert_true(node.description, 'I describe things!')
+
+    def test_can_template(self):
+        otherNode = ProjectFactory(creator=self.creator)
+        payload = {
+            'title': 'Im a real title',
+            'template': otherNode._id
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/',''))
+        assert_true(node)
+        assert_true(node.template_node, otherNode)
 
 if __name__ == '__main__':
     unittest.main()
