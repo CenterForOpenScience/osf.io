@@ -35,7 +35,7 @@ from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
-from website.project.decorators import choose_key, check_can_access
+from website.project.decorators import make_response_with_key, check_can_access
 
 from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
@@ -134,9 +134,9 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
 
-    def test_choose_key(self):
+    def test_make_response_with_key(self):
         # User is not logged in, goes to route with a private key
-        res = choose_key(
+        res = make_response_with_key(
             key=self.link.key,
             key_ring=set(),
             api_node='doesntmatter',
@@ -147,7 +147,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_choose_key_form_key_ring(self):
         with app.test_request_context():
-            res = choose_key('nope', key_ring=set([self.link.key]), node=self.project,
+            res = make_response_with_key('nope', key_ring=set([self.link.key]), node=self.project,
                 auth=Auth(None))
         assert_true(isinstance(res, Response))
 
