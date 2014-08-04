@@ -154,7 +154,6 @@
                             </div>
                     %endif
                     </div><!-- end result-->
-                    <br>
                 % endfor
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">

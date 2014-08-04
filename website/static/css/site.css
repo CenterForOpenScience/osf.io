@@ -1144,6 +1144,11 @@ h1.unavailable {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
     {
         padding: 0px;
