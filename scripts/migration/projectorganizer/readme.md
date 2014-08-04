@@ -1,0 +1,2 @@
+By and large, the project organizer does not need much by way of migration. Aside from bower installs and the like,
+the one migration task is to add a field to all the nodes called is_folder and to make it False.
