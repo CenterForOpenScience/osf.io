@@ -23,7 +23,7 @@
     };
 
     self.createFailure = function() {
-      bootbox.alert('Could not create a new project. Please try again later.');
+      bootbox.alert('Could not create a new project. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
     };
 
     self.serialize = function() {
@@ -107,7 +107,7 @@
     }
 
     function fetchFailed() {
-
+      bootbox.alert('Could not retrieve dashboard nodes at this time. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
     }
 
     $.ajax({
