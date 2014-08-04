@@ -111,7 +111,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
                 query = query & query_part
             user = User.find_one(query)
         except Exception as err:
-            logging.error(err)
+            logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -125,7 +125,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         user = User.find_one(query)
         return user
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         return None
 
 

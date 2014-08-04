@@ -432,7 +432,7 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
-                logging.exception(error)
+                logger.exception(error)
                 if error_msg:
                     return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(

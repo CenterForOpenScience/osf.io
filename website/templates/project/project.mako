@@ -118,7 +118,7 @@
                   "tpl": "util/render_nodes.mako",
                   "uri": "${node["api_url"]}get_children/",
                   "replace": true,
-		  "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
+          "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
               }'></div>
       </div>
   % else:
@@ -196,13 +196,16 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-       % if 'write' not in user['permissions']:
+        % if 'write' not in user['permissions'] or node['is_registration']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
 
+        %if node['is_registration'] and not node['tags']:
+            $('div.tags').remove();
+        %endif
 
     });
     $script.ready(['rubeus'], function() {

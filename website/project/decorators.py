@@ -1,6 +1,5 @@
 import httplib as http
 import functools
-import logging
 
 from furl import furl
 import urlparse
@@ -10,10 +9,6 @@ from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
-
-logger = logging.getLogger(__name__)
-
-debug = logger.debug
 
 
 def _kwargs_to_nodes(kwargs):
