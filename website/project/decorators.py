@@ -66,7 +66,7 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def check_can_access(node, user, api_node=None, has_deleted_keys=False):
+def check_can_access(node, user, api_node=None):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -76,8 +76,6 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     if user is None:
         return False
     if not node.is_contributor(user) and api_node != node:
-        if has_deleted_keys:
-            status.push_status_message("The private links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
     return True
 
@@ -188,32 +186,33 @@ def _must_be_contributor_factory(include_public):
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
                 if not node.is_public or not include_public:
-                    if key_ring.isdisjoint(node.private_link_keys_active):
-                        delete_key_check = has_deleted_keys(
-                            key_ring=key_ring, node=node, user=kwargs['auth'].user)
+                    if not node.is_contributor(user) and api_node != node:
+                        if key_ring.isdisjoint(node.private_link_keys_active):
+                            if has_deleted_keys(
+                                key_ring=key_ring, node=node, user=kwargs['auth'].user
+                            ):
 
-                        if not check_can_access(node=node, user=user, has_deleted_keys=delete_key_check,
-                                api_node=api_node):
-                            url = '/login/?next={0}'.format(request.path)
-                            redirect_url = check_key_expired(key=key, node=node, url = url)
-                            response = redirect(redirect_url)
+                                status.push_status_message("The private links you used are expired.")
+                            raise HTTPError(http.FORBIDDEN)
 
-                        kwargs['auth'].private_key = None
-
-                    #has intersection: check if the link is valid if not use other key
-                    # in the key ring
+                        #has intersection: check if the link is valid if not use other key
+                        # in the key ring
+                        else:
+                            scheme = (
+                                urlparse.urlparse(request.referrer).scheme
+                                if request.referrer
+                                else None
+                            )
+                            response = choose_key(
+                                key=key, key_ring=key_ring, node=node,
+                                auth=kwargs['auth'], api_node=api_node,
+                                scheme=scheme)
                     else:
-                        scheme = (
-                            urlparse.urlparse(request.referrer).scheme
-                            if request.referrer
-                            else None
-                        )
-                        response = choose_key(
-                            key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node,
-                            scheme=scheme)
+                        kwargs['auth'].private_key = key
+                        print key_ring
                 else:
                     kwargs['auth'].private_key = None
+
             return response or func(*args, **kwargs)
 
         return wrapped
