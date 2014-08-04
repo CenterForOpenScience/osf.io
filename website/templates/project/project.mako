@@ -151,7 +151,7 @@ ${parent.javascript_bottom()}
     var userName = '${user_full_name}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
-    var commentsLastViewed =  "${user['comments_viewed_timestamp']}";
+##    var commentsLastViewed =  "${user['n_unread_comments']}";
 
     if ($comments.length) {
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
@@ -159,7 +159,7 @@ ${parent.javascript_bottom()}
         $script.ready('comments', function() {
             var commentPane = new CommentPane('#commentPane');
             var commentListModel = Comment.init('#commentPane', userName, canComment, hasChildren);
-            commentListModel.lastViewed(commentsLastViewed);
+            //commentListModel.unreadComments(commentsLastViewed);
 
         });
     }

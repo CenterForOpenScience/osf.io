@@ -79,7 +79,7 @@
 
         self.comments = ko.observableArray();
         self.unreadComments = ko.observable();
-        self.lastViewed = ko.observable();
+        //self.lastViewed = ko.observable();
 
         self.displayCount = ko.computed(function() {
             if (self.unreadComments() !== 0) {
@@ -144,27 +144,29 @@
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
+                self.unreadComments(response.nUnread);
+                console.log(response.nUnread);
                 deferred.resolve(self.comments());
                 self._loaded = true;
-                self.checkUnreadComments();
+                //self.checkUnreadComments();
             }
         );
         return deferred;
     };
 
-    BaseComment.prototype.checkUnreadComments = function() {
-        var count = 0;
-        var self = this;
-        self.lastViewed(moment.utc(self.lastViewed()));
-
-        for (var i=0; i< self.comments().length; i++) {
-            if (moment.utc(self.comments()[i].dateCreated()).isAfter(self.lastViewed())
-                || moment.utc(self.comments()[i].dateModified()).isAfter(self.lastViewed())) {
-                count+= 1;
-            }
-        }
-        self.unreadComments(count);
-    };
+//    BaseComment.prototype.checkUnreadComments = function() {
+//        var count = 0;
+//        var self = this;
+//        self.lastViewed(moment.utc(self.lastViewed()));
+//
+//        for (var i=0; i< self.comments().length; i++) {
+//            if (moment.utc(self.comments()[i].dateCreated()).isAfter(self.lastViewed())
+//                || moment.utc(self.comments()[i].dateModified()).isAfter(self.lastViewed())) {
+//                count+= 1;
+//            }
+//        }
+//        self.unreadComments(count);
+//    };
 
     BaseComment.prototype.submitReply = function() {
         var self = this;

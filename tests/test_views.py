@@ -35,7 +35,7 @@ from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
-from website.project.views.comment import serialize_comment
+from website.project.views.comment import serialize_comment, n_unread_comments
 from website.project.decorators import choose_key, check_can_access
 
 from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_redirect
@@ -2061,6 +2061,32 @@ class TestComments(OsfTestCase):
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
+
+
+
+# def n_unread_comments(view_timestamp, comments):
+#     count = 0
+#
+#     for comment in comments:
+#         date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
+#         date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
+#
+#         if date_created > view_timestamp or date_modified > view_timestamp:
+#             count += 1
+#
+#     return count
+#
+
+
+
+    def test_n_unread_comments(self):
+        comment1 = CommentFactory(node=self.project)
+        comment2 = CommentFactory(node=self.project)
+        comments = ['2014-08-04T06:12:37', comment2]
+
+        view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
+        assert_equal(n_unread_comments(view_timestamp, comments), 2)
+
 
 
 class TestTagViews(OsfTestCase):

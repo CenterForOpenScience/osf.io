@@ -13,6 +13,7 @@ from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
+import pytz
 
 
 def resolve_target(node, guid):
@@ -153,13 +154,41 @@ def list_comments(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-
     guid = request.args.get('target')
     target = resolve_target(node, guid)
+    user = get_current_user()
+    comments = serialize_comments(target, auth)
+
+    viewed_timestamp = datetime.utcnow().isoformat()
+
+    if user.comments_viewed_timestamp is None:
+        user.comments_viewed_timestamp = {}
+        user.save()
+
+    if user.comments_viewed_timestamp.get(node._id, None):
+        viewed_timestamp = user.comments_viewed_timestamp[node._id]
+
+    n_unread = n_unread_comments(viewed_timestamp, comments)
+
+
 
     return {
-        'comments': serialize_comments(target, auth),
+        'comments': comments,
+        'nUnread': n_unread
     }
+
+
+def n_unread_comments(view_timestamp, comments):
+    count = 0
+
+    for comment in comments:
+        date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
+        date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
+
+        if date_created > view_timestamp or date_modified > view_timestamp:
+            count += 1
+
+    return count
 
 
 @must_be_logged_in
@@ -213,19 +242,16 @@ def undelete_comment(**kwargs):
 def view_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     user = get_current_user()
-    latest_comment_time = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S')
     comments = list_comments(**kwargs)['comments']
 
+    view_timestamp = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
+
     if len(comments) != 0:
-        latest_comment_time = comments[len(comments)-1]['dateCreated']
+        view_timestamp = datetime.utcnow().isoformat()
 
-    for comment in comments:
-        if comment['dateModified'] > latest_comment_time:
-            latest_comment_time = comment['dateModified']
-
-    user.comments_viewed_timestamp[node._id] = latest_comment_time
+    user.comments_viewed_timestamp[node._id] = view_timestamp
     user.save()
-
+    list_comments(**kwargs)
     return {}
 
 
