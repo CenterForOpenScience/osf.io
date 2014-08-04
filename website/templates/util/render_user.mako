@@ -1,9 +1,9 @@
 % if user_is_claimed:
-<a
+<a style="margin-right: -4px"
         rel="tooltip"
         href="${user_profile_url}"
         data-original-title="${user_fullname}"
     >${user_display_name}</a>
 % else:
-    <span>${user_display_name}</span>
+    <span style="margin-right: -4px">${user_display_name}</span>
 % endif
