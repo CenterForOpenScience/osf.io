@@ -9,7 +9,7 @@ from modularodm import FlaskStoredObject as StoredObject, fields, storage
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 
 ###### Mongo
-from framework.mongo import db, set_up_storage
+from framework.mongo import database, set_up_storage
 
 ##### Sessions
 from framework.sessions import goback, set_previous_url, session, create_session

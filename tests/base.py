@@ -4,10 +4,12 @@ import unittest
 import logging
 import functools
 import blinker
+from webtest_plus import TestApp
 
 from pymongo import MongoClient
 from faker import Factory
 
+from framework import mongo
 from framework import storage, set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -26,7 +28,7 @@ from website.util import web_url_for, api_url_for
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
-    settings_module='website.settings', routes=False, set_backends=False
+    settings_module='website.settings', routes=True, set_backends=False
 )
 
 # Silence some 3rd-party logging
@@ -54,13 +56,16 @@ class OsfTestCase(unittest.TestCase):
     def setUpClass(cls):
         '''Before running this TestCase, set up a temporary MongoDB database'''
         cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
-        cls.db = cls._client[cls.db_name]
+        # cls.db = cls._client[cls.db_name]
+        # mongo._db, mongo.db = mongo.db, cls.db
         # Set storage backend to MongoDb
+        settings.DB_NAME = 'osf_test'
         set_up_storage(
             website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, db=cls.db,
+            addons=settings.ADDONS_AVAILABLE,
         )
-        cls._client.drop_database(cls.db)
+        cls._client.drop_database(cls.db_name)
+        cls.app = TestApp(test_app)
         cls.context = test_app.test_request_context()
         cls.context.push()
 
@@ -68,7 +73,9 @@ class OsfTestCase(unittest.TestCase):
     def tearDownClass(cls):
         '''Drop the database when all tests finish.'''
         cls.context.pop()
-        cls._client.drop_database(cls.db)
+        cls._client.drop_database(cls.db_name)
+        # mongo.db = mongo._db
+        # del mongo._db
 
 
 class AppTestCase(unittest.TestCase):

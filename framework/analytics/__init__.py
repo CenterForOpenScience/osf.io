@@ -1,13 +1,13 @@
-from framework import db, session
+# -*- coding: utf-8 -*-
 
 from decorator import decorator
 from datetime import datetime
 
-collection = db['pagecounters']
+from framework import database, session
 
 
 def increment_user_activity_counters(user_id, action, date):
-    collection = db['useractivitycounters']
+    collection = database['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
     query = {
         '$inc': {
@@ -27,7 +27,7 @@ def increment_user_activity_counters(user_id, action, date):
 
 
 def get_total_activity_count(user_id):
-    collection = db['useractivitycounters']
+    collection = database['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
     )
@@ -88,6 +88,7 @@ def update_counters(rex):
 def get_basic_counters(page):
     unique = 0
     total = 0
+    collection = database['pagecounters']
     result = collection.find_one(
         {'_id': page}, {'total': 1, 'unique': 1}
     )

@@ -23,7 +23,7 @@ from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
+# import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -46,11 +46,9 @@ from tests.factories import (
 )
 
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
+from tests.base import test_app as app
 
-lookup = URLLookup(app)
+# lookup = URLLookup(app)
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -685,7 +683,6 @@ class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
         ensure_schemas()
-        self.app = TestApp(app)
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator)
         # Authenticate all requests
@@ -871,9 +868,9 @@ class TestAddingContributorViews(OsfTestCase):
             'users': [reg_dict, pseudouser],
             'node_ids': []
         }
-        with app.test_request_context():
-            url = api_url_for('project_contributors_post',
-                pid=self.project._primary_key)
+        url = api_url_for('project_contributors_post',
+            pid=self.project._primary_key)
+        import pdb; pdb.set_trace()
         res = self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.logs), n_logs_pre + 1)
@@ -1502,9 +1499,6 @@ class TestPointerViews(OsfTestCase):
 
 class TestPublicViews(OsfTestCase):
 
-    def setUp(self):
-        self.app = TestApp(app)
-
     def test_explore(self):
         res = self.app.get("/explore/").maybe_follow()
         assert_equal(res.status_code, 200)
@@ -1513,7 +1507,6 @@ class TestPublicViews(OsfTestCase):
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 

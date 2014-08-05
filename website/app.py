@@ -2,10 +2,14 @@
 import importlib
 import logging
 
-from framework import storage, db, app
+from framework import storage, app
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
+
+from framework.mongo import handlers as mongo_handlers
+from framework.transactions import handlers as transaction_handlers
+
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
@@ -52,7 +56,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         logger.debug('Setting storage backends')
         set_up_storage(
             website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, db=db
+            addons=settings.ADDONS_AVAILABLE, database=settings.DB_NAME,
         )
     if routes:
         try:
@@ -60,7 +64,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         except AssertionError:  # Route map has already been created
             pass
 
-
+    # Add `before_request` and `after_request` handlers to application
+    mongo_handlers.add_database_handlers(app)
+    transaction_handlers.add_transaction_handlers(app)
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
