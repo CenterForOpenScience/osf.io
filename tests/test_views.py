@@ -66,13 +66,14 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_not_anonymous_for_public_project(self):
+        user = AuthUserFactory()
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key))
+        assert_false(has_anonymous_link(self.project, anonymous_link.key, user.auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -2008,6 +2009,26 @@ class TestComments(OsfTestCase):
         res = self.app.get(url, auth=self.project.creator.auth)
 
         assert_equal(len(res.json['comments']), 1)
+
+    def test_view_comments_with_anonymous_link(self):
+        self.project.set_privacy('private')
+        self.project.save()
+        self.project.reload()
+        user = AuthUserFactory()
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+
+        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
+        comment = res.json['comments'][0]
+        author = comment['author']
+        assert_in('A user', author['name'])
+        assert_false(author['gravatarUrl'])
+        assert_false(author['url'])
+        assert_false(author['id'])
 
     def test_discussion_recursive(self):
 

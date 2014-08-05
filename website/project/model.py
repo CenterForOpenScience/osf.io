@@ -60,10 +60,28 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, link, auth):
+    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
+    #if link is valid use link else check key_ring
+    for valid_link in (x for x in node.private_links_active if x.key == link):
+        return valid_link.anonymous
+
+    try:
+        user = auth.user
+    except AttributeError:
+        user = None
+
+    if user and not node.is_contributor(user):
+        key_ring = set(user.private_link_keys)
+        valid_key = key_ring.intersection(node.private_link_keys_active)
+
+        if valid_key:
+            return all((x.anonymous for x in node.private_links_active if x.key in valid_key))
+    return False
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -780,7 +798,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
-            return auth.logged_in and self.can_view(auth)
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read'))
+            )
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
