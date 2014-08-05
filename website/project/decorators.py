@@ -2,12 +2,10 @@ import httplib as http
 import functools
 
 from furl import furl
-import urlparse
 
-from framework import request, redirect, status
+from framework import request, redirect
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
-from framework.sessions import add_key_to_url
 from website.models import Node
 
 
@@ -94,46 +92,6 @@ def check_key_expired(key, node, url):
     return url
 
 
-def has_deleted_keys(key_ring, node, user):
-    """check if there is deleted keys, if there is delete it from user.private_links
-        :param set key_ring: the set of kings user have
-        :param Node node: the node object wants to access
-        :param User user: the user who requires to access the node
-        :return: True if there are expired keys to delete and delete the key else return False
-    """
-    deleted_keys = key_ring.intersection(node.private_link_keys_deleted)
-
-    for link in deleted_keys:
-        for x in user.private_links:
-            if x.key == link:
-                user.private_links.remove(x)
-                break
-
-    if deleted_keys:
-        user.save()
-        return True
-
-    return False
-
-
-def make_response_with_key(key, key_ring, node, auth, api_node=None, scheme=None):
-    """Returns ``None`` if the given key is valid, else return a redirect
-    response to the requested URL with the correct key from the key_ring.
-    """
-    if key in node.private_link_keys_active:
-        auth.private_key = key
-        return
-
-    auth.private_key = key_ring.intersection(
-        node.private_link_keys_active
-    ).pop()
-    #do a redirect to reappend the key to url only if the user
-    # isn't a contributor
-    if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-        new_url = add_key_to_url(request.path, scheme, auth.private_key)
-        return redirect(new_url)
-
-
 def _must_be_contributor_factory(include_public):
     """Decorator factory for authorization wrappers. Decorators verify whether
     the current user is a contributor on the current project, or optionally
@@ -161,56 +119,15 @@ def _must_be_contributor_factory(include_public):
 
             key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
-            if not kwargs['auth'].user:
-                kwargs['auth'].private_key = key
-                if not node.is_public or not include_public:
-                    if key not in node.private_link_keys_active:
-                        if not check_can_access(node=node, user=user,
-                                api_node=api_node):
-                            url = '/login/?next={0}'.format(request.path)
-                            redirect_url = check_key_expired(key=key, node=node, url = url)
-                            response = redirect(redirect_url)
 
-            #for login user
-            else:
-                #key first time show up record it in the key ring
-                if key not in kwargs['auth'].user.private_link_keys:
-                    for node_link in node.private_links_active:
-                        if node_link.key == key:
-                            user.private_links.append(node_link)
-                            kwargs['auth'].user.save()
-                            break
-
-                key_ring = set(kwargs['auth'].user.private_link_keys)
-
-                #check if the keyring has intersection with node's private link
-                # if no intersction check other privilege
-                if not node.is_public or not include_public:
-                    if not node.is_contributor(user) and api_node != node:
-                        if key_ring.isdisjoint(node.private_link_keys_active):
-                            if has_deleted_keys(
-                                key_ring=key_ring, node=node, user=kwargs['auth'].user
-                            ):
-
-                                status.push_status_message("The private links you used are expired.")
-                            raise HTTPError(http.FORBIDDEN)
-
-                        #has intersection: check if the link is valid if not use other key
-                        # in the key ring
-                        else:
-                            scheme = (
-                                urlparse.urlparse(request.referrer).scheme
-                                if request.referrer
-                                else None
-                            )
-                            response = make_response_with_key(
-                                key=key, key_ring=key_ring, node=node,
-                                auth=kwargs['auth'], api_node=api_node,
-                                scheme=scheme)
-                    else:
-                        kwargs['auth'].private_key = key
-                else:
-                    kwargs['auth'].private_key = None
+            kwargs['auth'].private_key = key
+            if not node.is_public or not include_public:
+                if key not in node.private_link_keys_active:
+                    if not check_can_access(node=node, user=user,
+                            api_node=api_node):
+                        url = '/login/?next={0}'.format(request.path)
+                        redirect_url = check_key_expired(key=key, node=node, url = url)
+                        response = redirect(redirect_url)
 
             return response or func(*args, **kwargs)
 

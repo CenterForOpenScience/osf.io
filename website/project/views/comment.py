@@ -41,7 +41,7 @@ def comment_discussion(**kwargs):
     auth = kwargs['auth']
     users = collect_discussion(node)
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link, auth) if view_only_link else False
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -155,7 +155,7 @@ def list_comments(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link, auth) if view_only_link else False
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 
