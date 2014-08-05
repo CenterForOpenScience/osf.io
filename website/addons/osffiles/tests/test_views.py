@@ -1,14 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import unittest
 from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
 from webtest_plus import TestApp
+from StringIO import StringIO
 
 from framework.auth import Auth
 import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
+from website import settings
 from website.addons.osffiles.model import OsfGuidFile
+from website.project.views.file import prepare_file
 
 app = website.app.init_app(
     routes=True, set_backends=False,
@@ -137,3 +141,25 @@ class TestFilesViews(OsfTestCase):
             OsfGuidFile.find().count(),
             guid_count + 1
         )
+
+
+def make_file_like(name='file', content='data'):
+    sio = StringIO(content)
+    sio.filename = name
+    sio.content_type = 'text/html'
+    return sio
+
+
+class TestUtils(unittest.TestCase):
+
+    def test_prepare_file_name(self):
+        name, content, content_type, size = prepare_file(make_file_like(
+            name='file')
+        )
+        assert_equal(name, 'file')
+
+    def test_prepare_file_name_missing(self):
+        name, content, content_type, size = prepare_file(
+            make_file_like(name='ü')
+        )
+        assert_equal(name, settings.MISSING_FILE_NAME)

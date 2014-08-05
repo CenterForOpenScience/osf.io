@@ -1,6 +1,5 @@
 import httplib as http
 import functools
-import logging
 
 from furl import furl
 import urlparse
@@ -10,10 +9,6 @@ from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from framework.sessions import add_key_to_url
 from website.models import Node
-
-logger = logging.getLogger(__name__)
-
-debug = logger.debug
 
 
 def _kwargs_to_nodes(kwargs):
@@ -121,7 +116,7 @@ def has_deleted_keys(key_ring, node, user):
     return False
 
 
-def choose_key(key, key_ring, node, auth, api_node=None, scheme=None):
+def make_response_with_key(key, key_ring, node, auth, api_node=None, scheme=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
@@ -177,7 +172,7 @@ def _must_be_contributor_factory(include_public):
                             response = redirect(redirect_url)
 
             #for login user
-            elif not node.is_contributor(user) and api_node != node:
+            else:
                 #key first time show up record it in the key ring
                 if key not in kwargs['auth'].user.private_link_keys:
                     for node_link in node.private_links_active:
@@ -191,24 +186,31 @@ def _must_be_contributor_factory(include_public):
                 #check if the keyring has intersection with node's private link
                 # if no intersction check other privilege
                 if not node.is_public or not include_public:
-                    if key_ring.isdisjoint(node.private_link_keys_active):
-                        if has_deleted_keys(key_ring=key_ring, node=node,
-                                            user=kwargs['auth'].user):
-                            status.push_status_message("The view-only links you used are expired.")
-                        raise HTTPError(http.FORBIDDEN)
+                    if not node.is_contributor(user) and api_node != node:
+                        if key_ring.isdisjoint(node.private_link_keys_active):
+                            if has_deleted_keys(
+                                key_ring=key_ring, node=node, user=kwargs['auth'].user
+                            ):
 
-                    #has intersection: check if the link is valid if not use other key
-                    # in the key ring
+                                status.push_status_message("The private links you used are expired.")
+                            raise HTTPError(http.FORBIDDEN)
+
+                        #has intersection: check if the link is valid if not use other key
+                        # in the key ring
+                        else:
+                            scheme = (
+                                urlparse.urlparse(request.referrer).scheme
+                                if request.referrer
+                                else None
+                            )
+                            response = make_response_with_key(
+                                key=key, key_ring=key_ring, node=node,
+                                auth=kwargs['auth'], api_node=api_node,
+                                scheme=scheme)
                     else:
-                        scheme = (
-                            urlparse.urlparse(request.referrer).scheme
-                            if request.referrer
-                            else None
-                        )
-                        response = choose_key(
-                            key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node,
-                            scheme=scheme)
+                        kwargs['auth'].private_key = key
+                else:
+                    kwargs['auth'].private_key = None
 
             return response or func(*args, **kwargs)
 

@@ -222,20 +222,21 @@
         var isRegistration = ${json.dumps(node['is_registration'])};
         var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
+    % if 'admin' in user['permissions']:
+        $script(['/static/js/privateLinkManager.js',
+                 '/static/js/privateLinkTable.js']);
 
-    $script(['/static/js/privateLinkManager.js',
-             '/static/js/privateLinkTable.js']);
+        $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
+            // Controls the modal
+            var configUrl = nodeApiUrl + 'get_editable_children/';
+            var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
-    $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
-        // Controls the modal
-        var configUrl = nodeApiUrl + 'get_editable_children/';
-        var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
+            var tableUrl = nodeApiUrl + 'private_link/';
+            var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+        });
 
-        var tableUrl = nodeApiUrl + 'private_link/';
-        var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-    });
-
-    $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
+        $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
+    % endif
 
     </script>
 </%def>

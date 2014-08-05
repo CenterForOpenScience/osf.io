@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import logging
 import time
 
 from modularodm.exceptions import ValidationValueError
@@ -25,9 +24,6 @@ from website.project.decorators import (
     must_be_contributor_or_public, must_have_permission,
 )
 from framework.auth.core import get_current_user
-
-logger = logging.getLogger(__name__)
-
 
 @collect_auth
 @must_be_valid_project
@@ -223,6 +219,7 @@ def deserialize_contributors(node, user_dicts, auth):
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
+
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
         else:
@@ -243,6 +240,7 @@ def deserialize_contributors(node, user_dicts, auth):
             contributor.save()
             unreg_contributor_added.send(node, contributor=contributor,
                 auth=auth)
+
         contribs.append({
             'user': contributor,
             'visible': visible,

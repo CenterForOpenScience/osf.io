@@ -60,10 +60,37 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, link, auth):
+    """check if the node is anonymous to the user
+
+    :param Node node: Node which the user wants to visit
+    :param str link: any view-only link in the current url
+    :param Auth auth: Auth of the user who wants to visit the node
+    :return bool anonymous: Whether the node is anonymous to the user or not
+
+    """
+
+    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+
+    #if link is valid use link else check key_ring
+    for valid_link in (x for x in node.private_links_active if x.key == link):
+        return valid_link.anonymous
+
+    try:
+        user = auth.user
+    except AttributeError:
+        user = None
+
+    if user and not node.is_contributor(user):
+        key_ring = set(user.private_link_keys)
+        valid_key = key_ring.intersection(node.private_link_keys_active)
+
+        if valid_key:
+            return all(x.anonymous for x in node.private_links_active if x.key in valid_key)
+    return False
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -346,7 +373,7 @@ class NodeLog(StoredObject):
         # missing dates; return None and log error if date missing
         if self.date:
             return self.date.replace(tzinfo=pytz.UTC)
-        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
+        logger.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
@@ -780,7 +807,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
-            return auth.logged_in and self.can_view(auth)
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read'))
+            )
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
@@ -1761,7 +1791,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def absolute_url(self):
         if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            logger.error("Node {0} has a parent that is not a project".format(self._id))
             return None
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
@@ -1774,7 +1804,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def api_url(self):
         if not self.url:
-            logging.error('Node {0} has a parent that is not a project'.format(self._id))
+            logger.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return '/api/v1{0}'.format(self.deep_url)
 
@@ -1788,7 +1818,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     self.parent_id,
                     self._primary_key
                 )
-        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        logger.error("Node {0} has a parent that is not a project".format(self._id))
 
     def author_list(self, and_delim='&'):
         author_names = [
