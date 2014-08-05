@@ -116,7 +116,7 @@ def has_deleted_keys(key_ring, node, user):
     return False
 
 
-def choose_key(key, key_ring, node, auth, api_node=None, scheme=None):
+def make_response_with_key(key, key_ring, node, auth, api_node=None, scheme=None):
     """Returns ``None`` if the given key is valid, else return a redirect
     response to the requested URL with the correct key from the key_ring.
     """
@@ -203,7 +203,7 @@ def _must_be_contributor_factory(include_public):
                                 if request.referrer
                                 else None
                             )
-                            response = choose_key(
+                            response = make_response_with_key(
                                 key=key, key_ring=key_ring, node=node,
                                 auth=kwargs['auth'], api_node=api_node,
                                 scheme=scheme)
