@@ -1,6 +1,6 @@
 <div class="osf-sidenav hidden-print" role="complementary">
 
-    <ul class="nav bs-sidenav">
+    <ul class="nav bs-sidenav" style="margin: 0px;">
 
         <h4 style="margin-left: 10px;">Project Wiki Pages</h4>
 

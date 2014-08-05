@@ -104,6 +104,7 @@ def project_wiki_compare(auth, **kwargs):
     wid = kwargs['wid']
 
     wiki_page = node.get_wiki_page(wid)
+    toc = serialize_wiki_toc(node, auth=auth)
 
     if wiki_page:
         compare_id = kwargs['compare_id']
@@ -121,6 +122,14 @@ def project_wiki_compare(auth, **kwargs):
                 'is_current': True,
                 'is_edit': True,
                 'version': wiki_page.version,
+                'pages_current': [
+                    from_mongo(version)
+                    for version in node.wiki_pages_versions
+                ],
+                'toc': toc,
+                'url': node.url,
+                'api_url': node.api_url,
+                'category': node.category
             }
             rv.update(_view_project(node, auth, primary=True))
             return rv
@@ -246,6 +255,8 @@ def project_wiki_edit(auth, **kwargs):
         version = 'NA'
         is_current = False
         content = ''
+
+    toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'pageName': wid,
         'page': wiki_page,
@@ -254,6 +265,14 @@ def project_wiki_edit(auth, **kwargs):
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': True,
+        'pages_current': [
+            from_mongo(version)
+            for version in node.wiki_pages_versions
+        ],
+        'toc': toc,
+        'url': node.url,
+        'api_url': node.api_url,
+        'category': node.category
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -268,11 +287,11 @@ def project_wiki_edit_post(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = auth.user
     wid = kwargs['wid']
-    logging.debug(
-        '{user} edited wiki page: {wid}'.format(
-            user=user.username, wid=wid
-        )
-    )
+    # logging.debug(
+    #     '{user} edited wiki page: {wid}'.format(
+    #         user=user.username, wid=wid
+    #     )
+    # )
 
     if wid != sanitize(wid):
         status.push_status_message("This is an invalid wiki page name")
