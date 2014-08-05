@@ -60,36 +60,18 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link, auth):
+def has_anonymous_link(node, link):
     """check if the node is anonymous to the user
 
     :param Node node: Node which the user wants to visit
     :param str link: any view-only link in the current url
-    :param Auth auth: Auth of the user who wants to visit the node
     :return bool anonymous: Whether the node is anonymous to the user or not
 
     """
 
-    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-
-    #if link is valid use link else check key_ring
-    for valid_link in (x for x in node.private_links_active if x.key == link):
-        return valid_link.anonymous
-
-    try:
-        user = auth.user
-    except AttributeError:
-        user = None
-
-    if user and not node.is_contributor(user):
-        key_ring = set(user.private_link_keys)
-        valid_key = key_ring.intersection(node.private_link_keys_active)
-
-        if valid_key:
-            return all(x.anonymous for x in node.private_links_active if x.key in valid_key)
-    return False
+    return any([x.anonymous for x in node.private_links_active if x.key == link])
 
 
 signals = blinker.Namespace()
@@ -651,15 +633,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_links:
-            key_ring = set(auth.user.private_link_keys)
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_link_keys_active)
-        else:
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_link_keys_active
+        return self.is_public or auth.user \
+            and self.has_permission(auth.user, 'read') \
+            or auth.private_key in self.private_link_keys_active
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.

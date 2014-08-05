@@ -35,7 +35,7 @@ from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
-from website.project.decorators import make_response_with_key, check_can_access
+from website.project.decorators import check_can_access
 
 from tests.base import OsfTestCase, fake, capture_signals, URLLookup, assert_is_redirect
 from tests.factories import (
@@ -66,14 +66,13 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
 
     def test_not_anonymous_for_public_project(self):
-        user = AuthUserFactory()
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
         anonymous_link.save()
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key, user.auth))
+        assert_false(has_anonymous_link(self.project, anonymous_link.key))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -94,34 +93,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_logged_in_has_key_ring(self):
-        self.user.private_links.append(self.link)
-        self.user.save()
-        #check if key_ring works
-        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth)
-        assert_is_redirect(res)
-        redirected = res.follow()
-        assert_equal(redirected.request.GET['view_only'], self.link.key)
-        assert_equal(redirected.status_code, 200)
-
-    def test_logged_in_with_no_key_ring(self):
-        #check if key_ring works
-        res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
-            expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-    def test_logged_in_with_private_key_with_key_ring(self):
-        self.user.private_links.append(self.link)
-        self.user.save()
-        #check if key_ring works
-        link2 = PrivateLinkFactory(key="123456")
-        res = self.app.get(self.project_url, {'view_only': link2.key}, auth=self.user.auth)
-        assert_equal(res.request.GET['view_only'], link2.key)
-        assert_equal(res.status_code, 302)
-        res2 = res.maybe_follow(auth=self.user.auth)
-        assert_equal(res2.request.GET['view_only'], self.link.key)
-        assert_equal(res2.status_code, 200)
-
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
     def test_prepare_private_key(self):
         res = self.app.get(self.project_url, {'key': self.link.key})
@@ -133,23 +104,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
         assert_equal(res.status_code, 200)
         assert_equal(res.request.GET['key'], self.link.key)
-
-    def test_make_response_with_key(self):
-        # User is not logged in, goes to route with a private key
-        res = make_response_with_key(
-            key=self.link.key,
-            key_ring=set(),
-            api_node='doesntmatter',
-            node=self.project,
-            auth=Auth(None)
-        )
-        assert_is(res, None)
-
-    def test_choose_key_form_key_ring(self):
-        with app.test_request_context():
-            res = make_response_with_key('nope', key_ring=set([self.link.key]), node=self.project,
-                auth=Auth(None))
-        assert_true(isinstance(res, Response))
 
     def test_check_can_access_valid(self):
         contributor = AuthUserFactory()
