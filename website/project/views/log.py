@@ -53,7 +53,7 @@ def _get_logs(node, count, auth, link=None, offset=0):
         except (AttributeError, IndexError) as error:
             logger.exception(error)
             continue
-            
+
         if can_view:
             anonymous = has_anonymous_link(log.node__logged[0], link)
             if len(logs) < count:

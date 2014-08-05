@@ -3,7 +3,7 @@ import functools
 
 from furl import furl
 
-from framework import request, redirect
+from framework import request, redirect, status
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from website.models import Node
@@ -64,7 +64,7 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def check_can_access(node, user, api_node=None):
+def check_can_access(node, user, api_node=None, key=key):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -74,6 +74,8 @@ def check_can_access(node, user, api_node=None):
     if user is None:
         return False
     if not node.is_contributor(user) and api_node != node:
+        if key in node.private_link_keys_deleted:
+            status.push_status_message("The private links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
     return True
 
