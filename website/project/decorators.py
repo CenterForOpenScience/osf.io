@@ -64,7 +64,7 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def check_can_access(node, user, api_node=None, key=key):
+def check_can_access(node, user, key=None, api_node=None):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -75,7 +75,7 @@ def check_can_access(node, user, api_node=None, key=key):
         return False
     if not node.is_contributor(user) and api_node != node:
         if key in node.private_link_keys_deleted:
-            status.push_status_message("The private links you used are expired.")
+            status.push_status_message("The view-only links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
     return True
 
@@ -126,7 +126,7 @@ def _must_be_contributor_factory(include_public):
             if not node.is_public or not include_public:
                 if key not in node.private_link_keys_active:
                     if not check_can_access(node=node, user=user,
-                            api_node=api_node):
+                            api_node=api_node, key=key):
                         url = '/login/?next={0}'.format(request.path)
                         redirect_url = check_key_expired(key=key, node=node, url = url)
                         response = redirect(redirect_url)
