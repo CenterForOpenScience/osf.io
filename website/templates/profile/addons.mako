@@ -158,18 +158,24 @@
 	};
 
         if(unchecked.length > 0) {
+	    var unchecked_text = $.map(unchecked, function(el){
+		return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
+	    });
+	    unchecked_text = ['<ul>', unchecked_text.join(''), '</ul>'].join('');
             bootbox.confirm(
-                "Are you sure you want to remove the add-ons you have deselected?",
+                "Are you sure you want to remove the add-ons you have deselected: "+unchecked_text,
                 function(result) {
                     if(result) {
 			submit();
                     }
+		    else{
+			unchecked.each(function(i, el){$(el).prop('checked', true);});
+		    }
                 }
             );
         }
 	else submit();
-	
-        return false;
+	return false;
     });
 </script>
 </%def>
