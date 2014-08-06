@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
-import os
-
 from nose.tools import *
 
 from website.addons.badges.model import BadgeAssertion
 from utils import *
-from tests.base import OsfTestCase, fake, URLLookup
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
-
-from website.app import init_app
-
-app = init_app(set_backends=False, routes=True)
-lookup = URLLookup(app)
 
 
 class TestUserSettingsModel(OsfTestCase):
 
     def setUp(self):
+        super(TestUserSettingsModel, self).setUp()
         self.user = AuthUserFactory()
         self.user.add_addon('badges', override=True)
         self.usersettings = self.user.get_addon('badges')
@@ -50,6 +44,7 @@ class TestUserSettingsModel(OsfTestCase):
 class TestNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
+        super(TestNodeSettingsModel, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory()
         self.project.add_addon('badges', self.user.auth)
@@ -65,6 +60,7 @@ class TestNodeSettingsModel(OsfTestCase):
 class TestBadge(OsfTestCase):
 
     def setUp(self):
+        super(TestBadge, self).setUp()
         self.user = AuthUserFactory()
         self.user.add_addon('badges', override=True)
         self.usersettings = self.user.get_addon('badges', self.user.auth)
@@ -98,6 +94,7 @@ class TestBadge(OsfTestCase):
 class TestAssertion(OsfTestCase):
 
     def setUp(self):
+        super(TestAssertion, self).setUp()
         self.user = AuthUserFactory()
         self.user.add_addon('badges', override=True)
         self.usersettings = self.user.get_addon('badges', self.user.auth)

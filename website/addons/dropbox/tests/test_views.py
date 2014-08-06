@@ -8,7 +8,6 @@ import httplib
 import datetime
 
 from werkzeug import FileStorage
-from webtest_plus import TestApp
 from webtest import Upload
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
@@ -17,7 +16,7 @@ from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
 from website.addons.dropbox.tests.utils import (
-    DropboxAddonTestCase, app, mock_responses, MockDropbox, patch_client
+    DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
 )
 from website.addons.dropbox.views.config import serialize_settings
 from website.addons.dropbox.views.hgrid import dropbox_addon_folder
@@ -29,7 +28,7 @@ mock_client = MockDropbox()
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestAuthViews, self).setUp()
         self.user = AuthUserFactory()
         # Log user in
         self.app.authenticate(*self.user.auth)
@@ -231,9 +230,11 @@ class TestFilebrowserViews(DropboxAddonTestCase):
 
     def test_dropbox_hgrid_data_contents(self):
         with patch_client('website.addons.dropbox.views.hgrid.get_node_client'):
-            url = api_url_for('dropbox_hgrid_data_contents',
+            url = api_url_for(
+                'dropbox_hgrid_data_contents',
                 path=self.node_settings.folder,
-                pid=self.project._primary_key)
+                pid=self.project._primary_key,
+            )
             res = self.app.get(url, auth=self.user.auth)
             contents = mock_client.metadata('', list=True)['contents']
             assert_equal(len(res.json), len(contents))
@@ -481,8 +482,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_dropbox_delete_file_adds_log(self):
         with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
             path = 'foo'
-            url = api_url_for('dropbox_delete_file', pid=self.project._primary_key,
-                path=path)
+            url = self.project.api_url_for('dropbox_delete_file', path=path)
             res = self.app.delete(url, auth=self.user.auth)
             self.project.reload()
             last_log = self.project.logs[-1]
@@ -495,22 +495,34 @@ class TestCRUDViews(DropboxAddonTestCase):
     def test_get_revisions(self):
         with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
             path = 'foo.rst'
-            url = api_url_for('dropbox_get_revisions', path=path,
-                pid=self.project._primary_key)
+            url = self.project.api_url_for('dropbox_get_revisions', path=path)
             res = self.app.get(url, auth=self.user.auth)
             json_data = res.json
             result = json_data['result']
-            expected = [rev for rev in mock_responses['revisions'] if not rev.get('is_deleted')]
+            expected = [
+                rev for rev in mock_responses['revisions']
+                if not rev.get('is_deleted')
+            ]
             assert_equal(len(result), len(expected))
             for each in result:
                 download_link = each['download']
-                assert_equal(download_link, web_url_for('dropbox_download',
-                    pid=self.project._primary_key,
-                    path=path, rev=each['rev']))
+                assert_equal(
+                    download_link,
+                    web_url_for(
+                        'dropbox_download',
+                        pid=self.project._primary_key,
+                        path=path, rev=each['rev']
+                    )
+                )
                 view_link = each['view']
-                assert_equal(view_link, web_url_for('dropbox_view_file',
-                    pid=self.project._primary_key,
-                    path=path, rev=each['rev']))
+                assert_equal(
+                    view_link,
+                    web_url_for(
+                        'dropbox_view_file',
+                        pid=self.project._primary_key,
+                        path=path, rev=each['rev']
+                    )
+                )
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.revisions')
     def test_get_revisions_does_not_return_deleted_revisions(self, mock_revisions):
@@ -518,8 +530,7 @@ class TestCRUDViews(DropboxAddonTestCase):
             {'path': 'foo.txt', 'rev': '123'},
             {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
         ]
-        url = api_url_for('dropbox_get_revisions', path='foo.txt',
-            pid=self.project._primary_key)
+        url = self.project.api_url_for('dropbox_get_revisions', path='foo.txt')
         res = self.app.get(url, auth=self.user.auth)
         res_data = res.json['result']
         # Deleted revision was excluded
@@ -535,17 +546,16 @@ class TestCRUDViews(DropboxAddonTestCase):
         self.project.is_registration = True
         self.project.registered_date = datetime.datetime.utcnow()
         self.project.save()
-        url = api_url_for('dropbox_get_revisions',
-            path='foo.txt',
-            pid=self.project._primary_key)
+        url = self.project.api_url_for('dropbox_get_revisions', path='foo.txt')
         res = self.app.get(url, auth=self.user.auth)
         assert_true(res.json['registered'])
         # Compare with second precision
-        assert_equal(res.json['registered'][:19],
-            self.project.registered_date.isoformat()[:19])
+        assert_equal(
+            res.json['registered'][:19],
+            self.project.registered_date.isoformat()[:19]
+        )
 
     def test_dropbox_view_file(self):
-        url = web_url_for('dropbox_view_file', pid=self.project._primary_key,
-            path='foo')
+        url = self.project.web_url_for('dropbox_view_file', path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
