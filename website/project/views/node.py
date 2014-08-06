@@ -24,7 +24,6 @@ from website.project.decorators import (
     must_not_be_registration,
 )
 from website.project.model import has_anonymous_link
-from website.project.forms import NewProjectForm, NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
@@ -69,6 +68,9 @@ def project_new_post(auth, **kwargs):
         description = request.json.get('description')
         template = request.json.get('template')
     except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
 
     if template:

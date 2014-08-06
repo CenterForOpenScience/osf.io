@@ -22,7 +22,7 @@
   <br />
   <div class="row">
     <div class="col-md-6 col-md-offset-3">
-      <button class="btn btn-primary" type="submit" data-bind="enable: title" disabled>Create New Project</button>
+      <button class="btn btn-primary" type="submit" data-bind="enable: title.isValid()" disabled>Create New Project</button>
     </div>
   </div>
 </form>

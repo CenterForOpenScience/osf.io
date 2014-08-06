@@ -10,7 +10,10 @@
   function ProjectCreatorViewModel(url) {
     var self = this;
     self.url = url;
-    self.title = ko.observable();
+    self.title = ko.observable('').extend({
+      required: true,
+      maxLength: 200
+    });
     self.description = ko.observable();
     self.templates = [];
 

@@ -2180,6 +2180,20 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
 
+    def test_title_must_be_one_long(self):
+        payload = {
+            'title': ''
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_title_must_be_less_than_200(self):
+        payload = {
+            'title': ''.join([str(x) for x in xrange(0,250)])
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_creates_a_project(self):
         payload = {
             'title': 'Im a real title'
