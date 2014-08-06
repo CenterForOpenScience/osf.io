@@ -12,7 +12,6 @@ import httplib as http
 
 from nose.tools import *  # PEP8 asserts
 from tests.test_features import requires_search
-from webtest_plus import TestApp
 from webtest.app import AppError
 from werkzeug.wrappers import Response
 
@@ -170,7 +169,6 @@ class TestProjectViews(OsfTestCase):
     def setUp(self):
         super(TestProjectViews, self).setUp()
         ensure_schemas()
-        self.app = TestApp(app)
         self.user1 = UserFactory.build()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -391,8 +389,10 @@ class TestProjectViews(OsfTestCase):
         assert_true(self.project.is_public)
 
     def test_add_tag(self):
-        url = "/api/v1/project/{0}/addtag/{tag}/".format(self.project._primary_key,
-                                                        tag="footag")
+        url = "/api/v1/project/{0}/addtag/{tag}/".format(
+            self.project._primary_key,
+            tag="footag",
+        )
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         assert_in("footag", self.project.tags)
@@ -400,8 +400,10 @@ class TestProjectViews(OsfTestCase):
     def test_remove_tag(self):
         self.project.add_tag("footag", auth=self.consolidate_auth1, save=True)
         assert_in("footag", self.project.tags)
-        url = "/api/v1/project/{0}/removetag/{tag}/".format(self.project._primary_key,
-                                                        tag="footag")
+        url = "/api/v1/project/{0}/removetag/{tag}/".format(
+            self.project._primary_key,
+            tag="footag",
+        )
         res = self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         assert_not_in("footag", self.project.tags)
@@ -473,9 +475,13 @@ class TestProjectViews(OsfTestCase):
     def test_get_more_logs(self):
         # Add some logs
         for _ in range(12):
-            self.project.logs.append(NodeLogFactory(user=self.user1,
-                                                    action="file_added",
-                                                    params={"project": self.project._id}))
+            self.project.logs.append(
+                NodeLogFactory(
+                    user=self.user1,
+                    action="file_added",
+                    params={"project": self.project._id}
+                )
+            )
         self.project.save()
         url = "/api/v1/project/{0}/log/".format(self.project._primary_key)
         res = self.app.get(url, {"pageNum": 1}, auth=self.auth)
@@ -546,7 +552,11 @@ class TestProjectViews(OsfTestCase):
         link.save()
         assert_equal(link.name, "link")
         url = self.project.api_url + 'private_link/edit/'
-        self.app.put_json(url, {'pk': link._id, "value": "new name"}, auth=self.auth).maybe_follow()
+        self.app.put_json(
+            url,
+            {'pk': link._id, "value": "new name"},
+            auth=self.auth,
+        ).maybe_follow()
         self.project.reload()
         link.reload()
         assert_equal(link.name, "new name")
@@ -556,7 +566,11 @@ class TestProjectViews(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
         url = self.project.api_url_for('remove_private_link')
-        self.app.delete_json(url, {'private_link_id': link._id}, auth=self.auth).maybe_follow()
+        self.app.delete_json(
+            url,
+            {'private_link_id': link._id},
+            auth=self.auth,
+        ).maybe_follow()
         self.project.reload()
         link.reload()
         assert_true(link.is_deleted)
@@ -898,8 +912,11 @@ class TestUserInviteViews(OsfTestCase):
 
     def test_invite_contributor_post_if_not_in_db(self):
         name, email = fake.name(), fake.email()
-        res = self.app.post_json(self.invite_url,
-            {'fullname': name, 'email': email}, auth=self.user.auth)
+        res = self.app.post_json(
+            self.invite_url,
+            {'fullname': name, 'email': email},
+            auth=self.user.auth,
+        )
         contrib = res.json['contributor']
         assert_true(contrib['id'] is None)
         assert_equal(contrib['fullname'], name)
@@ -960,8 +977,11 @@ class TestUserInviteViews(OsfTestCase):
     def test_send_claim_email_to_given_email(self, send_mail):
         project = ProjectFactory()
         given_email = fake.email()
-        unreg_user = project.add_unregistered_contributor(fullname=fake.name(),
-            email=given_email, auth=Auth(project.creator))
+        unreg_user = project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(project.creator),
+        )
         project.save()
         send_claim_email(email=given_email, user=unreg_user, node=project)
 
@@ -1202,9 +1222,16 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
         # Claiming user goes to claim url, but contrib is already logged in
         url = self.user.get_claim_url(self.project._primary_key)
-        res = self.app.get(url, auth=contrib.auth).follow(auth=contrib.auth, expect_errors=True)
+        res = self.app.get(
+            url,
+            auth=contrib.auth,
+        ).follow(
+            auth=contrib.auth,
+            expect_errors=True,
+        )
         # Response is a 400
         assert_equal(res.status_code, 400)
+
 
 class TestWatchViews(OsfTestCase):
 
@@ -1472,7 +1499,9 @@ class TestPointerViews(OsfTestCase):
         assert_equal(len(prompts), 0)
 
     def test_before_fork_no_pointer(self):
-        "Assert that link warning does not appear in before fork callback."
+        """Assert that link warning does not appear in before fork callback.
+
+        """
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         prompts = [
@@ -1503,8 +1532,14 @@ class TestAuthViews(OsfTestCase):
         dupe.set_password("copycat")
         dupe.save()
         url = "/api/v1/user/merge/"
-        res = self.app.post_json(url, {"merged_username": "copy@cat.com",
-                                        "merged_password": "copycat"}, auth=self.auth)
+        res = self.app.post_json(
+            url,
+            {
+                "merged_username": "copy@cat.com",
+                "merged_password": "copycat"
+            },
+            auth=self.auth,
+        )
         self.user.reload()
         dupe.reload()
         assert_true(dupe.is_merged)
@@ -1550,7 +1585,7 @@ class TestAuthViews(OsfTestCase):
                 'email2': email + 'lol',
                 'password': password,
             },
-            expect_errors=True
+            expect_errors=True,
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
         users = User.find(Q('username', 'eq', email))
@@ -1616,7 +1651,11 @@ class TestAuthViews(OsfTestCase):
         assert_true(user.is_registered)
 
     def test_expired_link_returns_400(self):
-        user = User.create_unconfirmed('brian1@queen.com', 'bicycle123', 'Brian May')
+        user = User.create_unconfirmed(
+            'brian1@queen.com',
+            'bicycle123',
+            'Brian May',
+        )
         user.save()
         token = user.get_confirmation_token('brian1@queen.com')
         url = user.get_confirmation_url('brian1@queen.com', external=False)
@@ -2065,6 +2104,11 @@ class TestSearchViews(OsfTestCase):
         self.contrib1 = UserFactory(fullname='Freddie Mercury')
         self.contrib2 = UserFactory(fullname='Brian May')
 
+    def tearDown(self):
+        super(TestSearchViews, self).tearDown()
+        import website.search.search as search
+        search.delete_all()
+
     def test_search_contributor(self):
         url = api_url_for('search_contributor')
         res = self.app.get(url, {'query': self.contrib1.fullname})
@@ -2081,9 +2125,7 @@ class TestSearchViews(OsfTestCase):
         url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
-    def tearDown(self):
-        import website.search.search as search
-        search.delete_all()
+
 
 class TestReorderComponents(OsfTestCase):
 
