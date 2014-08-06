@@ -178,7 +178,7 @@ class TestProjectViews(OsfTestCase):
         dashboard = DashboardFactory(creator=self.user1)
         project_one = ProjectFactory(creator=self.user1)
         project_two = ProjectFactory(creator=self.user1)
-        url = dashboard.api_url + "get_folder_pointers/"
+        url = dashboard.api_url_for("get_folder_pointers")
         dashboard.add_pointer(project_one, auth=self.consolidate_auth1)
         dashboard.add_pointer(project_two, auth=self.consolidate_auth1)
         res = self.app.get(url, auth=self.auth)
@@ -190,7 +190,7 @@ class TestProjectViews(OsfTestCase):
     def test_api_get_folder_pointers_from_non_folder(self):
         project_one = ProjectFactory(creator=self.user1)
         project_two = ProjectFactory(creator=self.user1)
-        url = project_one.api_url + "get_folder_pointers/"
+        url = project_one.api_url_for("get_folder_pointers")
         project_one.add_pointer(project_two, auth=self.consolidate_auth1)
         res = self.app.get(url, auth=self.auth)
         pointers = res.json
@@ -198,12 +198,12 @@ class TestProjectViews(OsfTestCase):
 
     def test_new_user_gets_dashboard_on_dashboard_path(self):
         my_user = AuthUserFactory()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard','eq', True))
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 0)
-        url = '/api/v1/dashboard/get_dashboard/'
+        url = api_url_for('get_dashboard')
         self.app.get(url, auth=my_user.auth)
         my_user.reload()
-        dashboard = my_user.node__contributed.find(Q('is_dashboard','eq', True))
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
     def test_add_contributor_post(self):
