@@ -162,6 +162,9 @@
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
 
+                                        <td>
+                                            <a href="#" class="permission-editable" data-type="select"></a>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

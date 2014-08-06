@@ -1,7 +1,6 @@
 """
 
 """
-import logging
 import httplib as http
 import difflib
 
@@ -21,8 +20,6 @@ from website.project.decorators import (
 )
 
 from .model import NodeWikiPage
-
-logger = logging.getLogger(__name__)
 
 HOME = 'home'
 
@@ -50,8 +47,8 @@ def wiki_widget(**kwargs):
     wiki_page = node.get_wiki_page('home')
 
     more = False
-    if wiki_page and wiki_page.html:
-        wiki_html = wiki_page.html
+    if wiki_page and wiki_page.html(node):
+        wiki_html = wiki_page.html(node)
         if len(wiki_html) > 500:
             wiki_html = BeautifulSoup(wiki_html[:500] + '...', 'html.parser')
             more = True
@@ -144,7 +141,7 @@ def project_wiki_version(auth, **kwargs):
         rv = {
             'wiki_id': wiki_page._id if wiki_page else None,
             'pageName': wid,
-            'wiki_content': wiki_page.html,
+            'wiki_content': wiki_page.html(node),
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
             'is_edit': False,
@@ -189,7 +186,7 @@ def project_wiki_page(auth, **kwargs):
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
-        content = wiki_page.html
+        content = wiki_page.html(node)
     else:
         version = 'NA'
         is_current = False
@@ -197,7 +194,7 @@ def project_wiki_page(auth, **kwargs):
 
     toc = serialize_wiki_toc(node, auth=auth)
 
-    rv = {
+    ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'pageName': wid,
         'page': wiki_page,
@@ -215,8 +212,21 @@ def project_wiki_page(auth, **kwargs):
         'category': node.category
     }
 
-    rv.update(_view_project(node, auth, primary=True))
-    return rv
+    ret.update(_view_project(node, auth, primary=True))
+    return ret
+
+
+@must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
+def wiki_page_content(wid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    wiki_page = node.get_wiki_page(wid)
+
+    return {
+        'wiki_content': wiki_page.content if wiki_page else ''
+    }
 
 
 @must_be_valid_project # returns project

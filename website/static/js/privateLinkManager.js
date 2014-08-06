@@ -21,7 +21,8 @@
 
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
-
+        self.disableSubmit = ko.observable(false);
+        self.submitText = ko.observable('Submit');
         /**
          * Fetches the node info from the server and updates the viewmodel.
          */
@@ -60,11 +61,16 @@
         self.selectNodes = function() {
             self.nodesToChange($.osf.mapByProperty(self.nodes(), 'id'));
         };
+
         self.deselectNodes = function() {
             self.nodesToChange([]);
         };
 
         self.submit = function() {
+
+            self.disableSubmit(true);
+            self.submitText('Please wait');
+
             $.ajax(
                 nodeApiUrl + 'private_link/',
                 {
@@ -78,6 +84,11 @@
                     dataType: 'json',
                     success: function(response) {
                         window.location.reload();
+                    },
+                    error: function(response) {
+                        bootbox.alert('Failed to create a view-only Link.');
+                        self.disableSubmit(false);
+                        self.submitText('Submit');
                     }
                 }
             )

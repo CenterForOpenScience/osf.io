@@ -6,7 +6,8 @@ from framework.auth import Auth
 from webtest.app import AppError
 from tests.base import OsfTestCase
 from tests.factories import (
-    UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory
+    UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
+    AuthUserFactory, NodeWikiFactory,
 )
 
 from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
@@ -23,7 +24,8 @@ class TestWikiViews(OsfTestCase):
         expected = framework.url_for(
             'OsfWebRenderer__project_wiki_page',
             pid=node._primary_key,
-            wid='home')
+            wid='home'
+        )
         assert_equal(get_wiki_url(node), expected)
 
     def test_wiki_url_get_returns_200(self):
@@ -35,6 +37,12 @@ class TestWikiViews(OsfTestCase):
         pointer = PointerFactory(node=self.project)
         url = get_wiki_url(pointer)
         res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_content_returns_200(self):
+        node = ProjectFactory()
+        url = node.api_url_for('wiki_page_content', wid='somerandomid')
+        res = self.app.get(url).follow()
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
@@ -121,7 +129,28 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
 
         with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(
+                self.url,
+                {'value': new_name, 'pk': self.wiki._id},
+                auth=self.auth,
+            )
 
             e = cm.exception
             assert_equal(e, 409)
+
+
+class TestWikiLinks(OsfTestCase):
+
+    def test_links(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        wiki = NodeWikiFactory(
+            content='[[wiki2]]',
+            user=user,
+            node=project,
+        )
+        assert_in(
+            project.web_url_for('project_wiki_page', wid='wiki2'),
+            wiki.html(project),
+        )
+
