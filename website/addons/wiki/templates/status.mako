@@ -1,7 +1,7 @@
-<dl>
-	<strong>Name:</strong> <span id="pageName">${pageName}</span>
-    <br />
-	<strong>Version:</strong> ${version} ${'(current)' if is_current else ''}
+<dl style="text-align: center">
+	<strong><span id="pageName">${pageName}, </span></strong>
+##    <br />
+	<strong>version ${version} ${'(current)' if is_current else ''}</strong>
 </dl>
 
 %if wiki_id:

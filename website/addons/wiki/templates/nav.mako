@@ -1,6 +1,5 @@
-<div class="navbar-outer" style="text-align: center;">
+<div class="navbar-outer" style="text-align: center">
     <nav class="navbar navbar-default" style="display: inline-block;">
-
             <ul class="nav navbar-nav">
                 <li><a href="${node['url']}wiki/${pageName}">View</a></li>
                 % if user['can_edit']:
@@ -14,15 +13,24 @@
                     <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
                 % endif
             </ul>
-
+    </nav>
+    <nav class="navbar navbar-default" style="display: inline-block;">
+            <ul class="nav navbar-nav">
+                 % if user['can_edit']:
+                    <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
+                    <%include file="add_wiki_page.mako"/>
+                % else:
+                    <li><a class="disabled">New Page</a></li>
+                % endif
+            </ul>
     </nav>
 </div>
 
 <script type="text/javascript">
     $(document).ready(function(){
-        $(".nav li").each(function(){
+        $(".navbar-nav li").each(function(){
             var href = $(this).find('a').attr('href');
-            if (href === window.location.pathname) {
+            if (href === window.location.pathname.replace(/%20/g, ' ')) {
                 $(this).addClass('active');
             }
         });
