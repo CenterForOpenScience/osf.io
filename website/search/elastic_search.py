@@ -56,7 +56,7 @@ def search(raw_query, start=0):
         if type + ':' in orig_query:
             counts['total'] = counts[type + 's']
     if not counts.get('total'):
-        counts['total'] = sum([x for x in counts.values()])
+        counts['total'] = counts['all']
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
