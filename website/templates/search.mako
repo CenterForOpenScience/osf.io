@@ -105,7 +105,7 @@
                                       % endif
                                     </h5>
                                 % else:
-                                    <h5 class="text-muted">No description</h5>
+                                    <h5 class="no_">No description</h5>
                                 % endif
                             </div>
 
@@ -148,10 +148,12 @@
                             </div><!-- end highlight -->
     ##                      show all the tags for the project
                             <div class="tags">
-                                % if 'tags' in result:
+                                % if result['tags']:
                                     % for tag in result['tags']:
                                     <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
+                                % else:
+                                    <h5 class="no_">No tags</h5>
                                 % endif
                             </div>
                     %endif
