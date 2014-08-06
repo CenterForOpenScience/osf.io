@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import logging
 import httplib as http
 
 from framework import Q
@@ -20,9 +19,6 @@ from website import language
 
 from .node import _view_project
 from .. import clean_template_name
-
-
-logger = logging.getLogger(__name__)
 
 
 @must_be_valid_project

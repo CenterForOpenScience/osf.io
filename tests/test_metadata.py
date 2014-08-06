@@ -41,5 +41,6 @@ class TestMetaData(OsfTestCase):
         processed = process_payload({'foo': 'bar baz'})
         assert_equal(processed['foo'], 'bar baz')
 
+
 if __name__ == '__main__':
     unittest.main()

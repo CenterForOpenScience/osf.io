@@ -2,9 +2,6 @@ from .. import FileRenderer
 import os.path
 import imghdr
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
-
 
 class ImageRenderer(FileRenderer):
 

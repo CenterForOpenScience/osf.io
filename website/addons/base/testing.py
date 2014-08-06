@@ -81,6 +81,9 @@ class AddonTestCase(OsfTestCase):
         self.node_settings.save()
 
     def setUp(self):
+
+        super(AddonTestCase, self).setUp()
+
         self.app = self.create_app()
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
