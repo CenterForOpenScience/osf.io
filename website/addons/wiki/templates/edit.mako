@@ -3,12 +3,14 @@
 
 <div class="wiki">
     <div class="row">
-        <%include file="wiki/templates/status.mako"/>
         <div class="col-md-3">
             <%include file="wiki/templates/nav.mako"/>
             <%include file="wiki/templates/toc.mako"/>
         </div>
          <div class="col-md-9">
+
+                 <%include file="wiki/templates/status.mako/"/>
+
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>

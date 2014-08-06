@@ -1,9 +1,6 @@
 <div class="osf-sidenav hidden-print" role="complementary">
-
     <ul class="nav bs-sidenav" style="margin: 0px;">
-
         <h4 style="margin-left: 10px;">Project Wiki Pages</h4>
-
         % for k in pages_current:
             <li>
                 <a href="/${node['id']}/wiki/${k}">${k}</a>
@@ -38,11 +35,19 @@
                             % endif
                         % endfor
                     </ul>
-
                 </li>
             % endfor
         % endif
-
     </ul>
-
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".bs-sidenav li").each(function(){
+            var href = $(this).find('a').attr('href');
+            if (href === window.location.pathname.replace(/%20/g, ' ')) {
+                $(this).addClass('active');
+            }
+        });
+    });
+</script>
