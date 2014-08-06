@@ -176,7 +176,7 @@ def list_comments(**kwargs):
         if user.comments_viewed_timestamp.get(node._id, None):
             view_timestamp = user.comments_viewed_timestamp[node._id]
 
-        n_unread = n_unread_comments(view_timestamp, comments)
+        n_unread = n_unread_comments(view_timestamp, comments, user)
 
     return {
 
@@ -185,15 +185,16 @@ def list_comments(**kwargs):
     }
 
 
-def n_unread_comments(view_timestamp, comments):
+def n_unread_comments(view_timestamp, comments, current_user):
     count = 0
 
     for comment in comments:
-        date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
-        date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
+        if comment['author']['id'] != current_user._id:
+            date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
+            date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
 
-        if date_created > view_timestamp or date_modified > view_timestamp:
-            count += 1
+            if date_created > view_timestamp or date_modified > view_timestamp:
+                count += 1
 
     return count
 

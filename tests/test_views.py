@@ -2084,11 +2084,11 @@ class TestComments(OsfTestCase):
         comments = res.json.get('comments')
 
         view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
-        assert_equal(n_unread_comments(view_timestamp, comments), 1)
+        assert_equal(n_unread_comments(view_timestamp, comments, self.user), 1)
 
         self.test_view_comments()
         view_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        assert_equal(n_unread_comments(view_timestamp, comments), 0)
+        assert_equal(n_unread_comments(view_timestamp, comments, self.user), 0)
 
     def test_n_unread_comments_edit_comment(self):
         """if comment is edited, n_unread_comments += 1"""
@@ -2100,7 +2100,7 @@ class TestComments(OsfTestCase):
         comments = res.json.get('comments')
 
         view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
-        assert_equal(n_unread_comments(view_timestamp, comments), 1)
+        assert_equal(n_unread_comments(view_timestamp, comments, self.user), 1)
 
     def test_n_unread_comments_no_comments(self):
         url = self.project.api_url + 'comments/'
@@ -2108,7 +2108,7 @@ class TestComments(OsfTestCase):
         comments = res.json.get('comments')
 
         view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
-        assert_equal(n_unread_comments(view_timestamp, comments), 0)
+        assert_equal(n_unread_comments(view_timestamp, comments, self.user), 0)
 
 
 class TestTagViews(OsfTestCase):
