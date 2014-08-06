@@ -8,7 +8,6 @@
     </div>
     <div class="col-md-9">
         <%include file="wiki/templates/status.mako"/>
-        <%include file="wiki/templates/new.mako"/>
         ${wiki_content}
     </div>
 </div>

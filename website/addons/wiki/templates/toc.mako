@@ -41,13 +41,4 @@
     </ul>
 </div>
 
-<script type="text/javascript">
-    $(document).ready(function(){
-        $(".bs-sidenav li").each(function(){
-            var href = $(this).find('a').attr('href');
-            if (href === window.location.pathname.replace(/%20/g, ' ')) {
-                $(this).addClass('active');
-            }
-        });
-    });
-</script>
+
