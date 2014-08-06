@@ -41,6 +41,7 @@ def search(raw_query, start=0):
     count_query = copy.deepcopy(query)
     del count_query['from']
     del count_query['size']
+    counts['all'] = 0
     for type in TYPES:
         try:
             count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
@@ -48,6 +49,7 @@ def search(raw_query, start=0):
             pass
 
         counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
+        counts['all'] += counts[type + 's']
 
     # Figure out which count we should display as a total
     for type in TYPES:

@@ -34,6 +34,8 @@
         % if query:
             % if isinstance(counts, dict):
         <h4>
+                <a href="/search/?q=${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h}">All: ${counts['all']}</a>
+        </h4><h4>
                 <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Users: ${counts['users']}</a>
         </h4><h4>
                 <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Projects: ${counts['projects']}</a>
