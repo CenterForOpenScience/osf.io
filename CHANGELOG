@@ -20,5 +20,9 @@ links will appear the same, regardless of whether you are logged in or not.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.
 - Developers: Various improvements to logging.
+- Developers: ``URLLookup`` class is deprecated. Use ``api_url_for`` and
+``web_url_for`` in your tests.
+- Developers: Test cases that subclass ``OsfTestCase`` *must* call ``super()``
+in the ``setUp`` and ``tearDown`` methods.
 - Various bugfixes and minor UI improvements.
 
