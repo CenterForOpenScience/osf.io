@@ -604,8 +604,6 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
-            'comments_viewed_timestamp': user.comments_viewed_timestamp.get(node._id, '') if user else None,
-            # 'n_unread_comments': user.n_unread_comments.get(node._id, '') if user else None,
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

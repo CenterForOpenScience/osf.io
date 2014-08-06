@@ -1726,6 +1726,8 @@ class TestComments(OsfTestCase):
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_contributor = AuthUserFactory()
         self.app = TestApp(app)
+        self.user = AuthUserFactory()
+        self.user.save()
 
     def _configure_project(self, project, comment_level):
 
@@ -1872,6 +1874,7 @@ class TestComments(OsfTestCase):
         assert_equal(res.json['content'], 'edited')
 
         assert_equal(comment.content, 'edited')
+
 
     def test_edit_comment_short(self):
         self._configure_project(self.project, 'public')
@@ -2062,31 +2065,63 @@ class TestComments(OsfTestCase):
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
 
+    def test_view_comments(self):
+        """user.comments_view_timestamp is updated for contributors when post request is made to /viewComments"""
+        self.project.add_contributor(self.user)
+        view_timestamp = dt.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
+        CommentFactory(node=self.project)
 
+        url = self.project.api_url + 'viewComments/'
+        res = self.app.post_json(url, auth=self.user.auth)
+        self.user.reload()
 
-# def n_unread_comments(view_timestamp, comments):
-#     count = 0
-#
-#     for comment in comments:
-#         date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
-#         date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
-#
-#         if date_created > view_timestamp or date_modified > view_timestamp:
-#             count += 1
-#
-#     return count
-#
+        user_timestamp = str(self.user.comments_viewed_timestamp[self.project._id]).split('.')[0]
+        assert_equal(user_timestamp, view_timestamp)
 
+    def test_view_comments_non_contrib_viewer(self):
+        """viewers do not have a comments_view_timestamp for projects/components if they are not contributors"""
+        url = self.project.api_url + 'viewComments/'
+        res = self.app.post_json(url, auth=self.user.auth)
 
+        self.non_contributor.reload()
+        assert_false(self.non_contributor.comments_viewed_timestamp)
 
-    def test_n_unread_comments(self):
-        comment1 = CommentFactory(node=self.project)
-        comment2 = CommentFactory(node=self.project)
-        comments = ['2014-08-04T06:12:37', comment2]
+    def test_n_unread_comments_new_comment(self):
+        """when comment is added, n_unread_comments += 1
+           when user views comments, n_unread_comments equals 0"""
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        self.project.reload()
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=self.project.creator.auth)
+        comments = res.json.get('comments')
 
         view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
-        assert_equal(n_unread_comments(view_timestamp, comments), 2)
+        assert_equal(n_unread_comments(view_timestamp, comments), 1)
 
+        self.test_view_comments()
+        view_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        assert_equal(n_unread_comments(view_timestamp, comments), 0)
+
+    def test_n_unread_comments_edit_comment(self):
+        """if comment is edited, n_unread_comments += 1"""
+        self.test_edit_comment()
+        self.project.reload()
+
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=self.project.creator.auth)
+        comments = res.json.get('comments')
+
+        view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
+        assert_equal(n_unread_comments(view_timestamp, comments), 1)
+
+    def test_n_unread_comments_no_comments(self):
+        url = self.project.api_url + 'comments/'
+        res = self.app.get(url, auth=self.project.creator.auth)
+        comments = res.json.get('comments')
+
+        view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
+        assert_equal(n_unread_comments(view_timestamp, comments), 0)
 
 
 class TestTagViews(OsfTestCase):

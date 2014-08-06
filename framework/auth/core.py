@@ -259,7 +259,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #   'node_id': 'timestamp'
     # }
     comments_viewed_timestamp = fields.DictionaryField()
-    n_unread_comments = fields.DictionaryField()
 
     _meta = {'optimistic' : True}
 

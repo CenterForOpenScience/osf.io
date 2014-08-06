@@ -304,6 +304,7 @@ class DeprecatedUnregUserFactory(base.Factory):
 
     _build = _create
 
+
 class CommentFactory(ModularOdmFactory):
 
     FACTORY_FOR = Comment

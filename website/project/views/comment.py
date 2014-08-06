@@ -151,26 +151,26 @@ def add_comment(**kwargs):
 
 @must_be_contributor_or_public
 def list_comments(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     guid = request.args.get('target')
     target = resolve_target(node, guid)
     user = get_current_user()
     comments = serialize_comments(target, auth)
+    n_unread = 0
 
-    viewed_timestamp = datetime.utcnow().isoformat()
+    if node.is_contributor(user):
+        view_timestamp = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
 
-    if user.comments_viewed_timestamp is None:
-        user.comments_viewed_timestamp = {}
-        user.save()
+        if user.comments_viewed_timestamp is None:
+            user.comments_viewed_timestamp = {}
+            user.save()
 
-    if user.comments_viewed_timestamp.get(node._id, None):
-        viewed_timestamp = user.comments_viewed_timestamp[node._id]
+        if user.comments_viewed_timestamp.get(node._id, None):
+            view_timestamp = user.comments_viewed_timestamp[node._id]
+            #if node.is_contributor(user):
 
-    n_unread = n_unread_comments(viewed_timestamp, comments)
-
-
+        n_unread = n_unread_comments(view_timestamp, comments)
 
     return {
         'comments': comments,
@@ -242,16 +242,11 @@ def undelete_comment(**kwargs):
 def view_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     user = get_current_user()
-    comments = list_comments(**kwargs)['comments']
 
-    view_timestamp = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
-
-    if len(comments) != 0:
-        view_timestamp = datetime.utcnow().isoformat()
-
-    user.comments_viewed_timestamp[node._id] = view_timestamp
-    user.save()
-    list_comments(**kwargs)
+    if node.is_contributor(user):
+        user.comments_viewed_timestamp[node._id] = datetime.utcnow().isoformat()
+        user.save()
+        list_comments(**kwargs)
     return {}
 
 
