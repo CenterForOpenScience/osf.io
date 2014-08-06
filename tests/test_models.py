@@ -1171,6 +1171,7 @@ class TestRemoveNode(OsfTestCase):
 class TestDashboard(OsfTestCase):
 
     def setUp(self):
+        super(TestDashboard, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)

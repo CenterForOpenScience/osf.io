@@ -326,6 +326,7 @@ class TestSerializingEmptyDashboard(OsfTestCase):
     AMR_ID = '-amr'
 
     def setUp(self):
+        super(TestSerializingEmptyDashboard, self).setUp()
         self.dash = DashboardFactory()
         self.auth = AuthFactory(user=self.dash.creator)
         self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
@@ -386,18 +387,19 @@ class TestSerializingEmptyDashboard(OsfTestCase):
         for node in self.dash_hgrid:
             assert_valid_hgrid_smart_folder(node)
 
-class testSerializingPopulatedDashboard(OsfTestCase):
+
+class TestSerializingPopulatedDashboard(OsfTestCase):
 
     AMP_ID = '-amp'
     AMR_ID = '-amr'
 
     def setUp(self):
+        super(TestSerializingPopulatedDashboard, self).setUp()
         self.dash = DashboardFactory()
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
 
         self.init_dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
-
 
     def test_dashboard_1_folder_size(self):
         """
@@ -408,7 +410,6 @@ class testSerializingPopulatedDashboard(OsfTestCase):
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
-
 
     def test_dashboard_1_folder_titles(self):
         """
@@ -424,7 +425,6 @@ class testSerializingPopulatedDashboard(OsfTestCase):
             {node_hgrid['name'] for node_hgrid in dash_hgrid}
         )
 
-
     def test_dashboard_1_folder_containing_project_size(self):
         """
         Tests that the length of a dashboard's hgrid representation is properly incremented after adding one folder.
@@ -438,12 +438,13 @@ class testSerializingPopulatedDashboard(OsfTestCase):
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
+
 class TestSerializingFolders(OsfTestCase):
 
     def setUp(self):
+        super(TestSerializingFolders, self).setUp()
         self.user = UserFactory()
         self.auth = AuthFactory(user=self.user)
-
 
     def test_serialized_folder_is_valid_folder(self):
         """
@@ -470,13 +471,13 @@ class TestSerializingFolders(OsfTestCase):
         assert_equal(len(folder_hgrid) + 1, len(new_hgrid))
 
 
-
 class TestSmartFolderViews(OsfTestCase):
 
     AMP_ID = '-amp'
     AMR_ID = '-amr'
 
     def setUp(self):
+        super(TestSmartFolderViews, self).setUp()
         self.app = TestApp(app)
         self.dash = DashboardFactory()
         self.user = self.dash.creator

@@ -2128,7 +2128,6 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
-
 class TestODMTitleSearch(OsfTestCase):
     """ Docs from original method:
     :arg term: The substring of the title.
@@ -2143,7 +2142,8 @@ class TestODMTitleSearch(OsfTestCase):
     :return: a list of dictionaries of projects
     """
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestODMTitleSearch, self).setUp()
+
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, title="foo")
@@ -2256,6 +2256,7 @@ class TestODMTitleSearch(OsfTestCase):
                            }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json), 1)
+
 
 class TestReorderComponents(OsfTestCase):
 
