@@ -6,5 +6,7 @@ xlrd==0.9.3
 numpy==1.8.1
 PyDocX==0.3.14
 PyPDF2==1.22
-# Until R builds reliably, leave this at the bottom of this file so that failure doesn't keep other packages from being installed
-rpy2==2.4.2
+docutils==0.12
+# rpy2 is used for rendering SPSS files. Unfortunately, it does not build reliably on MacOSX and Ubuntu.
+# Make it an optional dependency for now.
+# rpy2==2.4.2
