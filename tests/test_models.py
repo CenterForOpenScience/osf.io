@@ -26,12 +26,11 @@ from website.profile.utils import serialize_user
 from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
 )
-from website.app import init_app
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 
-from tests.base import OsfTestCase, Guid, fake, URLLookup
+from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
     UserFactory, ApiKeyFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
@@ -40,8 +39,6 @@ from tests.factories import (
     AuthUserFactory, DashboardFactory, FolderFactory
 )
 
-app = init_app(set_backends=False, routes=True)
-lookup = URLLookup(app)
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
 
@@ -114,6 +111,7 @@ class TestUserValidation(OsfTestCase):
 class TestUser(OsfTestCase):
 
     def setUp(self):
+        super(TestUser, self).setUp()
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
@@ -507,11 +505,16 @@ class TestUserParse(unittest.TestCase):
 class TestMergingUsers(OsfTestCase):
 
     def setUp(self):
-        self.master = UserFactory(fullname='Joe Shmo',
-                            is_registered=True,
-                            emails=['joe@example.com'])
-        self.dupe = UserFactory(fullname='Joseph Shmo',
-                            emails=['joseph123@hotmail.com'])
+        super(TestMergingUsers, self).setUp()
+        self.master = UserFactory(
+            fullname='Joe Shmo',
+            is_registered=True,
+            emails=['joe@example.com'],
+        )
+        self.dupe = UserFactory(
+            fullname='Joseph Shmo',
+            emails=['joseph123@hotmail.com']
+        )
 
     def _merge_dupe(self):
         '''Do the actual merge.'''
@@ -563,7 +566,7 @@ class TestMergingUsers(OsfTestCase):
 class TestGUID(OsfTestCase):
 
     def setUp(self):
-
+        super(TestGUID, self).setUp()
         self.records = {}
         for factory in GUID_FACTORIES:
             record = factory()
@@ -594,6 +597,7 @@ class TestGUID(OsfTestCase):
 class TestNodeFile(OsfTestCase):
 
     def setUp(self):
+        super(TestNodeFile, self).setUp()
         # Create a project with a NodeFile
         self.node = ProjectFactory()
         self.node_file = NodeFile(node=self.node, path='foo.py', filename='foo.py', size=128)
@@ -622,6 +626,7 @@ class TestNodeFile(OsfTestCase):
 class TestAddFile(OsfTestCase):
 
     def setUp(self):
+        super(TestAddFile, self).setUp()
         # Create a project
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -686,6 +691,7 @@ class TestAddFile(OsfTestCase):
 class TestApiKey(OsfTestCase):
 
     def test_factory(self):
+        super(TestApiKey, self).setUp()
         key = ApiKeyFactory()
         user = UserFactory()
         user.api_keys.append(key)
@@ -697,6 +703,7 @@ class TestApiKey(OsfTestCase):
 class TestNodeWikiPage(OsfTestCase):
 
     def setUp(self):
+        super(TestNodeWikiPage, self).setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.wiki = NodeWikiFactory(user=self.user, node=self.project)
@@ -718,6 +725,7 @@ class TestNodeWikiPage(OsfTestCase):
 class TestUpdateNodeWiki(OsfTestCase):
 
     def setUp(self):
+        super(TestUpdateNodeWiki, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -790,6 +798,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 class TestNode(OsfTestCase):
 
     def setUp(self):
+        super(TestNode, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -801,13 +810,24 @@ class TestNode(OsfTestCase):
             Node(category='invalid').save()  # an invalid category
 
     def test_web_url_for(self):
-        with app.test_request_context():
-            result = self.parent.web_url_for('view_project')
-            assert_equal(result, web_url_for('view_project', pid=self.parent._primary_key))
+        result = self.parent.web_url_for('view_project')
+        assert_equal(
+            result,
+            web_url_for(
+                'view_project',
+                pid=self.parent._id,
+            )
+        )
 
-            result2 = self.node.web_url_for('view_project')
-            assert_equal(result2, web_url_for('view_project', pid=self.parent._primary_key,
-                nid=self.node._primary_key))
+        result2 = self.node.web_url_for('view_project')
+        assert_equal(
+            result2,
+            web_url_for(
+                'view_project',
+                pid=self.parent._primary_key,
+                nid=self.node._primary_key
+            )
+        )
 
     def test_category_display(self):
         node = NodeFactory(category='hypothesis')
@@ -815,15 +835,25 @@ class TestNode(OsfTestCase):
         node2 = NodeFactory(category='methods and measures')
         assert_equal(node2.category_display, 'Methods and Measures')
 
-
     def test_api_url_for(self):
-        with app.test_request_context():
-            result = self.parent.api_url_for('view_project')
-            assert_equal(result, api_url_for('view_project', pid=self.parent._primary_key))
+        result = self.parent.api_url_for('view_project')
+        assert_equal(
+            result,
+            api_url_for(
+                'view_project',
+                pid=self.parent._id
+            )
+        )
 
-            result2 = self.node.api_url_for('view_project')
-            assert_equal(result2, api_url_for('view_project', pid=self.parent._primary_key,
-                nid=self.node._primary_key))
+        result2 = self.node.api_url_for('view_project')
+        assert_equal(
+            result2,
+            api_url_for(
+                'view_project',
+                pid=self.parent._id,
+                nid=self.node._id,
+            )
+        )
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -1097,6 +1127,7 @@ class TestNode(OsfTestCase):
 class TestRemoveNode(OsfTestCase):
 
     def setUp(self):
+        super(TestRemoveNode, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1179,7 +1210,7 @@ class TestAddonCallbacks(OsfTestCase):
     }
 
     def setUp(self):
-
+        super(TestAddonCallbacks, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1247,6 +1278,7 @@ class TestAddonCallbacks(OsfTestCase):
 class TestProject(OsfTestCase):
 
     def setUp(self):
+        super(TestProject, self).setUp()
         # Create project
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -1679,9 +1711,11 @@ class TestProject(OsfTestCase):
             contrib.unclaimed_records.keys()
         )
 
+
 class TestTemplateNode(OsfTestCase):
 
     def setUp(self):
+        super(TestTemplateNode, self).setUp()
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -1876,7 +1910,9 @@ class TestTemplateNode(OsfTestCase):
 
 
 class TestForkNode(OsfTestCase):
+
     def setUp(self):
+        super(TestForkNode, self).setUp()
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -2089,6 +2125,7 @@ class TestForkNode(OsfTestCase):
 class TestRegisterNode(OsfTestCase):
 
     def setUp(self):
+        super(TestRegisterNode, self).setUp()
         ensure_schemas()
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
@@ -2292,6 +2329,7 @@ class TestRegisterNode(OsfTestCase):
 class TestNodeLog(OsfTestCase):
 
     def setUp(self):
+        super(TestNodeLog, self).setUp()
         self.log = NodeLogFactory()
 
     def test_node_log_factory(self):
@@ -2348,6 +2386,7 @@ class TestNodeLog(OsfTestCase):
 class TestPermissions(OsfTestCase):
 
     def setUp(self):
+        super(TestPermissions, self).setUp()
         self.project = ProjectFactory()
 
     def test_default_creator_permissions(self):
@@ -2404,6 +2443,7 @@ class TestPermissions(OsfTestCase):
 class TestPointer(OsfTestCase):
 
     def setUp(self):
+        super(TestPointer, self).setUp()
         self.pointer = PointerFactory()
 
     def test_title(self):
@@ -2480,6 +2520,7 @@ class TestWatchConfig(OsfTestCase):
 class TestUnregisteredUser(OsfTestCase):
 
     def setUp(self):
+        super(TestUnregisteredUser, self).setUp()
         self.referrer = UserFactory()
         self.project = ProjectFactory(creator=self.referrer)
         self.user = UnregUserFactory()
@@ -2670,6 +2711,7 @@ class TestProjectWithAddons(OsfTestCase):
 class TestComments(OsfTestCase):
 
     def setUp(self):
+        super(TestComments, self).setUp()
         self.comment = CommentFactory()
         self.consolidated_auth = Auth(user=self.comment.user)
 

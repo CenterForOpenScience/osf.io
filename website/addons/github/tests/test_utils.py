@@ -23,6 +23,7 @@ HOOK_PAYLOAD = json.dumps({
 class TestHookVerify(OsfTestCase):
 
     def setUp(self):
+        super(TestHookVerify, self).setUp()
         self.node_settings = AddonGitHubNodeSettings(
             hook_secret='speakfriend',
         )

@@ -61,9 +61,18 @@ def normalize_unicode(ustr):
 
 
 def has_anonymous_link(node, link):
+    """check if the node is anonymous to the user
+
+    :param Node node: Node which the user wants to visit
+    :param str link: any view-only link in the current url
+    :return bool anonymous: Whether the node is anonymous to the user or not
+
+    """
+
     if node.is_public:
         return False
     return any([x.anonymous for x in node.private_links_active if x.key == link])
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -630,15 +639,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_links:
-            key_ring = set(auth.user.private_link_keys)
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_link_keys_active)
-        else:
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_link_keys_active
+        return self.is_public or auth.user \
+            and self.has_permission(auth.user, 'read') \
+            or auth.private_key in self.private_link_keys_active
 
     def is_expanded(self, auth=None, user=None):
         """Return if a user is has expanded the folder in the dashboard view.
@@ -826,7 +829,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
-            return auth.logged_in and self.can_view(auth)
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read'))
+            )
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):

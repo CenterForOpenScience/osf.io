@@ -660,8 +660,9 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
-    recent_logs, has_more_logs= _get_logs(node, 10, auth, anonymous)
+    recent_logs, has_more_logs= _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
+    redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
     if primary:
@@ -679,6 +680,7 @@ def _view_project(node, auth, primary=False):
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
+            'redirect_url': redirect_url,
             'display_absolute_url': node.display_absolute_url,
             'citations': {
                 'apa': node.citation_apa,

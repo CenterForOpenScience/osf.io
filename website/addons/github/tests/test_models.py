@@ -14,6 +14,7 @@ from website.addons.github.exceptions import NotFoundError
 from .utils import create_mock_github
 mock_github = create_mock_github()
 
+
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
