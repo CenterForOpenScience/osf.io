@@ -17,8 +17,16 @@ class TestContributorViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
 
     def test_get_contributors(self):
-        self.project.add_contributor(AuthUserFactory(), auth=self.auth, visible=True)
-        self.project.add_contributor(AuthUserFactory(), auth=self.auth, visible=False)
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=False,
+        )
         self.project.save()
         url = self.project.api_url_for('get_contributors')
         res = self.app.get(url, auth=self.user.auth)
@@ -29,8 +37,16 @@ class TestContributorViews(OsfTestCase):
         )
 
     def test_get_contributors_from_parent(self):
-        self.project.add_contributor(AuthUserFactory(), auth=self.auth, visible=True)
-        self.project.add_contributor(AuthUserFactory(), auth=self.auth, visible=False)
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=True,
+        )
+        self.project.add_contributor(
+            AuthUserFactory(),
+            auth=self.auth,
+            visible=False,
+        )
         self.project.save()
         component = NodeFactory(parent=self.project, creator=self.user)
         url = component.api_url_for('get_contributors_from_parent')

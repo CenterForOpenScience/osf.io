@@ -30,7 +30,6 @@ def transaction_before_request():
     database.command('beginTransaction')
 
 
-# TODO: What if transaction has already been rolled back or committed?
 def transaction_after_request(response):
     """Teardown transaction after handling the request. Rollback if an
     uncaught exception occurred, else commit.
@@ -39,18 +38,20 @@ def transaction_after_request(response):
     if response.status_code == httplib.INTERNAL_SERVER_ERROR:
         database.command('rollbackTransaction')
     else:
-        # import pdb; pdb.set_trace()
         database.command('commitTransaction')
     return response
 
 
 def transaction_teardown_request(error=None):
-    """
+    """Rollback transaction on uncaught error. This code should never be
+    reached in debug mode, since uncaught errors are raised for use in the
+    Werkzeug debugger.
 
     """
     if error is not None:
         if not settings.DEBUG_MODE:
-            logger.error('THIS SHOULD NEVER HAPPEN')
+            logger.error('Uncaught error in `transaction_teardown_request`;'
+                         'this should never happen with `DEBUG_MODE = True`')
         database.command('rollbackTransaction')
 
 

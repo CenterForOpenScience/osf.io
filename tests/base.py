@@ -6,13 +6,14 @@ import functools
 import blinker
 from webtest_plus import TestApp
 
-from pymongo import MongoClient
 from faker import Factory
 
 from framework import storage, set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
+from framework import mongo
+
 from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig)
 from website import settings
@@ -65,14 +66,12 @@ class OsfTestCase(unittest.TestCase):
         """Clear test database and attach to schema classes.
 
         """
-        cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
-        # Set storage backend to MongoDB
         cls._original_db, settings.DB_NAME = settings.DB_NAME, cls.db_name
         set_up_storage(
             website.models.MODELS, storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE,
         )
-        cls._client.drop_database(cls.db_name)
+        mongo.client.drop_database(cls.db_name)
 
     def setUp(self):
         self.app = TestApp(test_app)
@@ -87,7 +86,7 @@ class OsfTestCase(unittest.TestCase):
         """Clear test database again.
 
         """
-        cls._client.drop_database(cls.db_name)
+        mongo.client.drop_database(cls.db_name)
         settings.DB_NAME = cls._original_db
 
 

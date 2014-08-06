@@ -65,7 +65,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         except AssertionError:  # Route map has already been created
             pass
 
-    # Add `before_request` and `after_request` handlers to application
+    # Add callback handlers to application
     mongo_handlers.add_database_handlers(app)
     transaction_handlers.add_transaction_handlers(app)
 

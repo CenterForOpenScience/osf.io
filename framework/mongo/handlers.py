@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 def get_mongo_client():
+    """Create MongoDB client and authenticate database.
 
+    """
     mongo_uri = 'mongodb://localhost:{port}'.format(port=settings.DB_PORT)
     client = MongoClient(mongo_uri)
 
@@ -25,10 +27,16 @@ def get_mongo_client():
 
 
 def connection_before_request():
+    """Attach MongoDB client to `g`.
+
+    """
     g._mongo_client = get_mongo_client()
 
 
 def connection_teardown_request(error=None):
+    """Close MongoDB client if attached to `g`.
+
+    """
     try:
         g._mongo_client.close()
     except AttributeError:
@@ -37,18 +45,22 @@ def connection_teardown_request(error=None):
 
 
 def add_database_handlers(app):
-    """
+    """Add connection callbacks on `before_request` and `teardown_request`.
 
     """
     app.before_request(connection_before_request)
     app.teardown_request(connection_teardown_request)
 
 
-# Getters for `LocalProxy` objects
+# Set up getters for `LocalProxy` objects
 _mongo_client = get_mongo_client()
 
 
 def _get_current_client():
+    """Getter for `client` proxy. Return default client if no client attached
+    to `g` or no request context.
+
+    """
     try:
         return g._mongo_client
     except (AttributeError, RuntimeError):
@@ -56,9 +68,13 @@ def _get_current_client():
 
 
 def _get_current_database():
+    """Getter for `database` proxy.
+
+    """
     return _get_current_client()[settings.DB_NAME]
 
-# `LocalProxy` objects
+
+# Set up `LocalProxy` objects
 client = LocalProxy(_get_current_client)
 database = LocalProxy(_get_current_database)
 
