@@ -77,7 +77,12 @@
                 <div class="comment-info">
                     <form class="form-inline">
                         <img data-bind="attr: {src: author.gravatarUrl}"/>
-                        <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                        <span data-bind="if: author.id">
+                            <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                        </span>
+                        <span data-bind="ifnot: author.id">
+                            <span class="comment-author" data-bind="text: author.name"></span>
+                        </span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>

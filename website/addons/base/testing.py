@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from framework.auth import Auth
-from tests.base import OsfTestCase, URLLookup
+from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
 
@@ -36,10 +36,6 @@ class AddonTestCase(OsfTestCase):
 
     def create_project(self):
         return ProjectFactory(creator=self.user)
-
-    # Required abstract methods
-    def create_app(self):
-        raise NotImplementedError('Must define create_app(self) method.')
 
     def set_user_settings(self, settings):
         """Make any necessary modifications to the user settings object,
@@ -88,7 +84,6 @@ class AddonTestCase(OsfTestCase):
 
         super(AddonTestCase, self).setUp()
 
-        self.app = self.create_app()
         self.user = self.create_user()
         if not self.TEST_FOR:
             raise ValueError('Must define TEST_FOR in the test class.')
@@ -99,6 +94,3 @@ class AddonTestCase(OsfTestCase):
 
         self.create_user_settings()
         self.create_node_settings()
-
-        self.lookup = URLLookup(self.app.app)
-        self.node_lookup = URLLookup(self.app.app, self.project)

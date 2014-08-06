@@ -241,7 +241,7 @@ class TestListFiles(GitlabTestCase):
                 'type': 'blob',
             }
         ]
-        path ='frozen/pizza/reviews.txt'
+        path = 'frozen/pizza/reviews.txt'
         branch = 'master'
         sha = '47b79b37ef1cf6f944f71ea13c6667ddd98b9804'
         permissions = {

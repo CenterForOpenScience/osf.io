@@ -1,9 +1,6 @@
 import os
 import inspect
-import logging
 from mako.lookup import TemplateLookup
-
-logger = logging.getLogger(__name__)
 
 
 class FileMeta(type):
@@ -64,7 +61,7 @@ class FileRenderer(object):
         # except RenderError as error:
         #     rendered = error.to_html()
         # except Exception as error:
-        #     logging.error(error)
+        #     logger.error(error)
         # rendered = 'Unable to render; download file to view it'
         return rendered
 

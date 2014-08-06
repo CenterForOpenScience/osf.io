@@ -8,22 +8,20 @@ from framework.auth import Auth
 from website.addons.dropbox.model import (
     DropboxUserSettings, DropboxNodeSettings, DropboxFile
 )
-from tests.base import OsfTestCase, fake
+from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 from website.addons.dropbox.tests.utils import MockDropbox
 from website.addons.dropbox.tests.factories import (
     DropboxUserSettingsFactory, DropboxNodeSettingsFactory,
     DropboxFileFactory
 )
-from website.app import init_app
 from website.util import web_url_for
-
-app = init_app(set_backends=False, routes=True)
 
 
 class TestUserSettingsModel(OsfTestCase):
 
     def setUp(self):
+        super(TestUserSettingsModel, self).setUp()
         self.user = UserFactory()
 
     def test_fields(self):
@@ -104,6 +102,7 @@ class TestUserSettingsModel(OsfTestCase):
 class TestDropboxNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
+        super(TestDropboxNodeSettingsModel, self).setUp()
         self.user = UserFactory()
         self.user.add_addon('dropbox')
         self.user.save()
@@ -199,10 +198,13 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
 class TestNodeSettingsCallbacks(OsfTestCase):
 
     def setUp(self):
+        super(TestNodeSettingsCallbacks, self).setUp()
         # Create node settings with auth
         self.user_settings = DropboxUserSettingsFactory(access_token='123abc')
-        self.node_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings,
-            folder='')
+        self.node_settings = DropboxNodeSettingsFactory(
+            user_settings=self.user_settings,
+            folder='',
+        )
 
         self.project = self.node_settings.owner
         self.user = self.user_settings.owner

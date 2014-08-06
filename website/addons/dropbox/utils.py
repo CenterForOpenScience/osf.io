@@ -17,7 +17,6 @@ from dropbox.rest import ErrorResponse
 
 
 logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 class DropboxNodeLogger(NodeLogger):

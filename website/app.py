@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import importlib
-import logging
 
 from modularodm import storage
 
 from framework.mongo import db
 from framework.flask import app
+
+from framework.logging import logger
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
@@ -13,7 +14,6 @@ import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
 
-logger = logging.getLogger(__name__)
 
 def init_addons(settings, routes=True):
     """
@@ -42,6 +42,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     :param settings_module: A string, the settings module to use.
     :param set_backends: Whether to set the database storage backends.
     :param routes: Whether to set the url map.
+
     """
     # The settings module
     settings = importlib.import_module(settings_module)
@@ -62,8 +63,6 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
             make_url_map(app)
         except AssertionError:  # Route map has already been created
             pass
-
-
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")

@@ -2,11 +2,8 @@
 
 import mock
 from nose.tools import *
-from webtest_plus import TestApp
 
 import httplib as http
-
-import website.app
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
@@ -20,10 +17,6 @@ from website.addons.figshare.views.config import serialize_settings
 from framework.auth import Auth
 
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 figshare_mock = create_mock_figshare(project=436)
 
 
@@ -33,7 +26,6 @@ class TestViewsConfig(OsfTestCase):
 
         super(TestViewsConfig, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -72,13 +64,20 @@ class TestViewsConfig(OsfTestCase):
         assert_true(is_not_none)
 
     def test_deauthorize(self):
-        """Testing figshare_deauthorize to ensure user auth gets removed from the node and that the AddonNodeSettings are cleared"""
+        """Testing figshare_deauthorize to ensure user auth gets removed from
+        the node and that the AddonNodeSettings are cleared
+
+        """
         settings = self.node_settings
         url = '/api/v1/project/{0}/figshare/config/'.format(self.project._id)
         self.app.delete(url, auth=self.user.auth)
         self.node_settings.reload()
         assert_true(settings.user_settings is None)
-        is_none = (settings.figshare_id is None) and (settings.figshare_title is None) and (settings.figshare_type is None)
+        is_none = (
+            settings.figshare_id is None
+            and settings.figshare_title is None
+            and settings.figshare_type is None
+        )
         assert_true(is_none)    
 
     def test_config_no_change(self):
@@ -154,9 +153,9 @@ class TestViewsConfig(OsfTestCase):
 class TestUtils(OsfTestCase):
 
     def setUp(self):
+
         super(TestUtils, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -233,9 +232,9 @@ class TestUtils(OsfTestCase):
 class TestViewsCrud(OsfTestCase):
 
     def setUp(self):
+
         super(TestViewsCrud, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -342,9 +341,9 @@ class TestViewsCrud(OsfTestCase):
 class TestViewsAuth(OsfTestCase):
 
     def setUp(self):
+
         super(TestViewsAuth, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)

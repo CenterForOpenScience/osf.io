@@ -144,16 +144,19 @@ class TestBuildUrls(GitlabTestCase):
         )
         assert_urls_equal(
             output['upload'],
-            self.node_lookup(
-                'api', 'gitlab_upload_file',
-                path=quote_path, branch=branch
+            self.project.api_url_for(
+                'gitlab_upload_file',
+                path=quote_path,
+                branch=branch,
             )
         )
         assert_urls_equal(
             output['fetch'],
-            self.node_lookup(
-                'api', 'gitlab_list_files',
-                path=quote_path, branch=branch, sha=sha
+            self.project.api_url_for(
+                'gitlab_list_files',
+                path=quote_path,
+                branch=branch,
+                sha=sha,
             )
         )
 
@@ -179,23 +182,28 @@ class TestBuildUrls(GitlabTestCase):
         )
         assert_urls_equal(
             output['view'],
-            self.node_lookup(
-                'web', 'gitlab_view_file',
-                path=quote_path, branch=branch, sha=sha
+            self.project.web_url_for(
+                'gitlab_view_file',
+                path=quote_path,
+                branch=branch,
+                sha=sha,
             )
         )
         assert_urls_equal(
             output['download'],
-            self.node_lookup(
-                'web', 'gitlab_download_file',
-                path=quote_path, branch=branch, sha=sha
+            self.project.web_url_for(
+                'gitlab_download_file',
+                path=quote_path,
+                branch=branch,
+                sha=sha,
             )
         )
         assert_urls_equal(
             output['delete'],
-            self.node_lookup(
-                'api', 'gitlab_delete_file',
-                path=quote_path, branch=branch
+            self.project.api_url_for(
+                'gitlab_delete_file',
+                path=quote_path,
+                branch=branch,
             )
         )
 

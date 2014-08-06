@@ -82,8 +82,8 @@ def make_url_map(app):
     '''Set up all the routes for the OSF app.
 
     :param app: A Flask/Werkzeug app to bind the rules to.
-    '''
 
+    '''
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
         Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),

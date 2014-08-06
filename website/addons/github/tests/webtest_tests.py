@@ -8,11 +8,6 @@ from website.addons.github.tests.utils import create_mock_github
 
 from github3.repos import Repository
 from github3.repos.commit import RepoCommit as Commit
-from webtest_plus import TestApp
-import website.app
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
 
 
 class TestGitHubFileView(OsfTestCase):
@@ -23,7 +18,6 @@ class TestGitHubFileView(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.app = TestApp(app)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')

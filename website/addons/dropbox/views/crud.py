@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import httplib as http
 from flask import request, redirect
 import os
@@ -29,9 +28,6 @@ from website.addons.dropbox.utils import (
     abort_if_not_subdir,
     is_authorizer,
 )
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_have_permission('write')

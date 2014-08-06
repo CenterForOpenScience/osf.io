@@ -1,11 +1,17 @@
 import framework.status as status
 
+# <<<<<<< HEAD
 from wtforms import validators
 
 from wtforms.widgets import TextInput, PasswordInput, TextArea
+# =======
+# from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
+#     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, \
+#     SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
+#     validators
+# from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select
+# >>>>>>> 92cf27039d1408563aa0787d444cdb0df6ff184a
 from wtforms.validators import ValidationError
-
-from wtfrecaptcha.fields import RecaptchaField
 
 from website.util.sanitize import scrub_html
 
@@ -68,7 +74,7 @@ class JqueryAutocomplete(TextInput):
                         input = $('<div class="input-group">' +
                                 '<input class="form-control"/>' +
                                 '<span class="input-group-btn">' +
-                                    '<button class="btn btn-default">' +
+                                    '<button class="btn btn-default" type="button">' +
                                         '<span class="caret"/>' +
                                     '</button>' +
                                 '</span>' +
@@ -143,8 +149,6 @@ class JqueryAutocomplete(TextInput):
             </script>
         """ % field
 
-
-RecaptchaField = RecaptchaField
 
 validators = validators
 

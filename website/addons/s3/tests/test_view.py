@@ -1,6 +1,5 @@
 import mock
 from nose.tools import *
-from webtest_plus import TestApp
 
 import httplib as http
 from boto.exception import S3ResponseError
@@ -10,16 +9,10 @@ from tests.factories import ProjectFactory, AuthUserFactory
 
 from framework.auth import Auth
 
-import website.app
-
 from website.addons.s3.model import S3GuidFile
 from website.addons.s3.utils import validate_bucket_name
 
 from .utils import create_mock_wrapper, create_mock_key
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
 
 
 class TestS3ViewsConfig(OsfTestCase):
@@ -28,7 +21,6 @@ class TestS3ViewsConfig(OsfTestCase):
 
         super(TestS3ViewsConfig, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -266,7 +258,6 @@ class TestS3ViewsCRUD(OsfTestCase):
 
         super(TestS3ViewsCRUD, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -316,7 +307,6 @@ class TestS3ViewsHgrid(OsfTestCase):
 
         super(TestS3ViewsHgrid, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -369,7 +359,6 @@ class TestCreateBucket(OsfTestCase):
 
         super(TestCreateBucket, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)

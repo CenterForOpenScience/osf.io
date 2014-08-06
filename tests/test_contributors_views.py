@@ -2,23 +2,16 @@
 
 from nose.tools import *  # PEP8 asserts
 
-from webtest_plus import TestApp
 from tests.factories import ProjectFactory, NodeFactory, AuthUserFactory
 from tests.base import OsfTestCase, fake
 
 from framework.auth.decorators import Auth
-import website
-
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
 
 
 class TestContributorViews(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestContributorViews, self).setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
