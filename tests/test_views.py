@@ -35,8 +35,6 @@ from website import settings, mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment, n_unread_comments
-from website.project.decorators import choose_key, check_can_access
-from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
 
