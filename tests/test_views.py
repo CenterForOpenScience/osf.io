@@ -206,6 +206,14 @@ class TestProjectViews(OsfTestCase):
         dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
+    def test_dashboard_all_my_projects(self):
+        pass
+
+    def test_dashboard_all_my_registrations(self):
+        pass
+
+
+
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
@@ -2305,10 +2313,10 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
 
-        url = api_url_for('get_dashboard_nodes')
+        url = api_url_for('get_all_projects_smart_folder')
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json['nodes']), 1)
+        assert_equal(len(res.json), 1)
 
 
 if __name__ == '__main__':

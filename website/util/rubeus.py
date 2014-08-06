@@ -147,7 +147,8 @@ class NodeProjectCollector(object):
         return rv
 
     def collect_all_projects_smart_folder(self):
-        all_my_projects = self.auth.user.node__contributed.find(
+        contributed = self.auth.user.node__contributed
+        all_my_projects = contributed.find(
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
             Q('is_registration', 'eq', False) &
@@ -155,11 +156,22 @@ class NodeProjectCollector(object):
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'eq', None)
         )
-        children_count = all_my_projects.count()
+        comps = contributed.find(
+            # components only
+            Q('category', 'ne', 'project') &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
+            # exclude deleted nodes
+            Q('is_deleted', 'eq', False) &
+            # exclude registrations
+            Q('is_registration', 'eq', False)
+        )
+        children_count = all_my_projects.count() + comps.count()
         return self.make_smart_folder('All my projects', '-amp', children_count)
 
     def collect_all_registrations_smart_folder(self):
-        all_my_registrations = self.auth.user.node__contributed.find(
+        contributed = self.auth.user.node__contributed
+        all_my_registrations = contributed.find(
             Q('category', 'eq', 'project') &
             Q('is_deleted', 'eq', False) &
             Q('is_registration', 'eq', True) &
@@ -167,7 +179,17 @@ class NodeProjectCollector(object):
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'eq', None)
         )
-        children_count = all_my_registrations.count()
+        comps = contributed.find(
+            # components only
+            Q('category', 'ne', 'project') &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'nin', all_my_registrations.get_keys()) &
+            # exclude deleted nodes
+            Q('is_deleted', 'eq', False) &
+            # exclude registrations
+            Q('is_registration', 'eq', True)
+        )
+        children_count = all_my_registrations.count() + comps.count()
         return self.make_smart_folder('All my registrations', '-amr', children_count)
 
     def make_smart_folder(self, title, node_id, children_count=0):

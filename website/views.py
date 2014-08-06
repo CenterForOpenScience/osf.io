@@ -45,29 +45,6 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-def _render_projects(nodes, **kwargs):
-    """
-
-    :param nodes:
-    :return:
-    """
-    pass
-    ret = {'data': [rubeus.to_project_hgrid(node, **kwargs) for node in nodes]}
-    return ret
-
-
-def _render_dashboard(nodes, **kwargs):
-    """
-
-    :param nodes:
-    :return:
-    """
-    dashboard_projects = [rubeus.to_project_hgrid(node, **kwargs) for node in nodes]
-    ret = {'data': dashboard_projects}
-    return ret
-
-
-
 def _render_node(node):
     """
 
@@ -164,7 +141,9 @@ def get_all_projects_smart_folder(**kwargs):
 
     user = kwargs['auth'].user
 
-    nodes = user.node__contributed.find(
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
@@ -173,15 +152,28 @@ def get_all_projects_smart_folder(**kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
-    return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+    comps = contributed.find(
+        # components only
+        Q('category', 'ne', 'project') &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', False)
+    )
+
+    return_value = [rubeus.to_project_root(comp, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(**kwargs):
 
     user = kwargs['auth'].user
+    contributed = user.node__contributed
 
-    nodes = user.node__contributed.find(
+    nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', True) &
@@ -190,7 +182,19 @@ def get_all_registrations_smart_folder(**kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
-    return_value = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+    comps = contributed.find(
+        # components only
+        Q('category', 'ne', 'project') &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', True)
+    )
+
+    return_value = [rubeus.to_project_root(comp, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
@@ -203,7 +207,7 @@ def get_dashboard_nodes(auth, **kwargs):
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
         Q('is_registration', 'eq', False) &
-        Q('is_folder','eq', False)
+        Q('is_folder', 'eq', False)
     )
 
     comps = contributed.find(
@@ -277,29 +281,10 @@ def reset_password_form():
 def new_project_form():
     return utils.jsonify(NewProjectForm())
 
+
 def new_folder_form():
     form = NewFolderForm()
-    # form._fields['location']['choices'] = get_folders()
-    # form.location.choices=get_folders()
     return utils.jsonify(form)
-
-
-
-@must_be_logged_in
-def get_folders(**kwargs):
-    """Find the user's folder nodes
-
-    :param User user: User object
-    :return array of tuples with key, value of the nodes
-    """
-    auth = kwargs['auth']
-    user = auth.user
-    folders = user.node__contributed.find(
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False) &
-        Q('is_folder','eq', True)
-    )
-    return [(folder._id, folder.title) for folder in folders]
 
 
 ### GUID ###
