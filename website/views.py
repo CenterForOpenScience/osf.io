@@ -16,7 +16,6 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 from framework.guid.model import Guid, GuidStoredObject
 
 from website.util import web_url_for
-from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
 
