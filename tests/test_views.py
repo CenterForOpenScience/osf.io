@@ -206,13 +206,6 @@ class TestProjectViews(OsfTestCase):
         dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
         assert_equal(dashboard.count(), 1)
 
-    def test_dashboard_all_my_projects(self):
-        pass
-
-    def test_dashboard_all_my_registrations(self):
-        pass
-
-
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -2318,6 +2311,19 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json), 1)
 
+    def test_registered_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+        project.register_node(
+            None, Auth(self.creator), '', '',
+        )
+
+        url = api_url_for('get_all_registrations_smart_folder')
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json), 1)
 
 if __name__ == '__main__':
     unittest.main()
