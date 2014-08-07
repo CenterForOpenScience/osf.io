@@ -103,7 +103,7 @@
                                       % endif
                                     </h5>
                                 % else:
-                                    <h5 style="color: #909090">No description</h5>
+                                    <h5 class="text-muted">No description</h5>
                                 % endif
                             </div>
 
