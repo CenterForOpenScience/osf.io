@@ -3,7 +3,7 @@
 <%def name="content()">
 <h2 class="page-title text-center">Create New Project</h2>
 
-<form id="creation-form" data-bind="submit: createProject">
+<form id="creationForm" data-bind="submit: createProject">
   <div class="row">
     <div class="col-md-6 col-md-offset-3">
       <label for="title">Title</label>
@@ -36,7 +36,7 @@
 <%def name="javascript_bottom()">
 <script>
   $script(['/static/js/projectCreator.js', '/static/vendor/bower_components/select2/select2.js'], function() {
-    ProjectCreator('#creation-form', 'url');
+  ProjectCreator('#creationForm', 'url');
   });
 </script>
 </%def>
