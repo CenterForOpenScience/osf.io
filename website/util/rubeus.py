@@ -4,7 +4,6 @@ formatted hgrid list/folders.
 """
 import os
 import hurry
-from operator import itemgetter
 from framework.auth import Auth
 
 
