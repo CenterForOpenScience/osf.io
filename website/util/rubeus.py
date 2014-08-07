@@ -4,8 +4,9 @@ formatted hgrid list/folders.
 """
 import os
 import hurry
-
+from operator import itemgetter
 from framework.auth import Auth
+
 
 FOLDER = 'folder'
 FILE = 'item'
@@ -164,12 +165,15 @@ class NodeFileCollector(object):
             'isPointer': not node.primary,
         }
 
+    def sort_by_name(self, hgrid_data):
+        return sorted(hgrid_data, key=lambda item: item['name'].lower())
+
     def _collect_addons(self, node):
         rv = []
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                rv.extend(temp or [])
+                rv.extend(self.sort_by_name(temp) or [])
         return rv
 
 # TODO: these might belong in addons module
