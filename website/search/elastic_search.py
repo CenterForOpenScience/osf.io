@@ -31,10 +31,18 @@ except pyelasticsearch.exceptions.ConnectionError as e:
     elastic = None
 
 
-def search(raw_query, start=0):
-    orig_query = raw_query
+def search(full_query, start=0):
+    orig_query = full_query['query']
 
-    query, filtered_query = _build_query(raw_query, start)
+    query, filtered_query, result_type, tags = _build_query(full_query, start)
+
+    # if full_query['type'] in TYPES:
+    #     result_type = full_query['type']
+    # else:
+    #     for type in TYPES:
+    #         if type + 's' in query:
+    #             pass
+
 
     # Get document counts by type
     counts = {}
@@ -52,21 +60,24 @@ def search(raw_query, start=0):
         counts['all'] += counts[type + 's']
 
     # Figure out which count we should display as a total
-    for type in TYPES:
-        if type + ':' in orig_query:
-            counts['total'] = counts[type + 's']
-    if not counts.get('total'):
+    if result_type:
+        counts['total'] = counts[result_type + 's']
+    else:
         counts['total'] = counts['all']
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results, tags = create_result(results, counts)
+    formatted_results, word_cloud = create_result(results, counts)
 
-    return formatted_results, tags, counts
+    return formatted_results, result_type, tags, word_cloud, counts
 
 
-def _build_query(raw_query, start=0):
+def _build_query(full_query, start=0):
+
+    # Grab variables from dict
+    raw_query = full_query['query']
+    result_type = full_query['type']
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -77,18 +88,62 @@ def _build_query(raw_query, start=0):
     } for type in TYPES]
 
     # But make sure to filter by type if requested
-    for type in TYPES:
-        if type + ':' in raw_query:
-            type_filter = {
-                'type': {
-                    'value': type
+    if result_type:
+        type_filter = {
+            'type': {
+                'value': result_type
+            }
+        }
+    # TODO(xander): re-add below functionality
+    # else:
+    #     # Check for type at beginning of query
+    #     for type in TYPES:
+    #         if raw_query[:len(type + ':')] == type + ':':
+    #             raw_query = raw_query[len(type + ':'):]
+    #             type_filter = {
+    #                 'type': {
+    #                     'value': type
+    #                 }
+    #             }
+    #             break
+
+    # If the search has a tag filter, add that to the query
+    tags = full_query['tags']
+    if tags:
+        tags = tags.split(',')
+        tag_filter = {
+            'query': {
+                'match': {
+                    'tags': {
+                        'query': '',
+                        'operator': 'or'
+                    }
                 }
             }
+        }
+        for tag in tags:
+            tag_filter['query']['match']['tags']['query'] += ' ' + tag
+        # TODO(xander): re-add below functionality
+        # # check for tags at end of query
+        # find_tags = re.compile(r'type:.+')
+        # q_tags = find_tags.match()
+        # if 'tags:' in raw_query:
+        #
+        #     tag_filter = {
+        #         'query': {
+        #             'match': {
+        #                 'tags': {
+        #                     'query': '',
+        #                     'operator': 'or'
+        #                 }
+        #             }
+        #         }
+        #     }
+        #     for i in range(1, len(tags)):
+        #         for tag in tags[i].split():
+        #             tag_filter['query']['match']['tags']['query'] += ' ' + tag
 
     # Cleanup string before using it to query
-    for type in TYPES:
-        raw_query = raw_query.replace(type + ':', '')
-
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
 
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
@@ -98,7 +153,7 @@ def _build_query(raw_query, start=0):
         inner_query = {
             'query_string': {
                 'default_field': '_all',
-                'query': raw_query + '*',
+                'query': raw_query,
                 'analyze_wildcard': True,
             }
         }
@@ -111,43 +166,35 @@ def _build_query(raw_query, start=0):
             }
         }
 
-    # If the search has a tag filter, add that to the query
-    if 'tags:' in raw_query:
-        tags = raw_query.replace('AND', ' ').split('tags:')
-        tag_filter = {
-            'query': {
-                'match': {
-                    'tags': {
-                        'query': '',
-                        'operator': 'or'
-                    }
-                }
-            }
-        }
-        for i in range(1, len(tags)):
-            for tag in tags[i].split():
-                tag_filter['query']['match']['tags']['query'] += ' ' + tag
-
-        # If the query is empty, turn it back to a wildcard search
-        if not tags[0].strip():
-            inner_query = {
-                'query_string': {
-                    'default_field': '_all',
-                    'query': '*',
-                    'analyze_wildcard': True,
-                }
-            }
-        elif inner_query.get('query_string'):
-            inner_query['query_string']['query'] = tags[0]
-        elif inner_query.get('multi_match'):
-            inner_query['multi_match']['query'] = tags[0]
-
+    if tags:
         inner_query = {
             'filtered': {
                 'filter': tag_filter,
                 'query': inner_query
             }
         }
+
+        # TODO(xander): re-add below functionality
+        # If the query is empty, turn it back to a wildcard search
+        # if not tags[0].strip():
+        #     inner_query = {
+        #         'query_string': {
+        #             'default_field': '_all',
+        #             'query': '*',
+        #             'analyze_wildcard': True,
+        #         }
+        #     }
+        # if inner_query.get('query_string'):
+        #     inner_query['query_string']['query'] = tags[0]
+        # elif inner_query.get('multi_match'):
+        #     inner_query['multi_match']['query'] = tags[0]
+        #
+        # inner_query = {
+        #     'filtered': {
+        #         'filter': tag_filter,
+        #         'query': inner_query
+        #     }
+        # }
 
     # This is the complete query
     query = {
@@ -171,7 +218,7 @@ def _build_query(raw_query, start=0):
         'size': 10,
     }
 
-    return query, raw_query
+    return query, raw_query, result_type, tags
 
 
 def update_node(node):

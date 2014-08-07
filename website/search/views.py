@@ -27,10 +27,13 @@ def search_search():
     except (TypeError, ValueError):
         logger.error(u'Invalid pagination value: {0}'.format(start))
         start = 0
-    query = request.args.get('q')
+    query = request.args.get('q') or ''
+    result_type = request.args.get('type') or ''
+    tags = request.args.get('tags') or ''
+    full_query = {'query': query, 'type': result_type, 'tags': tags}
     # if there is not a query, tell our users to enter a search
     query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
+    if query == '' and tags == '':
         status.push_status_message('No search query', 'info')
         return {
             'results': [],
@@ -42,7 +45,7 @@ def search_search():
     # the document, highlight,
     # and spellcheck suggestions are returned to us
     try:
-        results_search, tags, counts = search.search(query, start)
+        results_search, result_type, tags, word_cloud, counts = search.search(full_query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -53,7 +56,7 @@ def search_search():
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to display
     # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
+    searching_users = True if result_type == 'user' else False
     total = counts if not isinstance(counts, dict) else counts['total']
     return {
         'highlight': [],
@@ -63,7 +66,9 @@ def search_search():
         'spellcheck': [],
         'current_page': start,
         'time': round(time.time() - tick, 2),
+        'type': result_type,
         'tags': tags,
+        'cloud': word_cloud,
         'searching_users': searching_users,
         'counts': counts
     }

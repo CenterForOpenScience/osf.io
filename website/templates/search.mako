@@ -33,29 +33,25 @@
     <div class="col-md-2">
         % if query:
             % if isinstance(counts, dict):
-        <h4>
-                <a href="/search/?q=${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h}">All: ${counts['all']}</a>
-        </h4><h4>
-                <a href="/search/?q=user:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Users: ${counts['users']}</a>
-        </h4><h4>
-                <a href="/search/?q=project:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Projects: ${counts['projects']}</a>
-        </h4><h4>
-                <a href="/search/?q=component:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Components: ${counts['components']}</a>
-        </h4><h4>
-                <a href="/search/?q=registration:(${query.replace('user:(','').replace(')', '').replace('project:(','').replace('component:(','').replace('registration:(', '') | h})">Registrations: ${counts['registrations']}</a>
-        </h4>
+                <ul class="nav nav-pills nav-stacked">
+                    <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
+                    <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>
+                    <li class="${'active' if type == 'project' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=project">Projects: ${counts['projects']}</a></li>
+                    <li class="${'active' if type == 'component' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=component">Components: ${counts['components']}</a></li>
+                    <li class="${'active' if type == 'registration' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=registration">Registrations: ${counts['registrations']}</a></li>
+                </ul>
 
             % endif
         % else:
         <h3>Searching users</h3>
         % endif
 ##        our tag cloud!
-        % if tags:
+        % if cloud:
         <h3> Improve Your Search:</h3>
-            % for key, value in tags.iteritems():
-                % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
+            % for key, value in cloud.iteritems():
+                % if not key in tags:
                     <span id="tagCloud">
-                    <a href="/search/?q=(${query.replace('(', '').replace(')', '') | h} AND tags:&quot;${key}&quot;)" rel=${value}> ${key} </a>
+                    <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
                     </span>
                 % endif
             % endfor
@@ -150,7 +146,7 @@
                             <div class="tags">
                                 % if result['tags']:
                                     % for tag in result['tags']:
-                                    <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
+                                    <a href='/search/?q=${query}&type=${type}&tags=${tag}' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
                                 % else:
                                     <h5 class="no_">No tags</h5>

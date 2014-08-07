@@ -20,8 +20,8 @@ def requires_search(func):
 
 @requires_search
 def search(query, start=0):
-    result, tags, counts = search_engine.search(query, start)
-    return result, tags, counts
+    result, result_type, tags, word_cloud, counts = search_engine.search(query, start)
+    return result, result_type, tags, word_cloud, counts
 
 
 @requires_search
