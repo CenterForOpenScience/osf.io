@@ -4,25 +4,21 @@
 import unittest
 from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
-from webtest_plus import TestApp
 from StringIO import StringIO
 
 from framework.auth import Auth
-import website.app
 from tests.factories import ProjectFactory, AuthUserFactory
 from website import settings
 from website.addons.osffiles.model import OsfGuidFile
 from website.project.views.file import prepare_file
 
-app = website.app.init_app(
-    routes=True, set_backends=False,
-    settings_module='website.settings'
-)
 
 class TestFilesViews(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestFilesViews, self).setUp()
+
         self.user = AuthUserFactory()
         self.auth = ('test', self.user.api_keys[0]._primary_key)
         self.consolidated_auth = Auth(user=self.user)

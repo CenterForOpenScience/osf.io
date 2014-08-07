@@ -4,13 +4,13 @@ from wtforms import fields, Form, PasswordField, BooleanField, IntegerField, \
     DateField, DateTimeField, FileField, HiddenField, RadioField, SelectField, \
     SelectMultipleField, SubmitField, TextAreaField, TextField, FieldList, \
     validators
-
 from wtforms.widgets import TextInput, PasswordInput, html_params, TextArea, Select
 from wtforms.validators import ValidationError
 
-from wtfrecaptcha.fields import RecaptchaField
-
 from website.util.sanitize import scrub_html
+
+
+validators = validators
 
 
 class BootstrapTextInput(TextInput):
@@ -38,11 +38,6 @@ class BootstrapTextArea(TextArea):
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapTextArea, self).__call__(field, **kwargs)
         return html
-
-
-RecaptchaField = RecaptchaField
-
-validators = validators
 
 
 def push_errors_to_status(errors):

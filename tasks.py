@@ -239,7 +239,7 @@ def elasticsearch():
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
         run("sudo service elasticsearch start")
-    elif platform.system() == 'Darwin': # Mac OSX
+    elif platform.system() == 'Darwin':  # Mac OSX
         run('elasticsearch')
     else:
         print("Your system is not recognized, you will have to start elasticsearch manually")

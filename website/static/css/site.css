@@ -357,7 +357,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
