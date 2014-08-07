@@ -145,25 +145,26 @@
         var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
 
 	var submit = function(){
-	    $.ajax({
-		type: 'POST',
-		url: '/api/v1/settings/addons/',
-		data: JSON.stringify(formData),
-		contentType: 'application/json',
-		dataType: 'json',
-		success: function() {
+	    $.osf.postJSON(
+		'/api/v1/settings/addons/',
+		JSON.stringify(formData),
+		function() {
                     window.location.reload();
+		},
+		function() {
+		    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+		    bootbox.alert(msg);
 		}
-            });            
+            );            
 	};
 
         if(unchecked.length > 0) {
-	    var unchecked_text = $.map(unchecked, function(el){
+	    var uncheckedText = $.map(unchecked, function(el){
 		return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
 	    });
-	    unchecked_text = ['<ul>', unchecked_text.join(''), '</ul>'].join('');
+	    uncheckedText = ['<ul>', uncheckedText.join(''), '</ul>'].join('');
             bootbox.confirm(
-                "Are you sure you want to remove the add-ons you have deselected: "+unchecked_text,
+                "Are you sure you want to remove the add-ons you have deselected: "+uncheckedText,
                 function(result) {
                     if(result) {
 			submit();
@@ -174,7 +175,9 @@
                 }
             );
         }
-	else submit();
+	else {
+	    submit();
+	}
 	return false;
     });
 </script>
