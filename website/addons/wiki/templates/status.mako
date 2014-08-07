@@ -1,6 +1,6 @@
 <div class="navbar-outer" style="overflow: hidden">
     <div style="display: inline-block">
-	    <h3 class="node-title" style="margin-bottom: 0" id="wikiName"><span id="pageName">${pageName}</span></h3>
+	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
 
     <nav class="navbar navbar-default" style="display: inline-block; float: right">
