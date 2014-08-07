@@ -568,13 +568,10 @@ class TestProjectViews(OsfTestCase):
     def test_fork_private_project_non_contributor(self):
         url = self.project.api_url_for('node_fork_page')
         non_contributor = AuthUserFactory()
-        forbidden = False
-        try:
-            self.app.post_json(url, {}, auth=non_contributor.auth)
-        except Exception as e:
-            if '{"code": 403' in e.message:
-                forbidden = True
-        assert_true(forbidden)
+        res = self.app.post_json(url, {}, 
+                           auth=non_contributor.auth, 
+                           expect_error=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
 class TestUserProfile(OsfTestCase):
 

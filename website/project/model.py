@@ -1289,7 +1289,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         user = auth.user
 
         # Non-contributors can't fork private nodes
-        if not self.can_view(auth):
+        if not (self.is_public or self.has_permission(user, 'read')):
             raise PermissionsError()
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
