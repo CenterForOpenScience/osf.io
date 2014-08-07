@@ -17,7 +17,7 @@ from werkzeug.wrappers import Response
 from modularodm import Q
 
 from framework import auth
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
@@ -571,7 +571,7 @@ class TestProjectViews(OsfTestCase):
         forbidden = False
         try:
             self.app.post_json(url, {}, auth=non_contributor.auth)
-        except AppError as e:
+        except Exception as e:
             if '{"code": 403' in e.message:
                 forbidden = True
         assert_true(forbidden)

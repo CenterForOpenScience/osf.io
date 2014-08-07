@@ -1308,7 +1308,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.tags = self.tags
 
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth=auth, title='')
+            forked_node = None
+            try:
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
