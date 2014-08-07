@@ -2221,13 +2221,13 @@ class TestProjectCreation(OsfTestCase):
         other_node = ProjectFactory(creator=self.creator)
         payload = {
             'title': 'Im a real title',
-            'template': otherNode._id
+            'template': other_node._id
         }
         res = self.app.post_json(self.url, payload, auth=self.creator.auth)
         assert_equal(res.status_code, 201)
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
-        assert_true(node.template_node, otherNode)
+        assert_true(node.template_node, other_node)
 
 if __name__ == '__main__':
     unittest.main()
