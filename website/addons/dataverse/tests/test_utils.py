@@ -3,9 +3,11 @@ import mock
 
 from dataverse import Dataverse, Study, DataverseFile
 
-from website.addons.dataverse.tests.utils import (create_mock_connection,
+from website.addons.dataverse.tests.utils import (
+    create_mock_connection,
     create_mock_dataverse, create_mock_study, create_mock_draft_file,
-    create_mock_released_file, DataverseAddonTestCase)
+    create_mock_released_file, DataverseAddonTestCase
+)
 
 
 class TestUtils(DataverseAddonTestCase):
@@ -58,13 +60,6 @@ class TestUtils(DataverseAddonTestCase):
         fid = '65432'
         mock_file = create_mock_draft_file(fid)
         assert_equal(mock_file.name, 'file.txt')
-        assert_equal(mock_file.id, fid)
-        assert_is_instance(mock_file, DataverseFile)
-
-    def test_mock_dvn_file(self):
-        fid = '65432'
-        mock_file = create_mock_released_file(fid)
-        assert_equal(mock_file.name, 'released.txt')
         assert_equal(mock_file.id, fid)
         assert_is_instance(mock_file, DataverseFile)
 

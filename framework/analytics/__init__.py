@@ -1,6 +1,5 @@
 from framework import db, session
 
-from decorator import decorator
 from datetime import datetime
 
 collection = db['pagecounters']
@@ -36,53 +35,55 @@ def get_total_activity_count(user_id):
     return 0
 
 
+# TODO: Test me
 def update_counters(rex):
-    def wrapped(func, *args, **kwargs):
-        date = datetime.utcnow()
-        date = date.strftime('%Y/%m/%d')
-        target_node = kwargs.get('node') or kwargs.get('project')
-        target_id = target_node._id
-        data = {
-            'target_id': target_id,
-        }
-        data.update(kwargs)
-        try:
-            page = rex.format(**data).replace('.', '_')
-        except KeyError:
-            return func(*args, **kwargs)
+    def wrapper(func):
+        def wrapped(*args, **kwargs):
+            date = datetime.utcnow()
+            date = date.strftime('%Y/%m/%d')
+            target_node = kwargs.get('node') or kwargs.get('project')
+            target_id = target_node._id
+            data = {
+                'target_id': target_id,
+            }
+            data.update(kwargs)
+            try:
+                page = rex.format(**data).replace('.', '_')
+            except KeyError:
+                return func(*args, **kwargs)
 
-        d = {'$inc': {}}
+            d = {'$inc': {}}
 
-        visited_by_date = session.data.get('visited_by_date')
-        if not visited_by_date:
-            visited_by_date = {'date': date, 'pages': []}
+            visited_by_date = session.data.get('visited_by_date')
+            if not visited_by_date:
+                visited_by_date = {'date': date, 'pages': []}
 
-        if date == visited_by_date['date']:
-            if page not in visited_by_date['pages']:
+            if date == visited_by_date['date']:
+                if page not in visited_by_date['pages']:
+                    d['$inc']['date.%s.unique' % date] = 1
+                    visited_by_date['pages'].append(page)
+                    session.data['visited_by_date'] = visited_by_date
+            else:
+                visited_by_date['date'] = date
+                visited_by_date['pages'] = []
                 d['$inc']['date.%s.unique' % date] = 1
                 visited_by_date['pages'].append(page)
                 session.data['visited_by_date'] = visited_by_date
-        else:
-            visited_by_date['date'] = date
-            visited_by_date['pages'] = []
-            d['$inc']['date.%s.unique' % date] = 1
-            visited_by_date['pages'].append(page)
-            session.data['visited_by_date'] = visited_by_date
 
-        d['$inc']['date.%s.total' % date] = 1
+            d['$inc']['date.%s.total' % date] = 1
 
-        visited = session.data.get('visited') # '/project/x/, project/y/'
-        if not visited:
-            visited = []
-        if page not in visited:
-            d['$inc']['unique'] = 1
-            visited.append(page)
-            session.data['visited'] = visited
-        d['$inc']['total'] = 1
-        collection.update({'_id': page}, d, True, False)
-        return func(*args, **kwargs)
-
-    return decorator(wrapped)
+            visited = session.data.get('visited')  # '/project/x/, project/y/'
+            if not visited:
+                visited = []
+            if page not in visited:
+                d['$inc']['unique'] = 1
+                visited.append(page)
+                session.data['visited'] = visited
+            d['$inc']['total'] = 1
+            collection.update({'_id': page}, d, True, False)
+            return func(*args, **kwargs)
+        return wrapped
+    return wrapper
 
 
 def get_basic_counters(page):
