@@ -146,7 +146,7 @@
                 <span data-bind="text: contributor.fullname"></span>
             </span>
             <span data-bind="if: profileUrl">
-                <a data-bind="text: contributor.fullname, attr:{href: profile_url}"></a>
+                <a data-bind="text: contributor.fullname, attr:{href: profileUrl}"></a>
             </span>
         </td>
         <td>
