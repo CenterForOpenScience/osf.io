@@ -565,6 +565,16 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+    def test_fork_private_project_non_contributor(self):
+        url = self.project.api_url_for('node_fork_page')
+        non_contributor = AuthUserFactory()
+        forbidden = False
+        try:
+            self.app.post_json(url, {}, auth=non_contributor.auth)
+        except AppError as e:
+            if '{"code": 403' in e.message:
+                forbidden = True
+        assert_true(forbidden)
 
 class TestUserProfile(OsfTestCase):
 
