@@ -42,7 +42,7 @@ def search_search():
             }
         else:
             query = '*'
-    full_query = {'query': query, 'type': result_type, 'tags': tags}
+    full_query = {'query': query, 'type': result_type, 'tags': tags.strip(',')}
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,

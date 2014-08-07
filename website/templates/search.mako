@@ -3,25 +3,30 @@
 <%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">
-        % if query:
-##            split on and, so we will be able to remove tags
-            <%
-                cleaned_query = 'AND'.join(query.split('AND'))
-                components = cleaned_query.split('AND')
-            %>
-        <h1>Search <small> for
-##            for showing tags
-            % for i, term in enumerate(components):
-##              the first is not removable. we need it to query
-                    <span class="label label-success btn-mini" style="margin-right:.5em">${term.replace('(', ' ').replace(')',' ')}\
-                        % if len(components) > 1:
-                        <a href="/search/?q=${'AND'.join((x for x in components if x != term)) | h }" style="color:white">&times;</a>
-                        % endif
-<%                %></span>
-            % endfor
-         <br>
-##       number of results returned and the time it took
-        ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small></h1>
+        % if query and query != '*' or tags:
+            <h1>Search <small> for
+##              first show query, if it is there
+                % if query and query != '*':
+                <span class="label label-success btn-mini" style="margin-right:.5em">"${query}"
+                <a href="/search/?q=*&type=${type}&tags=${','.join(tags)}" style="color:white">&times;</a>
+                </span>
+                % endif
+##            then show tags
+            % if tags:
+                % for tag in tags:
+                    <span class="label label-info btn-mini" style="margin-right:.5em">${tag}
+                    <a href="/search/?q=${query}&type=${type}&tags=${','.join((x for x in tags if x != tag)) | h }" style="color:white">&times;</a>
+                    </span>
+                % endfor
+            % endif
+            <br>
+##          number of results returned and the time it took
+            ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small></h1>
+        % elif query == '*':
+            <h1>Showing all<small>
+            <br>
+##          number of results returned and the time it took
+            ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small></h1>
         % endif
 ##      if solr returned a spellcheck, display it
         % if spellcheck:
@@ -31,19 +36,14 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        % if query:
-            % if isinstance(counts, dict):
-                <ul class="nav nav-pills nav-stacked">
-                    <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
-                    <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>
-                    <li class="${'active' if type == 'project' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=project">Projects: ${counts['projects']}</a></li>
-                    <li class="${'active' if type == 'component' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=component">Components: ${counts['components']}</a></li>
-                    <li class="${'active' if type == 'registration' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=registration">Registrations: ${counts['registrations']}</a></li>
-                </ul>
-
-            % endif
-        % else:
-        <h3>Searching users</h3>
+        % if isinstance(counts, dict):
+            <ul class="nav nav-pills nav-stacked">
+                <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
+                <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>
+                <li class="${'active' if type == 'project' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=project">Projects: ${counts['projects']}</a></li>
+                <li class="${'active' if type == 'component' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=component">Components: ${counts['components']}</a></li>
+                <li class="${'active' if type == 'registration' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=registration">Registrations: ${counts['registrations']}</a></li>
+            </ul>
         % endif
 ##        our tag cloud!
         % if cloud:
@@ -66,7 +66,7 @@
                         % if 'user' in result:
                             <div class="user">
                                 <h4>
-                                    % if not 'user:' in cleaned_query:
+                                    % if not type == 'user':
                                         <small>[ User ]</small>
                                     % endif
                                     <a href=${result['user_url']}>${result['user']}</a>
