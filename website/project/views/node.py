@@ -490,7 +490,7 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node):
+def _render_addon(node, user):
 
     widgets = {}
     configs = {}
@@ -498,6 +498,12 @@ def _render_addon(node):
     css = []
 
     for addon in node.get_addons():
+
+        if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
+            wiki_page = node.get_wiki_page('home')
+            wiki_html = wiki_page.html(node)
+            if not wiki_page or len(wiki_html) == 0:
+                continue
 
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
