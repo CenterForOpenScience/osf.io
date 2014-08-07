@@ -24,7 +24,7 @@
 <script type="text/javascript">
     window.onload = function() {
         var version = window.location.pathname.split('/').pop();
-        $('#version').html(version);
+        $('#wikiName').append('</h3></br><h5><span>Version: </span>' + version + '</h5>' );
     }
 </script>
 

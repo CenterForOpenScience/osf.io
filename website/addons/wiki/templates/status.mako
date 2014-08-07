@@ -1,8 +1,6 @@
 <div class="navbar-outer" style="overflow: hidden">
     <div style="display: inline-block">
-	    <strong>Name: </strong><span id="pageName">${pageName}</span>
-        <br />
-	    <strong>Version: </strong><span id="version">${version} ${'(current)' if is_current else ''}</span>
+	    <h3 class="node-title" style="margin-bottom: 0" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
 
     <nav class="navbar navbar-default" style="display: inline-block; float: right">
