@@ -36,7 +36,8 @@ from framework.addons import AddonModelMixin
 
 
 from website.exceptions import NodeStateError
-from website.util.permissions import (expand_permissions,
+from website.util.permissions import (
+    expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
 )
@@ -1421,13 +1422,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             if registered_node is not None:
                 registered.nodes.append(registered_node)
 
-
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':registered._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': registered._primary_key,
             },
             auth=auth,
             log_date=when,
@@ -2365,7 +2365,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage(
+        new_wiki = NodeWikiPage(
             page_name=temp_page,
             version=version,
             user=auth.user,
@@ -2373,23 +2373,23 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        v.save()
+        new_wiki.save()
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(v._primary_key)
-        self.wiki_pages_current[page] = v._primary_key
+        self.wiki_pages_versions[page].append(new_wiki._primary_key)
+        self.wiki_pages_current[page] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': v.page_name,
-                'version': v.version,
+                'page': new_wiki.page_name,
+                'version': new_wiki.version,
             },
             auth=auth,
-            log_date=v.date
+            log_date=new_wiki.date
         )
 
     def get_stats(self, detailed=False):
