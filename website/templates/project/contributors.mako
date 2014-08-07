@@ -142,11 +142,11 @@
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
-            <span data-bind="ifnot: profile_url">
+            <span data-bind="ifnot: profileUrl">
                 <span data-bind="text: contributor.fullname"></span>
             </span>
-            <span data-bind="if: profile_url">
-                <a data-bind="text: contributor.fullname, attr:{href: profile_url}"></a>
+            <span data-bind="if: profileUrl">
+                <a data-bind="text: contributor.fullname, attr:{href: profileUrl}"></a>
             </span>
         </td>
         <td>
