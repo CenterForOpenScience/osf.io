@@ -2151,9 +2151,9 @@ class TestDashboardViews(OsfTestCase):
 class TestProjectCreation(OsfTestCase):
 
     def setUp(self):
+        super(TestProjectCreation, self).setUp()
         self.creator = AuthUserFactory()
-        self.url = lookup('api', 'project_new_post')
-        super(OsfTestCase, self).setUp()
+        self.url = api_url_for('project_new_post')
 
     def test_needs_title(self):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
