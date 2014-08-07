@@ -2,7 +2,7 @@
     <div style="display: inline-block">
 	    <strong>Name: </strong><span id="pageName">${pageName}</span>
         <br />
-	    <strong id="version">Version: </strong>${version} ${'(current)' if is_current else ''}
+	    <strong>Version: </strong><span id="version">${version} ${'(current)' if is_current else ''}</span>
     </div>
 
     <nav class="navbar navbar-default" style="display: inline-block; float: right">
@@ -23,8 +23,6 @@
 %if wiki_id:
 <script>
     $(document).ready(function() {
-
-
         $('#pageName').editable({
             type: 'text',
             send: 'always',

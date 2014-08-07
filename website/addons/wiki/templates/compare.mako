@@ -20,5 +20,13 @@
         </div>
     </div>
 </div>
+
+<script type="text/javascript">
+    window.onload = function() {
+        var version = window.location.pathname.split('/').pop();
+        $('#version').html(version);
+    }
+</script>
+
 </%def>
 
