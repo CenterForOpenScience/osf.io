@@ -1288,6 +1288,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
+        # Non-contributors can't fork private nodes
         if not self.can_view(auth):
             raise PermissionsError()
 
@@ -1307,12 +1308,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for node_contained in original.nodes:
+        # Recursively fork child nodes 
+        for node_contained in original.nodes:            
             forked_node = None
-            try:
+            try: # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass
+                pass # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
