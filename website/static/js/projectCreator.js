@@ -38,7 +38,13 @@
         template: $('#templates').val()
       };
     };
-
+    /**
+     * Query the current users projects from a local cache
+     *
+     * @method ownProjects
+     * @param {String} q a string query
+     * @return {Array} A filtered array of strings
+     */
     self.ownProjects = function(q) {
       if (q === '') {
         return self.templates;
@@ -56,6 +62,14 @@
       query.callback({results: [{text: 'Your Projects', children: self.ownProjects(query.term)}]});
     };
 
+    /**
+     * Fetch Nodes from the search api and concat. them with the current users projects
+     *
+     * @method fetchNodes
+     * @param {String} q A string query
+     * @param {Function} cb A callback to call with the list of projects
+     * @return null
+     */
     self.fetchNodes = function(q, cb) {
       $.osf.postJSON('/api/v1/search/node/', { includePublic: true, query: q},
         function(data) {
