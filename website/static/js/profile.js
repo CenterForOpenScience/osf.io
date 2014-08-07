@@ -484,11 +484,9 @@
         self.degree = ko.observable('');
 
         self.start = ko.observable().extend({
-            asDate: true,
             date: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
             minDate: self.start
         });
