@@ -570,7 +570,7 @@ class TestProjectViews(OsfTestCase):
         non_contributor = AuthUserFactory()
         res = self.app.post_json(url, {}, 
                            auth=non_contributor.auth, 
-                           expect_error=True)
+                           expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
 class TestUserProfile(OsfTestCase):
