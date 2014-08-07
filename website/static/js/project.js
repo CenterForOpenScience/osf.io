@@ -38,9 +38,12 @@ NodeActions.forkNode = function() {
             type: 'POST'
         }).success(function(response) {
             window.location = response;
-        }).error(function() {
+        }).error(function(response) {
             $.osf.unblock();
-            bootbox.alert('Forking failed');
+	    if (response.status == 403)
+		bootbox.alert('Sorry, you do not have permission to fork this project');
+	    else
+		bootbox.alert('Forking failed');
         });
     });
 };

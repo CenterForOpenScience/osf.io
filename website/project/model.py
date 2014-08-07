@@ -1288,9 +1288,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
-        # todo: should this raise an error?
         if not self.can_view(auth):
-            return
+            raise PermissionsError()
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
