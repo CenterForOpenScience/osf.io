@@ -48,7 +48,7 @@ def search_search():
     # the document, highlight,
     # and spellcheck suggestions are returned to us
     try:
-        results_search, result_type, tags, word_cloud, counts = search.search(full_query, start)
+        results_search, filtered_query, result_type, tags, word_cloud, counts = search.search(full_query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -65,7 +65,7 @@ def search_search():
         'highlight': [],
         'results': results_search,
         'total': total,
-        'query': query,
+        'query': filtered_query,
         'spellcheck': [],
         'current_page': start,
         'time': round(time.time() - tick, 2),

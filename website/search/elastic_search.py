@@ -36,13 +36,6 @@ def search(full_query, start=0):
 
     query, filtered_query, result_type, tags = _build_query(full_query, start)
 
-    # if full_query['type'] in TYPES:
-    #     result_type = full_query['type']
-    # else:
-    #     for type in TYPES:
-    #         if type + 's' in query:
-    #             pass
-
 
     # Get document counts by type
     counts = {}
@@ -70,7 +63,7 @@ def search(full_query, start=0):
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, word_cloud = create_result(results, counts)
 
-    return formatted_results, result_type, tags, word_cloud, counts
+    return formatted_results, filtered_query, result_type, tags, word_cloud, counts
 
 
 def _build_query(full_query, start=0):
@@ -94,21 +87,27 @@ def _build_query(full_query, start=0):
                 'value': result_type
             }
         }
-    # TODO(xander): re-add below functionality
-    # else:
-    #     # Check for type at beginning of query
-    #     for type in TYPES:
-    #         if raw_query[:len(type + ':')] == type + ':':
-    #             raw_query = raw_query[len(type + ':'):]
-    #             type_filter = {
-    #                 'type': {
-    #                     'value': type
-    #                 }
-    #             }
-    #             break
+    else:
+        # Also check for type at beginning of query
+        for type in TYPES:
+            if raw_query[:len(type + ':')] == type + ':':
+                raw_query = raw_query[len(type + ':'):]
+                result_type = type
+                type_filter = {
+                    'type': {
+                        'value': type
+                    }
+                }
+                break
 
     # If the search has a tag filter, add that to the query
     tags = full_query['tags']
+    tag_filter = {}
+    # Check for tag-based query
+    if raw_query[0:5] == 'tags:':
+        tags += raw_query[5:]
+        raw_query = '*'
+    # Create tag filter
     if tags:
         tags = tags.split(',')
         tag_filter = {
@@ -123,25 +122,6 @@ def _build_query(full_query, start=0):
         }
         for tag in tags:
             tag_filter['query']['match']['tags']['query'] += ' ' + tag
-        # TODO(xander): re-add below functionality
-        # # check for tags at end of query
-        # find_tags = re.compile(r'type:.+')
-        # q_tags = find_tags.match()
-        # if 'tags:' in raw_query:
-        #
-        #     tag_filter = {
-        #         'query': {
-        #             'match': {
-        #                 'tags': {
-        #                     'query': '',
-        #                     'operator': 'or'
-        #                 }
-        #             }
-        #         }
-        #     }
-        #     for i in range(1, len(tags)):
-        #         for tag in tags[i].split():
-        #             tag_filter['query']['match']['tags']['query'] += ' ' + tag
 
     # Cleanup string before using it to query
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
@@ -174,27 +154,6 @@ def _build_query(full_query, start=0):
             }
         }
 
-        # TODO(xander): re-add below functionality
-        # If the query is empty, turn it back to a wildcard search
-        # if not tags[0].strip():
-        #     inner_query = {
-        #         'query_string': {
-        #             'default_field': '_all',
-        #             'query': '*',
-        #             'analyze_wildcard': True,
-        #         }
-        #     }
-        # if inner_query.get('query_string'):
-        #     inner_query['query_string']['query'] = tags[0]
-        # elif inner_query.get('multi_match'):
-        #     inner_query['multi_match']['query'] = tags[0]
-        #
-        # inner_query = {
-        #     'filtered': {
-        #         'filter': tag_filter,
-        #         'query': inner_query
-        #     }
-        # }
 
     # This is the complete query
     query = {
