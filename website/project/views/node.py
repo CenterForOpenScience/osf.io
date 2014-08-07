@@ -33,6 +33,7 @@ from .log import _get_logs
 
 logger = logging.getLogger(__name__)
 
+
 @must_be_valid_project  # returns project
 @must_have_permission('write')
 @must_not_be_registration
@@ -65,10 +66,11 @@ def project_new_post(auth, **kwargs):
 
     try:
         title = request.json['title']
-        description = request.json.get('description')
-        template = request.json.get('template')
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
+
+    template = request.json.get('template')
+    description = request.json.get('description')
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -80,11 +82,11 @@ def project_new_post(auth, **kwargs):
         }
 
         if description:
-            changes['description']= description
+            changes['description'] = description
 
         project = original_node.use_as_template(
             auth=auth,
-            changes = {
+            changes={
                 template: changes
             })
 
@@ -112,7 +114,7 @@ def project_new_from_template(**kwargs):
 ##############################################################################
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission('write')
 @must_not_be_registration
 def project_new_node(**kwargs):
@@ -176,23 +178,21 @@ def node_fork_page(**kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public # returns user, project
+@must_be_contributor_or_public  # returns user, project
 def node_registrations(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
     return _view_project(node_to_use, auth, primary=True)
 
 
-
 @must_be_valid_project
-@must_be_contributor_or_public # returns user, project
+@must_be_contributor_or_public  # returns user, project
 def node_forks(**kwargs):
     project = kwargs['project']
     node = kwargs['node']
     auth = kwargs['auth']
     node_to_use = node or project
     return _view_project(node_to_use, auth, primary=True)
-
 
 
 @must_be_valid_project
@@ -233,6 +233,7 @@ def node_setting(**kwargs):
     }
 
     return rv
+
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -281,7 +282,8 @@ def view_project(**kwargs):
     rv['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return rv
 
-#### Reorder components
+# Reorder components
+
 
 @must_be_valid_project
 @must_not_be_registration
@@ -329,14 +331,13 @@ def project_reorder_components(project, **kwargs):
 
 
 @must_be_valid_project
-@must_be_contributor_or_public # returns user, project
+@must_be_contributor_or_public  # returns user, project
 def project_statistics(**kwargs):
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
-
 
 
 ###############################################################################
@@ -352,6 +353,7 @@ def project_before_set_public(**kwargs):
     return {
         'prompts': node.callback('before_make_public')
     }
+
 
 @must_be_valid_project
 @must_have_permission('admin')
@@ -443,7 +445,7 @@ def togglewatch_post(**kwargs):
     }
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission('admin')
 @must_not_be_registration
 def component_remove(**kwargs):
@@ -478,7 +480,8 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-@must_be_valid_project # returns project
+
+@must_be_valid_project  # returns project
 @must_have_permission("admin")
 def remove_private_link(*args, **kwargs):
     link_id = request.json['private_link_id']
@@ -523,7 +526,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
-    recent_logs, has_more_logs= _get_logs(node, 10, auth, view_only_link)
+    recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
@@ -602,7 +605,7 @@ def _view_project(node, auth, primary=False):
         'user': {
             'is_contributor': node.is_contributor(user),
             'can_edit': (node.can_edit(auth)
-                                and not node.is_registration),
+                         and not node.is_registration),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -644,12 +647,12 @@ def _get_children(node, auth, indent=0):
                 'title': child.title,
                 'indent': indent,
             })
-            children.extend(_get_children(child, auth, indent+1))
+            children.extend(_get_children(child, auth, indent + 1))
 
     return children
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission('admin')
 def private_link_table(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -657,7 +660,7 @@ def private_link_table(**kwargs):
         'node': {
             'absolute_url': node.absolute_url,
             'private_links': [x.to_json() for x in node.private_links_active],
-            }
+        }
     }
     return data
 
@@ -674,7 +677,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title,},
+        'node': {'title': node.title, },
         'children': children,
     }
 
@@ -694,7 +697,7 @@ def _get_user_activity(node, auth, rescale_ratio):
     else:
         ua_count = 0
 
-    non_ua_count = total_count - ua_count # base length of blue bar
+    non_ua_count = total_count - ua_count  # base length of blue bar
 
     # Normalize over all nodes
     try:
@@ -737,8 +740,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             'is_registration': node.is_registration,
             'anonymous': has_anonymous_link(node, view_only_link),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
-                if node.is_registration
-                else None,
+            if node.is_registration
+            else None,
             'nlogs': None,
             'ua_count': None,
             'ua': None,
@@ -805,7 +808,7 @@ def get_registrations(**kwargs):
     return _render_nodes(registrations)
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission('admin')
 def project_generate_private_link_post(auth, **kwargs):
     """ creata a new private link object and add it to the node and its selected children"""
@@ -827,11 +830,11 @@ def project_generate_private_link_post(auth, **kwargs):
     return new_link
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission('admin')
 def project_private_link_edit(auth, **kwargs):
     new_name = request.json.get('value', '')
-    private_link_id = request.json.get('pk','')
+    private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
         private_link.name = new_name
@@ -1003,4 +1006,3 @@ def get_pointed(**kwargs):
         }
         for each in node.pointed
     ]}
-
