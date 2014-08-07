@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import unittest
 from flask import Flask
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.routing import Rule, json_renderer
 from website.routes import process_rules, OsfWebRenderer
-from website.util import web_url_for, api_url_for
+from website.app import init_app
+from website.util import web_url_for, api_url_for, is_json_request
+
+app = init_app(set_backends=False)
 
 
 class TestUrlForHelpers(unittest.TestCase):
@@ -42,3 +46,12 @@ class TestUrlForHelpers(unittest.TestCase):
         with self.app.test_request_context():
             url = web_url_for('dummy_view', pid='123', nid='abc')
             assert url == '/123/component/abc/'
+
+
+def test_is_json_request():
+    with app.test_request_context(content_type='application/json'):
+        assert_true(is_json_request())
+    with app.test_request_context(content_type=None):
+        assert_false(is_json_request())
+    with app.test_request_context(content_type='application/json;charset=UTF-8'):
+        assert_true(is_json_request())

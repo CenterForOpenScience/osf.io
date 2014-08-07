@@ -1,6 +1,5 @@
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
-import logging
 import httplib as http
 
 from framework import request
@@ -14,9 +13,6 @@ from framework.exceptions import HTTPError
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_be_valid_project

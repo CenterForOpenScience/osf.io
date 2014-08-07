@@ -111,7 +111,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
                 query = query & query_part
             user = User.find_one(query)
         except Exception as err:
-            logging.error(err)
+            logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -125,7 +125,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         user = User.find_one(query)
         return user
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         return None
 
 
@@ -175,7 +175,6 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    private_links = fields.ForeignField('privatelink', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -259,10 +258,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def __repr__(self):
         return '<User {0!r}>'.format(self.username)
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
@@ -610,7 +605,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     ###### OSF-Specific methods ######
 
-    def watch(self, watch_config, save=False):
+    def watch(self, watch_config):
         """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
@@ -623,8 +618,6 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
-        if save:
-            self.save()
         return None
 
     def unwatch(self, watch_config):

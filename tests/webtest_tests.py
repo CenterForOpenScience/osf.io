@@ -7,13 +7,12 @@ import re
 import mock
 
 from nose.tools import *  # PEP8 asserts
-from webtest_plus import TestApp
 
 from framework import Q
 from framework.auth import User, Auth
-from tests.base import OsfTestCase, fake, URLLookup
+from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
-                             WatchConfigFactory, NodeLogFactory, ApiKeyFactory,
+                             WatchConfigFactory, ApiKeyFactory,
                              NodeFactory, NodeWikiFactory, RegistrationFactory,
                              UnregUserFactory, UnconfirmedUserFactory,
                              PrivateLinkFactory)
@@ -24,18 +23,9 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-import website.app
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
-
-lookup = URLLookup(app)
 
 class TestAnUnregisteredUser(OsfTestCase):
-
-    def setUp(self):
-        self.app = TestApp(app)
 
     def test_can_register(self):
         # Goes to home page
@@ -92,7 +82,7 @@ class TestAnUnregisteredUser(OsfTestCase):
 class TestAUser(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestAUser, self).setUp()
         self.user = UserFactory()
         self.user.set_password('science')
         # Add an API key for quicker authentication
@@ -106,8 +96,8 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/account/').maybe_follow()
         # Fills out login info
         form = res.forms['signinForm']  # Get the form from its ID
-        form['username'] = self.user.username
-        form['password'] = 'science'
+        form['username'] = username
+        form['password'] = password
         # submits
         res = form.submit().maybe_follow()
         return res
@@ -299,8 +289,8 @@ class TestAUser(OsfTestCase):
 class TestRegistrations(OsfTestCase):
 
     def setUp(self):
+        super(TestRegistrations, self).setUp()
         ensure_schemas()
-        self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -371,7 +361,7 @@ class TestRegistrations(OsfTestCase):
 class TestComponents(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestComponents, self).setUp()
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -386,7 +376,7 @@ class TestComponents(OsfTestCase):
         self.component.set_privacy('public', self.consolidate_auth)
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
-        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+        self.project_url = self.project.web_url_for('view_project')
 
     def test_can_create_component_from_a_project(self):
         res = self.app.get(self.project.url, auth=self.user.auth).maybe_follow()
@@ -437,15 +427,13 @@ class TestComponents(OsfTestCase):
 class TestPrivateLinkView(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
-
+        super(TestPrivateLinkView, self).setUp()
         self.user = AuthUserFactory()  # Is NOT a contributor
         self.project = ProjectFactory(is_public=False)
         self.link = PrivateLinkFactory(anonymous=True)
         self.link.nodes.append(self.project)
         self.link.save()
-
-        self.project_url = lookup('web', 'view_project', pid=self.project._primary_key)
+        self.project_url = self.project.web_url_for('view_project')
 
     def test_anonymous_link_hide_contributor(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -456,7 +444,7 @@ class TestPrivateLinkView(OsfTestCase):
 class TestMergingAccounts(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestMergingAccounts, self).setUp()
         self.user = UserFactory.build()
         self.user.set_password('science')
         self.user.save()
@@ -492,7 +480,12 @@ class TestMergingAccounts(OsfTestCase):
         # Back at the settings page
         assert_equal(res.request.path, '/settings/')
         # Sees a flash message
-        assert_in('Successfully merged {0} with this account'.format(self.dupe.username), res)
+        assert_in(
+            'Successfully merged {0} with this account'.format(
+                self.dupe.username
+            ),
+            res
+        )
         # User is merged in database
         self.dupe.reload()
         assert_true(self.dupe.is_merged)
@@ -509,7 +502,11 @@ class TestMergingAccounts(OsfTestCase):
         # Submits
         res = form.submit().maybe_follow()
         # Sees flash message
-        assert_in('Could not find that user. Please check the username and password.', res)
+        assert_in(
+            'Could not find that user. Please check the username and '
+            'password.',
+            res
+        )
 
     @unittest.skip('Disabled for now')
     def test_sees_error_message_when_own_password_is_wrong(self):
@@ -527,7 +524,10 @@ class TestMergingAccounts(OsfTestCase):
         # Submits
         res = form.submit().maybe_follow()
         # Sees flash message
-        assert_in('Could not authenticate. Please check your username and password.', res)
+        assert_in(
+            'Could not authenticate. Please check your username and password.',
+            res
+        )
 
     def test_merged_user_is_not_shown_as_a_contributor(self):
         project = ProjectFactory(is_public=True)
@@ -562,15 +562,14 @@ class TestMergingAccounts(OsfTestCase):
 # # Remove this side effect.
 @unittest.skipIf(not settings.SEARCH_ENGINE, 'Skipping because search is disabled')
 class TestSearching(OsfTestCase):
-
     '''Test searching using the search bar. NOTE: These may affect the
     Solr database. May need to migrate after running these.
     '''
 
     def setUp(self):
+        super(TestSearching, self).setUp()
         import website.search.search as search
         search.delete_all()
-        self.app = TestApp(app)
         self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -607,7 +606,7 @@ class TestSearching(OsfTestCase):
 class TestShortUrls(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestShortUrls, self).setUp()
         self.user = UserFactory()
         # Add an API key for quicker authentication
         api_key = ApiKeyFactory()
@@ -680,8 +679,9 @@ class TestShortUrls(OsfTestCase):
 
 @requires_piwik
 class TestPiwik(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestPiwik, self).setUp()
         self.users = [
             AuthUserFactory()
             for _ in range(3)
@@ -732,11 +732,11 @@ class TestPiwik(OsfTestCase):
             res
         )
 
-@unittest.skipIf(not settings.ALLOW_CLAIMING, 'skipping until claiming is fully implemented')
+
 class TestClaiming(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestClaiming, self).setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
 
@@ -753,7 +753,6 @@ class TestClaiming(OsfTestCase):
         # Correct name is shown
         assert_in(name2, res)
         assert_not_in(name1, res)
-
 
     def test_user_can_set_password_on_claim_page(self):
         name, email = fake.name(), fake.email()
@@ -882,16 +881,21 @@ class TestClaiming(OsfTestCase):
         form['password'] = 'killerqueen'
         form['password2'] = 'killerqueen'
         res = form.submit().maybe_follow(expect_errors=True)
-        assert_in(language.ALREADY_REGISTERED.format(email=reg_user.username), res)
+        assert_in(
+            language.ALREADY_REGISTERED.format(email=reg_user.username),
+            res
+        )
 
     def test_correct_display_name_is_shown_at_claim_page(self):
         original_name = fake.name()
         unreg = UnregUserFactory(fullname=original_name)
 
-        different_name= fake.name()
-        new_user = self.project.add_unregistered_contributor(email=unreg.username,
+        different_name = fake.name()
+        new_user = self.project.add_unregistered_contributor(
+            email=unreg.username,
             fullname=different_name,
-            auth=Auth(self.referrer))
+            auth=Auth(self.referrer),
+        )
         self.project.save()
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
@@ -900,16 +904,25 @@ class TestClaiming(OsfTestCase):
 
 
 class TestConfirmingEmail(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestConfirmingEmail, self).setUp()
         self.user = UnconfirmedUserFactory()
-        self.confirmation_url = self.user.get_confirmation_url(self.user.username,
-            external=False)
-        self.confirmation_token = self.user.get_confirmation_token(self.user.username)
+        self.confirmation_url = self.user.get_confirmation_url(
+            self.user.username,
+            external=False,
+        )
+        self.confirmation_token = self.user.get_confirmation_token(
+            self.user.username
+        )
 
     def test_redirects_to_settings(self):
         res = self.app.get(self.confirmation_url).follow()
-        assert_equal(res.request.path, '/settings/', 'redirected to settings page')
+        assert_equal(
+            res.request.path,
+            '/settings/',
+            'redirected to settings page'
+        )
         assert_in('Welcome to the OSF!', res, 'shows flash message')
         assert_in('Please update the following settings.', res)
 
@@ -965,10 +978,11 @@ class TestConfirmingEmail(OsfTestCase):
         # Sees alert message
         assert_in('already been confirmed', res)
 
+
 class TestClaimingAsARegisteredUser(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestClaimingAsARegisteredUser, self).setUp()
         self.referrer = AuthUserFactory()
         self.project = ProjectFactory(creator=self.referrer, is_public=True)
         name, email = fake.name(), fake.email()

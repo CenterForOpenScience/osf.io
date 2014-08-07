@@ -7,16 +7,15 @@ import urllib
 import itertools
 
 import github3
+import cachecontrol
 from dateutil.parser import parse
-from httpcache import CachingHTTPAdapter
 from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
 
 # Initialize caches
-http_cache = CachingHTTPAdapter()
-https_cache = CachingHTTPAdapter()
+https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
 

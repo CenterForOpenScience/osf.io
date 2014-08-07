@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
-
-import logging
-
 import framework
 from website.util.permissions import reduce_permissions
 from website.filters import gravatar
 from website import settings
-
-logger = logging.getLogger(__name__)
 
 
 def get_projects(user):
