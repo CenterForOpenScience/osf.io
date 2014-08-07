@@ -9,7 +9,9 @@
 
   function ProjectCreatorViewModel(url) {
     var self = this;
+    self.minSearchLength = 2;
     self.url = url;
+
     self.title = ko.observable('').extend({
       required: true,
       maxLength: 200
@@ -38,20 +40,16 @@
     };
 
     self.ownProjects = function(q) {
-      var results = [];
       if (q === '') {
-        results = self.templates;
-      } else {
-        results =  self.templates.filter(function(item) {
-          return item.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
-        });
+        return self.templates;
       }
-
-      return results;
+      return self.templates.filter(function(item) {
+          return item.text.toLowerCase().indexOf(q.toLowerCase()) !== -1;
+      });
     };
 
     self.query = function(query) {
-      if (query.term.length > 2) {
+      if (query.term.length > self.minSearchLength) {
         self.fetchNodes(query.term, query.callback);
         return;
       }
@@ -61,16 +59,11 @@
     self.fetchNodes = function(q, cb) {
       $.osf.postJSON('/api/v1/search/node/', { includePublic: true, query: q},
         function(data) {
+          var results = [];
           var local = self.ownProjects(q);
+          var fetched =  self.loadNodes(data.nodes);
 
-          var fetched =  ko.utils.arrayMap(data.nodes,
-            function(node) {
-              return {
-                'id': node.id,
-                'text': node.title
-              };
-            });
-
+          // Filter against local projects so that duplicates are not shown
           fetched = fetched.filter(function(element) {
             for (var i=0; i < local.length; i++) {
               if (element.id === local[i].id) {
@@ -80,7 +73,6 @@
             return true;
           });
 
-          var results = [];
 
           if (fetched.length > 0) {
             results.push({text: 'Other Projects', children: fetched});
@@ -91,16 +83,24 @@
           }
 
           cb({results: results});
+        },
+        function() {
+          //Silently error by just returning your projects
+          cb({results: [{text: 'Your Projects', children: self.ownProjects(q)}]});
         });
     };
 
+    self.loadNodes = function(nodes) {
+      return ko.utils.arrayMap(nodes, function(node) {
+        return {
+          'id': node.id,
+          'text': node.title
+        };
+      });
+    };
+
     function fetchSuccess(ret) {
-      self.templates = ko.utils.arrayMap(ret.nodes, function(item) {
-         return {
-           text: item.title,
-           id: item.id
-         };
-       });
+      self.templates = self.loadNodes(ret.nodes);
 
        $('#templates').select2({
          allowClear: true,
@@ -125,7 +125,7 @@
 
   function ProjectCreator(selector, url) {
     var viewModel = new ProjectCreatorViewModel(url);
-    // Uncomment for debuggin
+    // Uncomment for debugging
     //window.viewModel = viewModel;
     $.osf.applyBindings(viewModel, selector);
   }
