@@ -146,7 +146,7 @@
                             <div class="tags">
                                 % if result['tags']:
                                     % for tag in result['tags']:
-                                    <a href='/search/?q=${query}&type=${type}&tags=${tag}' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
+                                    <a href='/search/?tags=${tag}' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
                                 % else:
                                     <h5 class="no_">No tags</h5>

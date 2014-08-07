@@ -30,16 +30,19 @@ def search_search():
     query = request.args.get('q') or ''
     result_type = request.args.get('type') or ''
     tags = request.args.get('tags') or ''
-    full_query = {'query': query, 'type': result_type, 'tags': tags}
     # if there is not a query, tell our users to enter a search
     query = bleach.clean(query, tags=[], strip=True)
-    if query == '' and tags == '':
-        status.push_status_message('No search query', 'info')
-        return {
-            'results': [],
-            'tags': [],
-            'query': '',
-        }
+    if query == '':
+        if tags == '':
+            status.push_status_message('No search query', 'info')
+            return {
+                'results': [],
+                'tags': [],
+                'query': '',
+            }
+        else:
+            query = '*'
+    full_query = {'query': query, 'type': result_type, 'tags': tags}
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
