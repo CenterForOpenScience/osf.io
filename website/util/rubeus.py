@@ -110,6 +110,10 @@ def build_addon_button(text, action):
     }
 
 
+def sort_by_name(hgrid_data):
+    return sorted(hgrid_data, key=lambda item: item['name'].lower())
+
+
 class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
@@ -164,15 +168,12 @@ class NodeFileCollector(object):
             'isPointer': not node.primary,
         }
 
-    def sort_by_name(self, hgrid_data):
-        return sorted(hgrid_data, key=lambda item: item['name'].lower())
-
     def _collect_addons(self, node):
         rv = []
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                rv.extend(self.sort_by_name(temp) or [])
+                rv.extend(sort_by_name(temp) or [])
         return rv
 
 # TODO: these might belong in addons module

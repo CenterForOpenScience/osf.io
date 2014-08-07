@@ -9,6 +9,7 @@ from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
 
 from framework.auth import Auth
 from website.util import rubeus
+from website.util.rubeus import sort_by_name
 
 
 class TestRubeus(OsfTestCase):
@@ -279,7 +280,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
                 {'name': 'F.png'},
                 {'name': 'g.png'},
             ]
-        ret = self.serializer.sort_by_name(files)
+        ret = sort_by_name(files)
         for index, value in enumerate(ret):
             assert_equal(value['name'], sorted_files[index]['name'])
 
