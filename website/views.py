@@ -17,7 +17,7 @@ from framework.guid.model import Guid, GuidStoredObject
 
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
-from website.project.forms import NewProjectForm, NewFolderForm
+from website.project.forms import NewFolderForm
 from website.project import model, new_dashboard, new_folder
 from website import settings
 
@@ -53,6 +53,7 @@ def _render_node(node):
 
     """
     return {
+        'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,

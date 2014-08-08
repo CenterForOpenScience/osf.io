@@ -9,6 +9,7 @@
     "hgrid": "https://github.com/brianjgeiger/hgrid.git#ef1046c9c92659435b93c03df31449e0d58968c2",
     "qunit": "~1.14.0",
     "sinon": "~1.10.2",
+    "select2": "~3.5.1",
     "jquery-mockjax": "1.5.3",
     "sinon-qunit": "~1.0.0",
     "moment": "~2.7.0"

@@ -10,6 +10,9 @@ from wtforms.validators import ValidationError
 from website.util.sanitize import scrub_html
 
 
+validators = validators
+
+
 class BootstrapTextInput(TextInput):
     '''Custom TextInput that sets a field's class to 'form-control'.'''
     def __call__(self, field, **kwargs):
@@ -35,116 +38,6 @@ class BootstrapTextArea(TextArea):
         kwargs.setdefault('class_', 'form-control')
         html = super(BootstrapTextArea, self).__call__(field, **kwargs)
         return html
-
-
-class JqueryAutocomplete(TextInput):
-    def __call__(self, field, **kwargs):
-        return ''.join((
-            super(JqueryAutocomplete, self).__call__(field, **kwargs),
-            self._script(field.name),
-        ))
-
-    def _script(self, field):
-        return """
-        <script>
-            (function($) {
-                $(function() {
-
-                    var id = '%s';
-                    var old_elem = $('#' + id);
-
-                    var replace_with = function(el) {
-                        old_elem.hide()
-                        var old_field = old_elem.data('replacement');
-                        if(typeof(old_field) !== 'undefined') {
-                            old_field.remove()
-                        }
-                        old_elem.data('replacement', el)
-                        old_elem.after(el)
-                        el.data('replaces', old_elem)
-                    }
-
-                    var replace_with_input = function() {
-                        input = $('<div class="input-group">' +
-                                '<input class="form-control"/>' +
-                                '<span class="input-group-btn">' +
-                                    '<button class="btn btn-default" type="button">' +
-                                        '<span class="caret"/>' +
-                                    '</button>' +
-                                '</span>' +
-                            '</div>');
-
-                        var cache = {};
-
-                        input.find('input.form-control').catcomplete({
-                                source: function(request, response) {
-                                    if(request.term in cache) {
-                                        response(cache[request.term]);
-                                        return;
-                                    }
-
-                                    $.getJSON(
-                                        '/api/v1/search/projects/',
-                                        request,
-                                        function(data, status, xhr) {
-                                            cache[request.term] = data;
-                                            response(cache[request.term]);
-                                            return;
-                                        }
-                                    );
-                                },
-                                minLength: 0,
-                                select: function(event, ui) {
-                                    replace_with_selection(ui.item)
-                                    return false;
-                                },
-                                open: function(event, ui) {
-                                    $(event.target).data('autocomplete-open', true);
-                                },
-                                close: function(event, ui) {
-                                    $(event.target).data('autocomplete-open', false);
-                                }
-                            })
-                        replace_with(input);
-                        old_elem.val('');
-
-                        input.find('.btn-default').on('click', function(e) {
-                            e.preventDefault();
-                            var elem = input.find('input.form-control');
-                            elem.catcomplete( elem.data('autocomplete-open') ? 'close' : 'search' );
-
-                        })
-                    }
-
-                    var replace_with_selection = function(project) {
-                        replace_with(
-                            $('<div class="panel panel-default autocomplete-selection">' +
-                                '<div class="panel-heading">' +
-                                    '<h3 class="panel-title">' +
-                                        '<span class="pull-right remove-autocomplete-selection">&times;</span>' +
-                                        project.label +
-                                    '</h3>' +
-                                '</div>' +
-                                '<div class="panel-body">' +
-                                    project.authors +
-                                '</div>' +
-                            '</div>')
-                        );
-                        old_elem.val(project.id);
-                    }
-
-                    replace_with_input();
-
-                    $('body').on('click', '.remove-autocomplete-selection', function(e) {
-                        replace_with_input();
-                    })
-                });
-            })(jQuery);
-            </script>
-        """ % field
-
-
-validators = validators
 
 
 def push_errors_to_status(errors):

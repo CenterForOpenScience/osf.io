@@ -187,21 +187,6 @@ class TestAUser(OsfTestCase):
         assert_in('added file test.html', res)
         assert_in(project.title, res)
 
-    def test_can_create_a_project(self):
-        res = self._login(self.user.username, 'science')
-        # Goes to dashboard (already logged in)
-        res = res.click('Dashboard', index=0)
-        # Clicks New Project
-        res = res.click('New Project').maybe_follow()
-        # Fills out the form
-        form = res.forms['projectForm']
-        form['title'] = 'My new project'
-        form['description'] = 'Just testing'
-        # Submits
-        res = form.submit().maybe_follow()
-        # Taken to the project's page
-        assert_in('My new project', res)
-
     def test_sees_correct_title_home_page(self):
         # User goes to homepage
         res = self.app.get('/', auto_follow=True)
@@ -586,9 +571,6 @@ class TestSearching(OsfTestCase):
         form = res.forms['searchBar']
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
-        # No results, so clicks Search Users
-
-        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 
@@ -602,6 +584,17 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # A link to the project is shown as a result
         assert_in('Foobar Project', res)
+
+    def test_a_public_component_from_home_page(self):
+        component = NodeFactory(title='Foobar Component', is_public=True)
+        # Searches a part of the name
+        res = self.app.get('/').maybe_follow()
+        component.reload()
+        form = res.forms['searchBar']
+        form['q'] = 'Foobar'
+        res = form.submit().maybe_follow()
+        # A link to the component is shown as a result
+        assert_in('Foobar Component', res)
 
 
 class TestShortUrls(OsfTestCase):

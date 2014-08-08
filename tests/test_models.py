@@ -1142,6 +1142,14 @@ class TestRemoveNode(OsfTestCase):
         # parent node should have a log of the event
         assert_equal(self.parent_project.logs[-1].action, 'node_removed')
 
+    def test_delete_project_log_present(self):
+        self.project.remove_node(auth=self.consolidate_auth)
+        self.parent_project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.parent_project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'project_deleted')
+
     def test_remove_project_with_project_child_fails(self):
         with assert_raises(NodeStateError):
             self.parent_project.remove_node(self.consolidate_auth)
