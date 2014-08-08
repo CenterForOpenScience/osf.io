@@ -1,4 +1,4 @@
-<%inherit file="base.mako"/>
+9<%inherit file="base.mako"/>
 <%def name="title()">Configure Add-ons</%def>
 <%def name="content()">
 <h2 class="page-header">Configure Add-ons</h2>
@@ -94,43 +94,6 @@
         return rv;
     }
 
-    // TODO this function not called, but perhaps the preferred method of form submission here
-    function on_submit_settings() {
-        var $this = $(this),
-            addon = $this.attr('data-addon'),
-            owner = $this.find('span[data-owner]').attr('data-owner'),
-            msgElm = $this.find('.addon-settings-message');
-
-        var url = owner == 'user'
-            ? '/api/v1/settings/' + addon + '/'
-            : nodeApiUrl + addon + '/settings/';
-
-        $.ajax({
-            url: url,
-            data: JSON.stringify(formToObj($this)),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json'
-        }).success(function() {
-            msgElm.text('Settings updated')
-                .removeClass('text-danger').addClass('text-success')
-                .fadeOut(100).fadeIn();
-        }).fail(function(xhr) {
-            var message = 'Error: ';
-            var response = JSON.parse(xhr.responseText);
-            if (response && response.message) {
-                message += response.message;
-            } else {
-                message += 'Settings not updated.'
-            }
-            msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
-        });
-
-        return false;
-    }
-
     // Set up submission for addon selection form
     var checkedOnLoad = $("#selectAddonsForm input:checked");
 
@@ -147,10 +110,10 @@
 	var submit = function(){
 	    $.osf.postJSON(
 		'/api/v1/settings/addons/',
-		JSON.stringify(formData),
+		formData,
 		function() {
-                    window.location.reload();
-		},
+		    window.location.reload();
+		},		
 		function() {
 		    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
 		    bootbox.alert(msg);
