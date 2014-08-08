@@ -178,10 +178,6 @@ def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
 
 
-def new_project_form():
-    return utils.jsonify(NewProjectForm())
-
-
 ### GUID ###
 
 def _build_guid_url(url, prefix=None, suffix=None):

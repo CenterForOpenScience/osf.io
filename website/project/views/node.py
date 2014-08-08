@@ -24,6 +24,7 @@ from website.project.decorators import (
     must_not_be_registration,
 )
 from website.project.model import has_anonymous_link
+from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes
