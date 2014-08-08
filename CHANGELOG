@@ -16,6 +16,7 @@ Scheduled 2014-08-11
 - Add confirmation dialog when deselecting addons from the user profile page.
 - Registered users no longer have "key ring" of view-only link keys. View-only
 links will appear the same, regardless of whether you are logged in or not.
+- Project deletion events are logged.
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.
