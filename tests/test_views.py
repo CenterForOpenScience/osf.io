@@ -642,6 +642,66 @@ class TestUserProfile(OsfTestCase):
         )
         assert_not_in('addons', res.json)
 
+    def test_userialize_and_serialize_jobs(self):
+        self.jobs = [{
+            'institution': 'an institution',
+            'department': 'a department',
+            'title': 'a title',
+            'start': '2001-01-01',
+            'end': '2001-01-02',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'department': None,
+            'title': None,
+            'start': '2001-05-03',
+            'end': None,
+            'ongoing': True,
+        }]
+        payload = {'contents': self.jobs}
+        url = api_url_for('unserialize_jobs')
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(len(self.user.jobs), 2)
+        url = api_url_for('serialize_jobs')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        for job in range(len(self.jobs)):
+            for part in list(self.jobs[job].keys()):
+                assert_equal(self.jobs[job][part], res.json['contents'][job][part])
+                
+    def test_userialize_and_serialize_schools(self):
+        self.schools = [{
+            'institution': 'an institution',
+            'department': 'a department',
+            'degree': 'a degree',
+            'start': '2001-01-01',
+            'end': '2001-01-02',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'department': None,
+            'degree': None,
+            'start': '2001-05-03',
+            'end': None,
+            'ongoing': True,
+        }]
+        payload = {'contents': self.schools}
+        url = api_url_for('unserialize_schools')
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(len(self.user.schools), 2)
+        url = api_url_for('serialize_schools')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        for school in range(len(self.schools)):
+            for part in list(self.schools[school].keys()):
+                assert_equal(self.schools[school][part], res.json['contents'][school][part])
+
 
 class TestAddingContributorViews(OsfTestCase):
 
