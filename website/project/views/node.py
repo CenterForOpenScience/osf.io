@@ -122,20 +122,23 @@ def folder_new(**kwargs):
 @must_be_logged_in
 def folder_new_post(auth, nid, **kwargs):
     user = auth.user
-    form = NewFolderForm(request.form)
-    if form.validate():
-        node = Node.load(nid)
-        if node.is_deleted or node.is_registration or not node.is_folder:
-            raise HTTPError(http.BAD_REQUEST)
-        folder = new_folder(
-            scrub_html(form.title.data), user
-        )
-        folders = [folder]
-        _add_pointers(node, folders, auth)
-        return {}, 201, None, "/dashboard/"
-    else:
-        push_errors_to_status(form.errors)
-    raise HTTPError(http.BAD_REQUEST)
+
+    title = request.json.get('title')
+
+    if not title or len(title) > 200:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = Node.load(nid)
+    if node.is_deleted or node.is_registration or not node.is_folder:
+        raise HTTPError(http.BAD_REQUEST)
+    folder = new_folder(scrub_html(title), user)
+    folders = [folder]
+    _add_pointers(node, folders, auth)
+
+    return {
+        'projectUrl': '/dashboard/',
+    }, http.CREATED
+
 
 def rename_folder(**kwargs):
     pass

@@ -17,7 +17,6 @@ from framework.guid.model import Guid, GuidStoredObject
 
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
-from website.project.forms import NewFolderForm
 from website.project import model, new_dashboard, new_folder
 from website import settings
 
@@ -277,15 +276,6 @@ def forgot_password_form():
 
 def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
-
-
-def new_project_form():
-    return utils.jsonify(NewProjectForm())
-
-
-def new_folder_form():
-    form = NewFolderForm()
-    return utils.jsonify(form)
 
 
 ### GUID ###
