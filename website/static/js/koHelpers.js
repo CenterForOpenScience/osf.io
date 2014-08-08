@@ -53,7 +53,7 @@
     };
 
     var printDate = function(date, dlm) {
-        dlm = dlm || '-';
+        dlm = dlm || '/';
         var formatted = date.getFullYear() + dlm + pad((date.getMonth() + 1), 2);
         if (date.getDate()) {
             formatted += dlm + pad(date.getDate(), 2);
@@ -71,6 +71,7 @@
     addExtender('asDate', function(value, options) {
         var out;
         if (value) {
+            value.replace(/-/g,'/');
             var date;
             if (value.match(/^\d{4}$/)) {
                 date = new Date(value, 0, 1);
