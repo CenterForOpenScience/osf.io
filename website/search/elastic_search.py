@@ -129,22 +129,13 @@ def _build_query(full_query, start=0):
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
     # If the search contains wildcards, make them mean something
-    if '*' in raw_query:
-        inner_query = {
-            'query_string': {
-                'default_field': '_all',
-                'query': raw_query,
-                'analyze_wildcard': True,
-            }
+    inner_query = {
+        'query_string': {
+            'default_field': '_all',
+            'query': raw_query,
+            'analyze_wildcard': True,
         }
-    else:
-        inner_query = {
-            'multi_match': {
-                'query': raw_query,
-                'type': 'phrase_prefix',
-                'fields': '_all',
-            }
-        }
+    }
 
     if tags:
         inner_query = {
