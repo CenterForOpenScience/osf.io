@@ -61,6 +61,7 @@
         return formatted;
     };
 
+    // Handy pad function from http://stackoverflow.com/a/10073788
     function pad(n, width, z) {
       z = z || '0';
       n = n + '';
