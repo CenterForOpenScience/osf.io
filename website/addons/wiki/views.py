@@ -108,33 +108,35 @@ def project_wiki_compare(auth, **kwargs):
     wiki_page = node.get_wiki_page(wid)
     toc = serialize_wiki_toc(node, auth=auth)
 
-    if wiki_page:
-        compare_id = kwargs['compare_id']
-        comparison_page = node.get_wiki_page(wid, compare_id)
-        if comparison_page:
-            current = wiki_page.content
-            comparison = comparison_page.content
-            sm = difflib.SequenceMatcher(None, comparison, current)
-            content = show_diff(sm)
-            content = content.replace('\n', '<br />')
-            rv = {
-                'pageName': wid,
-                'wiki_content': content,
-                'versions': _get_wiki_versions(node, wid),
-                'is_current': True,
-                'is_edit': True,
-                'version': wiki_page.version,
-                'pages_current': [
-                    from_mongo(version)
-                    for version in node.wiki_pages_versions
-                ],
-                'toc': toc,
-                'url': node.url,
-                'api_url': node.api_url,
-                'category': node.category
-            }
-            rv.update(_view_project(node, auth, primary=True))
-            return rv
+    if not wiki_page:
+        wiki_page = NodeWikiPage()
+
+    compare_id = kwargs['compare_id']
+    comparison_page = node.get_wiki_page(wid, compare_id)
+    if comparison_page:
+        current = wiki_page.content
+        comparison = comparison_page.content
+        sm = difflib.SequenceMatcher(None, comparison, current)
+        content = show_diff(sm)
+        content = content.replace('\n', '<br />')
+        rv = {
+            'pageName': wid,
+            'wiki_content': content,
+            'versions': _get_wiki_versions(node, wid),
+            'is_current': True,
+            'is_edit': True,
+            'version': wiki_page.version,
+            'pages_current': [
+                from_mongo(version)
+                for version in node.wiki_pages_current
+            ],
+            'toc': toc,
+            'url': node.url,
+            'api_url': node.api_url,
+            'category': node.category
+        }
+        rv.update(_view_project(node, auth, primary=True))
+        return rv
     raise HTTPError(http.NOT_FOUND)
 
 
@@ -210,12 +212,13 @@ def project_wiki_page(auth, **kwargs):
         'pageName': wid,
         'page': wiki_page,
         'version': version,
+        'versions':_get_wiki_versions(node, wid),
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
         'pages_current': [
             from_mongo(version)
-            for version in node.wiki_pages_versions
+            for version in node.wiki_pages_current
         ],
         'toc': toc,
         'url': node.url,
@@ -249,11 +252,14 @@ def project_wiki_edit(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
+
+
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
     else:
+        wiki_page = NodeWikiPage()
         version = 'NA'
         is_current = False
         content = ''
@@ -269,7 +275,7 @@ def project_wiki_edit(auth, **kwargs):
         'is_edit': True,
         'pages_current': [
             from_mongo(version)
-            for version in node.wiki_pages_versions
+            for version in node.wiki_pages_current
         ],
         'toc': toc,
         'url': node.url,
@@ -289,11 +295,6 @@ def project_wiki_edit_post(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     user = auth.user
     wid = kwargs['wid']
-    # logging.debug(
-    #     '{user} edited wiki page: {wid}'.format(
-    #         user=user.username, wid=wid
-    #     )
-    # )
 
     if wid != sanitize(wid):
         status.push_status_message("This is an invalid wiki page name")
@@ -351,7 +352,16 @@ def project_wiki_delete(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
     page = NodeWikiPage.load(wid)
-    del node.wiki_pages_versions[page.page_name.lower()]
     del node.wiki_pages_current[page.page_name.lower()]
     node.save()
+
+    # wiki_page = node.get_wiki_page(wid)
+    # if wiki_page:
+    #     content = wiki_page.content
+    # else:
+    #     content = ''
+    #
+    # if request.form['content'] != content:
+    #     node.delete_node_wiki(wid, request.form['content'], auth)
+
     return {}

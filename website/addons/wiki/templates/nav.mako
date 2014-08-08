@@ -8,7 +8,7 @@
                 % else:
                     <li><a class="disabled">Edit</a></li>
                 % endif
-                % if version == 'NA':
+                % if not versions:
                     <li><a class="disabled">History</a></li>
                 % else:
                     <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
