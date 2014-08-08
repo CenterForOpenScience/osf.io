@@ -3,7 +3,6 @@
 """
 import httplib as http
 import difflib
-import logging
 
 from bs4 import BeautifulSoup
 
@@ -23,8 +22,6 @@ from website.project.decorators import (
 from .model import NodeWikiPage
 
 HOME = 'home'
-logger = logging.getLogger(__name__)
-
 
 def get_wiki_url(node, page=HOME):
     """Get the URL for the wiki page for a node or pointer."""
@@ -252,8 +249,6 @@ def project_wiki_edit(auth, **kwargs):
     wid = kwargs['wid']
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
-
-
 
     if wiki_page:
         version = wiki_page.version

@@ -3,7 +3,7 @@
 
 <div class="row">
     <div class="col-md-3">
-        <%include file="wiki/templates/nav.mako"/>
+        <%include file="wiki/templates/nav.mako" />
         <%include file="wiki/templates/toc.mako" />
     </div>
     <div class="col-md-9">
@@ -11,6 +11,3 @@
         ${wiki_content}
     </div>
 </div>
-
-
-

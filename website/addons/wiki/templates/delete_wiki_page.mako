@@ -2,7 +2,6 @@
     <div class="modal fade" id="deleteWiki">
         <div class="modal-dialog">
             <div class="modal-content">
-##                <form id="delete">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h3 class="modal-title">Delete Wiki Page</h3>
@@ -14,7 +13,6 @@
                     <a id="close" href="#" class="btn btn-default" data-dismiss="modal">Close</a>
                     <a id="delete-wiki" class="btn btn-primary">OK</a>
                 </div><!-- end modal-footer -->
-##                    </form>
             </div><!-- end modal- content -->
         </div><!-- end modal-dialog -->
     </div><!-- end modal -->
@@ -31,5 +29,4 @@
             })
         });
     });
-
 </script>
