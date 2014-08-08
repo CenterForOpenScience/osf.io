@@ -8,9 +8,11 @@
             % if user['can_edit']:
                 <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                     <%include file="add_wiki_page.mako/"/>
+                % if wiki_id:
                 <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                     <%include file="delete_wiki_page.mako/"/>
-            % else:
+                % endif
+                % else:
                 <li><a class="disabled">New</a></li>
                 <li><a class="disabled">Delete</a></li>
             % endif

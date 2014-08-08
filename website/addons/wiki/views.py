@@ -3,6 +3,7 @@
 """
 import httplib as http
 import difflib
+import logging
 
 from bs4 import BeautifulSoup
 
@@ -22,6 +23,7 @@ from website.project.decorators import (
 from .model import NodeWikiPage
 
 HOME = 'home'
+logger = logging.getLogger(__name__)
 
 
 def get_wiki_url(node, page=HOME):
@@ -340,3 +342,16 @@ def project_wiki_rename(**kwargs):
         return {'message': new_name}
 
     raise HTTPError(http.BAD_REQUEST)
+
+@must_be_valid_project # returns project
+@must_have_permission('write') # returns user, project
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def project_wiki_delete(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    wid = kwargs['wid']
+    page = NodeWikiPage.load(wid)
+    del node.wiki_pages_versions[page.page_name.lower()]
+    del node.wiki_pages_current[page.page_name.lower()]
+    node.save()
+    return {}
