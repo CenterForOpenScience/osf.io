@@ -329,7 +329,7 @@ class NodeLog(StoredObject):
     POINTER_REMOVED = 'pointer_removed'
 
     WIKI_UPDATED = 'wiki_updated'
-    # WIKI_DELETED = 'wiki_deleted'
+    WIKI_DELETED = 'wiki_deleted'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -2419,54 +2419,18 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=v.date
         )
 
-    # def delete_node_wiki(self, page, content, auth):
-    #
-    #     from website.addons.wiki.model import NodeWikiPage
-    #
-    #     temp_page = page
-    #
-    #     page = urllib.unquote_plus(page)
-    #     page = to_mongo(page)
-    #     page = str(page).lower()
-    #
-    #     if page not in self.wiki_pages_current:
-    #         version = 1
-    #     else:
-    #         current = NodeWikiPage.load(self.wiki_pages_current[page])
-    #         current.is_current = False
-    #         version = current.version + 1
-    #         current.save()
-    #
-    #     v = NodeWikiPage(
-    #         page_name=temp_page,
-    #         version=version,
-    #         user=auth.user,
-    #         is_current=True,
-    #         node=self,
-    #         content=content
-    #     )
-    #     v.save()
-    #
-    #     if page not in self.wiki_pages_versions:
-    #         self.wiki_pages_versions[page] = []
-    #     self.wiki_pages_versions[page].append(v._primary_key)
-    #     self.wiki_pages_current[page] = v._primary_key
-    #
-    #     self.add_log(
-    #         action=NodeLog.WIKI_DELETED,
-    #         params={
-    #             'project': self.parent_id,
-    #             'node': self._primary_key,
-    #             'page': v.page_name,
-    #             'version': v.version,
-    #         },
-    #         auth=auth,
-    #         log_date=v.date
-    #     )
+    def delete_node_wiki(self, page, auth):
 
-
-
-
+        self.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+            },
+            auth=auth,
+            log_date=page.date
+        )
 
     def get_stats(self, detailed=False):
         if detailed:

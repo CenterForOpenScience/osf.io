@@ -122,6 +122,7 @@ def project_wiki_compare(auth, **kwargs):
         rv = {
             'pageName': wid,
             'wiki_content': content,
+            'wiki_id': wiki_page._primary_key if wiki_page else None,
             'versions': _get_wiki_versions(node, wid),
             'is_current': True,
             'is_edit': True,
@@ -271,6 +272,7 @@ def project_wiki_edit(auth, **kwargs):
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
+        'wiki_id': wiki_page._primary_key if wiki_page else None,
         'is_current': is_current,
         'is_edit': True,
         'pages_current': [
@@ -353,15 +355,6 @@ def project_wiki_delete(auth, **kwargs):
     wid = kwargs['wid']
     page = NodeWikiPage.load(wid)
     del node.wiki_pages_current[page.page_name.lower()]
+    node.delete_node_wiki(page, auth)
     node.save()
-
-    # wiki_page = node.get_wiki_page(wid)
-    # if wiki_page:
-    #     content = wiki_page.content
-    # else:
-    #     content = ''
-    #
-    # if request.form['content'] != content:
-    #     node.delete_node_wiki(wid, request.form['content'], auth)
-
     return {}
