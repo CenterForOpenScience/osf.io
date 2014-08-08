@@ -1144,12 +1144,9 @@ h1.unavailable {
         padding:25px;
         font-size: 18px;
     }
-.result
+.search-types a
     {
-        padding-top: 8px;
-        padding-bottom: 8px;
-        height: 120px;
-        border-bottom: 2px solid #c0c0c0;
+        font-size: 16px;
     }
 .title h4
     {

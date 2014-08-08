@@ -37,7 +37,7 @@
 <div class="row">
     <div class="col-md-2">
         % if isinstance(counts, dict):
-            <ul class="nav nav-pills nav-stacked">
+            <ul class="nav nav-pills nav-stacked search-types">
                 <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
                 <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>
                 <li class="${'active' if type == 'project' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=project">Projects: ${counts['projects']}</a></li>
@@ -60,8 +60,9 @@
     <div class="col-md-10">
             % if results:
 ##            iterate through our nice lists of results
+                <div class="list-group">
                 % for result in results:
-                    <div class="result">
+                    <div class="list-group-item">
 ##                    users are different results than anything associated with projects
                         % if 'user' in result:
                             <div class="user">
@@ -155,6 +156,7 @@
                     %endif
                     </div><!-- end result-->
                 % endfor
+                </div>
 ##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
                 <div class="navigate">
                     <ul class="pagination">
