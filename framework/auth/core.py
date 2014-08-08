@@ -225,6 +225,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -236,6 +237,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
