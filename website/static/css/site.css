@@ -1165,17 +1165,9 @@ h1.unavailable {
         margin: 0px;
         font-weight: normal;
     }
-.tags
+.search-tags
     {
         padding-top: 2px;
-        height: 20px;
-    }
-.no_
-    {
-        padding: 0px;
-        margin: 0px;
-        font-weight: normal;
-        font-style: italic;
     }
 /* Search Contributors */
 
