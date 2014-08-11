@@ -1154,20 +1154,25 @@ h1.unavailable {
         padding-bottom: 5px;
         margin: 0px;
     }
-.user h4
+.search-field
     {
         padding: 0px;
+        padding-top: 2px;
+        padding-bottom: 2px;
         margin: 0px;
+        line-height: 16px;
     }
 .description h5
     {
         padding: 0px;
+        padding-bottom: 4px;
         margin: 0px;
         font-weight: normal;
+        line-height: 16px;
     }
 .search-tags
     {
-        padding-top: 2px;
+        padding-top: 4px;
     }
 /* Search Contributors */
 

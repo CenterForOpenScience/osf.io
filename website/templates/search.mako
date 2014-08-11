@@ -72,21 +72,22 @@
                                     % endif
                                     <a href=${result['user_url']}>${result['user']}</a>
                                 </h4>
-                            </div>
-                            <div class="description">
-                                % if result['job']:
-                                    <h5>
-                                        Employment: ${result['job_title'] if result['job_title'] else 'works'} at ${result['job']}
-                                    </h5>
-                                % endif
-                            </div>
-                            <div class="description">
-                                % if result['school']:
-                                    <h5>
-                                        Education: ${result['degree'] if result['degree'] else 'studied'} at ${result['school']}
-                                    </h5>
-                                % endif
-                            </div>
+                            </div><!-- end user name -->
+                            % if result['job']:
+                                <div class="search-field">
+                                    <span>Employment: ${result['job_title'] if result['job_title'] else 'works'} at ${result['job']}</span>
+                                </div>
+                            % endif
+                            % if result['school']:
+                                <div class="search-field">
+                                    <span>Education: ${result['degree'] if result['degree'] else 'studied'} at ${result['school']}</span>
+                                </div>
+                            % endif
+                            % if not (result['school'] or result['job']):
+                                <div class="search-field">
+                                    <span class="text-muted">No employment or education information given</span>
+                                </div>
+                            % endif
                         % else:
                             <div class="title">
                                 <h4>
@@ -118,10 +119,10 @@
                                 % else:
                                     <h5 class="text-muted">No description</h5>
                                 % endif
-                            </div>
+                            </div><!-- end description -->
 
     ##                            jeff's nice logic for displaying users
-                            <div class="contributors">
+                            <div class="search-field contributors">
                                 % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):
                                     <%
                                         if index == 2 and len(result['contributors']) > 3:
@@ -144,7 +145,7 @@
                                 % endfor
                             </div><!-- end contributors -->
     ##                      our highlight
-                            <div class="highlight">
+                            <div class="search-field highlight">
                                 % if result['highlight'] is not None:
                                     % for highlight in result['highlight']:
                                        %if hightlight:
@@ -159,7 +160,7 @@
                             </div><!-- end highlight -->
     ##                      show all the tags for the project
                             % if result['tags']:
-                                <div class="search_tags">
+                                <div class="search-tags">
                                     % for tag in result['tags']:
                                     <a href='/search/?tags=${tag}' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
                                     % endfor
