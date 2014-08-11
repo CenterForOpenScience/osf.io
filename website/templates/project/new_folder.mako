@@ -28,7 +28,8 @@
 <%def name="javascript_bottom()">
 <script>
     $script(['/static/js/folderCreator.js'], function() {
-        var folderCreator = new FolderCreator('#creationForm', 'url');
+
+        var folderCreator = new FolderCreator('#creationForm');
     });
 </script>
 </%def>
