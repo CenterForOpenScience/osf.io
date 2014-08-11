@@ -219,6 +219,7 @@ def deserialize_contributors(node, user_dicts, auth):
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
+
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
         else:
@@ -239,6 +240,7 @@ def deserialize_contributors(node, user_dicts, auth):
             contributor.save()
             unreg_contributor_added.send(node, contributor=contributor,
                 auth=auth)
+
         contribs.append({
             'user': contributor,
             'visible': visible,

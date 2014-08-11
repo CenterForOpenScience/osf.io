@@ -7,16 +7,16 @@ import datetime as dt
 
 from pytz import utc
 from nose.tools import *  # PEP8 asserts
-import bson
 from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, ApiKeyFactory,
-                            WatchConfigFactory)
+                             WatchConfigFactory)
 
 
 class TestWatching(OsfTestCase):
 
     def setUp(self):
+        super(TestWatching, self).setUp()
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         # add some log objects
@@ -28,16 +28,21 @@ class TestWatching(OsfTestCase):
         self.project.logs = []
         self.project.save()
         # A log added 100 days ago
-        self.project.add_log('project_created',
-                        params={'project': self.project._primary_key},
-                        auth=self.consolidate_auth,
-                        log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
-                        save=True)
+        self.project.add_log(
+            'project_created',
+            params={'project': self.project._primary_key},
+            auth=self.consolidate_auth,
+            log_date=dt.datetime.utcnow() - dt.timedelta(days=100),
+            save=True,
+        )
         # Set the ObjectId to correspond with the log date
         # A log added now
-        self.last_log = self.project.add_log('tag_added', params={'project': self.project._primary_key},
-                        auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
-                        save=True)
+        self.last_log = self.project.add_log(
+            'tag_added',
+            params={'project': self.project._primary_key},
+            auth=self.consolidate_auth, log_date=dt.datetime.utcnow(),
+            save=True,
+        )
         # Clear watched list
         self.user.watched = []
         self.user.save()
@@ -61,7 +66,8 @@ class TestWatching(OsfTestCase):
         assert_equal(n_watched_now, n_watched_then - 1)
         assert_false(self.user.is_watching(self.project))
 
-    @unittest.skip("Won't work because the old log's id doesn't encode the correct log date")
+    @unittest.skip("Won't work because the old log's id doesn't encode the "
+                   "correct log date")
     def test_get_recent_log_ids(self):
         self._watch_project(self.project)
         log_ids = list(self.user.get_recent_log_ids())
@@ -90,6 +96,7 @@ class TestWatching(OsfTestCase):
         watch_config = WatchConfigFactory(node=project)
         self.user.watch(watch_config)
         self.user.save()
+
 
 if __name__ == '__main__':
     unittest.main()

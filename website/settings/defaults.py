@@ -26,7 +26,6 @@ GNUPG_BINARY = 'gpg'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
-ALLOW_CLAIMING = True
 
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'http://localhost:9200'
@@ -164,3 +163,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+
+
+# TODO: Delete me after merging GitLab
+MISSING_FILE_NAME = 'untitled'

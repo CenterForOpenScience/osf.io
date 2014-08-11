@@ -1,29 +1,25 @@
 import mock
 from nose.tools import *
-from webtest_plus import TestApp
 
 import httplib as http
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
-import website.app
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-from website.addons.s3.model import AddonS3NodeSettings, S3GuidFile
+from website.addons.s3.model import S3GuidFile
 
 from website.addons.s3.utils import validate_bucket_name
 
 from utils import create_mock_wrapper, create_mock_key
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 
 class TestS3ViewsConfig(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsConfig, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -256,8 +252,11 @@ class TestS3ViewsConfig(OsfTestCase):
 
 
 class TestS3ViewsCRUD(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsCRUD, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -302,8 +301,11 @@ class TestS3ViewsCRUD(OsfTestCase):
 
 
 class TestS3ViewsHgrid(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsHgrid, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -351,8 +353,11 @@ class TestS3ViewsHgrid(OsfTestCase):
 
 
 class TestCreateBucket(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestCreateBucket, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)

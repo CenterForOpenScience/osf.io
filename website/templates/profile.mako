@@ -30,6 +30,7 @@
     % endif
     $script(['/static/addons/badges/bake-badges.js'], 'bakery');
     $script(['/static/addons/badges/badge-popover.js'], 'display');
+    $script(['/static/js/logFeed.js']);
 </script>
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
