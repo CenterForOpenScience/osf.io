@@ -146,20 +146,30 @@ def confirm_email_get(**kwargs):
     """
     user = get_user(id=kwargs['uid'])
     token = kwargs['token']
+
     if user:
-        if user.confirm_email(token):  # Confirm and register the usre
-            user.date_last_login = datetime.datetime.utcnow()
-            user.save()
-            # Go to settings page
-            status.push_status_message(language.WELCOME_MESSAGE, 'success')
-            response = redirect('/settings/')
-            return auth.authenticate(user, response=response)
-    # Return data for the error template
-    return {
-       'code': http.BAD_REQUEST,
-       'message_short': 'Link Expired',
-       'message_long': language.LINK_EXPIRED
-    }, http.BAD_REQUEST
+        if user.confirm_email(token):
+            if user.is_registered:
+                user.username = user.unconfirmed_username
+                user.save()
+                status.push_status_message(language.UPDATED_EMAIL_CONFIRMATION, 'success')
+                response = redirect('/settings/')
+                return response
+                #return auth.authenticate(user, response=response)
+
+            else: # Confirm and register the user
+                user.date_last_login = datetime.datetime.utcnow()
+                user.save()
+                # Go to settings page
+                status.push_status_message(language.WELCOME_MESSAGE, 'success')
+                response = redirect('/settings/')
+                return auth.authenticate(user, response=response)
+        # Return data for the error template
+        return {
+           'code': http.BAD_REQUEST,
+           'message_short': 'Link Expired',
+           'message_long': language.LINK_EXPIRED
+        }, http.BAD_REQUEST
 
 
 def send_confirm_email(user, email):
@@ -170,6 +180,18 @@ def send_confirm_email(user, email):
     """
     confirmation_url = user.get_confirmation_url(email, external=True)
     mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+        user=user,
+        confirmation_url=confirmation_url)
+
+
+def confirm_update_email(user, email):
+    """Sends a confirmation email to `user` to a given email.
+
+    :raises: KeyError if user does not have a confirmation token for the given
+        email.
+    """
+    confirmation_url = user.get_confirmation_url(email, external=True)
+    mails.send_mail(email, mails.UPDATE_EMAIL, 'plain',
         user=user,
         confirmation_url=confirmation_url)
 

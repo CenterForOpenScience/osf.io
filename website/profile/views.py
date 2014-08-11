@@ -9,12 +9,14 @@ from framework import (
     must_be_logged_in,
     request,
     redirect,
+    Q
 )
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
+from framework.auth.views import confirm_update_email
 
 from website.models import ApiKey, User
 from website.views import _render_nodes
@@ -348,9 +350,22 @@ def unserialize_names(**kwargs):
     user.middle_names = json_data.get('middle')
     user.family_name = json_data.get('family')
     user.suffix = json_data.get('suffix')
-    user.username = json_data.get('username')
+
+    if user.find(Q('username', 'eq', json_data.get('username'))).count() > 0:
+        raise ValueError
+
+    else:
+        send_update_email_confirmation(**kwargs)
+
     user.save()
 
+@must_be_logged_in
+def send_update_email_confirmation(**kwargs):
+    user = kwargs['auth'].user
+    json_data = deep_clean(request.get_json())
+    user.unconfirmed_username = json_data.get('username')
+    user.add_email_verification(user.unconfirmed_username)
+    confirm_update_email(user, email=user.unconfirmed_username)
 
 def verify_user_match(auth, **kwargs):
     uid = kwargs.get('uid')

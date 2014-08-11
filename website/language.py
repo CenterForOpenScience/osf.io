@@ -62,6 +62,13 @@ CLAIMED_CONTRIBUTOR = '''
 <a href="/dashboard/">dashboard</a> to see projects to which you have been added as a contributor by someone else.
 '''
 
+# Shown after user confirms new account email address and is redirected to the
+# settings page
+UPDATED_EMAIL_CONFIRMATION = '''
+Email successfully updated.
+'''
+
+
 # Error Pages
 # ###########
 
