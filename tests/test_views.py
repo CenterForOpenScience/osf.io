@@ -2156,12 +2156,11 @@ class TestForkViews(OsfTestCase):
         self.user.save()
         self.project.save()
 
-    def test_get_forks(self):
-        """ registrations of forks are not in parent project's list of forks"""
+    def test_registered_forks_dont_show_in_fork_list(self):
         fork = self.project.fork_node(self.consolidated_auth)
         RegistrationFactory(project=fork)
 
-        url = self.project.api_url + 'get_forks/'
+        url = self.project.api_url_for('get_forks')
         res = self.app.get(url, auth=self.user.auth)
 
         assert_equal(len(res.json['nodes']), 1)
