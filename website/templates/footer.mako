@@ -17,6 +17,8 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
+                    <li><a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md">Terms of Use</a></li>
+                    <li><a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a></li>
                 </ul>
             </div>
             <div class="col-md-2">
