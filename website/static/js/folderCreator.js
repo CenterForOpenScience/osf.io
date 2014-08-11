@@ -50,7 +50,7 @@
     function FolderCreator(selector, url) {
         var viewModel = new FolderCreatorViewModel(url);
         // Uncomment for debugging
-        window.viewModel = viewModel;
+        // window.viewModel = viewModel;
         $.osf.applyBindings(viewModel, selector);
     }
 
