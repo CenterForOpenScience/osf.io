@@ -798,6 +798,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 class TestDeleteNodeWiki(OsfTestCase):
 
     def setUp(self):
+        super(TestDeleteNodeWiki, self).setUp()
         # Create project with component
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
