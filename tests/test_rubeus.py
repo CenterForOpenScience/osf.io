@@ -243,8 +243,11 @@ serialized = {
 }
 mock_addon.config.get_hgrid_data.return_value = [serialized]
 
+
 class TestSerializingNodeWithAddon(OsfTestCase):
+
     def setUp(self):
+        super(TestSerializingNodeWithAddon, self).setUp()
         self.auth = AuthFactory()
         self.project = ProjectFactory(creator=self.auth.user)
         self.project.get_addons = mock.Mock()

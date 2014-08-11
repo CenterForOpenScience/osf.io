@@ -1,8 +1,9 @@
 """
 
 """
-import httplib as http
 import difflib
+import httplib as http
+import logging
 
 from bs4 import BeautifulSoup
 
@@ -21,7 +22,10 @@ from website.project.decorators import (
 
 from .model import NodeWikiPage
 
+logger = logging.getLogger(__name__)
+
 HOME = 'home'
+
 
 def get_wiki_url(node, page=HOME):
     """Get the URL for the wiki page for a node or pointer."""
@@ -241,8 +245,8 @@ def wiki_page_content(wid, **kwargs):
     }
 
 
-@must_be_valid_project # returns project
-@must_have_permission('write') # returns user, project
+@must_be_valid_project  # returns project
+@must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, **kwargs):
@@ -283,8 +287,8 @@ def project_wiki_edit(auth, **kwargs):
     return rv
 
 
-@must_be_valid_project # returns project
-@must_have_permission('write') # returns user, project
+@must_be_valid_project  # injects node or project
+@must_have_permission('write')  # injects user
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(auth, **kwargs):
@@ -303,10 +307,11 @@ def project_wiki_edit_post(auth, **kwargs):
         content = wiki_page.content
     else:
         content = ''
+
     if request.form['content'] != content:
         node_to_use.update_node_wiki(wid, request.form['content'], auth)
         return {
-            'status' : 'success',
+            'status': 'success',
         }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
     else:
         return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)

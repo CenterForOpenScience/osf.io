@@ -36,7 +36,8 @@ from framework.addons import AddonModelMixin
 
 
 from website.exceptions import NodeStateError
-from website.util.permissions import (expand_permissions,
+from website.util.permissions import (
+    expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
 )
@@ -60,36 +61,18 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link, auth):
+def has_anonymous_link(node, link):
     """check if the node is anonymous to the user
 
     :param Node node: Node which the user wants to visit
     :param str link: any view-only link in the current url
-    :param Auth auth: Auth of the user who wants to visit the node
     :return bool anonymous: Whether the node is anonymous to the user or not
 
     """
 
-    #check node is public or not. if is, then not anonymous else check link
     if node.is_public:
         return False
-
-    #if link is valid use link else check key_ring
-    for valid_link in (x for x in node.private_links_active if x.key == link):
-        return valid_link.anonymous
-
-    try:
-        user = auth.user
-    except AttributeError:
-        user = None
-
-    if user and not node.is_contributor(user):
-        key_ring = set(user.private_link_keys)
-        valid_key = key_ring.intersection(node.private_link_keys_active)
-
-        if valid_key:
-            return all(x.anonymous for x in node.private_links_active if x.key in valid_key)
-    return False
+    return any([x.anonymous for x in node.private_links_active if x.key == link])
 
 
 signals = blinker.Namespace()
@@ -319,6 +302,7 @@ class NodeLog(StoredObject):
 
     PROJECT_CREATED = 'project_created'
     PROJECT_REGISTERED = 'project_registered'
+    PROJECT_DELETED = 'project_deleted'
 
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
@@ -652,15 +636,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_links:
-            key_ring = set(auth.user.private_link_keys)
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_link_keys_active)
-        else:
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_link_keys_active
+        return self.is_public or auth.user \
+            and self.has_permission(auth.user, 'read') \
+            or auth.private_key in self.private_link_keys_active
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1278,6 +1256,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 log_date=log_date,
                 save=True,
             )
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
 
         # Remove self from parent registration list
         if self.is_registration:
@@ -1446,13 +1434,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             if registered_node is not None:
                 registered.nodes.append(registered_node)
 
-
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':registered._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': registered._primary_key,
             },
             auth=auth,
             log_date=when,
@@ -2393,7 +2380,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage(
+        new_wiki = NodeWikiPage(
             page_name=temp_page,
             version=version,
             user=auth.user,
@@ -2401,23 +2388,23 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        v.save()
+        new_wiki.save()
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(v._primary_key)
-        self.wiki_pages_current[page] = v._primary_key
+        self.wiki_pages_versions[page].append(new_wiki._primary_key)
+        self.wiki_pages_current[page] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': v.page_name,
-                'version': v.version,
+                'page': new_wiki.page_name,
+                'version': new_wiki.version,
             },
             auth=auth,
-            log_date=v.date
+            log_date=new_wiki.date
         )
 
     def delete_node_wiki(self, node, page, auth):
@@ -2556,7 +2543,7 @@ class PrivateLink(StoredObject):
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
             "name": self.name,
-            "creator": self.creator.fullname,
+            "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }

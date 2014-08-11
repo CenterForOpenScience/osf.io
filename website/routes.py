@@ -278,7 +278,6 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -498,7 +497,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-        # Create
+        # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
 
         Rule([
@@ -510,7 +509,6 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
         Rule(
             [
@@ -609,6 +607,9 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Create project, used by projectCreator.js
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
+
         Rule([
             '/project/<pid>/contributors_abbrev/',
             '/project/<pid>/node/<nid>/contributors_abbrev/',
@@ -705,16 +706,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
-        # Create
-        Rule(
-            [
-                '/project/new/',
-                '/project/<pid>/newnode/',
-            ],
-            'post',
-            project_views.node.project_new_node,
-            json_renderer,
-        ),
 
         # Private Link
         Rule([

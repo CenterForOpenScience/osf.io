@@ -1,15 +1,20 @@
 import os.path
 import pandas as pd
 import xlrd
-import rpy2.robjects as robjects
-import pandas.rpy.common as com
+# rpy2 is an optional dependency, but it is needed for SPSS rendering to work.
+rpy2_available = True
+try:
+    import rpy2.robjects as robjects
+    from rpy2.rinterface import RRuntimeError
+    import pandas.rpy.common as com
+except ImportError:
+    rpy2_available = False
 
 from .base import TabularRenderer
 from .exceptions import TooBigTableError, BlankOrCorruptTableError, StataVersionError
 
 from .utilities import MAX_COLS, MAX_ROWS
 from pandas.parser import CParserError
-from rpy2.rinterface import RRuntimeError
 from xlrd.biffh import XLRDError
 
 
@@ -20,7 +25,7 @@ class CSVRenderer(TabularRenderer):
 
     def _build_df(self, file_pointer):
         try:
-            return {"dataframe":pd.read_csv(file_pointer)}
+            return {"dataframe": pd.read_csv(file_pointer)}
         except CParserError:
             raise BlankOrCorruptTableError("Is this a valid csv file?")
 
@@ -68,13 +73,13 @@ class SPSSRenderer(TabularRenderer):
         return ext.lower() == ".sav"
 
     def _build_df(self, file_pointer):
+        if not rpy2_available:
+            return {'dataframe': None}
         try:
             r = robjects
             r.r("require(foreign)")
             r.r('x <- read.spss("{}",to.data.frame=T)'.format(file_pointer.name))
             r.r('row.names(x) = 0:(nrow(x)-1)')
-            return {"dataframe":com.load_data('x')}
+            return {"dataframe": com.load_data('x')}
         except (RRuntimeError, TypeError):
             raise BlankOrCorruptTableError("Is this a valid SPSS file?")
-
-

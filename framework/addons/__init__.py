@@ -111,6 +111,7 @@ class AddonModelMixin(StoredObject):
             statuses
 
         """
+
         for addon_name, enabled in config.iteritems():
             if enabled:
                 self.add_addon(addon_name, auth)

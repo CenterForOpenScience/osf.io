@@ -39,6 +39,7 @@ class TestNodeSerializers(OsfTestCase):
 class TestAddContributorJson(OsfTestCase):
 
     def setUp(self):
+        super(TestAddContributorJson, self).setUp()
         self.user = UserFactory()
         self.profile = self.user.profile_url
         self.user_id = self.user._primary_key
@@ -51,7 +52,7 @@ class TestAddContributorJson(OsfTestCase):
             'position': 'Lover Boy',
             'start': None,
             'end': None,
-                }]
+        }]
 
         self.schools = [{
             'degree': 'Vibing',
@@ -60,7 +61,7 @@ class TestAddContributorJson(OsfTestCase):
             'location': '',
             'start': None,
             'end': None,
-                }]
+        }]
 
     def test_add_contributor_json(self):
         # User with no employment or education info listed
@@ -126,4 +127,3 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-
