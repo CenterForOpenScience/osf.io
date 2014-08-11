@@ -302,6 +302,7 @@ class NodeLog(StoredObject):
 
     PROJECT_CREATED = 'project_created'
     PROJECT_REGISTERED = 'project_registered'
+    PROJECT_DELETED = 'project_deleted'
 
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
@@ -1247,6 +1248,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         if self.node__parent:
             self.node__parent[0].add_log(
                 NodeLog.NODE_REMOVED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
                 params={
                     'project': self._primary_key,
                 },

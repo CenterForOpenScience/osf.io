@@ -497,7 +497,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-        # Create
+        # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
 
         Rule([
@@ -509,7 +509,6 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule(
             [
@@ -543,13 +542,6 @@ def make_url_map(app):
         ),
 
         ### Logs ###
-
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
         # View forks
         Rule([
@@ -607,6 +599,9 @@ def make_url_map(app):
             project_views.email.meeting_hook,
             json_renderer,
         ),
+
+        # Create project, used by projectCreator.js
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
@@ -704,16 +699,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
-        # Create
-        Rule(
-            [
-                '/project/new/',
-                '/project/<pid>/newnode/',
-            ],
-            'post',
-            project_views.node.project_new_node,
-            json_renderer,
-        ),
 
         # Private Link
         Rule([

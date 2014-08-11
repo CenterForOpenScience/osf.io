@@ -4,6 +4,8 @@
 <h2 class="page-title text-center">Create New Project</h2>
 
 <form id="creationForm" data-bind="submit: createProject">
+    ## Uncomment for debugging
+    ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
     <div class="row">
         <div class="col-md-6 col-md-offset-3">
             <label for="title">Title</label>
@@ -35,7 +37,7 @@
 <%def name="javascript_bottom()">
 <script>
     $script(['/static/js/projectCreator.js', '/static/vendor/bower_components/select2/select2.js'], function() {
-        ProjectCreator('#creationForm', 'url');
+        ProjectCreator('#creationForm', '/api/v1/project/new/');
     });
 </script>
 </%def>
