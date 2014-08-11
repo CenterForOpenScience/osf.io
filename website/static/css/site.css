@@ -966,6 +966,7 @@ h1.node-title, h1.node-parent-title {
     border-bottom: none;
     margin-top: 0.2em;
     margin-bottom: 0;
+    height: 36px;
 }
 
 .btn-toolbar.node-control {

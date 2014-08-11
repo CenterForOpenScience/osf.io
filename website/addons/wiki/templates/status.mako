@@ -20,6 +20,12 @@
     </nav>
 </div>
 
+<script type="text/javascript">
+    if($('#pageName').height() >= $('#wikiName').height()) {
+        $('#wikiName').html('<h4 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h4>');
+    }
+</script>
+
 %if wiki_id:
 <script>
     $(document).ready(function() {
