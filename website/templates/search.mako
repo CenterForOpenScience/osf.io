@@ -144,20 +144,12 @@
                                     <a href=${url}>${contributor}</a>${sep}
                                 % endfor
                             </div><!-- end contributors -->
-    ##                      our highlight
-                            <div class="search-field highlight">
-                                % if result['highlight'] is not None:
-                                    % for highlight in result['highlight']:
-                                       %if hightlight:
-                                           ${highlight}
-                                       %endif
-                                    % endfor
     ##                      if there is a wiki link, display that
-                                    % if result['wiki_link']:
-                                        <a href=${result['wiki_link']}> jump to wiki </a>
-                                    % endif
-                                % endif
-                            </div><!-- end highlight -->
+                            % if result['wiki_link']:
+                                <div class="search-field">
+                                    <a href=${result['wiki_link']}> jump to wiki </a>
+                                </div><!-- end wiki link -->
+                            % endif
     ##                      show all the tags for the project
                             % if result['tags']:
                                 <div class="search-tags">

@@ -314,7 +314,6 @@ def create_result(results, counts):
         'tags': [{LIST OF TAGS}],
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
         'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}],
         'description': {PROJECT DESCRIPTION},
     }
     '''
@@ -371,7 +370,6 @@ def _format_result(result, parent, parent_info):
         'contributors_url': result['contributors_url'],
         'is_registration': result['registeredproject'] if parent is None
             else parent_info['is_registration'],
-        'highlight': [],
         'description': result['description'] if parent is None else None,
     }
 
