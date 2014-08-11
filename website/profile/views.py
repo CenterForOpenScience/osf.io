@@ -255,6 +255,7 @@ def serialize_names(**kwargs):
         'middle': user.middle_names,
         'family': user.family_name,
         'suffix': user.suffix,
+        'unconfirmed_username': user.username,
     }
 
 
@@ -366,6 +367,7 @@ def send_update_email_confirmation(**kwargs):
     user.unconfirmed_username = json_data.get('username')
     user.add_email_verification(user.unconfirmed_username)
     confirm_update_email(user, email=user.unconfirmed_username)
+
 
 def verify_user_match(auth, **kwargs):
     uid = kwargs.get('uid')
