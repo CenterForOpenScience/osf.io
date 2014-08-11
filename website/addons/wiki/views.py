@@ -347,9 +347,7 @@ def project_wiki_rename(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wid = kwargs['wid']
-    page = NodeWikiPage.load(wid)
-    del node.wiki_pages_current[page.page_name.lower()]
-    node.delete_node_wiki(page, auth)
+    page = NodeWikiPage.load(kwargs['wid'])
+    node.delete_node_wiki(node, page, auth)
     node.save()
     return {}

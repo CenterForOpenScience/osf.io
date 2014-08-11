@@ -2382,10 +2382,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = to_mongo(page)
         page = str(page).lower()
 
-        if page in self.wiki_pages_versions:
-            version = len(self.wiki_pages_versions[page]) + 1
-        elif page not in self.wiki_pages_current:
-            version = 1
+        if page not in self.wiki_pages_current:
+            if page in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[page]) + 1
+            else:
+                version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[page])
             current.is_current = False
@@ -2419,7 +2420,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=v.date
         )
 
-    def delete_node_wiki(self, page, auth):
+    def delete_node_wiki(self, node, page, auth):
+
+        del node.wiki_pages_current[page.page_name.lower()]
 
         self.add_log(
             action=NodeLog.WIKI_DELETED,
