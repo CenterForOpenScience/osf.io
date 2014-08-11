@@ -8,6 +8,8 @@
     % endif
     %if log['action'] == 'project_created':
         created <a href="${log['node']['url']}">project</a>
+    %elif log['action'] == 'project_deleted':
+        deleted <a href="${log['node']['url']}">project</a>
     %elif log['action'] == 'node_created':
         created ${log['node']['category']}
         <a href="${log['node']['url']}">${log['node']['title']}</a>

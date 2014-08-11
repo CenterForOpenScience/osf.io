@@ -1140,24 +1140,36 @@ h1.unavailable {
 }
 
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
@@ -1670,3 +1682,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+
