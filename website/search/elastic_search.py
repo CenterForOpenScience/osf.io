@@ -31,14 +31,6 @@ except pyelasticsearch.exceptions.ConnectionError as e:
     elastic = None
 
 
-def requires_search(func):
-    def wrapped(*args, **kwargs):
-        if elastic is not None:
-            return func(*args, **kwargs)
-    return wrapped
-
-
-@requires_search
 def search(raw_query, start=0):
     orig_query = raw_query
 
@@ -180,7 +172,6 @@ def _build_query(raw_query, start=0):
     return query, raw_query
 
 
-@requires_search
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
@@ -237,7 +228,6 @@ def update_node(node):
             elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
-@requires_search
 def update_user(user):
     if not user.is_active():
         try:
@@ -260,7 +250,6 @@ def update_user(user):
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
 
-@requires_search
 def delete_all():
     try:
         elastic.delete_index('website')
@@ -269,7 +258,6 @@ def delete_all():
         logger.error("The index 'website' was not deleted from elasticsearch")
 
 
-@requires_search
 def delete_doc(elastic_document_id, node):
     category = 'registration' if node.is_registration else node.project_or_component
     try:
@@ -383,7 +371,6 @@ def _format_result(result, parent, parent_info):
     return formatted_result
 
 
-@requires_search
 def search_contributor(query, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
