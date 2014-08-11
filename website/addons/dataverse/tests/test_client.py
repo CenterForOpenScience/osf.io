@@ -17,6 +17,9 @@ from website.addons.dataverse import settings
 class TestClient(DataverseAddonTestCase):
 
     def setUp(self):
+
+        super(TestClient, self).setUp()
+
         self.mock_connection = mock.create_autospec(Connection)
         self.mock_dataverse = mock.create_autospec(Dataverse)
         self.mock_study = mock.create_autospec(Study)

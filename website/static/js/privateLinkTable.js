@@ -91,8 +91,18 @@
         });
         self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
         self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
+        self.removeLink = "Remove this link";
         self.hasMoreText = ko.computed(function(){
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
+        });
+
+        self.anonymousDisplay = ko.computed(function(){
+            if(data.anonymous){
+                return "Yes";
+            }
+            else {
+                return "No";
+            }
         });
 
         self.displayAllNodes = function() {
@@ -123,8 +133,9 @@
         }
 
         function onFetchError() {
-          //TODO
-          console.log('an error occurred');
+          bootbox.alert('Could not retrieve view-only links. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
         }
 
         function fetch() {

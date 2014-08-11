@@ -12,9 +12,11 @@ from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
 from website.addons.dataverse.views.crud import fail_if_unauthorized
-from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_draft_file, DataverseAddonTestCase, mock_responses, \
+from website.addons.dataverse.tests.utils import (
+    create_mock_connection,
+    create_mock_draft_file, DataverseAddonTestCase, mock_responses,
     create_mock_study
+)
 
 
 class TestDataverseViewsAuth(DataverseAddonTestCase):
@@ -673,6 +675,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 class TestDataverseRestrictions(DataverseAddonTestCase):
 
     def setUp(self):
+
         super(DataverseAddonTestCase, self).setUp()
 
         # Nasty contributor who will try to access content that he shouldn't
@@ -700,5 +703,5 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     nose.run()

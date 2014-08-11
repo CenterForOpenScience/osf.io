@@ -3,7 +3,6 @@ Files views.
 """
 import os
 import codecs
-import logging
 from website.util import rubeus
 
 from framework.flask import request, secure_filename
@@ -12,9 +11,6 @@ from framework.render.tasks import build_rendered_html
 from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_be_contributor_or_public

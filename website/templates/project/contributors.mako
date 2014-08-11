@@ -6,9 +6,14 @@
 
         <h2>Contributors</h2>
             % if 'admin' in user['permissions']:
-                <div class="text-align">Drag and drop contributors to change listing order.</div>
+                <p>Drag and drop contributors to change listing order.</p>
             % endif
             <div id="manageContributors" class="scripted">
+            <!-- ko if: canEdit -->
+            <a href="#addContributors" data-toggle="modal" class="btn btn-primary">
+                Add Contributors
+            </a>
+            <!-- /ko -->
                 <table id="manageContributorsTable" class="table">
                     <thead>
                         <tr>
@@ -33,16 +38,10 @@
                                     data-html="true"
                                 ></i>
                         </th>
-                        <th class="col-md-1"></th>
+                        <th class="col-md-1">
+                        </th>
                         </tr>
                     </thead>
-                    <tr data-bind="if: canEdit">
-                        <td colspan="3">
-                            <a href="#addContributors" data-toggle="modal">
-                                Add a contributor
-                            </a>
-                        </td>
-                    </tr>
                     <tbody data-bind="sortable: {
                             template: 'contribTpl',
                             data: contributors,
@@ -61,7 +60,7 @@
 
     % if 'admin' in user['permissions']:
         <h2>View-only Links</h2>
-        <div class="text-align">Create a link to share this project so those who have the link can view but not edit the project</div>
+        <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
@@ -70,9 +69,11 @@
                     <tr>
                     <th class="col-sm-3">Link</th>
                     <th class="col-sm-4">What This Link Shares</th>
+
                     <th class="col-sm-2">Created Date</th>
                     <th class="col-sm-2">Created By</th>
-                    <th class="col-sm-1"></th>
+                    <th class="col-sm-1">Anonymous</th>
+                    <th class="col-sm-0"></th>
                     </tr>
                 </thead>
 
@@ -114,9 +115,14 @@
                         <td class="col-sm-2">
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
-                        <td class="col-sm-2" data-bind="text: creator"></td>
+                        <td class="col-sm-2" >
+                            <a data-bind="text: creator.fullname, attr: {href: creator.url}"></a>
+                        </td>
                         <td class="col-sm-1">
-                            <a  rel="tooltip" title="Remove this link" data-bind="click: $root.removeLink">
+                            <span data-bind="text: anonymousDisplay"></span>
+                        </td>
+                        <td class="col-sm-0">
+                            <a data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
                                 <i class="icon-remove text-danger"></i>
                             </a>
                         </td>
@@ -136,7 +142,12 @@
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
-            <span data-bind="text: contributor.fullname"></span>
+            <span data-bind="ifnot: profileUrl">
+                <span data-bind="text: contributor.fullname"></span>
+            </span>
+            <span data-bind="if: profileUrl">
+                <a data-bind="text: contributor.fullname, attr:{href: profileUrl}"></a>
+            </span>
         </td>
         <td>
             <!-- ko if: $parent.canEdit -->
@@ -163,9 +174,7 @@
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
                     <a
-                            data-bind="click: remove, clickBubble: false"
-                            rel="tooltip"
-                            title="Remove contributor"
+                            data-bind="click: remove, clickBubble: false, tooltip: {title: removeContributor}"
                         >
                                 <i class="icon-remove text-danger"></i>
                     </a>
@@ -213,20 +222,21 @@
         var isRegistration = ${json.dumps(node['is_registration'])};
         var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
+    % if 'admin' in user['permissions']:
+        $script(['/static/js/privateLinkManager.js',
+                 '/static/js/privateLinkTable.js']);
 
-    $script(['/static/js/privateLinkManager.js',
-             '/static/js/privateLinkTable.js']);
+        $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
+            // Controls the modal
+            var configUrl = nodeApiUrl + 'get_editable_children/';
+            var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
 
-    $script.ready(['privateLinkManager', 'privateLinkTable'], function () {
-        // Controls the modal
-        var configUrl = nodeApiUrl + 'get_editable_children/';
-        var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
+            var tableUrl = nodeApiUrl + 'private_link/';
+            var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
+        });
 
-        var tableUrl = nodeApiUrl + 'private_link/';
-        var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl);
-    });
-
-    $("body").on('click', ".link-url", function(e) { e.target.select() });
+        $("#privateLinkTable").on('click', ".link-url", function(e) { e.target.select() });
+    % endif
 
     </script>
 </%def>

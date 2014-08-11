@@ -21,6 +21,7 @@
      */
     var Log = function(params) {
         var self = this;
+
         $.extend(self, params);
         self.date = new FormattableDate(params.date);
         self.wikiUrl = ko.computed(function() {
@@ -35,26 +36,37 @@
         };
 
         /**
+         * Return whether a knockout template exists for the log.
+         */
+        self.hasTemplate = ko.computed(function() {
+            return $('script#' + self.action).length > 0;
+        });
+
+        /**
          * Return the html for a comma-delimited list of contributor links, formatted
          * with correct list grammar.
          * e.g. "Dasher and Dancer", "Comet, Cupid, and Blitzen"
          */
         self.displayContributors = ko.computed(function(){
             var ret = '';
-            for (var i=0; i < self.contributors.length; i++) {
-                var person = self.contributors[i];
-                if(i === self.contributors.length - 1 && self.contributors.length > 2){
-                    ret += ' and ';
-                }
-                if (person.registered){
-                    ret += self._asContribLink(person);
-                } else {
-                    ret += '<span>' + person.fullname + '</span>';
-                }
-                if (i < self.contributors.length - 1 && self.contributors.length > 2){
-                    ret += ', ';
-                } else if (i < self.contributors.length - 1 && self.contributors.length === 2){
-                    ret += ' and ';
+            if (self.anonymous){
+                ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
+            } else {
+                for (var i = 0; i < self.contributors.length; i++) {
+                    var person = self.contributors[i];
+                    if (i === self.contributors.length - 1 && self.contributors.length > 2) {
+                        ret += ' and ';
+                    }
+                    if (person.registered) {
+                        ret += self._asContribLink(person);
+                    } else {
+                        ret += '<span>' + person.fullname + '</span>';
+                    }
+                    if (i < self.contributors.length - 1 && self.contributors.length > 2) {
+                        ret += ', ';
+                    } else if (i < self.contributors.length - 1 && self.contributors.length === 2) {
+                        ret += ' and ';
+                    }
                 }
             }
             return ret;
@@ -114,13 +126,13 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
+                'anonymous': item.anonymous,
                 'action': item.action,
                 'date': item.date,
                 // The node type, either 'project' or 'component'
                 // NOTE: This is NOT the component category (e.g. 'hypothesis')
                 'nodeType': item.node.node_type,
                 'nodeCategory': item.node.category,
-                'contributor': item.contributor,
                 'contributors': item.contributors,
                 'nodeUrl': item.node.url,
                 'userFullName': item.user.fullname,
