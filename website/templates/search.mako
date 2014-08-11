@@ -65,13 +65,27 @@
                     <div class="list-group-item">
 ##                    users are different results than anything associated with projects
                         % if 'user' in result:
-                            <div class="user">
+                            <div class="title">
                                 <h4>
                                     % if not type == 'user':
                                         <small>[ User ]</small>
                                     % endif
                                     <a href=${result['user_url']}>${result['user']}</a>
                                 </h4>
+                            </div>
+                            <div class="description">
+                                % if result['job']:
+                                    <h5>
+                                        Employment: ${result['job_title'] if result['job_title'] else 'works'} at ${result['job']}
+                                    </h5>
+                                % endif
+                            </div>
+                            <div class="description">
+                                % if result['school']:
+                                    <h5>
+                                        Education: ${result['degree'] if result['degree'] else 'studied'} at ${result['school']}
+                                    </h5>
+                                % endif
                             </div>
                         % else:
                             <div class="title">

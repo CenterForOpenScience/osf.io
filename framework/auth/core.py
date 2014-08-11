@@ -164,6 +164,8 @@ class User(GuidStoredObject, AddonModelMixin):
     SEARCH_UPDATE_FIELDS = {
         'fullname',
         'merged_by',
+        'jobs',
+        'schools',
     }
 
     _id = fields.StringField(primary=True)

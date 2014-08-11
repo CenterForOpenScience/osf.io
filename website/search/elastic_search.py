@@ -128,7 +128,7 @@ def _build_query(full_query, start=0):
 
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
-    # If the search contains wildcards, make them mean something
+    # Build the inner query, making wildcards mean something
     inner_query = {
         'query_string': {
             'default_field': '_all',
@@ -240,6 +240,10 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'job': user.jobs[0]['institution'] if user.jobs else '',
+        'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'school': user.schools[0]['institution'] if user.schools else '',
+        'degree': user.schools[0]['degree'] if user.schools else '',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
@@ -325,6 +329,10 @@ def create_result(results, counts):
                 'id': result['id'],
                 'user': result['user'],
                 'user_url': '/profile/' + result['id'],
+                'job': result['job'],
+                'job_title': result['job_title'],
+                'school': result['school'],
+                'degree': result['degree']
             })
             index += 1
         else:
