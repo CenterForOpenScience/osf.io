@@ -2,7 +2,6 @@
     <div style="display: inline-block">
 	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
-
     <nav class="navbar navbar-default" style="display: inline-block; float: right">
         <ul class="nav navbar-nav">
             % if user['can_edit']:

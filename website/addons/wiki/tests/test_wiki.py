@@ -155,6 +155,3 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wid='wiki2'),
             wiki.html(project),
         )
-
-
-

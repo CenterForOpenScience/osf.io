@@ -2423,7 +2423,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     def delete_node_wiki(self, node, page, auth):
 
         del node.wiki_pages_current[page.page_name.lower()]
-
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={

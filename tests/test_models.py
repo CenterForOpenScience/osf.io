@@ -786,6 +786,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
+
 class TestDeleteNodeWiki(OsfTestCase):
 
     def setUp(self):
@@ -825,6 +826,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Check versions
         assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
+
 
 class TestNode(OsfTestCase):
 
