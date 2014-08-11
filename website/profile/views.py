@@ -253,6 +253,7 @@ def serialize_names(**kwargs):
         'middle': user.middle_names,
         'family': user.family_name,
         'suffix': user.suffix,
+        'unconfirmed_username': user.username,
     }
 
 
@@ -349,8 +350,8 @@ def unserialize_names(**kwargs):
     user.family_name = json_data.get('family')
     user.suffix = json_data.get('suffix')
     user.username = json_data.get('username')
+    user.unconfirmed_username = json_data.get('unconfirmed_username')
     user.save()
-
 
 def verify_user_match(auth, **kwargs):
     uid = kwargs.get('uid')

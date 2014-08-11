@@ -187,6 +187,7 @@
         self.family = $.osf.ko.sanitizedObservable();
         self.suffix = $.osf.ko.sanitizedObservable();
         self.username = $.osf.ko.sanitizedObservable();
+        self.unconfirmed_username = $.osf.ko.sanitizedObservable();
 
         self.tracked = [
             self.full,
@@ -194,6 +195,7 @@
             self.middle,
             self.family,
             self.suffix,
+            self.unconfirmed_username,
             self.username
         ];
 
@@ -274,6 +276,77 @@
         });
 
         self.fetch();
+
+
+        NameViewModel.prototype.handleEmailSuccess = function() {
+        if ($.inArray('view', this.modes) >= 0) {
+            this.mode('view');
+        } else {
+            this.changeMessage(
+                'Settings updated. Please check ' + this.username() + ' to confirm your email address',
+                'text-success',
+                5000
+            );
+        }
+        };
+
+        NameViewModel.prototype.handleEmailError = function() {
+            this.changeMessage(
+                'Email address cannot be updated',
+                'text-danger',
+                5000
+            );
+        };
+
+        NameViewModel.prototype.handleSuccess = function() {
+        if ($.inArray('view', this.modes) >= 0) {
+            this.mode('view');
+        } else {
+            this.changeMessage(
+                'Settings updated',
+                'text-success',
+                5000
+            );
+        }
+        };
+
+        NameViewModel.prototype.handleError = function() {
+            this.changeMessage(
+                'Could not update settings',
+                'text-danger',
+                5000
+            );
+        };
+
+        NameViewModel.prototype.submit = function() {
+            console.log(this.unconfirmed_username())
+            console.log(this.username())
+            if (this.enableSubmit() === false) {
+                return
+            }
+            if (this.unconfirmed_username() !== this.username()) {
+                $.ajax({
+                type: 'PUT',
+                url: this.urls.crud,
+                data: this.serialize(),
+                contentType: 'application/json',
+                dataType: 'json',
+                success: [this.handleEmailSuccess.bind(this), this.setOriginal],
+                error: this.handleEmailError.bind(this)
+                });
+            } else {
+                $.ajax({
+                    type: 'PUT',
+                    url: this.urls.crud,
+                    data: this.serialize(),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: [this.handleSuccess.bind(this), this.setOriginal],
+                    error: this.handleError.bind(this)
+                });
+            }
+        };
+
 
     };
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
