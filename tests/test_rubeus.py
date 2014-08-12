@@ -284,6 +284,12 @@ class TestSerializingNodeWithAddon(OsfTestCase):
         for index, value in enumerate(ret):
             assert_equal(value['name'], sorted_files[index]['name'])
 
+    def test_sort_by_name_none(self):
+        files = None
+        sorted_files = None
+        ret = sort_by_name(files)
+        assert_equal(ret, sorted_files)
+
     def test_serialize_node(self):
         ret = self.serializer._serialize_node(self.project)
         assert_equal(
