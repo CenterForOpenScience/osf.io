@@ -16,6 +16,7 @@ from website.project import Node
 from website.util import rubeus, api_url_for
 
 import website.app
+from website.util.rubeus import sort_by_name
 from website.views import get_all_projects_smart_folder
 
 app = website.app.init_app(
@@ -272,6 +273,37 @@ class TestSerializingNodeWithAddon(OsfTestCase):
     def test_collect_addons(self):
         ret = self.serializer._collect_addons(self.project)
         assert_equal(ret, [serialized])
+
+    def test_sort_by_name(self):
+        files = \
+            [
+                {'name': 'F.png'},
+                {'name': 'd.png'},
+                {'name': 'B.png'},
+                {'name': 'a.png'},
+                {'name': 'c.png'},
+                {'name': 'e.png'},
+                {'name': 'g.png'},
+            ]
+        sorted_files = \
+            [
+                {'name': 'a.png'},
+                {'name': 'B.png'},
+                {'name': 'c.png'},
+                {'name': 'd.png'},
+                {'name': 'e.png'},
+                {'name': 'F.png'},
+                {'name': 'g.png'},
+            ]
+        ret = sort_by_name(files)
+        for index, value in enumerate(ret):
+            assert_equal(value['name'], sorted_files[index]['name'])
+
+    def test_sort_by_name_none(self):
+        files = None
+        sorted_files = None
+        ret = sort_by_name(files)
+        assert_equal(ret, sorted_files)
 
     def test_serialize_node(self):
         ret = self.serializer._serialize_node(self.project)

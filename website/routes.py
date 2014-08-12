@@ -550,13 +550,6 @@ def make_url_map(app):
 
         ### Logs ###
 
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
-
         # View forks
         Rule([
             '/project/<pid>/forks/',

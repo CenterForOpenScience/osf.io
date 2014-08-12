@@ -53,17 +53,25 @@
     };
 
     var printDate = function(date, dlm) {
-        dlm = dlm || '-';
-        var formatted = date.getFullYear() + dlm + (date.getMonth() + 1);
+        dlm = dlm || '/';
+        var formatted = date.getFullYear() + dlm + pad((date.getMonth() + 1), 2);
         if (date.getDate()) {
-            formatted += dlm + date.getDate()
+            formatted += dlm + pad(date.getDate(), 2);
         }
         return formatted;
     };
 
+    // Handy pad function from http://stackoverflow.com/a/10073788
+    function pad(n, width, z) {
+      z = z || '0';
+      n = n + '';
+      return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    }
+
     addExtender('asDate', function(value, options) {
         var out;
         if (value) {
+            value.replace(/-/g,'/');
             var date;
             if (value.match(/^\d{4}$/)) {
                 date = new Date(value, 0, 1);
