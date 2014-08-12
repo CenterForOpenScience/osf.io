@@ -56,7 +56,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = '&nbsp;&'
+            separator = '&nbsp&'
         else:
             separator = ','
 

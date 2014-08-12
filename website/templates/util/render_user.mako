@@ -5,5 +5,5 @@
         data-original-title="${user_fullname}"
     >${user_display_name}</a>
 % else:
-    <span>${user_display_name}</span>
+    <span class="contributor-name">${user_display_name}</span>
 % endif
