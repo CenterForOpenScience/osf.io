@@ -6,6 +6,9 @@ This script must be run from the OSF root directory for the imports to work.
 ::
 
     $ python -m scripts.consistency.fix_duplicate_addons
+
+
+Performed on production by SL on 2014-08-12 at 5:10PM (EST).
 """
 
 from nose.tools import assert_raises
