@@ -111,7 +111,10 @@ def build_addon_button(text, action):
 
 
 def sort_by_name(hgrid_data):
-    return sorted(hgrid_data, key=lambda item: item['name'].lower())
+    return_value = hgrid_data
+    if hgrid_data is not None:
+        return_value = sorted(hgrid_data, key=lambda item: item['name'].lower())
+    return return_value
 
 
 class NodeFileCollector(object):
