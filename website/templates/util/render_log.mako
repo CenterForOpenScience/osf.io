@@ -17,8 +17,6 @@
         ${log['node']['category']} ${log['node']['title']}
     %elif log['action'] == 'wiki_updated':
         updated wiki page <a href="${log['node']['url']}wiki/${log['params']['page']}/">${log['params']['page']}</a> to version ${log['params']['version']}
-    %elif log['action'] == 'wiki_deleted':
-        deleted wiki page <a href="${log['node']['url']}wiki/${log['params']['page']}/">${log['params']['page']}</a>
     %elif log['action'] == 'contributor_added':
         added
         % for contributor in log['contributors']:
