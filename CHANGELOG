@@ -2,10 +2,8 @@
 Changelog
 *********
 
-0.15.0 (unreleased)
+0.15.0 (2014-08-11)
 ===================
-
-Scheduled 2014-08-11
 
 - View-only links: Add option to anonymize contributors.
 - Wiki: Add support for fenced code blocks; syntax highlighting; allow ID attributes in tags.
