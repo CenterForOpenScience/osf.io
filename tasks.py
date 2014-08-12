@@ -13,7 +13,6 @@ from invoke.exceptions import Failure
 
 from website import settings
 
-SOLR_DEV_PATH = os.path.join("scripts", "solr-dev")  # Path to example solr app
 
 try:
     run('pip freeze | grep rednose', hide='both')
@@ -232,15 +231,6 @@ def rabbitmq():
 
 
 @task
-def solr():
-    '''Start a local solr server.
-
-    NOTE: Requires that Java and Solr are installed. See README for more instructions.
-    '''
-    os.chdir(SOLR_DEV_PATH)
-    run("java -jar start.jar", pty=True)
-
-@task
 def elasticsearch():
     '''Start a local elasticsearch server
 
@@ -249,7 +239,7 @@ def elasticsearch():
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
         run("sudo service elasticsearch start")
-    elif platform.system() == 'Darwin': # Mac OSX
+    elif platform.system() == 'Darwin':  # Mac OSX
         run('elasticsearch')
     else:
         print("Your system is not recognized, you will have to start elasticsearch manually")
@@ -268,7 +258,7 @@ def mailserver(port=1025):
 @task
 def requirements(all=False):
     '''Install dependencies.'''
-    run("pip install --upgrade -r dev-requirements.txt", pty=True)
+    run("pip install --upgrade -r dev-requirements.txt")
     if all:
         addon_requirements()
         mfr_requirements()
@@ -328,8 +318,7 @@ def addon_requirements():
                     'pip install --upgrade -r {0}/{1}/requirements.txt'.format(
                         settings.ADDON_PATH,
                         directory
-                    ),
-                    pty=True
+                    )
                 )
             except IOError:
                 pass
@@ -341,7 +330,7 @@ def mfr_requirements():
     """Install modular file renderer requirements"""
     mfr = 'mfr'
     print('Installing mfr requirements')
-    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr))
 
 
 @task
@@ -419,12 +408,26 @@ def packages():
 
 
 @task
+def npm_bower():
+    print('Installing bower')
+    run('npm install -g bower')
+
+
+@task
+def bower_install():
+    print('Installing bower-managed packages')
+    run('bower install')
+
+
+@task
 def setup():
     """Creates local settings, installs requirements, and generates encryption key"""
     copy_settings(addons=True)
     packages()
     requirements(all=True)
     encryption()
+    npm_bower()
+    bower_install()
 
 
 @task

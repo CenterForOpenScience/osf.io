@@ -13,7 +13,6 @@ from website.util import rubeus
 from website.addons.dropbox.client import get_node_addon_client
 
 logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 # TODO: Generalize this for other addons?

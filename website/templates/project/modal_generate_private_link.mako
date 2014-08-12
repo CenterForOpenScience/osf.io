@@ -8,7 +8,6 @@
             <div class="modal-body">
 
                 <div>
-
                     <div>
                         Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
                         <div class="form-group">
@@ -18,11 +17,22 @@
 
                     <hr />
 
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" data-bind="checked: anonymous"/>
+                            Anonymize contributor list for this link (e.g., for blind peer review)
+                        </label>
+                    </div>
+
+                    <hr />
+
                     <div style="margin-bottom:10px;">
                         Anyone with the private link can view, but not edit,
                         the components associated with the link.
                         Which components would you like to associate with this link?
                     </div>
+
+
 
                     <div class="row">
 
@@ -40,6 +50,7 @@
                         </div>
 
                         <div class="col-md-6">
+
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
                             </div>
@@ -57,7 +68,7 @@
             <div class="modal-footer">
 
                 <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-                <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                <a class="btn btn-success" data-bind="click:submit, css:{disabled: disableSubmit}, text: submitText"></a>
 
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->

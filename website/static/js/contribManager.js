@@ -61,7 +61,7 @@
         self.visible = ko.observable(contributor.visible);
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
-
+        self.removeContributor = "Remove contributor";
         self.pageOwner = pageOwner;
         self.serialize = function() {
             return ko.toJS(self);
@@ -78,7 +78,7 @@
             // Allow default action
             return true;
         };
-
+        self.profileUrl = ko.observable(contributor.url);
         self.notDeleteStaged = ko.computed(function() {
             return !self.deleteStaged();
         });

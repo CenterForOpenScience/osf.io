@@ -3,7 +3,6 @@ import os
 import logging
 import copy
 import json
-import pystache
 import functools
 import httplib as http
 
@@ -170,6 +169,7 @@ def process_rules(app, rules, prefix=''):
 ### Renderer helpers ###
 
 def render_mustache_string(tpl_string, data):
+    import pystache
     return pystache.render(tpl_string, context=data)
 
 def render_jinja_string(tpl, data):
@@ -432,7 +432,7 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
-                logging.exception(error)
+                logger.exception(error)
                 if error_msg:
                     return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(

@@ -4,6 +4,7 @@ import unittest
 import logging
 import functools
 import blinker
+from webtest_plus import TestApp
 
 from pymongo import MongoClient
 from faker import Factory
@@ -22,17 +23,26 @@ from website.addons.wiki.model import NodeWikiPage
 import website.models
 from website.signals import ALL_SIGNALS
 from website.app import init_app
-from website.util import web_url_for, api_url_for
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
-    settings_module='website.settings', routes=False, set_backends=False
+    settings_module='website.settings', routes=True, set_backends=False
 )
 
-# Silence some 3rd-party logging
-SILENT_LOGGERS = ['factory.generate', 'factory.containers']
+
+logger = logging.getLogger()
+logger.setLevel(logging.CRITICAL)
+
+# Silence some 3rd-party logging and some "loud" internal loggers
+SILENT_LOGGERS = [
+    'factory.generate',
+    'factory.containers',
+    'website.search.elastic_search',
+    'framework.auth.core',
+    'website.mails',
+]
 for logger_name in SILENT_LOGGERS:
-    logging.getLogger(logger_name).setLevel(logging.WARNING)
+    logging.getLogger(logger_name).setLevel(logging.CRITICAL)
 
 # Fake factory
 fake = Factory.create()
@@ -61,13 +71,18 @@ class OsfTestCase(unittest.TestCase):
             addons=settings.ADDONS_AVAILABLE, db=cls.db,
         )
         cls._client.drop_database(cls.db)
-        cls.context = test_app.test_request_context()
-        cls.context.push()
+
+    def setUp(self):
+        self.app = TestApp(test_app)
+        self.context = test_app.test_request_context()
+        self.context.push()
+
+    def tearDown(self):
+        self.context.pop()
 
     @classmethod
     def tearDownClass(cls):
         '''Drop the database when all tests finish.'''
-        cls.context.pop()
         cls._client.drop_database(cls.db)
 
 
@@ -82,6 +97,7 @@ class AppTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.ctx.pop()
+
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
@@ -133,43 +149,6 @@ def capture_signals():
     """Factory method that creates a ``CaptureSignals`` with all OSF signals."""
     return CaptureSignals(ALL_SIGNALS)
 
-
-class URLLookup(object):
-    """Utility class for doing reverse URL lookup within tests. Just wraps
-    web_url_for and api_url_for so they can be used outside of app context.
-
-    Usage: ::
-
-        from website.app import init_app
-        from tests.base import OsfTestCase, URLLookup
-
-        app = init_app()
-        lookup = URLLookup(app)
-
-        class TestProjectViews(OsfTestCase):
-            ...
-            def test_project_endpoint(self):
-                url = lookup('web', 'view_project', pid=self.project._primary_key)
-    """
-
-    def __init__(self, app):
-        self.app = app
-
-    def web_url_for(self, view_name, *args, **kwargs):
-        with self.app.test_request_context():  # Need a request context to use url_for
-            url = web_url_for(view_name, *args, **kwargs)
-        return url
-
-    def api_url_for(self, view_name, *args, **kwargs):
-        with self.app.test_request_context():
-            url = api_url_for(view_name, *args, **kwargs)
-        return url
-
-    def __call__(self, type_, view_name, *args, **kwargs):
-        if type_ == 'web':
-            return self.web_url_for(view_name, *args, **kwargs)
-        else:
-            return self.api_url_for(view_name, *args, **kwargs)
 
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg

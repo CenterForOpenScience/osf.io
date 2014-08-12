@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import httplib as http
-import logging
 import time
 
 from modularodm.exceptions import ValidationValueError
@@ -15,7 +14,7 @@ from framework.sessions import session
 
 from website import mails, language
 from website.project.model import unreg_contributor_added
-from website.models import Node
+from website.models import Node, User
 from website.profile import utils
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
@@ -24,10 +23,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
     must_be_contributor_or_public, must_have_permission,
 )
-
-
-logger = logging.getLogger(__name__)
-
+from framework.auth.core import get_current_user
 
 @collect_auth
 @must_be_valid_project
@@ -125,7 +121,7 @@ def get_recently_added_contributors(auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils.add_contributor_json(contrib)
+        utils.add_contributor_json(contrib, get_current_user())
         for contrib in auth.user.recently_added
         if contrib.is_active()
         if contrib._id not in node.contributors
@@ -223,6 +219,7 @@ def deserialize_contributors(node, user_dicts, auth):
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
+
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
         else:
@@ -243,6 +240,7 @@ def deserialize_contributors(node, user_dicts, auth):
             contributor.save()
             unreg_contributor_added.send(node, contributor=contributor,
                 auth=auth)
+
         contribs.append({
             'user': contributor,
             'visible': visible,

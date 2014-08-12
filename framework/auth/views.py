@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import datetime
 import httplib as http
 from flask import request, redirect
@@ -20,9 +19,6 @@ import website.settings
 from website.models import User
 from website.util import web_url_for
 from website import security, mails, language
-
-
-logger = logging.getLogger(__name__)
 
 
 def reset_password(**kwargs):

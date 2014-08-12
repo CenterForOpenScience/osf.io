@@ -357,7 +357,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
@@ -599,6 +600,20 @@ h4 {
 
 .footer a i {
     color: #666666;
+}
+
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
 }
 
 .header-image {
@@ -1125,30 +1140,43 @@ h1.unavailable {
 }
 
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
 }
+
 
 /* Markdown editing */
 
@@ -1407,6 +1435,33 @@ div#logScope a.moreLogs{
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
 }
+
+/* Contributors list */
+
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors ol {
+    margin:0;
+    padding:0;
+    display:inline;
+}
+
+#contributors ol li {
+    list-style-type:none;
+    display:inline;
+    white-space: nowrap;
+}
+
+#contributors ol li:after {
+    content: ",";
+}
+
+#contributors ol li:last-child:after {
+    content: "";
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
@@ -1451,6 +1506,10 @@ li.contributor-list-item img {
 
 li.contributor-list-item a.name {
     margin-left:30px;
+}
+
+.contributor-anonymous {
+    font-style: italic;
 }
 
 /* Handle popovers inside modals */
@@ -1623,3 +1682,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+

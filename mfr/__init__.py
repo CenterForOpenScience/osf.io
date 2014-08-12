@@ -12,7 +12,8 @@ modules = [
 for module in modules:
     try:
         importlib.import_module('mfr.renderer.' + module)
-    except ImportError:
+    except ImportError as err:
+        logger.exception(err)
         logger.error('Could not import module {0}'.format(module))
 
 config = {}

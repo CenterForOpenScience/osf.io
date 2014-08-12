@@ -217,7 +217,9 @@ $(document).ready(function() {
 
     $('.permission-info').attr(
         'data-content', permissionInfoHtml
-    ).popover();
+    ).popover({
+            trigger: 'hover'
+        });
 
     var visibilityInfoHtml = 'Only visible contributors will be displayed ' +
         'in the Contributors list and in project citations. Non-visible ' +
@@ -225,7 +227,10 @@ $(document).ready(function() {
 
     $('.visibility-info').attr(
         'data-content', visibilityInfoHtml
-    ).popover();
+    ).popover({
+            trigger: 'hover'
+        });
+
 
     ////////////////////
     // Event Handlers //
