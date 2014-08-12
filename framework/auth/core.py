@@ -175,7 +175,6 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    private_links = fields.ForeignField('privatelink', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -259,10 +258,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def __repr__(self):
         return '<User {0!r}>'.format(self.username)
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):

@@ -4,17 +4,14 @@ from nose.tools import *  # PEP8 asserts
 
 from modularodm.exceptions import ValidationError
 
-from tests.base import OsfTestCase, URLLookup
+from tests.base import OsfTestCase
 from website.addons.forward.tests.factories import ForwardSettingsFactory
-from website.app import init_app
-
-app = init_app(set_backends=False, routes=True)
-lookup = URLLookup(app)
 
 
 class TestSettingsValidation(OsfTestCase):
 
     def setUp(self):
+        super(TestSettingsValidation, self).setUp()
         self.settings = ForwardSettingsFactory()
 
     def test_validate_url_bad(self):

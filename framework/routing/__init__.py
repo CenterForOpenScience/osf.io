@@ -3,7 +3,6 @@ import os
 import logging
 import copy
 import json
-import pystache
 import functools
 import httplib as http
 
@@ -170,6 +169,7 @@ def process_rules(app, rules, prefix=''):
 ### Renderer helpers ###
 
 def render_mustache_string(tpl_string, data):
+    import pystache
     return pystache.render(tpl_string, context=data)
 
 def render_jinja_string(tpl, data):
