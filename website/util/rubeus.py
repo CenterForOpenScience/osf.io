@@ -175,6 +175,7 @@ class NodeFileCollector(object):
         rv = []
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
+                # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
                 rv.extend(sort_by_name(temp) or [])
         return rv
