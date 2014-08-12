@@ -2192,7 +2192,6 @@ class TestForkViews(OsfTestCase):
 
     def setUp(self):
         super(TestForkViews, self).setUp()
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.project = ProjectFactory.build(creator=self.user, public=True)
         self.consolidated_auth = Auth(user=self.project.creator)
