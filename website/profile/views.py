@@ -362,6 +362,7 @@ def unserialize_names(**kwargs):
     user.save()
 
 @must_be_logged_in
+# write test
 def send_update_email_confirmation(**kwargs):
     user = kwargs['auth'].user
     json_data = deep_clean(request.get_json())

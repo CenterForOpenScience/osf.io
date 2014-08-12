@@ -319,8 +319,8 @@
         };
 
         NameViewModel.prototype.submit = function() {
-            console.log(this.unconfirmed_username())
-            console.log(this.username())
+            console.log(this.unconfirmed_username());
+            console.log(this.username());
             if (this.enableSubmit() === false) {
                 return
             }
