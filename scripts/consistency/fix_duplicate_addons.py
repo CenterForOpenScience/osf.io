@@ -47,7 +47,8 @@ def do_migration(db):
 
         for node in get_targets(db, addon_class):
             print('- ' + node._id)
-            keep, discard = [x for x in node.addons if isinstance(x, addon_class)]
+            backref_key = '{}__addons'.format(addon_class.__name__.lower())
+            keep, discard = getattr(node, backref_key)
             addon_class.remove_one(discard)
 
         print('')
