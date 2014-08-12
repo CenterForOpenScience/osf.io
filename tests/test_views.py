@@ -488,7 +488,7 @@ class TestProjectViews(OsfTestCase):
             ]
         )
 
-    def regression_test_for_private_component_log(self):
+    def test_for_private_component_log(self):
         for _ in range(5):
             self.project.add_log(
                 auth=self.consolidate_auth1,
@@ -500,10 +500,8 @@ class TestProjectViews(OsfTestCase):
         child = NodeFactory(project=self.project)
         child.is_public = False
         child.set_title("foo", auth=self.consolidate_auth1)
-        child.save()
         child.set_title("bar", auth=self.consolidate_auth1)
         child.save()
-        child.reload()
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 7)
