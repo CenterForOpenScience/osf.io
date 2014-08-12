@@ -4,7 +4,7 @@
 
         <div class="form-group">
             <label>Account email address:</label>
-            <input class="form-control" data-bind="value: username" />
+            <input class="form-control" data-bind="value: unconfirmed_username" />
         </div>
 
         <div class="form-group">

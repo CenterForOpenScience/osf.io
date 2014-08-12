@@ -1,4 +1,5 @@
 import logging
+import json
 import httplib as http
 from dateutil.parser import parse as parse_date
 
@@ -352,11 +353,11 @@ def unserialize_names(**kwargs):
     user.family_name = json_data.get('family')
     user.suffix = json_data.get('suffix')
 
-    if user.find(Q('username', 'eq', json_data.get('username'))).count() > 0:
-        raise ValueError
-
-    else:
-        send_update_email_confirmation(**kwargs)
+    if user.username != json_data.get('unconfirmed_username'):
+        if user.find(Q('username', 'eq', json_data.get('unconfirmed_username'))).count() > 0:
+            raise ValueError
+        else:
+            send_update_email_confirmation(**kwargs)
 
     user.save()
 
@@ -364,7 +365,7 @@ def unserialize_names(**kwargs):
 def send_update_email_confirmation(**kwargs):
     user = kwargs['auth'].user
     json_data = deep_clean(request.get_json())
-    user.unconfirmed_username = json_data.get('username')
+    user.unconfirmed_username = json_data.get('unconfirmed_username')
     user.add_email_verification(user.unconfirmed_username)
     confirm_update_email(user, email=user.unconfirmed_username)
 

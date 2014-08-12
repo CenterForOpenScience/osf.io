@@ -283,7 +283,7 @@
             this.mode('view');
         } else {
             this.changeMessage(
-                'Settings updated. Please check ' + this.username() + ' to confirm your email address',
+                'Settings updated. Please check ' + this.unconfirmed_username() + ' to confirm your email address',
                 'text-success',
                 5000
             );
@@ -347,8 +347,8 @@
             }
         };
 
-
     };
+
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
     $.extend(NameViewModel.prototype, SerializeMixin.prototype);
 
