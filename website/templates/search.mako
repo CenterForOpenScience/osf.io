@@ -36,7 +36,7 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        % if isinstance(counts, dict):
+        % if (query or tags) and isinstance(counts, dict):
             <ul class="nav nav-pills nav-stacked search-types">
                 <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
                 <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>

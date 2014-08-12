@@ -106,7 +106,7 @@ def _build_query(full_query, start=0):
     # Check for tag-based query
     if raw_query[0:5] == 'tags:':
         tags += raw_query[5:]
-        raw_query = '*'
+        raw_query = ''
     # Create tag filter
     if tags:
         tags = tags.split(',')
@@ -115,7 +115,7 @@ def _build_query(full_query, start=0):
                 'match': {
                     'tags': {
                         'query': '',
-                        'operator': 'or'
+                        'operator': 'and'
                     }
                 }
             }
@@ -128,22 +128,35 @@ def _build_query(full_query, start=0):
 
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
-    # Build the inner query, making wildcards mean something
-    inner_query = {
-        'query_string': {
-            'default_field': '_all',
-            'query': raw_query,
-            'analyze_wildcard': True,
-        }
-    }
-
-    if tags:
+    # Build the inner query
+    # Search for everything if the search is only an asterisk
+    if raw_query == '*':
         inner_query = {
-            'filtered': {
-                'filter': tag_filter,
-                'query': inner_query
+            'query_string': {
+                'default_field': '_all',
+                'query': '*',
+                'analyze_wildcard': True,
             }
         }
+    else:
+        inner_query = {
+            'multi_match': {
+                'query': raw_query,
+                'type': 'phrase_prefix',
+                'fields': '_all',
+            }
+        }
+
+    if tags:
+        if raw_query:
+            inner_query = {
+                'filtered': {
+                    'filter': tag_filter,
+                    'query': inner_query
+                }
+            }
+        else:
+            inner_query = tag_filter['query']
 
 
     # This is the complete query

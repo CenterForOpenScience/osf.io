@@ -32,16 +32,13 @@ def search_search():
     tags = request.args.get('tags') or ''
     # if there is not a query, tell our users to enter a search
     query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        if tags == '':
-            status.push_status_message('No search query', 'info')
-            return {
-                'results': [],
-                'tags': [],
-                'query': '',
-            }
-        else:
-            query = '*'
+    if not (query or tags):
+        status.push_status_message('No search query', 'info')
+        return {
+            'results': [],
+            'tags': [],
+            'query': '',
+        }
     full_query = {'query': query, 'type': result_type, 'tags': tags.strip(',')}
     # if the search does not work,
     # post an error message to the user, otherwise,
