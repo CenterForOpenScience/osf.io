@@ -30,7 +30,7 @@ def search_search():
     query = request.args.get('q') or ''
     result_type = request.args.get('type') or ''
     tags = request.args.get('tags') or ''
-    # if there is not a query, tell our users to enter a search
+    # if there is not a query, don't start the search
     query = bleach.clean(query, tags=[], strip=True)
     if not (query or tags):
         return {
@@ -41,10 +41,9 @@ def search_search():
     full_query = {'query': query, 'type': result_type, 'tags': tags.strip(',')}
     # if the search does not work,
     # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
+    # the results are returned to us
     try:
-        results_search, filtered_query, result_type, tags, word_cloud, counts = search.search(full_query, start)
+        full_result = search.search(full_query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return {
@@ -52,18 +51,12 @@ def search_search():
             'tags': [],
             'query': '',
         }
-    total = counts if not isinstance(counts, dict) else counts['total']
-    return {
-        'results': results_search,
-        'total': total,
-        'query': filtered_query,
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'type': result_type,
-        'tags': tags,
-        'cloud': word_cloud,
-        'counts': counts
-    }
+    # put the rest of the variables into the dict before returning
+    counts = full_result['counts']
+    full_result['total'] = counts if not isinstance(counts, dict) else counts['total']
+    full_result['current_page'] = start
+    full_result['time'] = round(time.time() - tick, 2)
+    return full_result
 
 
 @must_be_logged_in

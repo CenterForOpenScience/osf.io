@@ -63,7 +63,16 @@ def search(full_query, start=0):
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, word_cloud = create_result(results, counts)
 
-    return formatted_results, filtered_query, result_type, tags, word_cloud, counts
+    full_result = {
+        'results': formatted_results,
+        'query': filtered_query,
+        'type': result_type,
+        'tags': tags,
+        'cloud': word_cloud,
+        'counts': counts
+    }
+
+    return full_result
 
 
 def _build_query(full_query, start=0):

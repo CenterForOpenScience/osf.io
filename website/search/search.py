@@ -19,9 +19,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, start=0):
-    result, filtered_query, result_type, tags, word_cloud, counts = search_engine.search(query, start)
-    return result, filtered_query, result_type, tags, word_cloud, counts
+def search(full_query, start=0):
+    full_result = search_engine.search(full_query, start)
+    return full_result
 
 
 @requires_search
