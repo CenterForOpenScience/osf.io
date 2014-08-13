@@ -31,10 +31,6 @@
         % else:
             <h1>No query</h1>
         % endif
-##      if solr returned a spellcheck, display it
-        % if spellcheck:
-           <h4> Did you mean <a href='/search/?q=${spellcheck}'> ${spellcheck} </a>? </h4>
-        % endif
     </div><!-- end page-header -->
 </section>
 <div class="row">

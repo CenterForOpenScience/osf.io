@@ -52,23 +52,16 @@ def search_search():
             'tags': [],
             'query': '',
         }
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = True if result_type == 'user' else False
     total = counts if not isinstance(counts, dict) else counts['total']
     return {
-        'highlight': [],
         'results': results_search,
         'total': total,
         'query': filtered_query,
-        'spellcheck': [],
         'current_page': start,
         'time': round(time.time() - tick, 2),
         'type': result_type,
         'tags': tags,
         'cloud': word_cloud,
-        'searching_users': searching_users,
         'counts': counts
     }
 
