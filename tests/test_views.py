@@ -475,12 +475,38 @@ class TestProjectViews(OsfTestCase):
                 action='file_added',
                 params={'project': child._id}
             )
+
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
         assert_true(res.json['has_more_logs'])
         assert_equal(
             [self.project._id] * 10,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
+
+    def test_for_private_component_log(self):
+        for _ in range(5):
+            self.project.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        child.is_public = False
+        child.set_title("foo", auth=self.consolidate_auth1)
+        child.set_title("bar", auth=self.consolidate_auth1)
+        child.save()
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 7)
+        assert_not_in(
+            child._id,
             [
                 log['params']['project']
                 for log in res.json['logs']
