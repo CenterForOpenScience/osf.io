@@ -25,14 +25,14 @@ class SearchTestCase(OsfTestCase):
         search.delete_all()
 
 
-def query(term):
-    results, _, _ = search.search(term)
-    return results
+def query(term, tags=''):
+    full_result = search.search({'query': term, 'type': '', 'tags': tags})
+    return full_result['results']
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name)
-    return query(term)
+    full_result = search.search({'query': name, 'type': 'user', 'tags': ''})
+    return full_result['results']
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestUserUpdate(SearchTestCase):
@@ -178,12 +178,12 @@ class TestPublicNodes(SearchTestCase):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
         for tag in tags:
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 0)
             self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         for tag in tags:
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
@@ -193,7 +193,7 @@ class TestPublicNodes(SearchTestCase):
         for tag in tags:
             self.project.add_tag(tag, self.consolidate_auth, save=True)
             self.project.remove_tag(tag, self.consolidate_auth, save=True)
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
@@ -234,7 +234,7 @@ class TestPublicNodes(SearchTestCase):
         """
         user2 = UserFactory(fullname='Adam Lambert')
 
-        docs = query('"project:{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
