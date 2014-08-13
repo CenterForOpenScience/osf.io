@@ -92,7 +92,7 @@
             <li><a href="#schools" data-toggle="tab">Education</a></li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content" id="containDrag">
 
             <div class="tab-pane active" id="social">
                 <div data-bind="template: {name: 'profileSocial'}"></div>
