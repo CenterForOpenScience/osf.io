@@ -222,7 +222,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Employment history
     # Format: {
-    #     'position': <position or job title>,
+    #     'title': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,

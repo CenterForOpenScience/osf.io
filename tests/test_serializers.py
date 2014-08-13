@@ -48,7 +48,7 @@ class TestAddContributorJson(OsfTestCase):
         self.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'start': None,
             'end': None,
                 }]

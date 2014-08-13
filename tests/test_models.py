@@ -85,7 +85,7 @@ class TestUserValidation(OsfTestCase):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'start': datetime.datetime(1970, 1, 1),
             'end': datetime.datetime(1980, 1, 1),
         }]
@@ -103,7 +103,7 @@ class TestUserValidation(OsfTestCase):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'start': datetime.datetime(1970, 1, 1),
             'end': datetime.datetime(1960, 1, 1),
         }]
