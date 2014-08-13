@@ -11,7 +11,7 @@
                     Search <small> for
 ##                  first show query, if it is there
                     % if query:
-                    <span class="label label-success btn-mini" style="margin-right:.5em">"${query}"
+                    <span class="label label-success btn-mini" style="margin-right:.5em">${query}
                     <a href="/search/?type=${type}&tags=${','.join(tags)}" style="color:white">&times;</a>
                     </span>
                     % endif
