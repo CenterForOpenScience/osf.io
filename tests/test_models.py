@@ -375,17 +375,12 @@ class TestUser(OsfTestCase):
         user = UserFactory.build()
         master.merge_user(user, save=True)
         d = serialize_user(user, full=True)
-        gravatar = filters.gravatar(
-            user,
-            use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
-        )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar_url'], gravatar)
+        assert_equal(d['gravatar_url'], user.gravatar_url)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         assert_equal(d['activity_points'], user.activity_points)
