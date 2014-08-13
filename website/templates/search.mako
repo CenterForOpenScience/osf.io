@@ -3,30 +3,33 @@
 <%def name="content()">
 <section id="Search" xmlns="http://www.w3.org/1999/html">
     <div class="page-header">
-        % if query and query != '*' or tags:
-            <h1>Search <small> for
-##              first show query, if it is there
-                % if query and query != '*':
-                <span class="label label-success btn-mini" style="margin-right:.5em">"${query}"
-                <a href="/search/?q=*&type=${type}&tags=${','.join(tags)}" style="color:white">&times;</a>
-                </span>
-                % endif
-##            then show tags
-            % if tags:
-                % for tag in tags:
-                    <span class="label label-info btn-mini" style="margin-right:.5em">${tag}
-                    <a href="/search/?q=${query}&type=${type}&tags=${','.join((x for x in tags if x != tag)) | h }" style="color:white">&times;</a>
+        % if query or tags:
+            <h1>
+                % if query == '*' and not tags:
+                    Showing all<small>
+                % else:
+                    Search <small> for
+##                  first show query, if it is there
+                    % if query:
+                    <span class="label label-success btn-mini" style="margin-right:.5em">"${query}"
+                    <a href="/search/?type=${type}&tags=${','.join(tags)}" style="color:white">&times;</a>
                     </span>
-                % endfor
-            % endif
-            <br>
-##          number of results returned and the time it took
-            ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small></h1>
-        % elif query == '*':
-            <h1>Showing all<small>
-            <br>
-##          number of results returned and the time it took
-            ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small></h1>
+                    % endif
+##                  then show tags
+                    % if tags:
+                        % for tag in tags:
+                            <span class="label label-info btn-mini" style="margin-right:.5em">${tag}
+                            <a href="/search/?q=${query if query != '*' else ''}&type=${type}&tags=${','.join((x for x in tags if x != tag)) | h }" style="color:white">&times;</a>
+                            </span>
+                        % endfor
+                    % endif
+                % endif
+                <br>
+##              number of results returned and the time it took
+                ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small>
+            </h1>
+        % else:
+            <h1>No query</h1>
         % endif
 ##      if solr returned a spellcheck, display it
         % if spellcheck:
@@ -36,7 +39,7 @@
 </section>
 <div class="row">
     <div class="col-md-2">
-        % if (query or tags) and isinstance(counts, dict):
+        % if isinstance(counts, dict):
             <ul class="nav nav-pills nav-stacked search-types">
                 <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
                 <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>

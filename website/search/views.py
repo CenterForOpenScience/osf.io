@@ -33,7 +33,6 @@ def search_search():
     # if there is not a query, tell our users to enter a search
     query = bleach.clean(query, tags=[], strip=True)
     if not (query or tags):
-        status.push_status_message('No search query', 'info')
         return {
             'results': [],
             'tags': [],
