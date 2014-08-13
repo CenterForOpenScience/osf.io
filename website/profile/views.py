@@ -251,11 +251,11 @@ def serialize_names(**kwargs):
     user = kwargs['auth'].user
     return {
         'full': user.fullname,
-        'username': user.username,
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
         'suffix': user.suffix,
+        'username': user.username,
         'unconfirmed_username': user.username,
     }
 
@@ -355,8 +355,9 @@ def unserialize_names(**kwargs):
 
     if user.username != json_data.get('unconfirmed_username'):
         if user.find(Q('username', 'eq', json_data.get('unconfirmed_username'))).count() > 0:
-            raise ValueError
+            raise HTTPError(http.BAD_REQUEST)
         else:
+            user.unconfirmed_username = json_data.get('unconfirmed_username')
             send_update_email_confirmation(**kwargs)
 
     user.save()
@@ -364,8 +365,6 @@ def unserialize_names(**kwargs):
 @must_be_logged_in
 def send_update_email_confirmation(**kwargs):
     user = kwargs['auth'].user
-    json_data = deep_clean(request.get_json())
-    user.unconfirmed_username = json_data.get('unconfirmed_username')
     user.add_email_verification(user.unconfirmed_username)
     confirm_update_email(user, email=user.unconfirmed_username)
 

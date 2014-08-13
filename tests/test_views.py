@@ -582,15 +582,16 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
 
-    def test_unserialize_names(self):
+    def test_unserialize_names_when_unconfirmed_username_unique(self):
         url = api_url_for('unserialize_names')
         payload = {
             'full': 'Elvis Presley',
-            'username': 'hounddog@graceland.com',
             'given': 'Elvis',
             'middle': 'Aaron',
             'family': 'Presley',
+            'unconfirmed_username': 'bluesuede@shoes.com',
         }
         self.app.put_json(
             url,
@@ -600,15 +601,66 @@ class TestUserProfile(OsfTestCase):
         self.user.reload()
         assert_equal(self.user.fullname, 'Elvis Presley')
         assert_equal(self.user.given_name, 'Elvis')
-        assert_equal(self.user.family_name, 'Presley')
         assert_equal(self.user.middle_names, 'Aaron')
-        assert_equal(self.user.username, 'hounddog@graceland.com')
+        assert_equal(self.user.family_name, 'Presley')
         assert_false(self.user.suffix)
+        assert_equal(self.user.unconfirmed_username, 'bluesuede@shoes.com')
+
+    def test_unserialize_names_when_username_unchanged(self):
+        url = api_url_for('unserialize_names')
+        self.user.username = 'bluesuede@shoes.com'
+        self.user.save()
+        payload = {
+            'full': 'Elvis Presley',
+            'given': 'Elvis',
+            'middle': 'Aaron',
+            'family': 'Presley',
+            # set unconfirmed_username equal to username
+            'unconfirmed_username': 'bluesuede@shoes.com',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+        assert_equal(self.user.fullname, 'Elvis Presley')
+        assert_equal(self.user.given_name, 'Elvis')
+        assert_equal(self.user.middle_names, 'Aaron')
+        assert_equal(self.user.family_name, 'Presley')
+        assert_false(self.user.suffix)
+        # unconfirmed_username should not have been set because it is unchanged from username
+        assert_false(self.user.unconfirmed_username)
+
+    def test_unserialize_names_when_unconfirmed_username_not_unique(self):
+        with assert_raises(AppError) as cm:
+            url = api_url_for('unserialize_names')
+            self.user2.username = 'hounddog@graceland.com'
+            self.user2.save()
+            payload = {
+                'full': 'Elvis Presley',
+                'given': 'Elvis',
+                'middle': 'Aaron',
+                'family': 'Presley',
+                # set unconfirmed_username equal to user2.username
+                'unconfirmed_username': 'hounddog@graceland.com',
+            }
+            self.app.put_json(
+                url,
+                payload,
+                auth=self.user.auth,
+            )
+        # error should be raised because unconfirmed_username is not unique - it is username of user2
+        assert_in('400 BAD REQUEST', cm.exception.message)
+
 
     def test_serialize_names(self):
         self.user.fullname = 'Thomas Jefferson'
-        self.user.username = 'thomasjefferson@wahoowa.com'
+        self.user.given_name = 'Thomas'
         self.user.middle_names = 'Twizzler'
+        self.user.family_name = 'Jefferson'
+        self.user.username = 'thomasjefferson@wahoowa.com'
+        self.user.unconfirmed_username = self.user.username
         self.user.save()
         url = api_url_for('serialize_names')
         res = self.app.get(
@@ -616,9 +668,12 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.json.get('full'), 'Thomas Jefferson')
-        assert_equal(res.json.get('username'), 'thomasjefferson@wahoowa.com')
+        assert_equal(res.json.get('given'), 'Thomas')
         assert_equal(res.json.get('middle'), 'Twizzler')
+        assert_equal(res.json.get('family'), 'Jefferson')
         assert_false(res.json.get('suffix'))
+        assert_equal(res.json.get('username'), 'thomasjefferson@wahoowa.com')
+        assert_equal(res.json.get('unconfirmed_username'), 'thomasjefferson@wahoowa.com')
 
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
