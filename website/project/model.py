@@ -396,7 +396,7 @@ class Tag(StoredObject):
 
     @property
     def url(self):
-        return '/search/?q=tags:{}'.format(self._id)
+        return '/search/?tags={}'.format(self._id)
 
 
 class Pointer(StoredObject):
