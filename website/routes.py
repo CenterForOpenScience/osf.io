@@ -184,7 +184,6 @@ def make_url_map(app):
         Rule(
             [
                 '/dashboard/<nid>',
-                '/dashboard/<nid>/',
                 '/dashboard/',
             ],
             'get', website_views.get_dashboard, json_renderer),
