@@ -968,7 +968,6 @@ class TestConfirmingEmail(OsfTestCase):
         form = res.forms['resendForm']
         form['email'] = user.username
         res = form.submit()
-        print res
         # Sees alert message
         assert_in('already been confirmed', res)
 

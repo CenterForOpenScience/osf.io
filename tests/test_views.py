@@ -625,12 +625,15 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
+
         token = self.user.get_confirmation_token(self.user.unconfirmed_username)
         assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
+
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr='hounddog@graceland.com',
+            to_addr=self.user.unconfirmed_username,
         ))
+
 
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_confirm_update_email(self, send_mail):
@@ -642,11 +645,11 @@ class TestUserProfile(OsfTestCase):
             self.user.unconfirmed_username,
             external=False
         )
-        confirm_update_email(self.user, self.user.unconfirmed_username)
+        confirm_update_email(user=self.user, email=self.user.unconfirmed_username)
 
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(
-            to_addr='freddiemercury@queen.com',
+            to_addr=self.user.unconfirmed_username,
             confirmation_url=confirmation_url,
             mail=mails.UPDATE_EMAIL
         ))
