@@ -115,17 +115,6 @@ def ensure_schemas(clear=True):
             schema_obj.save()
 
 
-class MetaData(GuidStoredObject):
-
-    _id = fields.StringField(primary=True)
-
-    target = fields.AbstractForeignField(backref='metadata')
-    data = fields.DictionaryField()
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
-    date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-
-
 def validate_comment_reports(value, *args, **kwargs):
     for key, val in value.iteritems():
         if not User.load(key):

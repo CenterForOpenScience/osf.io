@@ -1,14 +1,55 @@
 from framework import StoredObject, fields
+from framework.mongo import ObjectId
+
+
+# Placed here because there is no other good place to go
+# Todo have a reference back to guid?
+class Metadata(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    data = fields.DictionaryField()
+    # guid = fields.ForeignField('guid', backref='metadata')
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, val):
+        self.data[key] = val
+
+    def __delitem__(self, key):
+        del self.data[key]
+
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def update(self, val):
+        return self.data.update(val)
+
+    def to_json(self):
+        return self.data
 
 
 class Guid(StoredObject):
 
     _id = fields.StringField()
     referent = fields.AbstractForeignField()
+    metastore = fields.DictionaryField()
 
     _meta = {
         'optimistic': True,
     }
+
+    def __getitem__(self, key):
+        try:
+            return Metadata.load(self.metastore[key])
+        except KeyError:
+            metadata = Metadata()
+            metadata.save()
+            self.metastore[key] = metadata._id
+            self.save()
+            return metadata
 
 
 class GuidStoredObject(StoredObject):
