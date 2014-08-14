@@ -88,7 +88,7 @@
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
         <h4 class="list-group-item-heading">
-            Private Component
+            Private Registration
         </h4>
     </li>
 
