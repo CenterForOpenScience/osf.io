@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the app addon.
 """
+import os
 
 from modularodm import fields
 
@@ -10,6 +11,9 @@ from website.addons.base import AddonNodeSettingsBase
 
 
 class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
+
+    redirect_mode = 'proxy'
+    # _id = fields.StringField(primary=True)
 
     custom_routes = fields.DictionaryField()
     allow_queries = fields.BooleanField(default=False)
@@ -26,8 +30,12 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
             return Guid.load(guid)[self.namespace]
 
     @property
+    def deep_url(self):
+        return os.path.join(self.owner.deep_url, 'application')
+
+    @property
     def name(self):
-        #Todo possibly store this for easier querying
+        # Todo possibly store this for easier querying
         return self.owner.title
 
     @property
