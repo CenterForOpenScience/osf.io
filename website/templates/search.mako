@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
-<section id="Search" xmlns="http://www.w3.org/1999/html">
+<section id="Search" xmlns="http://www.w3.org/1999/html" style="overflow: hidden">
   <div class="page-header">
     % if query or tags:
       <h1>
@@ -50,7 +50,7 @@
         <div class="panel-heading cloud">
           <h3> Improve Your Search:</h3>
         </div>
-        <div class="panel-body">
+        <div class="panel-body" style="overflow: hidden">
           % for key, value in cloud.iteritems():
             % if not key in tags:
               <span id="tagCloud">
@@ -65,7 +65,7 @@
   <div class="col-md-9">
     % if results:
 ##    iterate through our nice lists of results
-      <div class="list-group">
+      <div class="list-group" style="overflow: hidden">
         % for result in results:
           <div class="list-group-item">
 ##          users are different results than anything associated with projects
