@@ -9,7 +9,6 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -221,7 +220,7 @@ def update_node(node):
             NodeWikiPage.load(x)
             for x in node.wiki_pages_current.values()
         ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text
+            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         try:
             elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
@@ -272,28 +271,12 @@ def _load_parent(parent):
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
-        parent_info['wiki_url'] = parent.url + 'wiki/'
-        parent_info['contributors'] = [
-            contributor.fullname
-            for contributor in parent.visible_contributors
-        ]
-        parent_info['tags'] = [tag._id for tag in parent.tags]
-        parent_info['contributors_url'] = [
-            contributor.url
-            for contributor in parent.visible_contributors
-        ]
         parent_info['is_registration'] = parent.is_registration
-        parent_info['description'] = parent.description
         parent_info['id'] = parent._id
     else:
         parent_info['title'] = '-- private project --'
         parent_info['url'] = ''
-        parent_info['wiki_url'] = ''
-        parent_info['contributors'] = []
-        parent_info['tags'] = []
-        parent_info['contributors_url'] = []
         parent_info['is_registration'] = None
-        parent_info['description'] = ''
         parent_info['id'] = None
     return parent_info
 
@@ -322,18 +305,19 @@ def create_result(results, counts):
         'wiki_link': '{LINK TO WIKIS}',
         'title': '{TITLE TEXT}',
         'url': '{URL FOR NODE}',
-        'nest': {Nested node attributes},
+        'is_component': {TRUE OR FALSE},
+        'parent_title': {TITLE TEXT OF PARENT NODE},
+        'parent_url': {URL FOR PARENT NODE},
         'tags': [{LIST OF TAGS}],
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
         'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}]
-        'description': {PROJECT DESCRIPTION}
+        'highlight': [{No longer used, need to phase out}],
+        'description': {PROJECT DESCRIPTION},
     }
     '''
     formatted_results = []
     word_cloud = {}
     visited_nodes = {}  # For making sure projects are only returned once
-    num_deleted = 0  # For making deleting projects from the list faster
     index = 0  # For keeping track of what index a project is stored
     for result in results:
         # User results are handled specially
@@ -354,20 +338,9 @@ def create_result(results, counts):
             parent = Node.load(result['parent_id'])
             parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
 
-            # Check if parent has already been visited, if so, delete it
-            if parent and visited_nodes.get(parent_info['id']):
-                for i in range(visited_nodes.get(parent_info['id']) - num_deleted, len(formatted_results)):
-                    result_url = formatted_results[i].get('url')
-                    if result_url and result_url == parent_info['url']:
-                        del formatted_results[i]
-                        num_deleted += 1
-                        break
-                visited_nodes[parent_info['id']] = index
-            elif visited_nodes.get(result['id']):
+            if visited_nodes.get(result['id']):
                 # If node already visited, it should not be returned as a result
                 continue
-            elif parent_info['id']:
-                visited_nodes[parent_info['id']] = index
             else:
                 visited_nodes[result['id']] = index
 
@@ -380,32 +353,19 @@ def create_result(results, counts):
 
 def _format_result(result, parent, parent_info):
     formatted_result = {
-        'contributors': result['contributors'] if parent is None
-            else parent_info['contributors'],
-        'wiki_link': result['url'] + 'wiki/' if parent is None
-            else parent_info['wiki_url'],
-        'title': result['title'] if parent is None
-            else parent_info['title'],
-        'url': result['url'] if parent is None else parent_info['url'],
-        'nest': {
-            result['id']:{#Nested components have all their own attributes
-                'title': result['title'],
-                'url': result['url'],
-                'wiki_link': result['url'] + 'wiki/',
-                'contributors': result['contributors'],
-                'contributors_url': result['contributors_url'],
-                'highlight': [],
-                'description': result['description'],
-            }
-        } if parent is not None else {},
-        'tags': result['tags'] if parent is None else parent_info['tags'],
-        'contributors_url': result['contributors_url'] if parent is None
-            else parent_info['contributors_url'],
+        'contributors': result['contributors'],
+        'wiki_link': result['url'] + 'wiki/',
+        'title': result['title'],
+        'url': result['url'],
+        'is_component': False if parent is None else True,
+        'parent_title': parent_info['title'] if parent is not None else None,
+        'parent_url': parent_info['url'] if parent is not None else None,
+        'tags': result['tags'],
+        'contributors_url': result['contributors_url'],
         'is_registration': result['registeredproject'] if parent is None
             else parent_info['is_registration'],
         'highlight': [],
-        'description': result['description'] if parent is None
-            else parent_info['description'],
+        'description': result['description'] if parent is None else None,
     }
 
     return formatted_result

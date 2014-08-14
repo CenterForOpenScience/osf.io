@@ -1,4 +1,3 @@
-import logging
 from dateutil.parser import parse as dateparse
 
 from framework import request
@@ -9,9 +8,6 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 
 from website.addons.github import utils
-
-
-logger = logging.getLogger(__name__)
 
 
 # TODO: Refactor using NodeLogger

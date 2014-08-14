@@ -239,7 +239,7 @@ def elasticsearch():
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
         run("sudo service elasticsearch start")
-    elif platform.system() == 'Darwin': # Mac OSX
+    elif platform.system() == 'Darwin':  # Mac OSX
         run('elasticsearch')
     else:
         print("Your system is not recognized, you will have to start elasticsearch manually")
@@ -258,7 +258,7 @@ def mailserver(port=1025):
 @task
 def requirements(all=False):
     '''Install dependencies.'''
-    run("pip install --upgrade -r dev-requirements.txt", pty=True)
+    run("pip install --upgrade -r dev-requirements.txt")
     if all:
         addon_requirements()
         mfr_requirements()
@@ -318,8 +318,7 @@ def addon_requirements():
                     'pip install --upgrade -r {0}/{1}/requirements.txt'.format(
                         settings.ADDON_PATH,
                         directory
-                    ),
-                    pty=True
+                    )
                 )
             except IOError:
                 pass
@@ -331,7 +330,7 @@ def mfr_requirements():
     """Install modular file renderer requirements"""
     mfr = 'mfr'
     print('Installing mfr requirements')
-    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr), pty=True)
+    run('pip install --upgrade -r {0}/requirements.txt'.format(mfr))
 
 
 @task

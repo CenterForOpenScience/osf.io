@@ -2,10 +2,8 @@
 Changelog
 *********
 
-0.15.0 (unreleased)
+0.15.0 (2014-08-11)
 ===================
-
-Scheduled 2014-07-30
 
 - View-only links: Add option to anonymize contributors.
 - Wiki: Add support for fenced code blocks; syntax highlighting; allow ID attributes in tags.
@@ -14,8 +12,16 @@ Scheduled 2014-07-30
 - Add prompt if there are unsaved wiki changes.
 - Wiki logs link to wiki pages.
 - Add confirmation dialog when deselecting addons from the user profile page.
+- Registered users no longer have "key ring" of view-only link keys. View-only
+links will appear the same, regardless of whether you are logged in or not.
+- Project deletion events are logged.
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.
+- Developers: Various improvements to logging.
+- Developers: ``URLLookup`` class is deprecated. Use ``api_url_for`` and
+``web_url_for`` in your tests.
+- Developers: Test cases that subclass ``OsfTestCase`` *must* call ``super()``
+in the ``setUp`` and ``tearDown`` methods.
+- Developers: Update stale requirements.
 - Various bugfixes and minor UI improvements.
-

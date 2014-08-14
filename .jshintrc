@@ -1,4 +1,5 @@
 {
+    "indent": 4,
 	"boss": true,
 	"curly": true,
 	"eqeqeq": true,
