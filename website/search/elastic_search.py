@@ -32,10 +32,7 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 
 
 def search(full_query, start=0):
-    orig_query = full_query['query']
-
     query, filtered_query, result_type, tags = _build_query(full_query, start)
-
 
     # Get document counts by type
     counts = {}
@@ -80,6 +77,7 @@ def _build_query(full_query, start=0):
     # Grab variables from dict
     raw_query = full_query['query']
     result_type = full_query['type']
+    tags = full_query['tags']
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -110,7 +108,6 @@ def _build_query(full_query, start=0):
                 break
 
     # If the search has a tag filter, add that to the query
-    tags = full_query['tags']
     tag_filter = {}
     # Check for tag-based query
     if raw_query[0:5] == 'tags:':
@@ -134,7 +131,6 @@ def _build_query(full_query, start=0):
 
     # Cleanup string before using it to query
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
-
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
     # Build the inner query
@@ -353,7 +349,7 @@ def create_result(results, counts):
                 'job': result['job'],
                 'job_title': result['job_title'],
                 'school': result['school'],
-                'degree': result['degree']
+                'degree': result['degree'],
             })
             index += 1
         else:
