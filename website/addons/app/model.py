@@ -11,10 +11,19 @@ from website.addons.base import AddonNodeSettingsBase
 
 class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
 
-    api_key = fields.ForeignField('apikey', backref='application')
     custom_routes = fields.DictionaryField()
     allow_queries = fields.BooleanField(default=False)
     allow_public_read = fields.BooleanField(default=True)
+
+    def _guid_to_metadata(self, guid):
+        """Resolve a Guid to a metadata object
+        :param guid (str, Guid) The guid to attach data to
+        :return Metadata
+        """
+        if isinstance(guid, Guid):
+            return guid[self.namespace]
+        else:
+            return Guid.load(guid)[self.namespace]
 
     @property
     def name(self):
@@ -45,16 +54,6 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
             del metadata[key]
         else:
             metadata.remove()
-
-    def _guid_to_metadata(self, guid):
-        """Resolve a Guid to a metadata object
-        :param guid (str, Guid) The guid to attach data to
-        :return Metadata
-        """
-        if isinstance(guid, Guid):
-            return guid.metadata[self.namespace]
-        else:
-            return Guid.load(guid).metadata[self.namespace]
 
     def add_custom_route(self, route, map_to):
         self.custom_routes[route] = map_to
