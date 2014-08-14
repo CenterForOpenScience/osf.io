@@ -20,6 +20,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.auth.views import confirm_update_email
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -587,7 +588,33 @@ class TestUserProfile(OsfTestCase):
         url = api_url_for('unserialize_names')
         payload = {
             'full': 'Elvis Presley',
-            'username': 'hounddog@graceland.com',
+            'unconfirmed_username': 'hounddog@graceland.com',
+            'given': 'Elvis',
+            'middle': 'Aaron',
+            'family': 'Presley',
+        }
+
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+
+        self.user.reload()
+
+        assert_equal(self.user.fullname, 'Elvis Presley')
+        assert_equal(self.user.given_name, 'Elvis')
+        assert_equal(self.user.family_name, 'Presley')
+        assert_equal(self.user.middle_names, 'Aaron')
+        assert_equal(self.user.unconfirmed_username, 'hounddog@graceland.com')
+        assert_false(self.user.suffix)
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_send_update_email_confirmation_sends_confirm_email(self, send_mail):
+        url = api_url_for('unserialize_names')
+        payload = {
+            'full': 'Elvis Presley',
+            'unconfirmed_username': 'hounddog@graceland.com',
             'given': 'Elvis',
             'middle': 'Aaron',
             'family': 'Presley',
@@ -598,12 +625,31 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         self.user.reload()
-        assert_equal(self.user.fullname, 'Elvis Presley')
-        assert_equal(self.user.given_name, 'Elvis')
-        assert_equal(self.user.family_name, 'Presley')
-        assert_equal(self.user.middle_names, 'Aaron')
-        assert_equal(self.user.username, 'hounddog@graceland.com')
-        assert_false(self.user.suffix)
+        token = self.user.get_confirmation_token(self.user.unconfirmed_username)
+        assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='hounddog@graceland.com',
+        ))
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_update_email(self, send_mail):
+        self.user.unconfirmed_username = 'hounddog@graceland.com'
+        self.user.add_email_verification(self.user.unconfirmed_username)
+        self.user.save()
+
+        confirmation_url = self.user.get_confirmation_url(
+            self.user.unconfirmed_username,
+            external=False
+        )
+        confirm_update_email(self.user, self.user.unconfirmed_username)
+
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr='freddiemercury@queen.com',
+            confirmation_url=confirmation_url,
+            mail=mails.UPDATE_EMAIL
+        ))
 
     def test_serialize_names(self):
         self.user.fullname = 'Thomas Jefferson'

@@ -10,6 +10,7 @@ from nose.tools import *  # PEP8 asserts
 
 from framework import Q
 from framework.auth import User, Auth
+from framework.auth.views import confirm_update_email
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
@@ -941,7 +942,6 @@ class TestConfirmingEmail(OsfTestCase):
         res = res.click('Click here')
         assert_equal(res.request.path, '/resend/', 'at resend page')
 
-
     @mock.patch('framework.auth.views.send_confirm_email')
     def test_resend_form(self, send_confirm_email):
         res = self.app.get('/resend/')
@@ -968,8 +968,62 @@ class TestConfirmingEmail(OsfTestCase):
         form = res.forms['resendForm']
         form['email'] = user.username
         res = form.submit()
+        print res
         # Sees alert message
         assert_in('already been confirmed', res)
+
+
+class TestConfirmingNewUsernameEmail(OsfTestCase):
+
+    def setUp(self):
+        super(TestConfirmingNewUsernameEmail, self).setUp()
+
+    def test_redirects_to_settings_after_confirm_new_username(self):
+        user = AuthUserFactory()
+        user.unconfirmed_username = "mercury@example.com"
+        # create token
+        user.add_email_verification(user.unconfirmed_username)
+        # create confirmation url
+        confirm_update_email(user, user.unconfirmed_username)
+        # get url
+        confirmation_url = user.get_confirmation_url(
+            user.unconfirmed_username,
+            external=False,
+        )
+
+        user.save()
+        res = self.app.get(confirmation_url).follow()
+        assert_equal(
+            res.request.path,
+            '/settings/',
+            'redirected to settings page'
+        )
+        user.reload()
+        assert_equal(user.username, user.unconfirmed_username)
+        assert_in('Email successfully updated.', res, 'shows flash message')
+
+    def test_error_page_if_confirm_link_is_expired_for_new_username(self):
+        user = AuthUserFactory()
+        user.unconfirmed_username = "mercuryhg@example.com"
+        # create token
+        user.add_email_verification(user.unconfirmed_username)
+        # create confirmation url
+        confirm_update_email(user, user.unconfirmed_username)
+        # get url
+        confirmation_url = user.get_confirmation_url(
+            user.unconfirmed_username,
+            external=False,
+        )
+        # get token
+        confirmation_token = user.get_confirmation_token(
+            user.unconfirmed_username
+        )
+
+        user.confirm_email(confirmation_token)
+        user.save()
+        res = self.app.get(confirmation_url, expect_errors=True)
+        assert_in('Link Expired', res)
+        assert_not_equal(user.username, user.unconfirmed_username)
 
 
 class TestClaimingAsARegisteredUser(OsfTestCase):
