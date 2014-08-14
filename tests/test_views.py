@@ -2345,7 +2345,7 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         # Get the All My Projects smart folder from the dashboard
-        url = api_url_for('get_dashboard')+'-amp'
+        url = api_url_for('get_dashboard', nid='-amp')
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
@@ -2359,7 +2359,7 @@ class TestDashboardViews(OsfTestCase):
             None, Auth(self.creator), '', '',
         )
         # Get the All My Registrations smart folder from the dashboard
-        url = api_url_for('get_dashboard')+'-amr'
+        url = api_url_for('get_dashboard', nid='-amr')
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
