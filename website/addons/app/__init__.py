@@ -8,7 +8,7 @@ MODELS = [
 
 NODE_SETTINGS_MODEL = model.AppNodeSettings
 
-ROUTES = [routes.api_routes, routes.web_routes]
+ROUTES = [routes.api_routes, routes.web_routes, routes.metadata_routes]
 
 SHORT_NAME = 'app'
 FULL_NAME = 'Application'
