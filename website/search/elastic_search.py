@@ -229,6 +229,7 @@ def update_node(node):
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
+            'registered_date': str(node.registered_date)[:10],
             'wikis': {},
             'parent_id': parent_id,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -293,11 +294,13 @@ def _load_parent(parent):
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
         parent_info['is_registration'] = parent.is_registration
+        parent_info['registered_date'] = str(parent.registered_date)[:10]
         parent_info['id'] = parent._id
     else:
         parent_info['title'] = '-- private project --'
         parent_info['url'] = ''
         parent_info['is_registration'] = None
+        parent_info['registered_date'] = None
         parent_info['id'] = None
     return parent_info
 
@@ -387,7 +390,9 @@ def _format_result(result, parent, parent_info):
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
         'is_registration': result['registeredproject'] if parent is None
-            else parent_info['is_registration'],
+            else parent_info['is_registration'] or result['is_registration'],
+        'registered_date': result['registered_date'] if parent is None
+            else parent_info['registered_date'] or result['registered_date'],
         'description': result['description'] if parent is None else None,
     }
 

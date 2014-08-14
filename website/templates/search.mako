@@ -99,7 +99,7 @@
               <div class="title">
                 <h4>
                   %if result.get('is_registration'):
-                    <small>[ Registration ]</small>
+                    <small>[ Registration${': ' + result['registered_date'] if result.get('registered_date') else ''} ]</small>
                   %endif
                   % if result['url']:
                     <a href=${result['url']}>${result['title']}</a>
