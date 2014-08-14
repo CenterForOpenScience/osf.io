@@ -1993,17 +1993,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def add_addon(self, addon_name, auth, log=True):
-        """Add an add-on to the node.
+    def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
+        """Add an add-on to the node. Do nothing if the addon is already
+        enabled.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :return bool: Add-on was added
+        :return: A boolean, whether the addon was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth)
-        if rv and log:
+        ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
+                                        *args, **kwargs)
+        if ret and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -2016,7 +2018,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=False,
             )
             self.save() # TODO: here, or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def delete_addon(self, addon_name, auth):
         """Delete an add-on from the node.
