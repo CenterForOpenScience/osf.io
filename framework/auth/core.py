@@ -257,7 +257,7 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     def __repr__(self):
-        return '<User {0!r}>'.format(self.username)
+        return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
