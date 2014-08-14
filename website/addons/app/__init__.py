@@ -3,11 +3,10 @@ from . import routes
 from . import views
 
 MODELS = [
-    model.AddonAppUserSettings,
-    model.AddonAppNodeSettings,
+    model.AppNodeSettings,
 ]
-USER_SETTINGS_MODEL = model.AddonAppUserSettings
-NODE_SETTINGS_MODEL = model.AddonAppNodeSettings
+
+NODE_SETTINGS_MODEL = model.AppNodeSettings
 
 ROUTES = [routes.api_routes, routes.web_routes]
 
