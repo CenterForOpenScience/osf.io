@@ -67,7 +67,7 @@
 ##    iterate through our nice lists of results
       <div class="list-group" style="overflow: hidden">
         % for result in results:
-          <div class="list-group-item">
+          <div class="list-group-item" style="margin-bottom: 10px">
 ##          users are different results than anything associated with projects
             % if 'user' in result:
               <div class="title">
