@@ -11,20 +11,22 @@ from website.addons.base import AddonNodeSettingsBase
 
 class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
 
+    api_key = fields.ForeignField('apikey', backref='application')
+    custom_routes = fields.DictionaryField()
     allow_queries = fields.BooleanField(default=False)
     allow_public_read = fields.BooleanField(default=True)
-    custom_routes = fields.DictionaryField()
 
     @property
     def name(self):
+        #Todo possibly store this for easier querying
         return self.owner.title
 
     @property
     def namespace(self):
         return self._id
 
-    def add_custom_route(self, route, map_to):
-        self.custom_routes[route] = map_to
+    def get_data(self, guid):
+        return self._guid_to_metadata(guid)
 
     def attach_data(self, guid, data):
         """Attach a dictionary to the specified guid under this applications
@@ -37,14 +39,29 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
         metastore.update(data)
         metastore.save()
 
+    def delete_data(self, guid, key=None):
+        metadata = self._guid_to_metadata(guid)
+        if key:
+            del metadata[key]
+        else:
+            metadata.remove()
+
     def _guid_to_metadata(self, guid):
+        """Resolve a Guid to a metadata object
+        :param guid (str, Guid) The guid to attach data to
+        :return Metadata
+        """
         if isinstance(guid, Guid):
             return guid.metadata[self.namespace]
         else:
             return Guid.load(guid).metadata[self.namespace]
 
-    def get_data(self, guid):
-        return self._guid_to_metadata(guid)
+    def add_custom_route(self, route, map_to):
+        self.custom_routes[route] = map_to
+        self.save()
+
+    def resolve_url(self, url):
+        return self.custom_routes[url]
 
     ##### Callback overrides #####
 

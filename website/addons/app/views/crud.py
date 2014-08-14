@@ -49,12 +49,14 @@ def delete_route(node_addon, route):
     return http.NO_CONTENT
 
 
+# GET
 @must_have_permission('read')
 @must_have_addon('app', 'node')
 def get_metadata(node_addon, guid, **kwargs):
     return node_addon.get_metadata(guid)
 
 
+# POST, PUT
 @must_have_permission('write')
 @must_have_addon('app', 'node')
 def add_metadata(node_addon, guid, **kwargs):
@@ -65,3 +67,19 @@ def add_metadata(node_addon, guid, **kwargs):
 
     node_addon.attach_data(guid, metadata)
     node_addon.save()
+
+
+# DELETE
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def delete_metadata(node_addon, guid):
+    key = request.args.get('key')
+
+    node_addon.delete_data(guid, key=key)
+
+    if key:
+        return {
+            'deleted': key
+        }, http.OK
+
+    return HTTPError(http.NO_CONTENT)
