@@ -52,6 +52,7 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
         metadata = self._guid_to_metadata(guid)
         if key:
             del metadata[key]
+            metadata.save()
         else:
             metadata.remove()
 
