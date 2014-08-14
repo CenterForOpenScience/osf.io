@@ -908,9 +908,9 @@
                 forceFitColumns: true,
                 autoEdit: false
             },
-            data: '/api/v1/dashboard/get_dashboard/',  // Where to get the initial data
+            data: '/api/v1/dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
-                return '/api/v1/dashboard/get_dashboard/' + folder.node_id;
+                return '/api/v1/dashboard/' + folder.node_id;
             },
             fetchSuccess: function(newData, item){
 

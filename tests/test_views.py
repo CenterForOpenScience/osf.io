@@ -2344,8 +2344,8 @@ class TestDashboardViews(OsfTestCase):
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
-
-        url = api_url_for('get_all_projects_smart_folder')
+        # Get the All My Projects smart folder from the dashboard
+        url = api_url_for('get_dashboard')+'-amp'
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
@@ -2358,8 +2358,8 @@ class TestDashboardViews(OsfTestCase):
         project.register_node(
             None, Auth(self.creator), '', '',
         )
-
-        url = api_url_for('get_all_registrations_smart_folder')
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard')+'-amr'
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
