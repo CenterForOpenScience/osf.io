@@ -1166,6 +1166,10 @@ h1.unavailable {
         margin: 0;
         line-height: 16px;
     }
+.search-field p
+    {
+        margin: 0;
+    }
 .description h5
     {
         padding: 0;

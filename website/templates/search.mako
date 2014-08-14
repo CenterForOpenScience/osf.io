@@ -81,17 +81,17 @@
 
               % if result['job']:
                 <div class="search-field">
-                  <span>Employment: ${result['job_title'] if result['job_title'] else 'works'} at ${result['job']}</span>
+                  <p>Employment: ${result['job_title'] if result['job_title'] else 'works'} at ${result['job']}</p>
                 </div>
               % endif
               % if result['school']:
                 <div class="search-field">
-                  <span>Education: ${result['degree'] if result['degree'] else 'studied'} at ${result['school']}</span>
+                  <p>Education: ${result['degree'] if result['degree'] else 'studied'} at ${result['school']}</p>
                 </div>
               % endif
               % if not (result['school'] or result['job']):
                 <div class="search-field">
-                  <span class="text-muted">No employment or education information given</span>
+                  <p class="text-muted">No employment or education information given</p>
                 </div>
               % endif
 
