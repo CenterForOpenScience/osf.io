@@ -115,6 +115,10 @@ class TestUser(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
+    def test_repr(self):
+        assert_in(self.user.username, repr(self.user))
+        assert_in(self.user._id, repr(self.user))
+
     def test_update_guessed_names(self):
         name = fake.name()
         u = User(fullname=name)
@@ -1217,6 +1221,10 @@ class TestProject(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
 
+    def test_repr(self):
+        assert_in(self.project.title, repr(self.project))
+        assert_in(self.project._id, repr(self.project))
+
     def test_project_factory(self):
         node = ProjectFactory()
         assert_equal(node.category, 'project')
@@ -2264,6 +2272,11 @@ class TestNodeLog(OsfTestCase):
     def setUp(self):
         super(TestNodeLog, self).setUp()
         self.log = NodeLogFactory()
+
+    def test_repr(self):
+        rep = repr(self.log)
+        assert_in(self.log.action, rep)
+        assert_in(self.log._id, rep)
 
     def test_node_log_factory(self):
         log = NodeLogFactory()
