@@ -233,10 +233,18 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_be_logged_in_decorator_with_user(self, mock_from_kwargs):
         user = UserFactory()
         mock_from_kwargs.return_value = Auth(user=user)
-        protected()
+        resp = protected()
+        assert resp == 'open sesame'
 
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
-    def test_must_be_logged_in_decorator_with_no_user(self, mock_from_kwargs):
+    def test_must_be_logged_in_decorator_with_api_key(self, mock_from_kwargs):
+        user = UserFactory()
+        mock_from_kwargs.return_value = Auth(user=user)
+        resp = protected()
+        assert resp == 'open sesame'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_be_logged_in_decorator_with_no_user_or_api_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
         assert_true(isinstance(resp, BaseResponse))
