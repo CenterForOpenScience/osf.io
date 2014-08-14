@@ -34,8 +34,8 @@
     </div><!-- end page-header -->
 </section>
 <div class="row">
-    <div class="col-md-2">
-        % if isinstance(counts, dict):
+    <div class="col-md-3">
+        % if (query or tags) and isinstance(counts, dict):
             <ul class="nav nav-pills nav-stacked search-types">
                 <li class="${'active' if type == '' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}">All: ${counts['all']}</a></li>
                 <li class="${'active' if type == 'user' else ''}"><a href="/search/?q=${query}&tags=${','.join(tags)}&type=user">Users: ${counts['users']}</a></li>
@@ -46,17 +46,23 @@
         % endif
 ##        our tag cloud!
         % if cloud:
-        <h3> Improve Your Search:</h3>
-            % for key, value in cloud.iteritems():
-                % if not key in tags:
-                    <span id="tagCloud">
-                    <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
-                    </span>
-                % endif
-            % endfor
+        <div class="panel panel-default" style="margin-top: 20px; margin-bottom: 20px">
+            <div class="panel-heading cloud">
+                <h3> Improve Your Search:</h3>
+            </div>
+            <div class="panel-body">
+                % for key, value in cloud.iteritems():
+                    % if not key in tags:
+                        <span id="tagCloud">
+                        <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
+                        </span>
+                    % endif
+                % endfor
+            </div>
+        </div>
         % endif
     </div><!-- end col-md -->
-    <div class="col-md-10">
+    <div class="col-md-9">
             % if results:
 ##            iterate through our nice lists of results
                 <div class="list-group">

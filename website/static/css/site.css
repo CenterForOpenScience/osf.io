@@ -1148,6 +1148,10 @@ h1.unavailable {
     {
         font-size: 16px;
     }
+.cloud h3
+    {
+        margin: 0px;
+    }
 .title h4
     {
         padding: 0px;
