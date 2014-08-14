@@ -138,6 +138,11 @@ class Auth(object):
         self.api_node = api_node
         self.private_key = private_key
 
+    def __repr__(self):
+        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
+                'api_node={self.api_node}, '
+                'private_key={self.private_key})>').format(self=self)
+
     @property
     def logged_in(self):
         return self.user is not None
