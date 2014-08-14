@@ -348,6 +348,7 @@ class NodeLog(StoredObject):
 
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
