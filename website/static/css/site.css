@@ -1150,27 +1150,27 @@ h1.unavailable {
     }
 .cloud h3
     {
-        margin: 0px;
+        margin: 0;
     }
 .title h4
     {
-        padding: 0px;
+        padding: 0;
         padding-bottom: 5px;
-        margin: 0px;
+        margin: 0;
     }
 .search-field
     {
-        padding: 0px;
+        padding: 0;
         padding-top: 2px;
         padding-bottom: 2px;
-        margin: 0px;
+        margin: 0;
         line-height: 16px;
     }
 .description h5
     {
-        padding: 0px;
+        padding: 0;
         padding-bottom: 4px;
-        margin: 0px;
+        margin: 0;
         font-weight: normal;
         line-height: 16px;
     }
