@@ -42,14 +42,16 @@ class Guid(StoredObject):
     }
 
     def __getitem__(self, key):
-        try:
-            return Metadata.load(self.metastore[key])
-        except KeyError:
-            metadata = Metadata()
-            metadata.save()
-            self.metastore[key] = metadata._id
-            self.save()
+        metadata = Metadata.load(self.metastore.get(key))
+
+        if metadata:
             return metadata
+
+        metadata = Metadata()
+        metadata.save()
+        self.metastore[key] = metadata._id
+        self.save()
+        return metadata
 
 
 class GuidStoredObject(StoredObject):
