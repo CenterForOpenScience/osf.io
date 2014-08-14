@@ -143,11 +143,11 @@ ADDONS_REQUESTED = [
     'github', 's3', 'figshare',
     'dropbox', 'dataverse',
     # 'badges',
-    'forward',
+    'forward', 'app',
 ]
 
 ADDON_CATEGORIES = [
-    'documentation', 'storage', 'bibliography', 'other',
+    'service', 'documentation', 'storage', 'bibliography', 'other',
 ]
 
 SYSTEM_ADDED_ADDONS = {
