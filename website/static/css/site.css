@@ -969,6 +969,19 @@ h1.node-title, h1.node-parent-title {
     height: 36px;
 }
 
+.long-wiki-title {
+    line-height: 20px;
+    border-bottom: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.wiki-title-container {
+    display: inline-block;
+    width:80%;
+}
+
 .btn-toolbar.node-control {
     margin-top: 0.9em;
 }

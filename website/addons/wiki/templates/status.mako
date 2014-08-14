@@ -1,5 +1,5 @@
 <div class="navbar-outer" style="overflow: hidden">
-    <div style="display: inline-block">
+    <div class="wiki-title-container">
 	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
     <nav class="navbar navbar-default" style="display: inline-block; float: right">
@@ -21,7 +21,7 @@
 
 <script type="text/javascript">
     if($('#pageName').height() >= $('#wikiName').height()) {
-        $('#wikiName').html('<h4 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h4>');
+        $('#wikiName').html('<h4 class="long-wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h4>')
     }
 </script>
 
