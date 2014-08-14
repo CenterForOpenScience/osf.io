@@ -228,7 +228,7 @@ def update_node(node):
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
-            'registeredproject': node.is_registration,
+            'is_registration': node.is_registration,
             'registered_date': str(node.registered_date)[:10],
             'wikis': {},
             'parent_id': parent_id,
@@ -320,7 +320,7 @@ def create_result(results, counts):
         'parent_title': {TITLE TEXT OF PARENT NODE},
         'wikis': {LIST OF WIKIS AND THEIR TEXT},
         'public': {TRUE OR FALSE},
-        'registeredproject': {TRUE OR FALSE}
+        'is_registration': {TRUE OR FALSE}
     }
 
     Returns list of dicts of the following structure:
@@ -389,7 +389,7 @@ def _format_result(result, parent, parent_info):
         'parent_url': parent_info['url'] if parent is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': result['registeredproject'] if parent is None
+        'is_registration': result['is_registration'] if parent is None
             else parent_info['is_registration'] or result['is_registration'],
         'registered_date': result['registered_date'] if parent is None
             else parent_info['registered_date'] or result['registered_date'],
