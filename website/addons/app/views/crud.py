@@ -4,13 +4,15 @@ from flask import redirect, request
 
 from framework.exceptions import HTTPError
 
-from website.project.decorators import (must_be_valid_project,
-    must_have_addon, must_have_permission, must_not_be_registration
+from website.project.decorators import (
+    must_be_valid_project,
+    must_have_addon, must_have_permission,
+    must_not_be_registration, must_be_contributor_or_public
 )
 
 
 # GET
-@must_have_permission('admin')
+@must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
@@ -39,7 +41,7 @@ def create_route(node_addon, **kwargs):
 # DELETE
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
-def delete_route(node_addon, route):
+def delete_route(node_addon, route, **kwargs):
     if not node_addon.custom_routes.get(route):
         raise HTTPError(http.BAD_REQUEST)
 
@@ -50,17 +52,17 @@ def delete_route(node_addon, route):
 
 
 # GET
-@must_have_permission('read')
+@must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_metadata(node_addon, guid, **kwargs):
-    return node_addon.get_metadata(guid)
+    return node_addon.get_data(guid)
 
 
 # POST, PUT
 @must_have_permission('write')
 @must_have_addon('app', 'node')
 def add_metadata(node_addon, guid, **kwargs):
-    metadata = request.json.get('metadata')
+    metadata = request.json
 
     if not metadata:
         raise HTTPError(http.BAD_REQUEST)
@@ -72,10 +74,13 @@ def add_metadata(node_addon, guid, **kwargs):
 # DELETE
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
-def delete_metadata(node_addon, guid):
+def delete_metadata(node_addon, guid, **kwargs):
     key = request.args.get('key')
 
-    node_addon.delete_data(guid, key=key)
+    try:
+        node_addon.delete_data(guid, key=key)
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
 
     if key:
         return {
