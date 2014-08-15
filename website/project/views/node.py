@@ -762,6 +762,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             })
     else:
         summary['can_view'] = False
+        summary['is_registration'] = node.is_registration
 
     # TODO: Make output format consistent with _view_project
     return {
