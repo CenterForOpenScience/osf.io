@@ -40,7 +40,7 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    CommentFactory, PrivateLinkFactory
+    CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory
 )
 
 
@@ -2260,6 +2260,14 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.template_node, other_node)
+
+class TestUnconfirmedUserViews(OsfTestCase):
+
+    def test_can_view_profile(self):
+        user = UnconfirmedUserFactory()
+        url = web_url_for('profile_view_id', uid=user._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
 
 if __name__ == '__main__':
     unittest.main()
