@@ -12,6 +12,11 @@ This script must be run from the OSF root directory for the imports to work.
 
     $ python -m scripts.consistency.fix_tag_guids dry
     $ python -m scripts.consistency.fix_tag_guids
+
+Log:
+
+    Performed on production by sloria on 2014-08-15 at 11.45AM. 892 invalid GUID
+    objects were removed.
 """
 import sys
 
