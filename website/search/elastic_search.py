@@ -5,6 +5,8 @@ import pyelasticsearch
 import re
 import copy
 
+from framework import sentry
+
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
@@ -24,10 +26,10 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
 except pyelasticsearch.exceptions.ConnectionError as e:
-    logger.error(e)
-    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there "
-                "was a problem starting the elasticsearch interface. Is "
-                "elasticsearch running?")
+    sentry.log_exception()
+    sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
+                        "was a problem starting the elasticsearch interface. Is "
+                        "elasticsearch running?")
     elastic = None
 
 
@@ -35,6 +37,7 @@ def requires_search(func):
     def wrapped(*args, **kwargs):
         if elastic is not None:
             return func(*args, **kwargs)
+        sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 
 
@@ -374,8 +377,8 @@ def _format_result(result, parent, parent_info):
         'parent_url': parent_info['url'] if parent is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': result['registeredproject'] if parent is None
-            else parent_info['is_registration'],
+        'is_registration': (result['registeredproject'] if parent is None
+                                                        else parent_info['is_registration']),
         'highlight': [],
         'description': result['description'] if parent is None else None,
     }
