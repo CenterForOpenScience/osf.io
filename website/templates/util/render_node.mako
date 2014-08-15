@@ -89,6 +89,8 @@
         <h4 class="list-group-item-heading">
             %if summary['is_registration']:
                 Private Registration
+            %elif summary['is_fork']:
+                Private Fork
             %else:
                 Private Component
             %endif

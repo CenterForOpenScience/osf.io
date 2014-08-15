@@ -761,8 +761,11 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
                 'non_ua': non_ua,
             })
     else:
-        summary['can_view'] = False
-        summary['is_registration'] = node.is_registration
+        summary.update({
+            'can_view': False,
+            'is_registration': node.is_registration,
+            'is_fork': node.is_fork,
+            })
 
     # TODO: Make output format consistent with _view_project
     return {
