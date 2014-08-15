@@ -477,7 +477,7 @@ def update_metadata(metadata):
     index = "metadata"
     app_id = metadata.namespace
     data = metadata.to_json()
-    elastic.update(index=index, type=app_id, upsert=data, doc=data, id=metadata._id)
+    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id)
 
 
 @requires_search

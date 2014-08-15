@@ -4,7 +4,7 @@ from flask import request
 
 from framework.exceptions import HTTPError
 
-from website.search import search
+from website.search.search import search
 
 from website.project.decorators import (
     must_be_valid_project,
@@ -17,7 +17,12 @@ from website.project.decorators import (
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
-    pass
+    q = request.args.get('q', '')
+    ret = search(q, index='metadata')
+    return {
+        'results': ret['hits']['hits'],
+        'total': ret['hits']['total']
+    }
 
 
 # GET
@@ -25,7 +30,11 @@ def query_app(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
-        return {'results': search(node_addon[route], index='metadata')}
+        ret = search(node_addon[route], index='metadata')
+        return {
+            'results': ret['hits']['hits'],
+            'total': ret['hits']['total']
+        }
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
@@ -79,7 +88,10 @@ def delete_route(node_addon, route, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_metadata(node_addon, guid, **kwargs):
-    return node_addon.get_data(guid)
+    try:
+        return node_addon.get_data(guid)
+    except TypeError:
+        raise HTTPError(http.NOT_FOUND)
 
 
 # POST, PUT

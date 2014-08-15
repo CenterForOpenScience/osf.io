@@ -5,8 +5,8 @@ import os
 
 from modularodm import fields
 
-from website.search import update_metadata
 from website.addons.base import lookup
+from website.search.search import update_metadata
 
 from framework import Guid, GuidStoredObject
 
@@ -32,6 +32,9 @@ class AppNodeSettings(GuidStoredObject):
 
     def _ensure_types(self, blob):
         types = self.schema
+        if not types:
+            return
+
         for key, val in blob.items():
             if not types.get(key):
                 continue
