@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from framework.exceptions import HTTPError
+from dropbox.rest import ErrorResponse
 
+from framework.exceptions import HTTPError
 from framework.flask import request
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
@@ -37,10 +38,16 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         'view': node.can_view(auth)
     }
     client = get_node_client(node)
-    metadata = client.metadata(path)
+    file_not_found = HTTPError(http.NOT_FOUND, data=dict(message_short='File not found',
+                                                  message_long='The Dropbox file '
+                                                  'you requested could not be found.'))
+    try:
+        metadata = client.metadata(path)
+    except ErrorResponse:
+        raise file_not_found
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
-        raise HTTPError(http.NOT_FOUND)
+        raise file_not_found
     contents = metadata['contents']
     if request.args.get('foldersOnly'):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for

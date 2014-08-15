@@ -30,9 +30,9 @@ from website.project.views.contributor import (
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
-from website import settings, mails
+from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project, get_forks
+from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
