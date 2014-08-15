@@ -29,7 +29,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     if node_addon.folder is None and not request.args.get('foldersOnly'):
         return {'data': []}
     node = node_addon.owner
-    path = kwargs.get('path',  '')
+    path = kwargs.get('path', '')
     # Verify that path is a subdirectory of the node's shared folder
     if not is_authorizer(auth, node_addon):
         abort_if_not_subdir(path, node_addon.folder)
