@@ -31,7 +31,7 @@ class AppNodeSettings(GuidStoredObject):
             return Guid.load(guid)[self]
 
     def _ensure_types(self, blob, metadata):
-        types = get_mapping(metadata)
+        types = get_mapping('metadata', self.namespace)
 
         if not types:
             return
