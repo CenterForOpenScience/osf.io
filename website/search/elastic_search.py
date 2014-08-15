@@ -55,10 +55,29 @@ def search(full_query, start=0):
     else:
         counts['total'] = counts['all']
 
+    # Build word cloud
+    if not (result_type == 'user'):
+        cloud_query = copy.deepcopy(query)
+        cloud_query['from'] = 0
+        cloud_query['size'] = counts['total']
+        cloud_results = elastic.search(cloud_query, index='website')
+        cloud_results = [hit['_source'] for hit in cloud_results['hits']['hits']]
+        word_cloud = {}
+        for result in cloud_results:
+            if result.get('tags'):
+                for tag in result['tags']:
+                    word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                        else word_cloud[tag] + 1
+        word_cloud = sorted(word_cloud.iteritems(), key=lambda item: -item[1])
+        if len(word_cloud) > 10:
+            word_cloud = word_cloud[:10]
+    else:
+        word_cloud = []
+
     # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results, word_cloud = create_result(results, counts)
+    formatted_results = create_result(results, counts)
 
     full_result = {
         'results': formatted_results,
@@ -153,7 +172,7 @@ def _build_query(full_query, start=0):
         }
 
     if tags:
-        if raw_query:
+        if raw_query and raw_query != '*':
             inner_query = {
                 'filtered': {
                     'filter': tag_filter,
@@ -162,6 +181,7 @@ def _build_query(full_query, start=0):
             }
         else:
             inner_query = tag_filter['query']
+            raw_query = ''
 
 
     # This is the complete query
@@ -339,7 +359,6 @@ def create_result(results, counts):
     }
     '''
     formatted_results = []
-    word_cloud = {}
     visited_nodes = {}  # For making sure projects are only returned once
     index = 0  # For keeping track of what index a project is stored
     for result in results:
@@ -356,11 +375,6 @@ def create_result(results, counts):
             })
             index += 1
         else:
-            # Build up word cloud
-            for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
-                    else word_cloud[tag] + 1
-
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
@@ -375,7 +389,7 @@ def create_result(results, counts):
             formatted_results.append(_format_result(result, parent, parent_info))
             index += 1
 
-    return formatted_results, word_cloud
+    return formatted_results
 
 
 def _format_result(result, parent, parent_info):

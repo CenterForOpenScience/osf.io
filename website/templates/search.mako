@@ -51,7 +51,7 @@
           <h3> Improve Your Search:</h3>
         </div>
         <div class="panel-body" style="overflow: hidden">
-          % for key, value in cloud.iteritems():
+          % for key, value in cloud:
             % if not key in tags:
               <span id="tagCloud">
                 <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
