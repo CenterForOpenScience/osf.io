@@ -30,9 +30,31 @@ class AppNodeSettings(GuidStoredObject):
         else:
             return Guid.load(guid)[self]
 
+    def _ensure_types(self, blob):
+        types = self.schema
+        for key, val in blob.items():
+            if not types.get(key):
+                continue
+
+            if isinstance(val, list):
+
+                for index in val:
+                    if not isinstance(index, types.get(key)):
+                        raise ValueError
+                continue
+
+            if isinstance(val, types.get(key)):
+                continue
+
+            raise ValueError
+
+    @property
+    def schema(self):
+        pass
+
     @property
     def deep_url(self):
-        return os.path.join(self.owner.deep_url, 'application')
+        return os.path.join(self.owner.deep_url, 'app')
 
     @property
     def name(self):
@@ -56,6 +78,8 @@ class AppNodeSettings(GuidStoredObject):
         :param guid (str, Guid) The guid to attach data to
         :param data dict The metadata to store
         """
+        self._ensure_types(data)
+
         metastore = self._guid_to_metadata(guid)
         metastore.update(data)
         metastore.save()
@@ -82,7 +106,7 @@ class AppNodeSettings(GuidStoredObject):
         self.save()
 
     def get(self, url, default=None):
-        return self.custom_routes.get(url, default=default)
+        return self.custom_routes.get(url, default)
 
     ##### Addon Settings methods #####
 
