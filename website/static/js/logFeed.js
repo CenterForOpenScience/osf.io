@@ -140,7 +140,7 @@
                 'apiKey': item.api_key,
                 'params': item.params,
                 'nodeTitle': item.node.title,
-                'nodeDescription': item.params.description_new,
+                'nodeDescription': item.params.description_new
             });
         });
         return mappedLogs;
