@@ -1,8 +1,10 @@
 import httplib as http
 
-from flask import redirect, request
+from flask import request
 
 from framework.exceptions import HTTPError
+
+from website.search import search
 
 from website.project.decorators import (
     must_be_valid_project,
@@ -16,7 +18,7 @@ from website.project.decorators import (
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
-        return redirect(node_addon.resolve_route(route))
+        return {'results': search(node_addon[route], index='metadata')}
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
@@ -31,8 +33,8 @@ def create_route(node_addon, **kwargs):
     if not route or reroute:
         raise HTTPError(http.BAD_REQUEST)
 
-    created = not node_addon.custom_routes.get(route)
-    node_addon.add_custom_route(route, reroute)
+    created = not node_addon.get(route)
+    node_addon[route] = reroute
 
     if created:
         return http.CREATED

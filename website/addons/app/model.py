@@ -5,15 +5,16 @@ import os
 
 from modularodm import fields
 
+from website.search import update_metadata
+from website.addons.base import lookup
+
 from framework import Guid, GuidStoredObject
 
-from website.addons.base import AddonNodeSettingsBase
 
-
-class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
+class AppNodeSettings(GuidStoredObject):
 
     redirect_mode = 'proxy'
-    # _id = fields.StringField(primary=True)
+    _id = fields.StringField(primary=True)
 
     custom_routes = fields.DictionaryField()
     allow_queries = fields.BooleanField(default=False)
@@ -56,9 +57,10 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
         :param data dict The metadata to store
         """
         metastore = self._guid_to_metadata(guid)
-
         metastore.update(data)
         metastore.save()
+
+        update_metadata(metastore)
 
     def delete_data(self, guid, key=None):
         metadata = self._guid_to_metadata(guid)
@@ -68,12 +70,61 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
         else:
             metadata.remove()
 
-    def add_custom_route(self, route, map_to):
-        self.custom_routes[route] = map_to
+    def __setitem__(self, route, query):
+        self.custom_routes[route] = query
         self.save()
 
-    def resolve_url(self, url):
+    def __getitem__(self, url):
         return self.custom_routes[url]
+
+    def __delitem__(self, url):
+        del self.custom_routes[url]
+        self.save()
+
+    def get(self, url, default=None):
+        return self.custom_routes.get(url, default=default)
+
+    ##### Addon Settings methods #####
+
+    # Had to be copied and not inherited to use a guid for humans
+
+    deleted = fields.BooleanField(default=False)
+    owner = fields.ForeignField('node', backref='addons')
+
+    def delete(self, save=True):
+        self.deleted = True
+        if save:
+            self.save()
+
+    def undelete(self, save=True):
+        self.deleted = False
+        if save:
+            self.save()
+
+    def render_config_error(self, data):
+        # Note: `config` is added to `self` in `AddonConfig::__init__`.
+        template = lookup.get_template('project/addon/config_error.mako')
+        return template.get_def('config_error').render(
+            title=self.config.full_name,
+            name=self.config.short_name,
+            **data
+        )
+
+    def to_json(self, user):
+        return {
+            'addon_short_name': self.config.short_name,
+            'addon_full_name': self.config.full_name,
+            'user': {
+                'permissions': self.owner.get_permissions(user)
+            },
+            'node': {
+                'id': self.owner._id,
+                'api_url': self.owner.api_url,
+                'url': self.owner.url,
+                'is_registration': self.owner.is_registration,
+            },
+            'application_url': '/api/v1/%s/' % self._id
+        }
 
     ##### Callback overrides #####
 
