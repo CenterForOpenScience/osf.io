@@ -385,6 +385,12 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.registration_list[-1])
         assert_true(reg.is_registration)
 
+    def test_register_template_page_with_invalid_template_name(self):
+        url = self.project.web_url_for('node_register_template_page', template='invalid')
+        res = self.app.get(url, expect_errors=True, auth=self.auth)
+        assert_equal(res.status_code, 404)
+        assert_in('Template not found', res)
+
     def test_get_logs(self):
         # Add some logs
         for _ in range(5):
