@@ -25,9 +25,9 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
         :return Metadata
         """
         if isinstance(guid, Guid):
-            return guid[self.namespace]
+            return guid[self]
         else:
-            return Guid.load(guid)[self.namespace]
+            return Guid.load(guid)[self]
 
     @property
     def deep_url(self):
@@ -41,6 +41,10 @@ class AppNodeSettings(GuidStoredObject, AddonNodeSettingsBase):
     @property
     def namespace(self):
         return self._id
+
+    @property
+    def all_data(self):
+        return self.metadata__data
 
     def get_data(self, guid):
         return self._guid_to_metadata(guid)

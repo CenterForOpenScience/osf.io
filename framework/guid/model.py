@@ -7,7 +7,11 @@ from framework.mongo import ObjectId
 class Metadata(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     data = fields.DictionaryField()
-    # guid = fields.ForeignField('guid', backref='metadata')
+    app = fields.ForeignField('appnodesettings', backref='data')
+
+    @property
+    def namespace(self):
+        return self.app.namespace
 
     def __getitem__(self, key):
         return self.data[key]
@@ -41,15 +45,15 @@ class Guid(StoredObject):
         'optimistic': True,
     }
 
-    def __getitem__(self, key):
-        metadata = Metadata.load(self.metastore.get(key))
+    def __getitem__(self, app):
+        metadata = Metadata.load(self.metastore.get(app.namespace))
 
         if metadata:
             return metadata
 
-        metadata = Metadata()
+        metadata = Metadata(app=app)
         metadata.save()
-        self.metastore[key] = metadata._id
+        self.metastore[app.namespace] = metadata._id
         self.save()
         return metadata
 
