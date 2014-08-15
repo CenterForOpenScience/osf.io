@@ -187,3 +187,19 @@ class AppNodeSettings(GuidStoredObject):
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    # Need to implement these so we can be a faux addon
+    def before_page_load(self, node, user):
+        pass
+
+    def before_make_public(self, node):
+        pass
+
+    def before_make_private(self, node):
+        pass
+
+    def after_set_privacy(self, node, permissions):
+        pass
+
+    def after_delete(self, node, user):
+        pass
