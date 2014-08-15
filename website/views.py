@@ -235,7 +235,8 @@ def resolve_guid(guid, suffix=None):
         if prefix or mode == 'redirect':
             if request.query_string:
                 url += '?' + request.query_string
-            return redirect(url)
+            #Code is 307 to not change all methods to GET
+            return redirect(url, code=307)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
