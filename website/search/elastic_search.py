@@ -136,17 +136,12 @@ def _build_query(full_query, start=0):
     if tags:
         tags = tags.split(',')
         tag_filter = {
-            'query': {
-                'match': {
-                    'tags': {
-                        'query': '',
-                        'operator': 'and'
-                    }
-                }
+            'bool': {
+                'must': []
             }
         }
         for tag in tags:
-            tag_filter['query']['match']['tags']['query'] += ' ' + tag
+            tag_filter['bool']['must'].append({'term': {'tags': tag}})
 
     # Cleanup string before using it to query
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
@@ -180,7 +175,7 @@ def _build_query(full_query, start=0):
                 }
             }
         else:
-            inner_query = tag_filter['query']
+            inner_query = tag_filter
             raw_query = ''
 
 
