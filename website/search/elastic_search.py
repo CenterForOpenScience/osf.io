@@ -39,10 +39,10 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0):
+def search(raw_query, start=0, size=10):
     orig_query = raw_query
 
-    query, filtered_query = _build_query(raw_query, start)
+    query, filtered_query = _build_query(raw_query, start, size)
 
     # Get document counts by type
     counts = {}
@@ -72,7 +72,7 @@ def search(raw_query, start=0):
     return formatted_results, tags, counts
 
 
-def _build_query(raw_query, start=0):
+def _build_query(raw_query, start, size):
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -174,7 +174,7 @@ def _build_query(raw_query, start=0):
             }
         },
         'from': start,
-        'size': 10,
+        'size': size,
     }
 
     return query, raw_query
@@ -214,11 +214,11 @@ def update_node(node):
                 if x is not None
                 and x.is_active()
             ],
+            'description': node.description,
             'title': node.title,
             'category': node.category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
-            'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
@@ -357,6 +357,7 @@ def create_result(results, counts):
                 visited_nodes[result['id']] = index
 
             # Format dictionary for output
+            result['url']
             formatted_results.append(_format_result(result, parent, parent_info))
             index += 1
 
@@ -466,6 +467,67 @@ def search_contributor(query, exclude=None, current_user=None):
 
             })
 
-
-
     return {'users': users}
+
+
+# ## Metadata stuff ## #
+
+@requires_search
+def update_metadata(metadata):
+    index = "metadata"
+    app_id = metadata.namespace
+    data = metadata.to_json()
+    elastic.update(index=index, type=app_id, upsert=data, doc=data, id=metadata._id)
+
+
+@requires_search
+def search_metadata(query, _type, start, size):
+    query = {
+        'query': _metadata_inner_query(query),
+        'from': start,
+        'size': 10,
+    }
+
+    return elastic.search(query, index='metadata', doc_type=_type)
+
+
+def _metadata_inner_query(query):
+    return {
+        'multi_match': {
+            'query': query,
+            'type': 'phrase_prefix',
+            'fields': '_all',
+        }
+    }
+
+
+@requires_search
+def get_mapping(index, _type):
+    try:
+        mapping = elastic.get_mapping(index, _type)[index]['mappings'][_type]['properties']
+    except KeyError:
+        return None  # For now
+
+    return _strings_to_types(mapping)
+
+
+def _strings_to_types(mapping):
+
+    type_map = {
+        u'boolean': bool,
+        u'object': dict,
+        u'long': int,
+        u'int': int,
+        u'float': float,
+        u'double': float,
+        u'null': type(None),
+        u'string': str,
+    }
+
+    # x = lambda *y: {item[0]: type_map.get(item[1]['type'], str) for item in y}
+    # return map(x, mapping.items())
+
+    for key, val in mapping.items():
+        mapping[key] = type_map.get(val['type'], str)
+
+    return mapping
