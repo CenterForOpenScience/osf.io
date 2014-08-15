@@ -24,12 +24,13 @@
 
     <script type="text/javascript">
         $('#select-registration-template').on('change', function() {
-            var $this = $(this),
-                val = $this.val();
-            if (val != '')
+            var $this = $(this);
+            var val = $this.val();
+            if (val !== '') {
                 var urlparse = window.location.href.split("?");
                 urlparse[0] += '/' + val;
                 window.location.href = urlparse.join("?")
+            }
         });
     </script>
 
