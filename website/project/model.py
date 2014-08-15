@@ -2442,6 +2442,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
             'is_public': self.is_public,
+            'is_registration': self.is_registration
         }
 
 
