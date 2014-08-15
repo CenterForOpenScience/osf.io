@@ -91,8 +91,15 @@ custom_routing_routes = {
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/',
-             '/project/<pid>/node/<nid>/app/'],
+            ['/project/<pid>/app/q/',
+             '/project/<pid>/node/<nid>/app/q/'],
+            'get',
+            views.crud.list_custom_routes,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/q/',
+             '/project/<pid>/node/<nid>/app/q/'],
             'post',
             views.crud.create_route,
             json_renderer

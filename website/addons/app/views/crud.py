@@ -28,6 +28,19 @@ def query_app(node_addon, **kwargs):
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
+def list_custom_routes(node_addon, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+
+    return {
+        node.api_url_for('resolve_route', route=url): query
+        for url, query
+        in node_addon.custom_routes.items()
+    }
+
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
         ret = search(node_addon[route], index='metadata')
@@ -43,7 +56,6 @@ def resolve_route(node_addon, route, **kwargs):
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def create_route(node_addon, **kwargs):
-    import ipdb; ipdb.set_trace()
     route = request.json.get('route')
     query = request.json.get('query')
     exists = node_addon.get(route) is not None

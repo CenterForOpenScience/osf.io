@@ -6,7 +6,7 @@ import os
 from modularodm import fields
 
 from website.addons.base import lookup
-from website.search.search import update_metadata
+from website.search.search import update_metadata, get_mapping
 
 from framework import Guid, GuidStoredObject
 
@@ -30,8 +30,9 @@ class AppNodeSettings(GuidStoredObject):
         else:
             return Guid.load(guid)[self]
 
-    def _ensure_types(self, blob):
-        types = self.schema
+    def _ensure_types(self, blob, metadata):
+        types = get_mapping(metadata)
+
         if not types:
             return
 
@@ -50,10 +51,6 @@ class AppNodeSettings(GuidStoredObject):
                 continue
 
             raise ValueError
-
-    @property
-    def schema(self):
-        pass
 
     @property
     def deep_url(self):
@@ -81,9 +78,10 @@ class AppNodeSettings(GuidStoredObject):
         :param guid (str, Guid) The guid to attach data to
         :param data dict The metadata to store
         """
-        self._ensure_types(data)
 
         metastore = self._guid_to_metadata(guid)
+        self._ensure_types(data, metastore)
+
         metastore.update(data)
         metastore.save()
 
