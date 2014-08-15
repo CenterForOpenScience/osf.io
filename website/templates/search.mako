@@ -52,11 +52,9 @@
         </div>
         <div class="panel-body" style="overflow: hidden">
           % for key, value in cloud:
-            % if not key in tags:
-              <span id="tagCloud">
-                <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
-              </span>
-            % endif
+            <span id="tagCloud">
+              <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
+            </span>
           % endfor
         </div>
       </div>

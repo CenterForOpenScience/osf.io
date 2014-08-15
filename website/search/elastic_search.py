@@ -66,8 +66,9 @@ def search(full_query, start=0):
         for result in cloud_results:
             if result.get('tags'):
                 for tag in result['tags']:
-                    word_cloud[tag] = 1 if word_cloud.get(tag) is None \
-                        else word_cloud[tag] + 1
+                    if tag not in tags:
+                        word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                            else word_cloud[tag] + 1
         word_cloud = sorted(word_cloud.iteritems(), key=lambda item: -item[1])
         if len(word_cloud) > 10:
             word_cloud = word_cloud[:10]
