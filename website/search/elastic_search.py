@@ -492,13 +492,34 @@ def search_metadata(query, _type, start, size):
 
 
 def _metadata_inner_query(query):
-    return {
-        'multi_match': {
-            'query': query,
-            'type': 'phrase_prefix',
-            'fields': '_all',
+    query = query.split(';')
+    filters = []
+    for item in query:
+        item = item.split(':')
+        if len(item) == 1:
+            item = ['_all', item[0]]
+
+        filters.append({
+            "query": {
+                'match': {
+                    item[0]: {
+                        'query': item[1],
+                        'operator': 'and',
+                        'type': 'phrase',
+                    }
+                }
+            }
+        })
+
+        inner_query = {
+            'filtered': {
+                'filter': {
+                    'and': filters
+                },
+            },
         }
-    }
+
+    return inner_query
 
 
 @requires_search
@@ -507,6 +528,8 @@ def get_mapping(index, _type):
         mapping = elastic.get_mapping(index, _type)[index]['mappings'][_type]['properties']
     except KeyError:
         return None  # For now
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+        return None  # No mapping
 
     return _strings_to_types(mapping)
 
