@@ -528,6 +528,8 @@ def get_mapping(index, _type):
         mapping = elastic.get_mapping(index, _type)[index]['mappings'][_type]['properties']
     except KeyError:
         return None  # For now
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+        return None  # No mapping
 
     return _strings_to_types(mapping)
 
