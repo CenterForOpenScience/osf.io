@@ -297,6 +297,35 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    def test_get_contributors_abbrev(self):
+        # create a project with 3 registered contributors
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+            ]
+        )
+
+        # add an unregistered contributor
+        unregistered_user = project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=self.consolidate_auth1,
+            save=True,
+        )
+
+        url = project.api_url_for('get_node_contributors_abbrev')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(project.contributors), 4)
+        assert_equal(len(res.json['contributors']), 3)
+        assert_equal(len(res.json['others_count']), 1)
+        assert_equal(res.json['contributors'][0]['separator'], ',')
+        assert_equal(res.json['contributors'][1]['separator'], ',')
+        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
+
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
