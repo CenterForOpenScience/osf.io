@@ -20,12 +20,7 @@
                 }
             });
 
-            var gravatar = $('#profile-gravatar')
-            gravatar
-                .on('error', function(e) {
-                    gravatar.attr('src', '/static/img/blank_avatar.png')
-                })
-                .attr('src', gravatar.attr('src') + '&d=404')
+            var gravatar = $('#profile-gravatar');
         });
     % endif
     $script(['/static/addons/badges/bake-badges.js'], 'bakery');
