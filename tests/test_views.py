@@ -32,7 +32,7 @@ from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
 from website import settings, mails
 from website.util import rubeus
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, get_forks
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
@@ -40,7 +40,7 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory
+    CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, RegistrationFactory,
 )
 
 
@@ -2221,6 +2221,27 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json['nodes']), 1)
+
+
+class TestForkViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForkViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, public=True)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.user.save()
+        self.project.save()
+
+    def test_registered_forks_dont_show_in_fork_list(self):
+        fork = self.project.fork_node(self.consolidated_auth)
+        RegistrationFactory(project=fork)
+
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(len(res.json['nodes']), 1)
+        assert_equal(res.json['nodes'][0]['id'], fork._id)
 
 
 class TestProjectCreation(OsfTestCase):
