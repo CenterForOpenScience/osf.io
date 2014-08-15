@@ -173,9 +173,9 @@
       <div class="navigate">
         <ul class="pagination">
         % if counts['total'] > 10:
-          <li><a href="?q=${query | h}&pagination=${0}">First</a></li>
+          <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${0}">First</a></li>
           % if current_page >= 10:
-            <li><a href="?q=${query | h}&pagination=${(current_page)-10}">&laquo;</a></li>
+            <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${(current_page)-10}">&laquo;</a></li>
           % else:
             <li><a href="#">&laquo;</a></li>
           % endif
@@ -184,23 +184,23 @@
                 <li class="active"><a href="#">${i+1}</a></li>
               ## The following conditionals force the page to display at least 5 pages in the navigation bar
               % elif (current_page/10 == 0) and (i in range(1,5)):
-                <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${page}">${i+1}</a></li>
               % elif (current_page/10 == 1) and (i in range(2,5)):
-                <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${page}">${i+1}</a></li>
               % elif (current_page/10 == total/10) and (i in range((counts['total']/10 - 4), counts['total'])):
-                <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${page}">${i+1}</a></li>
               % elif (current_page/10 == ((total/10) - 1)) and (i in range((counts['total']/10 -4), counts['total'])):
-                <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${page}">${i+1}</a></li>
               % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
-                <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
+                <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${page}">${i+1}</a></li>
               % endif
             % endfor
           % if current_page < (counts['total']-10):
-            <li><a href="?q=${query | h}&pagination=${(current_page)+10}">&raquo;</a></li>
+            <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${(current_page)+10}">&raquo;</a></li>
           % else:
             <li><a href="#">&raquo;</a></li>
           % endif
-          <li><a href="?q=${query | h}&pagination=${(counts['total']-1)/10 * 10}">Last</a></li>
+          <li><a href="?q=${query | h}&type=${type}&tags=${tags}&pagination=${(counts['total']-1)/10 * 10}">Last</a></li>
         % endif
         </ul>
       </div><!-- end navigate -->
