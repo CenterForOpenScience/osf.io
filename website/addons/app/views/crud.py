@@ -16,6 +16,13 @@ from website.project.decorators import (
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
+def query_app(node_addon, **kwargs):
+    pass
+
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
         return {'results': search(node_addon[route], index='metadata')}
@@ -23,18 +30,33 @@ def resolve_route(node_addon, route, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
 
-# POST, PUT
+# POST
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def create_route(node_addon, **kwargs):
-    route = request.json.get('route') or kwargs.get('route')
-    reroute = request.json.get('reroute')
+    import ipdb; ipdb.set_trace()
+    route = request.json.get('route')
+    query = request.json.get('query')
+    exists = node_addon.get(route) is not None
 
-    if not route or reroute:
+    if not route or not query or exists:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node_addon[route] = query
+    return http.CREATED
+
+
+# PUT
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def update_route(node_addon, route, **kwargs):
+    query = request.json.get('query')
+
+    if not route or query:
         raise HTTPError(http.BAD_REQUEST)
 
     created = not node_addon.get(route)
-    node_addon[route] = reroute
+    node_addon[route] = query
 
     if created:
         return http.CREATED
@@ -68,9 +90,11 @@ def add_metadata(node_addon, guid, **kwargs):
 
     if not metadata:
         raise HTTPError(http.BAD_REQUEST)
-
-    node_addon.attach_data(guid, metadata)
-    node_addon.save()
+    try:
+        node_addon.attach_data(guid, metadata)
+        node_addon.save()
+    except TypeError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 # DELETE

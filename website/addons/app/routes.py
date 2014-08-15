@@ -83,6 +83,41 @@ api_routes = {
 
 custom_routing_routes = {
     'rules': [
+        Rule(
+            ['/project/<pid>/app/',
+             '/project/<pid>/node/<nid>/app/'],
+            'get',
+            views.crud.query_app,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/',
+             '/project/<pid>/node/<nid>/app/'],
+            'post',
+            views.crud.create_route,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/q/<path:route>/',
+             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            'get',
+            views.crud.resolve_route,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/q/<path:route>/',
+             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            'put',
+            views.crud.update_route,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/q/<path:route>/',
+             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            'delete',
+            views.crud.delete_route,
+            json_renderer
+        ),
     ],
     'prefix': '/api/v1'
 }
@@ -90,22 +125,22 @@ custom_routing_routes = {
 metadata_routes = {
     'rules': [
         Rule(
-            ['/project/<pid>/application/<guid>/',
-             '/project/<pid>/node/<nid>/application/<guid>/'],
+            ['/project/<pid>/app/<guid>/',
+             '/project/<pid>/node/<nid>/app/<guid>/'],
             'get',
             views.crud.get_metadata,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/application/<guid>/',
-             '/project/<pid>/node/<nid>/application/<guid>/'],
+            ['/project/<pid>/app/<guid>/',
+             '/project/<pid>/node/<nid>/app/<guid>/'],
             ['put', 'post'],
             views.crud.add_metadata,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/application/<guid>/',
-             '/project/<pid>/node/<nid>/application/<guid>/'],
+            ['/project/<pid>/app/<guid>/',
+             '/project/<pid>/node/<nid>/app/<guid>/'],
             'delete',
             views.crud.delete_metadata,
             json_renderer
