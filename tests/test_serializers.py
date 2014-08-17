@@ -35,6 +35,53 @@ class TestNodeSerializers(OsfTestCase):
         assert_equal(res['summary']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
 
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
+    def test_get_summary_private_registration_should_include_is_registration(self):
+        user = UserFactory()
+        # non-contributor cannot see private registration of public project
+        node = ProjectFactory(public=True)
+        reg = RegistrationFactory(project=node, user= node.creator)
+        res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
+
+        # serialized result should have is_registration
+        assert_equal(res['summary']['can_view'], False)
+        assert_equal(res['summary']['is_registration'], True)
+
+    def test_get_summary_private_fork_public_project_should_include_is_fork(self):
+        user = UserFactory()
+        # non-contributor cannot see private fork of public project
+        node = ProjectFactory(public=True)
+        consolidated_auth = Auth(user=node.creator)
+        fork = node.fork_node(consolidated_auth)
+
+        res = _get_summary(fork, auth=Auth(user),
+            rescale_ratio=None,
+            primary=True,
+            link_id=None
+        )
+        # serialized result should have is_fork
+        assert_equal(res['summary']['can_view'], False)
+        assert_equal(res['summary']['is_fork'], True)
+
+    def test_get_summary_private_fork_private_project_should_include_is_fork(self):
+        # contributor on a private project
+        user = UserFactory()
+        node = ProjectFactory(public=False)
+        node.add_contributor(user)
+
+        # contributor cannot see private fork of this project
+        consolidated_auth = Auth(user=node.creator)
+        fork = node.fork_node(consolidated_auth)
+
+        res = _get_summary(fork, auth=Auth(user),
+            rescale_ratio=None,
+            primary=True,
+            link_id=None
+        )
+        # serialized result should have is_fork
+        assert_equal(res['summary']['can_view'], False)
+        assert_equal(res['summary']['is_fork'], True)
+
 
 class TestAddContributorJson(OsfTestCase):
 
