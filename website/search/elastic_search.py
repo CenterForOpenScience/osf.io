@@ -5,6 +5,8 @@ import pyelasticsearch
 import re
 import copy
 
+from framework import sentry
+
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
@@ -24,13 +26,22 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
 except pyelasticsearch.exceptions.ConnectionError as e:
-    logger.error(e)
-    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there "
-                "was a problem starting the elasticsearch interface. Is "
-                "elasticsearch running?")
+    sentry.log_exception()
+    sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
+                        "was a problem starting the elasticsearch interface. Is "
+                        "elasticsearch running?")
     elastic = None
 
 
+def requires_search(func):
+    def wrapped(*args, **kwargs):
+        if elastic is not None:
+            return func(*args, **kwargs)
+        sentry.log_message('Elastic search action failed. Is elasticsearch running?')
+    return wrapped
+
+
+@requires_search
 def search(raw_query, start=0):
     orig_query = raw_query
 
@@ -172,6 +183,7 @@ def _build_query(raw_query, start=0):
     return query, raw_query
 
 
+@requires_search
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
@@ -228,6 +240,7 @@ def update_node(node):
             elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
+@requires_search
 def update_user(user):
     if not user.is_active():
         try:
@@ -250,6 +263,7 @@ def update_user(user):
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
 
+@requires_search
 def delete_all():
     try:
         elastic.delete_index('website')
@@ -258,6 +272,7 @@ def delete_all():
         logger.error("The index 'website' was not deleted from elasticsearch")
 
 
+@requires_search
 def delete_doc(elastic_document_id, node):
     category = 'registration' if node.is_registration else node.project_or_component
     try:
@@ -362,8 +377,8 @@ def _format_result(result, parent, parent_info):
         'parent_url': parent_info['url'] if parent is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': result['registeredproject'] if parent is None
-            else parent_info['is_registration'],
+        'is_registration': (result['registeredproject'] if parent is None
+                                                        else parent_info['is_registration']),
         'highlight': [],
         'description': result['description'] if parent is None else None,
     }
@@ -371,6 +386,7 @@ def _format_result(result, parent, parent_info):
     return formatted_result
 
 
+@requires_search
 def search_contributor(query, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
