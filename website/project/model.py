@@ -1220,7 +1220,13 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def update_search(self):
         import website.search.search as search
-        search.update_node(self)
+        if 'application_created' in self.system_tags:
+            index = 'application_created'
+        elif self.category == 'app':
+            index = 'application'
+        else:
+            index = 'website'
+        search.update_node(self, index=index)
 
     def remove_node(self, auth, date=None):
         """Marks a node as deleted.

@@ -181,7 +181,7 @@ def _build_query(raw_query, start, size):
 
 
 @requires_search
-def update_node(node):
+def update_node(node, index='website'):
     from website.addons.wiki.model import NodeWikiPage
 
     component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
@@ -232,9 +232,9 @@ def update_node(node):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         try:
-            elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
+            elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
+            elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
 @requires_search
