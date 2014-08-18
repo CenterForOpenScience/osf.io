@@ -28,20 +28,14 @@
             </table>
         </div>
         <div class="col-md-6">
-            {{chosen | json:4}}
-            <br/>
-            <!-- {{metadata | json:4}} -->
-            <table class="table">
-                <tbody data-bind="foreach: metadata">
-                    <tr>
-                        <td>{{key}}</td>
-                        <td>{{value}}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <pre>
+                {{metadata}}
+            </pre>
         </div>
     </div>
 </div>
+
+<script src="/static/vendor/jsonlint/formatter.js"></script>
 
 <script>
 ;(function (global, factory) {
@@ -60,7 +54,7 @@
         self.query = ko.observable('');
         self.chosen = ko.observable();
         self.results = ko.observableArray([]);
-        self.metadata = ko.observableArray([]);
+        self.metadata = ko.observable('');
 
 
         self.search = function() {
@@ -84,12 +78,7 @@
         };
 
         self.metadataRecieved = function(data) {
-            self.metadata(ko.utils.arrayMap(Object.keys(data), function(key) {
-                return {
-                    'key': key,
-                    'value': data[key]
-                }
-            }));
+            self.metadata('\n' + jsl.format.formatJson(JSON.stringify(data)));
         };
 
         self.setSelected = function(datum) {
