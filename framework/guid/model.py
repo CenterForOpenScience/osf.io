@@ -7,6 +7,7 @@ from framework.mongo import ObjectId
 class Metadata(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     data = fields.DictionaryField()
+    guid = fields.StringField()
     app = fields.ForeignField('appnodesettings', backref='data')
 
     @property
@@ -32,7 +33,11 @@ class Metadata(StoredObject):
         return self.data.update(val)
 
     def to_json(self):
-        return self.data
+        ret = {
+            'guid': self.guid  # TODO
+        }
+        ret.update(self.data)
+        return ret
 
 
 class Guid(StoredObject):
@@ -51,7 +56,7 @@ class Guid(StoredObject):
         if metadata:
             return metadata
 
-        metadata = Metadata(app=app)
+        metadata = Metadata(app=app, guid=self._id)
         metadata.save()
         self.metastore[app.namespace] = metadata._id
         self.save()
