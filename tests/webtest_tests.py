@@ -302,7 +302,6 @@ class TestRegistrations(OsfTestCase):
         assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
-
         # Browse to original project
         res = self.app.get(
             '{}register/'.format(self.original.url),
@@ -322,9 +321,9 @@ class TestRegistrations(OsfTestCase):
         )
 
         # First option should have empty value
-        assert_equal(options[0].get('value'), None)
+        assert_equal(options[0].get('value'), '')
 
-        # All registration templates should be listed in <option>s
+        # All registration templates should be listed in <option>
         option_values = [
             option.get('value')
             for option in options[1:]
@@ -407,6 +406,13 @@ class TestComponents(OsfTestCase):
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_not_in('Components', res)
+
+    def test_do_not_show_registration_button(self):
+        # No registrations on the component
+        url = self.component.web_url_for('node_registrations')
+        res = self.app.get(url, auth=self.user.auth)
+        # New registration button is hidden
+        assert_not_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):

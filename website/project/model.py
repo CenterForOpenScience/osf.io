@@ -343,8 +343,13 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    def __repr__(self):
+        return ('<NodeLog({self.action!r}, params={self.params!r}) '
+                'with id {self._id!r}>').format(self=self)
+
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
@@ -405,6 +410,9 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return '<Tag() with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -591,6 +599,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    def __repr__(self):
+        return ('<Node(title={self.title!r}, category={self.category!r}) '
+                'with _id {self._id!r}>').format(self=self)
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
@@ -1901,17 +1914,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def add_addon(self, addon_name, auth, log=True):
-        """Add an add-on to the node.
+    def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
+        """Add an add-on to the node. Do nothing if the addon is already
+        enabled.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :return bool: Add-on was added
+        :return: A boolean, whether the addon was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth)
-        if rv and log:
+        ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
+                                        *args, **kwargs)
+        if ret and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -1924,7 +1939,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=False,
             )
             self.save() # TODO: here, or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def delete_addon(self, addon_name, auth):
         """Delete an add-on from the node.

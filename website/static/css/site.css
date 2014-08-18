@@ -1483,6 +1483,10 @@ div#logScope a.moreLogs{
     content: "";
 }
 
+.contributor-name {
+    margin-right: -4px;
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {

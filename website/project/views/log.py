@@ -49,13 +49,13 @@ def _get_logs(node, count, auth, link=None, offset=0):
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
         try:
-            can_view = log.node__logged[0].can_view(auth)
+            can_view = all(x.can_view(auth) for x in log.node__logged)
         except (AttributeError, IndexError) as error:
             logger.exception(error)
             continue
 
         if can_view:
-            anonymous = has_anonymous_link(log.node__logged[0], link)
+            anonymous = has_anonymous_link(log.node, link)
             if len(logs) < count:
                 logs.append(log.serialize(anonymous))
             else:

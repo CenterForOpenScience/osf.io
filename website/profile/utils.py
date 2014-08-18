@@ -34,7 +34,10 @@ def serialize_user(user, node=None, full=False):
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': user.display_full_name(node=node),
-        'gravatar_url': user.gravatar_url,
+        'gravatar_url': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_PROFILE
+        ),
         'active': user.is_active(),
     }
     if node is not None:
@@ -64,7 +67,10 @@ def serialize_user(user, node=None, full=False):
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
             'activity_points': user.activity_points,
-            'gravatar_url': user.gravatar_url,
+            'gravatar_url': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_PROFILE
+        ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })
