@@ -48,7 +48,7 @@
     % if cloud:
       <div class="panel panel-default" style="margin-top: 20px; margin-bottom: 20px">
         <div class="panel-heading cloud">
-          <h3> Improve Your Search:</h3>
+          <h3>${'Improve Your Search' if query != '*' else 'Popular Tags'}:</h3>
         </div>
         <div class="panel-body" style="overflow: hidden">
           % for key, value in cloud:
