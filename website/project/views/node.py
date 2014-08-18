@@ -727,6 +727,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
     summary = {
         'id': link_id if link_id else node._id,
         'primary': primary,
+        'is_registration': node.is_registration,
+        'is_fork': node.is_fork,
     }
 
     if node.can_view(auth):
@@ -761,11 +763,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
                 'non_ua': non_ua,
             })
     else:
-        summary.update({
-            'can_view': False,
-            'is_registration': node.is_registration,
-            'is_fork': node.is_fork,
-            })
+        summary['can_view'] = False
 
     # TODO: Make output format consistent with _view_project
     return {

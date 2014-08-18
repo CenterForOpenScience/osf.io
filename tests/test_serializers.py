@@ -14,7 +14,7 @@ class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
-    def test_get_summary_private_node_should_include_id_and_primary_boolean(self):
+    def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
         node = ProjectFactory(public=False)
@@ -27,6 +27,8 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have id and primary
         assert_equal(result['summary']['id'], node._primary_key)
         assert_true(result['summary']['primary'], True)
+        assert_equal(result['summary']['is_registration'], node.is_registration)
+        assert_equal(result['summary']['is_fork'], node.is_fork)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
@@ -44,10 +46,9 @@ class TestNodeSerializers(OsfTestCase):
         res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
 
         # serialized result should have is_registration
-        assert_equal(res['summary']['can_view'], False)
-        assert_equal(res['summary']['is_registration'], True)
+        assert_true(res['summary']['is_registration'])
 
-    def test_get_summary_private_fork_public_project_should_include_is_fork(self):
+    def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
         node = ProjectFactory(public=True)
@@ -60,8 +61,7 @@ class TestNodeSerializers(OsfTestCase):
             link_id=None
         )
         # serialized result should have is_fork
-        assert_equal(res['summary']['can_view'], False)
-        assert_equal(res['summary']['is_fork'], True)
+        assert_true(res['summary']['is_fork'])
 
     def test_get_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
