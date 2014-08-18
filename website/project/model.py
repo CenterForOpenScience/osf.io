@@ -491,6 +491,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Use an OrderedDict so that menu items show in the correct order
     CATEGORY_MAP = OrderedDict([
         ('', 'Uncategorized'),
+        ('app', 'Application'),
         ('project', 'Project'),
         ('hypothesis', 'Hypothesis'),
         ('methods and measures', 'Methods and Measures'),
@@ -815,7 +816,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 if 'node' in addon.added_default:
                     self.add_addon(addon.short_name, auth=None, log=False)
 
-            #
+                if self.category == 'app' and 'app' in addon.added_default:
+                    self.add_addon(addon.short_name, auth=None, log=False)
+
             if getattr(self, 'project', None):
 
                 # Append log to parent
@@ -1799,7 +1802,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def deep_url(self):
-        if self.category == 'project':
+        if self.category in ['project', 'app']:
             return '/project/{}/'.format(self._primary_key)
         else:
             if self.node__parent and self.node__parent[0].category == 'project':
