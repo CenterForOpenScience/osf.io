@@ -130,6 +130,7 @@ def make_url_map(app):
         Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako')),
         Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako')),
         Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
+        Rule('/rss/', 'get', {}, OsfWebRenderer('public/pages/rss.mako')),
         Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
         Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
         Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
