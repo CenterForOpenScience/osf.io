@@ -182,6 +182,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
+        Rule('/dashboard/apps/', 'get', website_views.get_dashboard_apps, json_renderer),
 
     ], prefix='/api/v1')
 
