@@ -92,6 +92,38 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(query_user(user.fullname)), 1)
         assert_equal(len(query_user(merged_user.fullname)), 0)
 
+    def test_employment(self):
+        user = UserFactory(fullname='Helga Finn')
+        user.save()
+        institution = 'Finn\'s Fine Filers'
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 0)
+        user.jobs.append({
+            'institution': institution,
+            'title': 'The Big Finn',
+        })
+        user.save()
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 1)
+
+    def test_education(self):
+        user = UserFactory(fullname='Henry Johnson')
+        user.save()
+        institution = 'Henry\'s Amazing School!!!'
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 0)
+        user.schools.append({
+            'institution': institution,
+            'degree': 'failed all classes',
+        })
+        user.save()
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 1)
+
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestProject(SearchTestCase):
@@ -154,6 +186,16 @@ class TestPublicNodes(SearchTestCase):
         self.registration.set_privacy('private')
         docs = query('registration:' + self.title)
         assert_equal(len(docs), 0)
+
+    def test_make_parent_private(self):
+        """Make parent of component, public, then private, and verify that the
+        component still appears but doesn't link to the parent in search.
+        """
+        self.project.set_privacy('private')
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 1)
+        assert_equal(docs[0]['parent_title'], '-- private project --')
+        assert_false(docs[0]['parent_url'])
 
     def test_delete_project(self):
         """
@@ -272,6 +314,23 @@ class TestPublicNodes(SearchTestCase):
         self.project.set_visible(user2, True, save=True)
         docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
+
+    def test_word_cloud(self):
+        tag1 = 'general tag'
+        tag2 = 'specific tag'
+        self.project.add_tag(tag1, self.consolidate_auth, save=True)
+        self.component.add_tag(tag1, self.consolidate_auth, save=True)
+        self.component.add_tag(tag2, self.consolidate_auth, save=True)
+
+        # can't use "query" function because I need the word cloud, not results
+        res = search.search({'query': self.title, 'type': '', 'tags': ''})
+        cloud = res['cloud']
+
+        if len(cloud) == 2:
+            assert_equal(cloud[0], (tag1, 2))
+            assert_equal(cloud[1], (tag2, 1))
+        else:
+            assert 0
 
 
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
