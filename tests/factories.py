@@ -34,7 +34,6 @@ def save_kwargs(**kwargs):
 
 
 class ModularOdmFactory(base.Factory):
-
     """Base factory for modular-odm objects.
     """
 
@@ -42,7 +41,7 @@ class ModularOdmFactory(base.Factory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         save_kwargs(**kwargs)
         return target_class(*args, **kwargs)
 
