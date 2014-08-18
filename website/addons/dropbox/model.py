@@ -93,7 +93,7 @@ class DropboxFile(GuidFile):
             revision = rev
         # Note: Use hash of file path instead of file path in case paths are
         # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
-        return u'{digest}_{rev}.html'.format(
+        return '{digest}_{rev}.html'.format(
             digest=hashlib.md5(self.path).hexdigest(),
             rev=revision,
         )

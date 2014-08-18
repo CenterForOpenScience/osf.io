@@ -17,7 +17,6 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 from framework.guid.model import Guid, GuidStoredObject
 
 from website.util import web_url_for
-from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
 
@@ -53,6 +52,7 @@ def _render_node(node):
 
     """
     return {
+        'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
@@ -177,10 +177,6 @@ def forgot_password_form():
 
 def reset_password_form():
     return utils.jsonify(ResetPasswordForm())
-
-
-def new_project_form():
-    return utils.jsonify(NewProjectForm())
 
 
 ### GUID ###

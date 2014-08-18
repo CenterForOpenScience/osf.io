@@ -36,7 +36,8 @@ from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
 from website.exceptions import NodeStateError
-from website.util.permissions import (expand_permissions,
+from website.util.permissions import (
+    expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
 )
@@ -303,6 +304,7 @@ class NodeLog(StoredObject):
 
     PROJECT_CREATED = 'project_created'
     PROJECT_REGISTERED = 'project_registered'
+    PROJECT_DELETED = 'project_deleted'
 
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
@@ -342,8 +344,13 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    def __repr__(self):
+        return ('<NodeLog({self.action!r}, params={self.params!r}) '
+                'with id {self._id!r}>').format(self=self)
+
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
@@ -404,6 +411,9 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return '<Tag() with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -590,6 +600,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    def __repr__(self):
+        return ('<Node(title={self.title!r}, category={self.category!r}) '
+                'with _id {self._id!r}>').format(self=self)
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
@@ -1269,6 +1284,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 log_date=log_date,
                 save=True,
             )
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
 
         # Remove self from parent registration list
         if self.is_registration:
@@ -1437,13 +1462,12 @@ class Node(GuidStoredObject, AddonModelMixin):
             if registered_node is not None:
                 registered.nodes.append(registered_node)
 
-
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':registered._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': registered._primary_key,
             },
             auth=auth,
             log_date=when,
@@ -1911,17 +1935,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def add_addon(self, addon_name, auth, override=False, log=True):
-        """Add an add-on to the node.
+    def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
+        """Add an add-on to the node. Do nothing if the addon is already
+        enabled.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :returns: Add-on was added
+        :return: A boolean, whether the addon was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth=auth, override=override)
-        if rv and log:
+        ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
+                                        *args, **kwargs)
+        if ret and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -1934,7 +1960,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=False,
             )
             self.save() # TODO: here, or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def delete_addon(self, addon_name, auth):
         """Delete an add-on from the node.
@@ -2396,7 +2422,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage(
+        new_wiki = NodeWikiPage(
             page_name=temp_page,
             version=version,
             user=auth.user,
@@ -2404,23 +2430,23 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        v.save()
+        new_wiki.save()
 
         if page not in self.wiki_pages_versions:
             self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(v._primary_key)
-        self.wiki_pages_current[page] = v._primary_key
+        self.wiki_pages_versions[page].append(new_wiki._primary_key)
+        self.wiki_pages_current[page] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': v.page_name,
-                'version': v.version,
+                'page': new_wiki.page_name,
+                'version': new_wiki.version,
             },
             auth=auth,
-            log_date=v.date
+            log_date=new_wiki.date
         )
 
     def get_stats(self, detailed=False):
@@ -2545,7 +2571,7 @@ class PrivateLink(StoredObject):
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
             "name": self.name,
-            "creator": self.creator.fullname,
+            "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }

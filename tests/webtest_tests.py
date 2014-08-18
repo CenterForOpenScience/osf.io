@@ -187,21 +187,6 @@ class TestAUser(OsfTestCase):
         assert_in('added file test.html', res)
         assert_in(project.title, res)
 
-    def test_can_create_a_project(self):
-        res = self._login(self.user.username, 'science')
-        # Goes to dashboard (already logged in)
-        res = res.click('Dashboard', index=0)
-        # Clicks New Project
-        res = res.click('New Project').maybe_follow()
-        # Fills out the form
-        form = res.forms['projectForm']
-        form['title'] = 'My new project'
-        form['description'] = 'Just testing'
-        # Submits
-        res = form.submit().maybe_follow()
-        # Taken to the project's page
-        assert_in('My new project', res)
-
     def test_sees_correct_title_home_page(self):
         # User goes to homepage
         res = self.app.get('/', auto_follow=True)
@@ -318,7 +303,6 @@ class TestRegistrations(OsfTestCase):
         assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
-
         # Browse to original project
         res = self.app.get(
             '{}register/'.format(self.original.url),
@@ -338,9 +322,9 @@ class TestRegistrations(OsfTestCase):
         )
 
         # First option should have empty value
-        assert_equal(options[0].get('value'), None)
+        assert_equal(options[0].get('value'), '')
 
-        # All registration templates should be listed in <option>s
+        # All registration templates should be listed in <option>
         option_values = [
             option.get('value')
             for option in options[1:]
@@ -423,6 +407,13 @@ class TestComponents(OsfTestCase):
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_not_in('Components', res)
+
+    def test_do_not_show_registration_button(self):
+        # No registrations on the component
+        url = self.component.web_url_for('node_registrations')
+        res = self.app.get(url, auth=self.user.auth)
+        # New registration button is hidden
+        assert_not_in('New Registration', res)
 
 
 class TestPrivateLinkView(OsfTestCase):
@@ -589,9 +580,6 @@ class TestSearching(OsfTestCase):
         form = res.forms['searchBar']
         form['q'] = user.fullname
         res = form.submit().maybe_follow()
-        # No results, so clicks Search Users
-
-        res = res.click('Users: 1')
         # The username shows as a search result
         assert_in(user.fullname, res)
 
@@ -605,6 +593,17 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # A link to the project is shown as a result
         assert_in('Foobar Project', res)
+
+    def test_a_public_component_from_home_page(self):
+        component = NodeFactory(title='Foobar Component', is_public=True)
+        # Searches a part of the name
+        res = self.app.get('/').maybe_follow()
+        component.reload()
+        form = res.forms['searchBar']
+        form['q'] = 'Foobar'
+        res = form.submit().maybe_follow()
+        # A link to the component is shown as a result
+        assert_in('Foobar Component', res)
 
 
 class TestShortUrls(OsfTestCase):

@@ -13,6 +13,9 @@ class Guid(StoredObject):
 
 class GuidStoredObject(StoredObject):
 
+    def __str__(self):
+        return str(self._id)
+
     # Redirect to content using URL redirect by default
     redirect_mode = 'redirect'
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # PEP8 asserts
+# PEP8 asserts
+from nose.tools import *  # noqa
 
 from flask import url_for
 
@@ -13,13 +14,15 @@ from tests.factories import (
 )
 
 from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
+from website.addons.wiki.model import NodeWikiPage
 
 
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
         super(TestWikiViews, self).setUp()
-        self.project = ProjectFactory(is_public=True)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
 
     def test_get_wiki_url_for_project(self):
         node = ProjectFactory()
@@ -56,7 +59,7 @@ class TestWikiViews(OsfTestCase):
     def test_serialize_wiki_toc(self):
         project = ProjectFactory()
         auth = Auth(project.creator)
-        has_wiki = NodeFactory(project=project, creator=project.creator)
+        NodeFactory(project=project, creator=project.creator)
         no_wiki = NodeFactory(project=project, creator=project.creator)
         project.save()
 
@@ -78,6 +81,20 @@ class TestWikiViews(OsfTestCase):
         project.add_pointer(pointed_node, auth=auth, save=True)
 
         serialize_wiki_toc(project, auth)
+
+    def test_project_wiki_edit_post(self):
+        self.project.update_node_wiki(
+            'home',
+            content='old content',
+            auth=Auth(self.project.creator)
+        )
+        url = self.project.web_url_for('project_wiki_edit_post', wid='home')
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        # page was updated with new content
+        new_wiki = self.project.get_wiki_page('home')
+        assert_equal(new_wiki.content, 'new content')
 
 
 class TestWikiRename(OsfTestCase):

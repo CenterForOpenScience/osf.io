@@ -97,6 +97,11 @@ class TestAuthUtils(OsfTestCase):
 
 class TestAuthObject(OsfTestCase):
 
+    def test_repr(self):
+        auth = AuthFactory()
+        rep = repr(auth)
+        assert_in(str(auth.user), rep)
+
     def test_factory(self):
         super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()

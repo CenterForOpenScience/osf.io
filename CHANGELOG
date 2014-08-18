@@ -2,10 +2,13 @@
 Changelog
 *********
 
-0.15.0 (unreleased)
+0.15.1 (unreleased)
 ===================
 
-Scheduled 2014-08-08
+- Bugfix release. Fixes a number of minor UI bugs.
+
+0.15.0 (2014-08-11)
+===================
 
 - View-only links: Add option to anonymize contributors.
 - Wiki: Add support for fenced code blocks; syntax highlighting; allow ID attributes in tags.
@@ -16,6 +19,7 @@ Scheduled 2014-08-08
 - Add confirmation dialog when deselecting addons from the user profile page.
 - Registered users no longer have "key ring" of view-only link keys. View-only
 links will appear the same, regardless of whether you are logged in or not.
+- Project deletion events are logged.
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
 install` to installthem.

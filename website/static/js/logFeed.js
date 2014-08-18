@@ -50,7 +50,7 @@
         self.displayContributors = ko.computed(function(){
             var ret = '';
             if (self.anonymous){
-                    ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
+                ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
             } else {
                 for (var i = 0; i < self.contributors.length; i++) {
                     var person = self.contributors[i];

@@ -3,6 +3,7 @@ import random
 import string
 from nose.tools import *
 
+from website.util import api_url_for, web_url_for
 from website.addons.base.testing import AddonTestCase
 from website.util import api_url_for
 import website
@@ -28,7 +29,7 @@ class TestBadgesViews(AddonTestCase):
         ret = self.app.post_json(
             api_url_for('create_badge'),
             badge,
-            auth=self.user.auth,
+            auth=self.user.auth
         )
         self.user_settings.reload()
         assert_equals(ret.status_int, 201)

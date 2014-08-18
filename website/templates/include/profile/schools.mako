@@ -7,7 +7,8 @@
             <div data-bind="sortable: {
                     data: contents,
                     options: {
-                        handle: '.sort-handle'
+                        handle: '.sort-handle',
+                        containment: '#containDrag'
                     }
                 }">
 

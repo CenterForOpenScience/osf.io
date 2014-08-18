@@ -11,6 +11,11 @@ created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="project_deleted">
+deleted <span data-bind="text: nodeType"></span>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+</script>
+
 <script type="text/html" id="created_from">
 created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another <span data-bind="text: nodeType"></span></a>
@@ -23,7 +28,7 @@ created <span data-bind="text: nodeType"></span>
 
 <script type="text/html" id="node_removed">
 removed <span data-bind="text: nodeType"></span>
-<span class="overflow" data-bind="text: nodeTitle"></span>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="wiki_updated">

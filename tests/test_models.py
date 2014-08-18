@@ -118,6 +118,10 @@ class TestUser(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
 
+    def test_repr(self):
+        assert_in(self.user.username, repr(self.user))
+        assert_in(self.user._id, repr(self.user))
+
     def test_update_guessed_names(self):
         name = fake.name()
         u = User(fullname=name)
@@ -378,12 +382,17 @@ class TestUser(OsfTestCase):
         user = UserFactory.build()
         master.merge_user(user, save=True)
         d = serialize_user(user, full=True)
+        gravatar = filters.gravatar(
+            user,
+            use_ssl=True,
+            size=settings.GRAVATAR_SIZE_PROFILE
+        )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
         assert_equal(d.get('username'), None)
         assert_equal(d['fullname'], user.fullname)
         assert_equal(d['registered'], user.is_registered)
-        assert_equal(d['gravatar_url'], user.gravatar_url)
+        assert_equal(d['gravatar_url'], gravatar)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
         assert_equal(d['activity_points'], user.activity_points)
@@ -908,8 +917,8 @@ class TestNode(OsfTestCase):
     def test_add_existing_addon(self):
         addon_count = len(self.node.get_addon_names())
         addon_record_count = len(self.node.addons)
-        with assert_raises(AddonError):
-            self.node.add_addon('osffiles', self.consolidate_auth)
+        added = self.node.add_addon('osffiles', self.consolidate_auth)
+        assert_false(added)
         assert_equal(
             len(self.node.get_addon_names()),
             addon_count
@@ -1099,6 +1108,14 @@ class TestRemoveNode(OsfTestCase):
         # parent node should have a log of the event
         assert_equal(self.parent_project.logs[-1].action, 'node_removed')
 
+    def test_delete_project_log_present(self):
+        self.project.remove_node(auth=self.consolidate_auth)
+        self.parent_project.remove_node(auth=self.consolidate_auth)
+
+        assert_true(self.parent_project.is_deleted)
+        # parent node should have a log of the event
+        assert_equal(self.parent_project.logs[-1].action, 'project_deleted')
+
     def test_remove_project_with_project_child_fails(self):
         with assert_raises(NodeStateError):
             self.parent_project.remove_node(self.consolidate_auth)
@@ -1211,6 +1228,10 @@ class TestProject(OsfTestCase):
         self.user = UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
+
+    def test_repr(self):
+        assert_in(self.project.title, repr(self.project))
+        assert_in(self.project._id, repr(self.project))
 
     def test_project_factory(self):
         node = ProjectFactory()
@@ -2259,6 +2280,11 @@ class TestNodeLog(OsfTestCase):
     def setUp(self):
         super(TestNodeLog, self).setUp()
         self.log = NodeLogFactory()
+
+    def test_repr(self):
+        rep = repr(self.log)
+        assert_in(self.log.action, rep)
+        assert_in(self.log._id, rep)
 
     def test_node_log_factory(self):
         log = NodeLogFactory()
