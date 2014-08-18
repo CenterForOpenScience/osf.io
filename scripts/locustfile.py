@@ -5,12 +5,15 @@ from StringIO import StringIO
 
 from locust import HttpLocust, TaskSet, task
 
-USERNAME = 'jm.carp+locust@gmail.com'
-PASSWORD = 'locust'
-PROJECT_ID = '3vubz'
-FILE_ID = 'fk6tb'
+HOST = 'https://96.126.111.139'
+USERNAME = 'jm.carp+gitlab.test@gmail.com'
+PASSWORD = 'gitlab'
+READ_PROJECT_ID = '8hatz'
+WRITE_PROJECT_ID = 'kqf6z'
+FILE_ID = '3bz8x'
 FILE_NCHARS = 1024
-ROUTE = 'gitlab'
+ROUTE = 'osffiles'
+VERIFY = False
 
 
 def gen_file_like(nchars=None, name=None):
@@ -29,27 +32,35 @@ class UserBehavior(TaskSet):
     def login(self):
         self.client.post(
             '/login/',
-            {'username': USERNAME, 'password': PASSWORD}
+            {'username': USERNAME, 'password': PASSWORD},
+            verify=VERIFY,
         )
 
-    @task
-    def list_files(self):
-        self.client.get('/api/v1/{0}/osffiles/'.format(PROJECT_ID))
+    #@task
+    #def list_files(self):
+    #    self.client.get(
+    #        '/api/v1/{0}/osffiles/grid/'.format(READ_PROJECT_ID),
+    #        verify=VERIFY
+    #    )
 
-    @task
-    def download_file(self):
-        self.client.get('/{0}/download/'.format(FILE_ID))
+    #@task
+    #def download_file(self):
+    #    self.client.get(
+    #        '/{0}/download/'.format(FILE_ID),
+    #        verify=VERIFY,
+    #    )
 
     @task
     def upload_file(self):
         self.client.post(
-            '/api/v1/project/{0}/{1}/files/'.format(PROJECT_ID, ROUTE),
-            files={'file': gen_file_like()}
+            '/api/v1/project/{0}/{1}/files/'.format(WRITE_PROJECT_ID, ROUTE),
+            files={'file': gen_file_like()},
+            verify=VERIFY,
         )
 
 
 class WebsiteUser(HttpLocust):
-    host = 'http://localhost:5000'
+    host = HOST
     task_set = UserBehavior
     min_wait = 5000
     max_wait = 10000
