@@ -58,14 +58,18 @@
                   <td>Name</td>
                   <td class="fullname">${profile["fullname"]}</td>
                 </tr>
-                <tr>
-                  <td>Member&nbsp;Since</td>
-                  <td>${profile['date_registered']}</td>
-                </tr>
-                <tr>
-                  <td>Public&nbsp;Profile</td>
-                  <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
-                </tr>
+                % if profile.get('date_registered'):
+                    <tr>
+                        <td>Member&nbsp;Since</td>
+                        <td>${profile['date_registered']}</td>
+                    </tr>
+                % endif
+                % if profile.get('url') and profile.get('display_absolute_url'):
+                    <tr>
+                        <td>Public&nbsp;Profile</td>
+                        <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
+                    </tr>
+                % endif
             </table>
         </div>
         <div>
@@ -87,7 +91,7 @@
             <li><a href="#schools" data-toggle="tab">Education</a></li>
         </ul>
 
-        <div class="tab-content">
+        <div class="tab-content" id="containDrag">
 
             <div class="tab-pane active" id="social">
                 <div data-bind="template: {name: 'profileSocial'}"></div>
