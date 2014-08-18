@@ -26,7 +26,7 @@ class AppNodeSettings(GuidStoredObject):
         attachee.category = 'app'
         attachee.save()
 
-        system_user = User.create_confirmed(attachee.title, attachee.title, '12')
+        system_user = User.create_confirmed(attachee.title, '12', attachee.title)
         system_user.is_system_user = True
         system_user.password = '12'
         system_user.save()

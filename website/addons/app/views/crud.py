@@ -2,6 +2,7 @@ import httplib as http
 
 from flask import request
 
+from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.search.search import search
@@ -151,10 +152,12 @@ def create_application_project(node_addon, **kwargs):
     except KeyError, AssertionError:
         raise HTTPError(http.BAD_REQUEST)
 
-    node = new_node('project', node_addon.system_user, request.json('title'), request.json.get('description'))
+    node = new_node('project', request.json['title'], node_addon.system_user, request.json.get('description'))
+    node.system_tags.append('application_created')
+    node.set_privacy('public', auth=Auth(node_addon.system_user))
 
     return {
-        'id': node,
+        'id': node._id,
         'url': node.url,
         'apiUlr': node.api_url
     }, http.CREATED
