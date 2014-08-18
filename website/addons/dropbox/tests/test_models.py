@@ -287,6 +287,23 @@ class TestDropboxGuidFile(OsfTestCase):
             )
         )
 
+    def test_cache_file_name_encode(self):
+        project = ProjectFactory()
+        path = 'à/ é éà'
+        file_obj = DropboxFile(node=project, path=path)
+        mock_client = MockDropbox()
+        file_obj.update_metadata(client=mock_client)
+        file_obj.save()
+
+        result = file_obj.get_cache_filename(client=mock_client)
+        assert_equal(
+            result,
+            '{0}_{1}.html'.format(
+                hashlib.md5(path).hexdigest(),
+                file_obj.metadata['rev'],
+            )
+        )
+
     def test_download_url(self):
         file_obj = DropboxFileFactory()
         dl_url = file_obj.download_url(guid=False)
