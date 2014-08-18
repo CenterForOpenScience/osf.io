@@ -10,17 +10,15 @@ from . import views
 # Routes that use the web renderer
 web_routes = {
     'rules': [
-
-        ##### View file #####
-    #     Rule(
-    #         [
-    #             '/project/<pid>/app/files/<path:path>',
-    #             '/project/<pid>/node/<nid>/app/files/<path:path>',
-    #         ],
-    #         'get',
-    #         views.crud.app_view_file,
-    #         OsfWebRenderer('../addons/app/templates/app_view_file.mako'),
-    #     ),
+        Rule(
+            [
+                '/project/<pid>/app/',
+                '/project/<pid>/node/<nid>/app/',
+            ],
+            'get',
+            views.web.application_page,
+            OsfWebRenderer('../addons/app/templates/app_page.mako'),
+        ),
 
 
     #     ##### Download file #####

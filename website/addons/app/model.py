@@ -25,7 +25,6 @@ class AppNodeSettings(GuidStoredObject):
     def addon_attached(self, attachee):
         attachee.category = 'app'
         attachee.save()
-        import ipdb; ipdb.set_trace()
 
         system_user = User.create_confirmed(attachee.title, attachee.title, '12')
         system_user.is_system_user = True

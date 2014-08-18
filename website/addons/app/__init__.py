@@ -15,7 +15,7 @@ FULL_NAME = 'Application'
 
 OWNERS = ['node']
 
-VIEWS = []
+VIEWS = ['page']
 CONFIGS = ['node']
 
 CATEGORIES = ['service']
