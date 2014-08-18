@@ -21,6 +21,14 @@ import website.search.search as search
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class SearchTestCase(OsfTestCase):
 
+    def setUp(self):
+        search.delete_all()
+        search.create_index()
+        try:
+            self.set_up()
+        except AttributeError:
+            raise AttributeError('Test class not properly set up')
+
     def tearDown(self):
         search.delete_all()
 
@@ -37,7 +45,7 @@ def query_user(name):
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestUserUpdate(SearchTestCase):
 
-    def setUp(self):
+    def set_up(self):
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -88,7 +96,7 @@ class TestUserUpdate(SearchTestCase):
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestProject(SearchTestCase):
 
-    def setUp(self):
+    def set_up(self):
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -109,7 +117,7 @@ class TestProject(SearchTestCase):
 @unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
 class TestPublicNodes(SearchTestCase):
 
-    def setUp(self):
+    def set_up(self):
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -272,7 +280,7 @@ class TestAddContributor(SearchTestCase):
 
     """
 
-    def setUp(self):
+    def set_up(self):
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
