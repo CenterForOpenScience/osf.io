@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
-<section id="Search" xmlns="http://www.w3.org/1999/html" style="overflow: hidden">
+<section id="Search" xmlns="http://www.w3.org/1999/html">
   <div class="page-header">
     % if query or tags:
       <h1>
@@ -11,15 +11,15 @@
           Search <small> for
 ##        first show query, if it is there
           % if query:
-            <span class="label label-success btn-mini" style="margin-right:.5em">${query}
-              <a href="/search/?type=${type}&tags=${','.join(tags)}" style="color:white">&times;</a>
+            <span class="label label-success btn-mini query-label">${query}
+              <a href="/search/?type=${type}&tags=${','.join(tags)}" class="remove-button">&times;</a>
             </span>
           % endif
 ##        then show tags
           % if tags:
             % for tag in tags:
-              <span class="label label-info btn-mini" style="margin-right:.5em">${tag}
-                <a href="/search/?q=${query if query != '*' else ''}&type=${type}&tags=${','.join((x for x in tags if x != tag)) | h }" style="color:white">&times;</a>
+              <span class="label label-info btn-mini query-label">${tag}
+                <a href="/search/?q=${query if query != '*' else ''}&type=${type}&tags=${','.join((x for x in tags if x != tag)) | h }" class="remove-button">&times;</a>
               </span>
             % endfor
           % endif
@@ -46,11 +46,11 @@
     % endif
 ##  our tag cloud!
     % if cloud:
-      <div class="panel panel-default" style="margin-top: 20px; margin-bottom: 20px">
-        <div class="panel-heading cloud">
+      <div class="panel panel-default tag-cloud">
+        <div class="panel-heading">
           <h3>${'Improve Your Search' if query != '*' else 'Popular Tags'}:</h3>
         </div>
-        <div class="panel-body" style="overflow: hidden">
+        <div class="panel-body">
           % for key, value in cloud:
             <span id="tagCloud">
               <a href="/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + key}" rel=${value}> ${key} </a>
@@ -63,9 +63,9 @@
   <div class="col-md-9">
     % if results:
 ##    iterate through our nice lists of results
-      <div class="list-group" style="overflow: hidden">
+      <div class="list-group">
         % for result in results:
-          <div class="list-group-item" style="margin-bottom: 10px">
+          <div class="list-group-item result">
 ##          users are different results than anything associated with projects
             % if 'user' in result:
               <div class="title">
@@ -102,7 +102,7 @@
                   % if result['url']:
                     <a href=${result['url']}>${result['title']}</a>
                   %else:
-                    <span style='font-weight:normal; font-style:italic'>${result['title']}</span>
+                    <span class="private-title">${result['title']}</span>
                   % endif
                 </h4>
               </div><!-- end title -->
@@ -118,7 +118,7 @@
                     % if result['parent_url']:
                       <a href=${result['parent_url']}>${result['parent_title']}</a>
                     % else:
-                      <span style="font-style: italic">${result['parent_title']}</span>
+                      <span class="private-title">${result['parent_title']}</span>
                     % endif
                   </h5>
                 % else:
@@ -159,7 +159,7 @@
               % if result['tags']:
                 <div class="search-tags">
                   % for tag in result['tags']:
-                    <a href='/search/?tags=${tag}' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
+                    <a href='/search/?tags=${tag}' class="label label-info btn-mini">${tag}</a>
                   % endfor
                 </div>
               % endif

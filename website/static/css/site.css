@@ -1139,24 +1139,52 @@ h1.unavailable {
 }
 
 /* Search */
+.page-header
+    {
+        overflow: hidden;
+    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.remove-button
+    {
+        color: #ffffff;
+    }
 .search-types a
     {
         font-size: 16px;
     }
-.cloud h3
+.tag-cloud
+    {
+        margin-top: 20px;
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+.tag-cloud h3
     {
         margin: 0;
+    }
+.query-label
+    {
+        margin-right: .5em;
+    }
+.result
+    {
+        margin-bottom: 10px;
+        overflow: hidden;
     }
 .title h4
     {
         padding: 0;
         padding-bottom: 5px;
         margin: 0;
+    }
+.private-title
+    {
+        font-weight: normal;
+        font-style: italic;
     }
 .search-field
     {
@@ -1182,6 +1210,10 @@ h1.unavailable {
     {
         padding-top: 2px;
         line-height: 24px;
+    }
+.search-tags a
+    {
+        margin-right: .5em;
     }
 /* Search Contributors */
 
