@@ -320,6 +320,25 @@ def _load_parent(parent):
         parent_info['id'] = None
     return parent_info
 
+def create_index():
+    '''Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, and registrations'''
+    mapping = {
+        'properties': {
+            'tags': {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        }
+    }
+    try:
+        elastic.create_index('website')
+        for type in ['project','component','registration']:
+            elastic.put_mapping('website', type, mapping)
+    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
+        pass
+
+
 
 def create_result(results, counts):
     ''' Takes a dict of counts by type, and a list of dicts of the following structure:
