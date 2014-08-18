@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Adds wiki and osffiles addons to nodes that do not have them.
+"""
+
 import logging
 
 from nose.tools import *
