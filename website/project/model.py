@@ -1431,6 +1431,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         original.save()
 
         registered.save()
+        for node in registered.nodes:
+            node.update_search()
 
         return registered
 
