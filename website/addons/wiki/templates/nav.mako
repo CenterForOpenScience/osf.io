@@ -1,6 +1,6 @@
-<div class="navbar-outer" style="text-align: center">
+<div class="navbar-outer navbar-collapse" style="text-align: center">
 
-    <nav class="navbar navbar-default" style="display: inline-block;">
+    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block;">
         <ul class="nav navbar-nav">
             <li><a href="${node['url']}wiki/${pageName}">View</a></li>
             % if user['can_edit']:
