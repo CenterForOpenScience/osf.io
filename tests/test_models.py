@@ -2306,6 +2306,19 @@ class TestNodeLog(OsfTestCase):
         assert_equal(d['params'], log.params)
         assert_equal(d['node']['title'], log.node.title)
 
+    def test_serialize_node_for_logs(self):
+        node = NodeFactory()
+        d = node.serialize()
+
+        assert_equal(d['id'], node._primary_key)
+        assert_equal(d['category'], node.category_display)
+        assert_equal(d['node_type'], node.project_or_component)
+        assert_equal(d['url'], node.url)
+        assert_equal(d['title'], node.title)
+        assert_equal(d['api_url'], node.api_url)
+        assert_equal(d['is_public'], node.is_public)
+        assert_equal(d['is_registration'], node.is_registration)
+
     def test_render_log_contributor_unregistered(self):
         node = NodeFactory()
         name, email = fake.name(), fake.email()
