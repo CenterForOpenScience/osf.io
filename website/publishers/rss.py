@@ -1,5 +1,7 @@
 from website.search import views as search_views
 
+search_views.search_search()
+
 
 ## TODO
 ## use the search_search function from website/search/views.py
