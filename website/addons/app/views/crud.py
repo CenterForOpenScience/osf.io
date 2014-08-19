@@ -1,3 +1,4 @@
+import sys
 import httplib as http
 
 from flask import request
@@ -19,7 +20,7 @@ from website.project.decorators import (
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
     q = request.args.get('q', '')
-    ret = search(q, _type=node_addon.namespace, index='metadata')
+    ret = search(q, _type=node_addon.namespace, index='metadata', size=sys.maxsize)
     return {
         'results': [ blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
