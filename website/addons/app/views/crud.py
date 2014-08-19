@@ -20,7 +20,9 @@ from website.project.decorators import (
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
     q = request.args.get('q', '')
-    ret = search(q, _type=node_addon.namespace, index='metadata', size=sys.maxsize)
+    start = request.args.get('page', 0)
+
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
     return {
         'results': [ blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
@@ -44,14 +46,19 @@ def list_custom_routes(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
+    start = request.args.get('page', 0)
+
     try:
-        ret = search(node_addon[route], _type=node_addon.namespace, index='metadata')
-        return {
-            'results': ret['hits']['hits'],
-            'total': ret['hits']['total']
-        }
+        route = node_addon[route]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
+
+    ret = search(route, _type=node_addon.namespace, index='metadata', start=start)
+
+    return {
+        'results': ret['hits']['hits'],
+        'total': ret['hits']['total']
+    }
 
 
 # POST
