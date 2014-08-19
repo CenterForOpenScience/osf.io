@@ -142,11 +142,16 @@ def _build_query(full_query, start=0):
     tag_filter = {}
     # Check for tag-based query
     if raw_query[0:5] == 'tags:':
-        tags += raw_query[5:]
+        tags += ',' + raw_query[5:]
         raw_query = ''
     # Create tag filter
     if tags:
-        tags = tags.split(',')
+        # First, split by comma to create tag list
+        tags = tags.strip(',').split(',')
+        # Then make sure to remove duplicates while retaining order
+        seen = set()
+        seen_add = seen.add
+        tags = [x for x in tags if not (x in seen or seen_add(x))]
         tag_filter = {
             'bool': {
                 'must': []
