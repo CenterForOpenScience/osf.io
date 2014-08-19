@@ -20,7 +20,7 @@ import website.search.search as search
 class SearchTestCase(OsfTestCase):
 
     def set_up(self):
-        super(SearchTestCase, self).setUp()
+        """Common setup operations to all tests"""
         search.delete_all()
         search.create_index()
 
@@ -353,7 +353,7 @@ class TestAddContributor(SearchTestCase):
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
-        self.setUp()
+        self.set_up()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
