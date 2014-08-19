@@ -102,10 +102,10 @@ class TestMigratingAddons(OsfTestCase):
         unaffected_node = NodeFactory()
         assert_true(unaffected_node.has_addon('wiki'))
 
-        affected_nodes = get_affected_nodes(self.db, AddonWikiNodeSettings)
+        affected_nodes = list(get_affected_nodes(self.db, AddonWikiNodeSettings))
 
-        assert affected_node in affected_nodes
-        assert unaffected_node not in affected_nodes
+        assert_in(affected_node, affected_nodes)
+        assert_not_in(unaffected_node, affected_nodes)
 
 
 if __name__ == '__main__':
