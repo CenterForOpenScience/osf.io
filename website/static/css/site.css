@@ -1150,6 +1150,13 @@ h1.unavailable {
     {
         overflow: hidden;
     }
+.add-query
+    {
+        width: 190px;
+        margin-left: 10px;
+        display: inline-block;
+        font-weight: normal;
+    }
 .navigate
     {
         padding:25px;

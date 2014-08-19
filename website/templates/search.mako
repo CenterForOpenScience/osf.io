@@ -29,7 +29,7 @@
         ${total} result${'s' if total is not 1 else ''} in ${time} seconds</small>
       </h1>
     % else:
-      <h1>No query</h1>
+      <h1 style="display: inline-block">No query</h1> <form class="add-query" action="${ web_url_for('search_search') }" role="search" method="get"><input type="text" class="form-control" placeholder="Create query" name="q"></form>
     % endif
   </div><!-- end page-header -->
 </section>
