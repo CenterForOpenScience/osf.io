@@ -1139,6 +1139,12 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
 .navigate
     {
@@ -1460,6 +1466,10 @@ div#logScope a.moreLogs{
 
 #contributors ol li:last-child:after {
     content: "";
+}
+
+.contributor-name {
+    margin-right: -4px;
 }
 
 /* Contributor page */

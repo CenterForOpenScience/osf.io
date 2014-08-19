@@ -46,18 +46,17 @@ def get_node_contributors_abbrev(auth, **kwargs):
     contributors = []
 
     n_contributors = len(users)
-    others_count, others_suffix = '', ''
+    others_count = ''
 
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = ' &'
+            separator = '&nbsp;&'
             others_count = str(n_contributors - 3)
-            others_suffix = 's' if others_count > 1 else ''
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = ' &'
+            separator = '&nbsp&'
         else:
             separator = ','
 
@@ -69,7 +68,6 @@ def get_node_contributors_abbrev(auth, **kwargs):
     return {
         'contributors': contributors,
         'others_count': others_count,
-        'others_suffix': others_suffix,
     }
 
 
