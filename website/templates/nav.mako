@@ -36,7 +36,7 @@
           </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
-        <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="${ web_url_for('search_search') }" method="get" role="search">
+        <form id="searchBar" class="navbar-form navbar-left" action="${ web_url_for('search_search') }" method="get" role="search">
           <div class="form-group">
             <input type="text" class="form-control search-query" placeholder="Search" name="q">
           </div>
