@@ -39,13 +39,16 @@
 </div>
 % endif
 
-<div class="page-header">
-    <a href="#changeAvatarModal" data-toggle="modal">
-        <img id='profile-gravatar' src="${profile['gravatar_url']}"
-                 rel="tooltip" title="click to change avatar" />
-    </a>
-    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
-</div><!-- end-page-header -->
+        <div class="col-md-2">
+        <a href="#changeAvatarModal" data-toggle="modal">
+            <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                     rel="tooltip" title="click to change avatar" />
+        </a>
+    </div>
+    <div class="col-md-10">
+        <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+
+
 
 <div class="row">
 
@@ -175,7 +178,7 @@
             }'></div>
     </div>
 </div><!-- end row -->
-
+</div>
 <%include file="log_templates.mako"/>
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />

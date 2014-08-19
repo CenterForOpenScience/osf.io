@@ -795,7 +795,7 @@ border-radius: 6px;
 /* Profile gravatar
 -------------------------------------------------- */
 #profile-gravatar{
-    float:left;
+    float:right;
     margin-right:.5em;
     width:120px;
     height:120px;
