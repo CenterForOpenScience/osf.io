@@ -2,6 +2,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
+from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory
@@ -9,27 +10,22 @@ from tests.factories import (
 
 from framework.auth.core import Auth
 
-from website.models import User
-from website import settings
-
-# if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
+#Uncomment to force elasticsearch to load for testing
+# if settings.SEARCH_ENGINE is not None:
 #    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-# reload(search)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class SearchTestCase(OsfTestCase):
 
-    def setUp(self):
+    def set_up(self):
+        super(SearchTestCase, self).setUp()
         search.delete_all()
         search.create_index()
-        try:
-            self.set_up()
-        except AttributeError:
-            raise AttributeError('Test class not properly set up')
 
     def tearDown(self):
+        super(SearchTestCase, self).tearDown()
         search.delete_all()
 
 
@@ -42,10 +38,13 @@ def query_user(name):
     full_result = search.search({'query': name, 'type': 'user', 'tags': ''})
     return full_result['results']
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+
+@requires_search
 class TestUserUpdate(SearchTestCase):
 
-    def set_up(self):
+    def setUp(self):
+        super(TestUserUpdate, self).setUp()
+        self.set_up()
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -125,10 +124,12 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestProject(SearchTestCase):
 
-    def set_up(self):
+    def setUp(self):
+        super(TestProject, self).setUp()
+        self.set_up()
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -139,17 +140,20 @@ class TestProject(SearchTestCase):
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Elastic Search.
+        """Make project public, and verify that it is present in Elastic
+        Search.
         """
         self.project.set_privacy('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestPublicNodes(SearchTestCase):
 
-    def set_up(self):
+    def setUp(self):
+        super(TestPublicNodes, self).setUp()
+        self.set_up()
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -333,17 +337,18 @@ class TestPublicNodes(SearchTestCase):
             assert 0
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestAddContributor(SearchTestCase):
     """Tests of the search.search_contributor method
 
     """
 
-    def set_up(self):
+    def setUp(self):
+        super(TestAddContributor, self).setUp()
+        self.setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
-
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()

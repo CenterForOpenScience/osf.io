@@ -357,7 +357,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
@@ -1138,6 +1139,12 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
 .page-header
     {
@@ -1506,6 +1513,10 @@ div#logScope a.moreLogs{
     content: "";
 }
 
+.contributor-name {
+    margin-right: -4px;
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
@@ -1726,3 +1737,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+

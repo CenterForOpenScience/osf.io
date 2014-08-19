@@ -496,7 +496,7 @@
         },
         uploadDenied: function(evt, row) {
             this.removeHighlight('highlight-denied');
-        },
+        }
     };
 
     function updateTooltips() {

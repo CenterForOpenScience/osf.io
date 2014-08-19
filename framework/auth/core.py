@@ -138,6 +138,11 @@ class Auth(object):
         self.api_node = api_node
         self.private_key = private_key
 
+    def __repr__(self):
+        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
+                'api_node={self.api_node}, '
+                'private_key={self.private_key})>').format(self=self)
+
     @property
     def logged_in(self):
         return self.user is not None
@@ -177,7 +182,6 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    private_links = fields.ForeignField('privatelink', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -260,11 +264,7 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     def __repr__(self):
-        return '<User {0!r}>'.format(self.username)
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
+        return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):

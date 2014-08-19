@@ -50,7 +50,7 @@
         self.displayContributors = ko.computed(function(){
             var ret = '';
             if (self.anonymous){
-                    ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
+                ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
             } else {
                 for (var i = 0; i < self.contributors.length; i++) {
                     var person = self.contributors[i];
@@ -187,7 +187,7 @@
         var self = this;
         self.$progBar.hide();
         ko.cleanNode(self.$element[0]);
-        ko.applyBindings(self.viewModel, self.$element[0]);
+        $.osf.applyBindings(self.viewModel, self.selector);
     };
 
     return LogFeed;

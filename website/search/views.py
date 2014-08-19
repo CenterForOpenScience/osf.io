@@ -19,6 +19,11 @@ logger = logging.getLogger(__name__)
 
 def search_search():
     tick = time.time()
+    ERROR_RETURN = {
+        'results': [],
+        'tags': [],
+        'query': '',
+    }
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     start = request.args.get('pagination', 0)
@@ -33,11 +38,7 @@ def search_search():
     # if there is not a query, don't start the search
     query = bleach.clean(query, tags=[], strip=True)
     if not (query or tags):
-        return {
-            'results': [],
-            'tags': [],
-            'query': '',
-        }
+        return ERROR_RETURN
     full_query = {'query': query, 'type': result_type, 'tags': tags.strip(',')}
     # if the search does not work,
     # post an error message to the user, otherwise,
@@ -46,11 +47,10 @@ def search_search():
         full_result = search.search(full_query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
-        return {
-            'results': [],
-            'tags': [],
-            'query': '',
-        }
+        return ERROR_RETURN
+    except TypeError:
+        status.push_status_message('There was a problem querying the search database. Please try again later.')
+        return ERROR_RETURN
     # put the rest of the variables into the dict before returning
     counts = full_result['counts']
     full_result['total'] = counts if not isinstance(counts, dict) else counts['total']
