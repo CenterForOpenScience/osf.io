@@ -594,6 +594,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'with _id {self._id!r}>').format(self=self)
 
     @property
+    def is_system_project(self):
+        return 'application_created' in self.system_tags
+
+    @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]

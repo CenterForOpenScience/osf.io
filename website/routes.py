@@ -367,6 +367,12 @@ def make_url_map(app):
             OsfWebRenderer('profile/addons.mako'),
         ),
 
+        Rule(
+            '/settings/api/',
+            'get',
+            profile_views.user_apikeys,
+            OsfWebRenderer('profile/apikeys.mako'),
+        ),
     ])
 
     # API
