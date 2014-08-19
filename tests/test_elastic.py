@@ -336,6 +336,14 @@ class TestPublicNodes(SearchTestCase):
         else:
             assert 0
 
+    def test_wrong_order_search(self):
+        title_parts = self.title.split(' ')
+        title_parts.reverse()
+        title_search = ' '.join(title_parts)
+
+        docs = query(title_search)
+        assert_equal(len(docs), 3)
+
 
 @requires_search
 class TestAddContributor(SearchTestCase):

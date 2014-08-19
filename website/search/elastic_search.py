@@ -173,7 +173,6 @@ def _build_query(full_query, start=0):
         inner_query = {
             'multi_match': {
                 'query': raw_query,
-                'type': 'phrase_prefix',
                 'fields': '_all',
             }
         }
