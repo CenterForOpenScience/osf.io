@@ -2,6 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Adds wiki and osffiles addons to nodes that do not have them.
+
+Log:
+
+    Performed on production by sloria on 2014-08-19 at 4:55PM (EST). 2008 projects
+    without the OSF File Storage Addon were migrated. 2 projects without the
+    OSF Wiki addon were migrated.
 """
 
 import logging
