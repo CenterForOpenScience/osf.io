@@ -488,7 +488,7 @@ def search_metadata(query, _type, start, size):
     query = {
         'query': _metadata_inner_query(query),
         'from': start,
-        'size': 10,
+        'size': size,
     }
 
     return elastic.search(query, index='metadata', doc_type=_type)
@@ -538,7 +538,6 @@ def get_mapping(index, _type):
 
 
 def _strings_to_types(mapping):
-
     type_map = {
         u'boolean': bool,
         u'object': dict,
@@ -550,10 +549,6 @@ def _strings_to_types(mapping):
         u'string': str,
     }
 
-    # x = lambda *y: {item[0]: type_map.get(item[1]['type'], str) for item in y}
-    # return map(x, mapping.items())
-
     for key, val in mapping.items():
-        mapping[key] = type_map.get(val['type'], str)
-
+        mapping[key] = type_map.get(val['type']) if val.get('type') else _strings_to_types(val)
     return mapping
