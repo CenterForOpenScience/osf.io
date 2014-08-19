@@ -26,10 +26,10 @@
                     </tr>
                 </tbody>
             </table>
-            <ul class="pagination" data-bind="visible: total > 0">
-                <li><a data-bind="click: pagePrev">&laquo;</a></li>
+            <ul class="pagination" data-bind="visible: total() > 1">
+                <li><a data-bind="click: pagePrev, visible: currentIndex() > 0">&laquo;</a></li>
                 <li><a>{{currentIndex() + 1}}</a></li>
-                <li><a data-bind="click: pageNext" >&raquo;</a></li>
+                <li><a data-bind="click: pageNext, visible: currentIndex() < total() " >&raquo;</a></li>
             </ul>
         </div>
         <div class="col-md-6">

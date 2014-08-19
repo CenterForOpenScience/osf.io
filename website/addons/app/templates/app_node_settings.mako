@@ -8,7 +8,6 @@
     <!-- Uncomment for debugging. Shows pretty printed ViewModel data -->
     <!-- <pre data-bind="text: ko.toJSON($data, null, 2)"></pre> -->
 
-    <!-- TODO: Settings Interface here -->
     <h4>Custom Routes</h4>
     <table class="table">
         <thead>

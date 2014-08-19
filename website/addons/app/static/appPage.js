@@ -28,7 +28,7 @@
         };
 
         self.pageNext = function() {
-            if (self.currentIndex() == 0) return;
+            if (self.currentIndex() >= self.total()) return;
 
             self.currentIndex(self.currentIndex() + 1);
             self.search();
