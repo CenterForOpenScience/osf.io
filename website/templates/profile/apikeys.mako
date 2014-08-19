@@ -27,6 +27,7 @@
                         <tr>
                             <th>Label</th>
                             <th>Key</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody data-bind="foreach: keys">
