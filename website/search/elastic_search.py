@@ -488,7 +488,7 @@ def search_metadata(query, _type, start, size):
     query = {
         'query': _metadata_inner_query(query),
         'from': start,
-        'size': 10,
+        'size': size,
     }
 
     return elastic.search(query, index='metadata', doc_type=_type)
