@@ -30,7 +30,7 @@ from framework.analytics import (
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
+from framework import StoredObject, fields
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 

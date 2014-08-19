@@ -7,7 +7,7 @@ from modularodm import Q
 
 from framework.auth.core import User
 from framework import utils
-from framework.forms import utils as framework_utils
+from framework.forms import utils as form_utils
 from framework import sentry
 from framework.exceptions import HTTPError
 from framework.routing import proxy_url
@@ -183,19 +183,19 @@ def reproducibility():
 
 
 def registration_form():
-    return framework_utils.jsonify(RegistrationForm(prefix='register'))
+    return form_utils.jsonify(RegistrationForm(prefix='register'))
 
 
 def signin_form():
-    return framework_utils.jsonify(SignInForm())
+    return form_utils.jsonify(SignInForm())
 
 
 def forgot_password_form():
-    return framework_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
+    return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
 
 def reset_password_form():
-    return framework_utils.jsonify(ResetPasswordForm())
+    return form_utils.jsonify(ResetPasswordForm())
 
 
 ### GUID ###

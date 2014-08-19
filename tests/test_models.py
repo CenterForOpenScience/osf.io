@@ -29,6 +29,7 @@ from website.project.model import (
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
+from website.views import serialize_log
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
@@ -2287,12 +2288,12 @@ class TestNodeLog(OsfTestCase):
         log = NodeLogFactory()
         assert_true(log.action)
 
-    def test_serialize(self):
+    def test_serialize_log(self):
         node = NodeFactory(category='hypothesis')
         log = NodeLogFactory(params={'node': node._primary_key})
         node.logs.append(log)
         node.save()
-        d = log.serialize()
+        d = serialize_log(log)
         assert_equal(d['action'], log.action)
         assert_equal(d['node']['node_type'], 'component')
         assert_equal(d['node']['category'], 'Hypothesis')
