@@ -159,7 +159,7 @@
               % if result['tags']:
                 <div class="search-tags">
                   % for tag in result['tags']:
-                    <a href='/search/?tags=${tag}' class="label label-info btn-mini">${tag}</a>
+                    <a href='/search/?q=${query}&type=${type}&tags=${','.join(tags) + ',' + tag}' class="label label-info btn-mini">${tag}</a>
                   % endfor
                 </div>
               % endif
