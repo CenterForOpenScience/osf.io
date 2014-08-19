@@ -26,7 +26,6 @@
             </tr>
         </tbody>
     </table>
-    <hr>
     <form class="form-inline" role="form">
         <input class="form-control" type="text" data-bind="value: customUrl" placeholder="Url">
         <input class="form-control" type="text" data-bind="value: customQuery" placeholder="Query">

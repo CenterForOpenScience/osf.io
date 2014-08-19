@@ -26,6 +26,11 @@
                     </tr>
                 </tbody>
             </table>
+            <ul class="pagination" data-bind="visible: total > 0">
+                <li><a data-bind="click: pagePrev">&laquo;</a></li>
+                <li><a>{{currentIndex() + 1}}</a></li>
+                <li><a data-bind="click: pageNext" >&raquo;</a></li>
+            </ul>
         </div>
         <div class="col-md-6">
             <pre data-bind="visible: results().length > 0">
