@@ -85,12 +85,7 @@
         <hr />
 
         <div class="logs">
-            <div id='logScope'>
-                <%include file="log_list.mako"/>
-                <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-            </div><!-- end #logScope -->
-            ## Hide More widget until paging for logs is implemented
-            ##<div class="paginate pull-right">more</div>
+            <%include file="log_list.mako"/>
         </div>
 
     </div>

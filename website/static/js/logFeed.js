@@ -187,7 +187,7 @@
         var self = this;
         self.$progBar.hide();
         ko.cleanNode(self.$element[0]);
-        ko.applyBindings(self.viewModel, self.$element[0]);
+        $.osf.applyBindings(self.viewModel, self.selector);
     };
 
     return LogFeed;
