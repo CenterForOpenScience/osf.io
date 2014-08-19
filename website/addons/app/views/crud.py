@@ -19,7 +19,7 @@ from website.project.decorators import (
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
     q = request.args.get('q', '')
-    ret = search(q, index='metadata')
+    ret = search(q, _type=node_addon.namespace, index='metadata')
     return {
         'results': [ blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
@@ -44,7 +44,7 @@ def list_custom_routes(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
     try:
-        ret = search(node_addon[route], index='metadata')
+        ret = search(node_addon[route], _type=node_addon.namespace, index='metadata')
         return {
             'results': ret['hits']['hits'],
             'total': ret['hits']['total']
