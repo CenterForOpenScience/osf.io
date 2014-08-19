@@ -6,7 +6,7 @@ Adds wiki and osffiles addons to nodes that do not have them.
 
 import logging
 
-from nose.tools import *
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.base import OsfTestCase
 from tests.factories import NodeFactory
@@ -110,4 +110,3 @@ class TestMigratingAddons(OsfTestCase):
 
 if __name__ == '__main__':
     main()
-
