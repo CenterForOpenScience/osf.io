@@ -120,8 +120,7 @@ def get_dashboard_nodes(auth, **kwargs):
 
     comps = contributed.find(
         # components only
-        Q('category', 'ne', 'project') &
-        Q('category', 'ne', 'app') &
+        Q('category', 'nin', ['app', 'project']) &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
