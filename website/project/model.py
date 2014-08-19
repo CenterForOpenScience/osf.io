@@ -386,23 +386,6 @@ class NodeLog(StoredObject):
             'registered': user.is_registered,
         }
 
-    # TODO: Move to separate utility function
-    def serialize(self, anonymous=False):
-        '''Return a dictionary representation of the log.'''
-        return {
-            'id': str(self._primary_key),
-            'user': self.user.serialize()
-                    if isinstance(self.user, User)
-                    else {'fullname': self.foreign_user},
-            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'api_key': self.api_key.label if self.api_key else '',
-            'action': self.action,
-            'params': self.params,
-            'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None,
-            'anonymous': anonymous
-        }
-
 
 class Tag(StoredObject):
 
