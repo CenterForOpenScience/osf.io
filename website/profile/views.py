@@ -203,14 +203,17 @@ def create_user_key(**kwargs):
     # Return response
     return {
         'response': 'success',
+        'key': api_key._id
     }
 
 
 @must_be_logged_in
 def revoke_user_key(**kwargs):
-
     # Load key
-    api_key = ApiKey.load(request.form['key'])
+    api_key = ApiKey.load(request.args.get('key'))
+
+    if not api_key:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Remove from user
     user = kwargs['auth'].user

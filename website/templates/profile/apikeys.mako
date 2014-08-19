@@ -33,7 +33,7 @@
                         <tr>
                             <td>{{label | default:"No Label"}}</td>
                             <td>{{key}}</td>
-                            <td><a data-bind="click: $parent.deleteKey.bind(key)"><i class="icon-remove text-danger"></i></a></td>
+                            <td><a data-bind="click: $parent.deleteKey.bind()"><i class="icon-remove text-danger"></i></a></td>
                         </tr>
                     </tbody>
                 </table>
@@ -51,62 +51,8 @@
 </div>
 
 <script type="text/javascript">
-
-    ;(function (global, factory) {
-        if (typeof define === 'function' && define.amd) {
-            define(['knockout', 'jquery', 'osfutils', 'knockoutpunches'], factory);
-        } else {
-            global.ApiKeyView  = factory(ko, jQuery);
-        }
-    }(this, function(ko, $) {
-        // Enable knockout punches
-        ko.punches.enableAll();
-
-        var ViewModel = function(url) {
-            var self = this;
-            self.url = url;
-            self.keys = ko.observableArray([]);
-            self.label = ko.observable('');
-
-            self.keysRecieved = function(data) {
-                self.keys(data.keys);
-            }
-
-            self.createKey = function() {
-                $.osf.postJSON(self.url, {label: self.label()});
-            }
-
-            self.deleteKey = function(key) {
-                bootbox.confirm('Are you sure you want to delete this API key?', function(result) {
-
-                });
-            }
-
-            function fetch() {
-                $.ajax({
-                    url: self.url,
-                    type: 'GET',
-                    success: self.keysRecieved
-                });
-            }
-
-            fetch();
-
-        };
-
-        function ApiKeyView(selector, url) {
-            // Initialization code
-            var self = this;
-            self.viewModel = new ViewModel(url);
-            window.model = self.viewModel;
-            $.osf.applyBindings(self.viewModel, selector);
-        }
-
-        return ApiKeyView
-
-    }));
-
-    ApiKeyView('#apiKey', '${api_url_for('get_keys')}');
-
+    $script('/static/js/apiKeyManager.js', function() {
+        ApiKeyView('#apiKey', '${api_url_for('get_keys')}');
+    });
 </script>
 </%def>

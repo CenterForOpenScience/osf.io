@@ -388,8 +388,8 @@ def make_url_map(app):
         Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
-        Rule('/settings/key/', 'post', profile_views.create_user_key, json_renderer),
-        Rule('/settings/key/', 'delete', profile_views.revoke_user_key, json_renderer),
+        Rule('/settings/keys/', 'post', profile_views.create_user_key, json_renderer),
+        Rule('/settings/keys/', 'delete', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
