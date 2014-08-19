@@ -1905,7 +1905,11 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def project_or_component(self):
-        return 'project' if self.category == 'project' else 'component'
+        if self.category == 'project':
+            return 'project'
+        elif self.category == 'app':
+            return 'application'
+        return 'component'
 
     def is_contributor(self, user):
         return (
