@@ -21,7 +21,7 @@
                     </tr>
                 </thead>
                 <tbody data-bind="foreach: results">
-                    <tr data-bind="click: $parent.setSelected($data)">
+                    <tr data-bind="click: $parent.setSelected.bind($data)">
                         <td>{{guid}}</td>
                     </tr>
                 </tbody>

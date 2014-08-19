@@ -52,7 +52,6 @@
         // Initialization code
         var self = this;
         self.viewModel = new ViewModel(url);
-        window.model = self.viewModel;
         $.osf.applyBindings(self.viewModel, selector);
     }
 
