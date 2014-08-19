@@ -795,10 +795,10 @@ border-radius: 6px;
 /* Profile gravatar
 -------------------------------------------------- */
 #profile-gravatar{
-    float:right;
+    float:left;
     margin-right:.5em;
-    width:120px;
-    height:120px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
