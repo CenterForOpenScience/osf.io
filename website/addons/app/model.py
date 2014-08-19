@@ -9,16 +9,32 @@ from website.addons.base import lookup
 from website.search.search import update_metadata, get_mapping
 
 from framework import Guid, GuidStoredObject
-
+from framework.auth import User
 
 class AppNodeSettings(GuidStoredObject):
 
     redirect_mode = 'proxy'
     _id = fields.StringField(primary=True)
 
-    custom_routes = fields.DictionaryField()
-    allow_queries = fields.BooleanField(default=False)
-    allow_public_read = fields.BooleanField(default=True)
+
+    system_user         = fields.ForeignField('user', backref='application')
+    custom_routes       = fields.DictionaryField()
+    allow_queries       = fields.BooleanField(default=False)
+    allow_public_read   = fields.BooleanField(default=True)
+
+    def addon_attached(self, attachee):
+        attachee.category = 'app'
+        attachee.save()
+
+        system_user = User.create_confirmed(attachee.title, '12', attachee.title)
+        system_user.is_system_user = True
+        system_user.password = '12'
+        system_user.save()
+
+        self.system_user = system_user
+
+        self.system_user.save()
+        self.save()
 
     def _guid_to_metadata(self, guid):
         """Resolve a Guid to a metadata object

@@ -185,6 +185,7 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+    is_system_user = fields.BooleanField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)

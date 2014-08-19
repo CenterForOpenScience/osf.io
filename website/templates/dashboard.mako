@@ -4,6 +4,14 @@
 <div class="row">
     <div class="col-md-6">
         <div class="page-header">
+            <h3>Applications</h3>
+        </div>
+        <div mod-meta='{
+             "tpl": "util/render_nodes.mako",
+             "uri": "/api/v1/dashboard/apps/",
+             "replace": true
+        }'></div>
+        <div class="page-header">
             <div class="pull-right"><a class="btn btn-default" href="/project/new">New Project</a></div>
             <h3>Projects</h3>
         </div>

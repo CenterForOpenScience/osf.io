@@ -10,17 +10,15 @@ from . import views
 # Routes that use the web renderer
 web_routes = {
     'rules': [
-
-        ##### View file #####
-    #     Rule(
-    #         [
-    #             '/project/<pid>/app/files/<path:path>',
-    #             '/project/<pid>/node/<nid>/app/files/<path:path>',
-    #         ],
-    #         'get',
-    #         views.crud.app_view_file,
-    #         OsfWebRenderer('../addons/app/templates/app_view_file.mako'),
-    #     ),
+        Rule(
+            [
+                '/project/<pid>/app/',
+                '/project/<pid>/node/<nid>/app/',
+            ],
+            'get',
+            views.web.application_page,
+            OsfWebRenderer('../addons/app/templates/app_page.mako'),
+        ),
 
 
     #     ##### Download file #####
@@ -40,39 +38,16 @@ web_routes = {
 api_routes = {
     'rules': [
 
-        ##### Node settings #####
-
         Rule(
-            ['/project/<pid>/app/config/',
-            '/project/<pid>/node/<nid>/app/config/'],
-            'get',
-            views.config.app_config_get,
+            [
+                '/project/<pid>/app/project/',
+                '/project/<pid>/node/<nid>/app/project/'
+            ],
+            'post',
+            views.crud.create_application_project,
             json_renderer
-        ),
+        )
 
-        Rule(
-            ['/project/<pid>/app/config/',
-            '/project/<pid>/node/<nid>/app/config/'],
-            'put',
-            views.config.app_config_put,
-            json_renderer
-        ),
-
-        Rule(
-            ['/project/<pid>/app/config/',
-            '/project/<pid>/node/<nid>/app/config/'],
-            'delete',
-            views.config.app_deauthorize,
-            json_renderer
-        ),
-
-        Rule(
-            ['/project/<pid>/app/config/import-auth/',
-            '/project/<pid>/node/<nid>/app/config/import-auth/'],
-            'put',
-            views.config.app_import_user_auth,
-            json_renderer
-        ),
     ],
 
     ## Your routes here

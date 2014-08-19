@@ -2,10 +2,11 @@ import httplib as http
 
 from flask import request
 
+from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-
+from website.project import new_node
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon, must_have_permission,
@@ -20,7 +21,7 @@ def query_app(node_addon, **kwargs):
     q = request.args.get('q', '')
     ret = search(q, index='metadata')
     return {
-        'results': ret['hits']['hits'],
+        'results': [ blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
     }
 
@@ -138,3 +139,25 @@ def delete_metadata(node_addon, guid, **kwargs):
         }, http.OK
 
     return HTTPError(http.NO_CONTENT)
+
+
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def create_application_project(node_addon, **kwargs):
+    if not request.json:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        assert len(request.json['title']) > 1 and len(request.json['title']) < 201
+    except KeyError, AssertionError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    node = new_node('project', request.json['title'], node_addon.system_user, request.json.get('description'))
+    node.system_tags.append('application_created')
+    node.set_privacy('public', auth=Auth(node_addon.system_user))
+
+    return {
+        'id': node._id,
+        'url': node.url,
+        'apiUlr': node.api_url
+    }, http.CREATED

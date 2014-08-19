@@ -28,8 +28,8 @@ def search(query, start=0, size=10, index='website', _type=None):
 
 
 @requires_search
-def update_node(node):
-    search_engine.update_node(node)
+def update_node(node, index='website'):
+    search_engine.update_node(node, index)
 
 
 @requires_search

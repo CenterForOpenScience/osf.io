@@ -185,6 +185,9 @@ class AddonSettingsBase(StoredObject):
         'abstract': True,
     }
 
+    def addon_attached(self, attachee):
+        pass
+
     def delete(self, save=True):
         self.deleted = True
         if save:
