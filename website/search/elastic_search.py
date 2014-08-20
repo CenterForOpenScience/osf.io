@@ -474,7 +474,7 @@ def search_contributor(query, exclude=None, current_user=None):
 
 
 @requires_search
-def get_recent_documents(raw_query='', size=0, start=10):
+def get_recent_documents(raw_query='', start=0, size=10):
 
     query = _build_query(raw_query, start, size)
     query['sort'] = [{
