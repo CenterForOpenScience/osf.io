@@ -476,13 +476,13 @@ def search_contributor(query, exclude=None, current_user=None):
 @requires_search
 def get_recent_documents(raw_query='', start=0, size=10):
 
-    query = _build_query(raw_query, start, size)
+    query = _build_query(raw_query, start, size)[0]
     query['sort'] = [{
         'iso_timestamp': {
             'order': 'desc'
         }
     }]
-    raw_results = elastic.search(query, index='website', doc_type='project')
+    raw_results = elastic.search(query, index='website')#, doc_type='project')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     count = raw_results['hits']['total']
 
