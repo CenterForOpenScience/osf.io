@@ -75,7 +75,7 @@ def search(raw_query, start=0):
     return formatted_results, tags, counts
 
 
-def _build_query(raw_query, start=0):
+def _build_query(raw_query, start=0, size=10):
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -177,7 +177,7 @@ def _build_query(raw_query, start=0):
             }
         },
         'from': start,
-        'size': 10,
+        'size': size,
     }
 
     return query, raw_query
@@ -226,6 +226,7 @@ def update_node(node):
             'registeredproject': node.is_registration,
             'wikis': {},
             'parent_id': parent_id,
+            'iso_timestamp': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         for wiki in [
@@ -469,6 +470,20 @@ def search_contributor(query, exclude=None, current_user=None):
 
             })
 
-
-
     return {'users': users}
+
+
+@requires_search
+def get_recent_documents(raw_query='', size=0, start=10):
+
+    query = _build_query(raw_query, start, size)
+    query['sort'] = [{
+        'iso_timestamp': {
+            'order': 'desc'
+        }
+    }]
+    raw_results = elastic.search(query, index='website', doc_type='project')
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    count = raw_results['hits']['total']
+
+    return {'results': results, 'count': count}

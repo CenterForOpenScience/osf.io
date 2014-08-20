@@ -1,6 +1,6 @@
-from website import settings
 import logging
 
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,11 @@ def delete_all():
 
 
 @requires_search
-def search_contributor(query, exclude=None, current_user = None):
+def search_contributor(query, exclude=None, current_user=None):
     result = search_engine.search_contributor(query, exclude, current_user)
     return result
+
+
+@requires_search
+def get_recent_documents(query='', start=0, size=10):
+    return search_engine.get_recent_documents(query, start, size)
