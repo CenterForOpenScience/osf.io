@@ -1,27 +1,19 @@
 # -*- coding: utf-8 -*-
 
 import bleach
-from framework import request, status
 import logging
 from urllib2 import HTTPError
-from modularodm.query.querydialect import DefaultQueryDialect as Q
-from website.project import Node
 
-from website import settings
+from website.publishers import rss
 
-from framework.analytics.piwik import PiwikClient
+from framework import request, status
 
 
 
 logger = logging.getLogger(__name__)
 
 
-def search():
-    ERROR_RETURN = {
-        'results': [],
-        'tags': [],
-        'query': '',
-    }
+def recent_rss():
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     start = request.args.get('pagination', 0)
@@ -33,96 +25,10 @@ def search():
     query = request.args.get('q')
     # if there is not a query, tell our users to enter a search
     query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No results', 'info')
-        return ERROR_RETURN
-
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
     # and spellcheck suggestions are returned to us
-    try:
-        results_search, tags, counts = search.search(query, start)
-    except HTTPError:
-        status.push_status_message('Malformed query. Please try again')
-        return ERROR_RETURN
-    except TypeError:
-        status.push_status_message('There was a problem querying the search database. Please try again later.')
-        return ERROR_RETURN
+    feed = rss.gen_rss_feed(query)
 
-
-    return results_search
-
-def recent_rss():
-
-    popular_public_projects = []
-    popular_public_registrations = []
-    hits = {}
-
-    if settings.PIWIK_HOST:
-        client = PiwikClient(
-            url=settings.PIWIK_HOST,
-            auth_token=settings.PIWIK_ADMIN_TOKEN,
-            site_id=settings.PIWIK_SITE_ID,
-            period='week',
-            date='today',
-        )
-        popular_project_ids = [
-            x for x in client.custom_variables if x.label == 'Project ID'
-        ][0].values
-
-
-        for nid in popular_project_ids:
-            node = Node.load(nid.value)
-            if node is None:
-                continue
-            if node.is_public and not node.is_registration:
-                if len(popular_public_projects) < 10:
-                    popular_public_projects.append(node)
-            elif node.is_public and node.is_registration:
-                if len(popular_public_registrations) < 10:
-                    popular_public_registrations.append(node)
-            if len(popular_public_projects) >= 10 and len(popular_public_registrations) >= 10:
-                break
-
-        hits = {
-            x.value: {
-                'hits': x.actions,
-                'visits': x.visits
-            } for x in popular_project_ids
-        }
-
-    # Projects
-
-    recent_query = (
-        Q('category', 'eq', 'project') &
-        Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
-    )
-
-    # Temporary bug fix: Skip projects with empty contributor lists
-    # Todo: Fix underlying bug and remove this selector
-    recent_query = recent_query & Q('contributors', 'ne', [])
-
-    recent_public_projects = Node.find(
-        recent_query &
-        Q('is_registration', 'eq', False)
-    ).sort(
-        '-date_created'
-    ).limit(10)
-
-    # Registrations
-    recent_public_registrations = Node.find(
-        recent_query &
-        Q('is_registration', 'eq', True)
-    ).sort(
-        '-date_created'
-    ).limit(10)
-
-    return {
-        'recent_public_projects': recent_public_projects,
-        'recent_public_registrations': recent_public_registrations,
-        'popular_public_projects': popular_public_projects,
-        'popular_public_registrations': popular_public_registrations,
-        'hits': hits,
-    }
+    return feed

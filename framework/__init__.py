@@ -17,6 +17,7 @@ from framework.sessions import goback, set_previous_url, session, create_session
 ##### Routing
 from framework.routing import (Rule, process_rules,
                                WebRenderer, json_renderer,
+                               xml_renderer,
                                render_mako_string)
 
 ##### GUID

@@ -8,6 +8,7 @@ from framework import status
 from framework.exceptions import HTTPError
 from framework import (Rule, process_rules,
                        WebRenderer, json_renderer,
+                       xml_renderer,
                        render_mako_string)
 from framework.auth import views as auth_views
 from framework.auth import get_current_user
@@ -333,8 +334,7 @@ def make_url_map(app):
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
 
-        Rule('/rss/', 'get', rss_views.recent_rss, OsfWebRenderer('rss.mako')),
-        # Rule('/rss/', 'get', rss_views.recent_rss, json_renderer),
+        Rule('/rss/', 'get', rss_views.recent_rss, xml_renderer),
 
     ])
 
