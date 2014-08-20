@@ -27,8 +27,9 @@ def dict_to_rss(results, count, query):
         pyrss.RSSItem(
             title=doc.get('title').encode('ascii', 'ignore'),
             link=settings.DOMAIN + doc.get('url')[1:],
-            description=format_description(doc), #doc.get('description').encode('ascii', 'ignore'),
+            description=doc.get('description').encode('ascii', 'ignore') or 'No description provided',
             guid=doc.get('id'),
+            author='; '.join([contributor.encode('ascii', 'ignore') for contributor in doc.get('contributors')]) or 'No contributors listed',
             pubDate=doc.get('iso_timestamp')
         ) for doc in docs
     ]
@@ -45,9 +46,3 @@ def dict_to_rss(results, count, query):
     rss.write_xml(f)
 
     return f.getvalue()
-
-
-def format_description(doc):
-    contributors = '; '.join([contributor.encode('ascii', 'ignore') for contributor in doc.get('contributors')]) or 'No contributors listed'
-    description = doc.get('description') or 'No description provided'
-    return '<br/>'.join([contributors, description.encode('ascii', 'ignore')])
