@@ -17,14 +17,24 @@ NodeActions.beforeForkNode = function(url, done) {
         url: url,
         contentType: 'application/json'
     }).success(function(response) {
-        bootbox.confirm(
-             $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-             function(result) {
-                 if (result) {
-                     done && done();
-                 }
-             }
-         );
+        if (response.prompts.length !== 0) {
+            bootbox.confirm(
+                $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
+        } else {
+            bootbox.confirm('Are you sure you want to fork this project?',
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
+        }
     });
 };
 
