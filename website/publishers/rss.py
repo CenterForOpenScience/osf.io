@@ -25,12 +25,12 @@ def dict_to_rss(results, count, query):
 
     items = [
         pyrss.RSSItem(
-            title=doc.get('title'),
+            title=doc.get('title').encode('ascii', 'ignore'),
             link=settings.DOMAIN + doc.get('url')[1:],
-            description=doc.get('description'),
+            description=format_description(doc), #doc.get('description').encode('ascii', 'ignore'),
             guid=doc.get('id'),
             pubDate=doc.get('iso_timestamp')
-        ) for doc in docs 
+        ) for doc in docs
     ]
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
     rss = pyrss.RSS2(
@@ -45,3 +45,9 @@ def dict_to_rss(results, count, query):
     rss.write_xml(f)
 
     return f.getvalue()
+
+
+def format_description(doc):
+    contributors = '; '.join([contributor.encode('ascii', 'ignore') for contributor in doc.get('contributors')]) or 'No contributors listed'
+    description = doc.get('description') or 'No description provided'
+    return '<br/>'.join([contributors, description.encode('ascii', 'ignore')])
