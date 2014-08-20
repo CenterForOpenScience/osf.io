@@ -161,7 +161,6 @@ def project_before_fork(**kwargs):
 @must_be_logged_in
 @must_be_valid_project  # returns project
 def project_before_template(**kwargs):
-
     node = kwargs['node'] or kwargs['project']
     user = kwargs['auth'].user
     prompts = []

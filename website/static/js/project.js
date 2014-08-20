@@ -18,7 +18,7 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
-             $.osf.joinPrompts(response.prompts , 'Are you sure you want to fork this project?'),
+             $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
              function(result) {
                  if (result) {
                      done && done();
@@ -96,13 +96,11 @@ NodeActions.useAsTemplate = function() {
     });
 };
 
-//TODO: only show addons authorized for the node/project!
 NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
         url: url,
         contentType: 'application/json'
     }).success(function(response) {
-        console.log(response.prompts);
         if (response.prompts.length === 0) {
             bootbox.confirm('Are you sure you want to create a new project using this project as a template? ',
                 function (result) {
