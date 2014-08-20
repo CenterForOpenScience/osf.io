@@ -26,7 +26,7 @@ def dict_to_rss(results, count, query):
     items = [
         pyrss.RSSItem(
             title=str(doc.get('title')),
-            link='http://' + settings.DOMAIN + '/' + doc.get('url'),
+            link=settings.DOMAIN + doc.get('url')[1:],
             description=str(doc.get('description')),
             guid=str(doc.get('id')),
             pubDate=str(doc.get('iso_timestamp'))
