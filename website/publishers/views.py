@@ -2,11 +2,10 @@
 
 import bleach
 import logging
-from urllib2 import HTTPError
 
 from website.publishers import rss
 
-from framework import request, status
+from framework import request
 
 logger = logging.getLogger(__name__)
 

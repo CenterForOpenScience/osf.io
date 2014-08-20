@@ -25,11 +25,11 @@ def dict_to_rss(results, count, query):
 
     items = [
         pyrss.RSSItem(
-            title=str(doc.get('title')),
+            title=doc.get('title'),
             link=settings.DOMAIN + doc.get('url')[1:],
-            description=str(doc.get('description')),
-            guid=str(doc.get('id')),
-            pubDate=str(doc.get('iso_timestamp'))
+            description=doc.get('description'),
+            guid=doc.get('id'),
+            pubDate=doc.get('iso_timestamp')
         ) for doc in docs 
     ]
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
