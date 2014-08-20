@@ -76,3 +76,4 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
     return app
+

@@ -41,3 +41,4 @@ def test_settings_complete_true_no_redirect():
 def test_settings_complete_false():
     node_settings = ForwardSettingsFactory(url=None)
     assert_false(utils.settings_complete(node_settings))
+

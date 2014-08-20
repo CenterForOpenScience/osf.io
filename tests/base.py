@@ -58,8 +58,6 @@ class OsfTestCase(unittest.TestCase):
     '''
     # DB settings
     db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
-    db_host = getattr(settings, 'MONGO_HOST', 'localhost')
-    db_port = int(getattr(settings, 'DB_PORT', '27017'))
 
     @classmethod
     def setUpClass(cls):
@@ -68,7 +66,8 @@ class OsfTestCase(unittest.TestCase):
         """
         cls._original_db, settings.DB_NAME = settings.DB_NAME, cls.db_name
         set_up_storage(
-            website.models.MODELS, storage.MongoStorage,
+            website.models.MODELS,
+            storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE,
         )
         mongo.client.drop_database(cls.db_name)

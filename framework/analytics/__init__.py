@@ -79,6 +79,7 @@ def update_counters(rex):
             visited.append(page)
             session.data['visited'] = visited
         d['$inc']['total'] = 1
+        collection = database['pagecounters']
         collection.update({'_id': page}, d, True, False)
         return func(*args, **kwargs)
 

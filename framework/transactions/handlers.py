@@ -5,6 +5,7 @@ import logging
 from pymongo.errors import OperationFailure
 
 from framework.mongo import database
+from framework.flask import add_handler
 
 from website import settings
 
@@ -60,6 +61,10 @@ def add_transaction_handlers(app):
     `teardown_request`.
 
     """
-    app.before_request(transaction_before_request)
-    app.after_request(transaction_after_request)
-    app.teardown_request(transaction_teardown_request)
+    add_handler(app, 'before_request', transaction_before_request)
+    add_handler(app, 'after_request', transaction_after_request)
+    add_handler(app, 'teardown_request', transaction_teardown_request)
+    #app.before_request(transaction_before_request)
+    #app.after_request(transaction_after_request)
+    #app.teardown_request(transaction_teardown_request)
+

@@ -5,6 +5,7 @@ from flask import g
 from pymongo import MongoClient
 from werkzeug.local import LocalProxy
 
+from framework.flask import add_handler
 from website import settings
 
 
@@ -48,8 +49,8 @@ def add_database_handlers(app):
     """Add connection callbacks on `before_request` and `teardown_request`.
 
     """
-    app.before_request(connection_before_request)
-    app.teardown_request(connection_teardown_request)
+    add_handler(app, 'before_request', connection_before_request)
+    add_handler(app, 'teardown_request', connection_teardown_request)
 
 
 # Set up getters for `LocalProxy` objects
@@ -93,7 +94,7 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
         >>> client = MongoClient(port=20771)
         >>> db = client['mydb']
         >>> models = [User, ApiKey, Node, Tag]
-        >>> set_up_storage(models, MongoStorage, db=db)
+        >>> set_up_storage(models, MongoStorage)
     '''
     _schemas = []
     _schemas.extend(schemas)
@@ -105,9 +106,9 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
         collection = '{0}{1}'.format(prefix, schema._name)
         schema.set_storage(
             storage_class(
-                client=client,
-                database=kwargs.pop('database', None) or settings.DB_NAME,
+                db=database,
                 collection=collection,
                 **kwargs
             )
         )
+
