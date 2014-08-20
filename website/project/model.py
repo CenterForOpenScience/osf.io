@@ -342,8 +342,13 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    def __repr__(self):
+        return ('<NodeLog({self.action!r}, params={self.params!r}) '
+                'with id {self._id!r}>').format(self=self)
+
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
@@ -404,6 +409,9 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return '<Tag() with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -590,6 +598,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    def __repr__(self):
+        return ('<Node(title={self.title!r}, category={self.category!r}) '
+                'with _id {self._id!r}>').format(self=self)
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""

@@ -16,6 +16,7 @@ from website import settings, language, util
 from website import views as website_views
 from website.addons.base import views as addon_views
 from website.search import views as search_views
+from website.publishers import views as rss_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -332,6 +333,9 @@ def make_url_map(app):
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
 
+        Rule('/rss/', 'get', rss_views.recent_rss, OsfWebRenderer('rss.mako')),
+        # Rule('/rss/', 'get', rss_views.recent_rss, json_renderer),
+
     ])
 
     ### Profile ###
@@ -453,7 +457,8 @@ def make_url_map(app):
             json_renderer
         ),
 
-    ], prefix='/api/v1',)
+    ], prefix='/api/v1')
+
 
     ### Search ###
 
