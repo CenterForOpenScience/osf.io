@@ -56,8 +56,9 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     if set_backends:
         logger.debug('Setting storage backends')
         set_up_storage(
-            website.models.MODELS, storage.MongoStorage,
-            addons=settings.ADDONS_AVAILABLE, database=settings.DB_NAME,
+            website.models.MODELS,
+            storage.MongoStorage,
+            addons=settings.ADDONS_AVAILABLE,
         )
     if routes:
         try:

@@ -26,7 +26,7 @@ def transaction_before_request():
             message = error.args[0]
         except IndexError:
             pass
-        if 'no transaction exists to be rolled back' not in message:
+        if 'no transaction exists to be rolled back' not in message.lower():
             raise
     database.command('beginTransaction')
 
@@ -64,7 +64,4 @@ def add_transaction_handlers(app):
     add_handler(app, 'before_request', transaction_before_request)
     add_handler(app, 'after_request', transaction_after_request)
     add_handler(app, 'teardown_request', transaction_teardown_request)
-    #app.before_request(transaction_before_request)
-    #app.after_request(transaction_after_request)
-    #app.teardown_request(transaction_teardown_request)
 

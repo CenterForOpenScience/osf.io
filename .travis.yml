@@ -25,3 +25,6 @@ install:
     - bower install
 
 script: invoke test_all
+
+notifications:
+  flowdock: 0221882cdda034c0e9ac2a0e766053dd

@@ -20,7 +20,7 @@ This will create 3 fake public projects, each with 3 fake contributors (with
 import sys
 import argparse
 import logging
-
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 from faker import Factory
 
 from framework.auth import Auth
@@ -77,7 +77,7 @@ def create_fake_project(creator, n_users, privacy, name):
 
 def main():
     args = parse_args()
-    creator = models.User.find_by_email(args.user)[0]
+    creator = models.User.find(Q('username', 'eq', args.user))[0]
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, name)

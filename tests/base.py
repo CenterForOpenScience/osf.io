@@ -108,12 +108,14 @@ class CaptureSignals(object):
 
     Context manager which mocks out selected signals and registers which
     are `sent` on and what arguments were sent. Instantiate with a list of
-    blinker `NamedSignals` to patch. Each signal has it's `send` mocked out.
+    blinker `NamedSignals` to patch. Each signal has its `send` mocked out.
+
     """
     def __init__(self, signals):
         """Patch all given signals and make them available as attributes.
 
         :param signals: list of signals
+
         """
         self._records = {}
         self._receivers = {}
@@ -144,6 +146,7 @@ class CaptureSignals(object):
     def signals_sent(self):
         """Return a set of the signals sent.
         :rtype: list of blinker `NamedSignals`.
+
         """
         return set([signal for signal, _ in self._records.items() if self._records[signal]])
 
@@ -155,3 +158,4 @@ def capture_signals():
 
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
+

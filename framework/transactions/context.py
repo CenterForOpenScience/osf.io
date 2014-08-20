@@ -14,7 +14,7 @@ def begin_transaction_error(error):
         message = error.args[0]
     except IndexError:
         raise error
-    if 'transaction already exists' not in message:
+    if 'transaction already exists' not in message.lower():
         raise error
 
 
@@ -58,3 +58,4 @@ def transaction(database=database):
                 return func(*args, **kwargs)
         return wrapped
     return wrapper
+
