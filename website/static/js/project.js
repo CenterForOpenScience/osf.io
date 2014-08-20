@@ -18,7 +18,7 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
-             $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+             $.osf.joinPrompts(response.prompts , 'Are you sure you want to fork this project?'),
              function(result) {
                  if (result) {
                      done && done();
@@ -78,21 +78,54 @@ NodeActions.addonFileRedirect = function(item) {
 };
 
 NodeActions.useAsTemplate = function() {
-    $.osf.block();
+    NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
+        $.osf.block();
 
+        $.ajax({
+            url: '/api/v1/project/new/' + nodeId + '/',
+            type: 'POST',
+            dataType: 'json',
+            success: function (data) {
+                window.location = data['url']
+            },
+            error: function (response) {
+                $.osf.unblock();
+                $.osf.handleJSONError(response);
+            }
+        });
+    });
+};
+
+//TODO: only show addons authorized for the node/project!
+NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
-        url: '/api/v1/project/new/' + nodeId + '/',
-        type: 'POST',
-        dataType: 'json',
-        success: function(data) {
-            window.location = data['url']
-        },
-        error: function(response) {
-            $.osf.unblock();
-            $.osf.handleJSONError(response);
+        url: url,
+        contentType: 'application/json'
+    }).success(function(response) {
+        console.log(response.prompts);
+        if (response.prompts.length === 0) {
+            bootbox.confirm('Are you sure you want to create a new project using this project as a template? ',
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
+        } else {
+            bootbox.confirm(
+                $.osf.joinPrompts(response.prompts,
+                    ('Are you sure you want to create a new project using this project as a template? '
+                        + 'The following add-ons configured for this project will not be authenticated in the new project:')),
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
         }
     });
 };
+
 
 $(function(){
 
