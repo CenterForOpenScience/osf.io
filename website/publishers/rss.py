@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 @search.requires_search
 def gen_rss_feed(raw_query):
     results = search.get_recent_documents(raw_query, start=0, size=100)
-    logger.info('{n} results returned from search'.format(n=len(results)))
+    logger.info('{n} results returned from search'.format(n=len(results['results'])))
     xml = dict_to_rss(results['results'], results['count'], raw_query)
     return xml
 
