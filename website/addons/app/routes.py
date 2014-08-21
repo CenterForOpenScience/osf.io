@@ -66,36 +66,36 @@ custom_routing_routes = {
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/q/',
-             '/project/<pid>/node/<nid>/app/q/'],
+            ['/project/<pid>/app/routes/',
+             '/project/<pid>/node/<nid>/app/routes/'],
             'get',
             views.crud.list_custom_routes,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/q/',
-             '/project/<pid>/node/<nid>/app/q/'],
+            ['/project/<pid>/app/routes/',
+             '/project/<pid>/node/<nid>/app/routes/'],
             'post',
             views.crud.create_route,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/q/<path:route>/',
-             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            ['/project/<pid>/app/routes/<path:route>/',
+             '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'get',
             views.crud.resolve_route,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/q/<path:route>/',
-             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            ['/project/<pid>/app/routes/<path:route>/',
+             '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'put',
             views.crud.update_route,
             json_renderer
         ),
         Rule(
-            ['/project/<pid>/app/q/<path:route>/',
-             '/project/<pid>/node/<nid>/app/q/<path:route>/'],
+            ['/project/<pid>/app/routes/<path:route>/',
+             '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'delete',
             views.crud.delete_route,
             json_renderer
