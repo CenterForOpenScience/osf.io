@@ -103,10 +103,21 @@ class AppNodeSettings(GuidStoredObject):
 
         update_metadata(metastore)
 
-    def delete_data(self, guid, key=None):
+    def delete_data(self, guid, keys=()):
         metadata = self._guid_to_metadata(guid)
-        if key:
-            del metadata[key]
+        if keys:
+            data = metadata
+            for key in keys[:-1]:
+                if isinstance(data, list):
+                    data = data[int(key)]
+                else:
+                    data = data[key]
+
+            if isinstance(data, list):
+                del data[int(keys[-1])]
+            else:
+                del data[keys[-1]]
+
             metadata.save()
         else:
             metadata.remove()

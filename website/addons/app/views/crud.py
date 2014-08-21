@@ -134,11 +134,14 @@ def add_metadata(node_addon, guid, **kwargs):
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def delete_metadata(node_addon, guid, **kwargs):
-    key = request.args.get('key')
+    key = request.args.get('key', ())
+
+    if key:
+        key = key.split(',')
 
     try:
-        node_addon.delete_data(guid, key=key)
-    except KeyError:
+        node_addon.delete_data(guid, keys=key)
+    except KeyError as e:
         raise HTTPError(http.BAD_REQUEST)
 
     if key:
