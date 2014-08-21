@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.factories import ProjectFactory, UserFactory, RegistrationFactory
 from tests.base import OsfTestCase
@@ -18,7 +18,8 @@ class TestNodeSerializers(OsfTestCase):
         user = UserFactory()
         # user cannot see this node
         node = ProjectFactory(public=False)
-        result = _get_summary(node, auth=Auth(user),
+        result = _get_summary(
+            node, auth=Auth(user),
             rescale_ratio=None,
             primary=True,
             link_id=None
@@ -42,7 +43,7 @@ class TestNodeSerializers(OsfTestCase):
         user = UserFactory()
         # non-contributor cannot see private registration of public project
         node = ProjectFactory(public=True)
-        reg = RegistrationFactory(project=node, user= node.creator)
+        reg = RegistrationFactory(project=node, user=node.creator)
         res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
 
         # serialized result should have is_registration
@@ -55,7 +56,8 @@ class TestNodeSerializers(OsfTestCase):
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
-        res = _get_summary(fork, auth=Auth(user),
+        res = _get_summary(
+            fork, auth=Auth(user),
             rescale_ratio=None,
             primary=True,
             link_id=None
@@ -73,14 +75,15 @@ class TestNodeSerializers(OsfTestCase):
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
-        res = _get_summary(fork, auth=Auth(user),
+        res = _get_summary(
+            fork, auth=Auth(user),
             rescale_ratio=None,
             primary=True,
             link_id=None
         )
         # serialized result should have is_fork
-        assert_equal(res['summary']['can_view'], False)
-        assert_equal(res['summary']['is_fork'], True)
+        assert_false(res['summary']['can_view'])
+        assert_true(res['summary']['is_fork'])
 
 
 class TestAddContributorJson(OsfTestCase):
@@ -140,7 +143,6 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-
 
     def test_add_contributor_json_with_job(self):
         # Test user with only employment information
