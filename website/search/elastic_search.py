@@ -550,5 +550,9 @@ def _strings_to_types(mapping):
     }
 
     for key, val in mapping.items():
-        mapping[key] = type_map.get(val['type']) if val.get('type') else _strings_to_types(val)
+        if val.get('type') and isinstance(val['type'], basestring):
+            mapping[key] = type_map.get(val['type'])
+        else:
+            mapping[key] = _strings_to_types(val)
+
     return mapping
