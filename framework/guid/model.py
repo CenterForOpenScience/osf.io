@@ -10,6 +10,20 @@ class Metadata(StoredObject):
     guid = fields.StringField()
     app = fields.ForeignField('appnodesettings', backref='data')
 
+    @classmethod
+    def _merge_dicts(cls, dict1, dict2):
+        for key, val in dict2.items():
+            if not dict1.get(key):
+                dict1[key] = val
+                continue
+
+            if isinstance(val, dict):
+                cls._merge_dicts(dict1[key], val)
+            elif isinstance(val, list):
+                dict1[key] += [index for index in val if not index in dict1[key]]
+            else:
+                dict1[key] = val
+
     @property
     def namespace(self):
         return self.app.namespace
@@ -30,7 +44,7 @@ class Metadata(StoredObject):
             return default
 
     def update(self, val):
-        return self.data.update(val)
+        return self._merge_dicts(self.data, val)
 
     def to_json(self):
         ret = {
