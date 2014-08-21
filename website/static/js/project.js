@@ -101,26 +101,16 @@ NodeActions.beforeTemplate = function(url, done) {
         url: url,
         contentType: 'application/json'
     }).success(function(response) {
-        if (response.prompts.length === 0) {
-            bootbox.confirm('Are you sure you want to create a new project using this project as a template? ',
-                function (result) {
-                    if (result) {
-                        done && done();
-                    }
+        bootbox.confirm(
+            $.osf.joinPrompts(response.prompts,
+                ('Are you sure you want to create a new project using this project as a template? '
+                    + 'Any add-ons configured for this project will not be authenticated in the new project.')),
+            function (result) {
+                if (result) {
+                    done && done();
                 }
-            );
-        } else {
-            bootbox.confirm(
-                $.osf.joinPrompts(response.prompts,
-                    ('Are you sure you want to create a new project using this project as a template? '
-                        + 'The following add-ons configured for this project will not be authenticated in the new project:')),
-                function (result) {
-                    if (result) {
-                        done && done();
-                    }
-                }
-            );
-        }
+            }
+        );
     });
 };
 
