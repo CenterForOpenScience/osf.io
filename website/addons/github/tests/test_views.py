@@ -65,7 +65,7 @@ class TestGithubViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -359,7 +359,7 @@ class TestGithubViews(OsfTestCase):
     #
     # In addition, this test currently is incorrect: it really just ensures
     # a guid is created for the file
-    # 
+    #
     # @mambocab
     #
     # @mock.patch('website.addons.github.api.GitHub.history')
