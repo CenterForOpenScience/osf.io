@@ -70,6 +70,7 @@ def update_counters(rex):
                 visited_by_date['pages'].append(page)
                 session.data['visited_by_date'] = visited_by_date
 
+
             d['$inc']['date.%s.total' % date] = 1
 
             visited = session.data.get('visited')  # '/project/x/, project/y/'
@@ -86,6 +87,7 @@ def update_counters(rex):
     return wrapper
 
 
+# returns total and unique views of a page
 def get_basic_counters(page):
     unique = 0
     total = 0
