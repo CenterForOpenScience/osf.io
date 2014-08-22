@@ -36,6 +36,9 @@ def get_total_activity_count(user_id):
 
 
 # TODO: Test me
+# updates four different counters:
+# total page visits, unique page visits,
+# total page visits by date, and unique page visits by date
 def update_counters(rex):
     def wrapper(func):
         def wrapped(*args, **kwargs):
@@ -58,6 +61,7 @@ def update_counters(rex):
             if not visited_by_date:
                 visited_by_date = {'date': date, 'pages': []}
 
+            # updates unique page visits by date
             if date == visited_by_date['date']:
                 if page not in visited_by_date['pages']:
                     d['$inc']['date.%s.unique' % date] = 1
@@ -70,24 +74,24 @@ def update_counters(rex):
                 visited_by_date['pages'].append(page)
                 session.data['visited_by_date'] = visited_by_date
 
-
+            # updates total page visits by date
             d['$inc']['date.%s.total' % date] = 1
 
             visited = session.data.get('visited')  # '/project/x/, project/y/'
             if not visited:
                 visited = []
             if page not in visited:
-                d['$inc']['unique'] = 1
+                d['$inc']['unique'] = 1  # updates unique page visits
                 visited.append(page)
                 session.data['visited'] = visited
-            d['$inc']['total'] = 1
+            d['$inc']['total'] = 1  # updates total page visits
             collection.update({'_id': page}, d, True, False)
             return func(*args, **kwargs)
         return wrapped
     return wrapper
 
 
-# returns total and unique views of a page
+# returns the total page visits and unique page visits counters
 def get_basic_counters(page):
     unique = 0
     total = 0

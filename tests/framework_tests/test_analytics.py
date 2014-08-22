@@ -126,7 +126,3 @@ class TestUpdateCounters(UpdateCountersTestCase):
         collection.update({'_id': page}, d, True, False)
         count = get_basic_counters(page)
         assert_equal(count, (3,5))
-
-
-
-
