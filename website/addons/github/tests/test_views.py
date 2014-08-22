@@ -4,27 +4,23 @@ import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
-from webtest_plus import TestApp
 
 from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
-import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
-
 github_mock = create_mock_github(user='fred', private=False)
 
 
 class TestHGridViews(OsfTestCase):
+
     def setUp(self):
+        super(TestHGridViews, self).setUp()
         self.github = github_mock
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -65,12 +61,11 @@ class TestHGridViews(OsfTestCase):
 class TestGithubViews(OsfTestCase):
 
     def setUp(self):
-
-        self.app = TestApp(app)
+        super(TestGithubViews, self).setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -364,7 +359,7 @@ class TestGithubViews(OsfTestCase):
     #
     # In addition, this test currently is incorrect: it really just ensures
     # a guid is created for the file
-    # 
+    #
     # @mambocab
     #
     # @mock.patch('website.addons.github.api.GitHub.history')
@@ -477,7 +472,7 @@ class TestGithubSettings(OsfTestCase):
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
-        self.app = TestApp(app)
+
         self.project = ProjectFactory.build()
         self.project.save()
         self.auth = self.project.creator.auth

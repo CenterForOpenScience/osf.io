@@ -269,7 +269,7 @@ invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
 invoke rabbitmq
 invoke celery_worker
-invoke elastic_search
+invoke elasticsearch
 invoke server
 ```
 

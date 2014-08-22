@@ -2,6 +2,7 @@ import re
 import time
 import base64
 import urllib
+import hashlib
 import hmac
 import sha
 
@@ -175,7 +176,10 @@ def build_urls(node, file_name, url=None, etag=None, vid=None):
 
 
 def get_cache_file_name(key_name, etag):
-    return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+    return u'{0}_{1}.html'.format(
+        hashlib.md5(key_name).hexdigest(),
+        etag,
+    )
 
 
 def validate_bucket_name(name):

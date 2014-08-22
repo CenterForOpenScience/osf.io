@@ -6,6 +6,8 @@ import datetime
 
 from bleach import linkify
 from bleach.callbacks import nofollow
+import functools
+
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 
@@ -21,6 +23,10 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
         return {}
+
+
+def build_wiki_url(node, label, base, end):
+    return node.web_url_for('project_wiki_page', wid=label)
 
 
 class NodeWikiPage(GuidStoredObject):
@@ -46,20 +52,23 @@ class NodeWikiPage(GuidStoredObject):
     def url(self):
         return '{}wiki/{}/'.format(self.node.url, self.page_name)
 
-    @property
-    def html(self):
+    def html(self, node):
         """The cleaned HTML of the page"""
 
         html_output = markdown.markdown(
             self.content,
             extensions=[
                 wikilinks.WikiLinkExtension(
-                    configs=[('base_url', ''), ('end_url', '')]
+                    configs=[
+                        ('base_url', ''),
+                        ('end_url', ''),
+                        ('build_url', functools.partial(build_wiki_url, node))
+                    ]
                 ),
                 fenced_code.FencedCodeExtension(),
                 codehilite.CodeHiliteExtension(
-                    (('css_class', 'highlight'), )
-                ),
+                    [('css_class', 'highlight')]
+                )
             ]
         )
 
@@ -70,20 +79,21 @@ class NodeWikiPage(GuidStoredObject):
             [nofollow, ],
         )
 
-
-    @property
-    def raw_text(self):
+    def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
 
-        return sanitize(self.html, tags=[], strip=True)
+        return sanitize(self.html(node), tags=[], strip=True)
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
         if self.node:
-            self.node.update_search() 
+            self.node.update_search()
         return rv
 
     def rename(self, new_name, save=True):
         self.page_name = new_name
         if save:
             self.save()
+
+    def to_json(self):
+        return {}

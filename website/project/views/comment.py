@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import collections
 import httplib as http
 
@@ -12,9 +11,8 @@ from website import settings
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
+from website.project.model import has_anonymous_link
 
-
-logger = logging.getLogger(__name__)
 
 def resolve_target(node, guid):
 
@@ -40,9 +38,10 @@ def collect_discussion(target, users=None):
 def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-
+    auth = kwargs['auth']
     users = collect_discussion(node)
-
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -54,14 +53,14 @@ def comment_discussion(**kwargs):
     return {
         'discussion': [
             {
-                'id': user._id,
-                'url': user.url,
-                'fullname': user.fullname,
+                'id': user._id if not anonymous else '',
+                'url': user.url if not anonymous else '',
+                'fullname': user.fullname if not anonymous else '',
                 'isContributor': node.is_contributor(user),
                 'gravatarUrl': gravatar(
                     user, use_ssl=True,
                     size=settings.GRAVATAR_SIZE_DISCUSSION,
-                ),
+                )if not anonymous else '',
 
             }
             for user in sorted_users
@@ -69,32 +68,32 @@ def comment_discussion(**kwargs):
     }
 
 
-def serialize_comment(comment, auth):
+def serialize_comment(comment, auth, anonymous=False):
     return {
         'id': comment._id,
         'author': {
-            'id': comment.user._id,
-            'url': comment.user.url,
-            'name': comment.user.fullname,
+            'id': comment.user._id if not anonymous else '',
+            'url': comment.user.url if not anonymous else '',
+            'name': comment.user.fullname if not anonymous else 'A user',
             'gravatarUrl': gravatar(
                     comment.user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION),
+                    size=settings.GRAVATAR_SIZE_DISCUSSION) if not anonymous else '',
         },
         'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
         'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
-        'canEdit': comment.user == auth.user,
+        'canEdit': comment.user == auth.user ,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
         'isAbuse': auth.user and auth.user._id in comment.reports,
     }
 
 
-def serialize_comments(record, auth):
+def serialize_comments(record, auth, anonymous=False):
 
     return [
-        serialize_comment(comment, auth)
+        serialize_comment(comment, auth, anonymous)
         for comment in getattr(record, 'commented', [])
     ]
 
@@ -155,12 +154,13 @@ def list_comments(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 
     return {
-        'comments': serialize_comments(target, auth),
+        'comments': serialize_comments(target, auth, anonymous),
     }
 
 

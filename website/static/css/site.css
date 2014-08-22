@@ -357,7 +357,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
@@ -796,8 +797,8 @@ border-radius: 6px;
 #profile-gravatar{
     float:left;
     margin-right:.5em;
-    width:40px;
-    height:40px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
@@ -1138,25 +1139,43 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
@@ -1449,6 +1468,10 @@ div#logScope a.moreLogs{
     content: "";
 }
 
+.contributor-name {
+    margin-right: -4px;
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
@@ -1493,6 +1516,10 @@ li.contributor-list-item img {
 
 li.contributor-list-item a.name {
     margin-left:30px;
+}
+
+.contributor-anonymous {
+    font-style: italic;
 }
 
 /* Handle popovers inside modals */
@@ -1665,3 +1692,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+

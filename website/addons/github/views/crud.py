@@ -1,5 +1,5 @@
 import os
-import urllib
+import hashlib
 import logging
 import datetime
 import httplib as http
@@ -27,7 +27,7 @@ from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
 
 
-logger = logging.getLevelName(__name__)
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor_or_public
@@ -63,7 +63,8 @@ def github_download_file(**kwargs):
 
 def get_cache_file(path, sha):
     return '{0}_{1}.html'.format(
-        urllib.quote_plus(path.encode("utf-8")), sha,
+        hashlib.md5(path.encode('utf-8', 'ignore')).hexdigest(),
+        sha,
     )
 
 
