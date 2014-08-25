@@ -727,6 +727,8 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
     summary = {
         'id': link_id if link_id else node._id,
         'primary': primary,
+        'is_registration': node.is_registration,
+        'is_fork': node.is_fork,
     }
 
     if node.can_view(auth):
