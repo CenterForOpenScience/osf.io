@@ -49,9 +49,11 @@ class TestFilesViews(OsfTestCase):
 
     def test_upload_file(self):
 
+        node_addon = self.project.get_addon('osffiles')
+
         res = self._upload_file(
             'newfile',
-            'a' * (osffiles_settings.MAX_UPLOAD_SIZE * 1024),
+            'a' * (node_addon.config.max_file_size),
             expect_errors=True,
         )
 
@@ -69,9 +71,11 @@ class TestFilesViews(OsfTestCase):
 
     def test_upload_file_too_large(self):
 
+        node_addon = self.project.get_addon('osffiles')
+
         res = self._upload_file(
             'newfile',
-            'a' * (osffiles_settings.MAX_UPLOAD_SIZE * 1024 + 1),
+            'a' * (node_addon.config.max_file_size + 1),
             expect_errors=True,
         )
 

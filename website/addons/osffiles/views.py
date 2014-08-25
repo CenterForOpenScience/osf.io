@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import cgi
@@ -27,9 +25,10 @@ from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
-from website.addons.osffiles import settings as osffiles_settings
+
 
 logger = logging.getLogger(__name__)
+
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -131,7 +130,7 @@ def list_file_paths(**kwargs):
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(auth, **kwargs):
+def upload_file_public(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
@@ -139,7 +138,7 @@ def upload_file_public(auth, **kwargs):
 
     name, content, content_type, size = prepare_file(request.files['file'])
 
-    if size > (osffiles_settings.MAX_UPLOAD_SIZE * 1024):
+    if size > (node_addon.config.max_file_size):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
