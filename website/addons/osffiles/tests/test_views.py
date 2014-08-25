@@ -9,8 +9,10 @@ from StringIO import StringIO
 from framework.auth import Auth
 from tests.factories import ProjectFactory, AuthUserFactory
 from website import settings
-from website.addons.osffiles.model import OsfGuidFile
 from website.project.views.file import prepare_file
+
+from website.addons.osffiles.model import OsfGuidFile
+from website.addons.osffiles import settings as osffiles_settings
 
 
 class TestFilesViews(OsfTestCase):
@@ -27,7 +29,7 @@ class TestFilesViews(OsfTestCase):
         self.node_settings = self.project.get_addon('osffiles')
         self._upload_file('firstfile', 'firstcontent')
 
-    def _upload_file(self, name, content):
+    def _upload_file(self, name, content, **kwargs):
         url = self.project.api_url + 'osffiles/'
         res = self.app.post(
             url,
@@ -35,6 +37,7 @@ class TestFilesViews(OsfTestCase):
                 ('file', name, content),
             ],
             auth=self.auth,
+            **kwargs
         )
         self.project.reload()
         return res
@@ -46,7 +49,11 @@ class TestFilesViews(OsfTestCase):
 
     def test_upload_file(self):
 
-        res = self._upload_file('newfile', 'newcontent')
+        res = self._upload_file(
+            'newfile',
+            'a' * (osffiles_settings.MAX_UPLOAD_SIZE * 1024),
+            expect_errors=True,
+        )
 
         self.project.reload()
         assert_equal(
@@ -59,6 +66,19 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.json['name'], 'newfile')
 
         assert_in('newfile', self.project.files_current)
+
+    def test_upload_file_too_large(self):
+
+        res = self._upload_file(
+            'newfile',
+            'a' * (osffiles_settings.MAX_UPLOAD_SIZE * 1024 + 1),
+            expect_errors=True,
+        )
+
+        self.project.reload()
+
+        assert_equal(res.status_code, 400)
+        assert_not_in('newfile', self.project.files_current)
 
     def test_delete_file(self):
 
