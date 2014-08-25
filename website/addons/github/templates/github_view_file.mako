@@ -9,7 +9,9 @@
             <tr>
                 <th>Commit</th>
                 <th>Date</th>
-                <th>User</th>
+                % if not node['anonymous']:
+                    <th>User</th>
+                % endif
                 <th>Download</th>
             </tr>
         </thead>
@@ -17,19 +19,24 @@
         <tbody>
             % for commit in commits:
                 <tr class="${'active' if commit['sha'] == current_sha else ''}">
+                    <!-- SHA -->
                     <td>
                         <a href="${commit['view']}" title="${commit['sha']}">
                             ${commit['sha'][:10]}
                         </a>
                     </td>
+                    <!-- Commit date -->
                     <td>
                         ${commit['date']}
                     </td>
-                    <td>
-                        <a href="mailto:${commit['email']}">
-                            ${commit['name']}
-                        </a>
-                    </td>
+                    <!-- committer -->
+                    % if not node['anonymous']:
+                        <td>
+                            <a href="mailto:${commit['email']}">
+                                ${commit['name']}
+                            </a>
+                        </td>
+                    % endif
                     <td>
                         <a href="${commit['download']}" download="${file_name}">
                             <i class="icon-download-alt"></i>

@@ -54,21 +54,22 @@
     <div class="col-md-6">
 
         <!-- Citations -->
-        <div class="citations">
-            <span class="citation-label">Citation:</span>
-            <span>${node['display_absolute_url']}</span>
-            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-            <dl class="citation-list">
-                <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-            </dl>
-        </div>
-
+        % if not node['anonymous']:
+            <div class="citations">
+                <span class="citation-label">Citation:</span>
+                <span>${node['display_absolute_url']}</span>
+                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                <dl class="citation-list">
+                    <dt>APA</dt>
+                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dt>MLA</dt>
+                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dt>Chicago</dt>
+                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                </dl>
+            </div><!-- end .citations -->
         <hr />
+        % endif
 
         <!-- Show child on right if widgets -->
         % if addons:
