@@ -601,11 +601,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def serialize(self, anonymous=False):
         return {
-            'id': self._primary_key if not anonymous else '',
-            'fullname': self.fullname if not anonymous else 'A user',
+            'id': utils.privacy_info_handle(self._primary_key, anonymous),
+            'fullname': utils.privacy_info_handle(self.fullname, anonymous, name=True),
             'registered': self.is_registered,
-            'url': self.url if not anonymous else '',
-            'api_url': self.api_url if not anonymous else '',
+            'url': utils.privacy_info_handle(self.url, anonymous),
+            'api_url': utils.privacy_info_handle(self.api_url, anonymous),
         }
 
     ###### OSF-Specific methods ######

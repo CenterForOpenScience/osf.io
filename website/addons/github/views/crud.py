@@ -86,8 +86,8 @@ def github_view_file(**kwargs):
     ref = sha or branch
 
     connection = GitHub.from_settings(node_settings.user_settings)
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+
+    anonymous = has_anonymous_link(node, auth)
     try:
         # If GUID has already been created, we won't redirect, and can check
         # whether the file exists below

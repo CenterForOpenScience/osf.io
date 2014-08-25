@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from framework import request, make_response
 from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
+from framework.auth.utils import privacy_info_handle
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
@@ -116,19 +117,18 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     fail_if_unauthorized(node_addon, auth, file_id)
     fail_if_private(file_id)
 
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
 
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
 
     data = {
-        'dataverse': node_addon.dataverse if not anonymous else '',
-        'dataverse_url': dataverse_url if not anonymous else '',
-        'study': node_addon.study if not anonymous else '',
-        'study_url': study_url if not anonymous else '',
-        'download_url': download_url if not anonymous else '',
+        'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
+        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
+        'study': privacy_info_handle(node_addon.study, anonymous),
+        'study_url': privacy_info_handle(study_url, anonymous),
+        'download_url': privacy_info_handle(download_url, anonymous),
     }
 
     return {

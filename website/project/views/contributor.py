@@ -32,8 +32,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
@@ -81,8 +80,7 @@ def get_contributors(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
 
     if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)

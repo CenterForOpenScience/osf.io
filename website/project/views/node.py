@@ -8,6 +8,7 @@ from framework import push_errors_to_status, Q
 
 from framework import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
+from framework.auth.utils import privacy_info_handle
 import framework.status as status
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
@@ -528,7 +529,7 @@ def _view_project(node, auth, primary=False):
 
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
     recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
@@ -722,7 +723,7 @@ def get_recent_logs(**kwargs):
     return {'logs': logs}
 
 
-def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_only_link=None):
+def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None):
     # TODO(sloria): Refactor this or remove (lots of duplication with _view_project)
     summary = {
         'id': link_id if link_id else node._id,
@@ -743,7 +744,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, view_onl
             'category': node.category,
             'node_type': node.project_or_component,
             'is_registration': node.is_registration,
-            'anonymous': has_anonymous_link(node, view_only_link),
+            'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
             else None,
@@ -780,10 +781,9 @@ def get_summary(**kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     primary = kwargs.get('primary')
     link_id = kwargs.get('link_id')
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     return _get_summary(
-        node, auth, rescale_ratio, primary=primary, link_id=link_id, view_only_link=view_only_link
+        node, auth, rescale_ratio, primary=primary, link_id=link_id
     )
 
 

@@ -11,6 +11,7 @@ from framework import request, status, url_for
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
+from framework.auth.utils import privacy_info_handle
 from website.project.views.node import _view_project
 from website.project import show_diff
 from website.project.model import has_anonymous_link
@@ -93,7 +94,9 @@ def _get_wiki_versions(node, wid, anonymous=False):
     return [
         {
             'version': version.version,
-            'user_fullname': version.user.fullname if not anonymous else 'A user',
+            'user_fullname': privacy_info_handle(
+                version.user.fullname, anonymous, name=True
+            ),
             'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
@@ -107,8 +110,7 @@ def project_wiki_compare(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
 
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
     wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:

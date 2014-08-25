@@ -21,10 +21,11 @@ import blinker
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
-from framework import status
+from framework import status, request
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User, Auth
+from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
@@ -61,7 +62,7 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
 
     :param Node node: Node which the user wants to visit
@@ -69,10 +70,12 @@ def has_anonymous_link(node, link):
     :return bool anonymous: Whether the node is anonymous to the user or not
 
     """
-
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    if not view_only_link:
+        return False
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+    return any([x.anonymous for x in node.private_links_active if x.key == view_only_link])
 
 
 signals = blinker.Namespace()
@@ -381,8 +384,8 @@ class NodeLog(StoredObject):
         else:
             fullname = user.fullname
         return {
-            'id': user._primary_key if not anonymous else '',
-            'fullname': fullname if not anonymous else 'A user',
+            'id': privacy_info_handle(user._primary_key, anonymous),
+            'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
 
@@ -393,7 +396,7 @@ class NodeLog(StoredObject):
             'id': str(self._primary_key),
             'user': self.user.serialize(anonymous)
                     if isinstance(self.user, User)
-                    else {'fullname': self.foreign_user if not anonymous else 'a user'},
+                    else {'fullname': privacy_info_handle(self.foreign_user, anonymous, name=True)},
             'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,

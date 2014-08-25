@@ -9,6 +9,7 @@ from framework.flask import secure_filename
 from framework import request, make_response
 from framework.exceptions import HTTPError
 from framework import redirect, Q
+from framework.auth.utils import privacy_info_handle
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators
@@ -294,8 +295,7 @@ def figshare_view_file(*args, **kwargs):
     article_id = kwargs.get('aid') or None
     file_id = kwargs.get('fid') or None
 
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
 
     if not article_id or not file_id:
         raise HTTPError(http.NOT_FOUND)
@@ -382,7 +382,7 @@ def figshare_view_file(*args, **kwargs):
         'file_version': article['items'][0]['version'],
         'doi': 'http://dx.doi.org/10.6084/m9.figshare.{0}'.format(article['items'][0]['article_id']),
         'version_url': version_url,
-        'figshare_url': figshare_url if not anonymous else '',
+        'figshare_url': privacy_info_handle(figshare_url, anonymous),
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
         'figshare_categories': categories,
