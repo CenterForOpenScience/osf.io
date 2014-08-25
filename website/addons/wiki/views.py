@@ -13,6 +13,7 @@ from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
 from website.project.views.node import _view_project
 from website.project import show_diff
+from website.project.model import has_anonymous_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -77,7 +78,7 @@ def project_wiki_home(**kwargs):
     return {}, None, None, '{}wiki/home/'.format(node.url)
 
 
-def _get_wiki_versions(node, wid):
+def _get_wiki_versions(node, wid, anonymous=False):
 
     # Skip if page doesn't exist; happens on new projects before
     # default "home" page is created
@@ -92,7 +93,7 @@ def _get_wiki_versions(node, wid):
     return [
         {
             'version': version.version,
-            'user_fullname': version.user.fullname,
+            'user_fullname': version.user.fullname if not anonymous else 'A user',
             'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
@@ -106,6 +107,8 @@ def project_wiki_compare(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
 
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
     wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:

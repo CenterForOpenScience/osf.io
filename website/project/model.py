@@ -393,7 +393,7 @@ class NodeLog(StoredObject):
             'id': str(self._primary_key),
             'user': self.user.serialize(anonymous)
                     if isinstance(self.user, User)
-                    else {'fullname': self.foreign_user},
+                    else {'fullname': self.foreign_user if not anonymous else 'a user'},
             'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,

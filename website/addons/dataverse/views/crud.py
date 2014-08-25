@@ -17,6 +17,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.model import has_anonymous_link
 from website.util import rubeus
 from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
@@ -115,16 +116,19 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     fail_if_unauthorized(node_addon, auth, file_id)
     fail_if_private(file_id)
 
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
 
     data = {
-        'dataverse': node_addon.dataverse,
-        'dataverse_url': dataverse_url,
-        'study': node_addon.study,
-        'study_url': study_url,
-        'download_url': download_url,
+        'dataverse': node_addon.dataverse if not anonymous else '',
+        'dataverse_url': dataverse_url if not anonymous else '',
+        'study': node_addon.study if not anonymous else '',
+        'study_url': study_url if not anonymous else '',
+        'download_url': download_url if not anonymous else '',
     }
 
     return {

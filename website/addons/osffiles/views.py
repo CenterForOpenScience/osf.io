@@ -21,6 +21,7 @@ from website.project.decorators import (
     must_be_contributor_or_public, must_have_addon, must_have_permission
 )
 from website.project.views.file import get_cache_content, prepare_file
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
@@ -207,8 +208,11 @@ def file_info(**kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
     file_name = kwargs['fid']
-
+    auth = kwargs['auth']
     file_name_clean = file_name.replace('.', '_')
+
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
 
     try:
         files_versions = node.files_versions[file_name_clean]
@@ -229,8 +233,8 @@ def file_info(**kwargs):
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'downloads': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
+            'committer_name': node_file.uploader.fullname if not anonymous else 'A user',
+            'committer_url': node_file.uploader.url if not anonymous else '',
         })
     return {
         'files_url': node.url + "files/",
