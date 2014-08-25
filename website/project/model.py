@@ -372,7 +372,7 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    def _render_log_contributor(self, contributor):
+    def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
             return None
@@ -381,8 +381,8 @@ class NodeLog(StoredObject):
         else:
             fullname = user.fullname
         return {
-            'id': user._primary_key,
-            'fullname': fullname,
+            'id': user._primary_key if not anonymous else '',
+            'fullname': fullname if not anonymous else 'A user',
             'registered': user.is_registered,
         }
 
@@ -391,10 +391,10 @@ class NodeLog(StoredObject):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
-            'user': self.user.serialize()
+            'user': self.user.serialize(anonymous)
                     if isinstance(self.user, User)
                     else {'fullname': self.foreign_user},
-            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
+            'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,

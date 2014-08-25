@@ -555,7 +555,7 @@ def _view_project(node, auth, primary=False):
                 'apa': node.citation_apa,
                 'mla': node.citation_mla,
                 'chicago': node.citation_chicago,
-            },
+            } if not anonymous else '',
             'is_public': node.is_public,
             'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
             'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',

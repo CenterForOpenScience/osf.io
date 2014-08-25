@@ -599,13 +599,13 @@ class User(GuidStoredObject, AddonModelMixin):
         except:
             return []
 
-    def serialize(self):
+    def serialize(self, anonymous=False):
         return {
-            'id': self._primary_key,
-            'fullname': self.fullname,
+            'id': self._primary_key if not anonymous else '',
+            'fullname': self.fullname if not anonymous else 'A user',
             'registered': self.is_registered,
-            'url': self.url,
-            'api_url': self.api_url,
+            'url': self.url if not anonymous else '',
+            'api_url': self.api_url if not anonymous else '',
         }
 
     ###### OSF-Specific methods ######
