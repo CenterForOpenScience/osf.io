@@ -25,10 +25,7 @@
                <div class="page-header">
                     <h3>Watched Projects</h3>
                 </div>
-                <div id="logScope">
-                    <%include file="log_list.mako"/>
-                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-                </div><!-- end #logScope -->
+                <%include file="log_list.mako"/>
             </div><!-- end #watchFeed -->
         </div>
     </div>
@@ -67,6 +64,7 @@
     // Initialize the LogFeed
     $script(['/static/js/logFeed.js']);
     $script.ready('logFeed', function() {
+        // NOTE: the div#logScope comes from log_list.mako
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
     });
 </script>

@@ -37,7 +37,7 @@ def serialize_user(user, node=None, full=False):
         'fullname': user.display_full_name(node=node),
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
         'active': user.is_active(),
     }

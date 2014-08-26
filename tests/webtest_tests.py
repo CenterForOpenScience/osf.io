@@ -432,6 +432,10 @@ class TestPrivateLinkView(OsfTestCase):
         assert_in("Anonymous Contributors", res.body)
         assert_not_in(self.user.fullname, res)
 
+    def test_anonymous_link_hides_citations(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_not_in('Citation:', res)
+
 
 class TestMergingAccounts(OsfTestCase):
 

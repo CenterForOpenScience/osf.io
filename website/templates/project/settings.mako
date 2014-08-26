@@ -33,7 +33,8 @@
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
-            <div id="configureNode" class="panel panel-default">
+            <div class="panel panel-default">
+                <span id="configureNode" class="anchor"></span>
 
                 <div class="panel-heading">
                   <h3 class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
@@ -52,8 +53,8 @@
             </div>
 
         % endif
-
-        <div id="configureCommenting" class="panel panel-default">
+        <div class="panel panel-default">
+            <span id="configureCommenting" class="anchor"></span>
 
             <div class="panel-heading">
                 <h3 class="panel-title">Configure Commenting</h3>
@@ -84,7 +85,8 @@
 
         </div>
 
-        <div id="selectAddons" class="panel panel-default">
+        <div class="panel panel-default">
+            <span id="selectAddons" class="anchor"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>

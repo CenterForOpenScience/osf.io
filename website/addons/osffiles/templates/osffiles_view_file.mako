@@ -16,7 +16,9 @@
             <tr>
                 <th>Version</th>
                 <th>Date</th>
-                <th>User</th>
+                % if not node['anonymous']:
+                    <th>User</th>
+                % endif
                 <th colspan=2>Downloads</th>
             </tr>
             </thead>
@@ -25,7 +27,9 @@
                 <tr>
                     <td>{{version_number}}</td>
                     <td>{{modified_date.local}}</td>
-                    <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                    % if not node['anonymous']:
+                        <td><a href="{{committer_url}}">{{committer_name}}</a></td>
+                    % endif
                     <!-- download count; 'Downloads' column 1 -->
                     <td>{{downloads}}</td>
                     <!-- download url; 'Downloads' column 2 -->

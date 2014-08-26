@@ -797,8 +797,8 @@ border-radius: 6px;
 #profile-gravatar{
     float:left;
     margin-right:.5em;
-    width:40px;
-    height:40px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
@@ -1137,6 +1137,12 @@ li.unavailable {
 
 h1.unavailable {
     font-style: italic;
+}
+
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
 }
 
 /* Search */
