@@ -125,7 +125,7 @@ def project_wiki_compare(auth, **kwargs):
             rv = {
                 'pageName': wid,
                 'wiki_content': content,
-                'versions': _get_wiki_versions(node, wid),
+                'versions': _get_wiki_versions(node, wid, anonymous),
                 'is_current': True,
                 'is_edit': True,
                 'version': wiki_page.version,
