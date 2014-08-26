@@ -4,38 +4,40 @@
 
 <%def name="file_versions()">
 
-    <div class="scripted" id="dataverseScope">
-        <table class="table table-striped" id="file-version-history">
+    % if not node['anonymous']:
+        <div class="scripted" id="dataverseScope">
+            <table class="table table-striped" id="file-version-history">
 
-            <thead>
-            <tr>
-                <th>Dataverse</th>
-                <th>Study</th>
-                <th>Download</th>
-            </tr>
-            </thead>
-
-            <tbody>
-                <tr data-bind="if: loaded">
-                    <td>
-                        <a data-bind="attr: {href: dataverse_url}">
-                            {{dataverse}}</a>
-                    </td>
-                    <td>
-                        <a data-bind="attr: {href: study_url}">
-                            {{study}}</a>
-                    </td>
-                    <td>
-                        <a href="{{download_url}}">
-                            <i class="icon-download-alt"></i>
-                        </a>
-                    </td>
+                <thead>
+                <tr>
+                    <th>Dataverse</th>
+                    <th>Study</th>
+                    <th>Download</th>
                 </tr>
-            </tbody>
+                </thead>
 
-        </table>
+                <tbody>
+                    <tr data-bind="if: loaded">
+                        <td>
+                            <a data-bind="attr: {href: dataverse_url}">
+                                {{dataverse}}</a>
+                        </td>
+                        <td>
+                            <a data-bind="attr: {href: study_url}">
+                                {{study}}</a>
+                        </td>
+                        <td>
+                            <a href="{{download_url}}">
+                                <i class="icon-download-alt"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
 
-    </div>
+            </table>
+
+        </div>
+    % endif
 
     <script>
         $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {

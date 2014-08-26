@@ -4,8 +4,8 @@ formatted hgrid list/folders.
 """
 import os
 import hurry
-
 from framework.auth import Auth
+
 
 FOLDER = 'folder'
 FILE = 'item'
@@ -110,6 +110,13 @@ def build_addon_button(text, action):
     }
 
 
+def sort_by_name(hgrid_data):
+    return_value = hgrid_data
+    if hgrid_data is not None:
+        return_value = sorted(hgrid_data, key=lambda item: item['name'].lower())
+    return return_value
+
+
 class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
@@ -168,8 +175,9 @@ class NodeFileCollector(object):
         rv = []
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
+                # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
-                rv.extend(temp or [])
+                rv.extend(sort_by_name(temp) or [])
         return rv
 
 # TODO: these might belong in addons module

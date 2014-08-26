@@ -26,10 +26,8 @@ GNUPG_BINARY = 'gpg'
 CONFIRM_REGISTRATIONS_BY_EMAIL = True
 ALLOW_REGISTRATION = True
 ALLOW_LOGIN = True
-ALLOW_CLAIMING = True
 
-SEARCH_ENGINE = 'solr' # Can be 'solr', 'elastic', or None
-SOLR_URI = 'http://localhost:8983/solr/'
+SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = 'http://localhost:9200'
 ELASTIC_TIMEOUT = 10
 # Sessions
@@ -88,7 +86,7 @@ SHORT_DOMAIN = 'osf.io'
 COMMENT_MAXLENGTH = 500
 
 # Gravatar options
-GRAVATAR_SIZE_PROFILE = 120
+GRAVATAR_SIZE_PROFILE = 70
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
 GRAVATAR_SIZE_DISCUSSION = 20
 
@@ -111,7 +109,7 @@ WIKI_WHITELIST = {
     ],
     'attributes': [
         'align', 'alt', 'border', 'cite', 'class', 'dir',
-        'height', 'href', 'src', 'style', 'title', 'type', 'width',
+        'height', 'href', 'id', 'src', 'style', 'title', 'type', 'width',
         'face', 'size', # font tags
         'salign', 'align', 'wmode', 'target',
     ],
@@ -174,3 +172,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+
+
+# TODO: Delete me after merging GitLab
+MISSING_FILE_NAME = 'untitled'

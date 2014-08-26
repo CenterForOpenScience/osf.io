@@ -354,7 +354,7 @@
             self.scholar,
             self.linkedIn,
             self.github
-        ]
+        ];
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -458,12 +458,12 @@
         self.title = ko.observable('');
 
         self.start = ko.observable().extend({
-            asDate: true,
-            date: true
+            date: true,
+            asDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
             minDate: self.start
         });
 
@@ -486,12 +486,12 @@
         self.degree = ko.observable('');
 
         self.start = ko.observable().extend({
-            asDate: true,
-            date: true
+            date: true,
+            asDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
             minDate: self.start
         });
 

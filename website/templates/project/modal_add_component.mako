@@ -2,7 +2,7 @@
   <div class="modal fade" id="newComponent">
     <div class="modal-dialog">
         <div class="modal-content">
-        <form class="form" role="form" action="${node['url']}newnode/" method="post">
+        <form class="form" role="form" action="${node['url']}newnode/" method="post" id="componentForm">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
               <h3 class="modal-title">Add Component</h3>
@@ -15,6 +15,7 @@
                     <div class='form-group'>
                         <select id="category" name="category" class='form-control'>
                             <option disabled selected value=''>-- Category--</option>
+                            ## TODO: Remove hardcoded category values here and use the values from Node.CATEGORY_MAP
                             %for i in ["Project", "Hypothesis", "Methods and Measures", "Procedure", "Instrumentation", "Data", "Analysis", "Communication", "Other"]:
                             <option>${i}</option>
                             %endfor
@@ -31,11 +32,12 @@
     </div><!-- end modal -->
 <script type="text/javascript">
         $(document).ready(function() {
-            $('#confirm').on('click',function(){
+            $('#confirm').on('click', function () {
                 $("#alert").text("");
                 $("#title").val("");
                 $("#category").val("");
-            })
 
+            });
         });
+
 </script>

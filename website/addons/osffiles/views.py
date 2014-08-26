@@ -5,6 +5,7 @@
 import os
 import cgi
 import time
+import hashlib
 from cStringIO import StringIO
 import httplib as http
 import logging
@@ -338,10 +339,8 @@ def download_file(**kwargs):
 
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
-@update_counters('download:{pid}:{fid}:{vid}')
-@update_counters('download:{nid}:{fid}:{vid}')
-@update_counters('download:{pid}:{fid}')
-@update_counters('download:{nid}:{fid}')
+@update_counters('download:{target_id}:{fid}:{vid}')
+@update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
     node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
@@ -394,7 +393,8 @@ def delete_file(**kwargs):
 
 def get_cache_file(fid, vid):
     return '{0}_v{1}.html'.format(
-        fid.replace('.', '_'), vid,
+        hashlib.md5(fid).hexdigest(),
+        vid,
     )
 
 @must_be_valid_project

@@ -1,13 +1,11 @@
 % for contributor in contributors:
-    <span data-pk="${contributor['id']}"
+    <li data-pk="${contributor['id']}"
             class="contributor
                 ${'contributor-registered' if contributor['registered'] else 'contributor-unregistered'}
                 ${'contributor-self' if user['id'] == contributor['id'] else ''}">
         % if contributor['registered']:
-        <a href="/${contributor['id']}/">${contributor['fullname']}</a>
+        <a class='user-profile' href="/${contributor['id']}/">${contributor['fullname']}</a></li>
         % else:
-        <span>${contributor['fullname']}</span>
+        <span>${contributor['fullname']}</span></li>
         %endif
-    </span>
-    ${'' if loop.last else '|'}
 % endfor

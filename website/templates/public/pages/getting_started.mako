@@ -58,8 +58,8 @@
 
 
             <p class="subHeadFour text-center" id="features">Getting Started With:</p>
-            <div id="dashboards"></div>
-            <div class="row " >
+            <span id="dashboards" class="anchor"></span>
+            <div class="row" >
                 <p class="gs-header">Dashboards</p>
                 <p>Dashboards are a table of contents of your projects or project components. The user dashboard is linked in the black navigation bar at the top of the page.  This dashboard shows your public OSF profile and all of your projects--both public and private.</p>
                 <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/X0d-A5Gc3rk?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
@@ -67,21 +67,21 @@
                 <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/FxYFEsMmoEI?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe>
 
                 </div>
-                <div  id="projects"></div>
+                <span id="projects" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Projects</p>
                     <p>Projects are the largest form of categorization that the OSF supports. A project could be an experiment, a lab group, or a paper–anything that has contributing members and files or explanatory texts/images.</p>
-                    <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/d9gxOH15EPk?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
+                    <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/4GBfBnO_7Ks?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="components"></div>
+                <span id="components" class="anchor"></span>
                 <div class="row" >
                     <p class="gs-header">Components</p>
                     <p>Components are like folders in your project. You can assign a component a category upon its creation (data, materials, projects, etc.). A component that is categorized as a project can have more components added within it.</p>
-                    <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/4GBfBnO_7Ks?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
+                    <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/d9gxOH15EPk?hd=1&rel=0&autohide=1&showinfo=0"  frameborder="0" allowfullscreen></iframe></div>
                     <p>Components come with their own privacy settings, contributors, wikis, add-ons, and files.</p>
                     <p>To delete a component or project, visit its page and go to "Settings" in the grey navigation bar under the component's title. This will also delete that component's wiki.</p>
                 </div>
-                <div id="files"></div>
+                <span id="files" class="anchor"></span>
                 <div class="row" >
                     <p class="gs-header">Files</p>
                     <p>Each project and component can have its own set of files. This allows you to organize your files into meaningful groups like datasets or background research.</p>
@@ -91,7 +91,7 @@
                     <p>You can delete files by clicking  the ‘X’ that appears when you hover over the file.</p>
                     <p>Only contributors of that component with writing privileges can add or delete a file. If a component is set to be private, then no one will be able to see the enclosed files, but public components and projects allow anyone to download their materials.</p>
                 </div>
-                <div id="privacy"></div>
+                <span id="privacy" class="anchor"></span>
                 <div class="row" >
                     <p class="gs-header">Privacy</p>
                     <p>All projects are private by default. However, you can choose to make your project's contents available for anyone to view. </p>
@@ -99,7 +99,7 @@
                     <p>Once you make a project public, you can gain more feedback about the impact of your work by tracking how many people that are visiting your projects and downloading or forking your research materials. You can also create a watchlist of other projects that interest you. </p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/vs06zE77110?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="contributors"></div>
+                <span id="contributors" class="anchor"></span>
                 <div class="row" >
                     <p class="gs-header">Contributors</p>
                     <p>Adding contributors to a project allows credit to be given to those who have worked on the project, and allows them to make changes to the project.</p>
@@ -112,7 +112,7 @@
                     <P>Admins can also affect the order in which contributors are listed. To re-order, just click on a contributor and drag and drop them to their new position.</P>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/iU3ZVF8Lc3M?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div  id="links"></div>
+                <span id="links" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Links</p>
                     <p>Links are an alternative to building a component within a project. Adding a link to a project means that instead of building a component within the parent project, the component exists separately and is only being pointed to from the present project.</p>
@@ -121,7 +121,7 @@
                     <p>A link can be by visiting the project you want to add the link to. Click "Add Links" in the components section of your project dashboard and search for the project you wish to link to.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/bdhHoGiwvYg?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="forking"></div>
+                <span id="forking" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Forking</p>
                     <p>Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
@@ -132,7 +132,7 @@
                     <p>A <a href="links">linked</a> project can also easily be turned into a fork. If you were originally linking to a project but would like to make edits to the linked project, from your project dashboard you can find the linked project and hit the small fork button.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/3F8QC5S_uyU?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div  id="registrations"></div>
+                <span id="registrations" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Registrations</p>
                     <p>Registrations are permanent, read only copies of a project. Registration saves the state of a project at a particular point in time - such as right before data collection, or right when a manuscript is submitted.</p>
@@ -140,7 +140,7 @@
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/o9elWNmKRq0?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                     <p>A registration exists at a separate, permanent URL that is linked to the project.  Then, you can continue editing and revising the project.</p>
                 </div>
-                <div id="dropbox"></div>
+                <span id="dropbox" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Dropbox Add-on</p>
                     <p>To link a Drobpox folder to a project/component, visit the project you want to add a Dropbox folder to. Then go to "Settings" in the grey navigation bar. Check "Dropbox" under "Select Add-ons" to enable the add-on. Read, then click “OK” on the pop-up, then submit.</p>
@@ -148,7 +148,7 @@
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/0iFtgPfYSg4?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
 
-                <div id="github"></div>
+                <span id="github" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">GitHub Add-on</p>
                     <p>To link a GitHub repository to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "GitHub" under "Select Add-ons" to enable the add-on.</p>
@@ -158,7 +158,7 @@
                     <p>Authorize the Github repository by clicking the blue button. Once you have authorized GitHub then you need to either select a repository or create a new one.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/u61HCU2TL4M?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="s3"></div>
+                <span id="s3" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Amazon Simple Storage Service Add-on</p>
                     <p>To link Amazon Simple Storage Service bucket to a project/component, visit your profile settings by clicking the gear in the top right of the page. Check "Amazon Simple Storage Service" under "Select Add-on.”</p>
@@ -168,7 +168,7 @@
                     <p>Once you have authorized Amazon Simple Storage then you need to either select a buckets from the dropdown or create one.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/kFbNYVLY52A?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="figshare"></div>
+                <span id="figshare" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">FigShare Add-on</p>
                     <p>Currently, the OSF only supports linking FigShare projects to an OSF project–not individual files or articles.</p>
@@ -179,7 +179,7 @@
                     <p>Still in your project settings, now click the authorize button for FigShare under "Configure Add-ons" and then select the project you want to add.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/PYbDtghU1VI?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="dataverse"></div>
+                <span id="dataverse" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Dataverse Add-on</p>
                     <p>Currently, the OSF only supports linking Dataverses that you have already released on the <a href="http://thedata.harvard.edu/dvn/">Harvard Dataverse Network</a>.</p>
@@ -188,7 +188,7 @@
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/QzGJGWgy8Qo?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                     <p>Contributors to your project will have access to both released and draft versions of your study, but only the most recent release will be made public alongside your OSF project.</p>
                 </div>
-                <div id="commenting"></div>
+                <span id="commenting" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Commenting</p>
                     <p>Commenting can be enabled for any OSF project. To leave a comment on a project, if the administrators have allowed chat, you will see blue speech bubbles in the top right corner of your screen. Click on those speech bubbles and add your comment in the text box.</p>
@@ -197,14 +197,14 @@
                     <p>To change your project's comment settings, visit "Settings" in the grey navigation bar below the project title. Select your preference under "Configure Commenting" and submit your changes. </p>
 
                 </div>
-                <div id="citations"></div>
+                <span id="citations" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Citations</p>
                     <p>Every project, component, file, and user has a unique URL on the OSF. This means that anything you upload and make public on the OSF can be cited, giving you credit for your work.</p>
                     <p>To find a pre-formatted citation for a project, look directly below the grey navigation bar on the project's page and you will see the URL to be cited. If you click "more" then you ill see the APA, MLA, and Chicago citations.</p>
                     <div class="gs-video text-center"><iframe width="560" height="315" src="//www.youtube.com/embed/BeJhLJEzrNw?hd=1&rel=0&autohide=1&showinfo=0" frameborder="0" allowfullscreen></iframe></div>
                 </div>
-                <div id="statistics"></div>
+                <span id="statistics" class="anchor"></span>
                 <div class="row">
                     <p class="gs-header">Statistics</p>
                     <p>Every project comes with a statistics page where you can view informmation on how often people are visiting your project and where they are being referred from.</p>

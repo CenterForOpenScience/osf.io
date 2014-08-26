@@ -111,7 +111,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
                 query = query & query_part
             user = User.find_one(query)
         except Exception as err:
-            logging.error(err)
+            logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -125,7 +125,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         user = User.find_one(query)
         return user
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         return None
 
 
@@ -137,6 +137,11 @@ class Auth(object):
         self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
+
+    def __repr__(self):
+        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
+                'api_node={self.api_node}, '
+                'private_key={self.private_key})>').format(self=self)
 
     @property
     def logged_in(self):
@@ -163,6 +168,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'merged_by',
     }
 
     _id = fields.StringField(primary=True)
@@ -174,7 +180,6 @@ class User(GuidStoredObject, AddonModelMixin):
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
     is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    private_links = fields.ForeignField('privatelink', list=True)
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -257,11 +262,7 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     def __repr__(self):
-        return '<User {0!r}>'.format(self.username)
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
+        return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
@@ -575,9 +576,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        if self.is_active():
-            if self.SEARCH_UPDATE_FIELDS.intersection(rv):
-                self.update_search()
+        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+            self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
@@ -587,8 +587,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def update_search(self):
         from website.search import search
-        if self.is_active():
-            search.update_user(self)
+        search.update_user(self)
 
     @classmethod
     def find_by_email(cls, email):
@@ -611,7 +610,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     ###### OSF-Specific methods ######
 
-    def watch(self, watch_config, save=False):
+    def watch(self, watch_config):
         """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
@@ -624,8 +623,6 @@ class User(GuidStoredObject, AddonModelMixin):
             raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
-        if save:
-            self.save()
         return None
 
     def unwatch(self, watch_config):
@@ -684,11 +681,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return self.get_recent_log_ids(since=midnight)
 
     def merge_user(self, user, save=False):
-        '''Merge a registered user into this account. This user will be
+        """Merge a registered user into this account. This user will be
         a contributor on any project
 
         :param user: A User object to be merged.
-        '''
+        """
         # Inherit emails
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
@@ -719,6 +716,21 @@ class User(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
         return None
+
+    def get_projects_in_common(self, other_user, primary_keys= True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.node__contributed._to_primary_keys())
+            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+        else:
+            projects_contributed_to = set(self.node__contributed)
+            return projects_contributed_to.intersection(other_user.node__contributed)
+
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
 
 
 def _merge_into_reversed(*iterables):

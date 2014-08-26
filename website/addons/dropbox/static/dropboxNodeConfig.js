@@ -94,7 +94,7 @@
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
-                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
                         'text-warning');
                 }
             });

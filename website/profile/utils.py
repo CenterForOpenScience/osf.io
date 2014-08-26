@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
-
-import logging
-
 import framework
 from website.util.permissions import reduce_permissions
 from website.filters import gravatar
 from website import settings
-
-logger = logging.getLogger(__name__)
 
 
 def get_projects(user):
@@ -33,12 +28,16 @@ def serialize_user(user, node=None, full=False):
     :param bool full: Include complete user properties
 
     """
+
     rv = {
         'id': str(user._primary_key),
         'registered': user.is_registered,
         'surname': user.family_name,
         'fullname': user.display_full_name(node=node),
-        'gravatar_url': user.gravatar_url,
+        'gravatar_url': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+        ),
         'active': user.is_active(),
     }
     if node is not None:
@@ -68,7 +67,10 @@ def serialize_user(user, node=None, full=False):
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
             'activity_points': user.activity_points,
-            'gravatar_url': user.gravatar_url,
+            'gravatar_url': gravatar(
+            user, use_ssl=True,
+            size=settings.GRAVATAR_SIZE_PROFILE
+        ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })
@@ -84,17 +86,37 @@ def serialize_contributors(contribs, node):
     ]
 
 
-def add_contributor_json(user):
+def add_contributor_json(user, current_user=None):
+
+    # get shared projects
+    if current_user:
+        n_projects_in_common = current_user.n_projects_in_common(user)
+    else:
+        n_projects_in_common = 0
+
+    current_employment = None
+    education = None
+
+    if user.jobs:
+        current_employment = user.jobs[0]['institution']
+
+    if user.schools:
+        education = user.schools[0]['institution']
+
     return {
         'fullname': user.fullname,
         'email': user.username,
         'id': user._primary_key,
+        'employment': current_employment,
+        'education': education,
+        'n_projects_in_common': n_projects_in_common,
         'registered': user.is_registered,
         'active': user.is_active(),
         'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         ),
+        'profile_url': user.profile_url
     }
 
 def serialize_unregistered(fullname, email):

@@ -101,14 +101,20 @@ page_routes = {
 }
 
 api_routes = {
-    
+
     'rules': [
-        
+
         # View
         Rule([
             '/project/<pid>/wiki/<wid>/',
             '/project/<pid>/node/<nid>/wiki/<wid>/',
         ], 'get', views.project_wiki_page, json_renderer),
+
+        #justcontent
+        Rule([
+            '/project/<pid>/wiki/content/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/content/<wid>/',
+        ], 'get', views.wiki_page_content, json_renderer),
 
         # Edit | POST
         Rule([
@@ -138,9 +144,9 @@ api_routes = {
             '/project/<pid>/wiki/<wid>/version/<vid>/',
             '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
         ], 'get', views.project_wiki_version, json_renderer),
-        
+
     ],
-    
+
     'prefix': '/api/v1',
-    
+
 }

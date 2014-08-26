@@ -6,11 +6,11 @@
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
 - Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
 - Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
-- Wiki: https://osf.io/a92ji/wiki/home/
+- Docs: http://cosdev.rtfd.org/
 
 ## Help
 
-Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
+Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
 ## Quickstart
 
@@ -32,12 +32,28 @@ $ cp website/settings/local-dist.py website/settings/local.py
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
+    - Install npm
+    - Install bower
+    - Use bower to install Javascript components
 
 - To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
 ```bash
 $ pip install invoke
 $ invoke setup
+```
+
+
+- Optionally, you may install the requirements for the Modular File Renderer:
+
+```bash
+$ invoke mfr_requirements
+```
+
+and for addons:
+
+```bash
+$ invoke addon_requirements
 ```
 
 - On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
@@ -162,30 +178,6 @@ invoke celery_worker
 
 ## Using Search
 
-### Solr
-- Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
-
-- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
-
-```python
-SEARCH_ENGINE = 'solr'
-```
-
-- Start the Solr server and migrate the models.
-
-```bash
-$ invoke solr
-$ invoke migrate_search
-```
-
-#### Starting A Local Solr Server
-
-```bash
-$ invoke solr
-```
-
-This will start a Solr server on port 8983.
-
 ### Elasticsearch
 
 - Install Elasticsearch
@@ -225,16 +217,39 @@ $ invoke elasticsearch
 
 ## Using Bower for front-end dependencies
 
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries.
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
 
 To get the bower CLI, you must have Node installed.
 
 ```bash
+# For MacOSX
 $ brew update && brew install node
 $ npm install -g bower
 ```
 
-To install a library:
+Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
+
+```bash
+# For Ubuntu
+$ sudo apt-get install nodejs
+$ sudo ln -s /usr/bin/nodejs /usr/bin/node
+$ node --version      # v0.10.25
+$ npm install -g bower
+```
+
+### To update existing front-end dependencies
+
+This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
+
+```bash
+$ bower install
+```
+
+### To add a new front-end library
+
+Use this command when adding a new front-end dependency
 
 ```bash
 $ bower install zeroclipboard --save
@@ -254,7 +269,7 @@ invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
 invoke rabbitmq
 invoke celery_worker
-invoke solr
+invoke elasticsearch
 invoke server
 ```
 

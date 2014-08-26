@@ -4,27 +4,23 @@ import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
-from webtest_plus import TestApp
 
 from github3.repos.branch import Branch
 
 from framework.exceptions import HTTPError
-import website.app
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
-
 github_mock = create_mock_github(user='fred', private=False)
 
 
 class TestHGridViews(OsfTestCase):
+
     def setUp(self):
+        super(TestHGridViews, self).setUp()
         self.github = github_mock
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -65,12 +61,11 @@ class TestHGridViews(OsfTestCase):
 class TestGithubViews(OsfTestCase):
 
     def setUp(self):
-
-        self.app = TestApp(app)
+        super(TestGithubViews, self).setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -204,6 +199,24 @@ class TestGithubViews(OsfTestCase):
     def test_github_contents(self):
         pass
 
+    def check_hook_urls(self, urls, node, path, sha):
+        assert_equal(
+            urls['view'],
+            node.web_url_for(
+                'github_view_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+        assert_equal(
+            urls['download'],
+            node.api_url_for(
+                'github_download_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
@@ -228,6 +241,13 @@ class TestGithubViews(OsfTestCase):
         ).maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_added")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
@@ -246,6 +266,13 @@ class TestGithubViews(OsfTestCase):
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
@@ -264,6 +291,8 @@ class TestGithubViews(OsfTestCase):
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
+        urls = self.project.logs[-1].params['urls']
+        assert_equal(urls, {})
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
@@ -364,7 +393,7 @@ class TestGithubViews(OsfTestCase):
     #
     # In addition, this test currently is incorrect: it really just ensures
     # a guid is created for the file
-    # 
+    #
     # @mambocab
     #
     # @mock.patch('website.addons.github.api.GitHub.history')
@@ -477,7 +506,7 @@ class TestGithubSettings(OsfTestCase):
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
-        self.app = TestApp(app)
+
         self.project = ProjectFactory.build()
         self.project.save()
         self.auth = self.project.creator.auth
