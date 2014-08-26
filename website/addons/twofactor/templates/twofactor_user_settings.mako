@@ -12,12 +12,18 @@
     }
 </style>
 <div id="TfaVerify">
-    <p>Two-factor authentication will help protect your OSF account by requiring access to your mobile device to log in.</p>
-    <p>To use, you must install an appropriate application on your mobile device. Google Authenticator is a popular choice and is available for both <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a> and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.</p>
-    <p>Once verified, your device will display a six-digit code that must be entered during the login process. This code changes every few seconds, which means that unauthorized users will not be able to log in to you account, <em>even if they know your password</em>.</p>
+    <p>Two-factor authentication will help protect your OSF account by requiring access to
+        your mobile device to log in.</p>
+    <p>To use, you must install an appropriate application on your mobile device. Google Authenticator
+        is a popular choice and is available for both
+        <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a>
+        and <a href="https://itunes.apple.com/us/app/google-authenticator/id388497605?mt=8">iOS</a>.</p>
+    <p>Once verified, your device will display a six-digit code that must be entered during the
+        login process. This code changes every few seconds, which means that unauthorized users
+        will not be able to log in to you account, <em>even if they know your password</em>.</p>
     <p>Scan the image below, or enter the secret key <code>${ secret }</code> into your authentication device.</p>
     <div id="twoFactorQrCode"></div>
-    <div class="form-group"></div>
+    <div class="form-group">
         <label class="control-label" for="TfaCode">Enter your verification code:</label>
         <div>
             <input type="text" name='TfaCode' id="TfaCode" class="form-control" />
