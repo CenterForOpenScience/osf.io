@@ -11,7 +11,7 @@
         padding-top: 4px;
     }
 </style>
-<div id="TfaVerify">
+<div id="TfaVerify" class="addon-settings">
     <p>Two-factor authentication will help protect your OSF account by requiring access to
         your mobile device to log in.</p>
     <p>To use, you must install an appropriate application on your mobile device. Google Authenticator
@@ -29,6 +29,7 @@
             <input type="text" name='TfaCode' id="TfaCode" class="form-control" />
             <button class="btn btn-primary" id="TfaSubmit">Submit</button>
         </div>
+        <div class="addon-settings-message"></div>
     </div>
 
 </div>
@@ -55,7 +56,6 @@
                         var msgElm = settingsElm.find('.addon-settings-message')
                             .removeClass('text-success')
                             .addClass('text-danger');
-
                         if (e.status == 403) {
                             msgElm.text('Verification failed');
                         } else {
