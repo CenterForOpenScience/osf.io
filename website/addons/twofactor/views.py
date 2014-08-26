@@ -1,8 +1,7 @@
+# -*- coding: utf-8 -*-
 import httplib as http
-import json
 
 from framework import request
-from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
@@ -19,7 +18,7 @@ def user_settings(user_addon, *args, **kwargs):
 
     if user_addon.verify_code(code):
         user_addon.is_confirmed = True
-        user_addon.save()
-        return {}
-
-    raise HTTPError(403)
+    raise HTTPError(http.FORBIDDEN, data=dict(
+        message_short='Forbidden',
+        message_long='The two-factor verification code you provided is invalid.'
+    ))

@@ -1,6 +1,4 @@
 from nose.tools import *
-from webtest.app import AppError
-from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
@@ -20,8 +18,6 @@ class TestViews(OsfTestCase):
         self.user.add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
 
-        self.app = TestApp(app)
-
     def test_confirm_code(self):
         # Send a valid code to the API endpoint for the user settings.
         res = self.app.post_json(
@@ -37,14 +33,15 @@ class TestViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_confirm_code_failure(self):
-        with assert_raises(AppError) as error:
-            res = self.app.post_json(
-                '/api/v1/settings/twofactor/',
-                {'code': '000000'},
-                auth=self.user.auth
-            )
-
-            assert_in('403 FORBIDDEN', error.message)
+        res = self.app.post_json(
+            '/api/v1/settings/twofactor/',
+            {'code': '000000'},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 403)
+        json = res.json
+        assert_in('verification code', json['message_long'])
 
         # reload the user settings object from the DB
         self.user_settings.reload()
