@@ -5,7 +5,7 @@ import httplib as http
 
 from tests.base import OsfTestCase
 
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
@@ -318,6 +318,19 @@ class TestViewsCrud(OsfTestCase):
         resp = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(resp.status_int, http.OK)
         assert_true('file is unpublished we cannot render it.' in resp.body)
+
+    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
+    def test_view_file_with_anonymous_link(self, mock_fig):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+        mock_fig.return_value = self.figshare
+        url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, {'view_only': link.key}).maybe_follow()
+        assert_equal(resp.status_int, http.OK)
+        assert_true('file is unpublished we cannot render it.' in resp.body)
+        assert_not_in('View on Figshare', resp.body)
 
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')
     def test_view_bad_file(self, mock_fig):
