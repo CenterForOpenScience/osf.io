@@ -231,10 +231,7 @@
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         },
-        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
-        UNKNOWN_ERROR: 'An unknown error occurred. If this issue persists, ' +
-            'please report it to <a href=\"mailto:support@osf.io\">' +
-            'support@osf.io</a>.'
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>'
     };
 
     var statusType = {
@@ -410,7 +407,7 @@
                     var messageData = JSON.parse(message);
                     messageText = messageData.message_long;
                 } catch (error) {
-                    messageText = default_status.UNKNOWN_ERROR;
+                    messageText = message;
                 }
             }
             bootbox.alert(messageText);
