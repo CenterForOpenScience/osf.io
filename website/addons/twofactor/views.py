@@ -18,6 +18,8 @@ def user_settings(user_addon, *args, **kwargs):
 
     if user_addon.verify_code(code):
         user_addon.is_confirmed = True
+        user_addon.save()
+        return {'message': 'Successfully verified two-factor authentication.'}, http.OK
     raise HTTPError(http.FORBIDDEN, data=dict(
         message_short='Forbidden',
         message_long='The two-factor verification code you provided is invalid.'
