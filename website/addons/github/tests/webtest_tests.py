@@ -5,7 +5,7 @@ from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 
 from framework.auth import Auth
 from website.addons.github.tests.utils import create_mock_github
-
+from website.util import web_url_for
 from github3.repos import Repository
 from github3.repos.commit import RepoCommit as Commit
 
@@ -156,11 +156,7 @@ class TestGitHubFileView(OsfTestCase):
         link = PrivateLinkFactory(anonymous=True)
         link.nodes.append(self.project)
         link.save()
-
-        url = "/project/{0}/github/file/{1}/".format(
-            self.project._id,
-            "coveragerc"
-        )
+        url = web_url_for('github_view_file', pid=self.project._id, path="coveragerc")
         res = self.app.get(url, {'view_only': link.key}).maybe_follow()
         assert_in("6dcb09b5b57875f334f61aebed695e2e4193db5e", res)
         assert_in("Thu Apr 14 16:00:49 2011", res)

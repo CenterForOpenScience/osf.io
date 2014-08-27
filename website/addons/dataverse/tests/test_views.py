@@ -625,11 +625,10 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
                           pid=self.project._primary_key, path='foo')
         res = self.app.get(url, {'view_only': link.key}).maybe_follow()
         assert_equal(res.status_code, 200)
-        assert_not_in('ALIAS2', res.body)
-        assert_not_in('Example', res.body)
-        assert_not_in('00001', res.body)
-        assert_not_in('project', res.body)
-        assert_not_in('Example 2', res.body)
+        assert_not_in(self.node_settings.dataverse_alias, res.body)
+        assert_not_in(self.node_settings.dataverse, res.body)
+        assert_not_in(self.node_settings.study, res.body)
+
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')

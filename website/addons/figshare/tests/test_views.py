@@ -10,7 +10,7 @@ from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
-
+from website.util import web_url_for
 from website.addons.figshare.views.config import serialize_settings
 
 from framework.auth import Auth
@@ -325,7 +325,10 @@ class TestViewsCrud(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
         mock_fig.return_value = self.figshare
-        url = '/project/{0}/figshare/article/564/file/1348803/'.format(self.project._id)
+        url = web_url_for(
+            'figshare_view_file',
+            pid=self.project._id, aid='564',fid='1348803'
+        )
         self.app.auth = self.user.auth
         resp = self.app.get(url, {'view_only': link.key}).maybe_follow()
         assert_equal(resp.status_int, http.OK)
