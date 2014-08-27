@@ -139,7 +139,14 @@ def upload_file_public(auth, node_addon, **kwargs):
     name, content, content_type, size = prepare_file(request.files['file'])
 
     if size > (node_addon.config.max_file_size):
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large.',
+                'message_long': 'The file you are trying to upload exceeds '
+                    'the maximum file size limit.',
+            },
+        )
 
     try:
         fobj = node.add_file(
