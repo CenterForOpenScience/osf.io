@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import cgi
@@ -26,9 +24,11 @@ from website import settings
 from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
-from .model import NodeFile, OsfGuidFile
+from website.addons.osffiles.model import NodeFile, OsfGuidFile
+
 
 logger = logging.getLogger(__name__)
+
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -81,11 +81,10 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles(**kwargs):
+def get_osffiles(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    auth = kwargs['auth']
     can_view = node.can_view(auth)
 
     info = []
@@ -106,10 +105,9 @@ def get_osffiles(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles_public(**kwargs):
+def get_osffiles_public(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
 
     return get_osffiles_hgrid(node_settings, auth)
 
@@ -132,14 +130,23 @@ def list_file_paths(**kwargs):
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(**kwargs):
+def upload_file_public(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
     name, content, content_type, size = prepare_file(request.files['file'])
+
+    if size > (node_addon.config.max_file_size):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large.',
+                'message_long': 'The file you are trying to upload exceeds '
+                    'the maximum file size limit.',
+            },
+        )
 
     try:
         fobj = node.add_file(
@@ -379,9 +386,8 @@ def download_file_by_version(**kwargs):
 @must_be_valid_project # returns project
 @must_have_permission(permissions.WRITE) # returns user, project
 @must_not_be_registration
-def delete_file(**kwargs):
+def delete_file(auth, **kwargs):
 
-    auth = kwargs['auth']
     filename = kwargs['fid']
     node_to_use = kwargs['node'] or kwargs['project']
 
