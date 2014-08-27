@@ -10,7 +10,7 @@ from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
 from website.addons.figshare import utils
-from website.util import web_url_for
+
 from website.addons.figshare.views.config import serialize_settings
 
 from framework.auth import Auth

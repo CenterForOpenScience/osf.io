@@ -621,8 +621,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
 
-        url = api_url_for('dataverse_get_file_info',
-                          pid=self.project._primary_key, path='foo')
+        url = self.project.api_url_for('dataverse_get_file_info', path='foo')
         res = self.app.get(url, {'view_only': link.key}).maybe_follow()
         assert_equal(res.status_code, 200)
         assert_not_in(self.node_settings.dataverse_alias, res.body)
