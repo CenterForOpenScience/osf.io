@@ -415,7 +415,10 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
 
-    def test_get_logs(self):
+    @mock.patch('framework.transactions.commands.begin')
+    @mock.patch('framework.transactions.commands.rollback')
+    @mock.patch('framework.transactions.commands.commit')
+    def test_get_logs(self, *mock_commands):
         # Add some logs
         for _ in range(5):
             self.project.logs.append(
@@ -428,6 +431,8 @@ class TestProjectViews(OsfTestCase):
         self.project.save()
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
+        for mock_command in mock_commands:
+            assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))

@@ -4,7 +4,6 @@ import httplib
 import logging
 import functools
 
-
 from flask import request, make_response, current_app
 from pymongo.errors import OperationFailure
 
