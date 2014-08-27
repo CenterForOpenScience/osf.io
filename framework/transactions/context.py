@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
 from pymongo.errors import OperationFailure
 
 from framework.mongo import database
+from framework.transactions import commands, messages, utils
 
 
 logger = logging.getLogger(__name__)
-
-
-def begin_transaction_error(error):
-    try:
-        message = error.args[0]
-    except IndexError:
-        raise error
-    if 'transaction already exists' not in message.lower():
-        raise error
 
 
 class TokuTransaction(object):
@@ -24,16 +17,18 @@ class TokuTransaction(object):
     ignore attempts to nest transactions.
 
     """
-    def __init__(self, database):
+    def __init__(self, database=database):
         self.database = database
         self.pending = False
 
     def __enter__(self):
         try:
-            self.database.command('beginTransaction')
+            commands.begin(self.database)
             self.pending = True
         except OperationFailure as error:
-            begin_transaction_error(error)
+            message = utils.get_error_message(error)
+            if messages.TRANSACTION_EXISTS_ERROR not in message:
+                raise
             logger.warn('Transaction already in progress')
         finally:
             return self
@@ -41,10 +36,18 @@ class TokuTransaction(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.pending:
             if exc_type:
-                self.database.command('rollbackTransaction')
+                commands.rollback(self.database)
+                self.pending = False
                 raise exc_val
-            self.database.command('commitTransaction')
-            self.pending = False
+            try:
+                commands.commit(self.database)
+                self.pending = False
+            except OperationFailure as error:
+                message = utils.get_error_message(error)
+                if messages.LOCK_ERROR in message:
+                    commands.rollback(self.database)
+                    self.pending = False
+                raise
 
 
 def transaction(database=database):

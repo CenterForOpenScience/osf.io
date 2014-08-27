@@ -7,12 +7,14 @@ import blinker
 from webtest_plus import TestApp
 
 from faker import Factory
+from pymongo.errors import OperationFailure
 
 from framework import storage, set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from framework import mongo
+from framework.mongo import client, database
+from framework.transactions import commands, messages, utils
 
 from website.project.model import (ApiKey, Node, NodeLog,
                                    Tag, WatchConfig)
@@ -70,7 +72,7 @@ class OsfTestCase(unittest.TestCase):
             storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE,
         )
-        mongo.client.drop_database(cls.db_name)
+        client.drop_database(cls.db_name)
 
     def setUp(self):
         self.app = TestApp(test_app)
@@ -85,8 +87,34 @@ class OsfTestCase(unittest.TestCase):
         """Clear test database again.
 
         """
-        mongo.client.drop_database(cls.db_name)
+        client.drop_database(cls.db_name)
         settings.DB_NAME = cls._original_db
+
+
+def teardown_database(client=client, database=database):
+    try:
+        commands.rollback(database)
+    except OperationFailure as error:
+        message = utils.get_error_message(error)
+        if messages.NO_TRANSACTION_ERROR not in message:
+            raise
+    client.drop_database(database)
+
+
+class DbTestCase(unittest.TestCase):
+
+    DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
+
+    @classmethod
+    def setUpClass(cls):
+        cls._original_db_name = settings.DB_NAME
+        settings.DB_NAME = cls.DB_NAME
+        teardown_database(database=database._get_current_object())
+
+    @classmethod
+    def tearDownClass(cls):
+        teardown_database(database=database._get_current_object())
+        settings.DB_NAME = cls._original_db_name
 
 
 class AppTestCase(unittest.TestCase):

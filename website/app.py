@@ -3,6 +3,7 @@
 import importlib
 
 from framework import storage, app
+from framework.flask import add_handlers
 from framework.logging import logger
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
@@ -67,8 +68,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
             pass
 
     # Add callback handlers to application
-    mongo_handlers.add_database_handlers(app)
-    transaction_handlers.add_transaction_handlers(app)
+    add_handlers(app, mongo_handlers.handlers)
+    add_handlers(app, transaction_handlers.handlers)
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")

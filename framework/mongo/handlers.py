@@ -45,12 +45,10 @@ def connection_teardown_request(error=None):
             logger.error('MongoDB client not attached to request.')
 
 
-def add_database_handlers(app):
-    """Add connection callbacks on `before_request` and `teardown_request`.
-
-    """
-    add_handler(app, 'before_request', connection_before_request)
-    add_handler(app, 'teardown_request', connection_teardown_request)
+handlers = {
+    'before_request': connection_before_request,
+    'teardown_request': connection_teardown_request,
+}
 
 
 # Set up getters for `LocalProxy` objects
