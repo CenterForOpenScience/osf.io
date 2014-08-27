@@ -1,4 +1,5 @@
-from nose.tools import *
+# -*- coding: utf-8 -*-
+from nose.tools import *  # noqa (PEP8 asserts)
 from werkzeug.wrappers import BaseResponse
 
 from framework.auth import login
@@ -7,6 +8,7 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.app import init_app
 from website.addons.twofactor.tests import _valid_code
+from website.addons.twofactor.exceptions import TwoFactorValidationError
 
 app = init_app(
     routes=True,
@@ -38,7 +40,7 @@ class TestCore(OsfTestCase):
         assert_equal(res.status_code, 302)
 
     def test_login_invalid_code(self):
-        with assert_raises(PasswordIncorrectError):
+        with assert_raises(TwoFactorValidationError):
             login(
                 username=self.user.username,
                 password='badpassword',

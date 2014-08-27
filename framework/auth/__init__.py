@@ -4,12 +4,27 @@ from framework import session, create_session
 from framework import goback
 from framework import bcrypt
 from framework.auth.exceptions import (
-    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError
+    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError, TwoFactorValidationError
 )
 
 from .core import User, Auth
 from .core import get_user, get_current_user, get_api_key, get_current_node
 
+__all__ = [
+    'get_display_name',
+    'Auth',
+    'User',
+    'get_user',
+    'get_api_key',
+    'get_current_node',
+    'get_current_user',
+    'check_password',
+    'authenticate',
+    'login',
+    'logout',
+    'register_unconfirmed',
+    'register',
+]
 
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
@@ -56,7 +71,7 @@ def login(username, password, two_factor=None):
 
             tfa = user.get_addon('twofactor')
             if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):
-                raise PasswordIncorrectError('Two-Factor auth does not match.')
+                raise TwoFactorValidationError('Two-Factor auth does not match.')
 
             return authenticate(user, response=goback())
     raise PasswordIncorrectError('Incorrect password attempt.')
