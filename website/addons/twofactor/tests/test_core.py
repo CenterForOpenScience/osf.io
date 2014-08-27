@@ -3,12 +3,11 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from werkzeug.wrappers import BaseResponse
 
 from framework.auth import login
-from framework.auth.exceptions import PasswordIncorrectError
+from framework.auth.exceptions import PasswordIncorrectError, TwoFactorValidationError
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.app import init_app
 from website.addons.twofactor.tests import _valid_code
-from website.addons.twofactor.exceptions import TwoFactorValidationError
 
 app = init_app(
     routes=True,
