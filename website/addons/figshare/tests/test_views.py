@@ -325,9 +325,8 @@ class TestViewsCrud(OsfTestCase):
         link.nodes.append(self.project)
         link.save()
         mock_fig.return_value = self.figshare
-        url = web_url_for(
-            'figshare_view_file',
-            pid=self.project._id, aid='564',fid='1348803'
+        url = self.project.web_url_for(
+            'figshare_view_file', aid='564',fid='1348803'
         )
         self.app.auth = self.user.auth
         resp = self.app.get(url, {'view_only': link.key}).maybe_follow()
