@@ -169,14 +169,14 @@ def transaction_view():
     return make_response()
 
 
-@handlers.skip_transaction
+@handlers.no_auto_transaction
 @transaction_app.route('/dont/transact/me/bro/', methods=['GET'])
 def no_transaction_view():
     return make_response()
 
 
 @transaction_app.route('/seriously/bro/', methods=['GET'])
-@handlers.skip_transaction
+@handlers.no_auto_transaction
 def no_transaction_view_reverse_decorators():
     return make_response()
 

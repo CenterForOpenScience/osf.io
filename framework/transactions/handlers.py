@@ -15,13 +15,13 @@ from website import settings
 
 
 LOCK_ERROR_CODE = httplib.BAD_REQUEST
-SKIP_TRANSACTION_ATTR = '_skip_transaction'
+NO_AUTO_TRANSACTION_ATTR = '_no_auto_transaction'
 
 logger = logging.getLogger(__name__)
 
 
-def skip_transaction(func):
-    setattr(func, SKIP_TRANSACTION_ATTR, True)
+def no_auto_transaction(func):
+    setattr(func, NO_AUTO_TRANSACTION_ATTR, True)
     return func
 
 
@@ -31,14 +31,14 @@ def view_has_annotation(attr):
     except (RuntimeError, AttributeError):
         return False
     view = current_app.view_functions[endpoint]
-    return getattr(view, SKIP_TRANSACTION_ATTR, False)
+    return getattr(view, NO_AUTO_TRANSACTION_ATTR, False)
 
 
 def transaction_before_request():
     """Setup transaction before handling the request.
 
     """
-    if view_has_annotation(SKIP_TRANSACTION_ATTR):
+    if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None
     try:
         commands.rollback()
@@ -56,7 +56,7 @@ def transaction_after_request(response):
     error, rollback and return error response.
 
     """
-    if view_has_annotation(SKIP_TRANSACTION_ATTR):
+    if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
     if response.status_code == httplib.INTERNAL_SERVER_ERROR:
         commands.rollback()
@@ -78,7 +78,7 @@ def transaction_teardown_request(error=None):
     Werkzeug debugger.
 
     """
-    if view_has_annotation(SKIP_TRANSACTION_ATTR):
+    if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None
     if error is not None:
         if not settings.DEBUG_MODE:
