@@ -20,6 +20,7 @@ from website.project.decorators import (
 )
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
 
@@ -89,6 +90,7 @@ def github_view_file(**kwargs):
 
     connection = GitHub.from_settings(node_settings.user_settings)
 
+    anonymous = has_anonymous_link(node, auth)
     try:
         # If GUID has already been created, we won't redirect, and can check
         # whether the file exists below
@@ -146,6 +148,9 @@ def github_view_file(**kwargs):
         commit['view'] = (
             '/' + guid._id + '/' + ref_to_params(branch, sha=commit['sha'])
         )
+        if anonymous:
+            commit['name'] = 'A user'
+            commit['email'] = ''
 
     # Get or create rendered file
     cache_file = get_cache_file(

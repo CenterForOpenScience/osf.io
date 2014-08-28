@@ -86,6 +86,7 @@ class AddonModelMixin(StoredObject):
 
         # Instantiate model
         model = addon_config.settings_models[self._name](owner=self)
+        model.on_add()
         model.save()
 
         return True

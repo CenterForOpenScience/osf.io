@@ -144,6 +144,13 @@ class ResendConfirmationForm(Form):
 class SignInForm(Form):
     username = email_field
     password = password_field
+    two_factor = TextField(
+        'Two-factor Code (<span id="twoFactorHelpText">if applicable</span>)',
+        [
+            NoHtmlCharacters(),
+        ],
+        widget=BootstrapTextInput(),
+    )
 
 
 class PasswordForm(Form):

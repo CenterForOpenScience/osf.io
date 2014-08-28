@@ -6,6 +6,7 @@ from flask import request
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
@@ -41,8 +42,7 @@ def comment_discussion(**kwargs):
     node = kwargs['node'] or kwargs['project']
     auth = kwargs['auth']
     users = collect_discussion(node)
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -54,14 +54,16 @@ def comment_discussion(**kwargs):
     return {
         'discussion': [
             {
-                'id': user._id if not anonymous else '',
-                'url': user.url if not anonymous else '',
-                'fullname': user.fullname if not anonymous else '',
+                'id': privacy_info_handle(user._id, anonymous),
+                'url': privacy_info_handle(user.url, anonymous),
+                'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
                 'isContributor': node.is_contributor(user),
-                'gravatarUrl': gravatar(
-                    user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION,
-                )if not anonymous else '',
+                'gravatarUrl': privacy_info_handle(
+                    gravatar(
+                        user, use_ssl=True,size=settings.GRAVATAR_SIZE_DISCUSSION,
+                        ),
+                    anonymous
+                ),
 
             }
             for user in sorted_users
@@ -73,12 +75,18 @@ def serialize_comment(comment, auth, anonymous=False):
     return {
         'id': comment._id,
         'author': {
-            'id': comment.user._id if not anonymous else '',
-            'url': comment.user.url if not anonymous else '',
-            'name': comment.user.fullname if not anonymous else 'A user',
-            'gravatarUrl': gravatar(
+            'id': privacy_info_handle(comment.user._id, anonymous),
+            'url': privacy_info_handle(comment.user.url, anonymous),
+            'name': privacy_info_handle(
+                comment.user.fullname, anonymous, name=True
+            ),
+            'gravatarUrl': privacy_info_handle(
+                gravatar(
                     comment.user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION) if not anonymous else '',
+                    size=settings.GRAVATAR_SIZE_DISCUSSION
+                ),
+                anonymous
+            ),
         },
         'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
         'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
@@ -155,8 +163,7 @@ def list_comments(**kwargs):
 
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
-    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
-    anonymous = has_anonymous_link(node, view_only_link) if view_only_link else False
+    anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
 

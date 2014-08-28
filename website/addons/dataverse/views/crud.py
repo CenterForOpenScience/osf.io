@@ -9,6 +9,7 @@ from flask import request, make_response
 
 from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
+from framework.auth.utils import privacy_info_handle
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
@@ -19,6 +20,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.model import has_anonymous_link
 from website.util import rubeus
 from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
@@ -117,16 +119,18 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     fail_if_unauthorized(node_addon, auth, file_id)
     fail_if_private(file_id)
 
+    anonymous = has_anonymous_link(node, auth)
+
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
 
     data = {
-        'dataverse': node_addon.dataverse,
-        'dataverse_url': dataverse_url,
-        'study': node_addon.study,
-        'study_url': study_url,
-        'download_url': download_url,
+        'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
+        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
+        'study': privacy_info_handle(node_addon.study, anonymous),
+        'study_url': privacy_info_handle(study_url, anonymous),
+        'download_url': privacy_info_handle(download_url, anonymous),
     }
 
     return {
