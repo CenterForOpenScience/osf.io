@@ -10,6 +10,8 @@ from framework.auth.exceptions import (
 from .core import User, Auth
 from .core import get_user, get_current_user, get_api_key, get_current_node
 
+from website import settings
+
 __all__ = [
     'get_display_name',
     'Auth',
@@ -68,10 +70,10 @@ def login(username, password, two_factor=None):
 
             if not user.is_claimed:
                 raise LoginNotAllowedError('User is not claimed.')
-
-            tfa = user.get_addon('twofactor')
-            if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):
-                raise TwoFactorValidationError('Two-Factor auth does not match.')
+            if 'twofactor' in settings.ADDONS_REQUESTED:
+                tfa = user.get_addon('twofactor')
+                if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):
+                    raise TwoFactorValidationError('Two-Factor auth does not match.')
 
             return authenticate(user, response=goback())
     raise PasswordIncorrectError('Incorrect password attempt.')
