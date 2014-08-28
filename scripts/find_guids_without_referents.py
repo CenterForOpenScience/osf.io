@@ -21,11 +21,9 @@ def main():
 
 
 def get_targets():
-    """Use list comp over guid collection to find guids with no
-    referents and guids with referents that no longer exist.
-    Querying mongo with Guid.find(Q('referent', 'eq', None))
-    only catches the first case.
-    """
+    """Find GUIDs with no referents and GUIDs with referents that no longer exist."""
+    # Use a list comp because querying MODM with Guid.find(Q('referent', 'eq', None))
+    # only catches the first case.
     return [each for each in Guid.find() if each.referent is None]
 
 
