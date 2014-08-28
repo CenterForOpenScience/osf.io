@@ -368,9 +368,8 @@ def download_file_by_version(**kwargs):
     except (TypeError, ValueError):
         raise invalid_version_error
     current_version = len(node.files_versions[filename.replace('.', '_')]) - 1
-
     try:
-        content, content_type = node.get_file(filename, version=version_number)
+        file_object = node.get_file_object(filename, version=version_number)
     except InvalidVersionError:
         raise invalid_version_error
     except VersionNotFoundError:
@@ -378,28 +377,21 @@ def download_file_by_version(**kwargs):
             message_short='Version not found',
             message_long='The version number you requested could not be found.'
         ))
-
+    content, content_type = node.read_file_object(file_object)
     if version_number == current_version:
-        file_path = os.path.join(settings.UPLOADS_PATH, node._primary_key, filename)
-        return send_file(
-            file_path,
-            mimetype=content_type,
-            as_attachment=True,
-            attachment_filename=filename,
+        attachment_filename = filename
+    else:
+        filename_base, file_extension = os.path.splitext(file_object.path)
+        attachment_filename = '{base}_{tmstp}{ext}'.format(
+            base=filename_base,
+            ext=file_extension,
+            tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
         )
-
-    file_object = node.get_file_object(filename, version=version_number)
-    filename_base, file_extension = os.path.splitext(file_object.path)
-    returned_filename = '{base}_{tmstp}{ext}'.format(
-        base=filename_base,
-        ext=file_extension,
-        tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
-    )
     return send_file(
         StringIO(content),
         mimetype=content_type,
         as_attachment=True,
-        attachment_filename=returned_filename,
+        attachment_filename=attachment_filename,
     )
 
 

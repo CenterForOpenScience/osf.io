@@ -1506,7 +1506,20 @@ class Node(GuidStoredObject, AddonModelMixin):
             if save:
                 self.save()
 
+    # TODO: Move to NodeFile
+    def read_file_object(self, file_object):
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        repo = Repo(folder_name)
+        tree = repo.commit(file_object.git_commit).tree
+        mode, sha = tree_lookup_path(repo.get_object, tree, file_object.path)
+        return repo[sha].data, file_object.content_type
+
     def get_file(self, path, version):
+        #folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        file_object = self.get_file_object(path, version)
+        return self.read_file_object(file_object)
+
+    def get_file_object(self, path, version=None):
         # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
         from website.addons.osffiles.exceptions import (
@@ -1529,21 +1542,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         except TypeError:
             raise InvalidVersionError('Invalid version type. Version number'
                     'must be an integer >= 0.')
-
-        file_object = NodeFile.load(file_id)
-        repo = Repo(folder_name)
-        tree = repo.commit(file_object.git_commit).tree
-        (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
-        return repo[sha].data, file_object.content_type
-
-    def get_file_object(self, path, version=None):
-        from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(directory, '.git')):
-                return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-            # TODO: Raise exception here
-        return None, None # TODO: Raise exception here
+        return NodeFile.load(file_id)
 
     def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
