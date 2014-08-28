@@ -16,8 +16,7 @@ from nose.tools import *
 def main():
     # Set up storage backends
     init_app(routes=False)
-    get_targets()
-    print '{n} invalid GUID objects found'.format(n=len(get_targets()))
+    print ('{n} invalid GUID objects found'.format(n=len(get_targets())))
 
 
 def get_targets():
