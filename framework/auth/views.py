@@ -94,11 +94,14 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if request.method == 'POST' and not direct_call:
         form = SignInForm(request.form)
         if form.validate():
+            twofactor_code = None
+            if 'twofactor' in website.settings.ADDONS_REQUESTED:
+                twofactor_code = form.two_factor.data
             try:
                 response = login(
                     form.username.data,
                     form.password.data,
-                    form.two_factor.data,
+                    twofactor_code
                 )
                 return response
             except auth.LoginNotAllowedError:
