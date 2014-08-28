@@ -432,7 +432,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: KeyError if there no token for the email
         """
         for token, info in self.email_verifications.items():
-            if info['email'] == email:
+            if info['email'].lower() == email.lower():
                 return token
         raise KeyError('No confirmation token for email {0!r}'.format(email))
 
