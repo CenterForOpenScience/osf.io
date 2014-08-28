@@ -246,6 +246,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
+        assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
