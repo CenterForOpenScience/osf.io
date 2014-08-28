@@ -398,18 +398,17 @@
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
+            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            if (!messageText) {
+                if (typeof(message) === 'string') {
+                    messageText = message;
+                } else {
+                    messageText = message.message_long;
+                }
+            }
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
-            if (!messageText) {
-                try {
-                    var messageData = JSON.parse(message);
-                    messageText = messageData.message_long;
-                } catch (error) {
-                    messageText = message;
-                }
-            }
             bootbox.alert(messageText);
         },
         uploadSuccess: function(file, row, data) {
