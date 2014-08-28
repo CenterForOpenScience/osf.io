@@ -2,17 +2,16 @@
 # -*- coding: utf-8 -*-
 
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from StringIO import StringIO
 
 from framework.auth import Auth
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website import settings
 from website.project.views.file import prepare_file
 
 from website.addons.osffiles.model import OsfGuidFile
-from website.addons.osffiles import settings as osffiles_settings
 
 
 class TestFilesViews(OsfTestCase):
@@ -83,6 +82,18 @@ class TestFilesViews(OsfTestCase):
 
         assert_equal(res.status_code, 400)
         assert_not_in('newfile', self.project.files_current)
+
+    def test_view_file_with_anonymous_link(self):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+        self._upload_file('firstfile', 'secondcontent')
+        url = self.project.api_url_for(
+            'file_info', fid=self.project.uploads[0].filename
+        )
+        res = self.app.get(url, {'view_only': link.key})
+        assert_not_in(self.user.fullname, res.body)
+        assert_not_in(self.user._id, res.body)
 
     def test_delete_file(self):
 
