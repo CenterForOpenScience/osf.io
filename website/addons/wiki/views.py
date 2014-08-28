@@ -29,21 +29,6 @@ logger = logging.getLogger(__name__)
 HOME = 'home'
 
 
-def get_wiki_url(node, page=HOME):
-    """Get the URL for the wiki page for a node or pointer."""
-    view_spec = 'OsfWebRenderer__project_wiki_page'
-    if node.category != 'project':
-        pid = node.parent_node._id
-        nid = node._id
-        return url_for(view_spec, pid=pid, nid=nid, wid=page)
-    else:
-        if not node.primary:
-            pid = node.node._id
-        else:
-            pid = node._id
-        return url_for(view_spec, pid=pid, wid=page)
-
-
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def wiki_widget(**kwargs):
@@ -166,8 +151,10 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
-            'url': get_wiki_url(child, page=HOME),
+            'pages': child.wiki_pages_current.keys()
+                if child.wiki_pages_current
+                else [],
+            'url': child.web_url_for('project_wiki_page', wid=HOME),
             'is_pointer': not child.primary,
             'link': auth.private_key
         }
