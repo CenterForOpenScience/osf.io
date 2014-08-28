@@ -10,7 +10,6 @@ from flask import request, redirect
 from framework.flask import app
 
 from website import settings
-#from website.app import app
 
 from .model import Session
 
