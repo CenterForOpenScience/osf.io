@@ -12,13 +12,14 @@ from framework import request, redirect, send_file, Q
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-
+from framework.auth.utils import privacy_info_handle
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
     must_be_contributor_or_public, must_have_addon, must_have_permission
 )
 from website.project.views.file import get_cache_content, prepare_file
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
@@ -214,8 +215,10 @@ def file_info(**kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
     file_name = kwargs['fid']
-
+    auth = kwargs['auth']
     file_name_clean = file_name.replace('.', '_')
+
+    anonymous = has_anonymous_link(node, auth)
 
     try:
         files_versions = node.files_versions[file_name_clean]
@@ -236,8 +239,10 @@ def file_info(**kwargs):
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'downloads': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
+            'committer_name': privacy_info_handle(
+                node_file.uploader.fullname, anonymous, name=True
+            ),
+            'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
     return {
         'files_url': node.url + "files/",

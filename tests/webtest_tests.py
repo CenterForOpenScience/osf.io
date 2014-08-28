@@ -302,7 +302,6 @@ class TestRegistrations(OsfTestCase):
         assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
-
         # Browse to original project
         res = self.app.get(
             '{}register/'.format(self.original.url),
@@ -322,9 +321,9 @@ class TestRegistrations(OsfTestCase):
         )
 
         # First option should have empty value
-        assert_equal(options[0].get('value'), None)
+        assert_equal(options[0].get('value'), '')
 
-        # All registration templates should be listed in <option>s
+        # All registration templates should be listed in <option>
         option_values = [
             option.get('value')
             for option in options[1:]

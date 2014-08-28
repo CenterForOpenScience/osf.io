@@ -55,7 +55,7 @@ def _get_logs(node, count, auth, link=None, offset=0):
             continue
 
         if can_view:
-            anonymous = has_anonymous_link(log.node, link)
+            anonymous = has_anonymous_link(log.node, auth)
             if len(logs) < count:
                 logs.append(log.serialize(anonymous))
             else:

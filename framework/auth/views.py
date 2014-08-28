@@ -95,7 +95,11 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
         form = SignInForm(request.form)
         if form.validate():
             try:
-                response = login(form.username.data, form.password.data)
+                response = login(
+                    form.username.data,
+                    form.password.data,
+                    form.two_factor.data,
+                )
                 return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
@@ -103,6 +107,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
                 return {'next': ''}
             except auth.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
+            except auth.TwoFactorValidationError:
+                status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
