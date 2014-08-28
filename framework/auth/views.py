@@ -6,7 +6,7 @@ from flask import request, redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
-from framework import set_previous_url
+from framework.sessions import set_previous_url
 from framework import status, exceptions
 from framework import forms
 from framework import auth

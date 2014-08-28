@@ -1,6 +1,8 @@
-import httplib as http
+# -*- coding: utf-8 -*-
 
-from framework.flask import request
+import httplib as http
+from flask import request
+
 from framework.exceptions import HTTPError
 
 from website.util.sanitize import deep_clean

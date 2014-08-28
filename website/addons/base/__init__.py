@@ -8,8 +8,9 @@ import importlib
 import mimetypes
 from bson import ObjectId
 from mako.lookup import TemplateLookup
+from modularodm import fields
 
-from framework import StoredObject, fields
+from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 

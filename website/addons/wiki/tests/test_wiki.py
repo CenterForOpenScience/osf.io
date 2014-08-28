@@ -2,7 +2,8 @@
 # PEP8 asserts
 from nose.tools import *  # noqa
 
-import framework
+from flask import url_for
+
 from framework.auth import Auth
 from webtest.app import AppError
 from tests.base import OsfTestCase
@@ -24,7 +25,7 @@ class TestWikiViews(OsfTestCase):
 
     def test_get_wiki_url_for_project(self):
         node = ProjectFactory()
-        expected = framework.url_for(
+        expected = url_for(
             'OsfWebRenderer__project_wiki_page',
             pid=node._primary_key,
             wid='home'

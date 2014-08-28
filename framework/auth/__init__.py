@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from framework import session, create_session
-from framework import goback
+from framework.sessions import session, create_session, goback
 from framework import bcrypt
 from framework.auth.exceptions import (
     DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError

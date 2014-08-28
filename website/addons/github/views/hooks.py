@@ -3,7 +3,7 @@
 import os
 from dateutil.parser import parse as dateparse
 
-from framework import request
+from flask import request
 
 from website import models
 from website.project.decorators import must_be_valid_project

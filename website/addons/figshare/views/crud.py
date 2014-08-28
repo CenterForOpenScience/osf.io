@@ -1,14 +1,16 @@
+# -*- coding: utf-8 -*-
+
 import os
 import datetime
 import httplib as http
 
 from urllib2 import urlopen
 
-from framework.flask import secure_filename
+from flask import request, redirect, make_response
+from werkzeug.utils import secure_filename
+from modularodm import Q
 
-from framework import request, make_response
 from framework.exceptions import HTTPError
-from framework import redirect, Q
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators

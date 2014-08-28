@@ -18,9 +18,11 @@ from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm import fields, Q
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
+from framework import utils
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
@@ -30,8 +32,8 @@ from framework.analytics import (
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
-from framework import GuidStoredObject, Q
+from framework.mongo import StoredObject
+from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
 

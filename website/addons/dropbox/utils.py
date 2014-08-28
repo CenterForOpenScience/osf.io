@@ -3,9 +3,9 @@ import os
 import logging
 import httplib as http
 
+from flask import make_response
 from dropbox.rest import ErrorResponse
 
-from framework import make_response
 from framework.exceptions import HTTPError
 from website.project.utils import get_cache_content
 from website.util import rubeus
