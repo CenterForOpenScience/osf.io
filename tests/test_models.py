@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-
+import os
+import shutil
 import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
@@ -29,6 +30,10 @@ from website.project.model import (
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
+from website.addons.osffiles.exceptions import (
+    InvalidVersionError,
+    VersionNotFoundError,
+)
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
@@ -696,6 +701,34 @@ class TestAddFile(OsfTestCase):
         # Modify user, size, and type, but not content
         self.project.add_file(self.consolidate_auth2, self.file_name, 'Content', 256,
                               'Type 2')
+
+
+class TestFileActions(OsfTestCase):
+
+    def test_get_file(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+        valid = node.get_file('foo', version=0)
+        assert_true(valid)  # sanity check
+
+        with assert_raises(VersionNotFoundError):
+            node.get_file('foo', version=1)
+
+        with assert_raises(InvalidVersionError):
+            node.get_file('foo', version='dumb')
+
+        with assert_raises(InvalidVersionError):
+            node.get_file('foo', version=-1)
+
+    def test_get_file_with_no_git_dir(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+        git_path = os.path.join(settings.UPLOADS_PATH, node._id, '.git')
+        shutil.rmtree(git_path)
+        with assert_raises(AssertionError):
+            node.get_file('foo', version=0)
 
 
 class TestApiKey(OsfTestCase):

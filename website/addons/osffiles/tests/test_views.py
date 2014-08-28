@@ -26,7 +26,8 @@ class TestFilesViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('osffiles', auth=self.consolidated_auth)
         self.node_settings = self.project.get_addon('osffiles')
-        self._upload_file('firstfile', 'firstcontent')
+        self.fid = 'firstfile'
+        self._upload_file(self.fid, 'firstcontent')
 
     def _upload_file(self, name, content, **kwargs):
         url = self.project.api_url + 'osffiles/'
@@ -45,6 +46,34 @@ class TestFilesViews(OsfTestCase):
         url = self.project.uploads[0].download_url(self.project)
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.body, 'firstcontent')
+
+    def test_download_file_by_version_with_bad_version_value(self):
+        # FIXME: self.project.api_url_for doesn't seem to be working here. lolz
+        url = '/project/{}/osffiles/{}/version/bad/download/'.format(
+            self.project._id, self.fid
+        )
+
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid version', res.json['message_short'])
+
+    def test_download_file_by_version_with_bad_version_number(self):
+        # FIXME: self.project.api_url_for doesn't seem to be working here. lolz
+        url = '/project/{}/osffiles/{}/version/9999/download/'.format(
+            self.project._id, self.fid
+        )
+
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_download_file_by_version_with_negative_version_number(self):
+
+        url = '/project/{}/osffiles/{}/version/-1/download/'.format(
+            self.project._id, self.fid
+        )
+
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_upload_file(self):
 
