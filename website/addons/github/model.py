@@ -1,15 +1,13 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import urlparse
 import itertools
 import httplib as http
 
+from modularodm import fields
 from github3 import GitHubError
 
-from framework import fields
 from framework.auth import Auth
 
 from website import settings

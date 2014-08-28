@@ -1,5 +1,9 @@
+# -*- coding: utf-8 -*-
+
 from pymongo import MongoClient
 from bson import ObjectId
+
+from modularodm import FlaskStoredObject as StoredObject
 
 from website import settings
 
@@ -39,3 +43,4 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, *args, **kwar
         collection = "{0}{1}".format(prefix, schema._name)
         schema.set_storage(storage_class(collection=collection, **kwargs))
     return None
+

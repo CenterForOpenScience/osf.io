@@ -1,16 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import os
 import logging
 
-from modularodm import Q
+from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
-from framework import fields
 from framework.auth.decorators import Auth
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
 
+
 logging.getLogger('sword2').setLevel(logging.WARNING)
+
 
 class DataverseFile(GuidFile):
 

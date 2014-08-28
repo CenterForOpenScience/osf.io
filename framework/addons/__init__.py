@@ -1,8 +1,6 @@
-"""
+# -*- coding: utf-8 -*-
 
-"""
-
-from framework import StoredObject
+from framework.mongo import StoredObject
 from website import settings
 
 

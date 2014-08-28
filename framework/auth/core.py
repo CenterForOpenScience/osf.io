@@ -8,13 +8,14 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
-from framework import session
+from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields, Q, analytics
+from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
