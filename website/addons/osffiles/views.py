@@ -26,7 +26,10 @@ from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
-
+from website.addons.osffiles.exceptions import (
+    InvalidVersionError,
+    VersionNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -349,20 +352,32 @@ def download_file(**kwargs):
     )
     return redirect(redirect_url)
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @update_counters('download:{target_id}:{fid}:{vid}')
 @update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
     node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-
-    version_number = int(kwargs['vid']) - 1
+    invalid_version_error = HTTPError(http.BAD_REQUEST, data=dict(
+        message_short='Invalid version',
+        message_long='The version number you requested is invalid.'
+    ))
+    try:
+        version_number = int(kwargs['vid']) - 1
+    except (TypeError, ValueError):
+        raise invalid_version_error
     current_version = len(node.files_versions[filename.replace('.', '_')]) - 1
 
-    content, content_type = node.get_file(filename, version=version_number)
-    if content is None:
-        raise HTTPError(http.NOT_FOUND)
+    try:
+        content, content_type = node.get_file(filename, version=version_number)
+    except InvalidVersionError:
+        raise invalid_version_error
+    except VersionNotFoundError:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_short='Version not found',
+            message_long='The version number you requested could not be found.'
+        ))
 
     if version_number == current_version:
         file_path = os.path.join(settings.UPLOADS_PATH, node._primary_key, filename)

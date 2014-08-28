@@ -1506,17 +1506,35 @@ class Node(GuidStoredObject, AddonModelMixin):
             if save:
                 self.save()
 
-    def get_file(self, path, version=None):
+    def get_file(self, path, version):
+        # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-                repo = Repo(folder_name)
-                tree = repo.commit(file_object.git_commit).tree
-                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
-                return repo[sha].data, file_object.content_type
-        return None, None
+        from website.addons.osffiles.exceptions import (
+            InvalidVersionError,
+            VersionNotFoundError,
+        )
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        err_msg = 'Upload directory is not a git repo'
+        assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
+        try:
+            file_versions = self.files_versions[path.replace('.', '_')]
+        except (AttributeError, KeyError):
+            raise ValueError('Invalid path: {}'.format(path))
+        if version < 0:
+            raise InvalidVersionError('Version number must be >= 0.')
+        try:
+            file_id = file_versions[version]
+        except IndexError:
+            raise VersionNotFoundError('Invalid version number: {}'.format(version))
+        except TypeError:
+            raise InvalidVersionError('Invalid version type. Version number'
+                    'must be an integer >= 0.')
+
+        file_object = NodeFile.load(file_id)
+        repo = Repo(folder_name)
+        tree = repo.commit(file_object.git_commit).tree
+        (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
+        return repo[sha].data, file_object.content_type
 
     def get_file_object(self, path, version=None):
         from website.addons.osffiles.model import NodeFile
