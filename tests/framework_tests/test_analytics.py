@@ -3,14 +3,13 @@
 Unit tests for analytics logic in framework/analytics/__init__.py
 """
 
-from nose.tools import *
+from nose.tools import *  # noqa  (PEP8 asserts)
 
 from flask import Flask
 
-from framework import sessions
-from framework.analytics import *
-
 from datetime import datetime
+
+from framework import analytics, db, session, sessions
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
@@ -22,39 +21,27 @@ class TestAnalytics(OsfTestCase):
         user = UserFactory()
         date = datetime.utcnow()
 
-        assert_equal(get_total_activity_count(user._id), 0)
-        assert_equal(get_total_activity_count(user._id), user.activity_points)
+        assert_equal(analytics.get_total_activity_count(user._id), 0)
+        assert_equal(analytics.get_total_activity_count(user._id), user.get_activity_points(db=self.db))
 
-        increment_user_activity_counters(user._id, 'project_created', date)
+        analytics.increment_user_activity_counters(user._id, 'project_created', date, db=self.db)
 
-        assert_equal(get_total_activity_count(user._id), 1)
-        assert_equal(get_total_activity_count(user._id), user.activity_points)
+        assert_equal(analytics.get_total_activity_count(user._id, db=self.db), 1)
+        assert_equal(analytics.get_total_activity_count(user._id, db=self.db), user.get_activity_points(db=self.db))
 
     def test_increment_user_activity_counters(self):
         user = UserFactory()
         date = datetime.utcnow()
 
-        assert_equal(user.activity_points, 0)
-        increment_user_activity_counters(user._id, 'project_created', date)
-        assert_equal(user.activity_points, 1)
-
-
-# Flask app for testing update_counters decorator
-decoratorapp = Flask('decorators')
-
-# Dummy functions for testing update_counters decorator
-@update_counters('download:{target_id}:{fid}')
-def download_file_(**kwargs):
-    return kwargs.get('node') or kwargs.get('project')
-
-@update_counters('download:{target_id}:{fid}:{vid}')
-def download_file_version_(**kwargs):
-    return kwargs.get('node') or kwargs.get('project')
+        assert_equal(user.get_activity_points(db=self.db), 0)
+        analytics.increment_user_activity_counters(user._id, 'project_created', date, db=self.db)
+        assert_equal(user.get_activity_points(db=self.db), 1)
 
 
 class UpdateCountersTestCase(OsfTestCase):
 
     def setUp(self):
+        decoratorapp = Flask('decorators')
         self.ctx = decoratorapp.test_request_context()
         self.ctx.push()
         # TODO: Think of something better @sloria @jmcarp
@@ -73,47 +60,46 @@ class TestUpdateCounters(UpdateCountersTestCase):
         self.vid = 1
 
     def test_update_counters_file(self):
-        count = get_basic_counters('download:{0}:{1}'.format(self.node, self.fid))
+
+        @analytics.update_counters('download:{target_id}:{fid}', db=self.db)
+        def download_file_(**kwargs):
+            return kwargs.get('node') or kwargs.get('project')
+
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
         assert_equal(count, (None,None))
 
         download_file_(node=self.node, fid=self.fid)
 
-        count = get_basic_counters('download:{0}:{1}'.format(self.node, self.fid))
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
         assert_equal(count, (1,1))
-
-    def test_update_counters_file_version(self):
-        count = get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid))
-        assert_equal(count, (None,None))
-
-        download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
-
-        count = get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid))
-        assert_equal(count, (1,1))
-
-    def test_update_counters_file_unique(self):
-        count = get_basic_counters('download:{0}:{1}'.format(self.node, self.fid))
-        assert_equal(count, (None,None))
 
         page = 'download:{0}:{1}'.format(self.node, self.fid)
 
-        download_file_(node=self.node, fid=self.fid)
         session.data['visited'].append(page)
         download_file_(node=self.node, fid=self.fid)
 
-        count = get_basic_counters('download:{0}:{1}'.format(self.node, self.fid))
+        count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
         assert_equal(count, (1,2))
 
-    def test_update_counters_file_version_unique(self):
-        count = get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid))
+    def test_update_counters_file_version(self):
+        @analytics.update_counters('download:{target_id}:{fid}:{vid}', db=self.db)
+        def download_file_version_(**kwargs):
+            return kwargs.get('node') or kwargs.get('project')
+
+        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
         assert_equal(count, (None,None))
+
+        download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
+
+        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
+        assert_equal(count, (1,1))
 
         page = 'download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid)
 
-        download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
         session.data['visited'].append(page)
         download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
 
-        count = get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid))
+        count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
         assert_equal(count, (1,2))
 
     def test_get_basic_counters(self):
@@ -123,6 +109,7 @@ class TestUpdateCounters(UpdateCountersTestCase):
         d['$inc']['total'] = 5
         d['$inc']['unique'] = 3
 
+        collection = db['pagecounters']
         collection.update({'_id': page}, d, True, False)
-        count = get_basic_counters(page)
+        count = analytics.get_basic_counters(page)
         assert_equal(count, (3,5))

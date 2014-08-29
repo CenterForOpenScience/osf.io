@@ -11,6 +11,7 @@ import bson
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
+import framework
 from framework import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
@@ -551,9 +552,9 @@ class User(GuidStoredObject, AddonModelMixin):
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
-    @property
-    def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.db
+        return analytics.get_total_activity_count(self._primary_key, db=db)
 
     @property
     def is_merged(self):

@@ -1,11 +1,11 @@
-from framework import db, session
+from framework import session
 
 from datetime import datetime
+import framework
 
-collection = db['pagecounters']
 
-
-def increment_user_activity_counters(user_id, action, date):
+def increment_user_activity_counters(user_id, action, date, db=None):
+    db = db or framework.mongo.db  # for backwards-compat
     collection = db['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
     query = {
@@ -25,7 +25,8 @@ def increment_user_activity_counters(user_id, action, date):
     return True
 
 
-def get_total_activity_count(user_id):
+def get_total_activity_count(user_id, db=None):
+    db = db or framework.mongo.db
     collection = db['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
@@ -35,11 +36,17 @@ def get_total_activity_count(user_id):
     return 0
 
 
-# TODO: Test me
-# updates four different counters:
-# total page visits, unique page visits,
-# total page visits by date, and unique page visits by date
-def update_counters(rex):
+def update_counters(rex, db=None):
+    """
+    Create a decorator that updates analytics in `pagecounters` when the decorated
+    function is called.
+
+    :param rex: Pattern for building page key from keyword arguments of decorated function
+
+    """
+    db = db or framework.mongo.db
+    collection = db['pagecounters']
+
     def wrapper(func):
         def wrapped(*args, **kwargs):
             date = datetime.utcnow()
@@ -61,7 +68,6 @@ def update_counters(rex):
             if not visited_by_date:
                 visited_by_date = {'date': date, 'pages': []}
 
-            # updates unique page visits by date
             if date == visited_by_date['date']:
                 if page not in visited_by_date['pages']:
                     d['$inc']['date.%s.unique' % date] = 1
@@ -74,25 +80,25 @@ def update_counters(rex):
                 visited_by_date['pages'].append(page)
                 session.data['visited_by_date'] = visited_by_date
 
-            # updates total page visits by date
             d['$inc']['date.%s.total' % date] = 1
 
             visited = session.data.get('visited')  # '/project/x/, project/y/'
             if not visited:
                 visited = []
             if page not in visited:
-                d['$inc']['unique'] = 1  # updates unique page visits
+                d['$inc']['unique'] = 1
                 visited.append(page)
                 session.data['visited'] = visited
-            d['$inc']['total'] = 1  # updates total page visits
+            d['$inc']['total'] = 1
             collection.update({'_id': page}, d, True, False)
             return func(*args, **kwargs)
         return wrapped
     return wrapper
 
 
-# returns the total page visits and unique page visits counters
-def get_basic_counters(page):
+def get_basic_counters(page, db=None):
+    db = db or framework.mongo.db
+    collection = db['pagecounters']
     unique = 0
     total = 0
     result = collection.find_one(

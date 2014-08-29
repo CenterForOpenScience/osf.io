@@ -357,7 +357,7 @@ class TestUser(OsfTestCase):
         assert_equal(self.user.gravatar_url, expected)
 
     def test_activity_points(self):
-        assert_equal(self.user.activity_points,
+        assert_equal(self.user.get_activity_points(db=self.db),
                     get_total_activity_count(self.user._primary_key))
 
     def test_serialize_user(self):
@@ -392,7 +392,6 @@ class TestUser(OsfTestCase):
         assert_equal(d['gravatar_url'], gravatar)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['activity_points'], user.activity_points)
         assert_equal(d['is_merged'], user.is_merged)
         assert_equal(d['merged_by']['url'], user.merged_by.url)
         assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
