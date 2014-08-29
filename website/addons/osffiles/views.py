@@ -352,6 +352,9 @@ def download_file(**kwargs):
     )
     return redirect(redirect_url)
 
+def _get_current_file_version(node, filename):
+    """Return the current version number (0-indexed) for a NodeFile."""
+    pass
 
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public  # returns user, project
