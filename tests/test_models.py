@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import os
+import subprocess
 import shutil
 import mock
 import unittest
@@ -33,6 +34,7 @@ from website.util import web_url_for, api_url_for
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,
     VersionNotFoundError,
+    FileNotFoundError,
 )
 
 from tests.base import OsfTestCase, Guid, fake
@@ -729,6 +731,30 @@ class TestFileActions(OsfTestCase):
         shutil.rmtree(git_path)
         with assert_raises(AssertionError):
             node.get_file('foo', version=0)
+
+    def test_delete_file(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+
+        file_path = os.path.join(settings.UPLOADS_PATH, node._id, 'foo')
+
+        assert_true(os.path.exists(file_path))
+        node.remove_file(Auth(node.creator), 'foo')
+        assert_false(os.path.exists(file_path))
+
+    def test_delete_file_that_is_already_deleted(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+
+        git_dir = os.path.join(settings.UPLOADS_PATH, node._id)
+
+        subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
+
+        with assert_raises(FileNotFoundError):
+            node.remove_file(Auth(node.creator), 'foo')
+
 
 
 class TestApiKey(OsfTestCase):

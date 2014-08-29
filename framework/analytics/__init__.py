@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+import functools
+from datetime import datetime
+
 from framework import db, session
 
-from datetime import datetime
 
 collection = db['pagecounters']
 
@@ -38,6 +41,7 @@ def get_total_activity_count(user_id):
 # TODO: Test me
 def update_counters(rex):
     def wrapper(func):
+        @functools.wraps(func)
         def wrapped(*args, **kwargs):
             date = datetime.utcnow()
             date = date.strftime('%Y/%m/%d')
