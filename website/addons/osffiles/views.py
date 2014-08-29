@@ -334,24 +334,21 @@ def view_file(auth, **kwargs):
     rv.update(_view_project(node, auth))
     return rv
 
+FILE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
+    message_short='File not found',
+    message_long='The file you requested could not be found.'
+))
 
 @must_be_valid_project  # injects project
 @must_be_contributor_or_public  # injects user, project
-def download_file(**kwargs):
-
-    node_to_use = kwargs['node'] or kwargs['project']
-    filename = kwargs['fid']
+def download_file(fid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
 
     try:
-        vid = len(node_to_use.files_versions[filename.replace('.', '_')])
-    except KeyError:
-        raise HTTPError(http.NOT_FOUND)
-
-    redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
-        url=node_to_use.url,
-        fid=filename,
-        vid=vid,
-    )
+        vid = get_latest_version_number(fid, node) + 1
+    except FileNotFoundError:
+        raise FILE_NOT_FOUND_ERROR
+    redirect_url = node.api_url_for('download_file_by_version', fid=fid, vid=vid)
     return redirect(redirect_url)
 
 
@@ -373,10 +370,8 @@ def download_file_by_version(**kwargs):
     try:
         current_version = get_latest_version_number(filename, node=node)
     except FileNotFoundError:
-        raise HTTPError(http.NOT_FOUND, data=dict(
-            message_short='File not found',
-            message_long='The file you requested could not be found.'
-        ))
+        raise FILE_NOT_FOUND_ERROR
+
     try:
         file_object = node.get_file_object(filename, version=version_number)
     except InvalidVersionError:
@@ -407,15 +402,13 @@ def download_file_by_version(**kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission(permissions.WRITE)  # injects user, project
 @must_not_be_registration
-def delete_file(auth, **kwargs):
-
-    filename = kwargs['fid']
-    node_to_use = kwargs['node'] or kwargs['project']
-
-    if node_to_use.remove_file(auth, filename):
-        return {}
-
-    raise HTTPError(http.BAD_REQUEST)
+def delete_file(fid, auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    try:
+        node.remove_file(auth, fid)
+    except FileNotFoundError:
+        raise FILE_NOT_FOUND_ERROR
+    return {'message': 'Successfully deleted file'}
 
 
 def get_cache_file(fid, vid):

@@ -1,6 +1,10 @@
 from website.addons.osffiles.exceptions import FileNotFoundError
 
 
+def urlsafe_filename(filename):
+    #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
+    return filename.replace('.', '_')
+
 def get_versions(filename, node):
     """Return IDs for a file's version records.
 
@@ -11,7 +15,7 @@ def get_versions(filename, node):
     :raises: FileNotFoundError if file does not exists for the node.
     """
     try:
-        return node.files_versions[filename.replace('.', '_')]
+        return node.files_versions[urlsafe_filename(filename)]
     except KeyError:
         raise FileNotFoundError('{0!r} not found for node {1!r}'.format(
             filename, node._id

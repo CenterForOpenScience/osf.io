@@ -11,7 +11,7 @@ from website import settings
 from website.project.views.file import prepare_file
 
 from website.addons.osffiles.model import OsfGuidFile
-from website.addons.osffiles.utils import get_latest_version_number
+from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
 from website.addons.osffiles.exceptions import FileNotFoundError
 
 class TestFilesViews(OsfTestCase):
@@ -135,11 +135,20 @@ class TestFilesViews(OsfTestCase):
 
     def test_delete_file(self):
 
-        url = self.project.api_url + 'osffiles/firstfile/'
+        url = self.project.api_url_for('delete_file', fid=self.fid)
         res = self.app.delete(url, auth=self.auth).maybe_follow()
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_not_in('firstfile', self.project.files_current)
+
+    def test_delete_file_returns_404_when_file_is_already_deleted(self):
+
+        self.project.remove_file(Auth(self.project.creator), self.fid)
+        url = self.project.api_url_for('delete_file', fid=self.fid)
+
+        res = self.app.delete_json(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
 
     def test_file_urls(self):
 
@@ -217,6 +226,11 @@ def make_file_like(name='file', content='data'):
     sio.content_type = 'text/html'
     return sio
 
+def test_urlsafe_filename():
+    assert_equal(urlsafe_filename('foo.bar'), 'foo_bar')
+    assert_equal(urlsafe_filename('quux_'), 'quux_')
+
+
 class TestUtils(OsfTestCase):
 
     def setUp(self):
@@ -247,3 +261,5 @@ class TestUtils(OsfTestCase):
     def test_get_current_file_raises_error_when_file_not_found(self):
         with assert_raises(FileNotFoundError):
             get_latest_version_number('notfound', node=self.project)
+
+
