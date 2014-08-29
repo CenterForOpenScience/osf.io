@@ -2080,13 +2080,8 @@ class TestForkNode(OsfTestCase):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
         forked = False
-        try:
-            fork = self.project.fork_node(user2_auth)
-            if fork:
-                forked = True
-        except Exception:
-            pass
-        assert_false(forked)
+        with assert_raises(PermissionsError):
+            self.project.fork_node(user2_auth)
 
     def test_can_fork_public_node(self):
         self.project.set_privacy('public')

@@ -40,10 +40,12 @@ NodeActions.forkNode = function() {
             window.location = response;
         }).error(function(response) {
             $.osf.unblock();
-	    if (response.status == 403)
+	    if (response.status === 403){
 		bootbox.alert('Sorry, you do not have permission to fork this project');
-	    else
+	    }
+	    else{
 		bootbox.alert('Forking failed');
+	    }
         });
     });
 };
