@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from StringIO import StringIO
@@ -12,7 +11,8 @@ from website import settings
 from website.project.views.file import prepare_file
 
 from website.addons.osffiles.model import OsfGuidFile
-
+from website.addons.osffiles.utils import get_current_file_version
+from website.addons.osffiles.exceptions import FileNotFoundError
 
 class TestFilesViews(OsfTestCase):
 
@@ -201,15 +201,17 @@ class TestFilesViews(OsfTestCase):
             guid_count + 1
         )
 
-
 def make_file_like(name='file', content='data'):
     sio = StringIO(content)
     sio.filename = name
     sio.content_type = 'text/html'
     return sio
 
+class TestUtils(OsfTestCase):
 
-class TestUtils(unittest.TestCase):
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.project = ProjectFactory()
 
     def test_prepare_file_name(self):
         name, content, content_type, size = prepare_file(make_file_like(
@@ -222,3 +224,16 @@ class TestUtils(unittest.TestCase):
             make_file_like(name='ü')
         )
         assert_equal(name, settings.MISSING_FILE_NAME)
+
+    def test_get_current_file_version(self):
+        self.project.add_file(Auth(self.project.creator), 'foo', 'somecontent', 128, 'rst')
+        result = get_current_file_version('foo', node=self.project)
+        assert_equal(result, 0)
+        # Update the file
+        self.project.add_file(Auth(self.project.creator), 'foo', 'newcontent', 128, 'rst')
+        result = get_current_file_version('foo', node=self.project)
+        assert_equal(result, 1)
+
+    def test_get_current_file_raises_error_when_file_not_found(self):
+        with assert_raises(FileNotFoundError):
+            get_current_file_version('notfound', node=self.project)
