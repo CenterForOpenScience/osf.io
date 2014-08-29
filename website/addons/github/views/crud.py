@@ -6,9 +6,10 @@ import logging
 import datetime
 import httplib as http
 
+from modularodm import Q
 from modularodm.exceptions import ModularOdmException
+from flask import request, redirect, make_response
 
-from framework import request, redirect, make_response, Q
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
@@ -184,12 +185,10 @@ def github_view_file(**kwargs):
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_upload_file(**kwargs):
+def github_upload_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user = auth.user
-    node_settings = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
     path = get_path(kwargs, required=False) or ''
@@ -200,7 +199,7 @@ def github_upload_file(**kwargs):
     if branch is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -210,16 +209,14 @@ def github_upload_file(**kwargs):
     upload.seek(0, os.SEEK_END)
     size = upload.tell()
 
-    # Hack: Avoid circular import
-    from website.addons import github
-    if size > github.MAX_FILE_SIZE * 1024 * 1024:
+    if size > node_addon.config.max_file_size * 1024 * 1024:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get SHA of existing file if present; requires an additional call to the
     # GitHub API
     try:
         tree = connection.tree(
-            node_settings.user, node_settings.repo, sha=sha or branch
+            node_addon.user, node_settings.repo, sha=sha or branch
         ).tree
     except EmptyRepoError:
         tree = []
@@ -239,12 +236,12 @@ def github_upload_file(**kwargs):
 
     if existing:
         data = connection.update_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
             MESSAGES['update'], content, sha=sha, branch=branch, author=author
         )
     else:
         data = connection.create_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
             MESSAGES['update'], content, branch=branch, author=author
         )
 
@@ -275,8 +272,8 @@ def github_upload_file(**kwargs):
                     'download': download_url,
                 },
                 'github': {
-                    'user': node_settings.user,
-                    'repo': node_settings.repo,
+                    'user': node_addon.user,
+                    'repo': node_addon.repo,
                     'sha': data['commit'].sha,
                 },
             },
@@ -369,15 +366,14 @@ def github_delete_file(auth, node_addon, **kwargs):
 # TODO Add me Test me
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_download_starball(**kwargs):
+def github_download_starball(node_addon, **kwargs):
 
-    node_settings = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
     headers, data = connection.starball(
-        node_settings.user, node_settings.repo, archive, ref
+        node_addon.user, node_addon.repo, archive, ref
     )
 
     resp = make_response(data)

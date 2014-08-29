@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+
 import os
 import datetime
 import logging
 import requests
 from bs4 import BeautifulSoup
+from flask import request, make_response
 
-from framework import request, make_response
 from framework.flask import secure_filename, redirect
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle

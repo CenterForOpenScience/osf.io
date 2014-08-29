@@ -2,7 +2,8 @@
 import collections
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.utils import privacy_info_handle

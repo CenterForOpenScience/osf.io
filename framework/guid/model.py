@@ -1,4 +1,7 @@
-from framework import StoredObject, fields
+# -*- coding: utf-8 -*-
+
+from modularodm import fields
+from framework.mongo import StoredObject
 
 
 class Guid(StoredObject):

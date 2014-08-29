@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-import os
 
+import os
+import httplib as http
+
+from flask import request, redirect
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
@@ -13,7 +15,6 @@ from website.project.decorators import must_have_addon
 from website.project.decorators import must_be_contributor_or_public
 from website.addons.base.views import check_file_guid
 
-from framework import request, redirect
 from framework.exceptions import HTTPError
 
 from website.addons.dropbox.model import DropboxFile

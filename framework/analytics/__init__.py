@@ -1,6 +1,10 @@
-from framework import db, session
+# -*- coding: utf-8 -*-
 
 from datetime import datetime
+
+from framework.mongo import db
+from framework.sessions import session
+
 
 collection = db['pagecounters']
 

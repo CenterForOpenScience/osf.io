@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
+
+from flask import request
 from github3 import GitHubError
 
-from framework.flask import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 

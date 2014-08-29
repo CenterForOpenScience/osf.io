@@ -14,14 +14,17 @@ import urlparse
 import uuid
 
 import pytz
+from flask import request
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm import fields, Q
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
-from framework import status, request
+from framework import utils
+from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User, Auth
@@ -31,8 +34,8 @@ from framework.analytics import (
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
-from framework import GuidStoredObject, Q
+from framework.mongo import StoredObject
+from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
 
@@ -1316,9 +1319,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
-        # todo: should this raise an error?
-        if not self.can_view(auth):
-            return
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError()
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1336,8 +1339,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth=auth, title='')
+        # Recursively fork child nodes 
+        for node_contained in original.nodes:            
+            forked_node = None
+            try: # Catch the potential PermissionsError above
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
