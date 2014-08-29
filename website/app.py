@@ -1,11 +1,16 @@
 # -*- coding: utf-8 -*-
+
 import importlib
 
-from framework import storage, db, app
+from modularodm import storage
+
+from framework.flask import app
+from framework.mongo import db
 from framework.logging import logger
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
+
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon

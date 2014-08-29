@@ -8,8 +8,9 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 
-from framework import Q
-from framework.auth import User, Auth
+from modularodm import Q
+
+from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
@@ -302,7 +303,6 @@ class TestRegistrations(OsfTestCase):
         assert_in('Sharing', subnav.text)
 
     def test_sees_registration_templates(self):
-
         # Browse to original project
         res = self.app.get(
             '{}register/'.format(self.original.url),
@@ -322,9 +322,9 @@ class TestRegistrations(OsfTestCase):
         )
 
         # First option should have empty value
-        assert_equal(options[0].get('value'), None)
+        assert_equal(options[0].get('value'), '')
 
-        # All registration templates should be listed in <option>s
+        # All registration templates should be listed in <option>
         option_values = [
             option.get('value')
             for option in options[1:]
@@ -431,6 +431,10 @@ class TestPrivateLinkView(OsfTestCase):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
         assert_in("Anonymous Contributors", res.body)
         assert_not_in(self.user.fullname, res)
+
+    def test_anonymous_link_hides_citations(self):
+        res = self.app.get(self.project_url, {'view_only': self.link.key})
+        assert_not_in('Citation:', res)
 
 
 class TestMergingAccounts(OsfTestCase):
