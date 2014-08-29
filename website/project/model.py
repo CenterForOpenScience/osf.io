@@ -1553,12 +1553,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         :param path:
 
-        :return: True on success, False on failure
+        :raises: website.osffiles.exceptions.FileNotFoundError if file is not found.
         '''
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotFoundError
+        from website.addons.osffiles.utils import urlsafe_filename
 
-        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
-        file_name_key = path.replace('.', '_')
+        file_name_key = urlsafe_filename(path)
 
         repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1577,19 +1578,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             committer = self._get_committer(auth)
 
             repo.do_commit(message, committer)
-
         except subprocess.CalledProcessError as error:
-            # This exception can be ignored if the file has already been
-            # deleted, e.g. if two users attempt to delete a file at the same
-            # time. If another subprocess error is raised, fail.
-            if error.returncode == 128 and 'did not match any files' in error.output:
-                logger.warning(
-                    'Attempted to delete file {0}, but file was not found.'.format(
-                        path
-                    )
-                )
-                return True
-            return False
+            if error.returncode == 128:
+                raise FileNotFoundError('File {0!r} was not found'.format(path))
+            raise
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
@@ -1607,9 +1599,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'path':path
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'path': path
             },
             auth=auth,
             log_date=nf.date_modified,
@@ -1618,8 +1610,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Updates self.date_modified
         self.save()
-
-        return True
 
     @staticmethod
     def _get_committer(auth):

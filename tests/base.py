@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import os
+import shutil
 import unittest
 import logging
 import functools
@@ -55,8 +57,8 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
 
 
 class OsfTestCase(unittest.TestCase):
-    '''Base TestCase for tests that require a temporary MongoDB database.
-    '''
+    """Base TestCase for tests that require a temporary MongoDB database.
+    """
     # DB settings
     db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
     db_host = getattr(settings, 'MONGO_HOST', 'localhost')
@@ -64,7 +66,9 @@ class OsfTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        '''Before running this TestCase, set up a temporary MongoDB database'''
+        """Before running this TestCase, set up a temporary MongoDB database
+        and modify settings to store uploads in a temporary directory.
+        """
         cls._client = MongoClient(host=cls.db_host, port=cls.db_port)
         cls.db = cls._client[cls.db_name]
         # Set storage backend to MongoDb
@@ -73,6 +77,15 @@ class OsfTestCase(unittest.TestCase):
             addons=settings.ADDONS_AVAILABLE, db=cls.db,
         )
         cls._client.drop_database(cls.db)
+
+        # Store uploads in temp directory
+        cls._old_uploads_path = settings.UPLOADS_PATH
+        cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
+        try:
+            os.makedirs(cls._uploads_path)
+        except OSError:  # Path already exists
+            pass
+        settings.UPLOADS_PATH = cls._uploads_path
 
     def setUp(self):
         self.app = TestApp(test_app)
@@ -84,8 +97,11 @@ class OsfTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        '''Drop the database when all tests finish.'''
+        """Drop the database when all tests finish."""
         cls._client.drop_database(cls.db)
+        # Restore uploads path
+        shutil.rmtree(cls._uploads_path)
+        settings.UPLOADS_PATH = cls._old_uploads_path
 
 
 class AppTestCase(unittest.TestCase):

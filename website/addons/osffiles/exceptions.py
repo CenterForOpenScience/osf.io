@@ -1,10 +1,18 @@
+from website.addons.base.exceptions import AddonError
 
+class OSFFilesError(AddonError):
+    """Base exception class for OSFFiles-related error."""
+    pass
 
-class VersionNotFoundError(ValueError):
+class FileNotFoundError(OSFFilesError):
+    """Raised if user requests a file that does not exist."""
+    pass
+
+class VersionNotFoundError(OSFFilesError, ValueError):
     """Raised if user tries to access a file version that does not exist."""
     pass
 
-class InvalidVersionError(TypeError):
+class InvalidVersionError(OSFFilesError, TypeError):
     """Raised if user tries to access an invalid version value, e.g. a string
     instead of an integer.
     """
