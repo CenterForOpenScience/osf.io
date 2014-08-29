@@ -48,9 +48,9 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.body, 'firstcontent')
 
     def test_download_file_by_version_with_bad_version_value(self):
-        # FIXME: self.project.api_url_for doesn't seem to be working here. lolz
-        url = '/project/{}/osffiles/{}/version/bad/download/'.format(
-            self.project._id, self.fid
+        url = self.project.api_url_for('download_file_by_version',
+            fid=self.fid,
+            vid='bad'
         )
 
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
@@ -58,26 +58,29 @@ class TestFilesViews(OsfTestCase):
         assert_in('Invalid version', res.json['message_short'])
 
     def test_download_file_by_version_with_nonexistent_file(self):
-        url = '/project/{}/osffiles/{}/version/0/download/'.format(
-            self.project._id, 'notfound'
+        url = self.project.api_url_for(
+            'download_file_by_version',
+            fid='notfound',
+            vid=0
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_bad_version_number(self):
-        url = '/project/{}/osffiles/{}/version/9999/download/'.format(
-            self.project._id, self.fid
+        url = self.project.api_url_for(
+            'download_file_by_version',
+            fid=self.fid,
+            vid=9999
         )
-
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_negative_version_number(self):
-
-        url = '/project/{}/osffiles/{}/version/-1/download/'.format(
-            self.project._id, self.fid
+        url = self.project.api_url_for(
+            'download_file_by_version',
+            fid=self.fid,
+            vid=-1
         )
-
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
