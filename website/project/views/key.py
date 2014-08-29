@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
-from framework import request
+from flask import request
+
 from website.project.decorators import (
     must_be_valid_project, must_have_permission
 )
+
 from ..model import ApiKey
 from .node import _view_project
 

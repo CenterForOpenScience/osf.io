@@ -14,24 +14,28 @@ import urlparse
 import uuid
 
 import pytz
+from flask import request
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm import fields, Q
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
+from framework import utils
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
 from framework.auth import get_user, User, Auth
+from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
-from framework import GuidStoredObject, Q
+from framework.mongo import StoredObject
+from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
 
@@ -61,7 +65,7 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
+def has_anonymous_link(node, auth):
     """check if the node is anonymous to the user
 
     :param Node node: Node which the user wants to visit
@@ -69,10 +73,12 @@ def has_anonymous_link(node, link):
     :return bool anonymous: Whether the node is anonymous to the user or not
 
     """
-
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    if not view_only_link:
+        return False
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+    return any([x.anonymous for x in node.private_links_active if x.key == view_only_link])
 
 
 signals = blinker.Namespace()
@@ -342,8 +348,13 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    def __repr__(self):
+        return ('<NodeLog({self.action!r}, params={self.params!r}) '
+                'with id {self._id!r}>').format(self=self)
+
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
@@ -367,7 +378,7 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    def _render_log_contributor(self, contributor):
+    def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
             return None
@@ -376,8 +387,8 @@ class NodeLog(StoredObject):
         else:
             fullname = user.fullname
         return {
-            'id': user._primary_key,
-            'fullname': fullname,
+            'id': privacy_info_handle(user._primary_key, anonymous),
+            'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
         }
 
@@ -386,10 +397,10 @@ class NodeLog(StoredObject):
         '''Return a dictionary representation of the log.'''
         return {
             'id': str(self._primary_key),
-            'user': self.user.serialize()
+            'user': self.user.serialize(anonymous)
                     if isinstance(self.user, User)
-                    else {'fullname': self.foreign_user},
-            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
+                    else {'fullname': privacy_info_handle(self.foreign_user, anonymous, name=True)},
+            'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
             'api_key': self.api_key.label if self.api_key else '',
             'action': self.action,
             'params': self.params,
@@ -404,6 +415,9 @@ class Tag(StoredObject):
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
     count_public = fields.IntegerField(default=0)
     count_total = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return '<Tag() with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -590,6 +604,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    def __repr__(self):
+        return ('<Node(title={self.title!r}, category={self.category!r}) '
+                'with _id {self._id!r}>').format(self=self)
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
@@ -1490,26 +1509,43 @@ class Node(GuidStoredObject, AddonModelMixin):
             if save:
                 self.save()
 
-    def get_file(self, path, version=None):
-        from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-                repo = Repo(folder_name)
-                tree = repo.commit(file_object.git_commit).tree
-                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
-                return repo[sha].data, file_object.content_type
-        return None, None
+    # TODO: Move to NodeFile
+    def read_file_object(self, file_object):
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        repo = Repo(folder_name)
+        tree = repo.commit(file_object.git_commit).tree
+        mode, sha = tree_lookup_path(repo.get_object, tree, file_object.path)
+        return repo[sha].data, file_object.content_type
+
+    def get_file(self, path, version):
+        #folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        file_object = self.get_file_object(path, version)
+        return self.read_file_object(file_object)
 
     def get_file_object(self, path, version=None):
+        # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(directory, '.git')):
-                return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-            # TODO: Raise exception here
-        return None, None # TODO: Raise exception here
+        from website.addons.osffiles.exceptions import (
+            InvalidVersionError,
+            VersionNotFoundError,
+        )
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        err_msg = 'Upload directory is not a git repo'
+        assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
+        try:
+            file_versions = self.files_versions[path.replace('.', '_')]
+        except (AttributeError, KeyError):
+            raise ValueError('Invalid path: {}'.format(path))
+        if version < 0:
+            raise InvalidVersionError('Version number must be >= 0.')
+        try:
+            file_id = file_versions[version]
+        except IndexError:
+            raise VersionNotFoundError('Invalid version number: {}'.format(version))
+        except TypeError:
+            raise InvalidVersionError('Invalid version type. Version number'
+                    'must be an integer >= 0.')
+        return NodeFile.load(file_id)
 
     def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
@@ -1517,12 +1553,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         :param path:
 
-        :return: True on success, False on failure
+        :raises: website.osffiles.exceptions.FileNotFoundError if file is not found.
         '''
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotFoundError
+        from website.addons.osffiles.utils import urlsafe_filename
 
-        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
-        file_name_key = path.replace('.', '_')
+        file_name_key = urlsafe_filename(path)
 
         repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1541,19 +1578,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             committer = self._get_committer(auth)
 
             repo.do_commit(message, committer)
-
         except subprocess.CalledProcessError as error:
-            # This exception can be ignored if the file has already been
-            # deleted, e.g. if two users attempt to delete a file at the same
-            # time. If another subprocess error is raised, fail.
-            if error.returncode == 128 and 'did not match any files' in error.output:
-                logger.warning(
-                    'Attempted to delete file {0}, but file was not found.'.format(
-                        path
-                    )
-                )
-                return True
-            return False
+            if error.returncode == 128:
+                raise FileNotFoundError('File {0!r} was not found'.format(path))
+            raise
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
@@ -1571,9 +1599,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'path':path
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'path': path
             },
             auth=auth,
             log_date=nf.date_modified,
@@ -1582,8 +1610,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Updates self.date_modified
         self.save()
-
-        return True
 
     @staticmethod
     def _get_committer(auth):
@@ -1900,17 +1926,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def add_addon(self, addon_name, auth, log=True):
-        """Add an add-on to the node.
+    def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
+        """Add an add-on to the node. Do nothing if the addon is already
+        enabled.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :return bool: Add-on was added
+        :return: A boolean, whether the addon was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth)
-        if rv and log:
+        ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
+                                        *args, **kwargs)
+        if ret and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -1923,7 +1951,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=False,
             )
             self.save() # TODO: here, or outside the conditional? @mambocab
-        return rv
+        return ret
 
     def delete_addon(self, addon_name, auth):
         """Delete an add-on from the node.

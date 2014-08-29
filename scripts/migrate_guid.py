@@ -7,7 +7,8 @@ created records will have optimistically generated GUIDs.
 import time
 import collections
 
-from framework import StoredObject
+from framework.mongo import StoredObject
+
 from website import models
 from website.app import init_app
 

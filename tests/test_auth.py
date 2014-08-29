@@ -9,6 +9,7 @@ import httplib as http
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
+from modularodm import Q
 
 from framework import auth
 from framework.exceptions import HTTPError
@@ -18,7 +19,6 @@ from tests.factories import (
     ProjectFactory, AuthUserFactory, PrivateLinkFactory
 )
 
-from framework import Q
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
@@ -95,6 +95,11 @@ class TestAuthUtils(OsfTestCase):
 
 
 class TestAuthObject(OsfTestCase):
+
+    def test_repr(self):
+        auth = AuthFactory()
+        rep = repr(auth)
+        assert_in(str(auth.user), rep)
 
     def test_factory(self):
         super(TestAuthObject, self).setUp()

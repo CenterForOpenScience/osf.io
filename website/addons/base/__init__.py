@@ -8,8 +8,9 @@ import importlib
 import mimetypes
 from bson import ObjectId
 from mako.lookup import TemplateLookup
+from modularodm import fields
 
-from framework import StoredObject, fields
+from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
@@ -187,11 +188,13 @@ class AddonSettingsBase(StoredObject):
 
     def delete(self, save=True):
         self.deleted = True
+        self.on_delete()
         if save:
             self.save()
 
     def undelete(self, save=True):
         self.deleted = False
+        self.on_add()
         if save:
             self.save()
 
@@ -200,6 +203,18 @@ class AddonSettingsBase(StoredObject):
             'addon_short_name': self.config.short_name,
             'addon_full_name': self.config.full_name,
         }
+
+    #############
+    # Callbacks #
+    #############
+
+    def on_add(self):
+        """Called when the addon is added (or re-added) to a User"""
+        pass
+
+    def on_delete(self):
+        """Called when the addon is deleted from a User"""
+        pass
 
 
 class AddonUserSettingsBase(AddonSettingsBase):
@@ -220,8 +235,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
     # TODO: Test me @asmacdo
     @property
     def nodes_authorized(self):
-        """Get authorized, non-deleted nodes."""
-        schema = self.config.settings_models['node']
+        """Get authorized, non-deleted nodes. Returns an empty list if the
+        attached add-on does not include a node model.
+
+        """
+        try:
+            schema = self.config.settings_models['node']
+        except KeyError:
+            return []
         nodes_backref = self.get_backref_key(schema, 'authorized')
         return [
             node_addon.owner

@@ -4,7 +4,8 @@ from contextlib import contextmanager
 
 from webtest_plus import TestApp
 
-from framework import storage
+from modularodm import storage
+
 from framework.mongo import db, set_up_storage
 
 import website
