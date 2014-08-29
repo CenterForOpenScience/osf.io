@@ -26,7 +26,7 @@ $ cp website/settings/local-dist.py website/settings/local.py
 
 - You will need to:
     - Create local.py files for addons that need them.
-    - Install MongoDB.
+    - Install TokuMX.
     - Install libxml2 and libxslt (required for installing lxml).
     - Install elasticsearch.
     - Install GPG.
@@ -56,9 +56,9 @@ and for addons:
 $ invoke addon_requirements
 ```
 
-- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
+- On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
-- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like:
 
 ```bash
 sudo apt-get install rng-tools
@@ -142,6 +142,42 @@ Sent emails will show up in your server logs.
 ```bash
 $ invoke mailserver -p 1025
 ```
+
+## Using TokUMX
+
+TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments. 
+TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and 
+`commitTransaction` commands.
+
+If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
+
+### Installing with Mac OS
+
+```bash
+$ brew tap tokutex/tokumx
+$ brew install tokumx-bin
+```
+
+### Installing on Ubuntu
+
+```bash
+$ apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
+$ echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
+$ apt-get update
+$ apt-get install tokumx
+```
+
+### Migrating from MongoDB
+
+TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
+* Back up the MongoDB data
+    * `invoke mongodump --path dump`
+* Shut down the MongoDB server
+* Uninstall MongoDB
+* Install TokuMX (see instructions above)
+* Restore the data to TokuMX
+    * `invoke mongorestore --path dump/osf20130903 --drop`
+* Verify that the migrated data are available in TokuMX
 
 ## Using Celery
 
