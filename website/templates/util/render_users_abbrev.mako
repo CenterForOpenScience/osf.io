@@ -12,6 +12,7 @@
         <span>${contributor['separator']}</span>
     % endfor
     % if others_count:
-        <a href="${node_url}">${others_count} other${others_suffix}</a>
+        <a href="${node_url}">${others_count} more</a>
     % endif
 </div>
+

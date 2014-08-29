@@ -48,6 +48,8 @@ web_routes = {
         ),
 
         # Download file by version
+        # TODO: This should use OsfWebRenderer. Will need change any usages of
+        # project.api_url_for('download_file_by_version') -> project.web_url_for
         Rule(
             [
                 '/project/<pid>/osffiles/<fid>/version/<vid>/download/',

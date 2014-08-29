@@ -231,10 +231,7 @@
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         },
-        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
-        UNKNOWN_ERROR: 'An unknown error occurred. If this issue persists, ' +
-            'please report it to <a href=\"mailto:support@osf.io\">' +
-            'support@osf.io</a>.'
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>'
     };
 
     var statusType = {
@@ -401,18 +398,17 @@
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
+            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            if (!messageText) {
+                if (typeof(message) === 'string') {
+                    messageText = message;
+                } else {
+                    messageText = message.message_long;
+                }
+            }
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
-            if (!messageText) {
-                try {
-                    var messageData = JSON.parse(message);
-                    messageText = messageData.message_long;
-                } catch (error) {
-                    messageText = default_status.UNKNOWN_ERROR;
-                }
-            }
             bootbox.alert(messageText);
         },
         uploadSuccess: function(file, row, data) {
@@ -496,7 +492,7 @@
         },
         uploadDenied: function(evt, row) {
             this.removeHighlight('highlight-denied');
-        },
+        }
     };
 
     function updateTooltips() {

@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 from urllib import unquote
 
 from flask import request
-from website.util import rubeus
+
 from framework.exceptions import HTTPError
 
+from website.util import rubeus
 from website.addons.s3.api import S3Wrapper
 from website.addons.s3.utils import wrapped_key_to_json
 from website.project.decorators import must_be_contributor_or_public, must_have_addon

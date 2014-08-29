@@ -1,4 +1,7 @@
-from framework import StoredObject, fields
+# -*- coding: utf-8 -*-
+
+from modularodm import fields
+from framework.mongo import StoredObject
 
 
 class Guid(StoredObject):
@@ -12,6 +15,9 @@ class Guid(StoredObject):
 
 
 class GuidStoredObject(StoredObject):
+
+    def __str__(self):
+        return str(self._id)
 
     # Redirect to content using URL redirect by default
     redirect_mode = 'redirect'

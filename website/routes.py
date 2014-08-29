@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from flask import redirect
+from flask import redirect, send_from_directory
 
-import framework
 from framework import status
+from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
 from framework.auth import get_current_user
 
@@ -27,20 +27,20 @@ def get_globals():
     OSFWebRenderer.
 
     """
-    user = framework.auth.get_current_user()
+    user = get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
         'user_api_url': user.api_url if user else '',
-        'display_name': framework.auth.get_display_name(user.fullname) if user else '',
+        'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
-        'status': framework.status.pop_status_messages(),
+        'status': status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
@@ -62,7 +62,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
@@ -278,7 +278,6 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -498,7 +497,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-        # Create
+        # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
 
         Rule([
@@ -510,7 +509,6 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
 
         Rule(
             [
@@ -544,13 +542,6 @@ def make_url_map(app):
         ),
 
         ### Logs ###
-
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
         # View forks
         Rule([
@@ -608,6 +599,9 @@ def make_url_map(app):
             project_views.email.meeting_hook,
             json_renderer,
         ),
+
+        # Create project, used by projectCreator.js
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
@@ -705,16 +699,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
-        # Create
-        Rule(
-            [
-                '/project/new/',
-                '/project/<pid>/newnode/',
-            ],
-            'post',
-            project_views.node.project_new_node,
-            json_renderer,
-        ),
 
         # Private Link
         Rule([

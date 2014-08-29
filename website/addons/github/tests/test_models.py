@@ -40,6 +40,13 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.save()
 
     @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_before_make_public(self, mock_repo):
+        mock_repo.side_effect = NotFoundError
+
+        result = self.node_settings.before_make_public(self.project)
+        assert_is(result, None)
+
+    @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_public_gh_public(self, mock_repo):
         self.project.is_public = True
         self.project.save()

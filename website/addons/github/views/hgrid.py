@@ -2,9 +2,10 @@
 import os
 import logging
 import httplib as http
-from mako.template import Template
 
-from framework import request
+from mako.template import Template
+from flask import request
+
 from framework.status import push_status_message
 from framework.exceptions import HTTPError
 

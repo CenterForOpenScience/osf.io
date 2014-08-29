@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # PEP8 asserts
+# PEP8 asserts
+from nose.tools import *  # noqa
 
-import framework
+
 from framework.auth import Auth
 from webtest.app import AppError
 from tests.base import OsfTestCase
@@ -10,32 +11,24 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
-from website.addons.wiki.views import get_wiki_url, serialize_wiki_toc
+from website.addons.wiki.views import serialize_wiki_toc
 
 
 class TestWikiViews(OsfTestCase):
 
     def setUp(self):
         super(TestWikiViews, self).setUp()
-        self.project = ProjectFactory(is_public=True)
-
-    def test_get_wiki_url_for_project(self):
-        node = ProjectFactory()
-        expected = framework.url_for(
-            'OsfWebRenderer__project_wiki_page',
-            pid=node._primary_key,
-            wid='home'
-        )
-        assert_equal(get_wiki_url(node), expected)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
 
     def test_wiki_url_get_returns_200(self):
-        url = get_wiki_url(self.project)
+        url = self.project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_pointer_returns_200(self):
         pointer = PointerFactory(node=self.project)
-        url = get_wiki_url(pointer)
+        url = self.project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
@@ -47,14 +40,14 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_url_for_component_returns_200(self):
         component = NodeFactory(project=self.project)
-        url = get_wiki_url(component)
+        url = component.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url).follow()
         assert_equal(res.status_code, 200)
 
     def test_serialize_wiki_toc(self):
         project = ProjectFactory()
         auth = Auth(project.creator)
-        has_wiki = NodeFactory(project=project, creator=project.creator)
+        NodeFactory(project=project, creator=project.creator)
         no_wiki = NodeFactory(project=project, creator=project.creator)
         project.save()
 
@@ -65,8 +58,9 @@ class TestWikiViews(OsfTestCase):
         assert_equal(len(serialized), 1)
 
     def test_get_wiki_url_pointer_component(self):
-        """Regression test for issue
-        https://github.com/CenterForOpenScience/osf/issues/363
+        """Regression test for issues
+        https://github.com/CenterForOpenScience/osf/issues/363 and
+        https://github.com/CenterForOpenScience/openscienceframework.org/issues/574
 
         """
         user = UserFactory()
@@ -75,7 +69,25 @@ class TestWikiViews(OsfTestCase):
         auth = Auth(user=user)
         project.add_pointer(pointed_node, auth=auth, save=True)
 
-        serialize_wiki_toc(project, auth)
+        serialized = serialize_wiki_toc(project, auth)
+        assert_equal(
+            serialized[0]['url'],
+            pointed_node.web_url_for('project_wiki_page', wid='home')
+        )
+
+    def test_project_wiki_edit_post(self):
+        self.project.update_node_wiki(
+            'home',
+            content='old content',
+            auth=Auth(self.project.creator)
+        )
+        url = self.project.web_url_for('project_wiki_edit_post', wid='home')
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        # page was updated with new content
+        new_wiki = self.project.get_wiki_page('home')
+        assert_equal(new_wiki.content, 'new content')
 
 
 class TestWikiRename(OsfTestCase):
@@ -153,4 +165,3 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wid='wiki2'),
             wiki.html(project),
         )
-

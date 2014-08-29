@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
+from modularodm import fields
 from modularodm.validators import (
     URLValidator, MinValueValidator, MaxValueValidator
 )
 from modularodm.exceptions import ValidationValueError
 
-from framework import fields
 from framework.mongo.utils import sanitized
 
 from website.addons.base import AddonNodeSettingsBase
