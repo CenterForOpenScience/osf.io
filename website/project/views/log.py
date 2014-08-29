@@ -2,7 +2,8 @@
 import httplib as http
 import logging
 
-from framework import request
+from flask import request
+
 from framework.auth import Auth, get_current_user, get_api_key, get_current_node
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
@@ -55,7 +56,7 @@ def _get_logs(node, count, auth, link=None, offset=0):
             continue
 
         if can_view:
-            anonymous = has_anonymous_link(log.node, link)
+            anonymous = has_anonymous_link(log.node, auth)
             if len(logs) < count:
                 logs.append(log.serialize(anonymous))
             else:

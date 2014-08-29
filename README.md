@@ -6,11 +6,11 @@
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
 - Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
 - Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
-- Wiki: https://osf.io/a92ji/wiki/home/
+- Docs: http://cosdev.rtfd.org/
 
 ## Help
 
-Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
+Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
 ## Quickstart
 

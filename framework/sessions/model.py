@@ -1,5 +1,10 @@
-from framework import StoredObject, fields
+# -*- coding: utf-8 -*-
+
 from bson import ObjectId
+from modularodm import fields
+
+from framework.mongo import StoredObject
+
 
 class Session(StoredObject):
 
@@ -13,3 +18,4 @@ class Session(StoredObject):
         # Initialize history to empty list if not found
         if 'history' not in self.data:
             self.data['history'] = []
+

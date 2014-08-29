@@ -1,16 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
+from flask import request, redirect
 from modularodm.exceptions import ValidationError
 
-from framework import (
-    get_user,
-    must_be_logged_in,
-    request,
-    redirect,
-)
-from framework.auth.decorators import collect_auth
+from framework.auth import get_user
+from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
 from framework.auth import get_current_user
