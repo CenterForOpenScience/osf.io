@@ -70,7 +70,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
 
     # Add callback handlers to application
     add_handlers(app, mongo_handlers.handlers)
-    add_handlers(app, transaction_handlers.handlers)
+    if settings.USE_TOKU_MX:
+        add_handlers(app, transaction_handlers.handlers)
 
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
