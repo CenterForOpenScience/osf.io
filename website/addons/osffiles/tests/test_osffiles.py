@@ -11,7 +11,7 @@ from website import settings
 from website.project.views.file import prepare_file
 
 from website.addons.osffiles.model import OsfGuidFile
-from website.addons.osffiles.utils import get_current_file_version
+from website.addons.osffiles.utils import get_latest_version_number
 from website.addons.osffiles.exceptions import FileNotFoundError
 
 class TestFilesViews(OsfTestCase):
@@ -56,6 +56,13 @@ class TestFilesViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('Invalid version', res.json['message_short'])
+
+    def test_download_file_by_version_with_nonexistent_file(self):
+        url = '/project/{}/osffiles/{}/version/0/download/'.format(
+            self.project._id, 'notfound'
+        )
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_bad_version_number(self):
         url = '/project/{}/osffiles/{}/version/9999/download/'.format(
@@ -227,13 +234,13 @@ class TestUtils(OsfTestCase):
 
     def test_get_current_file_version(self):
         self.project.add_file(Auth(self.project.creator), 'foo', 'somecontent', 128, 'rst')
-        result = get_current_file_version('foo', node=self.project)
+        result = get_latest_version_number('foo', node=self.project)
         assert_equal(result, 0)
         # Update the file
         self.project.add_file(Auth(self.project.creator), 'foo', 'newcontent', 128, 'rst')
-        result = get_current_file_version('foo', node=self.project)
+        result = get_latest_version_number('foo', node=self.project)
         assert_equal(result, 1)
 
     def test_get_current_file_raises_error_when_file_not_found(self):
         with assert_raises(FileNotFoundError):
-            get_current_file_version('notfound', node=self.project)
+            get_latest_version_number('notfound', node=self.project)
