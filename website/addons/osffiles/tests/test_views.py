@@ -58,7 +58,6 @@ class TestFilesViews(OsfTestCase):
         assert_in('Invalid version', res.json['message_short'])
 
     def test_download_file_by_version_with_bad_version_number(self):
-        # FIXME: self.project.api_url_for doesn't seem to be working here. lolz
         url = '/project/{}/osffiles/{}/version/9999/download/'.format(
             self.project._id, self.fid
         )

@@ -352,6 +352,7 @@ def download_file(**kwargs):
     )
     return redirect(redirect_url)
 
+
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public  # returns user, project
 @update_counters('download:{target_id}:{fid}:{vid}')
@@ -395,8 +396,8 @@ def download_file_by_version(**kwargs):
     )
 
 
-@must_be_valid_project # returns project
-@must_have_permission(permissions.WRITE) # returns user, project
+@must_be_valid_project  # injects project
+@must_have_permission(permissions.WRITE)  # injects user, project
 @must_not_be_registration
 def delete_file(auth, **kwargs):
 
