@@ -14,7 +14,7 @@ from framework.mongo import client, database
 from framework.mongo import handlers as database_handlers
 from framework.transactions import context, handlers, commands, messages, utils
 
-from flask import Flask
+from flask import Flask, abort
 app = Flask('test_transactions_app')
 @app.route('/')
 def dummy_view():
@@ -212,6 +212,49 @@ class TestSkipTransactions(DbTestCase):
         assert_false(mock_begin.called)
         assert_false(mock_rollback.called)
         assert_false(mock_commit.called)
+
+
+
+@transaction_app.route('/write/without/errors/', methods=['POST'])
+def write_without_errors():
+    database['txn'].insert({'_id': 'success'})
+    return 'success'
+
+
+@transaction_app.route('/write/with/error/500/', methods=['POST'])
+def write_with_error_500():
+    database['txn'].insert({'_id': 'error_500'})
+    abort(500)
+
+
+@transaction_app.route('/write/with/error/uncaught/', methods=['POST'])
+def write_with_error_uncaught():
+    database['txn'].insert({'_id': 'error_uncaught'})
+    raise
+
+
+class TestTransactionIntegration(DbTestCase):
+
+    def test_commit_if_no_error(self):
+        test_app.post('/write/without/errors/')
+        assert_equal(
+            database['txn'].find({'_id': 'success'}).count(),
+            1,
+        )
+
+    def test_rollback_if_error_500(self):
+        test_app.post('/write/with/error/500/', expect_errors=True)
+        assert_equal(
+            database['txn'].find({'_id': 'error_500'}).count(),
+            0,
+        )
+
+    def test_rollback_if_error_uncaught(self):
+        test_app.post('/write/with/error/uncaught/', expect_errors=True)
+        assert_equal(
+            database['txn'].find({'_id': 'error_uncaught'}).count(),
+            0,
+        )
 
 
 if __name__ == '__main__':
