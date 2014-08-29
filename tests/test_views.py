@@ -642,8 +642,8 @@ class TestProjectViews(OsfTestCase):
         url = self.project.api_url_for('node_fork_page')
         non_contributor = AuthUserFactory()
         res = self.app.post_json(url, {}, 
-                           auth=non_contributor.auth, 
-                           expect_errors=True)
+                                 auth=non_contributor.auth, 
+                                 expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
 class TestUserProfile(OsfTestCase):

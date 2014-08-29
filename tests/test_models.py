@@ -2079,7 +2079,6 @@ class TestForkNode(OsfTestCase):
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        forked = False
         with assert_raises(PermissionsError):
             self.project.fork_node(user2_auth)
 
