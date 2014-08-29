@@ -2,13 +2,14 @@
 
 import importlib
 
-from framework import storage, app
-from framework.flask import add_handlers
+from modularodm import storage
+
+from framework.flask import app, add_handlers
+from framework.mongo import database
 from framework.logging import logger
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
-
 from framework.mongo import handlers as mongo_handlers
 from framework.transactions import handlers as transaction_handlers
 

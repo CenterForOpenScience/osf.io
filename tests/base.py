@@ -8,16 +8,18 @@ from webtest_plus import TestApp
 
 from faker import Factory
 from pymongo.errors import OperationFailure
+from modularodm import storage
 
-from framework import storage, set_up_storage
+from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
 from framework.mongo import client, database
 from framework.transactions import commands, messages, utils
 
-from website.project.model import (ApiKey, Node, NodeLog,
-                                   Tag, WatchConfig)
+from website.project.model import (
+    ApiKey, Node, NodeLog, Tag, WatchConfig,
+)
 from website import settings
 
 from website.addons.osffiles.model import NodeFile

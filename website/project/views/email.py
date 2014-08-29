@@ -9,12 +9,13 @@ import hashlib
 import logging
 import urlparse
 import httplib as http
-from nameparser import HumanName
 
-from framework import Q
+from flask import request
+from nameparser import HumanName
+from modularodm import Q
+
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
-from framework.flask import request
 from framework.auth import Auth
 
 from website import settings, security
@@ -24,6 +25,7 @@ from website.project import new_node
 from website.project.views.file import prepare_file
 from website.util.sanitize import deep_clean
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
+
 
 logger = logging.getLogger(__name__)
 

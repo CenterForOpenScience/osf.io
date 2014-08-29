@@ -1,14 +1,17 @@
+# -*- coding: utf-8 -*-
+
 import os
 import datetime
 import httplib as http
 
 from urllib2 import urlopen
 
-from framework.flask import secure_filename
+from flask import request, redirect, make_response
+from werkzeug.utils import secure_filename
+from modularodm import Q
 
-from framework import request, make_response
 from framework.exceptions import HTTPError
-from framework import redirect, Q
+from framework.auth.utils import privacy_info_handle
 from website.addons.base.views import check_file_guid
 
 from website.project import decorators
@@ -16,7 +19,7 @@ from website.project.decorators import must_be_contributor_or_public, must_be_co
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
-
+from website.project.model import has_anonymous_link
 from website.addons.figshare import settings as figshare_settings
 from website.addons.figshare.model import FigShareGuidFile
 
@@ -294,6 +297,8 @@ def figshare_view_file(*args, **kwargs):
     article_id = kwargs.get('aid') or None
     file_id = kwargs.get('fid') or None
 
+    anonymous = has_anonymous_link(node, auth)
+
     if not article_id or not file_id:
         raise HTTPError(http.NOT_FOUND)
 
@@ -379,7 +384,7 @@ def figshare_view_file(*args, **kwargs):
         'file_version': article['items'][0]['version'],
         'doi': 'http://dx.doi.org/10.6084/m9.figshare.{0}'.format(article['items'][0]['article_id']),
         'version_url': version_url,
-        'figshare_url': figshare_url,
+        'figshare_url': privacy_info_handle(figshare_url, anonymous),
         'parent_type': 'fileset' if article['items'][0]['defined_type'] == 'fileset' else 'singlefile',
         'parent_id': article['items'][0]['article_id'],
         'figshare_categories': categories,

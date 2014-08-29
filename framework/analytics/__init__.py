@@ -2,7 +2,8 @@
 
 from datetime import datetime
 
-from framework import database, session
+from framework.mongo import database
+from framework.sessions import session
 
 
 def increment_user_activity_counters(user_id, action, date):

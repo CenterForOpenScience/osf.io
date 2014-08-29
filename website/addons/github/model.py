@@ -1,15 +1,13 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import urlparse
 import itertools
 import httplib as http
 
+from modularodm import fields
 from github3 import GitHubError
 
-from framework import fields
 from framework.auth import Auth
 
 from website import settings
@@ -459,7 +457,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def before_make_public(self, node):
-        if self.is_private:
+        try:
+            is_private = self.is_private
+        except NotFoundError:
+            return None
+        if is_private:
             return (
                 'This {cat} is connected to a private GitHub repository. Users '
                 '(other than contributors) will not be able to see the '

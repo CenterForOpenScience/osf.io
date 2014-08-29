@@ -3,17 +3,13 @@ import mock
 from contextlib import contextmanager
 
 from webtest_plus import TestApp
+from modularodm import storage
 
-from framework import storage
 from framework.mongo import database, set_up_storage
 
 import website
 from website.addons.base.testing import AddonTestCase
 from website.addons.dropbox import MODELS
-
-#app = website.app.init_app(
-#    routes=True, set_backends=False, settings_module='website.settings'
-#)
 
 
 def init_storage():

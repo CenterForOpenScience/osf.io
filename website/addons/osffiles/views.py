@@ -1,6 +1,4 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import cgi
@@ -10,25 +8,33 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from framework import request, redirect, send_file, Q
+from flask import request, redirect, send_file
+from modularodm import Q
+
 from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-
+from framework.auth.utils import privacy_info_handle
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
     must_be_contributor_or_public, must_have_addon, must_have_permission
 )
 from website.project.views.file import get_cache_content, prepare_file
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
-from .model import NodeFile, OsfGuidFile
+from website.addons.osffiles.model import NodeFile, OsfGuidFile
+from website.addons.osffiles.exceptions import (
+    InvalidVersionError,
+    VersionNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
+
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -81,11 +87,10 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles(**kwargs):
+def get_osffiles(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    auth = kwargs['auth']
     can_view = node.can_view(auth)
 
     info = []
@@ -106,10 +111,9 @@ def get_osffiles(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles_public(**kwargs):
+def get_osffiles_public(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
 
     return get_osffiles_hgrid(node_settings, auth)
 
@@ -132,14 +136,23 @@ def list_file_paths(**kwargs):
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(**kwargs):
+def upload_file_public(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
     name, content, content_type, size = prepare_file(request.files['file'])
+
+    if size > (node_addon.config.max_file_size):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large.',
+                'message_long': 'The file you are trying to upload exceeds '
+                    'the maximum file size limit.',
+            },
+        )
 
     try:
         fobj = node.add_file(
@@ -207,8 +220,10 @@ def file_info(**kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
     file_name = kwargs['fid']
-
+    auth = kwargs['auth']
     file_name_clean = file_name.replace('.', '_')
+
+    anonymous = has_anonymous_link(node, auth)
 
     try:
         files_versions = node.files_versions[file_name_clean]
@@ -229,8 +244,10 @@ def file_info(**kwargs):
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'downloads': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
+            'committer_name': privacy_info_handle(
+                node_file.uploader.fullname, anonymous, name=True
+            ),
+            'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
     return {
         'files_url': node.url + "files/",
@@ -337,51 +354,54 @@ def download_file(**kwargs):
     )
     return redirect(redirect_url)
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @update_counters('download:{target_id}:{fid}:{vid}')
 @update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
     node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
-
-    version_number = int(kwargs['vid']) - 1
+    invalid_version_error = HTTPError(http.BAD_REQUEST, data=dict(
+        message_short='Invalid version',
+        message_long='The version number you requested is invalid.'
+    ))
+    try:
+        version_number = int(kwargs['vid']) - 1
+    except (TypeError, ValueError):
+        raise invalid_version_error
     current_version = len(node.files_versions[filename.replace('.', '_')]) - 1
-
-    content, content_type = node.get_file(filename, version=version_number)
-    if content is None:
-        raise HTTPError(http.NOT_FOUND)
-
+    try:
+        file_object = node.get_file_object(filename, version=version_number)
+    except InvalidVersionError:
+        raise invalid_version_error
+    except VersionNotFoundError:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_short='Version not found',
+            message_long='The version number you requested could not be found.'
+        ))
+    content, content_type = node.read_file_object(file_object)
     if version_number == current_version:
-        file_path = os.path.join(settings.UPLOADS_PATH, node._primary_key, filename)
-        return send_file(
-            file_path,
-            mimetype=content_type,
-            as_attachment=True,
-            attachment_filename=filename,
+        attachment_filename = filename
+    else:
+        filename_base, file_extension = os.path.splitext(file_object.path)
+        attachment_filename = '{base}_{tmstp}{ext}'.format(
+            base=filename_base,
+            ext=file_extension,
+            tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
         )
-
-    file_object = node.get_file_object(filename, version=version_number)
-    filename_base, file_extension = os.path.splitext(file_object.path)
-    returned_filename = '{base}_{tmstp}{ext}'.format(
-        base=filename_base,
-        ext=file_extension,
-        tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
-    )
     return send_file(
         StringIO(content),
         mimetype=content_type,
         as_attachment=True,
-        attachment_filename=returned_filename,
+        attachment_filename=attachment_filename,
     )
 
 
 @must_be_valid_project # returns project
 @must_have_permission(permissions.WRITE) # returns user, project
 @must_not_be_registration
-def delete_file(**kwargs):
+def delete_file(auth, **kwargs):
 
-    auth = kwargs['auth']
     filename = kwargs['fid']
     node_to_use = kwargs['node'] or kwargs['project']
 
