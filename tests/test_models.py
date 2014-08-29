@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
-
+import os
+import shutil
 import mock
 import unittest
 from nose.tools import *  # PEP8 asserts
@@ -29,6 +30,10 @@ from website.project.model import (
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
+from website.addons.osffiles.exceptions import (
+    InvalidVersionError,
+    VersionNotFoundError,
+)
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
@@ -246,6 +251,7 @@ class TestUser(OsfTestCase):
         u = UserFactory()
         u.add_email_verification('foo@bar.com')
         assert_equal(u.get_confirmation_token('foo@bar.com'), '12345')
+        assert_equal(u.get_confirmation_token('fOo@bar.com'), '12345')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_url(self, random_string):
@@ -694,6 +700,34 @@ class TestAddFile(OsfTestCase):
         # Modify user, size, and type, but not content
         self.project.add_file(self.consolidate_auth2, self.file_name, 'Content', 256,
                               'Type 2')
+
+
+class TestFileActions(OsfTestCase):
+
+    def test_get_file(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+        valid = node.get_file('foo', version=0)
+        assert_true(valid)  # sanity check
+
+        with assert_raises(VersionNotFoundError):
+            node.get_file('foo', version=1)
+
+        with assert_raises(InvalidVersionError):
+            node.get_file('foo', version='dumb')
+
+        with assert_raises(InvalidVersionError):
+            node.get_file('foo', version=-1)
+
+    def test_get_file_with_no_git_dir(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+        git_path = os.path.join(settings.UPLOADS_PATH, node._id, '.git')
+        shutil.rmtree(git_path)
+        with assert_raises(AssertionError):
+            node.get_file('foo', version=0)
 
 
 class TestApiKey(OsfTestCase):
@@ -1376,11 +1410,15 @@ class TestProject(OsfTestCase):
         link1 = PrivateLinkFactory(anonymous=True, key="link1")
         link1.nodes.append(self.project)
         link1.save()
+        user2 = UserFactory()
+        auth2 = Auth(user=user2, private_key="link1")
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
-        assert_true(has_anonymous_link(self.project, "link1"))
-        assert_false(has_anonymous_link(self.project, "link2"))
+        user3 = UserFactory()
+        auth3 = Auth(user=user3, private_key="link2")
+        assert_true(has_anonymous_link(self.project, auth2))
+        assert_false(has_anonymous_link(self.project, auth3))
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self):
         new_user = self.project.add_unregistered_contributor(fullname=fake.name(),

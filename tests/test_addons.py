@@ -37,3 +37,5 @@ class TestAddonConfig(unittest.TestCase):
             url,
             '/foo'
         )
+
+    # TODO: Add tests for callbacks - specifically, `on_add()` and `on_delete()`
