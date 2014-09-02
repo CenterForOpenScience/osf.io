@@ -17,7 +17,6 @@ from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
-from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import filters, language, settings
@@ -29,7 +28,6 @@ from website.project.model import (
 from website.addons.osffiles.model import NodeFile
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
-from website.views import serialize_log
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
@@ -2287,38 +2285,6 @@ class TestNodeLog(OsfTestCase):
     def test_node_log_factory(self):
         log = NodeLogFactory()
         assert_true(log.action)
-
-    def test_serialize_log(self):
-        node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
-        node.save()
-        d = serialize_log(log)
-        assert_equal(d['action'], log.action)
-        assert_equal(d['node']['node_type'], 'component')
-        assert_equal(d['node']['category'], 'Hypothesis')
-
-        assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], utils.rfcformat(log.date))
-        assert_in('contributors', d)
-        assert_equal(d['user']['fullname'], log.user.fullname)
-        assert_equal(d['user']['url'], log.user.url)
-        assert_in('api_key', d)
-        assert_equal(d['params'], log.params)
-        assert_equal(d['node']['title'], log.node.title)
-
-    def test_serialize_node_for_logs(self):
-        node = NodeFactory()
-        d = node.serialize()
-
-        assert_equal(d['id'], node._primary_key)
-        assert_equal(d['category'], node.category_display)
-        assert_equal(d['node_type'], node.project_or_component)
-        assert_equal(d['url'], node.url)
-        assert_equal(d['title'], node.title)
-        assert_equal(d['api_url'], node.api_url)
-        assert_equal(d['is_public'], node.is_public)
-        assert_equal(d['is_registration'], node.is_registration)
 
     def test_render_log_contributor_unregistered(self):
         node = NodeFactory()
