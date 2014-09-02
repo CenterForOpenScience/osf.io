@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-from framework import fields
+
+from modularodm import fields
+from framework.auth.decorators import Auth
+
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
-from framework.auth.decorators import Auth
 
 from .api import Figshare
 from . import settings as figshare_settings
@@ -134,17 +136,17 @@ class AddonFigShareNodeSettings(AddonNodeSettingsBase):
         super(AddonFigShareNodeSettings, self).delete(save=False)
         self.deauthorize(add_log=False, save=save)
 
-    def update_fields(self, fields, node, auth):        
+    def update_fields(self, fields, node, auth):
         updated = False
         if fields.get('id'):
             updated = updated or (fields['id'] != self.figshare_id)
             self.figshare_id = fields['id']
         if fields.get('title'):
             updated = updated or (fields['title'] != self.figshare_title)
-            self.figshare_title = fields['title']            
+            self.figshare_title = fields['title']
         if fields.get('type'):
             updated = updated or (fields['type'] != self.figshare_type)
-            self.figshare_type = fields['type']            
+            self.figshare_type = fields['type']
 
         self.save()
         if updated:

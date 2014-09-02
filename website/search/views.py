@@ -4,16 +4,17 @@ import time
 import bleach
 import logging
 from urllib2 import HTTPError
-from modularodm.storage.mongostorage import RawQuery as Q
 
-from framework import must_be_logged_in, request, status
+from flask import request
+from modularodm import Q
+
+from framework import status
+from framework.auth.core import get_current_user
+from framework.auth.decorators import must_be_logged_in
 
 import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from modularodm.storage.mongostorage import RawQuery as Q
-from framework.auth.core import get_current_user
-from framework.exceptions import HTTPError
 import httplib as http
 
 logger = logging.getLogger(__name__)

@@ -71,9 +71,9 @@ Available variables:
 
 
 def make_shell_context():
-    from framework import Q
+    from modularodm import Q
     from framework.auth import User, Auth
-    from framework import db
+    from framework.mongo import db
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models

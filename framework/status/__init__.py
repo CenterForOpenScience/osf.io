@@ -1,5 +1,8 @@
-from framework import session
+# -*- coding: utf-8 -*-
+
 from collections import namedtuple
+
+from framework.sessions import session
 
 Status = namedtuple('Status', ['message', 'css_class'])
 

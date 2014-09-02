@@ -6,7 +6,7 @@ from flask import request, redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
-from framework import set_previous_url
+from framework.sessions import set_previous_url
 from framework import status, exceptions
 from framework import forms
 from framework import auth
@@ -94,8 +94,15 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if request.method == 'POST' and not direct_call:
         form = SignInForm(request.form)
         if form.validate():
+            twofactor_code = None
+            if 'twofactor' in website.settings.ADDONS_REQUESTED:
+                twofactor_code = form.two_factor.data
             try:
-                response = login(form.username.data, form.password.data)
+                response = login(
+                    form.username.data,
+                    form.password.data,
+                    twofactor_code
+                )
                 return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
@@ -103,6 +110,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
                 return {'next': ''}
             except auth.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
+            except auth.TwoFactorValidationError:
+                status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):

@@ -67,7 +67,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key))
+        auth = Auth(user=self.user, private_key=anonymous_link.key)
+        assert_false(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})

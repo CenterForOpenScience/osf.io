@@ -8,13 +8,14 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
-from framework import session
+from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields, Q, analytics
+from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
@@ -432,7 +433,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: KeyError if there no token for the email
         """
         for token, info in self.email_verifications.items():
-            if info['email'] == email:
+            if info['email'].lower() == email.lower():
                 return token
         raise KeyError('No confirmation token for email {0!r}'.format(email))
 
@@ -599,13 +600,13 @@ class User(GuidStoredObject, AddonModelMixin):
         except:
             return []
 
-    def serialize(self):
+    def serialize(self, anonymous=False):
         return {
-            'id': self._primary_key,
-            'fullname': self.fullname,
+            'id': utils.privacy_info_handle(self._primary_key, anonymous),
+            'fullname': utils.privacy_info_handle(self.fullname, anonymous, name=True),
             'registered': self.is_registered,
-            'url': self.url,
-            'api_url': self.api_url,
+            'url': utils.privacy_info_handle(self.url, anonymous),
+            'api_url': utils.privacy_info_handle(self.api_url, anonymous),
         }
 
     ###### OSF-Specific methods ######

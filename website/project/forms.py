@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from framework import Form, TextField, TextAreaField, validators
+from framework.forms import Form, TextField, TextAreaField, validators
 from framework.forms import (
     BootstrapTextArea,
     BootstrapTextInput,
