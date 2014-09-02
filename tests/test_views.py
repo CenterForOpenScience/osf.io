@@ -30,9 +30,9 @@ from website.project.views.contributor import (
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
-from website import settings, mails
+from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project, get_forks
+from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
@@ -67,7 +67,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key))
+        auth = Auth(user=self.user, private_key=anonymous_link.key)
+        assert_false(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -296,6 +297,35 @@ class TestProjectViews(OsfTestCase):
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
+
+    def test_get_contributors_abbrev(self):
+        # create a project with 3 registered contributors
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+            ]
+        )
+
+        # add an unregistered contributor
+        unregistered_user = project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=self.consolidate_auth1,
+            save=True,
+        )
+
+        url = project.api_url_for('get_node_contributors_abbrev')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(project.contributors), 4)
+        assert_equal(len(res.json['contributors']), 3)
+        assert_equal(len(res.json['others_count']), 1)
+        assert_equal(res.json['contributors'][0]['separator'], ',')
+        assert_equal(res.json['contributors'][1]['separator'], ',')
+        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
 
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)

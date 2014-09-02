@@ -18,13 +18,13 @@ NodeActions.beforeForkNode = function(url, done) {
         contentType: 'application/json'
     }).success(function(response) {
         bootbox.confirm(
-             $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
-             function(result) {
-                 if (result) {
-                     done && done();
-                 }
-             }
-         );
+            $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
+            function (result) {
+                if (result) {
+                    done && done();
+                }
+            }
+        );
     });
 };
 
@@ -45,7 +45,7 @@ NodeActions.forkNode = function() {
     });
 };
 
-NodeActions.forkPointer = function(pointerId, nodeId) {
+NodeActions.forkPointer = function(pointerId) {
     bootbox.confirm('Are you sure you want to fork this project?',
         function(result) {
             if (result) {
@@ -59,7 +59,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
                     data: JSON.stringify({'pointerId': pointerId}),
                     contentType: 'application/json',
                     dataType: 'json',
-                    success: function(response) {
+                    success: function() {
                         window.location.reload();
                     },
                     error: function() {
@@ -69,7 +69,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
                 });
             }
         }
-    )
+    );
 };
 
 NodeActions.addonFileRedirect = function(item) {
@@ -85,7 +85,7 @@ NodeActions.useAsTemplate = function() {
         type: 'POST',
         dataType: 'json',
         success: function(data) {
-            window.location = data['url']
+            window.location = data.url;
         },
         error: function(response) {
             $.osf.unblock();

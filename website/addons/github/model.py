@@ -459,7 +459,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def before_make_public(self, node):
-        if self.is_private:
+        try:
+            is_private = self.is_private
+        except NotFoundError:
+            return None
+        if is_private:
             return (
                 'This {cat} is connected to a private GitHub repository. Users '
                 '(other than contributors) will not be able to see the '
@@ -481,6 +485,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         if self.user_settings:
             connect = GitHub.from_settings(self.user_settings)
+            secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
                 'web',
@@ -492,13 +497,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         )
                     ),
                     'content_type': github_settings.HOOK_CONTENT_TYPE,
-                    'secret': utils.make_hook_secret(),
+                    'secret': secret,
                 }
             )
 
             if hook:
                 self.hook_id = hook.id
-                self.hook_secret = hook.config['secret']
+                self.hook_secret = secret
                 if save:
                     self.save()
 
@@ -520,3 +525,4 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     self.save()
                 return True
         return False
+

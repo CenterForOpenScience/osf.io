@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory
 from tests.base import OsfTestCase
@@ -16,11 +16,12 @@ class TestNodeSerializers(OsfTestCase):
 
     # Regression test for #489
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/489
-    def test_get_summary_private_node_should_include_id_and_primary_boolean(self):
+    def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
         node = ProjectFactory(public=False)
-        result = _get_summary(node, auth=Auth(user),
+        result = _get_summary(
+            node, auth=Auth(user),
             rescale_ratio=None,
             primary=True,
             link_id=None
@@ -29,6 +30,8 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have id and primary
         assert_equal(result['summary']['id'], node._primary_key)
         assert_true(result['summary']['primary'], True)
+        assert_equal(result['summary']['is_registration'], node.is_registration)
+        assert_equal(result['summary']['is_fork'], node.is_fork)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/668
     def test_get_summary_for_registration_uses_correct_date_format(self):
@@ -36,6 +39,53 @@ class TestNodeSerializers(OsfTestCase):
         res = _get_summary(reg, auth=Auth(reg.creator), rescale_ratio=None)
         assert_equal(res['summary']['registered_date'],
                 reg.registered_date.strftime('%Y-%m-%d %H:%M UTC'))
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/858
+    def test_get_summary_private_registration_should_include_is_registration(self):
+        user = UserFactory()
+        # non-contributor cannot see private registration of public project
+        node = ProjectFactory(public=True)
+        reg = RegistrationFactory(project=node, user=node.creator)
+        res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
+
+        # serialized result should have is_registration
+        assert_true(res['summary']['is_registration'])
+
+    def test_get_summary_private_fork_should_include_is_fork(self):
+        user = UserFactory()
+        # non-contributor cannot see private fork of public project
+        node = ProjectFactory(public=True)
+        consolidated_auth = Auth(user=node.creator)
+        fork = node.fork_node(consolidated_auth)
+
+        res = _get_summary(
+            fork, auth=Auth(user),
+            rescale_ratio=None,
+            primary=True,
+            link_id=None
+        )
+        # serialized result should have is_fork
+        assert_true(res['summary']['is_fork'])
+
+    def test_get_summary_private_fork_private_project_should_include_is_fork(self):
+        # contributor on a private project
+        user = UserFactory()
+        node = ProjectFactory(public=False)
+        node.add_contributor(user)
+
+        # contributor cannot see private fork of this project
+        consolidated_auth = Auth(user=node.creator)
+        fork = node.fork_node(consolidated_auth)
+
+        res = _get_summary(
+            fork, auth=Auth(user),
+            rescale_ratio=None,
+            primary=True,
+            link_id=None
+        )
+        # serialized result should have is_fork
+        assert_false(res['summary']['can_view'])
+        assert_true(res['summary']['is_fork'])
 
 
 class TestNodeLogSerializers(OsfTestCase):
@@ -129,7 +179,6 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-
 
     def test_add_contributor_json_with_job(self):
         # Test user with only employment information

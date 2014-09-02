@@ -10,6 +10,9 @@ class Guid(StoredObject):
         'optimistic': True,
     }
 
+    def __repr__(self):
+        return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
+
 
 class GuidStoredObject(StoredObject):
 

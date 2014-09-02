@@ -81,7 +81,7 @@
 
     $.osf.joinPrompts = function(prompts, base) {
         var prompt = base || '';
-        if (prompts) {
+        if (prompts.length !==0) {
             prompt += '<hr />';
             prompt += '<ul>';
             for (var i=0; i<prompts.length; i++) {

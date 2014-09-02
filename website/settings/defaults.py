@@ -86,7 +86,7 @@ SHORT_DOMAIN = 'osf.io'
 COMMENT_MAXLENGTH = 500
 
 # Gravatar options
-GRAVATAR_SIZE_PROFILE = 120
+GRAVATAR_SIZE_PROFILE = 70
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
 GRAVATAR_SIZE_DISCUSSION = 20
 
@@ -138,15 +138,24 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'osffiles',
-    'github', 's3', 'figshare',
-    'dropbox', 'dataverse',
     # 'badges',
+    'dataverse',
+    'dropbox',
+    'figshare',
     'forward',
+    'github',
+    'osffiles',
+    's3',
+    # 'twofactor',
+    'wiki',
 ]
 
 ADDON_CATEGORIES = [
-    'documentation', 'storage', 'bibliography', 'other',
+    'documentation',
+    'storage',
+    'bibliography',
+    'other',
+    # 'security',
 ]
 
 SYSTEM_ADDED_ADDONS = {

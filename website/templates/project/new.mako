@@ -9,7 +9,7 @@
     <div class="row">
         <div class="col-md-6 col-md-offset-3">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" data-bind="value: title">
+            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'">
             <br />
             <label>Description</label>
             <textarea class="form-control" name="description" data-bind="value: description"></textarea>

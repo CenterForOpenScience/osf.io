@@ -13,7 +13,7 @@ from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 from framework.sessions import session
 
 from website import mails, language
-from website.project.model import unreg_contributor_added
+from website.project.model import unreg_contributor_added, has_anonymous_link
 from website.models import Node, User
 from website.profile import utils
 from website.util import web_url_for, is_json_request
@@ -29,7 +29,10 @@ from framework.auth.core import get_current_user
 @must_be_valid_project
 def get_node_contributors_abbrev(auth, **kwargs):
 
+
     node = kwargs['node'] or kwargs['project']
+
+    anonymous = has_anonymous_link(node, auth)
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
@@ -40,24 +43,23 @@ def get_node_contributors_abbrev(auth, **kwargs):
     else:
         users = node.visible_contributors
 
-    if not node.can_view(auth):
+    if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
 
     n_contributors = len(users)
-    others_count, others_suffix = '', ''
+    others_count = ''
 
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = ' &'
+            separator = '&nbsp;&'
             others_count = str(n_contributors - 3)
-            others_suffix = 's' if others_count > 1 else ''
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = ' &'
+            separator = '&nbsp&'
         else:
             separator = ','
 
@@ -69,7 +71,6 @@ def get_node_contributors_abbrev(auth, **kwargs):
     return {
         'contributors': contributors,
         'others_count': others_count,
-        'others_suffix': others_suffix,
     }
 
 
@@ -79,7 +80,9 @@ def get_contributors(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_view(auth):
+    anonymous = has_anonymous_link(node, auth)
+
+    if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = utils.serialize_contributors(

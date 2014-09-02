@@ -30,8 +30,8 @@ $('#figsharePublishArticle').on('click', function(){
 %if file_versions:
     Versions: ${file_version}
     <a href="${version_url}">Version History</a><br />
-%endif 
-%if figshare_url:
+%endif
+%if figshare_url and not node['anonymous']:
     <a href="${figshare_url}">View on FigShare</a><br />
 %endif
 

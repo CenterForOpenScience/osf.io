@@ -30,7 +30,7 @@
     </div><!-- end page-header -->
 </section>
 <div class="row">
-    <div class="col-md-2">
+    <div class="col-md-2 hidden-xs">
         % if query:
             % if isinstance(counts, dict):
         <h4>
