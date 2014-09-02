@@ -18,6 +18,7 @@
     <div id="TfaVerify" class="addon-settings">
         <p>By using two-factor authentication, you'll protect your OSF account with both
             your password and your mobile phone.</p>
+        <div class="alert alert-danger"><p><strong>Important: </strong> If you lose access to your mobile device, you will not be able to log in to your OSF account.</p></div>
         <p>To use, you must install an appropriate application on your mobile device. Google Authenticator
             is a popular choice and is available for both
             <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a>
