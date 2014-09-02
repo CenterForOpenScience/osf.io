@@ -208,11 +208,11 @@ class AddonSettingsBase(StoredObject):
     #############
 
     def on_add(self):
-        """Called when the addon is added (or re-added) to a User"""
+        """Called when the addon is added (or re-added) to the owner (User or Node)."""
         pass
 
     def on_delete(self):
-        """Called when the addon is deleted from a User"""
+        """Called when the addon is deleted from the owner (User or Node)."""
         pass
 
 
