@@ -1,19 +1,13 @@
 """Check for consistency errors in parent-child relationships.
 
 """
-import logging
+from nose.tools import *    #noqa (PEP 8 asserts)
 
-from website.app import init_app
 from website import models
-from framework import Q
+from modularodm import Q
 
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.WARN)
-file_logger = logging.FileHandler('consistency/children.log')
-logger.addHandler(file_logger)
-
-app = init_app()
+from tests.base import OsfTestCase
+from tests.factories import UserFactory, ProjectFactory
 
 
 def find_orphaned_children(filters=None):
@@ -32,7 +26,6 @@ def find_orphaned_children(filters=None):
                 child._primary_key,
                 len(child.node__parent),
             )
-            logger.error(msg)
             errors.append(msg)
             continue
         parent = child.node__parent[0]
@@ -43,7 +36,6 @@ def find_orphaned_children(filters=None):
                 child.title,
                 child._primary_key,
             )
-            logger.error(msg)
             parent.nodes.append(child)
             parent.save()
             errors.append(msg)
@@ -68,11 +60,38 @@ def find_missing_children(filters=None):
                     parent.title,
                     parent._primary_key,
                 )
-                logger.error(msg)
                 child.node__parent.append(parent)
                 child.save()
                 errors.append(msg)
     return errors
+
+
+class TestParentChildMigration(OsfTestCase):
+
+    def setUp(self):
+        super(TestParentChildMigration, self).setUp()
+        self.user = UserFactory()
+        self.parent_project = ProjectFactory(creator=self.user)
+        self.first_child = ProjectFactory(creator=self.user, project=self.parent_project)
+        self.second_child = ProjectFactory(creator=self.user, project=self.parent_project)
+
+    def test_orphaned_children(self):
+        assert_equal(len(self.parent_project.nodes), 2)
+
+        self.parent_project.nodes.remove(self.second_child)
+        assert_equal(len(self.parent_project.nodes), 1)
+
+        find_orphaned_children(filters=None)
+        assert_equal(len(self.parent_project.nodes), 2)
+
+    def test_missing_children(self):
+        assert self.parent_project in self.first_child.node__parent
+
+        self.first_child.node__parent = []
+        assert self.parent_project not in self.first_child.node__parent
+
+        find_missing_children(filters=None)
+        assert self.parent_project in self.first_child.node__parent
 
 
 if __name__ == '__main__':
