@@ -25,7 +25,9 @@ NodeActions.beforeForkNode = function(url, done) {
                 }
             }
         );
-    });
+    }).error(
+        $.osf.handleJSONError
+    );
 };
 
 NodeActions.forkNode = function() {
@@ -59,13 +61,11 @@ NodeActions.forkPointer = function(pointerId) {
                     data: JSON.stringify({'pointerId': pointerId}),
                     contentType: 'application/json',
                     dataType: 'json',
-                    success: function() {
-                        window.location.reload();
-                    },
-                    error: function() {
-                        $.osf.unblock();
-                        bootbox.alert('Could not fork link.');
-                    }
+                }).success(function() {
+                    window.location.reload();
+                }).error(function() {
+                    $.osf.unblock();
+                    bootbox.alert('Could not fork link.');
                 });
             }
         }
@@ -84,13 +84,11 @@ NodeActions.useAsTemplate = function() {
         url: '/api/v1/project/new/' + nodeId + '/',
         type: 'POST',
         dataType: 'json',
-        success: function(data) {
-            window.location = data.url;
-        },
-        error: function(response) {
-            $.osf.unblock();
-            $.osf.handleJSONError(response);
-        }
+    }).done(function(data) {
+        window.location = data.url;
+    }).fail(function(response) {
+        $.osf.unblock();
+        $.osf.handleJSONError(response);
     });
 };
 
@@ -158,10 +156,9 @@ NodeActions.reorderChildren = function(idList, elm) {
         data: JSON.stringify({'new_list': idList}),
         contentType: 'application/json',
         dataType: 'json',
-        error: function(response) {
-            $(elm).sortable('cancel');
-            $.osf.handleJSONError(response);
-        }
+    }).fail(function(response) {
+        $(elm).sortable('cancel');
+        $.osf.handleJSONError(response);
     });
 };
 
@@ -172,10 +169,11 @@ NodeActions.removePointer = function(pointerId, pointerElm) {
         data: JSON.stringify({pointerId: pointerId}),
         contentType: 'application/json',
         dataType: 'json',
-        success: function(response) {
-            pointerElm.remove();
-        }
-    })
+    }).done(function() {
+        pointerElm.remove();
+    }).fail(
+        $.osf.handleJSONError
+    );
 };
 
 
@@ -228,8 +226,8 @@ $(document).ready(function() {
     $('.visibility-info').attr(
         'data-content', visibilityInfoHtml
     ).popover({
-            trigger: 'hover'
-        });
+        trigger: 'hover'
+    });
 
 
     ////////////////////

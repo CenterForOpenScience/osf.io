@@ -24,15 +24,12 @@
      *
      * @param  {String} url  The url to post to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done, error) {
+    $.osf.postJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -42,22 +39,32 @@
      * Puts JSON data.
      *
      * Example:
-     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'})
      *
      * @param  {String} url  The url to put to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done, error) {
+    $.osf.putJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
+    };
+
+    // Error handlers
+
+    $.osf.handleJSONError = function(response) {
+        bootbox.alert({
+            title: response.responseJSON.message_short,
+            message: response.responseJSON.message_long
+        });
+    };
+
+    $.osf.handleEditableError = function(response, newValue) {
+        return 'Unexpected error: ' + response.statusText;
     };
 
     $.osf.block = function() {
@@ -186,13 +193,6 @@
             $elem.show();
         }
         ko.applyBindings(viewModel, $elem[0]);
-    };
-
-    $.osf.handleJSONError = function (response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short,
-            message: response.responseJSON.message_long
-        });
     };
 
 
