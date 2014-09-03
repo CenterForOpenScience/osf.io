@@ -44,6 +44,8 @@ def find_orphaned_children(filters=None):
                 child._primary_key,
             )
             logger.error(msg)
+            parent.nodes.append(child)
+            parent.save()
             errors.append(msg)
     return errors
 
@@ -67,6 +69,8 @@ def find_missing_children(filters=None):
                     parent._primary_key,
                 )
                 logger.error(msg)
+                child.node__parent.append(parent)
+                child.save()
                 errors.append(msg)
     return errors
 
