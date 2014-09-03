@@ -2,6 +2,7 @@
 import httplib as http
 
 from dropbox.rest import ErrorResponse
+from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
 from framework.flask import request
@@ -41,10 +42,18 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     file_not_found = HTTPError(http.NOT_FOUND, data=dict(message_short='File not found',
                                                   message_long='The Dropbox file '
                                                   'you requested could not be found.'))
+
+    max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data=dict(message_short='Request Timeout',
+                                                   message_long='Dropbox could not be reached '
+                                                   'at this time.'))
+
     try:
         metadata = client.metadata(path)
     except ErrorResponse:
         raise file_not_found
+    except MaxRetryError:
+        raise max_retry_error
+
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
         raise file_not_found
