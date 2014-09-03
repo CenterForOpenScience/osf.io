@@ -31,7 +31,7 @@ from framework.analytics import (
 )
 from framework.exceptions import PermissionsError
 from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
+from framework import StoredObject, fields
 from framework import GuidStoredObject, Q
 from framework.addons import AddonModelMixin
 
@@ -387,23 +387,6 @@ class NodeLog(StoredObject):
             'id': privacy_info_handle(user._primary_key, anonymous),
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
-        }
-
-    # TODO: Move to separate utility function
-    def serialize(self, anonymous=False):
-        '''Return a dictionary representation of the log.'''
-        return {
-            'id': str(self._primary_key),
-            'user': self.user.serialize(anonymous)
-                    if isinstance(self.user, User)
-                    else {'fullname': privacy_info_handle(self.foreign_user, anonymous, name=True)},
-            'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
-            'api_key': self.api_key.label if self.api_key else '',
-            'action': self.action,
-            'params': self.params,
-            'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None,
-            'anonymous': anonymous
         }
 
 
@@ -2452,6 +2435,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
             'is_public': self.is_public,
+            'is_registration': self.is_registration
         }
 
 

@@ -131,7 +131,7 @@
                 'date': item.date,
                 // The node type, either 'project' or 'component'
                 // NOTE: This is NOT the component category (e.g. 'hypothesis')
-                'nodeType': item.node.node_type,
+                'nodeType': item.node.is_registration ? 'registration': item.node.node_type,
                 'nodeCategory': item.node.category,
                 'contributors': item.contributors,
                 'nodeUrl': item.node.url,
