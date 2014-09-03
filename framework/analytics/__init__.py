@@ -1,8 +1,12 @@
-from framework import session
-
+# -*- coding: utf-8 -*-
+import functools
 from datetime import datetime
-import framework
 
+import framework
+from framework import db, session
+
+
+collection = db['pagecounters']
 
 def increment_user_activity_counters(user_id, action, date, db=None):
     db = db or framework.mongo.db  # for backwards-compat
@@ -48,6 +52,7 @@ def update_counters(rex, db=None):
     collection = db['pagecounters']
 
     def wrapper(func):
+        @functools.wraps(func)
         def wrapped(*args, **kwargs):
             date = datetime.utcnow()
             date = date.strftime('%Y/%m/%d')
