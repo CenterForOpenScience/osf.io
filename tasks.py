@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
+"""Invoke tasks. To run a task, run ``$ invoke <COMMAND>``. To see a list of
 commands, run ``$ invoke --list``.
-'''
+"""
 import os
 import sys
 import code
@@ -134,8 +134,8 @@ def shell():
     code.interact(banner, local=context)
     return
 
-@task
-def mongo(daemon=False,
+@task(aliases=['mongo'])
+def mongoserver(daemon=False,
           logpath="/usr/local/var/log/mongodb/mongo.log",
           logappend=True):
     """Run the mongod process.
@@ -146,12 +146,12 @@ def mongo(daemon=False,
         cmd += " --logappend"
     if daemon:
         cmd += " --fork"
-    run(cmd)
+    run(cmd, echo=True)
 
 
-@task
-def mongoshell():
-    '''Run the mongo shell for the OSF database.'''
+@task(aliases=['mongoshell'])
+def mongoclient():
+    """Run the mongo shell for the OSF database."""
     db = settings.DB_NAME
     port = settings.DB_PORT
     run("mongo {db} --port {port}".format(db=db, port=port), pty=True)
@@ -214,28 +214,28 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
-@task
+@task(aliases=['celery'])
 def celery_worker(level="debug"):
-    '''Run the Celery process.'''
+    """Run the Celery process."""
     run("celery worker -A framework.tasks -l {0}".format(level))
 
 
 @task
 def rabbitmq():
-    '''Start a local rabbitmq server.
+    """Start a local rabbitmq server.
 
     NOTE: this is for development only. The production environment should start
     the server as a daemon.
-    '''
+    """
     run("rabbitmq-server", pty=True)
 
 
 @task
 def elasticsearch():
-    '''Start a local elasticsearch server
+    """Start a local elasticsearch server
 
     NOTE: Requires that elasticsearch is installed. See README for instructions
-    '''
+    """
     import platform
     if platform.linux_distribution()[0] == 'Ubuntu':
         run("sudo service elasticsearch start")
@@ -251,13 +251,13 @@ def migrate_search(python='python'):
 
 @task
 def mailserver(port=1025):
-    '''Run a SMTP test server.'''
+    """Run a SMTP test server."""
     run("python -m smtpd -n -c DebuggingServer localhost:{port}".format(port=port), pty=True)
 
 
 @task
 def requirements(all=False):
-    '''Install dependencies.'''
+    """Install dependencies."""
     run("pip install --upgrade -r dev-requirements.txt")
     if all:
         addon_requirements()
@@ -266,8 +266,7 @@ def requirements(all=False):
 
 @task
 def test_module(module=None, verbosity=2):
-    """
-    Helper for running tests.
+    """Helper for running tests.
     """
     # Allow selecting specific submodule
     module_fmt = ' '.join(module) if isinstance(module, list) else module
@@ -410,13 +409,13 @@ def packages():
 @task
 def npm_bower():
     print('Installing bower')
-    run('npm install -g bower')
+    run('npm install -g bower', echo=True)
 
 
 @task
 def bower_install():
     print('Installing bower-managed packages')
-    run('bower install')
+    run('bower install', echo=True)
 
 
 @task
