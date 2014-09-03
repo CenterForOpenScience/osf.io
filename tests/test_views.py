@@ -20,6 +20,7 @@ from framework import auth
 from framework.exceptions import HTTPError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
+from framework.auth.views import confirm_update_email
 
 import website.app
 from website.models import Node, Pointer, NodeLog
@@ -593,12 +594,15 @@ class TestUserProfile(OsfTestCase):
             'family': 'Presley',
             'unconfirmed_username': 'bluesuede@shoes.com',
         }
+
         self.app.put_json(
             url,
             payload,
             auth=self.user.auth,
         )
+
         self.user.reload()
+
         assert_equal(self.user.fullname, 'Elvis Presley')
         assert_equal(self.user.given_name, 'Elvis')
         assert_equal(self.user.middle_names, 'Aaron')
@@ -653,6 +657,51 @@ class TestUserProfile(OsfTestCase):
         # error should be raised because unconfirmed_username is not unique - it is username of user2
         assert_in('400 BAD REQUEST', cm.exception.message)
 
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_send_update_email_confirmation_sends_confirm_email(self, send_mail):
+        url = api_url_for('unserialize_names')
+        payload = {
+            'full': 'Elvis Presley',
+            'unconfirmed_username': 'hounddog@graceland.com',
+            'given': 'Elvis',
+            'middle': 'Aaron',
+            'family': 'Presley',
+        }
+        self.app.put_json(
+            url,
+            payload,
+            auth=self.user.auth,
+        )
+        self.user.reload()
+
+        token = self.user.get_confirmation_token(self.user.unconfirmed_username)
+        assert_equal(self.user.email_verifications[token]['email'], self.user.unconfirmed_username)
+
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.unconfirmed_username,
+        ))
+
+
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_update_email(self, send_mail):
+        self.user.unconfirmed_username = 'hounddog@graceland.com'
+        self.user.add_email_verification(self.user.unconfirmed_username)
+        self.user.save()
+
+        confirmation_url = self.user.get_confirmation_url(
+            self.user.unconfirmed_username,
+            external=False
+        )
+        confirm_update_email(user=self.user, email=self.user.unconfirmed_username)
+
+        assert_true(send_mail.called)
+        assert_true(send_mail.called_with(
+            to_addr=self.user.unconfirmed_username,
+            confirmation_url=confirmation_url,
+            mail=mails.UPDATE_EMAIL
+        ))
 
     def test_serialize_names(self):
         self.user.fullname = 'Thomas Jefferson'
