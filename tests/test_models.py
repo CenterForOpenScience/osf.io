@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Unit tests for models and their factories.'''
 import os
+import subprocess
 import shutil
 import mock
 import unittest
@@ -18,7 +19,6 @@ from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
-from framework import utils
 from framework.bcrypt import check_password_hash
 from framework.git.exceptions import FileNotModified
 from website import filters, language, settings
@@ -33,6 +33,7 @@ from website.util import web_url_for, api_url_for
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,
     VersionNotFoundError,
+    FileNotFoundError,
 )
 
 from tests.base import OsfTestCase, Guid, fake
@@ -729,6 +730,30 @@ class TestFileActions(OsfTestCase):
         shutil.rmtree(git_path)
         with assert_raises(AssertionError):
             node.get_file('foo', version=0)
+
+    def test_delete_file(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+
+        file_path = os.path.join(settings.UPLOADS_PATH, node._id, 'foo')
+
+        assert_true(os.path.exists(file_path))
+        node.remove_file(Auth(node.creator), 'foo')
+        assert_false(os.path.exists(file_path))
+
+    def test_delete_file_that_is_already_deleted(self):
+        node = ProjectFactory()
+        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
+        node.save()
+
+        git_dir = os.path.join(settings.UPLOADS_PATH, node._id)
+
+        subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
+
+        with assert_raises(FileNotFoundError):
+            node.remove_file(Auth(node.creator), 'foo')
+
 
 
 class TestApiKey(OsfTestCase):
@@ -2324,25 +2349,6 @@ class TestNodeLog(OsfTestCase):
     def test_node_log_factory(self):
         log = NodeLogFactory()
         assert_true(log.action)
-
-    def test_serialize(self):
-        node = NodeFactory(category='hypothesis')
-        log = NodeLogFactory(params={'node': node._primary_key})
-        node.logs.append(log)
-        node.save()
-        d = log.serialize()
-        assert_equal(d['action'], log.action)
-        assert_equal(d['node']['node_type'], 'component')
-        assert_equal(d['node']['category'], 'Hypothesis')
-
-        assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], utils.rfcformat(log.date))
-        assert_in('contributors', d)
-        assert_equal(d['user']['fullname'], log.user.fullname)
-        assert_equal(d['user']['url'], log.user.url)
-        assert_in('api_key', d)
-        assert_equal(d['params'], log.params)
-        assert_equal(d['node']['title'], log.node.title)
 
     def test_render_log_contributor_unregistered(self):
         node = NodeFactory()

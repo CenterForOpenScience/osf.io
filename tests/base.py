@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import os
+import shutil
 import unittest
 import logging
 import functools
@@ -77,6 +79,7 @@ class DbTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        super(DbTestCase, cls).setUpClass()
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
         teardown_database(database=database_proxy._get_current_object())
@@ -90,6 +93,7 @@ class DbTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        super(DbTestCase, cls).tearDownClass()
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
 
@@ -98,17 +102,44 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
     def setUp(self):
+        super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
         self.context.push()
 
     def tearDown(self):
+        super(AppTestCase, self).tearDown()
         self.context.pop()
 
 
-class OsfTestCase(DbTestCase, AppTestCase):
+class UploadTestCase(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Store uploads in temp directory.
+        """
+        super(UploadTestCase, cls).setUpClass()
+        cls._old_uploads_path = settings.UPLOADS_PATH
+        cls._uploads_path = os.path.join('/tmp', 'osf', 'uploads')
+        try:
+            os.makedirs(cls._uploads_path)
+        except OSError:  # Path already exists
+            pass
+        settings.UPLOADS_PATH = cls._uploads_path
+
+    @classmethod
+    def tearDownClass(cls):
+        """Restore uploads path.
+        """
+        super(UploadTestCase, cls).tearDownClass()
+        shutil.rmtree(cls._uploads_path)
+        settings.UPLOADS_PATH = cls._old_uploads_path
+
+
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
-    application.
+    application. Note: superclasses must call `super` in order for all setup and
+    teardown methods to be called correctly.
     """
     pass
 

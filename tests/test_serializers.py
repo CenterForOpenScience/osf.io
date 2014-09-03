@@ -2,12 +2,14 @@
 
 from nose.tools import *  # noqa (PEP8 asserts)
 
-from tests.factories import ProjectFactory, UserFactory, RegistrationFactory
+from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
+from framework import utils as framework_utils
 from website.project.views.node import _get_summary
 from website.profile import utils
+from website.views import serialize_log
 
 
 class TestNodeSerializers(OsfTestCase):
@@ -85,6 +87,40 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
 
+
+class TestNodeLogSerializers(OsfTestCase):
+
+    def test_serialize_log(self):
+        node = NodeFactory(category='hypothesis')
+        log = NodeLogFactory(params={'node': node._primary_key})
+        node.logs.append(log)
+        node.save()
+        d = serialize_log(log)
+        assert_equal(d['action'], log.action)
+        assert_equal(d['node']['node_type'], 'component')
+        assert_equal(d['node']['category'], 'Hypothesis')
+
+        assert_equal(d['node']['url'], log.node.url)
+        assert_equal(d['date'], framework_utils.rfcformat(log.date))
+        assert_in('contributors', d)
+        assert_equal(d['user']['fullname'], log.user.fullname)
+        assert_equal(d['user']['url'], log.user.url)
+        assert_in('api_key', d)
+        assert_equal(d['params'], log.params)
+        assert_equal(d['node']['title'], log.node.title)
+
+    def test_serialize_node_for_logs(self):
+        node = NodeFactory()
+        d = node.serialize()
+
+        assert_equal(d['id'], node._primary_key)
+        assert_equal(d['category'], node.category_display)
+        assert_equal(d['node_type'], node.project_or_component)
+        assert_equal(d['url'], node.url)
+        assert_equal(d['title'], node.title)
+        assert_equal(d['api_url'], node.api_url)
+        assert_equal(d['is_public'], node.is_public)
+        assert_equal(d['is_registration'], node.is_registration)
 
 class TestAddContributorJson(OsfTestCase):
 

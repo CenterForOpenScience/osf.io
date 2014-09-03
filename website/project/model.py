@@ -23,7 +23,6 @@ from modularodm import fields, Q
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
-from framework import utils
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo.utils import to_mongo
@@ -390,23 +389,6 @@ class NodeLog(StoredObject):
             'id': privacy_info_handle(user._primary_key, anonymous),
             'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
-        }
-
-    # TODO: Move to separate utility function
-    def serialize(self, anonymous=False):
-        '''Return a dictionary representation of the log.'''
-        return {
-            'id': str(self._primary_key),
-            'user': self.user.serialize(anonymous)
-                    if isinstance(self.user, User)
-                    else {'fullname': privacy_info_handle(self.foreign_user, anonymous, name=True)},
-            'contributors': [self._render_log_contributor(c, anonymous) for c in self.params.get("contributors", [])],
-            'api_key': self.api_key.label if self.api_key else '',
-            'action': self.action,
-            'params': self.params,
-            'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None,
-            'anonymous': anonymous
         }
 
 
@@ -1553,12 +1535,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         :param path:
 
-        :return: True on success, False on failure
+        :raises: website.osffiles.exceptions.FileNotFoundError if file is not found.
         '''
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotFoundError
+        from website.addons.osffiles.utils import urlsafe_filename
 
-        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
-        file_name_key = path.replace('.', '_')
+        file_name_key = urlsafe_filename(path)
 
         repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1577,19 +1560,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             committer = self._get_committer(auth)
 
             repo.do_commit(message, committer)
-
         except subprocess.CalledProcessError as error:
-            # This exception can be ignored if the file has already been
-            # deleted, e.g. if two users attempt to delete a file at the same
-            # time. If another subprocess error is raised, fail.
-            if error.returncode == 128 and 'did not match any files' in error.output:
-                logger.warning(
-                    'Attempted to delete file {0}, but file was not found.'.format(
-                        path
-                    )
-                )
-                return True
-            return False
+            if error.returncode == 128:
+                raise FileNotFoundError('File {0!r} was not found'.format(path))
+            raise
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
@@ -1607,9 +1581,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'path':path
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'path': path
             },
             auth=auth,
             log_date=nf.date_modified,
@@ -1618,8 +1592,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Updates self.date_modified
         self.save()
-
-        return True
 
     @staticmethod
     def _get_committer(auth):
@@ -2465,6 +2437,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
             'is_public': self.is_public,
+            'is_registration': self.is_registration
         }
 
 
