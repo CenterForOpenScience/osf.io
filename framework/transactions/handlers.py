@@ -7,7 +7,6 @@ import functools
 from flask import request, make_response, current_app
 from pymongo.errors import OperationFailure
 
-from framework.mongo import database
 from framework.flask import add_handler
 from framework.transactions import utils, commands, messages
 
@@ -31,7 +30,7 @@ def view_has_annotation(attr):
     except (RuntimeError, AttributeError):
         return False
     view = current_app.view_functions[endpoint]
-    return getattr(view, NO_AUTO_TRANSACTION_ATTR, False)
+    return getattr(view, attr, False)
 
 
 def transaction_before_request():
@@ -54,11 +53,10 @@ def transaction_after_request(response):
     """Teardown transaction after handling the request. Rollback if an
     uncaught exception occurred, else commit. If the commit fails due to a lock
     error, rollback and return error response.
-
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return response
-    if response.status_code == httplib.INTERNAL_SERVER_ERROR:
+    if response.status_code >= 500:
         commands.rollback()
     else:
         try:
@@ -76,7 +74,6 @@ def transaction_teardown_request(error=None):
     """Rollback transaction on uncaught error. This code should never be
     reached in debug mode, since uncaught errors are raised for use in the
     Werkzeug debugger.
-
     """
     if view_has_annotation(NO_AUTO_TRANSACTION_ATTR):
         return None

@@ -14,7 +14,8 @@ from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from framework.mongo import client, database
+from framework.mongo import client as client_proxy
+from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
 from website.project.model import (
@@ -57,25 +58,45 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
-class OsfTestCase(unittest.TestCase):
-    '''Base TestCase for tests that require a temporary MongoDB database.
-    '''
-    # DB settings
-    db_name = getattr(settings, 'TEST_DB_NAME', 'osf_test')
+def teardown_database(client=None, database=None):
+    client = client or client_proxy
+    database = database or database_proxy
+    try:
+        commands.rollback(database)
+    except OperationFailure as error:
+        message = utils.get_error_message(error)
+        if messages.NO_TRANSACTION_ERROR not in message:
+            raise
+    client_proxy.drop_database(database)
+
+
+class DbTestCase(unittest.TestCase):
+    """Base `TestCase` for tests that require a scratch database.
+    """
+    DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
 
     @classmethod
     def setUpClass(cls):
-        """Clear test database and attach to schema classes.
-
-        """
-        cls._original_db, settings.DB_NAME = settings.DB_NAME, cls.db_name
+        cls._original_db_name = settings.DB_NAME
+        settings.DB_NAME = cls.DB_NAME
+        teardown_database(database=database_proxy._get_current_object())
+        # TODO: With `database` as a `LocalProxy`, we should be able to simply
+        # this logic
         set_up_storage(
             website.models.MODELS,
             storage.MongoStorage,
             addons=settings.ADDONS_AVAILABLE,
         )
-        client.drop_database(cls.db_name)
 
+    @classmethod
+    def tearDownClass(cls):
+        teardown_database(database=database_proxy._get_current_object())
+        settings.DB_NAME = cls._original_db_name
+
+
+class AppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF tests that require the WSGI app (but no database).
+    """
     def setUp(self):
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
@@ -84,52 +105,12 @@ class OsfTestCase(unittest.TestCase):
     def tearDown(self):
         self.context.pop()
 
-    @classmethod
-    def tearDownClass(cls):
-        """Clear test database again.
 
-        """
-        client.drop_database(cls.db_name)
-        settings.DB_NAME = cls._original_db
-
-
-def teardown_database(client=client, database=database):
-    try:
-        commands.rollback(database)
-    except OperationFailure as error:
-        message = utils.get_error_message(error)
-        if messages.NO_TRANSACTION_ERROR not in message:
-            raise
-    client.drop_database(database)
-
-
-class DbTestCase(unittest.TestCase):
-
-    DB_NAME = getattr(settings, 'TEST_DB_NAME', 'osf_test')
-
-    @classmethod
-    def setUpClass(cls):
-        cls._original_db_name = settings.DB_NAME
-        settings.DB_NAME = cls.DB_NAME
-        teardown_database(database=database._get_current_object())
-
-    @classmethod
-    def tearDownClass(cls):
-        teardown_database(database=database._get_current_object())
-        settings.DB_NAME = cls._original_db_name
-
-
-class AppTestCase(unittest.TestCase):
-    '''Base TestCase for OSF tests that require the WSGI app (but no database).
-    '''
-
-    def setUp(self):
-        self.app = test_app
-        self.ctx = self.app.app_context()
-        self.ctx.push()
-
-    def tearDown(self):
-        self.ctx.pop()
+class OsfTestCase(DbTestCase, AppTestCase):
+    """Base `TestCase` for tests that require both scratch databases and the OSF
+    application.
+    """
+    pass
 
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py

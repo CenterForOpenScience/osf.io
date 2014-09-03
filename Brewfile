@@ -6,5 +6,5 @@ install elasticsearch
 install gpg
 install node
 
-brew tap tokutek/tokumx
+tap tokutek/tokumx
 install tokumx-bin

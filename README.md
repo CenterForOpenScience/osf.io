@@ -154,7 +154,7 @@ If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/se
 ### Installing with Mac OS
 
 ```bash
-$ brew tap tokutex/tokumx
+$ brew tap tokutek/tokumx
 $ brew install tokumx-bin
 ```
 

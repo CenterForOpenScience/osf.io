@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 
-from framework.mongo import database
+from framework.mongo import database as proxy_database
 
 
-def begin(database=database):
+def begin(database=None):
+    database = database or proxy_database
     database.command('beginTransaction')
 
 
-def rollback(database=database):
+def rollback(database=None):
+    database = database or proxy_database
     database.command('rollbackTransaction')
 
 
-def commit(database=database):
+def commit(database=None):
+    database = database or proxy_database
     database.command('commitTransaction')
 
 
-def show_live(database=database):
+def show_live(database=None):
+    database = database or proxy_database
     return database.command('showLiveTransactions')
+

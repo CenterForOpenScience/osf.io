@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import functools
 
 from pymongo.errors import OperationFailure
 
-from framework.mongo import database
+from framework.mongo import database as proxy_database
 from framework.transactions import commands, messages, utils
 
 
@@ -17,8 +18,8 @@ class TokuTransaction(object):
     ignore attempts to nest transactions.
 
     """
-    def __init__(self, database=database):
-        self.database = database
+    def __init__(self, database=None):
+        self.database = database or proxy_database
         self.pending = False
 
     def __enter__(self):
@@ -50,12 +51,13 @@ class TokuTransaction(object):
                 raise
 
 
-def transaction(database=database):
+def transaction(database=None):
     """Transaction decorator factory. Create a decorator that wraps the
     decorated function in a transaction using the provided database object.
 
     """
     def wrapper(func):
+        @functools.wraps(func)
         def wrapped(*args, **kwargs):
             with TokuTransaction(database):
                 return func(*args, **kwargs)

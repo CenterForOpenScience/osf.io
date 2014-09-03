@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import logging
+
 import mock
 import webtest_plus
 import unittest
@@ -22,6 +24,8 @@ def dummy_view():
 
 
 TEST_COLLECTION_NAME = 'transactions'
+
+app.logger.setLevel(logging.CRITICAL)
 
 
 class TestTransactionContext(OsfTestCase):
@@ -214,7 +218,6 @@ class TestSkipTransactions(DbTestCase):
         assert_false(mock_commit.called)
 
 
-
 @transaction_app.route('/write/without/errors/', methods=['POST'])
 def write_without_errors():
     database['txn'].insert({'_id': 'success'})
@@ -230,7 +233,7 @@ def write_with_error_500():
 @transaction_app.route('/write/with/error/uncaught/', methods=['POST'])
 def write_with_error_uncaught():
     database['txn'].insert({'_id': 'error_uncaught'})
-    raise
+    raise Exception
 
 
 class TestTransactionIntegration(DbTestCase):
