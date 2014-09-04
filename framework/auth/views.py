@@ -154,9 +154,7 @@ def confirm_email_get(**kwargs):
                 user.save()
                 status.push_status_message(language.UPDATED_EMAIL_CONFIRMATION, 'success')
                 response = redirect('/settings/')
-                return response
-                #return auth.authenticate(user, response=response)
-
+                return auth.authenticate(user, response=response)
             else: # Confirm and register the user
                 user.date_last_login = datetime.datetime.utcnow()
                 user.save()
