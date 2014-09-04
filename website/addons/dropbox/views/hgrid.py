@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 
-from framework.exceptions import HTTPError
+from flask import request
+from dropbox.rest import ErrorResponse
+from urllib3.exceptions import MaxRetryError
 
-from framework.flask import request
+from framework.exceptions import HTTPError
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
 
@@ -28,7 +31,7 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
     if node_addon.folder is None and not request.args.get('foldersOnly'):
         return {'data': []}
     node = node_addon.owner
-    path = kwargs.get('path',  '')
+    path = kwargs.get('path', '')
     # Verify that path is a subdirectory of the node's shared folder
     if not is_authorizer(auth, node_addon):
         abort_if_not_subdir(path, node_addon.folder)
@@ -37,10 +40,24 @@ def dropbox_hgrid_data_contents(node_addon, auth, **kwargs):
         'view': node.can_view(auth)
     }
     client = get_node_client(node)
-    metadata = client.metadata(path)
+    file_not_found = HTTPError(http.NOT_FOUND, data=dict(message_short='File not found',
+                                                  message_long='The Dropbox file '
+                                                  'you requested could not be found.'))
+
+    max_retry_error = HTTPError(http.REQUEST_TIMEOUT, data=dict(message_short='Request Timeout',
+                                                   message_long='Dropbox could not be reached '
+                                                   'at this time.'))
+
+    try:
+        metadata = client.metadata(path)
+    except ErrorResponse:
+        raise file_not_found
+    except MaxRetryError:
+        raise max_retry_error
+
     # Raise error if folder was deleted
     if metadata.get('is_deleted'):
-        raise HTTPError(http.NOT_FOUND)
+        raise file_not_found
     contents = metadata['contents']
     if request.args.get('foldersOnly'):
         contents = [metadata_to_hgrid(file_dict, node, permissions) for

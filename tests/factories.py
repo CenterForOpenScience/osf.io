@@ -16,7 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation
 
-from framework import StoredObject
+from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from website.project.model import (
@@ -34,7 +34,6 @@ def save_kwargs(**kwargs):
 
 
 class ModularOdmFactory(base.Factory):
-
     """Base factory for modular-odm objects.
     """
 
@@ -42,7 +41,7 @@ class ModularOdmFactory(base.Factory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        '''Build an object without saving it.'''
+        """Build an object without saving it."""
         save_kwargs(**kwargs)
         return target_class(*args, **kwargs)
 

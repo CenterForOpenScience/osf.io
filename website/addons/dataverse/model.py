@@ -1,16 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import os
 import logging
 
-from modularodm import Q
+from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
-from framework import fields
 from framework.auth.decorators import Auth
 from website.addons.base import AddonNodeSettingsBase, AddonUserSettingsBase
 from website.addons.base import GuidFile
 from website.security import encrypt, decrypt
 
+
 logging.getLogger('sword2').setLevel(logging.WARNING)
+
 
 class DataverseFile(GuidFile):
 
@@ -213,11 +216,20 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = 'Dataverse authorization copied to fork.'
+            message = (
+                'Dataverse authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component
+            )
         else:
-            message = ('Dataverse authorization not copied to fork. You may '
-                        'authorize this fork on the <a href="{url}">Settings</a>'
-                        'page.').format(url=fork.web_url_for('node_setting'))
+            message = (
+                'Dataverse authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href="{url}">Settings</a> '
+                'page.'
+            ).format(
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component
+            )
         if save:
             clone.save()
         return clone, message

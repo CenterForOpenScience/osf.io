@@ -2,7 +2,7 @@
 """Views tests for the Dropbox addon."""
 import os
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 import httplib
 import datetime
@@ -12,6 +12,8 @@ from webtest import Upload
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
+from dropbox.rest import ErrorResponse
+from urllib3.exceptions import MaxRetryError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
@@ -58,7 +60,7 @@ class TestAuthViews(OsfTestCase):
         assert_true(settings.has_auth)
         self.user.save()
         url = api_url_for('dropbox_oauth_delete_user')
-        res = self.app.delete(url)
+        self.app.delete(url)
         settings.reload()
         assert_false(settings.has_auth)
 
@@ -108,7 +110,6 @@ class TestConfigViews(DropboxAddonTestCase):
         result = serialize_settings(self.node_settings, no_addon_user, client=mock_client)
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
-
 
     def test_serialize_settings_helper_returns_correct_folder_info(self):
         result = serialize_settings(self.node_settings, self.user, client=mock_client)
@@ -298,7 +299,6 @@ class TestFilebrowserViews(DropboxAddonTestCase):
             node_settings=self.node_settings, auth=self.user.auth)
         assert_is_none(root)
 
-
     @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
     def test_dropbox_hgrid_data_contents_deleted(self, mock_metadata):
         # Example metadata for a deleted folder
@@ -320,6 +320,22 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         url = self.project.api_url_for('dropbox_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_returns_error_if_invalid_path(self, mock_metadata):
+        mock_response = mock.Mock()
+        mock_metadata.side_effect = ErrorResponse(mock_response, body='File not found')
+        url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.NOT_FOUND)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
+        mock_response = mock.Mock()
+        url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        mock_metadata.side_effect = MaxRetryError(mock_response, url)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.REQUEST_TIMEOUT)
 
 
 class TestRestrictions(DropboxAddonTestCase):
@@ -437,7 +453,7 @@ class TestCRUDViews(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.file_delete')
     def test_delete_file(self, mock_file_delete):
         path = 'foo'
-        res = self.app.delete(
+        self.app.delete(
             url=api_url_for('dropbox_delete_file',
                        pid=self.project._primary_key, path=path),
             auth=self.user.auth,
@@ -461,9 +477,9 @@ class TestCRUDViews(DropboxAddonTestCase):
     @mock.patch('website.addons.dropbox.client.DropboxClient.put_file')
     def test_dropbox_upload_saves_a_log(self, mock_put_file):
         mock_put_file.return_value = mock_responses['put_file']
-        payload = {'file': Upload('rootfile.rst', b'baz','text/x-rst')}
+        payload = {'file': Upload('rootfile.rst', b'baz', 'text/x-rst')}
         url = api_url_for('dropbox_upload', pid=self.project._primary_key, path='foo')
-        res = self.app.post(url, payload, auth=self.user.auth)
+        self.app.post(url, payload, auth=self.user.auth)
         self.project.reload()
         last_log = self.project.logs[-1]
 
@@ -483,7 +499,7 @@ class TestCRUDViews(DropboxAddonTestCase):
         with patch_client('website.addons.dropbox.views.crud.get_node_addon_client'):
             path = 'foo'
             url = self.project.api_url_for('dropbox_delete_file', path=path)
-            res = self.app.delete(url, auth=self.user.auth)
+            self.app.delete(url, auth=self.user.auth)
             self.project.reload()
             last_log = self.project.logs[-1]
             assert_equal(last_log.action, 'dropbox_' + NodeLog.FILE_REMOVED)

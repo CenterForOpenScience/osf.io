@@ -31,7 +31,7 @@ from website.project.views.contributor import (
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
-from website import settings, mails
+from website import mails
 from website.util import rubeus
 from website.project.views.node import _view_project
 from website.project.views.comment import serialize_comment
@@ -41,7 +41,7 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    CommentFactory, PrivateLinkFactory
+    CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, RegistrationFactory,
 )
 
 
@@ -68,7 +68,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key))
+        auth = Auth(user=self.user, private_key=anonymous_link.key)
+        assert_false(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -298,6 +299,35 @@ class TestProjectViews(OsfTestCase):
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    def test_get_contributors_abbrev(self):
+        # create a project with 3 registered contributors
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+            ]
+        )
+
+        # add an unregistered contributor
+        unregistered_user = project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=self.consolidate_auth1,
+            save=True,
+        )
+
+        url = project.api_url_for('get_node_contributors_abbrev')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(project.contributors), 4)
+        assert_equal(len(res.json['contributors']), 3)
+        assert_equal(len(res.json['others_count']), 1)
+        assert_equal(res.json['contributors'][0]['separator'], ',')
+        assert_equal(res.json['contributors'][1]['separator'], ',')
+        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
+
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
@@ -385,6 +415,12 @@ class TestProjectViews(OsfTestCase):
         # Most recent node is a registration
         reg = Node.load(self.project.registration_list[-1])
         assert_true(reg.is_registration)
+
+    def test_register_template_page_with_invalid_template_name(self):
+        url = self.project.web_url_for('node_register_template_page', template='invalid')
+        res = self.app.get(url, expect_errors=True, auth=self.auth)
+        assert_equal(res.status_code, 404)
+        assert_in('Template not found', res)
 
     def test_get_logs(self):
         # Add some logs
@@ -476,12 +512,38 @@ class TestProjectViews(OsfTestCase):
                 action='file_added',
                 params={'project': child._id}
             )
+
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
         assert_true(res.json['has_more_logs'])
         assert_equal(
             [self.project._id] * 10,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
+
+    def test_for_private_component_log(self):
+        for _ in range(5):
+            self.project.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        child.is_public = False
+        child.set_title("foo", auth=self.consolidate_auth1)
+        child.set_title("bar", auth=self.consolidate_auth1)
+        child.save()
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 7)
+        assert_not_in(
+            child._id,
             [
                 log['params']['project']
                 for log in res.json['logs']
@@ -2303,6 +2365,27 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(res.json['nodes']), 1)
 
 
+class TestForkViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForkViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, public=True)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.user.save()
+        self.project.save()
+
+    def test_registered_forks_dont_show_in_fork_list(self):
+        fork = self.project.fork_node(self.consolidated_auth)
+        RegistrationFactory(project=fork)
+
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.user.auth)
+
+        assert_equal(len(res.json['nodes']), 1)
+        assert_equal(res.json['nodes'][0]['id'], fork._id)
+
+
 class TestProjectCreation(OsfTestCase):
 
     def setUp(self):
@@ -2369,6 +2452,14 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.template_node, other_node)
+
+class TestUnconfirmedUserViews(OsfTestCase):
+
+    def test_can_view_profile(self):
+        user = UnconfirmedUserFactory()
+        url = web_url_for('profile_view_id', uid=user._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
 
 if __name__ == '__main__':
     unittest.main()

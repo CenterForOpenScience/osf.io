@@ -2,6 +2,33 @@
 Changelog
 *********
 
+0.17.0 (unreleased)
+===================
+
+- Improvements to wiki interface.
+- Allow wiki pages to be deleted.
+- Show number of unread comments in comments tab.
+- Developers: Switch to latest version of the modular-file-renderer. Remove
+old vendorized distribution.
+- Developers: Switch to the TokuMX MongoDB distribution for handling database
+transactions.
+
+0.16.0 (unreleased)
+===================
+
+Scheduled 2014-09-04
+
+- Add two-factor authentication.
+- Developers: Remove all imports from ``framework/__init__.py``. This solves
+and prevents a number of circular import problems throughout the codebase.
+
+
+0.15.1 (2014-08-28)
+===================
+
+- Bugfix release. Fixes a number of minor UI bugs.
+- Fix anonymization in HTTP API.
+
 0.15.0 (2014-08-11)
 ===================
 
