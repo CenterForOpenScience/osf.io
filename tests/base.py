@@ -69,7 +69,7 @@ def teardown_database(client=None, database=None):
         message = utils.get_error_message(error)
         if messages.NO_TRANSACTION_ERROR not in message:
             raise
-    client_proxy.drop_database(database)
+    client.drop_database(database)
 
 
 class DbTestCase(unittest.TestCase):
