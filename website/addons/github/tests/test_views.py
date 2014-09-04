@@ -80,11 +80,13 @@ class TestCRUD(OsfTestCase):
             },
         )
 
+    @unittest.skip('Finish me')
     def test_update_file(self):
-        pass
+        assert 0
 
+    @unittest.skip('Finish me')
     def def_view_file(self):
-        pass
+        assert 0
 
     @mock.patch('website.addons.github.api.GitHub.file')
     def test_download_file(self, mock_file):
