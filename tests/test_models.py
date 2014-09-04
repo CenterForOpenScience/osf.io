@@ -2055,10 +2055,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = None
         # New user forks the project
-        try:
-            fork = self.project.fork_node(user2_auth)
-        except Exception:
-            pass
+        fork = self.project.fork_node(user2_auth)
+        #except Exception:
+        #    pass
 
         # fork correct children
         assert_equal(len(fork.nodes), 2)
