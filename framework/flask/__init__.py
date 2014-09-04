@@ -15,13 +15,3 @@ app = Flask(
 
 # Pull debug mode from settings
 app.debug = settings.DEBUG_MODE
-
-# Set up static routing for addons
-# TODO: Handle this in nginx
-
-addon_base_path = os.path.abspath('website/addons')
-
-@app.route('/static/addons/<addon>/<path:filename>')
-def addon_static(addon, filename):
-    addon_path = os.path.join(addon_base_path, addon, 'static')
-    return send_from_directory(addon_path, filename)

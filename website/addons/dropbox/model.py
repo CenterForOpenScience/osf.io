@@ -4,10 +4,9 @@ import hashlib
 import logging
 import urllib
 
-from modularodm import Q
+from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
-from framework import fields
 from framework.auth import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 

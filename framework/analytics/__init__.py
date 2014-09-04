@@ -2,7 +2,8 @@
 import functools
 from datetime import datetime
 
-from framework import db, session
+from framework.mongo import db
+from framework.sessions import session
 
 
 collection = db['pagecounters']

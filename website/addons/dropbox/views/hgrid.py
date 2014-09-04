@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 
+from flask import request
 from dropbox.rest import ErrorResponse
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError
-from framework.flask import request
 from website.project.decorators import must_be_contributor_or_public, must_have_addon
 from website.util import rubeus
 

@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 import urllib
 import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from flask import request, redirect
+from framework.flask import app
 
 from website import settings
-from framework.flask import app, request, redirect
+
 from .model import Session
 
 

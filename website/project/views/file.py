@@ -3,11 +3,13 @@ Files views.
 """
 import os
 import codecs
-from website.util import rubeus
 
-from framework.flask import request, secure_filename
+from flask import request
+from werkzeug.utils import secure_filename
 
 from framework.render.tasks import build_rendered_html
+
+from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
 from website import settings
 from website.project.views.node import _view_project

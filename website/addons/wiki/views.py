@@ -1,17 +1,18 @@
-"""
+# -*- coding: utf-8 -*-
 
-"""
 import difflib
 import httplib as http
 import logging
 
 from bs4 import BeautifulSoup
+from flask import request, url_for
 
-from framework import request, status, url_for
+from framework import status
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
+
 from website.project.views.node import _view_project
 from website.project import show_diff
 from website.project.model import has_anonymous_link

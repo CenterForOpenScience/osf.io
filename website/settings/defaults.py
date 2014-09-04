@@ -146,7 +146,7 @@ ADDONS_REQUESTED = [
     'github',
     'osffiles',
     's3',
-    # 'twofactor',
+    'twofactor',
     'wiki',
 ]
 
@@ -155,7 +155,7 @@ ADDON_CATEGORIES = [
     'storage',
     'bibliography',
     'other',
-    # 'security',
+    'security',
 ]
 
 SYSTEM_ADDED_ADDONS = {

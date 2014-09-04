@@ -3,10 +3,11 @@
 
 import shutil
 
-from framework import app
+from framework.flask import app
 
 from website.app import init_app
 from website.project.model import ensure_schemas
+
 
 _LOG_TEMPLATES = 'website/templates/_log_templates.mako'
 LOG_TEMPLATES = 'website/templates/log_templates.mako'

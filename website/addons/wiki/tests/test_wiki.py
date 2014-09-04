@@ -2,7 +2,7 @@
 # PEP8 asserts
 from nose.tools import *  # noqa
 
-import framework
+
 from framework.auth import Auth
 from webtest.app import AppError
 from tests.base import OsfTestCase
@@ -12,7 +12,6 @@ from tests.factories import (
 )
 
 from website.addons.wiki.views import serialize_wiki_toc
-from website.addons.wiki.model import NodeWikiPage
 
 
 class TestWikiViews(OsfTestCase):

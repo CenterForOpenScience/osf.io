@@ -10,13 +10,15 @@ from webtest_plus import TestApp
 
 from pymongo import MongoClient
 from faker import Factory
+from modularodm import storage
 
-from framework import storage, set_up_storage
+from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
 from framework.guid.model import Guid
-from website.project.model import (ApiKey, Node, NodeLog,
-                                   Tag, WatchConfig)
+from website.project.model import (
+    ApiKey, Node, NodeLog, Tag, WatchConfig,
+)
 from website import settings
 
 from website.addons.osffiles.model import NodeFile
