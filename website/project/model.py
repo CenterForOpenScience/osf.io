@@ -377,6 +377,27 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
+    def resolve_node(self, node):
+        """A single `NodeLog` record may be attached to multiple `Node` records
+        (parents, forks, registrations, etc.), so the node that the log refers
+        to may not be the same as the node the user is viewing. Use
+        `resolve_node` to determine the relevant node to use for permission
+        checks.
+
+        :param Node node: Node being viewed
+        """
+        if self.node == node or self.node in node.nodes:
+            return self.node
+        if node.is_fork_of(self.node) or node.is_registration_of(self.node):
+            return node
+        for child in node.nodes:
+            if child.is_fork_of(self.node) or node.is_registration_of(self.node):
+                return child
+        return False
+
+    def can_view(self, node, auth):
+        return self.resolve_node(node).can_view(auth)
+
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
@@ -639,6 +660,21 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.is_public or auth.user \
             and self.has_permission(auth.user, 'read') \
             or auth.private_key in self.private_link_keys_active
+
+    def is_derived_from(self, other, attr):
+        derived_from = getattr(self, attr)
+        while True:
+            if derived_from is None:
+                return False
+            if derived_from == other:
+                return True
+            derived_from = getattr(derived_from, attr)
+
+    def is_fork_of(self, other):
+        return self.is_derived_from(other, 'forked_from')
+
+    def is_registration_of(self, other):
+        return self.is_derived_from(other, 'registered_from')
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
