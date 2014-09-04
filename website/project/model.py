@@ -1250,7 +1250,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # TODO: rename "date" param - it's shadowing a global
 
         if not self.can_edit(auth):
-            raise PermissionsError()
+            raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
@@ -1321,7 +1321,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Non-contributors can't fork private nodes
         if not (self.is_public or self.has_permission(user, 'read')):
-            raise PermissionsError()
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
