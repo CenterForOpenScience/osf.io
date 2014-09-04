@@ -1,13 +1,24 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
+<style type="text/css" media="screen">
+    #editor {
+        position: relative;
+        height: 300px;
+        border: solid;
+        border-width: 1px;
+    }
+</style>
+
 <div class="wiki">
     <div class="row">
         <div class="col-md-9">
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
+                    <div id="editor" data-bind="ace: wikiText, value: wikiText">Loading. . . </div>
+                    <!-- use an invisible text area to perform actual form submission -->
+                    <textarea id="wmd-input" name="content" data-bind="value: wikiText" style="display: none;"></textarea>
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
@@ -29,13 +40,30 @@
 
 <%def name="javascript_bottom()">
 
+    <script src="/static/vendor/bower_components/ace-builds/src/ace.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
     <script>
-      $script('/static/addons/wiki/WikiEditor.js', function() {
-          WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+
+        var langTools = ace.require("ace/ext/language_tools");
+        var editor = ace.edit("editor");
+        editor.getSession().setMode("ace/mode/markdown");
+        editor.setReadOnly(true);
+
+        // Settings
+        editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
+        editor.getSession().setUseWrapMode(true);   // Wraps text
+        editor.renderer.setShowGutter(false);       // Hides line number
+        editor.setShowPrintMargin(false);           // Hides print margin
+
+    </script>
+
+    <script>
+
+        $script('/static/addons/wiki/WikiEditor.js', function() {
+            WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
         });
 
    </script>

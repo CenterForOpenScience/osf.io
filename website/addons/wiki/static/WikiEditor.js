@@ -11,6 +11,32 @@
 }(this, function(ko, $) {
     'use strict';
 
+    var editor;
+
+    ko.bindingHandlers.ace = {
+        init: function(element, valueAccessor) {
+            editor = ace.edit(element.id);
+            var value = ko.unwrap(valueAccessor());
+
+            // Initialize value
+            editor.setValue(value);
+            editor.setReadOnly(false);
+
+            // Change view model on editor change
+            editor.getSession().on('change', function () {
+                valueAccessor()(editor.getValue());
+            });
+        },
+        update: function (element, valueAccessor) {
+            var content = editor.getValue();        // Content of ace editor
+            var value = ko.unwrap(valueAccessor()); // Value from view model
+
+            if (content !== value) {
+                editor.setValue(value);
+            }
+        }
+    };
+
     function ViewModel(url) {
         var self = this;
 
