@@ -25,7 +25,9 @@ from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.exceptions import (
+    NotFoundError, EmptyRepoError, TooBigError
+)
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
@@ -45,9 +47,19 @@ def github_download_file(**kwargs):
     ref = request.args.get('sha')
     connection = GitHub.from_settings(node_settings.user_settings)
 
-    name, data, _ = connection.file(
-        node_settings.user, node_settings.repo, path, ref=ref
-    )
+    try:
+        name, data, _ = connection.file(
+            node_settings.user, node_settings.repo, path, ref=ref
+        )
+    except TooBigError:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large',
+                'message_long': 'This file is too large to download through '
+                    'the GitHub API.',
+            },
+        )
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -74,9 +86,8 @@ def get_cache_file(path, sha):
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_view_file(**kwargs):
+def github_view_file(auth, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
@@ -158,17 +169,21 @@ def github_view_file(**kwargs):
     )
     rendered = get_cache_content(node_settings, cache_file)
     if rendered is None:
-        _, data, size = connection.file(
-            node_settings.user, node_settings.repo, path, ref=sha,
-        )
-        # Skip if too large to be rendered.
-        if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
-            rendered = 'File too large to render; download file to view it'
-        else:
-            rendered = get_cache_content(
-                node_settings, cache_file, start_render=True,
-                file_path=file_name, file_content=data, download_path=download_url,
+        try:
+            _, data, size = connection.file(
+                node_settings.user, node_settings.repo, path, ref=sha,
             )
+        except TooBigError:
+            rendered = 'File too large to download.'
+        if rendered is None:
+            # Skip if too large to be rendered.
+            if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
+                rendered = 'File too large to render; download file to view it.'
+            else:
+                rendered = get_cache_content(
+                    node_settings, cache_file, start_render=True,
+                    file_path=file_name, file_content=data, download_path=download_url,
+                )
 
     rv = {
         'file_name': file_name,
@@ -216,7 +231,7 @@ def github_upload_file(auth, node_addon, **kwargs):
     # GitHub API
     try:
         tree = connection.tree(
-            node_addon.user, node_settings.repo, sha=sha or branch
+            node_addon.user, node_addon.repo, sha=sha or branch
         ).tree
     except EmptyRepoError:
         tree = []
@@ -242,7 +257,7 @@ def github_upload_file(auth, node_addon, **kwargs):
     else:
         data = connection.create_file(
             node_addon.user, node_addon.repo, os.path.join(path, filename),
-            MESSAGES['update'], content, branch=branch, author=author
+            MESSAGES['add'], content, branch=branch, author=author
         )
 
     if data is not None:
