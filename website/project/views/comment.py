@@ -84,8 +84,8 @@ def serialize_comment(comment, auth, anonymous=False):
                     comment.user, use_ssl=True,
                     size=settings.GRAVATAR_SIZE_DISCUSSION) if not anonymous else '',
         },
-        'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
-        'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
+        'dateCreated': comment.date_created.isoformat(),
+        'dateModified': comment.date_modified.isoformat(),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user ,
@@ -167,7 +167,7 @@ def list_comments(**kwargs):
     n_unread = 0
 
     if node.is_contributor(user):
-        view_timestamp = datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
+        view_timestamp = datetime(1970, 1, 1, 12, 0, 0).isoformat()
 
         if user.comments_viewed_timestamp is None:
             user.comments_viewed_timestamp = {}
@@ -190,10 +190,7 @@ def n_unread_comments(view_timestamp, comments, current_user):
 
     for comment in comments:
         if comment['author']['id'] != current_user._id:
-            date_created = datetime.strptime(comment['dateCreated'], '%m/%d/%y %H:%M:%S').isoformat()
-            date_modified = datetime.strptime(comment['dateModified'], '%m/%d/%y %H:%M:%S').isoformat()
-
-            if date_created > view_timestamp or date_modified > view_timestamp:
+            if comment['dateCreated'] > view_timestamp or comment['dateModified'] > view_timestamp:
                 count += 1
 
     return count
@@ -256,6 +253,7 @@ def view_comments(**kwargs):
         user.save()
         list_comments(**kwargs)
     return {}
+
 
 
 @must_be_logged_in

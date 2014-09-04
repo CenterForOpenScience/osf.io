@@ -27,7 +27,7 @@
      */
     var relativeDate = function(datetime) {
         var now = moment.utc();
-        var then = moment.utc(datetime, 'MM/DD/YY HH:mm:ss');
+        var then = moment.utc(datetime);
         then = then > now ? now : then;
         return then.fromNow();
     };
@@ -78,11 +78,11 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
-        self.unreadComments = ko.observable();
+        self.unreadComments = ko.observable(' ');
 
         self.displayCount = ko.computed(function() {
             if (self.unreadComments() !== 0) {
-                return self.unreadComments();
+                return self.unreadComments().toString();
             } else {
                 return ' ';
             }
@@ -205,6 +205,7 @@
 
         $.extend(self, ko.mapping.fromJS(data));
         self.dateCreated(data.dateCreated);
+
         self.dateModified(data.dateModified);
 
         self.prettyDateCreated = ko.computed(function() {
@@ -292,7 +293,7 @@
         $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
             {
-                content: self.content(),
+                content: self.content()
             },
             function(response) {
                 self.content(response.content);
