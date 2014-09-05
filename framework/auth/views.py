@@ -155,7 +155,6 @@ def confirm_email_get(**kwargs):
     """
     user = get_user(id=kwargs['uid'])
     token = kwargs['token']
-
     if user:
         if user.confirm_email(token):
             if user.unconfirmed_username:

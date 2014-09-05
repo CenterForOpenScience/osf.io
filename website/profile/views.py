@@ -6,6 +6,7 @@ from dateutil.parser import parse as parse_date
 
 from flask import request, redirect
 from modularodm.exceptions import ValidationError
+from modularodm import Q
 
 from framework.auth import get_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
@@ -247,10 +248,12 @@ def serialize_names(**kwargs):
     user = kwargs['auth'].user
     return {
         'full': user.fullname,
+        'unconfirmed_username': user.username,
         'given': user.given_name,
         'middle': user.middle_names,
         'family': user.family_name,
         'suffix': user.suffix,
+        'username': user.username,
     }
 
 
@@ -346,7 +349,21 @@ def unserialize_names(**kwargs):
     user.middle_names = json_data.get('middle')
     user.family_name = json_data.get('family')
     user.suffix = json_data.get('suffix')
+
+    if user.username != json_data.get('unconfirmed_username'):
+        if user.find(Q('username', 'eq', json_data.get('unconfirmed_username'))).count() > 0:
+            raise HTTPError(http.BAD_REQUEST)
+        else:
+            user.unconfirmed_username = json_data.get('unconfirmed_username')
+            send_update_email_confirmation(**kwargs)
+
     user.save()
+
+@must_be_logged_in
+def send_update_email_confirmation(**kwargs):
+    user = kwargs['auth'].user
+    user.add_email_verification(user.unconfirmed_username)
+    confirm_update_email(user, email=user.unconfirmed_username)
 
 
 def verify_user_match(auth, **kwargs):
