@@ -21,23 +21,38 @@ def find_orphaned_children(filters=None):
     with_parent = models.Node.find(query)
     for child in with_parent:
         if len(child.node__parent) > 1:
-            msg = u'Inconsistency: Child {} ({}) has {} parents.'.format(
-                child.title,
-                child._primary_key,
-                len(child.node__parent),
+            children = []
+            for parent in child.node__parent:
+                children.append('{}: {}'.format(parent, parent.nodes))
+            msg = (
+                u'Inconsistency: Child {} ({}) has {} parents. The parents are {}. '
+                u'The parents have children {}. Manual intervention is necessary.'.format(
+                    child.title,
+                    child._primary_key,
+                    len(child.node__parent),
+                    child.node__parent,
+                    children
+                )
             )
             errors.append(msg)
             continue
         parent = child.node__parent[0]
         if child not in parent.nodes:
-            msg = u'Inconsistency: Parent {} ({}) does not point to child {} ({})'.format(
+            msg = u'Inconsistency: Parent {} ({}) does not point to child {} ({}). Attempting to fix.'.format(
                 parent.title,
                 parent._primary_key,
                 child.title,
                 child._primary_key,
             )
+            errors.append(msg)
             parent.nodes.append(child)
             parent.save()
+            msg = u'Fixed inconsistency: Parent {} ({}) does not point to child {} ({})'.format(
+                parent.title,
+                parent._primary_key,
+                child.title,
+                child._primary_key
+            )
             errors.append(msg)
     return errors
 
@@ -54,14 +69,21 @@ def find_missing_children(filters=None):
     for parent in with_children:
         for child in parent.nodes:
             if not child.node__parent or child.node__parent[0] != parent:
-                msg = u'Inconsistency: Child {} ({}) does not point to parent {} ({})'.format(
+                msg = u'Inconsistency: Child {} ({}) does not point to parent {} ({}). Attempting to fix.'.format(
                     child.title,
                     child._primary_key,
                     parent.title,
                     parent._primary_key,
                 )
+                errors.append(msg)
                 child.node__parent.append(parent)
                 child.save()
+                msg = u'Fixed inconsistency: Child {} ({}) does not point to parent {} ({}).'.format(
+                    child.title,
+                    child._primary_key,
+                    parent.title,
+                    parent._primary_key
+                )
                 errors.append(msg)
     return errors
 
@@ -77,12 +99,38 @@ class TestParentChildMigration(OsfTestCase):
 
     def test_orphaned_children(self):
         assert_equal(len(self.parent_project.nodes), 2)
-
         self.parent_project.nodes.remove(self.second_child)
         assert_equal(len(self.parent_project.nodes), 1)
-
         find_orphaned_children(filters=None)
         assert_equal(len(self.parent_project.nodes), 2)
+
+    def test_orphaned_children_with_multiple_parents(self):
+        first_parent = ProjectFactory(creator=self.user)
+        second_parent = ProjectFactory(creator=self.user)
+        child = ProjectFactory(creator=self.user)
+
+        first_parent.nodes.append(child)
+        first_parent.save()
+
+        second_parent.nodes.append(child)
+        second_parent.save()
+
+        children = []
+        for parent in child.node__parent:
+                children.append('{}: {}'.format(parent, parent.nodes))
+        msg = (
+            u'Inconsistency: Child {} ({}) has {} parents. The parents are {}. '
+            u'The parents have children {}. Manual intervention is necessary.'.format(
+                child.title,
+                child._primary_key,
+                len(child.node__parent),
+                child.node__parent,
+                children
+            )
+        )
+
+        error = find_orphaned_children(filters=None)
+        assert error[0] == msg
 
     def test_missing_children(self):
         assert self.parent_project in self.first_child.node__parent
@@ -95,5 +143,5 @@ class TestParentChildMigration(OsfTestCase):
 
 
 if __name__ == '__main__':
-    errors = find_missing_children()
-    errors = find_orphaned_children()
+    missing_child_errors = find_missing_children()
+    orphaned_child_errors = find_orphaned_children()
