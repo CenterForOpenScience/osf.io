@@ -4,7 +4,7 @@ import mock
 import json
 
 import httplib as http
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory, PrivateLinkFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from webtest import Upload
@@ -611,6 +611,23 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
                           pid=self.project._primary_key, path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
         assert_equal(res.status_code, 200)
+
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_dataverse_view_file_with_anonymous_link(self, mock_get_files, mock_connection):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+        mock_connection.return_value = create_mock_connection()
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
+
+        url = self.project.api_url_for('dataverse_get_file_info', path='foo')
+        res = self.app.get(url, {'view_only': link.key}).maybe_follow()
+        assert_equal(res.status_code, 200)
+        assert_not_in(self.node_settings.dataverse_alias, res.body)
+        assert_not_in(self.node_settings.dataverse, res.body)
+        assert_not_in(self.node_settings.study, res.body)
+
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
