@@ -3,8 +3,8 @@
 """
 
 import httplib as http
+from flask import request
 
-from framework import request
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from website.project import decorators

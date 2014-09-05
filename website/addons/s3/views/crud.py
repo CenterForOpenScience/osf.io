@@ -1,10 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import urllib
 import datetime
 import httplib as http
 
 from boto.exception import S3ResponseError, BotoClientError
 
-from framework import request, redirect, Q
+from flask import request, redirect
+from modularodm import Q
+
 from framework.exceptions import HTTPError
 
 from website.models import NodeLog

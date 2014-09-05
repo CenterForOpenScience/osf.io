@@ -5,9 +5,11 @@ import httplib as http
 from flask import request, redirect
 from modularodm import Q
 
+from framework.auth.core import User
+from framework import utils
+from framework.forms import utils as form_utils
 from framework import sentry
 from framework.exceptions import HTTPError
-from framework.forms import utils
 from framework.routing import proxy_url
 from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
@@ -16,9 +18,9 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
 from framework.guid.model import Guid, GuidStoredObject
 
 from website.util import web_url_for
-from website.project.forms import NewProjectForm
 from website.project import model
 from website import settings
+
 
 
 logger = logging.getLogger(__name__)
@@ -52,6 +54,7 @@ def _render_node(node):
 
     """
     return {
+        'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
@@ -150,7 +153,7 @@ def watched_logs_get(**kwargs):
 
     for log in logs:
         if len(watch_logs) < page_size:
-            watch_logs.append(log.serialize())
+            watch_logs.append(serialize_log(log))
         else:
             has_more_logs =True
             break
@@ -158,28 +161,41 @@ def watched_logs_get(**kwargs):
     return {"logs": watch_logs, "has_more_logs": has_more_logs}
 
 
+def serialize_log(node_log, anonymous=False):
+    '''Return a dictionary representation of the log.'''
+    return {
+        'id': str(node_log._primary_key),
+        'user': node_log.user.serialize()
+                if isinstance(node_log.user, User)
+                else {'fullname': node_log.foreign_user},
+        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
+        'api_key': node_log.api_key.label if node_log.api_key else '',
+        'action': node_log.action,
+        'params': node_log.params,
+        'date': utils.rfcformat(node_log.date),
+        'node': node_log.node.serialize() if node_log.node else None,
+        'anonymous': anonymous
+    }
+
+
 def reproducibility():
     return redirect('/ezcuj/wiki')
 
 
 def registration_form():
-    return utils.jsonify(RegistrationForm(prefix='register'))
+    return form_utils.jsonify(RegistrationForm(prefix='register'))
 
 
 def signin_form():
-    return utils.jsonify(SignInForm())
+    return form_utils.jsonify(SignInForm())
 
 
 def forgot_password_form():
-    return utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
+    return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
 
 def reset_password_form():
-    return utils.jsonify(ResetPasswordForm())
-
-
-def new_project_form():
-    return utils.jsonify(NewProjectForm())
+    return form_utils.jsonify(ResetPasswordForm())
 
 
 ### GUID ###

@@ -4,14 +4,17 @@ import time
 import bleach
 import logging
 from urllib2 import HTTPError
-from modularodm.storage.mongostorage import RawQuery as Q
 
-from framework import must_be_logged_in, request, status
+from flask import request
+from modularodm import Q
+
+from framework import status
+from framework.auth.core import get_current_user
+from framework.auth.decorators import must_be_logged_in
 
 import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-from framework.auth.core import get_current_user
 
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,11 @@ logger = logging.getLogger(__name__)
 
 def search_search():
     tick = time.time()
+    ERROR_RETURN = {
+        'results': [],
+        'tags': [],
+        'query': '',
+    }
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     start = request.args.get('pagination', 0)
@@ -32,11 +40,8 @@ def search_search():
     query = bleach.clean(query, tags=[], strip=True)
     if query == '':
         status.push_status_message('No search query', 'info')
-        return {
-            'results': [],
-            'tags': [],
-            'query': '',
-        }
+        return ERROR_RETURN
+
     # if the search does not work,
     # post an error message to the user, otherwise,
     # the document, highlight,
@@ -45,11 +50,11 @@ def search_search():
         results_search, tags, counts = search.search(query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
-        return {
-            'results': [],
-            'tags': [],
-            'query': '',
-        }
+        return ERROR_RETURN
+    except TypeError:
+        status.push_status_message('There was a problem querying the search database. Please try again later.')
+        return ERROR_RETURN
+
     # with our highlights and search result 'documents' we build the search
     # results so that it is easier for us to display
     # Whether or not the user is searching for users

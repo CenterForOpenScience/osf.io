@@ -115,7 +115,9 @@
                         <td class="col-sm-2">
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
-                        <td class="col-sm-2" data-bind="text: creator"></td>
+                        <td class="col-sm-2" >
+                            <a data-bind="text: creator.fullname, attr: {href: creator.url}"></a>
+                        </td>
                         <td class="col-sm-1">
                             <span data-bind="text: anonymousDisplay"></span>
                         </td>
@@ -140,7 +142,12 @@
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
-            <span data-bind="text: contributor.fullname"></span>
+            <span data-bind="ifnot: profileUrl">
+                <span data-bind="text: contributor.fullname"></span>
+            </span>
+            <span data-bind="if: profileUrl">
+                <a data-bind="text: contributor.fullname, attr:{href: profileUrl}"></a>
+            </span>
         </td>
         <td>
             <!-- ko if: $parent.canEdit -->

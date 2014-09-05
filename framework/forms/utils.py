@@ -24,14 +24,14 @@ def process_data(data, func):
 def process_payload(data):
     return process_data(
         data,
-        lambda value: urllib.quote(value.encode('utf-8'), safe=' ')
+        lambda value: urllib.quote(value.encode('utf-8') if value else '', safe=' ')
     )
 
 
 def unprocess_payload(data):
     return process_data(
         data,
-        lambda value: urllib.unquote(value.encode('utf-8'))
+        lambda value: urllib.unquote(value.encode('utf-8') if value else '')
     )
 
 
