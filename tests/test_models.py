@@ -5,7 +5,7 @@ import subprocess
 import shutil
 import mock
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytz
 import datetime
@@ -2445,6 +2445,21 @@ class TestNodeLog(OsfTestCase):
             forked_project.nodes[0],
         )
 
+    def test_can_view(self):
+        project = ProjectFactory(is_public=False)
+
+        non_contrib = UserFactory()
+
+        created_log = project.logs[0]
+        assert_false(created_log.can_view(project, Auth(user=non_contrib)))
+        assert_true(created_log.can_view(project, Auth(user=project.creator)))
+
+    def test_can_view_with_non_related_project_arg(self):
+        project = ProjectFactory()
+        unrelated = ProjectFactory()
+
+        created_log = project.logs[0]
+        assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
 
 class TestPermissions(OsfTestCase):
 

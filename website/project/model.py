@@ -396,7 +396,10 @@ class NodeLog(StoredObject):
         return False
 
     def can_view(self, node, auth):
-        return self.resolve_node(node).can_view(auth)
+        node_to_check = self.resolve_node(node)
+        if node_to_check:
+            return node_to_check.can_view(auth)
+        return False
 
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
