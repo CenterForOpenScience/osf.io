@@ -8,12 +8,9 @@ import datetime as dt
 import mock
 import httplib as http
 
-
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 from webtest.app import AppError
-from webtest_plus import TestApp
-from werkzeug.wrappers import Response
 
 from modularodm import Q
 
@@ -1816,13 +1813,19 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
+        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], self.consolidated_auth
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
 
     def test_add_comment_public_non_contributor(self):
 
@@ -1833,13 +1836,19 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
+        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], Auth(user=self.non_contributor)
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
 
     def test_add_comment_private_contributor(self):
 
@@ -1850,13 +1859,20 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
+        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], self.consolidated_auth
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
+
 
     def test_add_comment_private_non_contributor(self):
 
