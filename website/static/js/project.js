@@ -81,20 +81,16 @@ NodeActions.useAsTemplate = function() {
     NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
         $.osf.block();
 
-        $.ajax({
-            url: '/api/v1/project/new/' + nodeId + '/',
-            type: 'POST',
-            dataType: 'json',
-            success: function (data) {
-                window.location = data['url']
-            },
-            error: function (response) {
-                $.osf.unblock();
-                $.osf.handleJSONError(response);
-            }
+        $.osf.postJSON(
+                    '/api/v1/project/new/' + nodeId + '/',
+                function (data) {
+                    window.location = data['url']
+                }).fail(function (response) {
+                    $.osf.unblock();
+                    $.osf.handleJSONError(response);
+                });
         });
-    });
-};
+    };
 
 NodeActions.beforeTemplate = function(url, done) {
     $.ajax({
