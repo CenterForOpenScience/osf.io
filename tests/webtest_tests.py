@@ -8,8 +8,9 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 
-from framework import Q
-from framework.auth import User, Auth
+from modularodm import Q
+
+from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,

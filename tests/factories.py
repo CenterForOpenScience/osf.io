@@ -16,7 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation
 
-from framework import StoredObject
+from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from website.project.model import (

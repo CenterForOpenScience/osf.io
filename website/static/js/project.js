@@ -45,7 +45,7 @@ NodeActions.forkNode = function() {
     });
 };
 
-NodeActions.forkPointer = function(pointerId, nodeId) {
+NodeActions.forkPointer = function(pointerId) {
     bootbox.confirm('Are you sure you want to fork this project?',
         function(result) {
             if (result) {
@@ -59,7 +59,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
                     data: JSON.stringify({'pointerId': pointerId}),
                     contentType: 'application/json',
                     dataType: 'json',
-                    success: function(response) {
+                    success: function() {
                         window.location.reload();
                     },
                     error: function() {
@@ -69,7 +69,7 @@ NodeActions.forkPointer = function(pointerId, nodeId) {
                 });
             }
         }
-    )
+    );
 };
 
 NodeActions.addonFileRedirect = function(item) {
@@ -109,7 +109,6 @@ NodeActions.beforeTemplate = function(url, done) {
         );
     });
 };
-
 
 $(function(){
 

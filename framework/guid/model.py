@@ -1,4 +1,7 @@
-from framework import StoredObject, fields
+# -*- coding: utf-8 -*-
+
+from modularodm import fields
+from framework.mongo import StoredObject
 
 
 class Guid(StoredObject):
@@ -9,6 +12,9 @@ class Guid(StoredObject):
     _meta = {
         'optimistic': True,
     }
+
+    def __repr__(self):
+        return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
 
 
 class GuidStoredObject(StoredObject):

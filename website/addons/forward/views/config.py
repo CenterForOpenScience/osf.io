@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
+from flask import request
 from modularodm.exceptions import ValidationError
 
-from framework import request
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (must_have_addon,

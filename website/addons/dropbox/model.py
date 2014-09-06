@@ -4,10 +4,9 @@ import hashlib
 import logging
 import urllib
 
-from modularodm import Q
+from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
-from framework import fields
 from framework.auth import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
@@ -229,12 +228,12 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         category = node.project_or_component
         if self.user_settings and self.user_settings.owner == user:
             return (u'Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authentication to '
+                '{category}, forking it will also transfer your authentication token to '
                 'the forked {category}.').format(category=category)
 
         else:
             return (u'Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
+                    'user, forking it will not transfer authentication token to the forked '
                     '{category}.').format(category=category)
 
     # backwards compatibility
@@ -287,12 +286,20 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = 'Dropbox authorization copied to fork.'
+            message = (
+                'Dropbox authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component
+            )
         else:
-            message = (u'Dropbox authorization not copied to fork. You may '
-                        'authorize this fork on the <a href="{url}">Settings</a>'
-                        'page.').format(
-                        url=fork.web_url_for('node_setting'))
+            message = (
+                u'Dropbox authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href="{url}">Settings</a> '
+                'page.'
+            ).format(
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component
+            )
         if save:
             clone.save()
         return clone, message
