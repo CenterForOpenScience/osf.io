@@ -1,6 +1,8 @@
 """Check for consistency errors in parent-child relationships.
 
 """
+import sys
+
 from nose.tools import *    #noqa (PEP 8 asserts)
 
 from website import models
@@ -10,7 +12,7 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 
-def find_orphaned_children(filters=None):
+def find_orphaned_children(filters=None, dryrun=False):
     """Find parents that don't point to their children.
 
     """
@@ -45,19 +47,20 @@ def find_orphaned_children(filters=None):
                 child._primary_key,
             )
             errors.append(msg)
-            parent.nodes.append(child)
-            parent.save()
-            msg = u'Fixed inconsistency: Parent {} ({}) does not point to child {} ({})'.format(
-                parent.title,
-                parent._primary_key,
-                child.title,
-                child._primary_key
-            )
-            errors.append(msg)
+            if dryrun is False:
+                parent.nodes.append(child)
+                parent.save()
+                msg = u'Fixed inconsistency: Parent {} ({}) does not point to child {} ({})'.format(
+                    parent.title,
+                    parent._primary_key,
+                    child.title,
+                    child._primary_key
+                )
+                errors.append(msg)
     return errors
 
 
-def find_missing_children(filters=None):
+def find_missing_children(filters=None, dryrun=False):
     """Find children that don't point to their parents.
 
     """
@@ -76,15 +79,16 @@ def find_missing_children(filters=None):
                     parent._primary_key,
                 )
                 errors.append(msg)
-                child.node__parent.append(parent)
-                child.save()
-                msg = u'Fixed inconsistency: Child {} ({}) does not point to parent {} ({}).'.format(
-                    child.title,
-                    child._primary_key,
-                    parent.title,
-                    parent._primary_key
-                )
-                errors.append(msg)
+                if dryrun is False:
+                    child.node__parent.append(parent)
+                    child.save()
+                    msg = u'Fixed inconsistency: Child {} ({}) does not point to parent {} ({}).'.format(
+                        child.title,
+                        child._primary_key,
+                        parent.title,
+                        parent._primary_key
+                    )
+                    errors.append(msg)
     return errors
 
 
@@ -143,5 +147,9 @@ class TestParentChildMigration(OsfTestCase):
 
 
 if __name__ == '__main__':
-    missing_child_errors = find_missing_children()
-    orphaned_child_errors = find_orphaned_children()
+    if sys.argv == 'dry':
+        missing_child_errors = find_missing_children(dryrun=True)
+        orphaned_child_errors = find_orphaned_children(dryrun=True)
+    else:
+        missing_child_errors = find_missing_children()
+        orphaned_child_errors = find_orphaned_children()
