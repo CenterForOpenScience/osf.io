@@ -49,14 +49,9 @@ def _get_logs(node, count, auth, link=None, offset=0):
         # log can be None; its `node__logged` back-ref can be empty, and the
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
-        try:
-            can_view = all(x.can_view(auth) for x in log.node__logged)
-        except (AttributeError, IndexError) as error:
-            logger.exception(error)
-            continue
-
-        if can_view:
-            anonymous = has_anonymous_link(log.node, auth)
+        log_node = log.resolve_node(node)
+        if log.can_view(node, auth):
+            anonymous = has_anonymous_link(log_node, auth)
             if len(logs) < count:
                 logs.append(serialize_log(log, anonymous))
             else:

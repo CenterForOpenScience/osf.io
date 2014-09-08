@@ -75,7 +75,7 @@
             </div>
 
             <div class="modal-body">
-                <p>By using two-factor authentication, you'll protect your OSF account with both your password and your mobile phone.</p>
+                <p>Two-factor authentication helps protect your OSF account by requiring both a password and a code generated on your mobile phone to log in. This addon may be enabled on your account's <a href="${ web_url_for('user_addons') }">addon settings</a>.</p>
                 <p>If you have enabled two-factor authentication on your account, enter the current verification code from your device in this field.</p>
             </div><!-- end modal-body -->
 
