@@ -214,6 +214,12 @@ def mongorestore(path, drop=False):
     run(cmd, echo=True)
 
 
+@task
+def sharejs():
+    """Start a local ShareJS server."""
+    run("node shareServer.js")
+
+
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""

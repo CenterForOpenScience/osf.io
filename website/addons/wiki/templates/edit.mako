@@ -45,12 +45,48 @@
     <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
     <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
+    <!-- Necessary for ShareJS communication -->
+    <script src="http://localhost:7007/channel/bcsocket.js"></script>
+    <script src="http://localhost:7007/share/share.js"></script>
+    <script src="http://localhost:7007/share/ace.js"></script>
+
     <script>
+
+        var doc = null;
+        var editor;
+
+        // ShareJS supports multiple document backends per server based on key/
+        // value stores. It is possible to expose the document name to switch between
+        // different documents, like in a wiki.
+        var setDoc = function(docName) {
+
+            editor.setReadOnly(true);
+
+            sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
+
+                if (doc != null) {
+                    doc.close();
+                    doc.detach_ace();
+                }
+
+                doc = newDoc;
+
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                doc.attach_ace(editor);
+
+                editor.setReadOnly(false);
+            });
+        };
 
         var langTools = ace.require("ace/ext/language_tools");
         var editor = ace.edit("editor");
         editor.getSession().setMode("ace/mode/markdown");
-        editor.setReadOnly(true);
+
+        // TODO: Pull the name of the wiki page
+        setDoc('default');
 
         // Settings
         editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
