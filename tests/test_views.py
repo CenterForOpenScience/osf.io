@@ -2166,7 +2166,7 @@ class TestComments(OsfTestCase):
         CommentFactory(node=self.project)
 
         url = self.project.api_url_for('view_comments')
-        res = self.app.post_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, auth=self.user.auth)
         self.user.reload()
 
         user_timestamp = str(self.user.comments_viewed_timestamp[self.project._id]).split('.')[0]
@@ -2174,7 +2174,7 @@ class TestComments(OsfTestCase):
 
     def test_confirm_non_contrib_viewers_have_no_comments_view_timestamp(self):
         url = self.project.api_url_for('view_comments')
-        res = self.app.post_json(url, auth=self.user.auth)
+        res = self.app.put_json(url, auth=self.user.auth)
 
         self.non_contributor.reload()
         assert_false(self.non_contributor.comments_viewed_timestamp)
