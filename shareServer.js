@@ -4,7 +4,7 @@ var connect = require('connect'),
 var server = connect(connect.logger());
 
 var options = {
-    db: {type: 'none'},
+    db: {type: 'mongo'},
     browserChannel: { cors: "http://localhost:5000" }
 }; // See docs for options.
 
