@@ -2,8 +2,9 @@
 
 """
 import sys
+import logging
 
-from nose.tools import *    #noqa (PEP 8 asserts)
+from nose.tools import *  # noqa (PEP 8 asserts)
 
 from website import models
 from modularodm import Q
@@ -11,6 +12,7 @@ from modularodm import Q
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
+logger = logging.getLogger(__name__)
 
 def find_orphaned_children(filters=None, dryrun=False):
     """Find parents that don't point to their children.
@@ -36,6 +38,7 @@ def find_orphaned_children(filters=None, dryrun=False):
                     children
                 )
             )
+            logger.info(msg)
             errors.append(msg)
             continue
         parent = child.node__parent[0]
@@ -46,6 +49,7 @@ def find_orphaned_children(filters=None, dryrun=False):
                 child.title,
                 child._primary_key,
             )
+            logger.info(msg)
             errors.append(msg)
             if dryrun is False:
                 parent.nodes.append(child)
@@ -56,6 +60,7 @@ def find_orphaned_children(filters=None, dryrun=False):
                     child.title,
                     child._primary_key
                 )
+                logger.info(msg)
                 errors.append(msg)
     return errors
 
@@ -71,13 +76,14 @@ def find_missing_children(filters=None, dryrun=False):
     with_children = models.Node.find(query)
     for parent in with_children:
         for child in parent.nodes:
-            if not child.node__parent or child.node__parent[0] != parent:
+            if not child.node__parent:
                 msg = u'Inconsistency: Child {} ({}) does not point to parent {} ({}). Attempting to fix.'.format(
                     child.title,
                     child._primary_key,
                     parent.title,
                     parent._primary_key,
                 )
+                logger.info(msg)
                 errors.append(msg)
                 if dryrun is False:
                     child.node__parent.append(parent)
@@ -88,6 +94,7 @@ def find_missing_children(filters=None, dryrun=False):
                         parent.title,
                         parent._primary_key
                     )
+                    logger.info(msg)
                     errors.append(msg)
     return errors
 
@@ -153,3 +160,4 @@ if __name__ == '__main__':
     else:
         missing_child_errors = find_missing_children()
         orphaned_child_errors = find_orphaned_children()
+    logger.info('Finished.')
