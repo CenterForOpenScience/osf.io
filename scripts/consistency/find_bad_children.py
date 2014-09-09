@@ -147,7 +147,7 @@ class TestParentChildMigration(OsfTestCase):
 
 
 if __name__ == '__main__':
-    if sys.argv == 'dry':
+    if 'dry' in sys.argv:
         missing_child_errors = find_missing_children(dryrun=True)
         orphaned_child_errors = find_orphaned_children(dryrun=True)
     else:
