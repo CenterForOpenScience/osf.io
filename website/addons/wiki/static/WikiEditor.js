@@ -65,7 +65,9 @@
 
         $(window).on('beforeunload', function() {
             if (self.changed()) {
-                return 'There are unsaved changes to your wiki.';
+                return 'There are unsaved changes to your wiki. These ' +
+                    'changes will be available the next time someone edits' +
+                    'this wiki.';
             }
         });
     }
