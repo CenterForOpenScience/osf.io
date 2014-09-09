@@ -28,11 +28,13 @@ def main():
     # Set up MongoStorage backend
     init_app(set_backends=True, routes=False)
     if 'dry' in sys.argv:
-        missing_child_errors = find_missing_children(dryrun=True)
-        orphaned_child_errors = find_orphaned_children(dryrun=True)
+        missing_child_errors, _ = find_missing_children(dryrun=True)
+        orphaned_child_errors, _ = find_orphaned_children(dryrun=True)
     else:
-        missing_child_errors = find_missing_children()
-        orphaned_child_errors = find_orphaned_children()
+        missing_child_errors, _ = find_missing_children()
+        orphaned_child_errors, _ = find_orphaned_children()
+    logger.info('Found {} parents missing forward refs to their children.'.format(len(missing_child_errors)))
+    logger.info('Found {} children missing backrefs to their children.'.format(len(orphaned_child_errors)))
     logger.info('Finished.')
 
 def find_orphaned_children(filters=None, dryrun=False):
@@ -40,6 +42,7 @@ def find_orphaned_children(filters=None, dryrun=False):
 
     """
     errors = []
+    fixed = []
     query = Q('__backrefs.parent.node.nodes.0', 'exists', True)
     if filters:
         query = query & filters
@@ -51,7 +54,7 @@ def find_orphaned_children(filters=None, dryrun=False):
                 children.append('{}: {}'.format(parent, parent.nodes))
             msg = (
                 u'Inconsistency: Child {} ({}) has {} parents. The parents are {}. '
-                u'The parents have children {}. Manual intervention is necessary.'.format(
+                u'The parents have children {}. Manual intervention is necessary.\n'.format(
                     child.title,
                     child._primary_key,
                     len(child.node__parent),
@@ -60,30 +63,30 @@ def find_orphaned_children(filters=None, dryrun=False):
                 )
             )
             logger.info(msg)
-            errors.append(msg)
+            errors.append(child)
             continue
         parent = child.node__parent[0]
         if child not in parent.nodes:
-            msg = u'Inconsistency: Parent {} ({}) does not point to child {} ({}). Attempting to fix.'.format(
+            msg = u'Inconsistency: Parent {} ({}) does not point to child {} ({}). Attempting to fix.\n'.format(
                 parent.title,
                 parent._primary_key,
                 child.title,
                 child._primary_key,
             )
             logger.info(msg)
-            errors.append(msg)
+            errors.append(parent)
             if dryrun is False:
                 parent.nodes.append(child)
                 parent.save()
-                msg = u'Fixed inconsistency: Parent {} ({}) does not point to child {} ({})'.format(
+                msg = u'Fixed inconsistency: Parent {} ({}) does not point to child {} ({})\n'.format(
                     parent.title,
                     parent._primary_key,
                     child.title,
                     child._primary_key
                 )
                 logger.info(msg)
-                errors.append(msg)
-    return errors
+                fixed.append(parent)
+    return errors, fixed
 
 
 def find_missing_children(filters=None, dryrun=False):
@@ -91,6 +94,7 @@ def find_missing_children(filters=None, dryrun=False):
 
     """
     errors = []
+    fixed = []
     query = Q('nodes.0', 'exists', True)
     if filters:
         query = query & filters
@@ -98,26 +102,26 @@ def find_missing_children(filters=None, dryrun=False):
     for parent in with_children:
         for child in parent.nodes:
             if not child.node__parent:
-                msg = u'Inconsistency: Child {} ({}) does not point to parent {} ({}). Attempting to fix.'.format(
+                msg = u'Inconsistency: Child {} ({}) does not point to parent {} ({}). Attempting to fix.\n'.format(
                     child.title,
                     child._primary_key,
                     parent.title,
                     parent._primary_key,
                 )
                 logger.info(msg)
-                errors.append(msg)
+                errors.append(child)
                 if dryrun is False:
                     child.node__parent.append(parent)
                     child.save()
-                    msg = u'Fixed inconsistency: Child {} ({}) does not point to parent {} ({}).'.format(
+                    msg = u'Fixed inconsistency: Child {} ({}) does not point to parent {} ({}).\n'.format(
                         child.title,
                         child._primary_key,
                         parent.title,
                         parent._primary_key
                     )
                     logger.info(msg)
-                    errors.append(msg)
-    return errors
+                    fixed.append(child)
+    return errors, fixed
 
 
 class TestParentChildMigration(OsfTestCase):
