@@ -85,8 +85,7 @@
         var editor = ace.edit("editor");
         editor.getSession().setMode("ace/mode/markdown");
 
-        // TODO: Pull the name of the wiki page
-        setDoc('default');
+        setDoc('${pageName}');
 
         // Settings
         editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
