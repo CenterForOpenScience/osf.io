@@ -411,6 +411,10 @@ def packages():
         # e.g., run('sudo apt-get install [list of packages]')
         pass
 
+@task
+def npm():
+    print('Installing local npm packages')
+    run('npm install')
 
 @task
 def npm_bower():
@@ -431,6 +435,7 @@ def setup():
     packages()
     requirements(all=True)
     encryption()
+    npm()
     npm_bower()
     bower_install()
 
