@@ -85,7 +85,7 @@
         var editor = ace.edit("editor");
         editor.getSession().setMode("ace/mode/markdown");
 
-        setDoc('${pageName}');
+        setDoc('${node['id']}-${pageName}');
 
         // Settings
         editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
