@@ -3,11 +3,11 @@ var connect = require('connect'),
 
 var server = connect(
     connect.logger(),
-    connect.static(__dirname + '/public-share')
+    connect.static(__dirname + '/static/website/addons/wiki/static/')
 );
 var options = {
     db: {type: 'none'},
-    browserChannel: { cors: "http://localhost:5000/" }
+    browserChannel: { cors: "http://localhost:5000" }
 }; // See docs for options.
 
 // Attach the sharejs REST and Socket.io interfaces to the server
