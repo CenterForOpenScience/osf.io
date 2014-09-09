@@ -8,6 +8,14 @@ To run migration: ::
 
     python -m scripts.consistency.fix_bad_chidren dry
 
+Log:
+
+    Performed on 2014-09-09 by SL. `find_orphaned_children` 2 projects (9 deleted) missing
+    forward refs to a child and 8 nodes that had multiple parents.
+    with missing forward refs were fixed.
+    There was 1 project (deleted) missing a backref to its parent.
+    All affected nodes were fixed.
+
 """
 import sys
 import logging
