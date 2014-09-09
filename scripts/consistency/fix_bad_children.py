@@ -1,4 +1,12 @@
-"""Check for consistency errors in parent-child relationships.
+"""Find and fix consistency errors in parent-child relationships.
+
+To do a dry run: ::
+
+    python -m scripts.consistency.fix_bad_chidren dry
+
+To run migration: ::
+
+    python -m scripts.consistency.fix_bad_chidren dry
 
 """
 import sys
@@ -7,12 +15,25 @@ import logging
 from nose.tools import *  # noqa (PEP 8 asserts)
 
 from website import models
+from website.app import init_app
 from modularodm import Q
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+def main():
+    # Set up MongoStorage backend
+    init_app(set_backends=True, routes=False)
+    if 'dry' in sys.argv:
+        missing_child_errors = find_missing_children(dryrun=True)
+        orphaned_child_errors = find_orphaned_children(dryrun=True)
+    else:
+        missing_child_errors = find_missing_children()
+        orphaned_child_errors = find_orphaned_children()
+    logger.info('Finished.')
 
 def find_orphaned_children(filters=None, dryrun=False):
     """Find parents that don't point to their children.
@@ -154,10 +175,4 @@ class TestParentChildMigration(OsfTestCase):
 
 
 if __name__ == '__main__':
-    if 'dry' in sys.argv:
-        missing_child_errors = find_missing_children(dryrun=True)
-        orphaned_child_errors = find_orphaned_children(dryrun=True)
-    else:
-        missing_child_errors = find_missing_children()
-        orphaned_child_errors = find_orphaned_children()
-    logger.info('Finished.')
+    main()
