@@ -1,0 +1,15 @@
+{
+    "name": "osf",
+    "title": "Open Science Framework",
+    "homepage": "http://osf.io",
+    "version": "0.1.0",
+    "devDependencies": {
+        "share": "<0.7",
+        "connect": "<2.0.0",
+        "mongodb": "~1.4.10"
+    },
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/CenterForOpenScience/osf.git"
+    }
+}
