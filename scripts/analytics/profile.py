@@ -50,7 +50,7 @@ def main():
     keys = ['total', 'jobs', 'schools', 'social', 'any']
 
     table = tabulate(
-        [counts[key] for key in keys],
+        [[counts[key] for key in keys]],
         headers=keys,
     )
 

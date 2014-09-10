@@ -433,11 +433,11 @@ def setup():
 def analytics():
     from scripts.analytics import (
         logs, addons, comments, links, watch, email_invites,
-        permissions, profile
+        permissions, profile, benchmarks
     )
     modules = (
         logs, addons, comments, links, watch, email_invites,
-        permissions, profile
+        permissions, profile, benchmarks
     )
     for module in modules:
         module.main()
