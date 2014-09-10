@@ -4,12 +4,13 @@ from datetime import datetime
 
 from framework.mongo import db
 from framework.sessions import session
+import framework
 
 
 collection = db['pagecounters']
 
-
-def increment_user_activity_counters(user_id, action, date):
+def increment_user_activity_counters(user_id, action, date, db=None):
+    db = db or framework.mongo.db  # for backwards-compat
     collection = db['useractivitycounters']
     date = date.strftime('%Y/%m/%d') # todo remove slashes
     query = {
@@ -29,7 +30,8 @@ def increment_user_activity_counters(user_id, action, date):
     return True
 
 
-def get_total_activity_count(user_id):
+def get_total_activity_count(user_id, db=None):
+    db = db or framework.mongo.db
     collection = db['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
@@ -39,8 +41,17 @@ def get_total_activity_count(user_id):
     return 0
 
 
-# TODO: Test me
-def update_counters(rex):
+def update_counters(rex, db=None):
+    """
+    Create a decorator that updates analytics in `pagecounters` when the decorated
+    function is called.
+
+    :param rex: Pattern for building page key from keyword arguments of decorated function
+
+    """
+    db = db or framework.mongo.db
+    collection = db['pagecounters']
+
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
@@ -91,7 +102,9 @@ def update_counters(rex):
     return wrapper
 
 
-def get_basic_counters(page):
+def get_basic_counters(page, db=None):
+    db = db or framework.mongo.db
+    collection = db['pagecounters']
     unique = 0
     total = 0
     result = collection.find_one(

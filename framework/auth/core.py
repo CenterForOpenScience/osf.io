@@ -552,9 +552,9 @@ class User(GuidStoredObject, AddonModelMixin):
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
-    @property
-    def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.db
+        return analytics.get_total_activity_count(self._primary_key, db=db)
 
     @property
     def is_merged(self):
