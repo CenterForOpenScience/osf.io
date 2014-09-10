@@ -366,7 +366,7 @@
             return [
                 {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
                 {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
-                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherId.url()},
+                {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
                 {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
                 {label: 'GitHub', text: self.github(), value: self.github.url()},
                 {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
