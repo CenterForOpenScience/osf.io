@@ -12,7 +12,7 @@ from flask import make_response
 from pymongo.errors import CollectionInvalid, OperationFailure
 
 from framework.flask import add_handlers
-from framework.mongo import client, database
+from framework.mongo import database
 from framework.mongo import handlers as database_handlers
 from framework.transactions import context, handlers, commands, messages, utils
 
@@ -26,6 +26,12 @@ def dummy_view():
 TEST_COLLECTION_NAME = 'transactions'
 
 app.logger.setLevel(logging.CRITICAL)
+
+SILENT_LOGGERS = ['framework.transactions.handlers', 'framework.transactions.context']
+
+for each in SILENT_LOGGERS:
+    logger = logging.getLogger(each)
+    logger.setLevel(logging.CRITICAL)
 
 
 class TestTransactionContext(OsfTestCase):
