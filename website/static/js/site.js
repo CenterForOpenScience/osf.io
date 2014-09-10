@@ -56,10 +56,14 @@
 
     // Error handlers
 
+    var errorDefaultShort = 'Unable to resolve';
+    var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
+        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+
     $.osf.handleJSONError = function(response) {
         bootbox.alert({
-            title: response.responseJSON.message_short,
-            message: response.responseJSON.message_long
+            title: response.responseJSON.message_short || errorDefaultShort,
+            message: response.responseJSON.message_long || errorDefaultLong
         });
     };
 

@@ -122,7 +122,7 @@
                     document.location.reload(true);
                 },
                 error: $.osf.handleEditableError,
-                placement: 'bottom',
+                placement: 'bottom'
             };
 
             // TODO: Remove hardcoded selectors.

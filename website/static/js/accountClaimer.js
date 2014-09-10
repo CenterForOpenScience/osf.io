@@ -25,7 +25,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
     function alertFinished(email) {
         bootbox.alert({
             title: 'Email will arrive shortly',
-            message: ['Please check <em>', email, '</em>'].join(''),
+            message: ['Please check <em>', email, '</em>'].join('')
         });
     }
 
