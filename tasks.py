@@ -444,6 +444,12 @@ def analytics():
 
 
 @task
+def clear_sessions(months=1, dry_run=False):
+    from scripts import clear_sessions
+    clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
+
+
+@task
 def clear_mfr_cache():
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
