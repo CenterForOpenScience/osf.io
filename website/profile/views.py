@@ -58,7 +58,7 @@ def date_or_none(date):
 def _profile_view(uid=None):
 
     user = get_current_user()
-    profile = get_user(id=uid) if uid else user
+    profile = User.load(uid) if uid else user
 
     if not (uid or user):
         return redirect('/login/?next={0}'.format(request.path))

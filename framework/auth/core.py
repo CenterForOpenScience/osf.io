@@ -95,12 +95,19 @@ def get_api_key():
     return ApiKey.load(api_key)
 
 
-# TODO: This should be a class method of User
-def get_user(id=None, username=None, password=None, verification_key=None):
+# TODO: This should be a class method of User?
+def get_user(username=None, password=None, verification_key=None):
+    """Get an instance of User matching the provided params.
+
+    :return: The instance of User requested
+    :rtype: User or None
+    """
     # tag: database
+    if password and not username:
+        raise AssertionError("If a password is provided, a username must also "
+                             "be provided.")
+
     query_list = []
-    if id:
-        query_list.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
         query_list.append(Q('username', 'eq', username))

@@ -153,7 +153,7 @@ def confirm_email_get(**kwargs):
 
     methods: GET
     """
-    user = get_user(id=kwargs['uid'])
+    user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
         if user.confirm_email(token):  # Confirm and register the usre
