@@ -254,8 +254,6 @@ def auth_register_post():
                 return auth_login(registration_form=form)
             else:
                 return redirect('/login/first/')
-                #status.push_status_message('You may now log in')
-            return redirect(web_url_for('auth_login'))
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)
