@@ -10,7 +10,7 @@ from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.auth.utils import privacy_info_handle
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
@@ -176,7 +176,13 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
-    fork = node_to_use.fork_node(auth)
+    try:
+        fork = node_to_use.fork_node(auth)
+    except PermissionsError:
+        raise HTTPError(
+            http.FORBIDDEN,
+            redirect_url=node_to_use.url
+        )
 
     return fork.url
 

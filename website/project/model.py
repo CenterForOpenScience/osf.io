@@ -1271,7 +1271,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         # TODO: rename "date" param - it's shadowing a global
 
         if not self.can_edit(auth):
-            raise PermissionsError()
+            raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
@@ -1340,9 +1340,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
-        # todo: should this raise an error?
-        if not self.can_view(auth):
-            return
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1360,8 +1360,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth=auth, title='')
+        # Recursively fork child nodes 
+        for node_contained in original.nodes:            
+            forked_node = None
+            try: # Catch the potential PermissionsError above
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
