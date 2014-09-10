@@ -12,6 +12,7 @@ from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
+import framework
 from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
