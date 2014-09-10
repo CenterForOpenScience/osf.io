@@ -159,22 +159,8 @@ class TestParentChildMigration(OsfTestCase):
         second_parent.nodes.append(child)
         second_parent.save()
 
-        children = []
-        for parent in child.node__parent:
-                children.append('{}: {}'.format(parent, parent.nodes))
-        msg = (
-            u'Inconsistency: Child {} ({}) has {} parents. The parents are {}. '
-            u'The parents have children {}. Manual intervention is necessary.'.format(
-                child.title,
-                child._primary_key,
-                len(child.node__parent),
-                child.node__parent,
-                children
-            )
-        )
-
-        error = find_orphaned_children(filters=None)
-        assert error[0] == msg
+        errors, fixed = find_orphaned_children(filters=None)
+        assert errors[0] == child
 
     def test_missing_children(self):
         assert self.parent_project in self.first_child.node__parent
