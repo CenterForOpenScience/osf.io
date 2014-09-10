@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
-    <meta name="og:image" content="https://lh3.googleusercontent.com/-mQiY2L9dqpI/AAAAAAAAAAI/AAAAAAAAAFs/4PhVZEXJoWs/photo.jpg"/>
+    <meta name="og:image" content="https://avatars0.githubusercontent.com/u/3344584?v=2&s=200"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
