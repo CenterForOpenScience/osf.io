@@ -2,14 +2,14 @@
 
 import os
 
-from modularodm import Q
 import tabulate
+from modularodm import Q
 
-from website.models import User, PrivateLink
 from website import settings
+from website.models import User, PrivateLink
+from website.addons.dropbox.model import DropboxUserSettings
 
 from scripts.analytics import profile
-from scripts.analytics import addons
 
 
 def get_active_users():
@@ -19,6 +19,13 @@ def get_active_users():
         Q('is_merged', 'ne', True) &
         Q('date_confirmed', 'ne', None)
     )
+
+
+def get_dropbox_users():
+    return [
+        each.owner for each in DropboxUserSettings.find()
+        if each.nodes_authorized
+    ]
 
 
 def get_private_links():
@@ -52,7 +59,7 @@ def count_at_least(counts, at_least):
 
 def main():
     active_users = get_active_users()
-    dropbox_installs = addons.analyze_addon_installs('dropbox')
+    dropbox_users = get_dropbox_users()
     extended_profile_counts = profile.get_profile_counts()
     private_links = get_private_links()
 
@@ -67,7 +74,7 @@ def main():
     table = tabulate.tabulate(
         [
             ['active-users', active_users.count()],
-            ['dropbox-users', dropbox_installs['user']['count']],
+            ['dropbox-users', len(dropbox_users)],
             ['profile-edits', extended_profile_counts['any']],
             ['view-only-links', private_links.count()],
             ['nodes-gte-1', nodes_at_least_1],
