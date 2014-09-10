@@ -9,9 +9,7 @@ from modularodm.exceptions import ModularOdmException
 from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.auth.utils import privacy_info_handle
 from framework.exceptions import HTTPError, PermissionsError
-from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 
 from website import language
