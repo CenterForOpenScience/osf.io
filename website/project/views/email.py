@@ -56,20 +56,34 @@ MEETING_DATA = {
         'name': 'APS 2014',
         'info_url': 'http://centerforopenscience.org/aps/',
         'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
-        'active': True,
+        'active': False,
     },
     'annopeer2014': {
         'name': '#annopeer',
         'info_url': None,
         'logo_url': None,
-        'active': True,
+        'active': False,
     },
     'cpa2014': {
         'name': 'CPA 2014',
         'info_url': None,
         'logo_url': None,
+        'active': False,
+    },
+    'filaments2014': {
+        'name': 'Filaments 2014',
+        'info_url': None,
+        'logo_url': 'https://science.nrao.edu/science/meetings/2014/'
+                    'filamentary-structure/images/filaments2014_660x178.png',
         'active': True,
     },
+    # TODO: Uncomment on 2015/02/01
+    # 'spsp2015': {
+    #     'name': 'SPSP 2015',
+    #     'info_url': None,
+    #     'logo_url': None,
+    #     'active': False,
+    # },
 }
 
 
