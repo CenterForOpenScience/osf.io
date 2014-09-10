@@ -23,7 +23,7 @@ from website.util import web_url_for
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
-from website.util.sanitize import deep_clean
+from website.util.sanitize import escape_html
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 
@@ -326,7 +326,7 @@ def meeting_hook():
     # Fail if not from Mailgun
     check_mailgun_headers()
 
-    form = deep_clean(request.form.to_dict())
+    form = escape_html(request.form.to_dict())
     meeting, category = parse_mailgun_receiver(form)
 
     # Fail if not found or inactive

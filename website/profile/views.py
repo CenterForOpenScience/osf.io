@@ -18,7 +18,7 @@ from website.models import ApiKey, User
 from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
-from website.util.sanitize import deep_clean
+from website.util.sanitize import escape_html
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ def profile_addons(**kwargs):
 @must_be_logged_in
 def user_choose_addons(**kwargs):
     auth = kwargs['auth']
-    json_data = deep_clean(request.get_json())
+    json_data = escape_html(request.get_json())
     auth.user.config_addons(json_data, auth)
 
 
@@ -339,7 +339,7 @@ def serialize_schools(auth, uid=None, **kwargs):
 @must_be_logged_in
 def unserialize_names(**kwargs):
     user = kwargs['auth'].user
-    json_data = deep_clean(request.get_json())
+    json_data = escape_html(request.get_json())
     user.fullname = json_data.get('full')
     user.given_name = json_data.get('given')
     user.middle_names = json_data.get('middle')
@@ -360,7 +360,7 @@ def unserialize_social(auth, **kwargs):
     verify_user_match(auth, **kwargs)
 
     user = auth.user
-    json_data = deep_clean(request.get_json())
+    json_data = escape_html(request.get_json())
 
     user.social['personal'] = json_data.get('personal')
     user.social['orcid'] = json_data.get('orcid')
@@ -398,7 +398,7 @@ def unserialize_school(school):
 
 def unserialize_contents(field, func, auth):
     user = auth.user
-    json_data = deep_clean(request.get_json())
+    json_data = escape_html(request.get_json())
     setattr(
         user,
         field,
