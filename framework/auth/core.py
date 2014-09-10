@@ -567,7 +567,7 @@ class User(GuidStoredObject, AddonModelMixin):
         )
 
     def get_activity_points(self, db=None):
-        db = db or framework.mongo.db
+        db = db or framework.mongo.database
         return analytics.get_total_activity_count(self._primary_key, db=db)
 
     @property
