@@ -11,7 +11,7 @@ collection = db['pagecounters']
 
 def increment_user_activity_counters(user_id, action, date):
     collection = db['useractivitycounters']
-    date = date.strftime('%Y/%m/%d') # todo remove slashes
+    date = date.strftime('%Y/%m/%d')
     query = {
         '$inc': {
             'total': 1,
