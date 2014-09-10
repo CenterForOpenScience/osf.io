@@ -7,9 +7,6 @@ Changelog
 
 - Improvements to wiki interface.
 - Allow wiki pages to be deleted.
-- Show number of unread comments in comments tab.
-- Developers: Switch to latest version of the modular-file-renderer. Remove
-old vendorized distribution.
 - Developers: Switch to the TokuMX MongoDB distribution for handling database
 transactions.
 
