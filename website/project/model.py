@@ -2378,7 +2378,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
 
-        page = str(page).lower()
+        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2415,7 +2415,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
-        page = str(page).lower()
+        page = page.lower()
 
         if page not in self.wiki_pages_current:
             version = 1
