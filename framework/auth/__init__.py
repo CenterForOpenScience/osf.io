@@ -79,7 +79,6 @@ def login(username, password, two_factor=None):
 
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
-        # todo leave username so login page can persist probable id
         try:
             del session.data[key]
         except KeyError:

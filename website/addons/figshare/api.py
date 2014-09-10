@@ -14,7 +14,7 @@ import requests
 from requests_oauthlib import OAuth1Session
 from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
-from website.util.sanitize import deep_clean
+from website.util.sanitize import escape_html
 
 
 class Figshare(object):
@@ -73,7 +73,7 @@ class Figshare(object):
                 rv = getattr(req, output)
                 if callable(rv):
                     rv = rv()
-            return deep_clean(rv)
+            return escape_html(rv)
         else:
             self.last_error = req.status_code
             return False
@@ -101,9 +101,9 @@ class Figshare(object):
                 return req
             rv = getattr(req, output)
             if mapper:
-                return mapper(deep_clean(rv))
+                return mapper(escape_html(rv))
             elif callable(rv):
-                return deep_clean(rv())
+                return escape_html(rv())
             return rv
         else:
             self.handle_error(req)
