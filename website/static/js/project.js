@@ -16,7 +16,7 @@
         $.ajax({
             url: url,
             contentType: 'application/json'
-        }).success(function(response) {
+        }).done(function(response) {
             bootbox.confirm(
                 $.osf.joinPrompts(response.prompts, 'Are you sure you want to fork this project?'),
                 function(result) {
@@ -25,7 +25,9 @@
                     }
                 }
             );
-        });
+        }).fail(
+            $.osf.handleJSONError
+        );
     };
 
     NodeActions.forkNode = function() {
@@ -33,12 +35,12 @@
             // Block page
             $.osf.block();
             // Fork node
-            $.ajax({
-                url: nodeApiUrl + 'fork/',
-                type: 'POST'
-            }).success(function(response) {
+            $.osf.postJSON(
+                nodeApiUrl + 'fork/',
+                {}
+            ).done(function(response) {
                 window.location = response;
-            }).error(function(response) {
+            }).fail(function(response) {
                 $.osf.unblock();
                 if (response.status === 403) {
                     bootbox.alert('Sorry, you do not have permission to fork this project');
@@ -57,21 +59,14 @@
                     $.osf.block();
 
                     // Fork pointer
-                    $.ajax({
-                        type: 'post',
-                        url: nodeApiUrl + 'pointer/fork/',
-                        data: JSON.stringify({
-                            'pointerId': pointerId
-                        }),
-                        contentType: 'application/json',
-                        dataType: 'json',
-                        success: function() {
-                            window.location.reload();
-                        },
-                        error: function() {
-                            $.osf.unblock();
-                            bootbox.alert('Could not fork link.');
-                        }
+                    $.osf.postJSON(
+                        nodeApiUrl + 'pointer/fork/',
+                        {pointerId: pointerId}
+                    ).done(function() {
+                        window.location.reload();
+                    }).fail(function() {
+                        $.osf.unblock();
+                        bootbox.alert('Could not fork link.');
                     });
                 }
             }
@@ -86,17 +81,14 @@
     NodeActions.useAsTemplate = function() {
         $.osf.block();
 
-        $.ajax({
-            url: '/api/v1/project/new/' + nodeId + '/',
-            type: 'POST',
-            dataType: 'json',
-            success: function(data) {
-                window.location = data.url;
-            },
-            error: function(response) {
-                $.osf.unblock();
-                $.osf.handleJSONError(response);
-            }
+        $.osf.postJSON(
+            '/api/v1/project/new/' + nodeId + '/',
+            {}
+        ).done(function(response) {
+            window.location = data.url;
+        }).fail(function(response) {
+            $.osf.unblock();
+            $.osf.handleJSONError(response);
         });
     };
 
@@ -130,8 +122,6 @@
         });
     });
 
-
-
     NodeActions._openCloseNode = function(nodeId) {
 
         var icon = $('#icon-' + nodeId);
@@ -157,18 +147,12 @@
 
 
     NodeActions.reorderChildren = function(idList, elm) {
-        $.ajax({
-            type: 'POST',
+        $.osf.postJSON(
             url: nodeApiUrl + 'reorder_components/',
-            data: JSON.stringify({
-                'new_list': idList
-            }),
-            contentType: 'application/json',
-            dataType: 'json',
-            error: function(response) {
-                $(elm).sortable('cancel');
-                $.osf.handleJSONError(response);
-            }
+            {new_list: idList}
+        ).fail(function(response) {
+            $(elm).sortable('cancel');
+            $.osf.handleJSONError(response);
         });
     };
 
@@ -181,10 +165,11 @@
             }),
             contentType: 'application/json',
             dataType: 'json',
-            success: function(response) {
-                pointerElm.remove();
-            }
-        });
+        }).done(function() {
+            pointerElm.remove();
+        }).fail(
+            $.osf.handleJSONError
+        );
     };
 
 
@@ -196,14 +181,12 @@ Display recent logs for for a node on the project view page.
         if (!$logs.hasClass('active')) {
             if (!$logs.hasClass('served')) {
                 $.getJSON(
-                    $logs.attr('data-uri'), {
-                        count: 3
-                    },
-                    function(response) {
-                        var log = new window.LogFeed($logs, response.logs);
-                        $logs.addClass('served');
-                    }
-                );
+                    $logs.attr('data-uri'),
+                    {count: 3}
+                ).done(function(response) {
+                    var log = new window.LogFeed($logs, response.logs);
+                    $logs.addClass('served');
+                });
             }
             $logs.addClass('active');
         } else {
@@ -271,3 +254,4 @@ Display recent logs for for a node on the project view page.
     });
 
 }));
+

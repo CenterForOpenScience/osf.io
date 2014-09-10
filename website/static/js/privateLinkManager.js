@@ -42,10 +42,15 @@
         }
 
         function fetch() {
-            $.ajax({url: url, type: 'GET', dataType: 'json',
-              success: onFetchSuccess,
-              error: onFetchError
-            });
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+            }).done(
+                onFetchSuccess
+            ).fail(
+                onFetchError
+            );
         }
 
         // Initial fetch of data
@@ -71,27 +76,20 @@
             self.disableSubmit(true);
             self.submitText('Please wait');
 
-            $.ajax(
+            $.osf.postJSON(
                 nodeApiUrl + 'private_link/',
                 {
-                    type: 'post',
-                    data: JSON.stringify({
-                        node_ids: self.nodesToChange(),
-                        name: self.name(),
-                        anonymous: self.anonymous()
-                    }),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function(response) {
-                        window.location.reload();
-                    },
-                    error: function(response) {
-                        bootbox.alert('Failed to create a view-only Link.');
-                        self.disableSubmit(false);
-                        self.submitText('Submit');
-                    }
+                    node_ids: self.nodesToChange(),
+                    name: self.name(),
+                    anonymous: self.anonymous()
                 }
-            )
+            ).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                bootbox.alert('Failed to create a view-only Link.');
+                self.disableSubmit(false);
+                self.submitText('Submit');
+            });
         };
 
         self.clear = function() {
