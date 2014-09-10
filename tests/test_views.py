@@ -17,7 +17,7 @@ from werkzeug.wrappers import Response
 from modularodm import Q
 
 from framework import auth
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
@@ -524,6 +524,23 @@ class TestProjectViews(OsfTestCase):
             ]
         )
 
+    def test_can_view_public_log_from_private_project(self):
+        project = ProjectFactory(is_public=True)
+        fork = project.fork_node(auth=self.consolidate_auth1)
+        url = fork.api_url_for('get_logs')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+        project.is_public = False
+        project.save()
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+
     def test_for_private_component_log(self):
         for _ in range(5):
             self.project.add_log(
@@ -638,6 +655,13 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+    def test_fork_private_project_non_contributor(self):
+        url = self.project.api_url_for('node_fork_page')
+        non_contributor = AuthUserFactory()
+        res = self.app.post_json(url, {}, 
+                                 auth=non_contributor.auth, 
+                                 expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
 class TestUserProfile(OsfTestCase):
 

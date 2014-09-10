@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 
 from website.project.model import NodeLog, has_anonymous_link
 from website.project.decorators import must_be_valid_project
-
+from website.views import serialize_log
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ def get_log(log_id):
     if not node_to_use.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
-    return {'log': log.serialize()}
+    return {'log': serialize_log(log)}
 
 
 def _get_logs(node, count, auth, link=None, offset=0):
@@ -49,16 +49,11 @@ def _get_logs(node, count, auth, link=None, offset=0):
         # log can be None; its `node__logged` back-ref can be empty, and the
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
-        try:
-            can_view = all(x.can_view(auth) for x in log.node__logged)
-        except (AttributeError, IndexError) as error:
-            logger.exception(error)
-            continue
-
-        if can_view:
-            anonymous = has_anonymous_link(log.node, auth)
+        log_node = log.resolve_node(node)
+        if log.can_view(node, auth):
+            anonymous = has_anonymous_link(log_node, auth)
             if len(logs) < count:
-                logs.append(log.serialize(anonymous))
+                logs.append(serialize_log(log, anonymous))
             else:
                 has_more_logs = True
                 break
