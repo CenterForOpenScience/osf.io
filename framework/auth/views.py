@@ -195,7 +195,6 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    # TODO: Move this logic to ODM
     if request.json['email1'] != request.json['email2']:
         raise HTTPError(
             http.BAD_REQUEST,

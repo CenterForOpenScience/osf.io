@@ -187,7 +187,13 @@ class User(GuidStoredObject, AddonModelMixin):
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+
+    # TODO: Migrate unclaimed users to the new style, then remove this attribute
+    # Note: No new users should be created where is_claimed is False.
+    #   As of 9 Sep 2014, there were 331 legacy unclaimed users in the system.
+    #   When those users are migrated to the new style, this attribute should be
+    #   removed.
+    is_claimed = fields.BooleanField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
