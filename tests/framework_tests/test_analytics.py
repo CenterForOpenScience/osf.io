@@ -9,7 +9,8 @@ from flask import Flask
 
 from datetime import datetime
 
-from framework import analytics, db, session, sessions
+from framework import analytics, sessions
+from framework.sessions import session
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
@@ -66,12 +67,12 @@ class TestUpdateCounters(UpdateCountersTestCase):
             return kwargs.get('node') or kwargs.get('project')
 
         count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
-        assert_equal(count, (None,None))
+        assert_equal(count, (None, None))
 
         download_file_(node=self.node, fid=self.fid)
 
         count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
-        assert_equal(count, (1,1))
+        assert_equal(count, (1, 1))
 
         page = 'download:{0}:{1}'.format(self.node, self.fid)
 
@@ -79,7 +80,7 @@ class TestUpdateCounters(UpdateCountersTestCase):
         download_file_(node=self.node, fid=self.fid)
 
         count = analytics.get_basic_counters('download:{0}:{1}'.format(self.node, self.fid), db=self.db)
-        assert_equal(count, (1,2))
+        assert_equal(count, (1, 2))
 
     def test_update_counters_file_version(self):
         @analytics.update_counters('download:{target_id}:{fid}:{vid}', db=self.db)
@@ -87,12 +88,12 @@ class TestUpdateCounters(UpdateCountersTestCase):
             return kwargs.get('node') or kwargs.get('project')
 
         count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
-        assert_equal(count, (None,None))
+        assert_equal(count, (None, None))
 
         download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
 
         count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
-        assert_equal(count, (1,1))
+        assert_equal(count, (1, 1))
 
         page = 'download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid)
 
@@ -100,7 +101,7 @@ class TestUpdateCounters(UpdateCountersTestCase):
         download_file_version_(node=self.node, fid=self.fid, vid=self.vid)
 
         count = analytics.get_basic_counters('download:{0}:{1}:{2}'.format(self.node, self.fid, self.vid), db=self.db)
-        assert_equal(count, (1,2))
+        assert_equal(count, (1, 2))
 
     def test_get_basic_counters(self):
         page = 'node:' + str(self.node._id)
@@ -109,7 +110,7 @@ class TestUpdateCounters(UpdateCountersTestCase):
         d['$inc']['total'] = 5
         d['$inc']['unique'] = 3
 
-        collection = db['pagecounters']
+        collection = self.db['pagecounters']
         collection.update({'_id': page}, d, True, False)
-        count = analytics.get_basic_counters(page)
-        assert_equal(count, (3,5))
+        count = analytics.get_basic_counters(page, db=self.db)
+        assert_equal(count, (3, 5))
