@@ -7,7 +7,6 @@ from dateutil import relativedelta
 from modularodm import Q
 
 from website.models import Session
-from website.app import init_app
 
 from nose.tools import *
 from tests.base import OsfTestCase
@@ -15,8 +14,6 @@ from tests.base import OsfTestCase
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARN)
-
-init_app()
 
 
 def clear_sessions(max_date, dry_run=False):
@@ -46,10 +43,6 @@ class TestClearSessions(OsfTestCase):
 
     @classmethod
     def setUpClass(cls):
-        """Since a storage backend is attached to `Session` above, detach it
-        here; then store the collection object for use in `setUp`.
-        """
-        Session._storage = []
         super(TestClearSessions, cls).setUpClass()
         cls.session_collection = Session._storage[0].store
 
