@@ -259,6 +259,15 @@ class TestAUser(OsfTestCase):
         # Sees a message indicating no content
         assert_in('No wiki content', res)
 
+    def test_wiki_page_name_non_ascii(self):
+        project = ProjectFactory(creator=self.user)
+        non_ascii = 'WöRlÐé'
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            non_ascii
+        ), auth=self.auth)
+        assert_in('No wiki content', res)
+
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))

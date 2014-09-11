@@ -1,7 +1,4 @@
-<%inherit file="base.mako"/>
-<%def name="content()">
-
-<div mod-meta='{"tpl": "project/project_header.mako", "replace": true}'></div>
+<%inherit file="project/project_base.mako"/>
 
 <div>
     <div class="col-md-9 wiki">
@@ -14,4 +11,3 @@
     </div>
 
 </div>
-</%def>

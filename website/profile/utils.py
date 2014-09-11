@@ -67,7 +67,7 @@ def serialize_user(user, node=None, full=False):
         rv.update({
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
-            'activity_points': user.activity_points,
+            'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
             user, use_ssl=True,
             size=settings.GRAVATAR_SIZE_PROFILE

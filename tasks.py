@@ -73,26 +73,27 @@ Available variables:
 def make_shell_context():
     from modularodm import Q
     from framework.auth import User, Auth
-    from framework.mongo import db
+    from framework.mongo import database
     from website.app import init_app
     from website.project.model import Node
     from website import models  # all models
     from website import settings
     import requests
     app = init_app()
-    context = {'app': app,
-                'db': db,
-                'User': User,
-                'Auth': Auth,
-                'Node': Node,
-                'Q': Q,
-                'models': models,
-                'run_tests': test,
-                'rget': requests.get,
-                'rpost': requests.post,
-                'rdelete': requests.delete,
-                'rput': requests.put,
-                'settings': settings,
+    context = {
+        'app': app,
+        'db': database,
+        'User': User,
+        'Auth': Auth,
+        'Node': Node,
+        'Q': Q,
+        'models': models,
+        'run_tests': test,
+        'rget': requests.get,
+        'rpost': requests.post,
+        'rdelete': requests.delete,
+        'rput': requests.put,
+        'settings': settings,
     }
     try:  # Add a fake factory for generating fake names, emails, etc.
         from faker import Factory
@@ -430,5 +431,28 @@ def setup():
 
 
 @task
+def analytics():
+    from scripts.analytics import (
+        logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    modules = (
+        logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    for module in modules:
+        module.main()
+
+
+@task
+def clear_sessions(months=1, dry_run=False):
+    from website.app import init_app
+    app = init_app(routes=False, set_backends=True)
+    from scripts import clear_sessions
+    clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
+
+
+@task
 def clear_mfr_cache():
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
+
