@@ -4,15 +4,13 @@
 
 
     <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
-
             <li>
-            <a href="/${node['id']}/wiki/${'home'}">${'home'}</a>
+                <a href=${web_url_for('project_wiki_page', wid='home', pid=node['id'])}>${'home'}</a>
             </li>
-
             % for k in pages_current:
                 %if k != 'home':
                     <li>
-                    <a href="/${node['id']}/wiki/${k}">${k}</a>
+                        <a href=${web_url_for('project_wiki_page', wid=k, pid=node['id'])}>${k}</a>
                     </li>
                 % endif
             %endfor
