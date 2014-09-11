@@ -430,5 +430,28 @@ def setup():
 
 
 @task
+def analytics():
+    from scripts.analytics import (
+        logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    modules = (
+        logs, addons, comments, links, watch, email_invites,
+        permissions, profile, benchmarks
+    )
+    for module in modules:
+        module.main()
+
+
+@task
+def clear_sessions(months=1, dry_run=False):
+    from website.app import init_app
+    app = init_app(routes=False, set_backends=True)
+    from scripts import clear_sessions
+    clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
+
+
+@task
 def clear_mfr_cache():
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
+
