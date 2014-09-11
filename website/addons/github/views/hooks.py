@@ -42,7 +42,7 @@ def add_hook_log(node, github, action, path, date, committer, include_urls=False
                 path=path,
                 sha=sha,
             ),
-            'download': node.api_url_for(
+            'download': node.web_url_for(
                 'github_download_file',
                 path=path,
                 sha=sha,

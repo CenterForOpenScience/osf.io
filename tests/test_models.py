@@ -5,7 +5,7 @@ import subprocess
 import shutil
 import mock
 import unittest
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 import pytz
 import datetime
@@ -364,7 +364,7 @@ class TestUser(OsfTestCase):
         assert_equal(self.user.gravatar_url, expected)
 
     def test_activity_points(self):
-        assert_equal(self.user.activity_points,
+        assert_equal(self.user.get_activity_points(db=self.db),
                     get_total_activity_count(self.user._primary_key))
 
     def test_serialize_user(self):
@@ -399,7 +399,6 @@ class TestUser(OsfTestCase):
         assert_equal(d['gravatar_url'], gravatar)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['activity_points'], user.activity_points)
         assert_equal(d['is_merged'], user.is_merged)
         assert_equal(d['merged_by']['url'], user.merged_by.url)
         assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
@@ -927,7 +926,7 @@ class TestNode(OsfTestCase):
         node = NodeFactory()
         assert_equal(node.category, 'hypothesis')
         assert_true(node.node__parent)
-        assert_equal(node.logs[-1].action, 'node_created')
+        assert_equal(node.logs[0].action, 'node_created')
         assert_equal(
             set(node.get_addon_names()),
             set([
@@ -1679,6 +1678,40 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_contributor(other_guy))
         assert_false(self.project.is_contributor(None))
 
+    def test_is_fork_of(self):
+        project = ProjectFactory()
+        fork1 = project.fork_node(auth=Auth(user=project.creator))
+        fork2 = fork1.fork_node(auth=Auth(user=project.creator))
+        assert_true(fork1.is_fork_of(project))
+        assert_true(fork2.is_fork_of(project))
+
+    def test_is_fork_of_false(self):
+        project = ProjectFactory()
+        to_fork = ProjectFactory()
+        fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
+        assert_false(fork.is_fork_of(project))
+
+    def test_is_fork_of_no_forked_from(self):
+        project = ProjectFactory()
+        assert_false(project.is_fork_of(self.project))
+
+    def test_is_registration_of(self):
+        project = ProjectFactory()
+        reg1 = project.register_node(None, Auth(user=project.creator), '', None)
+        reg2 = reg1.register_node(None, Auth(user=project.creator), '', None)
+        assert_true(reg1.is_registration_of(project))
+        assert_true(reg2.is_registration_of(project))
+
+    def test_is_registration_of_false(self):
+        project = ProjectFactory()
+        to_reg = ProjectFactory()
+        reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
+        assert_false(reg.is_registration_of(project))
+
+    def test_is_registration_of_no_registered_from(self):
+        project = ProjectFactory()
+        assert_false(project.is_registration_of(self.project))
+
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -2154,8 +2187,11 @@ class TestForkNode(OsfTestCase):
         )
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
+        fork = None
         # New user forks the project
         fork = self.project.fork_node(user2_auth)
+        #except Exception:
+        #    pass
 
         # fork correct children
         assert_equal(len(fork.nodes), 2)
@@ -2176,8 +2212,8 @@ class TestForkNode(OsfTestCase):
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        fork = self.project.fork_node(user2_auth)
-        assert_false(fork)
+        with assert_raises(PermissionsError):
+            self.project.fork_node(user2_auth)
 
     def test_can_fork_public_node(self):
         self.project.set_privacy('public')
@@ -2453,6 +2489,55 @@ class TestNodeLog(OsfTestCase):
         parsed = parser.parse(iso_formatted)
         assert_equal(parsed, self.log.tz_date)
 
+    def test_resolve_node_same_as_self_node(self):
+        project = ProjectFactory()
+        assert_equal(
+            project.logs[-1].resolve_node(project),
+            project,
+        )
+
+    def test_resolve_node_in_nodes_list(self):
+        component = NodeFactory()
+        assert_equal(
+            component.logs[-1].resolve_node(component.parent_node),
+            component,
+        )
+
+    def test_resolve_node_fork_of_self_node(self):
+        project = ProjectFactory()
+        fork = project.fork_node(auth=Auth(project.creator))
+        assert_equal(
+            fork.logs[-1].resolve_node(fork),
+            fork,
+        )
+
+    def test_resolve_node_fork_of_self_in_nodes_list(self):
+        user = UserFactory()
+        component = ProjectFactory(creator=user)
+        project = ProjectFactory(creator=user)
+        project.nodes.append(component)
+        project.save()
+        forked_project = project.fork_node(auth=Auth(user=user))
+        assert_equal(
+            forked_project.nodes[0].logs[-1].resolve_node(forked_project),
+            forked_project.nodes[0],
+        )
+
+    def test_can_view(self):
+        project = ProjectFactory(is_public=False)
+
+        non_contrib = UserFactory()
+
+        created_log = project.logs[0]
+        assert_false(created_log.can_view(project, Auth(user=non_contrib)))
+        assert_true(created_log.can_view(project, Auth(user=project.creator)))
+
+    def test_can_view_with_non_related_project_arg(self):
+        project = ProjectFactory()
+        unrelated = ProjectFactory()
+
+        created_log = project.logs[0]
+        assert_false(created_log.can_view(unrelated, Auth(user=project.creator)))
 
 class TestPermissions(OsfTestCase):
 

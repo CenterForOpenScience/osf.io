@@ -9,8 +9,7 @@ from modularodm.exceptions import ModularOdmException
 from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.auth.utils import privacy_info_handle
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo
 
 from website import language
@@ -30,7 +29,7 @@ from website import settings
 from website.views import _render_nodes
 from website.profile import utils
 from website.project import new_folder
-from website.util.sanitize import scrub_html
+from website.util.sanitize import strip_html
 
 from .log import _get_logs
 
@@ -44,7 +43,7 @@ def edit_node(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     post_data = request.json
     edited_field = post_data.get('name')
-    value = scrub_html(post_data.get('value', ''))
+    value = strip_html(post_data.get('value', ''))
     if edited_field == 'title':
         node.set_title(value, auth=auth)
     elif edited_field == 'description':
@@ -133,7 +132,7 @@ def folder_new_post(auth, nid, **kwargs):
     node = Node.load(nid)
     if node.is_deleted or node.is_registration or not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
-    folder = new_folder(scrub_html(title), user)
+    folder = new_folder(strip_html(title), user)
     folders = [folder]
     _add_pointers(node, folders, auth)
 
@@ -149,7 +148,7 @@ def rename_folder(**kwargs):
 def add_folder(**kwargs):
     auth = kwargs['auth']
     user = auth.user
-    title = scrub_html(request.json.get('title'))
+    title = strip_html(request.json.get('title'))
     node_id = request.json.get('node_id')
     node = Node.load(node_id)
     if node.is_deleted or node.is_registration or not node.is_folder:
@@ -231,7 +230,13 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
-    fork = node_to_use.fork_node(auth)
+    try:
+        fork = node_to_use.fork_node(auth)
+    except PermissionsError:
+        raise HTTPError(
+            http.FORBIDDEN,
+            redirect_url=node_to_use.url
+        )
 
     return fork.url
 
@@ -281,7 +286,7 @@ def node_setting(**kwargs):
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and 'node' not in addon.added_mandatory
-        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -561,7 +566,7 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('admin')
 @must_not_be_registration
 def delete_folder(**kwargs):
@@ -740,7 +745,7 @@ def _view_project(node, auth, primary=False):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
-            'absolute_url':  parent.absolute_url if parent else '',
+            'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
@@ -1271,4 +1276,3 @@ def get_pointed(**kwargs):
         }
         for each in node.pointed
     ]}
-

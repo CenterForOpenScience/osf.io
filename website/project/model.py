@@ -377,6 +377,30 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
+    def resolve_node(self, node):
+        """A single `NodeLog` record may be attached to multiple `Node` records
+        (parents, forks, registrations, etc.), so the node that the log refers
+        to may not be the same as the node the user is viewing. Use
+        `resolve_node` to determine the relevant node to use for permission
+        checks.
+
+        :param Node node: Node being viewed
+        """
+        if self.node == node or self.node in node.nodes:
+            return self.node
+        if node.is_fork_of(self.node) or node.is_registration_of(self.node):
+            return node
+        for child in node.nodes:
+            if child.is_fork_of(self.node) or node.is_registration_of(self.node):
+                return child
+        return False
+
+    def can_view(self, node, auth):
+        node_to_check = self.resolve_node(node)
+        if node_to_check:
+            return node_to_check.can_view(auth)
+        return False
+
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
@@ -685,6 +709,21 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         self.expanded[user._id] = False
         self.save()
+
+    def is_derived_from(self, other, attr):
+        derived_from = getattr(self, attr)
+        while True:
+            if derived_from is None:
+                return False
+            if derived_from == other:
+                return True
+            derived_from = getattr(derived_from, attr)
+
+    def is_fork_of(self, other):
+        return self.is_derived_from(other, 'forked_from')
+
+    def is_registration_of(self, other):
+        return self.is_derived_from(other, 'registered_from')
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -1316,7 +1355,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             raise NodeStateError("Dashboards may not be deleted.")
 
         if not self.can_edit(auth):
-            raise PermissionsError()
+            raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
         #if this is a folder, remove all the folders that this is pointing at.
         if self.is_folder:
@@ -1391,9 +1430,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
-        # todo: should this raise an error?
-        if not self.can_view(auth):
-            return
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1411,8 +1450,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
+        # Recursively fork child nodes
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth=auth, title='')
+            forked_node = None
+            try: # Catch the potential PermissionsError above
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -2432,7 +2476,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
 
-        page = str(page).lower()
+        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2469,7 +2513,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
-        page = str(page).lower()
+        page = page.lower()
 
         if page not in self.wiki_pages_current:
             version = 1

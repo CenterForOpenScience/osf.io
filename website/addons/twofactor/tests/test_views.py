@@ -1,3 +1,4 @@
+import mock
 from nose.tools import *
 
 from tests.base import OsfTestCase
@@ -12,7 +13,8 @@ app = init_app(
 )
 
 class TestViews(OsfTestCase):
-    def setUp(self):
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def setUp(self, mocked):
         super(TestViews, self).setUp()
         self.user = AuthUserFactory()
         self.user.add_addon('twofactor')
