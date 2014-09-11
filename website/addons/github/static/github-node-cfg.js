@@ -78,7 +78,7 @@ var GithubConfigHelper = (function() {
                         type: 'DELETE',
                         url: nodeApiUrl + 'github/oauth/'
                     }).done(function() {
-                        window.location.reload;
+                        window.location.reload();
                     }).fail(
                         $.osf.handleJSONError
                     );
