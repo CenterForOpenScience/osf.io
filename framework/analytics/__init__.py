@@ -2,17 +2,16 @@
 import functools
 from datetime import datetime
 
-from framework.mongo import db
+from framework.mongo import database
 from framework.sessions import session
-import framework
 
 
-collection = db['pagecounters']
+collection = database['pagecounters']
 
 def increment_user_activity_counters(user_id, action, date, db=None):
-    db = db or framework.mongo.db  # for backwards-compat
-    collection = db['useractivitycounters']
-    date = date.strftime('%Y/%m/%d') # todo remove slashes
+    db = db or database  # default to local proxy
+    collection = database['useractivitycounters']
+    date = date.strftime('%Y/%m/%d')
     query = {
         '$inc': {
             'total': 1,
@@ -31,8 +30,8 @@ def increment_user_activity_counters(user_id, action, date, db=None):
 
 
 def get_total_activity_count(user_id, db=None):
-    db = db or framework.mongo.db
-    collection = db['useractivitycounters']
+    db = db or database
+    collection = database['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
     )
@@ -49,8 +48,7 @@ def update_counters(rex, db=None):
     :param rex: Pattern for building page key from keyword arguments of decorated function
 
     """
-    db = db or framework.mongo.db
-    collection = db['pagecounters']
+    db = db or database
 
     def wrapper(func):
         @functools.wraps(func)
@@ -96,6 +94,7 @@ def update_counters(rex, db=None):
                 visited.append(page)
                 session.data['visited'] = visited
             d['$inc']['total'] = 1
+            collection = database['pagecounters']
             collection.update({'_id': page}, d, True, False)
             return func(*args, **kwargs)
         return wrapped
@@ -103,10 +102,11 @@ def update_counters(rex, db=None):
 
 
 def get_basic_counters(page, db=None):
-    db = db or framework.mongo.db
+    db = db or database
     collection = db['pagecounters']
     unique = 0
     total = 0
+    collection = database['pagecounters']
     result = collection.find_one(
         {'_id': page}, {'total': 1, 'unique': 1}
     )

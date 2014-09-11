@@ -9,6 +9,10 @@ Changelog
 - Allow wiki pages to be deleted.
 - Developers: Switch to the TokuMX MongoDB distribution for handling database
 transactions.
+- Developers: Add a number of missing JS error handlers.
+- Developers: ``$.osf.postJSON`` and ``$.osf.putJSON`` no longer take
+callbacks as arguments. They return jQuery XHR objects, so use the Promise
+interface instead.
 
 0.16.0 (2014-09-04)
 ===================
