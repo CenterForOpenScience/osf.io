@@ -13,28 +13,23 @@
 <div class="wiki">
     <div class="row">
         <div class="col-md-9">
-            <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
-                <div class="form-group wmd-panel">
-                    <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
-                    <div id="wmd-button-bar" style="display: none;"></div>
-                    <div id="editor" data-bind="ace: wikiText, value: wikiText">Loading. . . </div>
-                    <!-- use an invisible text area to perform actual form submission -->
-                    <textarea id="wmd-input"
-                              name="content"
-                              data-bind="value: wikiText"
-                              style="display: none;"
-                            >
-                    </textarea>
+            <div class="form-group wmd-panel">
+                <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
+                <div id="wmd-button-bar"></div>
+                <div id="editor" class="wmd-input" data-bind="ace: wikiText, value: wikiText">
+                    Loading. . .
                 </div>
-                <div class="pull-right">
-                    <!-- clicking "Cancel" overrides unsaved changes check -->
-                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
-                    <input type="submit" class="btn btn-primary" value="Save"
-                           data-bind="enable: changed" onclick=$(window).off('beforeunload')>
-                </div>
-                <p class="help-block">Preview</p>
-                <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
-            </form>
+            </div>
+            <div class="pull-right">
+                <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
+                <button class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert All Changes</button>
+                <input type="submit" class="btn btn-success" value="Save Version"
+                       data-bind="enable: changed,
+                                  click: function() {updateChanged('${node['url']}wiki/${pageName}/edit/')}"
+                       onclick=$(window).off('beforeunload')>
+            </div>
+            <p class="help-block">Preview</p>
+            <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
         </div>
         <div class="col-md-3">
             <div>
@@ -49,9 +44,9 @@
 <%def name="javascript_bottom()">
 
     <script src="/static/vendor/bower_components/ace-builds/src/ace.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
+    <script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
+    <script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
+    <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
     <!-- Necessary for ShareJS communication -->
     <script src="http://localhost:7007/channel/bcsocket.js"></script>

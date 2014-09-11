@@ -40,12 +40,36 @@
     function ViewModel(url) {
         var self = this;
 
-        self.initText = '';
+        self.initText = ko.observable();
         self.wikiText = ko.observable();
 
+        // TODO: Bug with multiple windows messing up changed value
         self.changed = ko.computed(function() {
-            return self.initText !== self.wikiText();
+            return self.initText() !== self.wikiText();
         });
+
+        self.revertChanges = function() {
+            editor.setValue(self.initText());
+        };
+
+        self.updateChanged = function(editUrl) {
+            $.ajax({
+                type: 'POST',
+                url: editUrl,
+                data: {
+                    content: self.wikiText()
+                },
+                success: function() {
+                    console.log('successful post');
+                    self.initText(self.wikiText());
+                },
+                error: function(xhr, textStatus, error) {
+                    console.error(xhr);
+                    console.error(textStatus);
+                    console.error(error);
+                }
+            });
+        };
 
         //Fetch initial wiki text
         $.ajax({
@@ -53,7 +77,7 @@
             url: url,
             dataType: 'json',
             success: function(response) {
-                self.initText = response.wiki_content;
+                self.initText(response.wiki_content);
                 self.wikiText(response.wiki_content);
             },
             error: function(xhr, textStatus, error) {
@@ -63,13 +87,13 @@
             }
         });
 
-        $(window).on('beforeunload', function() {
-            if (self.changed()) {
-                return 'There are unsaved changes to your wiki. These ' +
-                    'changes will be available the next time someone edits' +
-                    'this wiki.';
-            }
-        });
+        // TODO: Uncomment once "changed" property is correct
+//        $(window).on('beforeunload', function() {
+//            if (self.changed()) {
+//                return 'If you leave this page, your changes will be ' +
+//                    'saved as a draft for collaborators, but not made public.';
+//            }
+//        });
     }
 
     function WikiEditor(selector, url) {
@@ -77,7 +101,7 @@
         $.osf.applyBindings(viewModel, selector);
         var converter1 = Markdown.getSanitizingConverter();
         var editor1 = new Markdown.Editor(converter1);
-        editor1.run();
+        editor1.run(editor);
     }
 
     return WikiEditor;
