@@ -79,7 +79,9 @@ var GithubConfigHelper = (function() {
                         url: nodeApiUrl + 'github/oauth/'
                     }).done(function() {
                         window.location.reload;
-                    });
+                    }).fail(
+                        $.osf.handleJSONError
+                    );
                 }
             });
         });
