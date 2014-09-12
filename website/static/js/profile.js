@@ -64,11 +64,11 @@
         self.tracked = [];  // Define for each view model that inherits
 
         self.setOriginal = function() {
-            self.original(ko.toJSON(self.tracked));
+            self.original(ko.toJS(self.tracked));
         };
 
         self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJS(self.tracked) !== self.original();
         });
 
         // Must be set after isValid is defined in inherited view models
@@ -435,9 +435,7 @@
     };
 
     ListViewModel.prototype.serialize = function() {
-        return JSON.stringify({
-            contents: ko.toJS(this.contents)
-        });
+        return {contents: ko.toJS(this.contents)};
     };
 
     ListViewModel.prototype.addContent = function() {
