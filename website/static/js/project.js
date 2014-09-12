@@ -148,7 +148,7 @@
 
     NodeActions.reorderChildren = function(idList, elm) {
         $.osf.postJSON(
-            url: nodeApiUrl + 'reorder_components/',
+            nodeApiUrl + 'reorder_components/',
             {new_list: idList}
         ).fail(function(response) {
             $(elm).sortable('cancel');
