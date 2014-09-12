@@ -4,15 +4,16 @@ import httplib as http
 import logging
 from collections import namedtuple
 
-from dropbox.client import DropboxOAuth2Flow
+from flask import redirect, request
 from werkzeug.wrappers import BaseResponse
+from dropbox.client import DropboxOAuth2Flow
 
 from framework.auth import get_current_user
 from framework.exceptions import HTTPError
 from framework.sessions import session
-from framework import redirect, request
 from framework.status import push_status_message as flash
 from framework.auth.decorators import must_be_logged_in
+
 from website.project.model import Node
 from website.project.decorators import must_have_addon
 from website.util import api_url_for, web_url_for
@@ -66,7 +67,7 @@ def dropbox_oauth_start(**kwargs):
     user = get_current_user()
     # Store the node ID on the session in order to get the correct redirect URL
     # upon finishing the flow
-    nid = kwargs.get('pid') or kwargs.get('nid')
+    nid = kwargs.get('nid') or kwargs.get('pid')
     if nid:
         session.data['dropbox_auth_nid'] = nid
     if not user:

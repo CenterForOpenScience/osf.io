@@ -3,8 +3,9 @@ import mock
 
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
-from website.addons.dataverse.model import AddonDataverseUserSettings, \
-    AddonDataverseNodeSettings, DataverseFile
+from website.addons.dataverse.model import (
+    AddonDataverseUserSettings, AddonDataverseNodeSettings, DataverseFile
+)
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 
 

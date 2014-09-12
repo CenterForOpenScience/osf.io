@@ -2,23 +2,23 @@
 # -*- coding: utf-8 -*-
 import unittest
 from nose.tools import *  # PEP8 asserts
+from webtest_plus import TestApp
 import mock
 import datetime
 import httplib as http
 
 from flask import Flask
 from werkzeug.wrappers import BaseResponse
-from webtest_plus import TestApp
+from modularodm import Q
 
 from framework import auth
 from framework.exceptions import HTTPError
-from tests.base import OsfTestCase
-from tests.factories import (UserFactory, UnregUserFactory, AuthFactory,
+from tests.base import OsfTestCase, assert_is_redirect
+from tests.factories import (
+    UserFactory, UnregUserFactory, AuthFactory,
     ProjectFactory, AuthUserFactory, PrivateLinkFactory
 )
 
-from framework import Q
-from framework import app
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
@@ -28,13 +28,10 @@ from website.project.decorators import (
 )
 
 
-def assert_is_redirect(response, msg="Response is a redirect."):
-    assert 300 <= response.status_code < 400, msg
-
-
 class TestAuthUtils(OsfTestCase):
 
     def test_register(self):
+        super(TestAuthUtils, self).setUp()
         auth.register('rosie@franklin.com', 'gattaca', fullname="Rosie Franklin")
         user = User.find_one(Q('username', 'eq', 'rosie@franklin.com'))
         # The password should be set
@@ -46,14 +43,17 @@ class TestAuthUtils(OsfTestCase):
     def test_unreg_user_can_register(self):
         user = UnregUserFactory()
 
-        auth.register_unconfirmed(username=user.username,
-            password='gattaca', fullname='Rosie')
+        auth.register_unconfirmed(
+            username=user.username,
+            password='gattaca',
+            fullname='Rosie',
+        )
 
         assert_true(user.get_confirmation_token(user.username))
 
     def test_get_user_by_id(self):
         user = UserFactory()
-        assert_equal(auth.get_user(id=user._id), user)
+        assert_equal(User.load(user._id), user)
 
     def test_get_user_by_username(self):
         user = UserFactory()
@@ -62,18 +62,21 @@ class TestAuthUtils(OsfTestCase):
     def test_get_user_with_wrong_password_returns_false(self):
         user = UserFactory.build()
         user.set_password('killerqueen')
-        assert_false(auth.get_user(username=user.username,
-            password='wrong'))
+        assert_false(
+            auth.get_user(
+                username=user.username,
+                password='wrong'
+            )
+        )
 
     def test_login_success_authenticates_user(self):
         user = UserFactory.build(date_last_login=datetime.datetime.utcnow())
         user.set_password('killerqueen')
         user.save()
         # need request context because login returns a rsponse
-        with app.test_request_context():
-            res = auth.login(user.username, 'killerqueen')
-            assert_true(isinstance(res, BaseResponse))
-            assert_equal(res.status_code, 302)
+        res = auth.login(user.username, 'killerqueen')
+        assert_true(isinstance(res, BaseResponse))
+        assert_equal(res.status_code, 302)
 
     def test_login_unregistered_user(self):
         user = UnregUserFactory()
@@ -93,7 +96,13 @@ class TestAuthUtils(OsfTestCase):
 
 class TestAuthObject(OsfTestCase):
 
+    def test_repr(self):
+        auth = AuthFactory()
+        rep = repr(auth)
+        assert_in(str(auth.user), rep)
+
     def test_factory(self):
+        super(TestAuthObject, self).setUp()
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
         assert_true(auth_obj.api_key)
@@ -118,6 +127,7 @@ class TestAuthObject(OsfTestCase):
 class TestPrivateLink(OsfTestCase):
 
     def setUp(self):
+        super(TestPrivateLink, self).setUp()
         self.flaskapp = Flask('testing_private_links')
 
         @self.flaskapp.route('/project/<pid>/')

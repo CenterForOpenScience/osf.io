@@ -4,7 +4,7 @@ import mock
 import json
 
 import httplib as http
-from tests.factories import AuthUserFactory
+from tests.factories import AuthUserFactory, PrivateLinkFactory
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 from webtest import Upload
@@ -12,9 +12,11 @@ from website.util import api_url_for, web_url_for
 from website.addons.dataverse.settings import HOST
 from website.addons.dataverse.views.config import serialize_settings
 from website.addons.dataverse.views.crud import fail_if_unauthorized
-from website.addons.dataverse.tests.utils import create_mock_connection, \
-    create_mock_draft_file, DataverseAddonTestCase, mock_responses, \
+from website.addons.dataverse.tests.utils import (
+    create_mock_connection,
+    create_mock_draft_file, DataverseAddonTestCase, mock_responses,
     create_mock_study
+)
 
 
 class TestDataverseViewsAuth(DataverseAddonTestCase):
@@ -612,6 +614,23 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
+    def test_dataverse_view_file_with_anonymous_link(self, mock_get_files, mock_connection):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+        mock_connection.return_value = create_mock_connection()
+        mock_get_files.return_value = [create_mock_draft_file('foo')]
+
+        url = self.project.api_url_for('dataverse_get_file_info', path='foo')
+        res = self.app.get(url, {'view_only': link.key}).maybe_follow()
+        assert_equal(res.status_code, 200)
+        assert_not_in(self.node_settings.dataverse_alias, res.body)
+        assert_not_in(self.node_settings.dataverse, res.body)
+        assert_not_in(self.node_settings.study, res.body)
+
+
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
+    @mock.patch('website.addons.dataverse.views.crud.get_files')
     def test_download_file(self, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
@@ -673,6 +692,7 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 class TestDataverseRestrictions(DataverseAddonTestCase):
 
     def setUp(self):
+
         super(DataverseAddonTestCase, self).setUp()
 
         # Nasty contributor who will try to access content that he shouldn't
@@ -700,5 +720,5 @@ class TestDataverseRestrictions(DataverseAddonTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     nose.run()

@@ -10,8 +10,8 @@ Created on Jan 7, 2014
 import os
 
 from boto.exception import BotoServerError
+from modularodm import fields
 
-from framework import fields
 from framework.auth.core import Auth
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
@@ -63,8 +63,9 @@ class AddonS3UserSettings(AddonUserSettingsBase):
     def revoke_auth(self, save=False):
         for node_settings in self.addons3nodesettings__authorized:
             node_settings.deauthorize(save=True)
-        rv = self.remove_iam_user()
+        rv = self.remove_iam_user() if self.has_auth else True
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
+
         if save:
             self.save()
         return rv

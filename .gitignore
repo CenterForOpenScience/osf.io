@@ -48,6 +48,8 @@ cover/
 .webassets-cache
 website/static/public/css/*.css
 website/static/public/js/*.js
+website/static/vendor/node_modules/*
+website/static/vendor/bower_components/
 
 # OSF-specific
 #######################
@@ -58,12 +60,6 @@ website/mfrcache/*
 website/gpg/*
 # Local settings
 */settings/local.py
-
-# Solr
-#######################
-scripts/solr-dev/logs/*
-scripts/solr-dev/solr-webapp/*
-scripts/solr-dev/solr/collection1/data/*
 
 # Add-ons
 #######################

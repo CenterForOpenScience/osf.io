@@ -14,7 +14,7 @@
         <div class="help-block">${language.REGISTRATION_INFO}</div>
 
         <select class="form-control" id="select-registration-template">
-            <option>Please select a registration form to initiate registration</option>
+            <option value="">Please select a registration form to initiate registration</option>
             % for option in options:
                 <option value="${option['template_name']}">${option['template_name_clean']}</option>
             % endfor
@@ -24,12 +24,13 @@
 
     <script type="text/javascript">
         $('#select-registration-template').on('change', function() {
-            var $this = $(this),
-                val = $this.val();
-            if (val != 'Please select')
+            var $this = $(this);
+            var val = $this.val();
+            if (val !== '') {
                 var urlparse = window.location.href.split("?");
                 urlparse[0] += '/' + val;
                 window.location.href = urlparse.join("?")
+            }
         });
     </script>
 

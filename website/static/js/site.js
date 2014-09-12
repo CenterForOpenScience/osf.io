@@ -24,15 +24,12 @@
      *
      * @param  {String} url  The url to post to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done, error) {
+    $.osf.postJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -42,22 +39,36 @@
      * Puts JSON data.
      *
      * Example:
-     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'})
      *
      * @param  {String} url  The url to put to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done, error) {
+    $.osf.putJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
+    };
+
+    // Error handlers
+
+    var errorDefaultShort = 'Unable to resolve';
+    var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
+        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+
+    $.osf.handleJSONError = function(response) {
+        bootbox.alert({
+            title: response.responseJSON.message_short || errorDefaultShort,
+            message: response.responseJSON.message_long || errorDefaultLong
+        });
+    };
+
+    $.osf.handleEditableError = function(response, newValue) {
+        return 'Unexpected error: ' + response.statusText;
     };
 
     $.osf.block = function() {
@@ -68,7 +79,7 @@
                 backgroundColor: '#000',
                 '-webkit-border-radius': '10px',
                 '-moz-border-radius': '10px',
-                opacity: .5,
+                opacity: 0.5,
                 color: '#fff'
             },
             message: 'Please wait'
@@ -81,7 +92,7 @@
 
     $.osf.joinPrompts = function(prompts, base) {
         var prompt = base || '';
-        if (prompts) {
+        if (prompts.length !==0) {
             prompt += '<hr />';
             prompt += '<ul>';
             for (var i=0; i<prompts.length; i++) {
@@ -114,7 +125,7 @@
      */
     $.osf.urlParams = function(str) {
         return (str || document.location.search).replace(/(^\?)/,'').split('&')
-            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this}.bind({}))[0];
+            .map(function(n){return n = n.split('='),this[n[0]] = n[1],this;}.bind({}))[0];
     };
 
     ///////////
@@ -176,23 +187,16 @@
     $.osf.applyBindings = function(viewModel, selector) {
         var $elem = $(selector);
         if ($elem.length === 0) {
-            throw "No elements matching selector '" + selector + "'";
+            throw "No elements matching selector '" + selector + "'";  // jshint ignore: line
         }
         if ($elem.length > 1) {
-            throw "Can't bind ViewModel to multiple elements.";
+            throw "Can't bind ViewModel to multiple elements."; // jshint ignore: line
         }
         // Ensure that the bound element is shown
-        if ($elem.hasClass("scripted")){
+        if ($elem.hasClass('scripted')){
             $elem.show();
         }
         ko.applyBindings(viewModel, $elem[0]);
-    };
-
-    $.osf.handleJSONError = function (response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short,
-            message: response.responseJSON.message_long
-        });
     };
 
 
@@ -201,8 +205,8 @@
      * @param {String} date The original date as a string. Should be an standard
      *                      format such as RFC or ISO.
      */
-    var LOCAL_DATEFORMAT = 'l h:mm A';
-    var UTC_DATEFORMAT = 'l H:mm UTC';
+    var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
+    var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
     $.osf.FormattableDate = function(date) {
         if (typeof date === 'string') {
             // The date as a Date object

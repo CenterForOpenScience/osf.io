@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 import urllib
 import urlparse
-import logging
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from flask import request, redirect
+from framework.flask import app
 
 from website import settings
-from framework.flask import app, request, redirect
+
 from .model import Session
-
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 def add_key_to_url(url, scheme, key):

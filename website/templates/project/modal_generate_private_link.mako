@@ -8,12 +8,20 @@
             <div class="modal-body">
 
                 <div>
-
                     <div>
                         Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
                         <div class="form-group">
                             <input type="text" class="form-control private-link-name" placeholder="Add a link name" data-bind="value:name"/>
                         </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" data-bind="checked: anonymous"/>
+                            Anonymize contributor list for this link (e.g., for blind peer review)
+                        </label>
                     </div>
 
                     <hr />
@@ -24,6 +32,8 @@
                         Which components would you like to associate with this link?
                     </div>
 
+
+
                     <div class="row">
 
                         <div class="col-md-6" >
@@ -31,7 +41,7 @@
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
                             <div data-bind="foreach:nodes">
-                                <div data-bind="style:{'margin-left':margin}">
+                                <div data-bind="style:{'marginLeft':margin}">
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <span data-bind="text:title"></span>
                                 </div>
@@ -40,6 +50,7 @@
                         </div>
 
                         <div class="col-md-6">
+
                             <div>
                                 <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
                             </div>
@@ -57,7 +68,7 @@
             <div class="modal-footer">
 
                 <a href="#" class="btn btn-default" data-dismiss="modal">Cancel</a>
-                <a class="btn btn-success" data-bind="click:submit">Submit</a>
+                <a class="btn btn-success" data-bind="click:submit, css:{disabled: disableSubmit}, text: submitText"></a>
 
             </div><!-- end modal-footer -->
         </div><!-- end modal-content -->

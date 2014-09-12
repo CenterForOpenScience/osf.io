@@ -14,6 +14,7 @@ from website.addons.github.exceptions import NotFoundError
 from .utils import create_mock_github
 mock_github = create_mock_github()
 
+
 class TestCallbacks(OsfTestCase):
 
     def setUp(self):
@@ -37,6 +38,13 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.user = 'Queen'
         self.node_settings.repo = 'Sheer-Heart-Attack'
         self.node_settings.save()
+
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_before_make_public(self, mock_repo):
+        mock_repo.side_effect = NotFoundError
+
+        result = self.node_settings.before_make_public(self.project)
+        assert_is(result, None)
 
     @mock.patch('website.addons.github.api.GitHub.repo')
     def test_before_page_load_osf_public_gh_public(self, mock_repo):

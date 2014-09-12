@@ -35,8 +35,9 @@
 
         // Forward configuration
         self.url = ko.observable().extend({
-            required: true,
-            url: true
+            ensureHttp: true,
+            url: true,
+            required: true
         });
         ko.validation.addAnonymousRule(
             self.url,
@@ -82,19 +83,17 @@
             $.ajax({
                 type: 'GET',
                 url: url,
-                dataType: 'json',
-                success: function(response) {
-                    self.updateFromData(response);
-                },
-                error: function(xhr, textStatus, error) {
-                    console.error(textStatus);
-                    console.error(error);
-                    self.changeMessage('Could not retrieve Forward settings at ' +
-                        'this time. Please refresh ' +
-                        'the page. If the problem persists, email ' +
-                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
-                        'text-warning');
-                }
+                dataType: 'json'
+            }).done(function(response) {
+                self.updateFromData(response);
+            }).fail(function(xhr, textStatus, error) {
+                console.error(textStatus);
+                console.error(error);
+                self.changeMessage('Could not retrieve Forward settings at ' +
+                    'this time. Please refresh ' +
+                    'the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'text-warning');
             });
         };
 
@@ -122,8 +121,10 @@
         self.submitSettings = function() {
             $.osf.putJSON(
                 url,
-                ko.toJS(self),
-                onSubmitSuccess,
+                ko.toJS(self)
+            ).done(
+                onSubmitSuccess
+            ).fail(
                 onSubmitError
             );
         };

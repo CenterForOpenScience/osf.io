@@ -1,9 +1,11 @@
-import httplib as http
+# -*- coding: utf-8 -*-
 
-from framework.flask import request
+import httplib as http
+from flask import request
+
 from framework.exceptions import HTTPError
 
-from website.util.sanitize import deep_clean
+from website.util.sanitize import escape_html
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -44,7 +46,7 @@ def create_badge(*args, **kwargs):
 
         raise HTTPError(http.BAD_REQUEST)
     try:
-        id = Badge.create(awarder, deep_clean(badge_data))._id
+        id = Badge.create(awarder, escape_html(badge_data))._id
         return {'badgeid': id}, http.CREATED
     except IOError:
         raise HTTPError(http.BAD_REQUEST)

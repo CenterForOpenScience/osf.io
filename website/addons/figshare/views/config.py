@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 
@@ -76,7 +79,7 @@ def serialize_settings(node_settings, current_user, client=None):
     """View helper that returns a dictionary representation of a
     FigshareNodeSettings record. Provides the return value for the
     figshare config endpoints.
-    """    
+    """
 
     current_user_settings = current_user.get_addon('figshare')
     user_settings = node_settings.user_settings

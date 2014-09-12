@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import os
-import logging
 import httplib as http
 
-from framework import request, redirect
+from flask import request, redirect
+
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -14,9 +16,6 @@ from website.util import web_url_for
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
-
-
-logger = logging.getLogger(__name__)
 
 
 def get_profile_view(user_settings):

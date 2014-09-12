@@ -2,6 +2,7 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
+from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory
@@ -9,20 +10,18 @@ from tests.factories import (
 
 from framework.auth.core import Auth
 
-from website.models import User
-from website import settings
-
-# if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
+#Uncomment to force elasticsearch to load for testing
+# if settings.SEARCH_ENGINE is not None:
 #    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-# reload(search)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class SearchTestCase(OsfTestCase):
 
     def tearDown(self):
-        search.delete_all() 
+        super(SearchTestCase, self).tearDown()
+        search.delete_all()
 
 
 def query(term):
@@ -34,14 +33,16 @@ def query_user(name):
     term = 'user:"{}"'.format(name)
     return query(term)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+
+@requires_search
 class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
+        super(TestUserUpdate, self).setUp()
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
-        # Verify that user has been added to Solr
+        # Verify that user has been added to Elastic Search
         docs = query_user(self.user.fullname)
         assert_equal(len(docs), 1)
 
@@ -85,31 +86,34 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(query_user(merged_user.fullname)), 0)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestProject(SearchTestCase):
 
     def setUp(self):
+        super(TestProject, self).setUp()
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Solr.
+        """Verify that a private project is not present in Elastic Search.
         """
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Solr.
+        """Make project public, and verify that it is present in Elastic
+        Search.
         """
         self.project.set_privacy('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
+        super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -207,7 +211,8 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 0)
 
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -219,7 +224,8 @@ class TestPublicNodes(SearchTestCase):
         """
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
         self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)
@@ -264,17 +270,17 @@ class TestPublicNodes(SearchTestCase):
         assert_equal(len(docs), 1)
 
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+@requires_search
 class TestAddContributor(SearchTestCase):
     """Tests of the search.search_contributor method
 
     """
 
     def setUp(self):
+        super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
-
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()

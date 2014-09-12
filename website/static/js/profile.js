@@ -28,13 +28,14 @@
                 return match[1];
             }
             return value;
-        }
+        };
     };
 
     var SerializeMixin = function() {};
 
+    /** Serialize to a JS Object. */
     SerializeMixin.prototype.serialize = function() {
-        return ko.toJSON(this);
+        return ko.toJS(this);
     };
 
     SerializeMixin.prototype.unserialize = function(data) {
@@ -63,11 +64,11 @@
         self.tracked = [];  // Define for each view model that inherits
 
         self.setOriginal = function() {
-            self.original(ko.toJSON(self.tracked));
+            self.original(ko.toJS(self.tracked));
         };
 
         self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJS(self.tracked) !== self.original();
         });
 
         // Must be set after isValid is defined in inherited view models
@@ -161,17 +162,18 @@
 
     BaseViewModel.prototype.submit = function() {
         if (this.enableSubmit() === false) {
-            return
+            return;
         }
-        $.ajax({
-            type: 'PUT',
-            url: this.urls.crud,
-            data: this.serialize(),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: [this.handleSuccess.bind(this), this.setOriginal],
-            error: this.handleError.bind(this)
-        });
+        $.osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal
+        ).fail(
+            this.handleError.bind(this)
+        );
     };
 
     var NameViewModel = function(urls, modes) {
@@ -209,7 +211,7 @@
 
         self.impute = function() {
             if (! self.hasFirst()) {
-                return
+                return;
             }
             $.ajax({
                 type: 'GET',
@@ -236,10 +238,10 @@
 
         var suffix = function(suffix) {
             var suffixLower = suffix.toLowerCase();
-            if ($.inArray(suffixLower, ['jr', 'sr']) != -1) {
+            if ($.inArray(suffixLower, ['jr', 'sr']) !== -1) {
                 suffix = suffix + '.';
                 suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) != -1) {
+            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) !== -1) {
                 suffix = suffix.toUpperCase();
             }
             return suffix;
@@ -354,7 +356,7 @@
             self.scholar,
             self.linkedIn,
             self.github
-        ]
+        ];
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -366,7 +368,7 @@
             return [
                 {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
                 {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
-                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherId.url()},
+                {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
                 {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
                 {label: 'GitHub', text: self.github(), value: self.github.url()},
                 {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
@@ -427,15 +429,13 @@
             return new self.ContentModel(self).unserialize(each);
         }));
         // Ensure at least one item is visible
-        if (self.contents().length == 0) {
+        if (self.contents().length === 0) {
             self.addContent();
         }
     };
 
     ListViewModel.prototype.serialize = function() {
-        return JSON.stringify({
-            contents: ko.toJS(this.contents)
-        });
+        return {contents: ko.toJS(this.contents)};
     };
 
     ListViewModel.prototype.addContent = function() {
@@ -458,12 +458,12 @@
         self.title = ko.observable('');
 
         self.start = ko.observable().extend({
-            asDate: true,
-            date: true
+            date: true,
+            asDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
             minDate: self.start
         });
 
@@ -486,12 +486,12 @@
         self.degree = ko.observable('');
 
         self.start = ko.observable().extend({
-            asDate: true,
-            date: true
+            date: true,
+            asDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
             minDate: self.start
         });
 

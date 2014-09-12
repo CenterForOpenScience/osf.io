@@ -54,9 +54,9 @@
             url: nodeApiUrl + 'private_link/edit/',
             placement: 'bottom',
             ajaxOptions: {
-                'type': 'PUT',
-                "dataType": "json",
-                "contentType": "application/json"
+                type: 'PUT',
+                dataType: 'json',
+                contentType: 'application/json',
             },
             send:"always",
             title:"Edit Link Name",
@@ -67,7 +67,8 @@
             },
             success: function(response, value) {
                 data.name(value);
-            }
+            },
+            error: $.osf.handleEditableError,
         });
     };
 
@@ -91,8 +92,13 @@
         });
         self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
         self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
+        self.removeLink = "Remove this link";
         self.hasMoreText = ko.computed(function(){
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
+        });
+
+        self.anonymousDisplay = ko.computed(function() {
+            return data.anonymous ? 'Yes' : 'No';
         });
 
         self.displayAllNodes = function() {
@@ -123,21 +129,27 @@
         }
 
         function onFetchError() {
-          //TODO
-          console.log('an error occurred');
+          bootbox.alert('Could not retrieve view-only links. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
         }
 
         function fetch() {
-            $.ajax({url: url, type: 'GET', dataType: 'json',
-              success: onFetchSuccess,
-              error: onFetchError
-            });
+            $.ajax({
+                url: url, 
+                type: 'GET', 
+                dataType: 'json',
+            }).done(
+                onFetchSuccess
+            ).fail(
+                onFetchError
+            );
         }
 
         fetch();
 
-        self.removeLink = function(data){
-            var data_to_send={
+        self.removeLink = function(data) {
+            var dataToSend = {
                 'private_link_id': data.id
             };
             bootbox.confirm('Are you sure to remove this view only link?', function(result) {
@@ -147,13 +159,11 @@
                         url: nodeApiUrl + 'private_link/',
                         contentType: 'application/json',
                         dataType: 'json',
-                        data: JSON.stringify(data_to_send),
-                        success: function(response) {
-                            self.privateLinks.remove(data);
-                        },
-                        error: function(xhr) {
-                            bootbox.alert('Failed to delete the private link.')
-                        }
+                        data: JSON.stringify(dataToSend),
+                    }).done(function() {
+                        self.privateLinks.remove(data);
+                    }).fail(function() {
+                        bootbox.alert('Failed to delete the private link.')
                     });
                 }
              });

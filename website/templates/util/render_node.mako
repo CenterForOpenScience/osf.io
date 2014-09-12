@@ -34,6 +34,7 @@
         </h4>
         <div class="list-group-item-text"></div>
 
+        % if not summary['anonymous']:
         <!-- Show abbreviated contributors list -->
         <div mod-meta='{
                 "tpl": "util/render_users_abbrev.mako",
@@ -43,16 +44,20 @@
                 },
                 "replace": true
             }'></div>
-
+        % else:
+         <div>Anonymous Contributors</div>
+        % endif
         <!--Stacked bar to visualize user activity level against total activity level of a project -->
         <!--Length of the stacked bar is normalized over all projects -->
-        <div class="user-activity-meter">
-            <ul class="meter-wrapper">
-                <li class="ua-meter" data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions" style="width:${summary['ua']}px;"></li>
-                <li class="pa-meter" style="width:${summary['non_ua']}px;"></li>
-                <li class="pa-meter-label">${summary['nlogs']} contributions</li>
-            </ul>
-        </div>
+        % if not summary['anonymous']:
+            <div class="user-activity-meter">
+                <ul class="meter-wrapper">
+                    <li class="ua-meter" data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions" style="width:${summary['ua']}px;"></li>
+                    <li class="pa-meter" style="width:${summary['non_ua']}px;"></li>
+                    <li class="pa-meter-label">${summary['nlogs']} contributions</li>
+                </ul>
+            </div>
+        % endif
 
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
@@ -62,7 +67,12 @@
                     data-bind="foreach: {data: logs, as: 'log'}">
                     <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                   <dd class="log-content">
-                    <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                    <span data-bind="if:log.anonymous">
+                        <span><em>A user</em></span>
+                    </span>
+                    <span data-bind="ifnot:log.anonymous">
+                        <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                    </span>
                     <!-- log actions are the same as their template name -->
                     <span data-bind="template: {name: log.action, data: log}"></span>
                   </dd>
@@ -73,12 +83,17 @@
     </li>
 
 % else:
-
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
         <h4 class="list-group-item-heading">
-            Private Component
+            %if summary['is_registration']:
+                Private Registration
+            %elif summary['is_fork']:
+                Private Fork
+            %else:
+                Private Component
+            %endif
         </h4>
     </li>
 

@@ -2,9 +2,10 @@
 import os
 import logging
 import httplib as http
-from mako.template import Template
 
-from framework import request
+from mako.template import Template
+from flask import request
+
 from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
@@ -132,7 +133,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
-            logging.error('Could not access GitHub repo')
+            logger.error('Could not access GitHub repo')
             return None
         if repo.private:
             return None

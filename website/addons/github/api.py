@@ -7,16 +7,17 @@ import urllib
 import itertools
 
 import github3
+import cachecontrol
 from dateutil.parser import parse
-from httpcache import CachingHTTPAdapter
 from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
+from website.addons.github.exceptions import (
+    NotFoundError, EmptyRepoError, TooBigError, GitHubError
+)
 
 # Initialize caches
-http_cache = CachingHTTPAdapter()
-https_cache = CachingHTTPAdapter()
+https_cache = cachecontrol.CacheControlAdapter()
 default_adapter = HTTPAdapter()
 
 
@@ -164,7 +165,12 @@ class GitHub(object):
         :returns: A tuple of the form (<filename>, <file_content>, <file_size):
 
         """
-        req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        try:
+            req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        except GitHubError as error:
+            if 'requested blob is too large' in error.message:
+                raise TooBigError()
+            raise
         if req:
             return req.name, req.decoded, req.size
         return None, None, None

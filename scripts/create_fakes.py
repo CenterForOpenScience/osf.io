@@ -20,7 +20,7 @@ This will create 3 fake public projects, each with 3 fake contributors (with
 import sys
 import argparse
 import logging
-
+from modularodm.query.querydialect import DefaultQueryDialect as Q
 from faker import Factory
 
 from framework.auth import Auth
@@ -29,9 +29,10 @@ from website import models, security
 from framework.auth import utils
 from tests.factories import UserFactory, ProjectFactory
 
+
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 fake = Factory.create()
-app = init_app('website.settings', set_backends=True, routes=True)
 
 
 def create_fake_user():
@@ -47,7 +48,7 @@ def create_fake_user():
     )
     user.set_password('faker123')
     user.save()
-    print('Created user: {0} <{1}>'.format(user.fullname, user.username))
+    logger.info('Created user: {0} <{1}>'.format(user.fullname, user.username))
     return user
 
 def parse_args():
@@ -70,18 +71,21 @@ def create_fake_project(creator, n_users, privacy, name):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
     project.save()
-    print('Created project: {0}'.format(project.title))
+    logger.info('Created project: {0}'.format(project.title))
     return project
 
 
 def main():
     args = parse_args()
-    creator = models.User.find_by_email(args.user)[0]
+    creator = models.User.find(Q('username', 'eq', args.user))[0]
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
         create_fake_project(creator, args.n_users, args.privacy, name)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 
+
 if __name__ == '__main__':
+    app = init_app('website.settings', set_backends=True, routes=True)
     main()
+

@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
+
 import os
-import urllib
+import hashlib
 import logging
 import datetime
 import httplib as http
 
+from modularodm import Q
 from modularodm.exceptions import ModularOdmException
+from flask import request, redirect, make_response
 
-from framework import request, redirect, make_response, Q
 from framework.flask import secure_filename
 from framework.exceptions import HTTPError
 
@@ -17,17 +20,20 @@ from website.project.decorators import (
 )
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.exceptions import (
+    NotFoundError, EmptyRepoError, TooBigError
+)
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
 
 
-logger = logging.getLevelName(__name__)
+logger = logging.getLogger(__name__)
 
 
 @must_be_contributor_or_public
@@ -41,9 +47,19 @@ def github_download_file(**kwargs):
     ref = request.args.get('sha')
     connection = GitHub.from_settings(node_settings.user_settings)
 
-    name, data, _ = connection.file(
-        node_settings.user, node_settings.repo, path, ref=ref
-    )
+    try:
+        name, data, _ = connection.file(
+            node_settings.user, node_settings.repo, path, ref=ref
+        )
+    except TooBigError:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large',
+                'message_long': 'This file is too large to download through '
+                    'the GitHub API.',
+            },
+        )
     if data is None:
         raise HTTPError(http.NOT_FOUND)
 
@@ -63,15 +79,15 @@ def github_download_file(**kwargs):
 
 def get_cache_file(path, sha):
     return '{0}_{1}.html'.format(
-        urllib.quote_plus(path.encode("utf-8")), sha,
+        hashlib.md5(path.encode('utf-8', 'ignore')).hexdigest(),
+        sha,
     )
 
 
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_view_file(**kwargs):
+def github_view_file(auth, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     node_settings = kwargs['node_addon']
 
@@ -85,6 +101,7 @@ def github_view_file(**kwargs):
 
     connection = GitHub.from_settings(node_settings.user_settings)
 
+    anonymous = has_anonymous_link(node, auth)
     try:
         # If GUID has already been created, we won't redirect, and can check
         # whether the file exists below
@@ -142,6 +159,9 @@ def github_view_file(**kwargs):
         commit['view'] = (
             '/' + guid._id + '/' + ref_to_params(branch, sha=commit['sha'])
         )
+        if anonymous:
+            commit['name'] = 'A user'
+            commit['email'] = ''
 
     # Get or create rendered file
     cache_file = get_cache_file(
@@ -149,17 +169,21 @@ def github_view_file(**kwargs):
     )
     rendered = get_cache_content(node_settings, cache_file)
     if rendered is None:
-        _, data, size = connection.file(
-            node_settings.user, node_settings.repo, path, ref=sha,
-        )
-        # Skip if too large to be rendered.
-        if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
-            rendered = 'File too large to render; download file to view it'
-        else:
-            rendered = get_cache_content(
-                node_settings, cache_file, start_render=True,
-                file_path=file_name, file_content=data, download_path=download_url,
+        try:
+            _, data, size = connection.file(
+                node_settings.user, node_settings.repo, path, ref=sha,
             )
+        except TooBigError:
+            rendered = 'File too large to download.'
+        if rendered is None:
+            # Skip if too large to be rendered.
+            if github_settings.MAX_RENDER_SIZE is not None and size > github_settings.MAX_RENDER_SIZE:
+                rendered = 'File too large to render; download file to view it.'
+            else:
+                rendered = get_cache_content(
+                    node_settings, cache_file, start_render=True,
+                    file_path=file_name, file_content=data, download_path=download_url,
+                )
 
     rv = {
         'file_name': file_name,
@@ -176,12 +200,10 @@ def github_view_file(**kwargs):
 @must_have_permission(permissions.WRITE)
 @must_not_be_registration
 @must_have_addon('github', 'node')
-def github_upload_file(**kwargs):
+def github_upload_file(auth, node_addon, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
     user = auth.user
-    node_settings = kwargs['node_addon']
     now = datetime.datetime.utcnow()
 
     path = get_path(kwargs, required=False) or ''
@@ -192,7 +214,7 @@ def github_upload_file(**kwargs):
     if branch is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
 
     upload = request.files.get('file')
     filename = secure_filename(upload.filename)
@@ -202,16 +224,14 @@ def github_upload_file(**kwargs):
     upload.seek(0, os.SEEK_END)
     size = upload.tell()
 
-    # Hack: Avoid circular import
-    from website.addons import github
-    if size > github.MAX_FILE_SIZE * 1024 * 1024:
+    if size > node_addon.config.max_file_size * 1024 * 1024:
         raise HTTPError(http.BAD_REQUEST)
 
     # Get SHA of existing file if present; requires an additional call to the
     # GitHub API
     try:
         tree = connection.tree(
-            node_settings.user, node_settings.repo, sha=sha or branch
+            node_addon.user, node_addon.repo, sha=sha or branch
         ).tree
     except EmptyRepoError:
         tree = []
@@ -231,13 +251,13 @@ def github_upload_file(**kwargs):
 
     if existing:
         data = connection.update_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
             MESSAGES['update'], content, sha=sha, branch=branch, author=author
         )
     else:
         data = connection.create_file(
-            node_settings.user, node_settings.repo, os.path.join(path, filename),
-            MESSAGES['update'], content, branch=branch, author=author
+            node_addon.user, node_addon.repo, os.path.join(path, filename),
+            MESSAGES['add'], content, branch=branch, author=author
         )
 
     if data is not None:
@@ -267,8 +287,8 @@ def github_upload_file(**kwargs):
                     'download': download_url,
                 },
                 'github': {
-                    'user': node_settings.user,
-                    'repo': node_settings.repo,
+                    'user': node_addon.user,
+                    'repo': node_addon.repo,
                     'sha': data['commit'].sha,
                 },
             },
@@ -361,15 +381,14 @@ def github_delete_file(auth, node_addon, **kwargs):
 # TODO Add me Test me
 @must_be_contributor_or_public
 @must_have_addon('github', 'node')
-def github_download_starball(**kwargs):
+def github_download_starball(node_addon, **kwargs):
 
-    node_settings = kwargs['node_addon']
     archive = kwargs.get('archive', 'tar')
     ref = request.args.get('sha', 'master')
 
-    connection = GitHub.from_settings(node_settings.user_settings)
+    connection = GitHub.from_settings(node_addon.user_settings)
     headers, data = connection.starball(
-        node_settings.user, node_settings.repo, archive, ref
+        node_addon.user, node_addon.repo, archive, ref
     )
 
     resp = make_response(data)
