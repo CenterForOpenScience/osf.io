@@ -44,6 +44,7 @@ from tests.factories import (
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
     AuthUserFactory
 )
+from tests.test_features import requires_piwik
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -1880,6 +1881,7 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.files_current, {})
         assert_equal(new.files_versions, {})
 
+    @requires_piwik
     def test_template_piwik_site_id_not_copied(self):
         new = self.project.use_as_template(
             auth=self.consolidate_auth
