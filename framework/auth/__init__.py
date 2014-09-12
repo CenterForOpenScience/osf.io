@@ -1,15 +1,31 @@
 # -*- coding: utf-8 -*-
 
-from framework import session, create_session
-from framework import goback
+from framework.sessions import session, create_session, goback
 from framework import bcrypt
 from framework.auth.exceptions import (
-    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError
+    DuplicateEmailError, LoginNotAllowedError, PasswordIncorrectError, TwoFactorValidationError
 )
 
 from .core import User, Auth
 from .core import get_user, get_current_user, get_api_key, get_current_node
 
+from website import settings
+
+__all__ = [
+    'get_display_name',
+    'Auth',
+    'User',
+    'get_user',
+    'get_api_key',
+    'get_current_node',
+    'get_current_user',
+    'check_password',
+    'authenticate',
+    'login',
+    'logout',
+    'register_unconfirmed',
+    'register',
+]
 
 def get_display_name(username):
     """Return the username to display in the navbar. Shortens long usernames."""
@@ -33,7 +49,7 @@ def authenticate(user, response):
     return response
 
 
-def login(username, password):
+def login(username, password, two_factor=None):
     """View helper function for logging in a user. Either authenticates a user
     and returns a ``Response`` or raises an ``AuthError``.
 
@@ -50,16 +66,19 @@ def login(username, password):
         if user:
             if not user.is_registered:
                 raise LoginNotAllowedError('User is not registered.')
-            elif not user.is_claimed:
-                raise LoginNotAllowedError('User is not claimed.')
-            else:
-                return authenticate(user, response=goback())
-    raise PasswordIncorrectError('Incorrect password attempt.')
 
+            if not user.is_claimed:
+                raise LoginNotAllowedError('User is not claimed.')
+            if 'twofactor' in settings.ADDONS_REQUESTED:
+                tfa = user.get_addon('twofactor')
+                if tfa and tfa.is_confirmed and not tfa.verify_code(two_factor):
+                    raise TwoFactorValidationError('Two-Factor auth does not match.')
+
+            return authenticate(user, response=goback())
+    raise PasswordIncorrectError('Incorrect password attempt.')
 
 def logout():
     for key in ['auth_user_username', 'auth_user_id', 'auth_user_fullname']:
-        # todo leave username so login page can persist probable id
         try:
             del session.data[key]
         except KeyError:

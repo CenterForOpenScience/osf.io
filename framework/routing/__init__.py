@@ -11,11 +11,13 @@ import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
+from flask import request, redirect, make_response
 
-from framework import session, request, make_response
-from framework.exceptions import HTTPError
-from framework.flask import app, redirect
 from framework import sentry
+from framework.flask import app
+from framework.sessions import session
+from framework.exceptions import HTTPError
+
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -32,6 +34,7 @@ REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
 ]
+
 
 class Rule(object):
     """ Container for routing and rendering rules."""
@@ -78,8 +81,10 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
-
-        session_error_code = session.data.get('auth_error_code')
+        if session:
+            session_error_code = session.data.get('auth_error_code')
+        else:
+            session_error_code = None
         if session_error_code:
             raise HTTPError(session_error_code)
         try:
@@ -298,7 +303,6 @@ class Renderer(object):
         return make_response(rendered, status_code, headers)
 
 
-
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
@@ -317,13 +321,15 @@ class JSONRenderer(Renderer):
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
-        return self.render(error.to_data(), None), error.code
+        headers = {'Content-Type': self.CONTENT_TYPE}
+        return self.render(error.to_data(), None), error.code, headers
 
     def render(self, data, redirect_url, *args, **kwargs):
         return json.dumps(data, cls=self.Encoder)
 
 # Create a single JSONRenderer instance to avoid repeated construction
 json_renderer = JSONRenderer()
+
 
 class WebRenderer(Renderer):
     """Renderer for web views. Generates HTML; follows redirects

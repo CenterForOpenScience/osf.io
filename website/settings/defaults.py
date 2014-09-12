@@ -18,6 +18,7 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
+ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -65,6 +66,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
+USE_TOKU_MX = True
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -86,7 +88,7 @@ SHORT_DOMAIN = 'osf.io'
 COMMENT_MAXLENGTH = 500
 
 # Gravatar options
-GRAVATAR_SIZE_PROFILE = 120
+GRAVATAR_SIZE_PROFILE = 70
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
 GRAVATAR_SIZE_DISCUSSION = 20
 
@@ -138,15 +140,25 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'osffiles',
-    'github', 's3', 'figshare',
-    'dropbox', 'dataverse',
-    # 'badges',
-    'forward', 'app',
+    'app',
+    'dataverse',
+    'dropbox',
+    'figshare',
+    'forward',
+    'github',
+    'osffiles',
+    's3',
+    'twofactor',
+    'wiki',
 ]
 
 ADDON_CATEGORIES = [
-    'service', 'documentation', 'storage', 'bibliography', 'other',
+    'documentation',
+    'storage',
+    'bibliography',
+    'other',
+    'security',
+    'service'
 ]
 
 SYSTEM_ADDED_ADDONS = {

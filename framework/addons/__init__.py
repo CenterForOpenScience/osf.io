@@ -1,8 +1,6 @@
-"""
+# -*- coding: utf-8 -*-
 
-"""
-
-from framework import StoredObject
+from framework.mongo import StoredObject
 from website import settings
 
 
@@ -88,6 +86,7 @@ class AddonModelMixin(StoredObject):
 
         # Instantiate model
         model = addon_config.settings_models[self._name](owner=self)
+        model.on_add()
         model.save()
         model.addon_attached(self)
 

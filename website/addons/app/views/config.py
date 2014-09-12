@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 from website.project.decorators import (must_be_valid_project,

@@ -227,7 +227,7 @@ class CustomVariableField(object):
 
     def __init__(self, client, **kwargs):
         # accepts a dictionary from Piwik's JSON repsonse.
-        # TODO: Not all variables here are captured
+        # Note: Not all variables here are captured
         self.client = client
         self.subtable_id = kwargs.get('idsubdatatable')
         self.label = kwargs.get('label')

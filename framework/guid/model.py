@@ -1,5 +1,6 @@
-from framework import StoredObject, fields
-from framework.mongo import ObjectId
+# -*- coding: utf-8 -*-
+from modularodm import fields
+from framework.mongo import StoredObject, ObjectId
 
 
 # Placed here because there is no other good place to go
@@ -75,6 +76,9 @@ class Guid(StoredObject):
         self.metastore[app.namespace] = metadata._id
         self.save()
         return metadata
+
+    def __repr__(self):
+        return '<id:{0}, referent:({1}, {2})>'.format(self._id, self.referent._primary_key, self.referent._name)
 
 
 class GuidStoredObject(StoredObject):

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import os
 
-from flask import redirect
+from flask import redirect, send_from_directory
 
-import framework
 from framework import status
+from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
-from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
@@ -25,22 +25,21 @@ from website.assets import env as assets_env
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
-
     """
-    user = framework.auth.get_current_user()
+    user = get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
         'user_api_url': user.api_url if user else '',
-        'display_name': framework.auth.get_display_name(user.fullname) if user else '',
+        'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
-        'status': framework.status.pop_status_messages(),
+        'status': status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
@@ -62,7 +61,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
@@ -937,3 +936,12 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    # Set up static routing for addons
+    # NOTE: We use nginx to serve static addon assets in production
+    addon_base_path = os.path.abspath('website/addons')
+    if settings.DEV_MODE:
+        @app.route('/static/addons/<addon>/<path:filename>')
+        def addon_static(addon, filename):
+            addon_path = os.path.join(addon_base_path, addon, 'static')
+            return send_from_directory(addon_path, filename)

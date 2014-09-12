@@ -8,8 +8,8 @@ from modularodm import fields
 from website.addons.base import lookup
 from website.search.search import update_metadata, get_mapping
 
-from framework import Guid, GuidStoredObject
 from framework.auth import User
+from framework.guid.model import Guid, GuidStoredObject
 
 class AppNodeSettings(GuidStoredObject):
 

@@ -163,15 +163,16 @@
         if (this.enableSubmit() === false) {
             return
         }
-        $.ajax({
-            type: 'PUT',
-            url: this.urls.crud,
-            data: this.serialize(),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: [this.handleSuccess.bind(this), this.setOriginal],
-            error: this.handleError.bind(this)
-        });
+        $.osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal
+        ).fail(
+            this.handleError.bind(this)
+        );
     };
 
     var NameViewModel = function(urls, modes) {
@@ -366,7 +367,7 @@
             return [
                 {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
                 {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
-                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherId.url()},
+                {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
                 {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
                 {label: 'GitHub', text: self.github(), value: self.github.url()},
                 {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
