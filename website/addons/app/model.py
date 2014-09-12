@@ -22,11 +22,12 @@ class AppNodeSettings(GuidStoredObject):
     allow_queries       = fields.BooleanField(default=False)
     allow_public_read   = fields.BooleanField(default=True)
 
-    def addon_attached(self, attachee):
-        attachee.category = 'app'
-        attachee.save()
+    def on_add(self):
 
-        system_user = User.create_confirmed(attachee.title, '12', attachee.title)
+        self.owner.category = 'app'
+        self.owner.save()
+
+        system_user = User.create_confirmed(self.owner.title, '12', self.owner.title)
         system_user.is_system_user = True
         system_user.password = '12'
         system_user.save()

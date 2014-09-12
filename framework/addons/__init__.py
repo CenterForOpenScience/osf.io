@@ -88,7 +88,6 @@ class AddonModelMixin(StoredObject):
         model = addon_config.settings_models[self._name](owner=self)
         model.on_add()
         model.save()
-        model.addon_attached(self)
 
         return True
 
