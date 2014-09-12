@@ -21,7 +21,7 @@ env:
 install:
     - cp website/settings/local-travis.py website/settings/local.py
     # - travis_retry invoke encryption
-    - travis_retry pip install invoke==0.8.1
+    - travis_retry pip install invoke==0.9.0
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements
     - travis_retry invoke addon_requirements
