@@ -2,10 +2,11 @@
 
 from flask import request, url_for
 
+from website import settings
+
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
 
-from website import settings
 
 
 def api_url_for(view_name, _absolute=False, *args, **kwargs):
@@ -50,3 +51,4 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
+

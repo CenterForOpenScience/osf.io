@@ -187,13 +187,14 @@
         };
 
         function postInviteRequest(fullname, email, options) {
-            var ajaxOpts = $.extend({
-                url: nodeApiUrl + 'invite_contributor/',
-                type: 'POST',
-                data: JSON.stringify({'fullname': fullname, 'email': email}),
-                dataType: 'json', contentType: 'application/json'
-            }, options);
-            return $.ajax(ajaxOpts);
+            $.osf.postJSON(
+                nodeApiUrl + 'invite_contributor/',
+                {'fullname': fullname, 'email': email}
+            ).done(
+                onInviteSuccess
+            ).fail(
+                onInviteError
+            );
         }
 
         function onInviteSuccess(result) {
@@ -237,12 +238,7 @@
                 self.inviteError(validated);
                 return false;
             }
-            return postInviteRequest(self.inviteName(), self.inviteEmail(),
-                {
-                    success: onInviteSuccess,
-                    error: onInviteError
-                }
-            );
+            return postInviteRequest(self.inviteName(), self.inviteEmail());
         };
 
         self.add = function(data) {
@@ -313,24 +309,19 @@
         self.submit = function() {
             $.osf.block();
             $('.modal').modal('hide');
-            $.ajax({
-                url: nodeApiUrl + 'contributors/',
-                type: 'post',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify({
+            $.osf.postJSON(
+                nodeApiUrl + 'contributors/',
+                {
                     users: self.selection().map(function(user) {
                         return ko.toJS(user);
                     }),
                     node_ids: self.nodesToChange()
-                }),
-                success: function() {
-                        window.location.reload();
-                },
-                error: function(){
-                    $.osf.unblock();
-                    bootbox.alert('Add contributor failed.');
                 }
+            ).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                $.osf.unblock();
+                bootbox.alert('Add contributor failed.');
             });
         };
 

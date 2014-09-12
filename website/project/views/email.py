@@ -23,7 +23,7 @@ from website.util import web_url_for
 from website.models import User, Node, MailRecord
 from website.project import new_node
 from website.project.views.file import prepare_file
-from website.util.sanitize import deep_clean
+from website.util.sanitize import escape_html
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
 
 
@@ -56,20 +56,34 @@ MEETING_DATA = {
         'name': 'APS 2014',
         'info_url': 'http://centerforopenscience.org/aps/',
         'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
-        'active': True,
+        'active': False,
     },
     'annopeer2014': {
         'name': '#annopeer',
         'info_url': None,
         'logo_url': None,
-        'active': True,
+        'active': False,
     },
     'cpa2014': {
         'name': 'CPA 2014',
         'info_url': None,
         'logo_url': None,
+        'active': False,
+    },
+    'filaments2014': {
+        'name': 'Filaments 2014',
+        'info_url': None,
+        'logo_url': 'https://science.nrao.edu/science/meetings/2014/'
+                    'filamentary-structure/images/filaments2014_660x178.png',
         'active': True,
     },
+    # TODO: Uncomment on 2015/02/01
+    # 'spsp2015': {
+    #     'name': 'SPSP 2015',
+    #     'info_url': None,
+    #     'logo_url': None,
+    #     'active': False,
+    # },
 }
 
 
@@ -326,7 +340,7 @@ def meeting_hook():
     # Fail if not from Mailgun
     check_mailgun_headers()
 
-    form = deep_clean(request.form.to_dict())
+    form = escape_html(request.form.to_dict())
     meeting, category = parse_mailgun_receiver(form)
 
     # Fail if not found or inactive
