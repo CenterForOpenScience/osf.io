@@ -1887,7 +1887,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='&'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
@@ -1897,7 +1897,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} "{title}." Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
@@ -1907,7 +1907,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} "{title}." Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,

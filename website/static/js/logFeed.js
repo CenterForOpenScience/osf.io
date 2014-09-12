@@ -90,22 +90,21 @@
         self.moreLogs = function(){
             pageNum+=1;
             $.ajax({
+                type: 'get',
                 url: self.url,
                 data:{
-                    pageNum:pageNum
+                    pageNum: pageNum
                 },
-                type: 'get',
                 cache: false,
-                success: function(response){
-                    // Initialize LogViewModel
-                    var logModelObjects = createLogs(response.logs);  // Array of Log model objects
-                    for(var i=0;i<logModelObjects.length;i++)
-                    {
-                        self.logs.push(logModelObjects[i]);
-                    }
-                    self.enableMoreLogs(response.has_more_logs);
+            }).done(function(response) {
+                // Initialize LogViewModel
+                for (var i=0; i<logModelObjects.length; i++) {
+                    self.logs.push(logModelObjects[i]);
                 }
-            });
+                self.enableMoreLogs(response.has_more_logs);
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.tzname = ko.computed(function() {
@@ -178,7 +177,7 @@
             initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
         } else { // data is a URL
             $.getJSON(data, function(response) {
-                  initViewModel(self, response.logs, response.has_more_logs,data);
+                  initViewModel(self, response.logs, response.has_more_logs, data);
             });
         }
     }

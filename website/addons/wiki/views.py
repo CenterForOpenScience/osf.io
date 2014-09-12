@@ -53,6 +53,7 @@ def wiki_widget(**kwargs):
         'complete': True,
         'content': wiki_html,
         'more': more,
+        'include': False,
     }
     rv.update(wiki.config.to_json())
     return rv

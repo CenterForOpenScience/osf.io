@@ -40,3 +40,4 @@ class TestForwardLogs(ForwardAddonTestCase):
             len(self.project.logs),
             log_count
         )
+
