@@ -20,7 +20,14 @@
 
 
         self.createFolder = function () {
-            $.osf.postJSON(self.url, self.serialize(), self.createSuccess, self.createFailure);
+            $.osf.postJSON(
+                self.url,
+                self.serialize()
+            ).done(
+                self.createSuccess
+            ).fail(
+                self.createFailure
+            );
         };
 
         self.createSuccess = function (data) {
