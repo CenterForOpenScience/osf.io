@@ -314,7 +314,7 @@ ${parent.javascript_bottom()}
                     } else {
                         $.ajax({
                         success: function() {
-                            bootbox.alert('<div><p style="font-weight: normal; font-size: medium; line-height: normal;">Sorry, the name you entered did not match the name we gave you. Please try again.</p></div>') 
+                            bootbox.alert('<div><p style="font-weight: normal; font-size: medium; line-height: normal;">Incorrect confirmation.</p> <p>Please try again.</p></div>') 
                             }
                         });
                     }
