@@ -353,21 +353,21 @@ def view_project(**kwargs):
 def is_expanded(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    return node_to_use.is_expanded(auth=auth)
+    return node_to_use.is_expanded(user=auth.user)
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def expand(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    node_to_use.expand(auth=auth)
+    node_to_use.expand(user=auth.user)
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def collapse(**kwargs):
     auth = kwargs['auth']
     node_to_use = kwargs['node'] or kwargs['project']
-    node_to_use.collapse(auth=auth)
+    node_to_use.collapse(user=auth.user)
 
 # Reorder components
 
