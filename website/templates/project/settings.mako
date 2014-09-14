@@ -193,14 +193,54 @@ ${parent.javascript_bottom()}
 
     ## TODO: Replace with something more fun, like the name of a famous scientist
     ## h/t @sloria
-    function randomString() {
-        var alphabet = 'abcdefghijkmnpqrstuvwxyz23456789',
-            text = '';
+    function randomScientist() {
+        // returns a random name from this list to use as a confirmation string
 
-        for (var i = 0; i < 5; i++)
-            text += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+        var scientists = [
+        'Emilie du Chatelet',
+        'Caroline Herschel',
+        'Mary Anning',
+        'Mary Somerville',
+        'Maria Mitchell',
+        'Nikola Tesla',
+        'Lise Meitner',
+        'Irene Curie-Joliot',
+        'Barbara McClintock',
+        'Dorothy Hodgkin',
+        'Rosalind Franklin',
+        'Hedy Lamarr',
+        'Ada Lovelace',
+        'Annie Jump Cannon',
+        'Cecilia Payne-Gaposchkin',
+        'Grace Hopper',
+        'Benjamin Banneker',
+        'Charles Drew',
+        'Daniel Hale Williams',
+        'Emmett Chappelle',
+        'Ernest Everett Just',
+        'Garrett Morgan',
+        'George Washington Carver',
+        'James West',
+        'Neil deGrasse Tyson',
+        'Mae Jemison',
+        'Marie Maynard Daly',
+        'Norbert Rillieux',
+        'Patricia Bath',
+        'Percy Lavon Julian',
+        'Philip Emeagwali',
+        'Samuel Massie Jr.',
+        'Francis Bacon',
+        'S. Josephine Baker',
+        'Allan Cox',
+        'Neil Divine',
+        'Sonja Kovalevsky',
+        'Margaret Mead',
+        'Louise Pearce',
+        'Jim Pollack',
+        'Alan Turing'
+        ];
 
-        return text;
+        return scientists[Math.floor(Math.random() * scientists.length)];
     }
 
     $(document).ready(function() {
@@ -250,7 +290,7 @@ ${parent.javascript_bottom()}
         });
 
         $('#deleteNode').on('click', function() {
-            var key = randomString();
+            var key = randomScientist();
             bootbox.prompt(
               '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
