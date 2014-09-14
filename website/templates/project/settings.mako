@@ -191,11 +191,10 @@ ${parent.javascript_bottom()}
 
 <script type="text/javascript">
 
-    ## TODO: Replace with something more fun, like the name of a famous scientist
-    ## h/t @sloria
+    /**
+     *  returns a random name from this list to use as a confirmation string
+     */ 
     function randomScientist() {
-        // returns a random name from this list to use as a confirmation string
-
         var scientists = [
         'Emilie du Chatelet',
         'Caroline Herschel',
@@ -287,10 +286,11 @@ ${parent.javascript_bottom()}
 
         });
 
-        function getConfirmationCode() {
-            // Pulls a random name from the scientist list to use as confirmation string
-            // Ignores case and whitespace
-            
+        /**
+         * Pulls a random name from the scientist list to use as confirmation string
+        *  Ignores case and whitespace
+        */
+        function getConfirmationCode() {            
             var key = randomScientist();
             bootbox.prompt(
                 '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
