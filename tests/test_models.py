@@ -1250,6 +1250,21 @@ class TestDashboard(OsfTestCase):
         with assert_raises(ValueError):
             new_node.add_pointer(self.project, auth=self.consolidate_auth)
 
+    def test_can_remove_empty_folder(self):
+        new_folder = FolderFactory(creator=self.user)
+        assert_equal(new_folder.is_folder, True)
+        new_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(new_folder.is_deleted)
+
+    def test_can_remove_folder_structure(self):
+        outer_folder = FolderFactory(creator=self.user)
+        assert_equal(outer_folder.is_folder, True)
+        inner_folder = FolderFactory(creator=self.user)
+        assert_equal(inner_folder.is_folder, True)
+        outer_folder.add_pointer(inner_folder, self.consolidate_auth)
+        outer_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(outer_folder.is_deleted)
+        assert_true(inner_folder.is_deleted)
 
 
 class TestAddonCallbacks(OsfTestCase):
