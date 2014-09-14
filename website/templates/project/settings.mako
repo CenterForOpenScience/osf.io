@@ -289,13 +289,19 @@ ${parent.javascript_bottom()}
 
         });
 
-        $('#deleteNode').on('click', function() {
+        function getConfirmationCode() {
+            // Pulls a random name from the scientist list to use as confirmation string
+            // Ignores case and whitespace
+            
             var key = randomScientist();
             bootbox.prompt(
-              '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
+                '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
-                    if (result === key) {
+                    if (result != null) {
+                        result = result.toLowerCase();
+                    }
+                    if ($.trim(result) === key.toLowerCase()) {
                         $.ajax({
                             type: 'DELETE',
                             dataType: 'json',
@@ -305,9 +311,21 @@ ${parent.javascript_bottom()}
                             },
                             error: $.osf.handleJSONError
                         });
+                    } else if (result === null) {
+
+                    } else {
+                        $.ajax({
+                        success: function() {
+                            bootbox.alert('<div><p style="font-weight: normal; font-size: medium; line-height: normal;">Sorry, the name you entered did not match the name we gave you. Please try again.</p></div>') 
+                            }
+                        });
                     }
                 }
             )
+        }
+
+        $('#deleteNode').on('click', function() {
+            getConfirmationCode();
         });
 
         // Show capabilities modal on selecting an addon; unselect if user
