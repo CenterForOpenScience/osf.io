@@ -248,7 +248,7 @@ class NodeProjectCollector(object):
         visited = visited or []
         visited.append(node.resolve()._id)
         can_edit = node.can_edit(auth=self.auth) and not node.is_registration
-        expanded = node.is_expanded(auth=self.auth)
+        expanded = node.is_expanded(user=self.auth.user)
         can_view = node.can_view(auth=self.auth)
         children = []
         modified_delta = delta_date(node.date_modified)
