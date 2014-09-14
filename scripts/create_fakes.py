@@ -3,7 +3,7 @@
 
 To use:
 
-1. Install fake-factory and reportlab. ::
+1. Install fake-factory.
 
     pip install fake-factory
 
