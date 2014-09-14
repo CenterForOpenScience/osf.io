@@ -309,9 +309,7 @@ ${parent.javascript_bottom()}
                             },
                             error: $.osf.handleJSONError
                         });
-                    } else if (result === null) {
-
-                    } else {
+                    } else if (result != null) {
                         $.ajax({
                         success: function() {
                             bootbox.alert('<div><p style="font-weight: normal; font-size: medium; line-height: normal;">Incorrect confirmation.</p> <p>Please try again.</p></div>') 
