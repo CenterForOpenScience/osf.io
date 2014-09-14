@@ -350,6 +350,7 @@ class TestSerializingNodeWithAddon(OsfTestCase):
             {'foo.js', 'baz.js'}
         )
 
+
 class TestSerializingEmptyDashboard(OsfTestCase):
 
     AMP = 'All my projects'
@@ -363,28 +364,13 @@ class TestSerializingEmptyDashboard(OsfTestCase):
         self.auth = AuthFactory(user=self.dash.creator)
         self.dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
-
-    def test_empty_dashboard_hgrid_is_list(self):
-        """
-        Tests that the hgrid representation of the initial dashboard is a list.
-        """
+    def test_empty_dashboard_hgrid_representation_is_list(self):
         assert_is_instance(self.dash_hgrid, list)
 
-
-    def test_empty_dashboard_smart_folders_correct_number(self):
-        """
-        Tests that the size of the hgrid representation of the initial dashboard is 2.
-        In practice, these should be the 2 smart folders (tested in
-        test_empty_dashboard_smart_folders_correct_names_and_ids)
-        """
+    def test_empty_dashboard_has_proper_number_of_smart_folders(self):
         assert_equal(len(self.dash_hgrid), 2)
 
-
-    def test_empty_dashboard_smart_folders_correct_names_and_ids(self):
-        """
-        Tests that the hgrid representation of the initial dashboard contains each of the two smart folders
-        and that they each have the correct id.
-        """
+    def test_empty_dashboard_smart_folders_have_correct_names_and_ids(self):
         for node_hgrid in self.dash_hgrid:
             assert_in(node_hgrid['name'], (self.AMP, self.AMR))
         for node_hgrid in self.dash_hgrid:
@@ -393,29 +379,15 @@ class TestSerializingEmptyDashboard(OsfTestCase):
             elif node_hgrid['name'] == self.AMR:
                 assert_equal(node_hgrid['node_id'], self.AMR_ID)
 
-
-    def test_empty_dashboard_smart_folders_empty(self):
-        """
-        Tests that all the folders in the initial dashboard are empty.
-        """
+    def test_empty_dashboard_smart_folders_are_empty(self):
         for node_hgrid in self.dash_hgrid:
             assert_equal(node_hgrid['children'], [])
 
-
-    def test_empty_dashboard_valid_folders(self):
-        """
-        Tests that all the nodes in the initial dashboard are valid folders,
-        as specified in assert_valid_hgrid_folder.
-        """
+    def test_empty_dashboard_are_valid_folders(self):
         for node in self.dash_hgrid:
             assert_valid_hgrid_folder(node)
 
-
-    def test_empty_dashboard_valid_smart_folders(self):
-        """
-        Tests that all the nodes in the initial dashboard are valid folders,
-        as specified in assert_valid_hgrid_smart_folder.
-        """
+    def test_empty_dashboard_smart_folders_are_valid_smart_folders(self):
         for node in self.dash_hgrid:
             assert_valid_hgrid_smart_folder(node)
 
@@ -433,20 +405,14 @@ class TestSerializingPopulatedDashboard(OsfTestCase):
 
         self.init_dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
-    def test_dashboard_1_folder_size(self):
-        """
-        Tests that adding a folder to the dashboard makes the dashboard hgrid contain one more element.
-        """
+    def test_dashboard_adding_one_folder_increases_size_by_one(self):
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
         assert_equal(len(dash_hgrid), len(self.init_dash_hgrid) + 1)
 
-    def test_dashboard_1_folder_titles(self):
-        """
-        Tests that a dashboard still contains each of the two smart folders after having a folder added to it.
-        """
+    def test_dashboard_adding_one_folder_does_not_remove_smart_folders(self):
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
@@ -457,10 +423,7 @@ class TestSerializingPopulatedDashboard(OsfTestCase):
             {node_hgrid['name'] for node_hgrid in dash_hgrid}
         )
 
-    def test_dashboard_1_folder_containing_project_size(self):
-        """
-        Tests that the length of a dashboard's hgrid representation is properly incremented after adding one folder.
-        """
+    def test_dashboard_adding_one_folder_increases_size_by_one_in_hgrid_representation(self):
         folder = FolderFactory(creator=self.user)
         self.dash.add_pointer(folder, self.auth)
 
@@ -479,19 +442,13 @@ class TestSerializingFolders(OsfTestCase):
         self.auth = AuthFactory(user=self.user)
 
     def test_serialized_folder_is_valid_folder(self):
-        """
-        Tests that the hgrid representation of an initialized folder is valid.
-        """
         folder = FolderFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(folder, self.auth)
 
         assert_equal(folder_hgrid, [])
 
-    def test_serialize_folder_containing_folder(self):
-        """
-        Tests that the length of a folder's hgrid representation is properly incremented after adding one folder.
-        """
+    def test_serialize_folder_containing_folder_increases_size_by_one(self):
         outer_folder = FolderFactory(creator=self.user)
 
         folder_hgrid = rubeus.to_project_hgrid(outer_folder, self.auth)
@@ -517,10 +474,7 @@ class TestSmartFolderViews(OsfTestCase):
 
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_project_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
-        """
-        Tests that the length of the json returned by '/get_dashboard/$AMP_ID' increases after adding a project.
-        """
+    def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -540,11 +494,7 @@ class TestSmartFolderViews(OsfTestCase):
 
     @mock.patch('website.project.decorators.get_api_key')
     @mock.patch('website.project.decorators.Auth.from_kwargs')
-    def test_adding_registration_to_dashboard(self, mock_from_kwargs, mock_get_api_key):
-        """
-        Tests that the length of the json returned by '/get_dashboard/$AMR_ID' increases after adding a registration.
-        """
-
+    def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs, mock_get_api_key):
         mock_get_api_key.return_value = 'api_keys_lol'
         mock_from_kwargs.return_value = Auth(user=self.user)
 
@@ -587,13 +537,10 @@ def assert_valid_hgrid_folder(node_hgrid):
         'type': 'smart-folder'
     }
 
-    print node_hgrid
     if isinstance(node_hgrid, list):
         node_hgrid = node_hgrid[0]['data']
     else:
         assert_is_instance(node_hgrid, dict)
-
-
 
     for key, correct_value in folder_values.items():
         assert_equal(node_hgrid[key], correct_value)
@@ -604,7 +551,6 @@ def assert_valid_hgrid_folder(node_hgrid):
     for key, correct_type in keys_types.items():
         for inner_key, inner_value in node_hgrid[key].items():
             assert_is_instance(inner_value, correct_type)
-
 
     valid_keys = set(folder_types.keys()).union(folder_values.keys())
     for key in node_hgrid.keys():
@@ -635,5 +581,3 @@ def assert_valid_hgrid_smart_folder(node_hgrid):
     assert_valid_hgrid_folder(node_hgrid)
     for attr, correct_value in smart_folder_values.items():
         assert_equal(correct_value, node_hgrid[attr])
-
-
