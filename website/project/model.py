@@ -610,8 +610,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if project and project.category != 'project':
             raise ValueError('Parent must be a project.')
 
-        #Crash if trying to create a second dashboard
-
         if kwargs.get('_is_loaded', False):
             return
 
