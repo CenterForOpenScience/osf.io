@@ -539,6 +539,12 @@ class Node(GuidStoredObject, AddonModelMixin):
     # Project Organization
     is_dashboard = fields.BooleanField(default=False)
     is_folder = fields.BooleanField(default=False)
+
+    # Expanded: Dictionary field mapping user IDs to expand state of this node:
+    # {
+    #   'icpnw': True,
+    #   'cdi38': False,
+    # }
     expanded = fields.DictionaryField(default={})
 
     is_deleted = fields.BooleanField(default=False)
