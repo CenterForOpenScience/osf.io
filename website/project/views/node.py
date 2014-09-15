@@ -347,13 +347,6 @@ def view_project(**kwargs):
     return rv
 
 #### Expand/Collapse
-
-@must_be_valid_project
-@must_be_contributor_or_public
-def is_expanded(auth, **kwargs):
-    node_to_use = kwargs['node'] or kwargs['project']
-    return node_to_use.is_expanded(user=auth.user)
-
 @must_be_valid_project
 @must_be_contributor_or_public
 def expand(auth, **kwargs):
