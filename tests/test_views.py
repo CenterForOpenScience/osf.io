@@ -2424,6 +2424,7 @@ class TestDashboardViews(OsfTestCase):
         super(TestDashboardViews, self).setUp()
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
+        self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with__are_accessible_from_dashboard(self):
@@ -2450,6 +2451,68 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
+
+    def test_untouched_node_is_collapsed(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_expand_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_collapse_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+
+        # Expand the folder
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+        # Collapse the folder
+        found_item = False
+        url = api_url_for('collapse', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
 
 
 class TestForkViews(OsfTestCase):
