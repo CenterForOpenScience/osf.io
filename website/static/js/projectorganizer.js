@@ -23,8 +23,8 @@
     var reloadNewFolder = false;
     var rnfPrevItem = '';
     var rnfToReload = '';
-    // copyMode can be 'copy', 'move', 'forbidden', or 'none'.
-    var copyMode = 'none';
+    // copyMode can be 'copy', 'move', 'forbidden', or null.
+    var copyMode = null;
 
     var fadeTime = 100;
 
@@ -212,7 +212,7 @@
                     items.forEach(function (item) {
                         if ($.inArray(item.node_id, folderChildren) === -1) { // pointer not in folder to be moved to
                             itemsToMove.push(item.node_id);
-                        } else if (copyMode == 'move') { // Pointer is already in the folder and it's a move
+                        } else if (copyMode === 'move') { // Pointer is already in the folder and it's a move
     //                              We  need to make sure not to delete the folder if the item is moved to the same folder.
     //                              When we add the ability to reorganize within a folder, this will have to change.
                             itemsNotToMove.push(item.node_id);
@@ -268,7 +268,7 @@
                                             reloadFolder(draggable.grid, folder);
 
                                         }
-                                        copyMode = 'none';
+                                        copyMode = null;
 
                                 });
                                 postAction.fail(function (jqxhr, textStatus, errorThrown){
@@ -358,7 +358,7 @@
                 // Find visible submit-button in this div and activate it
                 $('#ptd-'+nodeID).find('.submit-button-'+nodeID).filter(':visible').click();
                 return false;
-            } else*/ if (e.which == 27) {//esc
+            } else*/ if (e.which === 27) {//esc
                 // Find visible cancel-button in this div and activate it
                 $('#ptd-'+nodeID).find('.cancel-button-'+nodeID).filter(':visible').click();
                 return false;
@@ -389,13 +389,13 @@
         text: 'Modified',
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
-            if (row.modifiedDelta == 0) {
+            if (row.modifiedDelta === 0) {
                 return '';
             }
             return moment.utc(row.dateModified).fromNow() + ', ' + row.modifiedBy.toString();
         },
         folderView: function (row) {
-            if (row.modifiedDelta == 0) {
+            if (row.modifiedDelta === 0) {
                 return '';
             }
             return moment.utc(row.dateModified).fromNow() + ', ' + row.modifiedBy.toString();
@@ -412,7 +412,7 @@
         // Using a function that receives `row` containing all the item information
         itemView: function (row) {
             var contributorCount = row.contributors.length;
-            if (contributorCount == 0) {
+            if (contributorCount === 0) {
                 return '';
             }
             var contributorString = row.contributors[0].name.toString();
@@ -423,7 +423,7 @@
         },
         folderView: function (row) {
             var contributorCount = row.contributors.length;
-            if (contributorCount == 0) {
+            if (contributorCount === 0) {
                 return '';
             }
             var contributorString = row.contributors[0].name.toString();
@@ -559,7 +559,7 @@
         self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
             var selectedRows = self.grid.grid.getSelectedRows();
             var multipleItems = false;
-            if (selectedRows.length == 1) {
+            if (selectedRows.length === 1) {
                 self.myProjects.initialize();
                 self.publicProjects.initialize();
                 // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
@@ -680,7 +680,7 @@
                         }
                     });
                     $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-                        if (children.indexOf(datum.node_id) == -1) {
+                        if (children.indexOf(datum.node_id) === -1) {
                             $('#add-link-' + theItem.node_id).removeAttr('disabled');
                             linkName = datum.name;
                             linkID = datum.node_id;
