@@ -512,7 +512,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('data', 'Data'),
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
-        ('other', 'Other')
+        ('other', 'Other'),
+        ('report', 'Report')
         ])
 
     _id = fields.StringField(primary=True)
