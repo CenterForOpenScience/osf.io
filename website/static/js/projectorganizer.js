@@ -50,18 +50,20 @@
             var folderNodeId = folderToDeleteFrom.node_id;
             var url = '/api/v1/folder/' + folderNodeId + '/pointers/';
             var postData = JSON.stringify({pointerIds: pointerIds});
-            $.ajax({
+            var reloadHgrid = function () {
+                if (theHgrid !== null) {
+                    reloadFolder(theHgrid, folderToDeleteFrom);
+                }
+            };
+            var jqxhr = $.ajax({
                 type: 'DELETE',
                 url: url,
                 data: postData,
                 contentType: 'application/json',
-                dataType: 'json',
-                success: function () {
-                    if (theHgrid !== null) {
-                        reloadFolder(theHgrid, folderToDeleteFrom);
-                    }
-                }
+                dataType: 'json'
             });
+            jqxhr.done(reloadHgrid);
+            jqxhr.fail(reloadHgrid);
         }
     }
 
