@@ -45,6 +45,13 @@
         return itemParent.node_id;
     }
 
+    function addAlert(status, message, priority) {
+        var $alertDiv = $('<div class = "alert alert-' + priority + '"><a href="#" class="close" data-dismiss="alert">&times;</a>' +
+            '<strong>' + status + ':</strong> ' + message +
+            '</div>');
+        $('body').append($alertDiv);
+    }
+
     function deleteMultiplePointersFromFolder(theHgrid, pointerIds, folderToDeleteFrom) {
         if(pointerIds.length > 0) {
             var folderNodeId = folderToDeleteFrom.node_id;
@@ -55,28 +62,32 @@
                     reloadFolder(theHgrid, folderToDeleteFrom);
                 }
             };
-            var jqxhr = $.ajax({
+            var delete_action = $.ajax({
                 type: 'DELETE',
                 url: url,
                 data: postData,
                 contentType: 'application/json',
                 dataType: 'json'
             });
-            jqxhr.always(reloadHgrid);
-            // TODO: Error notification
+            delete_action.done(reloadHgrid);
+            delete_action.fail(function (jqxhr, textStatus, errorThrown){
+                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+            });
         }
     }
 
     function setItemToExpand(item, callback) {
         var expandUrl = item.apiURL + 'expand/';
-        var jqxhr = $.osf.postJSON(expandUrl,{});
-        jqxhr.done(function() {
+        var postAction = $.osf.postJSON(expandUrl,{});
+        postAction.done(function() {
             item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
         });
-        // TODO: Error notification
+        postAction.fail(function (jqxhr, textStatus, errorThrown){
+                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+            });
     }
 
     function reloadFolder(hgrid, theItem, theParentNode) {
@@ -193,7 +204,7 @@
             var itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
             var itemParentNodeID = itemParent.node_id;
             if (itemParentNodeID !== theFolderNodeID) { // This shouldn't happen, but if it does, it's bad
-                $.getJSON(getChildrenURL, function (data) {
+                var getAction = $.getJSON(getChildrenURL, function (data) {
                     // We can't add a pointer to a folder that already has those pointers, so cull those away
                     folderChildren = data;
                     var itemsToMove = [];
@@ -234,14 +245,14 @@
                                 var postData = JSON.stringify(postInfo[copyMode]['json']);
                                 var outerFolderID = whichIsContainer(draggable.grid, itemParentID, folder.id);
 
-                                var jqxhr = $.ajax({
+                                var postAction = $.ajax({
                                     type: 'POST',
                                     url: url,
                                     data: postData,
                                     contentType: 'application/json',
                                     dataType: 'json'
                                 });
-                                jqxhr.always(function () {
+                                postAction.always(function () {
                                         if (copyMode === 'move') {
                                             if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
@@ -260,6 +271,9 @@
                                         copyMode = 'none';
 
                                 });
+                                postAction.fail(function (jqxhr, textStatus, errorThrown){
+                                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
+                                });
                             } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
                                 draggable.grid.refreshData();
@@ -267,6 +281,9 @@
                             }
                         });
                     } // From: if (copyMode === 'copy' || copyMode === 'move')
+                });
+                getAction.fail(function (jqxhr, textStatus, errorThrown){
+                    bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
                 });
             } else {
                 console.error('Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
