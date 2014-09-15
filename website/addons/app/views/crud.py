@@ -7,7 +7,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-from website.project import new_node
+from website.project import new_node, Node
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon, must_have_permission,
@@ -177,28 +177,66 @@ def create_application_project(node_addon, **kwargs):
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def create_report(node_addon, **kwargs):
-    record = request.json
+    report = request.json
 
     try:
-        ret = search('doi:{}'.format(record['id']['doi']), _type=node_addon.namespace, index='metadata')
-
-        if ret['hits']['total'] > 0:
-            resource = Node.load(ret['hits']['hits']['id'])
-        else:
-            resource = new_node('project', record['title'], node_addon.system_user, description=record.get('description'))
-
-        record_node = new_node('component', record['title'], node_addon.system_user, description=record.get('description'))
-
+        resource = find_or_create_from_report(report, node_addon)
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
+    for contributor in report['contributors']:
+        if contributor.get('email'):
+            resource.add_unregistered_contributor(contributors['full_name'], contributors['email'], node_addon.system_user.auth)
+        #  TODO Users with no emails
+
+    # This may not be the best behavior
+    # This will just merge the documents in a not super smart way
+    # Keys and nested key will be updated and empty fields filled in
+    node_addon.attach_data(resource._id, report)
+
+    report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
+            description=report.get('description'), project=resource)
+
+    report_node.set_privacy('public')
+    report_node.save()
+
+    node_addon.attach_data(report_node._id, report)
+
+
     return {
-        'id': record_node._id,
-        'url': record_node.url,
-        'apiUrl': record_node.api_url,
+        'id': report_node._id,
+        'url': report_node.url,
+        'apiUrl': report_node.api_url,
         'resource': {
             'id': resource._id,
             'url': resource.url,
             'apiUrl': resource.api_url
         }
     }, http.CREATED
+
+def find_or_create_from_report(report, app):
+    search_map = {
+        'doi': ['id', 'doi'],
+        'title': ['title']
+    }
+    search_string = 'is_project:true;'
+
+    for key, val in search_map.items():
+        tmp = report
+        for _key in val:
+            tmp = tmp[_key]
+
+        search_string += '{}:{};'.format(key, tmp)
+        ret = search(search_string, _type=app.namespace, index='metadata')
+
+        if ret['hits']['total'] == 1:
+            return Node.load(ret['hits']['hits'][0]['_source']['guid'])
+        elif ret['hits']['total'] == 0:
+            break
+
+
+    resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
+    resource.set_privacy('public')
+    resource.save()
+    app.attach_data(resource._id, {'is_project': 'true'})
+    return resource
