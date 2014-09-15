@@ -290,7 +290,7 @@
             }
         } else {
             if (typeof folder === 'undefined') {
-                console.error('oDrop folder is undefined.');
+                console.error('onDrop folder is undefined.');
             }/* else {
                 console.error('onDrop folder is null.');
             }*/
