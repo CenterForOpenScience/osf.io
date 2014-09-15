@@ -62,9 +62,8 @@
                 contentType: 'application/json',
                 dataType: 'json'
             });
-            jqxhr.done(reloadHgrid);
+            jqxhr.always(reloadHgrid);
             // TODO: Error notification
-            jqxhr.fail(reloadHgrid);
         }
     }
 
@@ -235,13 +234,14 @@
                                 var postData = JSON.stringify(postInfo[copyMode]['json']);
                                 var outerFolderID = whichIsContainer(draggable.grid, itemParentID, folder.id);
 
-                                $.ajax({
+                                var jqxhr = $.ajax({
                                     type: 'POST',
                                     url: url,
                                     data: postData,
                                     contentType: 'application/json',
-                                    dataType: 'json',
-                                    complete: function () {
+                                    dataType: 'json'
+                                });
+                                jqxhr.always(function () {
                                         if (copyMode === 'move') {
                                             if (typeof outerFolderID === 'undefined' || outerFolderID === null) {
                                                 itemParent = draggable.grid.grid.getData().getItemById(itemParentID);
@@ -259,7 +259,6 @@
                                         }
                                         copyMode = 'none';
 
-                                    }
                                 });
                             } else { // From:  if(itemsToMove.length > 0)
 //                                folder.childrenCount = folder.children.length;
