@@ -37,14 +37,22 @@ web_routes = {
 # JSON endpoints
 api_routes = {
     'rules': [
-
         Rule(
             [
-                '/project/<pid>/app/project/',
-                '/project/<pid>/node/<nid>/app/project/'
+                '/project/<pid>/app/projects/',
+                '/project/<pid>/node/<nid>/app/projects/'
             ],
             'post',
             views.crud.create_application_project,
+            json_renderer
+        ),
+        Rule(
+            [
+                '/project/<pid>/app/reports/',
+                '/project/<pid>/node/<nid>/app/reports/'
+            ],
+            'post',
+            views.crud.create_report,
             json_renderer
         )
 
