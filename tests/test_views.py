@@ -2514,6 +2514,24 @@ class TestDashboardViews(OsfTestCase):
                 assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
         assert_true(found_item, "Did not find the folder in the dashboard.")
 
+    def test_folder_new_post(self):
+        url = api_url_for('folder_new_post', nid=self.dashboard._id)
+        found_item = False
+
+        # Make the folder
+        title = 'New test folder'
+        payload = {'title': title, }
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'name'] == title:
+                found_item = True
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
 
 class TestForkViews(OsfTestCase):
 
