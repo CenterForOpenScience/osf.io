@@ -714,12 +714,10 @@
                         var confirmationText = "Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.";
                         bootbox.confirm(confirmationText, function (result) {
                             if (result !== null && result) {
-                                var url = '/api/v1/folder/';
-                                var postData = JSON.stringify({ 'node_id': theItem.node_id });
+                                var url = '/api/v1/folder/'+ theItem.node_id;
                                 $.ajax({
                                     type: "DELETE",
                                     url: url,
-                                    data: postData,
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     success: function () {

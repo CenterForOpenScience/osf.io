@@ -563,10 +563,10 @@ def component_remove(**kwargs):
         'url': redirect_url,
     }
 
-@must_be_valid_project  # injects project
+#@must_be_valid_project  # injects project
 @must_have_permission('admin')
 @must_not_be_registration
-def delete_folder(**kwargs):
+def delete_folder(auth, **kwargs):
     """Remove folder node
 
     """
@@ -576,42 +576,6 @@ def delete_folder(**kwargs):
 
     if not node.is_folder or node.is_dashboard:
         raise HTTPError(http.BAD_REQUEST)
-
-    auth = kwargs['auth']
-
-    try:
-        node.remove_node(auth)
-    except NodeStateError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data={
-                'message_long': 'Could not delete component: ' + e.message
-            },
-        )
-
-    message = 'Folder deleted'
-    status.push_status_message(message)
-    redirect_url = '/dashboard/'
-
-    return {
-        'url': redirect_url,
-    }
-
-@collect_auth
-def delete_folder_quietly(**kwargs):
-    """Remove folder node without notification
-
-    """
-    node_id = request.json.get('node_id')
-    if node_id is None:
-        raise HTTPError(http.BAD_REQUEST)
-
-    node = Node.load(node_id)
-
-    if not node.is_folder or node.is_dashboard:
-        raise HTTPError(http.BAD_REQUEST)
-
-    auth = kwargs['auth']
 
     try:
         node.remove_node(auth)

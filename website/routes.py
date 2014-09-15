@@ -698,14 +698,6 @@ def make_url_map(app):
             project_views.node.delete_folder,
             json_renderer,
         ),
-        Rule(
-            [
-                '/folder/',
-            ],
-            'delete',
-            project_views.node.delete_folder_quietly,
-            json_renderer,
-        ),
         Rule('/folder/', 'put', project_views.node.add_folder, json_renderer),
         Rule([
             '/project/<pid>/get_summary/',
