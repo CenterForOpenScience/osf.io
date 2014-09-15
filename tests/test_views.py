@@ -1470,6 +1470,32 @@ class TestPointerViews(OsfTestCase):
         with assert_raises(AppError):
             self.app.post_json(url, {}, auth=self.user.auth)
 
+    def test_move_pointers(self):
+        project_two = ProjectFactory(creator=self.user)
+        url = api_url_for('move_pointers')
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+
+        assert_equal(len(self.project.nodes), 1)
+        assert_equal(len(project_two.nodes), 0)
+
+        user_auth = self.user.auth
+        move_request = \
+            {
+                'fromNodeId': self.project._id,
+                'toNodeId': project_two._id,
+                'pointerIds': [pointer.node._id],
+            }
+        self.app.post_json(
+            url,
+            move_request,
+            auth=user_auth,
+        ).maybe_follow()
+        self.project.reload()
+        project_two.reload()
+        assert_equal(len(self.project.nodes), 0)
+        assert_equal(len(project_two.nodes), 1)
+
     def test_remove_pointer(self):
         url = self.project.api_url + 'pointer/'
         node = NodeFactory()
