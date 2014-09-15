@@ -489,6 +489,14 @@ def validate_category(value):
     return True
 
 
+def validate_user(value):
+    if value != {}:
+        user_id = value.iterkeys().next()
+        if User.find(Q('_id', 'eq', user_id)).count() != 1:
+            raise ValidationValueError('User does not exist.')
+    return True
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -545,7 +553,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     #   'icpnw': True,
     #   'cdi38': False,
     # }
-    expanded = fields.DictionaryField(default={})
+    expanded = fields.DictionaryField(default={}, validate=validate_user)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
