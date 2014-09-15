@@ -134,7 +134,7 @@ def add_metadata(node_addon, guid, **kwargs):
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def delete_metadata(node_addon, guid, **kwargs):
-    key = request.args.get('key', ())
+    key = request.args.get('key', None)
 
     if key:
         key = key.split(',')

@@ -19,7 +19,7 @@ class AppNodeSettings(GuidStoredObject):
 
     system_user         = fields.ForeignField('user', backref='application')
     custom_routes       = fields.DictionaryField()
-    allow_queries       = fields.BooleanField(default=False)
+    allow_queries       = fields.BooleanField(default=True)
     allow_public_read   = fields.BooleanField(default=True)
 
     def on_add(self):
@@ -104,7 +104,7 @@ class AppNodeSettings(GuidStoredObject):
 
         update_metadata(metastore)
 
-    def delete_data(self, guid, keys=()):
+    def delete_data(self, guid, keys=None):
         metadata = self._guid_to_metadata(guid)
         if keys:
             data = metadata
