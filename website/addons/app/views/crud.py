@@ -170,5 +170,35 @@ def create_application_project(node_addon, **kwargs):
     return {
         'id': node._id,
         'url': node.url,
-        'apiUlr': node.api_url
+        'apiUrl': node.api_url
+    }, http.CREATED
+
+
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def create_report(node_addon, **kwargs):
+    record = request.json
+
+    try:
+        ret = search('doi:{}'.format(record['id']['doi']), _type=node_addon.namespace, index='metadata')
+
+        if ret['hits']['total'] > 0:
+            resource = Node.load(ret['hits']['hits']['id'])
+        else:
+            resource = new_node('project', record['title'], node_addon.system_user, description=record.get('description'))
+
+        record_node = new_node('component', record['title'], node_addon.system_user, description=record.get('description'))
+
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST)
+
+    return {
+        'id': record_node._id,
+        'url': record_node.url,
+        'apiUrl': record_node.api_url,
+        'resource': {
+            'id': resource._id,
+            'url': resource.url,
+            'apiUrl': resource.api_url
+        }
     }, http.CREATED
