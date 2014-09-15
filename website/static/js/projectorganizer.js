@@ -63,25 +63,21 @@
                 dataType: 'json'
             });
             jqxhr.done(reloadHgrid);
+            // TODO: Error notification
             jqxhr.fail(reloadHgrid);
         }
     }
 
     function setItemToExpand(item, callback) {
         var expandUrl = item.apiURL + 'expand/';
-        var postData = JSON.stringify({});
-        $.ajax({
-            type: 'POST',
-            url: expandUrl,
-            data: postData,
-            contentType: 'application/json',
-            dataType: 'json'
-        }).done(function() {
+        var jqxhr = $.osf.postJSON(expandUrl,{});
+        jqxhr.done(function() {
             item.expand = false;
             if (typeof callback !== 'undefined') {
                 callback();
             }
         });
+        // TODO: Error notification
     }
 
     function reloadFolder(hgrid, theItem, theParentNode) {
