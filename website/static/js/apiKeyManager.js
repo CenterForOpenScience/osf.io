@@ -19,7 +19,14 @@
         };
 
         self.createKey = function() {
-            $.osf.postJSON(self.url, {label: self.label()}, self.keyCreated, self.ajaxError.bind(this, 'create an API key'));
+            $.ajax({
+                url: self.url,
+                method: 'POST',
+                data: JSON.stringify({label: self.label()}),
+                contentType: 'application/json',
+                success: self.keyCreated,
+                error: self.ajaxError.bind(this, 'create an API key')
+            });
         };
 
         self.keyCreated = function(data) {
