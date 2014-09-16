@@ -711,7 +711,7 @@ class TestPiwik(OsfTestCase):
         ).maybe_follow()
         assert_in('iframe', res)
         assert_in('src', res)
-        assert_in('http://162.243.104.66/piwik/', res)
+        assert_in(settings.PIWIK_HOST, res)
 
     def test_anonymous_no_token(self):
         res = self.app.get(
