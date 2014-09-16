@@ -62,15 +62,15 @@
                     reloadFolder(theHgrid, folderToDeleteFrom);
                 }
             };
-            var delete_action = $.ajax({
+            var deleteAction = $.ajax({
                 type: 'DELETE',
                 url: url,
                 data: postData,
                 contentType: 'application/json',
                 dataType: 'json'
             });
-            delete_action.done(reloadHgrid);
-            delete_action.fail(function (jqxhr, textStatus, errorThrown){
+            deleteAction.done(reloadHgrid);
+            deleteAction.fail(function (jqxhr, textStatus, errorThrown){
                 bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
             });
         }
@@ -696,15 +696,15 @@
                                 toNodeID: theItem.node_id
                             });
                         setItemToExpand(theItem, function() {
-                            $.ajax({
+                            var postAction = $.ajax({
                                 type: 'POST',
                                 url: url,
                                 data: postData,
                                 contentType: 'application/json',
-                                dataType: 'json',
-                                success: function () {
-                                    reloadFolder(self.grid, theItem, theParentNode);
-                                }
+                                dataType: 'json'
+                            });
+                            postAction.done(function () {
+                                reloadFolder(self.grid, theItem, theParentNode);
                             });
                         });
                         return false;
@@ -712,14 +712,14 @@
 
                     $('#remove-link-' + theItem.node_id).click(function () {
                         var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
-                        $.ajax({
+                        var deleteAction = $.ajax({
                             type: 'DELETE',
                             url: url,
                             contentType: 'application/json',
-                            dataType: 'json',
-                            success: function () {
-                                reloadFolder(self.grid, theParentNode);
-                            }
+                            dataType: 'json'
+                        });
+                        deleteAction.done(function () {
+                            reloadFolder(self.grid, theParentNode);
                         });
                     });
                     $('#delete-folder-' + theItem.node_id).click(function () {
@@ -727,14 +727,14 @@
                         bootbox.confirm(confirmationText, function (result) {
                             if (result !== null && result) {
                                 var url = '/api/v1/folder/'+ theItem.node_id;
-                                $.ajax({
+                                var deleteAction = $.ajax({
                                     type: 'DELETE',
                                     url: url,
                                     contentType: 'application/json',
-                                    dataType: 'json',
-                                    success: function () {
-                                        reloadFolder(self.grid, theParentNode);
-                                    }
+                                    dataType: 'json'
+                                });
+                                deleteAction.done(function () {
+                                    reloadFolder(self.grid, theParentNode);
                                 });
                             }
                         });
@@ -756,21 +756,16 @@
 
                     $('#add-folder-button' + theItem.node_id).click(function () {
                         var url = '/api/v1/folder/';
-                        var postData = JSON.stringify({
+                        var postData = {
                             node_id: theItem.node_id,
                             title: $.trim($('#add-folder-input' + theItem.node_id).val())
-                        });
+                        };
                         setItemToExpand(theItem, function() {
-                            $.ajax({
-                                type: 'PUT',
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json',
-                                success: function () {
-                                    reloadFolder(self.grid, theItem, theParentNode);
-                                }
+                            var putAction = $.osf.putJSON(url, postData);
+                            putAction.done(function () {
+                                reloadFolder(self.grid, theItem, theParentNode);
                             });
+
                         });
                         return false;
                     });
@@ -792,20 +787,14 @@
 
                     $('#rename-node-button' + theItem.node_id).click(function () {
                         var url = theItem.apiURL + 'edit/';
-                        var postData = JSON.stringify({
+                        var postData = {
                             name: 'title',
                             value: $.trim($('#rename-node-input' + theItem.node_id).val())
-                        });
-                        $.ajax({
-                            type: 'POST',
-                            url: url,
-                            data: postData,
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function () {
+                        };
+                        var postAction = $.osf.postJSON(url, postData);
+                        postAction.done(function () {
                                 reloadFolder(self.grid, theParentNode);
-                            }
-                        });
+                            });
                         return false;
                     });
                     $('.cancel-button-' + theItem.node_id).click(function() {
@@ -955,14 +944,8 @@
                 item.expand = false;
                 if(typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
                     var collapseUrl = item.apiURL + 'collapse/';
-                    var postData = JSON.stringify({});
-                    $.ajax({
-                        type: 'POST',
-                        url: collapseUrl,
-                        data: postData,
-                        contentType: 'application/json',
-                        dataType: 'json'
-                    }).done(function() {
+                    var postAction = $.osf.postJSON(collapseUrl, {});
+                    postAction.done(function() {
                         item.expand = false;
                         draggable.grid.resetLoadedState(item);
                     });
