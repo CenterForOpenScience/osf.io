@@ -14,7 +14,7 @@ from website.addons.dataverse.client import (
 from website.addons.dataverse.settings import HOST
 from website.project import decorators
 from website.util import web_url_for, api_url_for
-from website.util.sanitize import deep_ensure_clean
+from website.util.sanitize import assert_clean
 
 
 @decorators.must_be_valid_project
@@ -126,8 +126,9 @@ def dataverse_set_user_config(auth, **kwargs):
     user = auth.user
 
     try:
-        deep_ensure_clean(request.json)
-    except ValueError:
+        assert_clean(request.json)
+    except AssertionError:
+        # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     # Log in with DATAVERSE
@@ -163,8 +164,9 @@ def set_dataverse_and_study(node_addon, auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     try:
-        deep_ensure_clean(request.json)
-    except ValueError:
+        assert_clean(request.json)
+    except AssertionError:
+        # TODO: Test me!
         raise HTTPError(http.NOT_ACCEPTABLE)
 
     alias = request.json.get('dataverse').get('alias')

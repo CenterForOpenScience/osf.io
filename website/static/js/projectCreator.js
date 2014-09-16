@@ -21,7 +21,14 @@
         self.templates = [];
 
         self.createProject = function() {
-            $.osf.postJSON(self.url, self.serialize(), self.createSuccess, self.createFailure);
+            $.osf.postJSON(
+                self.url,
+                self.serialize()
+            ).done(
+                self.createSuccess
+            ).fail(
+                self.createFailure
+            );
         };
 
         self.createSuccess = function(data) {
@@ -77,53 +84,51 @@
          * @return null
          */
         self.fetchNodes = function(q, cb) {
-            $.osf.postJSON('/api/v1/search/node/', {
+            $.osf.postJSON(
+                '/api/v1/search/node/',
+                {
                     includePublic: true,
-                    query: q
-                },
-                function(data) {
-                    var results = [];
-                    var local = self.ownProjects(q);
-                    var fetched = self.loadNodes(data.nodes);
+                    query: q,
+                }
+            ).done(function(data) {
+                var results = [];
+                var local = self.ownProjects(q);
+                var fetched = self.loadNodes(data.nodes);
 
-                    // Filter against local projects so that duplicates are not shown
-                    fetched = fetched.filter(function(element) {
-                        for (var i = 0; i < local.length; i++) {
-                            if (element.id === local[i].id) {
-                                return false;
-                            }
+                // Filter against local projects so that duplicates are not shown
+                fetched = fetched.filter(function(element) {
+                    for (var i = 0; i < local.length; i++) {
+                        if (element.id === local[i].id) {
+                            return false;
                         }
-                        return true;
-                    });
-
-
-                    if (fetched.length > 0) {
-                        results.push({
-                            text: 'Other Projects',
-                            children: fetched
-                        });
                     }
-
-                    if (local.length > 0) {
-                        results.push({
-                            text: 'Your Projects',
-                            children: local
-                        });
-                    }
-
-                    cb({
-                        results: results
-                    });
-                },
-                function() {
-                    //Silently error by just returning your projects
-                    cb({
-                        results: [{
-                            text: 'Your Projects',
-                            children: self.ownProjects(q)
-                        }]
-                    });
+                    return true;
                 });
+
+                if (fetched.length > 0) {
+                    results.push({
+                        text: 'Other Projects',
+                        children: fetched
+                    });
+                }
+
+                if (local.length > 0) {
+                    results.push({
+                        text: 'Your Projects',
+                        children: local
+                    });
+                }
+
+                cb({results: results});
+            }).fail(function() {
+                //Silently error by just returning your projects
+                cb({
+                    results: [{
+                        text: 'Your Projects',
+                        children: self.ownProjects(q)
+                    }]
+                });
+            });
         };
 
         self.loadNodes = function(nodes) {
