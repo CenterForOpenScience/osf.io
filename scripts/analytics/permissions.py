@@ -4,13 +4,13 @@ import os
 from collections import Counter
 from tabulate import tabulate
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
 from .utils import mkdirp
 
 
-node_collection = db['node']
+node_collection = database['node']
 
 TAB_PATH = os.path.join(settings.ANALYTICS_PATH, 'tables', 'features')
 mkdirp(TAB_PATH)
