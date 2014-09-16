@@ -712,11 +712,9 @@
 
                     $('#remove-link-' + theItem.node_id).click(function () {
                         var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
-                        var postData = JSON.stringify({});
                         $.ajax({
                             type: 'DELETE',
                             url: url,
-                            data: postData,
                             contentType: 'application/json',
                             dataType: 'json',
                             success: function () {
