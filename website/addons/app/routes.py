@@ -19,19 +19,7 @@ web_routes = {
             views.web.application_page,
             OsfWebRenderer('../addons/app/templates/app_page.mako'),
         ),
-
-
-    #     ##### Download file #####
-    #     Rule(
-    #         [
-    #             '/project/<pid>/app/files/<path:path>/download/',
-    #             '/project/<pid>/node/<nid>/app/files/<path:path>/download/',
-    #         ],
-    #         'get',
-    #         views.crud.app_download,
-    #         notemplate,
-    #     ),
-    ],
+    ]
 }
 
 # JSON endpoints
@@ -57,8 +45,6 @@ api_routes = {
         )
 
     ],
-
-    ## Your routes here
 
     'prefix': '/api/v1'
 }
