@@ -249,6 +249,8 @@ def resolve_guid(guid, suffix=None):
             logger.error('Referent of GUID {0} not found'.format(guid))
             raise HTTPError(http.NOT_FOUND)
         mode = referent.redirect_mode
+        if mode is None:
+            raise HTTPError(http.NOT_FOUND)
         url = referent.deep_url if mode == 'proxy' else referent.url
         url = _build_guid_url(url, prefix, suffix)
         # Always redirect API URLs; URL should identify endpoint being called
