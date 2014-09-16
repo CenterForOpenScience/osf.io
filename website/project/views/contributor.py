@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-import httplib as http
-import time
 
+import time
+import httplib as http
+
+from flask import request, redirect
 from modularodm.exceptions import ValidationValueError
-import framework
-from framework import request, User, status
+
+from framework.auth import User, get_user, get_current_user, authenticate
+from framework import status
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
 from framework import forms
@@ -13,7 +16,7 @@ from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 from framework.sessions import session
 
 from website import mails, language
-from website.project.model import unreg_contributor_added
+from website.project.model import unreg_contributor_added, has_anonymous_link
 from website.models import Node, User
 from website.profile import utils
 from website.util import web_url_for, is_json_request
@@ -29,7 +32,10 @@ from framework.auth.core import get_current_user
 @must_be_valid_project
 def get_node_contributors_abbrev(auth, **kwargs):
 
+
     node = kwargs['node'] or kwargs['project']
+
+    anonymous = has_anonymous_link(node, auth)
 
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
@@ -40,7 +46,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
     else:
         users = node.visible_contributors
 
-    if not node.can_view(auth):
+    if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contributors = []
@@ -77,7 +83,9 @@ def get_contributors(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
 
-    if not node.can_view(auth):
+    anonymous = has_anonymous_link(node, auth)
+
+    if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = utils.serialize_contributors(
@@ -176,9 +184,9 @@ def project_removecontributor(auth, **kwargs):
 
     if outcome:
         if auth.user == contributor:
-            framework.status.push_status_message('Removed self from project', 'info')
+            status.push_status_message('Removed self from project', 'info')
             return {'redirectUrl': '/dashboard/'}
-        framework.status.push_status_message('Contributor removed', 'info')
+        status.push_status_message('Contributor removed', 'info')
         return {}
 
     raise HTTPError(
@@ -227,7 +235,7 @@ def deserialize_contributors(node, user_dicts, auth):
                     email=email)
                 contributor.save()
             except ValidationValueError:
-                contributor = framework.auth.get_user(username=email)
+                contributor = get_user(username=email)
 
         # Add unclaimed record if necessary
         if (not contributor.is_registered
@@ -316,7 +324,7 @@ def project_manage_contributors(auth, **kwargs):
     # If user has removed herself from project, alert; redirect to user
     # dashboard if node is private, else node dashboard
     if not node.is_contributor(auth.user):
-        framework.status.push_status_message(
+        status.push_status_message(
             'You have removed yourself as a contributor from this project',
             'info'
         )
@@ -326,7 +334,7 @@ def project_manage_contributors(auth, **kwargs):
     # Else if user has revoked her admin permissions, alert and stay on
     # current page
     if not node.has_permission(auth.user, ADMIN):
-        framework.status.push_status_message(
+        status.push_status_message(
             'You have removed your administrative privileges for this project',
             'info'
         )
@@ -454,10 +462,10 @@ def claim_user_registered(**kwargs):
     A user must be logged in.
     """
     node = kwargs['node'] or kwargs['project']
-    current_user = framework.auth.get_current_user()
+    current_user = get_current_user()
     sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
     if not current_user:
-        response = framework.redirect(sign_out_url)
+        response = redirect(sign_out_url)
         return response
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
@@ -485,7 +493,7 @@ def claim_user_registered(**kwargs):
                 status.push_status_message(
                     'Success. You are now a contributor to this project.',
                     'success')
-                return framework.redirect(node.url)
+                return redirect(node.url)
             else:
                 status.push_status_message(language.LOGIN_FAILED, 'warning')
         else:
@@ -533,17 +541,17 @@ def claim_user_form(**kwargs):
     token = request.form.get('token') or request.args.get('token')
 
     # If user is logged in, redirect to 're-enter password' page
-    if framework.auth.get_current_user():
-        return framework.redirect(web_url_for('claim_user_registered',
+    if get_current_user():
+        return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
-    user = framework.auth.get_user(id=uid)  # The unregistered user
+    user = User.load(uid)  # The unregistered user
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(http.BAD_REQUEST)
     # If claim token not valid, redirect to registration page
     if not verify_claim_token(user, token, pid):
-        return framework.redirect('/account/')
+        return redirect('/account/')
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
@@ -557,11 +565,11 @@ def claim_user_form(**kwargs):
             user.unclaimed_records = {}
             user.save()
             # Authenticate user and redirect to project page
-            response = framework.redirect('/settings/')
+            response = redirect('/settings/')
             node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
                 'success')
-            return framework.auth.authenticate(user, response)
+            return authenticate(user, response)
         else:
             forms.push_errors_to_status(form.errors)
     return {
@@ -587,7 +595,7 @@ def invite_contributor_post(**kwargs):
     if not fullname:
         return {'status': 400, 'message': 'Must provide fullname'}, 400
     # Check if email is in the database
-    user = framework.auth.get_user(username=email)
+    user = get_user(username=email)
     if user:
         if user.is_registered:
             msg = 'User is already in database. Please go back and try your search again.'
@@ -618,7 +626,7 @@ def claim_user_post(**kwargs):
     # Submitted through X-editable
     if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
-        claimer = framework.auth.get_user(username=email)
+        claimer = get_user(username=email)
         if claimer:
             send_claim_registered_email(claimer=claimer, unreg_user=user,
                 node=node)

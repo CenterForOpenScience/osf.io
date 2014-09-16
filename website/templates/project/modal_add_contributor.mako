@@ -46,7 +46,6 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-                            <!-- start making changes -->
 
                             <table>
                                 <thead data-bind="visible: foundResults">
@@ -70,7 +69,7 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
                                         <td >
-                                            <a data-bind = "attr: {href: contributor.profile_url}" >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 

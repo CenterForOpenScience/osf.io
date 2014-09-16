@@ -13,6 +13,7 @@ from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from website.project.model import NodeLog
 from dropbox.rest import ErrorResponse
+from urllib3.exceptions import MaxRetryError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory
 
@@ -327,6 +328,14 @@ class TestFilebrowserViews(DropboxAddonTestCase):
         url = self.project.api_url_for('dropbox_hgrid_data_contents')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, httplib.NOT_FOUND)
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.metadata')
+    def test_dropbox_hgrid_data_contents_handles_max_retry_error(self, mock_metadata):
+        mock_response = mock.Mock()
+        url = self.project.api_url_for('dropbox_hgrid_data_contents')
+        mock_metadata.side_effect = MaxRetryError(mock_response, url)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, httplib.REQUEST_TIMEOUT)
 
 
 class TestRestrictions(DropboxAddonTestCase):

@@ -8,8 +8,9 @@ import mock
 
 from nose.tools import *  # PEP8 asserts
 
-from framework import Q
-from framework.auth import User, Auth
+from modularodm import Q
+
+from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
                              WatchConfigFactory, ApiKeyFactory,
@@ -255,6 +256,15 @@ class TestAUser(OsfTestCase):
         # Goes to project's wiki, where there is no content
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
+        assert_in('No wiki content', res)
+
+    def test_wiki_page_name_non_ascii(self):
+        project = ProjectFactory(creator=self.user)
+        non_ascii = 'WöRlÐé'
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            non_ascii
+        ), auth=self.auth)
         assert_in('No wiki content', res)
 
     def test_sees_own_profile(self):
@@ -701,7 +711,7 @@ class TestPiwik(OsfTestCase):
         ).maybe_follow()
         assert_in('iframe', res)
         assert_in('src', res)
-        assert_in('http://162.243.104.66/piwik/', res)
+        assert_in(settings.PIWIK_HOST, res)
 
     def test_anonymous_no_token(self):
         res = self.app.get(

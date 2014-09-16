@@ -14,7 +14,8 @@ def test_registration_form_processing():
         username=' fRed@queen.com  ',
         username2='fRed@queen.com',
         password='killerqueen ',
-        password2='killerqueen')
+        password2='killerqueen'
+    )
     assert_equal(form.fullname.data, 'Freddy Mercury')
     assert_equal(form.username.data, 'fred@queen.com')
     assert_equal(form.username2.data, 'fred@queen.com')
@@ -26,7 +27,8 @@ def test_merge_account_form_cleaning():
     form = forms.MergeAccountForm(
         merged_username='freD@queen.com\t ',
         merged_password='rhapsodY123 ',
-        user_password='bohemi1aN ')
+        user_password='bohemi1aN '
+    )
     assert_equal(form.merged_username.data, 'fred@queen.com')
     assert_equal(form.merged_password.data, 'rhapsodY123')
     assert_equal(form.user_password.data, 'bohemi1aN')
@@ -44,7 +46,10 @@ class TestValidation(OsfTestCase):
 
     def test_unique_email_validator_with_unreg_user(self):
         class MockForm(Form):
-            username = Field('Username', [forms.UniqueEmail(allow_unregistered=True)])
+            username = Field(
+                'Username',
+                [forms.UniqueEmail(allow_unregistered=True)]
+            )
         u = UnregUserFactory()
         f = MockForm(username=u.username)
         assert_true(f.validate())

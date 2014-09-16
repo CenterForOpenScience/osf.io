@@ -24,15 +24,12 @@
      *
      * @param  {String} url  The url to post to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data, done, error) {
+    $.osf.postJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
@@ -42,22 +39,36 @@
      * Puts JSON data.
      *
      * Example:
-     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'})
      *
      * @param  {String} url  The url to put to
      * @param  {Object} data JSON data to send to the endpoint
-     * @param  {Function} done Success callback. Takes returned data as its first argument
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data, done, error) {
+    $.osf.putJSON = function(url, data) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
-            success: done,
-            error: error,
             contentType: 'application/json', dataType: 'json'
         };
         return $.ajax(ajaxOpts);
+    };
+
+    // Error handlers
+
+    var errorDefaultShort = 'Unable to resolve';
+    var errorDefaultLong = 'OSF was unable to resolve your request. If this issue persists, ' +
+        'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
+
+    $.osf.handleJSONError = function(response) {
+        bootbox.alert({
+            title: response.responseJSON.message_short || errorDefaultShort,
+            message: response.responseJSON.message_long || errorDefaultLong
+        });
+    };
+
+    $.osf.handleEditableError = function(response, newValue) {
+        return 'Unexpected error: ' + response.statusText;
     };
 
     $.osf.block = function() {
@@ -81,7 +92,7 @@
 
     $.osf.joinPrompts = function(prompts, base) {
         var prompt = base || '';
-        if (prompts) {
+        if (prompts.length !==0) {
             prompt += '<hr />';
             prompt += '<ul>';
             for (var i=0; i<prompts.length; i++) {
@@ -186,13 +197,6 @@
             $elem.show();
         }
         ko.applyBindings(viewModel, $elem[0]);
-    };
-
-    $.osf.handleJSONError = function (response) {
-        bootbox.alert({
-            title: response.responseJSON.message_short,
-            message: response.responseJSON.message_long
-        });
     };
 
 
