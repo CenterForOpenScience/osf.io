@@ -16,12 +16,12 @@ from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
     UserFactory, UnregUserFactory, AuthFactory,
-    ProjectFactory, AuthUserFactory, PrivateLinkFactory
+    ProjectFactory, AuthUserFactory, PrivateLinkFactory,
+    ApiKeyFactory
 )
 
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
-
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
     must_have_addon, must_be_addon_authorizer,
@@ -149,7 +149,7 @@ class TestPrivateLink(OsfTestCase):
         mock_get_api_key.return_value = 'foobar123'
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'view_only': self.link.key})
+                           {'view_only': self.link.key})
         res = res.follow()
         assert_equal(res.status_code, 200)
         assert_equal(res.body, 'success')
@@ -160,7 +160,7 @@ class TestPrivateLink(OsfTestCase):
         mock_get_api_key.return_value = 'foobar123'
         mock_from_kwargs.return_value = Auth(user=None)
         res = self.app.get('/project/{0}'.format(self.project._primary_key),
-            {'key': None})
+                           {'key': None})
         assert_is_redirect(res)
 
 
@@ -214,7 +214,7 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         res = view_that_needs_contributor(
             pid=self.project._primary_key,
             user=None,
-            api_key='123',
+            api_key=ApiKeyFactory(),
             api_node='abc',
         )
         assert_is_redirect(res)
@@ -238,10 +238,18 @@ class TestPermissionDecorators(AuthAppTestCase):
     def test_must_be_logged_in_decorator_with_user(self, mock_from_kwargs):
         user = UserFactory()
         mock_from_kwargs.return_value = Auth(user=user)
-        protected()
+        resp = protected()
+        assert resp == 'open sesame'
 
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')
-    def test_must_be_logged_in_decorator_with_no_user(self, mock_from_kwargs):
+    def test_must_be_logged_in_decorator_with_api_key(self, mock_from_kwargs):
+        user = UserFactory()
+        mock_from_kwargs.return_value = Auth(user=user)
+        resp = protected()
+        assert resp == 'open sesame'
+
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    def test_must_be_logged_in_decorator_with_no_user_or_api_key(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
         assert_true(isinstance(resp, BaseResponse))

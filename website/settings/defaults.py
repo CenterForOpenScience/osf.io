@@ -140,7 +140,7 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    # 'badges',
+    'app',
     'dataverse',
     'dropbox',
     'figshare',
@@ -158,6 +158,7 @@ ADDON_CATEGORIES = [
     'bibliography',
     'other',
     'security',
+    'service'
 ]
 
 SYSTEM_ADDED_ADDONS = {

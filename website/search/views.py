@@ -78,7 +78,10 @@ def search_search():
 def search_projects_by_title(**kwargs):
     # TODO(fabianvf): At some point, it would be nice to do this with elastic search
 
-    term = request.args.get('term')
+    term = request.args.get('q')
+    if not term:
+        return {'results': [], 'count': 0}
+
     user = kwargs['auth'].user
 
     max_results = 10
@@ -125,7 +128,7 @@ def search_projects_by_title(**kwargs):
             'authors': authors_html,
         })
 
-    return out
+    return {'results': out, 'count': len(out)}
 
 
 def search_contributor():

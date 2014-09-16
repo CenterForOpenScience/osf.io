@@ -153,6 +153,9 @@ def user_addons(auth, **kwargs):
     out['addon_enabled_settings'] = addon_enabled_settings
     return out
 
+@must_be_logged_in
+def user_apikeys(auth, **kwargs):
+    return {}
 
 @must_be_logged_in
 def profile_addons(**kwargs):
@@ -187,7 +190,7 @@ def get_keys(**kwargs):
 def create_user_key(**kwargs):
 
     # Generate key
-    api_key = ApiKey(label=request.form['label'])
+    api_key = ApiKey(label=request.json.get('label'))
     api_key.save()
 
     # Append to user
@@ -198,14 +201,17 @@ def create_user_key(**kwargs):
     # Return response
     return {
         'response': 'success',
+        'key': api_key._id
     }
 
 
 @must_be_logged_in
 def revoke_user_key(**kwargs):
-
     # Load key
-    api_key = ApiKey.load(request.form['key'])
+    api_key = ApiKey.load(request.args.get('key'))
+
+    if not api_key:
+        raise HTTPError(http.BAD_REQUEST)
 
     # Remove from user
     user = kwargs['auth'].user

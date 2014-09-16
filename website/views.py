@@ -123,7 +123,7 @@ def get_dashboard_nodes(auth, **kwargs):
 
     comps = contributed.find(
         # components only
-        Q('category', 'ne', 'project') &
+        Q('category', 'nin', ['app', 'project']) &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
@@ -133,6 +133,19 @@ def get_dashboard_nodes(auth, **kwargs):
     )
 
     return _render_nodes(list(nodes) + list(comps))
+
+
+@must_be_logged_in
+def get_dashboard_apps(auth, **kwargs):
+    user = auth.user
+
+    contributed = user.node__contributed  # nodes user cotributed to
+
+    return _render_nodes(list(contributed.find(
+        Q('category', 'eq', 'app') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False)
+    )))
 
 
 @must_be_logged_in
@@ -255,7 +268,8 @@ def resolve_guid(guid, suffix=None):
         if prefix or mode == 'redirect':
             if request.query_string:
                 url += '?' + request.query_string
-            return redirect(url)
+            #Code is 307 to not change all methods to GET
+            return redirect(url, code=307)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists

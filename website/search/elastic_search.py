@@ -42,10 +42,10 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0):
+def search(raw_query, start=0, size=10):
     orig_query = raw_query
 
-    query, filtered_query = _build_query(raw_query, start)
+    query, filtered_query = _build_query(raw_query, start, size)
 
     # Get document counts by type
     counts = {}
@@ -75,7 +75,7 @@ def search(raw_query, start=0):
     return formatted_results, tags, counts
 
 
-def _build_query(raw_query, start=0, size=10):
+def _build_query(raw_query, start, size):
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
@@ -177,14 +177,14 @@ def _build_query(raw_query, start=0, size=10):
             }
         },
         'from': start,
-        'size': size,
+        'size': 10,
     }
 
     return query, raw_query
 
 
 @requires_search
-def update_node(node):
+def update_node(node, index='website'):
     from website.addons.wiki.model import NodeWikiPage
 
     component_categories = ['', 'hypothesis', 'methods and measures', 'procedure', 'instrumentation', 'data', 'analysis', 'communication', 'other']
@@ -217,11 +217,11 @@ def update_node(node):
                 if x is not None
                 and x.is_active()
             ],
+            'description': node.description,
             'title': node.title,
             'category': node.category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
-            'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
@@ -236,9 +236,9 @@ def update_node(node):
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         try:
-            elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
+            elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
+            elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
 @requires_search
@@ -361,6 +361,7 @@ def create_result(results, counts):
                 visited_nodes[result['id']] = index
 
             # Format dictionary for output
+            result['url']
             formatted_results.append(_format_result(result, parent, parent_info))
             index += 1
 
@@ -473,6 +474,89 @@ def search_contributor(query, exclude=None, current_user=None):
     return {'users': users}
 
 
+# ## Metadata stuff ## #
+
+@requires_search
+def update_metadata(metadata):
+    index = "metadata"
+    app_id = metadata.namespace
+    data = metadata.to_json()
+    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id)
+
+
+@requires_search
+def search_metadata(query, _type, start, size):
+    query = {
+        'query': _metadata_inner_query(query),
+        'from': start,
+        'size': size,
+    }
+
+    return elastic.search(query, index='metadata', doc_type=_type)
+
+
+def _metadata_inner_query(query):
+    query = query.split(';')
+    filters = []
+    for item in query:
+        item = item.split(':')
+        if len(item) == 1:
+            item = ['_all', item[0]]
+
+        filters.append({
+            "query": {
+                'match': {
+                    item[0]: {
+                        'query': item[1],
+                        'operator': 'and',
+                        'type': 'phrase',
+                    }
+                }
+            }
+        })
+
+        inner_query = {
+            'filtered': {
+                'filter': {
+                    'and': filters
+                },
+            },
+        }
+
+    return inner_query
+
+
+@requires_search
+def get_mapping(index, _type):
+    try:
+        mapping = elastic.get_mapping(index, _type)[index]['mappings'][_type]['properties']
+    except KeyError:
+        return None  # For now
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+        return None  # No mapping
+
+    return _strings_to_types(mapping)
+
+
+def _strings_to_types(mapping):
+    type_map = {
+        u'boolean': bool,
+        u'object': dict,
+        u'long': int,
+        u'int': int,
+        u'float': float,
+        u'double': float,
+        u'null': type(None),
+        u'string': str,
+    }
+
+    for key, val in mapping.items():
+        if val.get('type') and isinstance(val['type'], basestring):
+            mapping[key] = type_map.get(val['type'])
+        else:
+            mapping[key] = _strings_to_types(val)
+
+    return mapping
 @requires_search
 def get_recent_documents(raw_query='', start=0, size=10):
 

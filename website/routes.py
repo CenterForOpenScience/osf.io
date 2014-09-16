@@ -188,6 +188,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
+        Rule('/dashboard/apps/', 'get', website_views.get_dashboard_apps, json_renderer),
 
     ], prefix='/api/v1')
 
@@ -374,6 +375,12 @@ def make_url_map(app):
             OsfWebRenderer('profile/addons.mako'),
         ),
 
+        Rule(
+            '/settings/api/',
+            'get',
+            profile_views.user_apikeys,
+            OsfWebRenderer('profile/apikeys.mako'),
+        ),
     ])
 
     # API
@@ -389,8 +396,8 @@ def make_url_map(app):
         Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
-        Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
-        Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
+        Rule('/settings/keys/', 'post', profile_views.create_user_key, json_renderer),
+        Rule('/settings/keys/', 'delete', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
