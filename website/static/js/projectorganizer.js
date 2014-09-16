@@ -922,7 +922,11 @@
                     draggable.grid.grid.setSelectedRows([]);
                     draggable.grid.grid.resetActiveCell();
                 }
-                item.childrenCount = newData.data.length;
+                if(typeof newData.data !== 'undefined' ) {
+                    item.childrenCount = newData.data.length;
+                } else {
+                    return false;
+                }
 
                 var row = draggable.grid.getDataView().getRowById(item.id);
                 draggable.grid.grid.invalidateRow(row);
