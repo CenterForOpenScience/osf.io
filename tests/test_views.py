@@ -40,7 +40,8 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
+    ProjectWithAddonFactory
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
@@ -2621,6 +2622,17 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.template_node, other_node)
+
+    def test_project_before_template_no_addons(self):
+        project = ProjectFactory()
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_equal(res.json['prompts'], [])
+
+    def test_project_before_template_with_addons(self):
+        project = ProjectWithAddonFactory(addon='github')
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_in('GitHub', res.json['prompts'])
+
 
 class TestUnconfirmedUserViews(OsfTestCase):
 

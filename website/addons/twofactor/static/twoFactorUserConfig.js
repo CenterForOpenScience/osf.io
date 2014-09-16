@@ -39,24 +39,22 @@
         self.submitSettings = function() {
             $.osf.postJSON(
                 SETTINGS_URL,
-                {code: self.tfaCode()},
-                function() {
-                    $('#TfaVerify').slideUp(function() {
-                        $('#TfaDeactivate').slideDown();
-                    });
-                },
-                function(e) {
-                    if (e.status === 403) {
-                        self.changeMessage('Verification failed. Please enter your verification code again.',
-                                           'text-danger', 5000);
-                    } else {
-                        self.changeMessage(
-                            'Unexpected HTTP Error (' + e.status + '/' + e.statusText + ')',
-                            'text-danger',
-                            5000);
-                    }
+                {code: self.tfaCode()}
+            ).done(function() {
+                $('#TfaVerify').slideUp(function() {
+                    $('#TfaDeactivate').slideDown();
+                });
+            }).fail(function(e) {
+                if (e.status === 403) {
+                    self.changeMessage('Verification failed. Please enter your verification code again.',
+                                        'text-danger', 5000);
+                } else {
+                    self.changeMessage(
+                        'Unexpected HTTP Error (' + e.status + '/' + e.statusText + ')',
+                        'text-danger',
+                        5000);
                 }
-            );
+            });
         };
     }
 

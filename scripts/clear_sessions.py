@@ -19,16 +19,17 @@ logger.setLevel(logging.WARN)
 def clear_sessions(max_date, dry_run=False):
     """Remove all sessions last modified before `max_date`.
     """
-    query = Q('date_modified', 'lt', max_date)
+    session_collection = Session._storage[0].store
+    query = {'date_modified': {'$lt': max_date}}
     if dry_run:
         logger.warn('Dry run mode')
     logger.warn(
         'Removing {0} stale sessions'.format(
-            Session.find(query).count()
+            session_collection.find(query).count()
         )
     )
     if not dry_run:
-        Session.remove(query)
+        session_collection.remove(query)
 
 
 def clear_sessions_relative(months=1, dry_run=False):

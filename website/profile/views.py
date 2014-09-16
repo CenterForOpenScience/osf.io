@@ -414,9 +414,11 @@ def unserialize_contents(field, func, auth):
 def unserialize_jobs(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('jobs', unserialize_job, auth)
+    # TODO: Add return value
 
 
 @must_be_logged_in
 def unserialize_schools(auth, **kwargs):
     verify_user_match(auth, **kwargs)
     unserialize_contents('schools', unserialize_school, auth)
+    # TODO: Add return value

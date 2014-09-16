@@ -17,12 +17,11 @@
         var url = item.urls.branch + '?' + $.param({branch: branch});
         $.ajax({
             type: 'get',
-            url: url,
-            success: function(data) {
-                // Update the item with the new branch data
-                $.extend(item, data[0]);
-                grid.reloadFolder(item);
-            }
+            url: url
+        }).done(function(response) {
+            // Update the item with the new branch data
+            $.extend(item, response[0]);
+            grid.reloadFolder(item);
         });
     }
 

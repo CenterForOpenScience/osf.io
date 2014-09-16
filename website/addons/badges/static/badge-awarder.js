@@ -106,9 +106,9 @@
 
     function attachDropDown (url) {
         $.ajax({
-        method: 'GET',
-        url: url,
-        success: function(ret) {
+            method: 'GET',
+            url: url
+        }).done(function(ret) {
             $('#awardBadge').editable({
                 name: 'title',
                 title: 'Award Badge',
@@ -120,9 +120,9 @@
                 value: ret[0],
                 badges: ret,
                 ajaxOptions: {
-                    'type': 'POST',
-                    "dataType": "json",
-                    "contentType": "application/json"
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json'
                 },
                 url: nodeApiUrl + 'badges/award/',
                 params: function(params) {
@@ -134,8 +134,9 @@
                 },
                 pk: 'newBadge'
             });
-        }
-        });
+        }).fail(
+            $.osf.handleJSONError
+        );
     };
 
     return attachDropDown;

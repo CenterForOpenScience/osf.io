@@ -3,13 +3,13 @@
 import os
 import matplotlib.pyplot as plt
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
 from utils import plot_dates, mkdirp
 
 
-comment_collection = db['comment']
+comment_collection = database['comment']
 
 FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'features')
 mkdirp(FIG_PATH)
