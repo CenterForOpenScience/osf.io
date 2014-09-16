@@ -45,11 +45,16 @@
 
         // TODO: Bug with multiple windows messing up changed value
         self.changed = ko.computed(function() {
-            return self.initText() !== self.wikiText();
+            /* Always assume a changed state so we can edit. Once
+               there is a better way to push save information from one
+               browser window to another, it should be used to disable buttons.
+             */
+            return true;
+            // return self.initText() !== self.wikiText();
         });
 
         self.revertChanges = function() {
-            editor.setValue(self.initText());
+            self.fetchData()
         };
 
         self.updateChanged = function(editUrl) {
@@ -71,21 +76,23 @@
             });
         };
 
-        //Fetch initial wiki text
-        $.ajax({
-            type: 'GET',
-            url: url,
-            dataType: 'json',
-            success: function(response) {
-                self.initText(response.wiki_content);
-                self.wikiText(response.wiki_content);
-            },
-            error: function(xhr, textStatus, error) {
-                console.error(textStatus);
-                console.error(error);
-                bootbox.alert('Could not get wiki content.');
-            }
-        });
+        // Fetch initial wiki text
+        self.fetchData = function() {
+            $.ajax({
+                type: 'GET',
+                url: url,
+                dataType: 'json',
+                success: function (response) {
+                    self.initText(response.wiki_content);
+                    self.wikiText(response.wiki_content);
+                },
+                error: function (xhr, textStatus, error) {
+                    console.error(textStatus);
+                    console.error(error);
+                    bootbox.alert('Could not get wiki content.');
+                }
+            });
+        };
 
         // TODO: Uncomment once "changed" property is correct
 //        $(window).on('beforeunload', function() {

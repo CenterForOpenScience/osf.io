@@ -22,7 +22,7 @@
             </div>
             <div class="pull-right">
                 <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
-                <button class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert All Changes</button>
+                <button class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
                 <input type="submit" class="btn btn-success" value="Save Version"
                        data-bind="enable: changed,
                                   click: function() {updateChanged('${node['url']}wiki/${pageName}/edit/')}"
