@@ -2,22 +2,21 @@
 import os
 from types import NoneType
 from xmlrpclib import DateTime
-from flask import Flask
+
 import mock
 from nose.tools import *
 from webtest_plus import TestApp
 
 from tests.base import OsfTestCase
 from tests.factories import (UserFactory, ProjectFactory, NodeFactory,
-    AuthFactory, PointerFactory, DashboardFactory, FolderFactory, AuthUserFactory, RegistrationFactory)
-
+    AuthFactory, PointerFactory, DashboardFactory, FolderFactory, RegistrationFactory)
 from framework.auth import Auth
-from website.project import Node
 from website.util import rubeus, api_url_for
-
 import website.app
 from website.util.rubeus import sort_by_name
-from website.views import get_all_projects_smart_folder
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, \
+    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
+
 
 app = website.app.init_app(
     routes=True, set_backends=False, settings_module='website.settings'
@@ -353,10 +352,6 @@ class TestSerializingNodeWithAddon(OsfTestCase):
 
 class TestSerializingEmptyDashboard(OsfTestCase):
 
-    AMP = 'All my projects'
-    AMP_ID = '-amp'
-    AMR = 'All my registrations'
-    AMR_ID = '-amr'
 
     def setUp(self):
         super(TestSerializingEmptyDashboard, self).setUp()
@@ -372,12 +367,12 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
     def test_empty_dashboard_smart_folders_have_correct_names_and_ids(self):
         for node_hgrid in self.dash_hgrid:
-            assert_in(node_hgrid['name'], (self.AMP, self.AMR))
+            assert_in(node_hgrid['name'], (ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME))
         for node_hgrid in self.dash_hgrid:
-            if node_hgrid['name'] == self.AMP:
-                assert_equal(node_hgrid['node_id'], self.AMP_ID)
-            elif node_hgrid['name'] == self.AMR:
-                assert_equal(node_hgrid['node_id'], self.AMR_ID)
+            if node_hgrid['name'] == ALL_MY_PROJECTS_ID:
+                assert_equal(node_hgrid['node_id'], ALL_MY_PROJECTS_ID)
+            elif node_hgrid['name'] == ALL_MY_REGISTRATIONS_ID:
+                assert_equal(node_hgrid['node_id'], ALL_MY_REGISTRATIONS_ID)
 
     def test_empty_dashboard_smart_folders_are_empty(self):
         for node_hgrid in self.dash_hgrid:
@@ -394,8 +389,6 @@ class TestSerializingEmptyDashboard(OsfTestCase):
 
 class TestSerializingPopulatedDashboard(OsfTestCase):
 
-    AMP_ID = '-amp'
-    AMR_ID = '-amr'
 
     def setUp(self):
         super(TestSerializingPopulatedDashboard, self).setUp()
@@ -419,7 +412,7 @@ class TestSerializingPopulatedDashboard(OsfTestCase):
         dash_hgrid = rubeus.to_project_hgrid(self.dash, self.auth)
 
         assert_true(
-            {'All my projects', 'All my registrations', folder.title} <=
+            {ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, folder.title} <=
             {node_hgrid['name'] for node_hgrid in dash_hgrid}
         )
 
@@ -462,8 +455,6 @@ class TestSerializingFolders(OsfTestCase):
 
 class TestSmartFolderViews(OsfTestCase):
 
-    AMP_ID = '-amp'
-    AMR_ID = '-amr'
 
     def setUp(self):
         super(TestSmartFolderViews, self).setUp()
@@ -481,14 +472,14 @@ class TestSmartFolderViews(OsfTestCase):
         with app.test_request_context():
             url = api_url_for('get_dashboard')
 
-        res = self.app.get(url + self.AMP_ID)
+        res = self.app.get(url + ALL_MY_PROJECTS_ID)
 
         import pprint;pp = pprint.PrettyPrinter()
 
         init_len = len(res.json[u'data'])
 
         ProjectFactory(creator=self.user)
-        res = self.app.get(url + self.AMP_ID)
+        res = self.app.get(url + ALL_MY_PROJECTS_ID)
         assert_equal(len(res.json[u'data']), init_len + 1)
 
 
@@ -501,11 +492,11 @@ class TestSmartFolderViews(OsfTestCase):
         with app.test_request_context():
             url = api_url_for('get_dashboard')
 
-        res = self.app.get(url + self.AMR_ID)
+        res = self.app.get(url + ALL_MY_REGISTRATIONS_ID)
         init_len = len(res.json[u'data'])
 
         RegistrationFactory(creator=self.user)
-        res = self.app.get(url + self.AMR_ID)
+        res = self.app.get(url + ALL_MY_REGISTRATIONS_ID)
         assert_equal(len(res.json[u'data']), init_len + 1)
 
 

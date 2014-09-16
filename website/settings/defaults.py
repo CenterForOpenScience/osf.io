@@ -178,3 +178,9 @@ SENTRY_DSN = None
 
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
+
+# Dashboard
+ALL_MY_PROJECTS_ID = '-amp'
+ALL_MY_REGISTRATIONS_ID = '-amr'
+ALL_MY_PROJECTS_NAME = 'All my projects'
+ALL_MY_REGISTRATIONS_NAME = 'All my registrations'

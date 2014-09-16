@@ -3,10 +3,14 @@
 formatted hgrid list/folders.
 """
 import os
-import hurry
 import datetime
+
+import hurry
 from modularodm import Q
+
 from framework.auth.decorators import Auth
+from website.settings import ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, \
+    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
 
 
 FOLDER = 'folder'
@@ -171,7 +175,7 @@ class NodeProjectCollector(object):
             Q('is_registration', 'eq', False)
         )
         children_count = all_my_projects.count() + comps.count()
-        return self.make_smart_folder('All my projects', '-amp', children_count)
+        return self.make_smart_folder(ALL_MY_PROJECTS_NAME, ALL_MY_PROJECTS_ID, children_count)
 
     def collect_all_registrations_smart_folder(self):
         contributed = self.auth.user.node__contributed
@@ -194,7 +198,7 @@ class NodeProjectCollector(object):
             Q('is_registration', 'eq', True)
         )
         children_count = all_my_registrations.count() + comps.count()
-        return self.make_smart_folder('All my registrations', '-amr', children_count)
+        return self.make_smart_folder(ALL_MY_REGISTRATIONS_NAME, ALL_MY_REGISTRATIONS_ID, children_count)
 
     def make_smart_folder(self, title, node_id, children_count=0):
         return_value = {

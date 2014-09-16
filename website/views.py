@@ -2,6 +2,7 @@
 import logging
 import itertools
 import httplib as http
+
 from flask import request, redirect
 from modularodm import Q
 
@@ -15,14 +16,13 @@ from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
-from framework.guid.model import Guid, GuidStoredObject
-
+from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
-from website.project import model, new_dashboard, new_folder
+from website.project import model, new_dashboard
 from website import settings
 
-
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 logger = logging.getLogger(__name__)
 
@@ -129,9 +129,9 @@ def get_dashboard(nid=None, **kwargs):
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, **kwargs)]
         return_value = {'data': dashboard_projects}
-    elif nid == '-amp':
+    elif nid == ALL_MY_PROJECTS_ID:
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
-    elif nid == '-amr':
+    elif nid == ALL_MY_REGISTRATIONS_ID:
         return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
     else:
         node = Node.load(nid)

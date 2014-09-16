@@ -42,6 +42,7 @@ from tests.factories import (
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory
 )
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -2433,7 +2434,7 @@ class TestDashboardViews(OsfTestCase):
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         # Get the All My Projects smart folder from the dashboard
-        url = api_url_for('get_dashboard', nid='-amp')
+        url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
@@ -2447,7 +2448,7 @@ class TestDashboardViews(OsfTestCase):
             None, Auth(self.creator), '', '',
         )
         # Get the All My Registrations smart folder from the dashboard
-        url = api_url_for('get_dashboard', nid='-amr')
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
         assert_equal(len(res.json), 1)
