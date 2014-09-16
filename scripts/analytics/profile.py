@@ -3,13 +3,13 @@
 import os
 from tabulate import tabulate
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
 from .utils import mkdirp
 
 
-user_collection = db['user']
+user_collection = database['user']
 
 TAB_PATH = os.path.join(settings.ANALYTICS_PATH, 'tables', 'features')
 mkdirp(TAB_PATH)

@@ -4,14 +4,14 @@ import os
 import re
 import matplotlib.pyplot as plt
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 from website.app import init_app
 
 from .utils import plot_dates, oid_to_datetime, mkdirp
 
 
-log_collection = db['nodelog']
+log_collection = database['nodelog']
 init_app()
 
 FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'addons')
