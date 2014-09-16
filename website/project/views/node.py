@@ -352,12 +352,14 @@ def view_project(**kwargs):
 def expand(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_to_use.expand(user=auth.user)
+    return {}, 200, None
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def collapse(auth, **kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     node_to_use.collapse(user=auth.user)
+    return {}, 200, None
 
 # Reorder components
 
@@ -1064,6 +1066,8 @@ def move_pointers(auth):
 
         from_node.save()
         _add_pointers(to_node, [pointer_node], auth)
+
+    return {}, 200, None
 
 @collect_auth
 def add_pointer(auth):
