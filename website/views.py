@@ -119,15 +119,15 @@ def find_dashboard(user):
         dashboard_folder = user.node__contributed.find(
             Q('is_dashboard', 'eq', True)
         )
-    return dashboard_folder
+    return dashboard_folder[0]
 
 
 @must_be_logged_in
 def get_dashboard(nid=None, **kwargs):
     user = kwargs['auth'].user
     if nid is None:
-        nodes = find_dashboard(user)
-        dashboard_projects = [rubeus.to_project_root(node, **kwargs) for node in nodes]
+        node = find_dashboard(user)
+        dashboard_projects = [rubeus.to_project_root(node, **kwargs)]
         return_value = {'data': dashboard_projects}
     elif nid == '-amp':
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
@@ -232,7 +232,7 @@ def dashboard(**kwargs):
     auth = kwargs['auth']
     user = auth.user
     dashboard_folder = find_dashboard(user)
-    dashboard_id = dashboard_folder[0]._id
+    dashboard_id = dashboard_folder._id
 
 
     return {'addons_enabled': user.get_addon_names(),
