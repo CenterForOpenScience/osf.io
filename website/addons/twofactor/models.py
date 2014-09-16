@@ -5,6 +5,7 @@ from random import SystemRandom
 from modularodm.fields import BooleanField, StringField, IntegerField
 from oath import accept_totp
 
+from framework.status import push_status_message
 from website.addons.base import AddonUserSettingsBase
 
 
@@ -45,30 +46,36 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
             return True
         return False
 
-    def _generate_seed(self):
-        """Generate a new random seed
-
-        The length of the returned string will be a multiple of two, and
-        stripped of type specifier "0x" that `hex()` prepends.
-
-        :return str: A random, padded hex value
-        """
-        x = SystemRandom().randint(0, 32**16-1)
-        h = hex(x).strip('L')[2:]
-        if len(h) % 2:
-            h = '0' + h
-        return h
 
     #############
     # Callbacks #
     #############
 
     def on_add(self):
-        self.totp_secret = self._generate_seed()
+        push_status_message('Please <a href="#TfaVerify">activate your'
+                            ' device</a> before continuing.')
+        super(TwoFactorUserSettings, self).on_add()
+        self.totp_secret = _generate_seed()
         self.totp_drift = 0
         self.is_confirmed = False
 
     def on_delete(self):
+        super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0
         self.is_confirmed = False
+
+
+def _generate_seed():
+    """Generate a new random seed
+
+    The length of the returned string will be a multiple of two, and
+    stripped of type specifier "0x" that `hex()` prepends.
+
+    :return str: A random, padded hex value
+    """
+    x = SystemRandom().randint(0, 32**16-1)
+    h = hex(x).strip('L')[2:]
+    if len(h) % 2:
+        h = '0' + h
+    return h

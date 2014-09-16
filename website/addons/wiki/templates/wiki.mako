@@ -11,3 +11,14 @@
         ${wiki_content}
     </div>
 </div>
+
+
+##<div mod-meta='{
+##        "tpl": "metadata/comment_group.mako",
+##        "kwargs": {
+##            "guid": "${wiki_id}",
+##            "top": true
+##        },
+##        "replace": true
+##    }'></div>
+

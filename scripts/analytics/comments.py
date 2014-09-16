@@ -3,19 +3,19 @@
 import os
 import matplotlib.pyplot as plt
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
-from utils import plot_dates
+from utils import plot_dates, mkdirp
 
 
-comment_collection = db['comment']
+comment_collection = database['comment']
 
-ROOT_PATH = settings.parent_dir(settings.BASE_PATH)
-FIG_PATH = os.path.join(ROOT_PATH, 'figs', 'features')
+FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'features')
+mkdirp(FIG_PATH)
 
 
-def analyze_comment_dates():
+def main():
     dates = [
         record['date_created']
         for record in comment_collection.find({}, {'date_created': True})
@@ -27,5 +27,5 @@ def analyze_comment_dates():
 
 
 if __name__ == '__main__':
-    analyze_comment_dates()
+    main()
 

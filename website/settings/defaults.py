@@ -18,6 +18,7 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
+ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -65,6 +66,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
+USE_TOKU_MX = False
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -172,6 +174,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+SENTRY_DSN_JS = None
 
 
 # TODO: Delete me after merging GitLab

@@ -17,11 +17,11 @@ from werkzeug.wrappers import Response
 from modularodm import Q
 
 from framework import auth
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
+# import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -41,11 +41,7 @@ from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, RegistrationFactory,
-)
-
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
+    ProjectWithAddonFactory
 )
 
 
@@ -421,7 +417,10 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 404)
         assert_in('Template not found', res)
 
-    def test_get_logs(self):
+    @mock.patch('framework.transactions.commands.begin')
+    @mock.patch('framework.transactions.commands.rollback')
+    @mock.patch('framework.transactions.commands.commit')
+    def test_get_logs(self, *mock_commands):
         # Add some logs
         for _ in range(5):
             self.project.logs.append(
@@ -434,6 +433,8 @@ class TestProjectViews(OsfTestCase):
         self.project.save()
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
+        for mock_command in mock_commands:
+            assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
@@ -522,6 +523,23 @@ class TestProjectViews(OsfTestCase):
                 log['params']['project']
                 for log in res.json['logs']
             ]
+        )
+
+    def test_can_view_public_log_from_private_project(self):
+        project = ProjectFactory(is_public=True)
+        fork = project.fork_node(auth=self.consolidate_auth1)
+        url = fork.api_url_for('get_logs')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+        project.is_public = False
+        project.save()
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
         )
 
     def test_for_private_component_log(self):
@@ -638,6 +656,13 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+    def test_fork_private_project_non_contributor(self):
+        url = self.project.api_url_for('node_fork_page')
+        non_contributor = AuthUserFactory()
+        res = self.app.post_json(url, {}, 
+                                 auth=non_contributor.auth, 
+                                 expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
 class TestUserProfile(OsfTestCase):
 
@@ -1554,8 +1579,10 @@ class TestAuthViews(OsfTestCase):
         self.auth = self.user.auth
 
     def test_merge_user(self):
-        dupe = UserFactory(username="copy@cat.com",
-                           emails=['copy@cat.com'])
+        dupe = UserFactory(
+            username="copy@cat.com",
+            emails=['copy@cat.com']
+        )
         dupe.set_password("copycat")
         dupe.save()
         url = "/api/v1/user/merge/"
@@ -2311,6 +2338,17 @@ class TestProjectCreation(OsfTestCase):
         node = Node.load(res.json['projectUrl'].replace('/', ''))
         assert_true(node)
         assert_true(node.template_node, other_node)
+
+    def test_project_before_template_no_addons(self):
+        project = ProjectFactory()
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_equal(res.json['prompts'], [])
+
+    def test_project_before_template_with_addons(self):
+        project = ProjectWithAddonFactory(addon='github')
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_in('GitHub', res.json['prompts'])
+
 
 class TestUnconfirmedUserViews(OsfTestCase):
 

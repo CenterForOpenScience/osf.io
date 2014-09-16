@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import os
 
 from flask import redirect, send_from_directory
 
@@ -10,7 +11,6 @@ from framework.routing import (
     Rule, process_rules, WebRenderer, json_renderer, render_mako_string
 )
 from framework.auth import views as auth_views
-from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
@@ -25,7 +25,6 @@ from website.assets import env as assets_env
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
-
     """
     user = get_current_user()
     return {
@@ -38,6 +37,7 @@ def get_globals():
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
@@ -510,6 +510,8 @@ def make_url_map(app):
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
 
+        Rule('/project/new/<pid>/beforeTemplate/', 'get', project_views.node.project_before_template, json_renderer),
+
         Rule(
             [
                 '/project/<pid>/contributors/',
@@ -930,3 +932,12 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    # Set up static routing for addons
+    # NOTE: We use nginx to serve static addon assets in production
+    addon_base_path = os.path.abspath('website/addons')
+    if settings.DEV_MODE:
+        @app.route('/static/addons/<addon>/<path:filename>')
+        def addon_static(addon, filename):
+            addon_path = os.path.join(addon_base_path, addon, 'static')
+            return send_from_directory(addon_path, filename)

@@ -53,6 +53,7 @@ def wiki_widget(**kwargs):
         'complete': True,
         'content': wiki_html,
         'more': more,
+        'include': False,
     }
     rv.update(wiki.config.to_json())
     return rv
@@ -152,8 +153,8 @@ def project_wiki_compare(auth, **kwargs):
     raise HTTPError(http.NOT_FOUND)
 
 
-@must_be_valid_project # returns project
-@must_have_permission('write') # returns user, project
+@must_be_valid_project  # injects project
+@must_have_permission('write')  # injects auth, project
 @must_have_addon('wiki', 'node')
 def project_wiki_version(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -183,9 +184,8 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': child.wiki_pages_current.keys()
-                if child.wiki_pages_current
-                else [],
+            'url': child.web_url_for('project_wiki_page', wid=HOME),
+            'pages': sorted(child.wiki_pages_current.keys()) if child.wiki_pages_current else [],
             'url': child.web_url_for('project_wiki_page', wid=HOME),
             'is_pointer': not child.primary,
             'link': auth.private_key
@@ -198,7 +198,9 @@ def serialize_wiki_toc(project, auth):
     return toc
 
 
-@must_be_valid_project # returns project
+
+
+@must_be_valid_project  # injects project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def project_wiki_page(auth, **kwargs):
@@ -230,10 +232,10 @@ def project_wiki_page(auth, **kwargs):
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
-        'pages_current': [
+        'pages_current': sorted([
             from_mongo(version)
             for version in node.wiki_pages_current
-        ],
+        ]),
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,

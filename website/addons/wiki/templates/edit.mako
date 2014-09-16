@@ -26,16 +26,13 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
-<%def name="javascript_bottom()">
+<script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
+<script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
+<script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
-    <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
+<script>
+  $script('/static/addons/wiki/WikiEditor.js', function() {
+      WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+    });
 
-    <script>
-      $script('/static/addons/wiki/WikiEditor.js', function() {
-          WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
-        });
-   </script>
-
-</%def>
+</script>

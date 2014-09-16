@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-
+import functools
 from datetime import datetime
 
-from framework.mongo import db
+from framework.mongo import database
 from framework.sessions import session
 
 
-collection = db['pagecounters']
+collection = database['pagecounters']
 
-
-def increment_user_activity_counters(user_id, action, date):
-    collection = db['useractivitycounters']
-    date = date.strftime('%Y/%m/%d') # todo remove slashes
+def increment_user_activity_counters(user_id, action, date, db=None):
+    db = db or database  # default to local proxy
+    collection = database['useractivitycounters']
+    date = date.strftime('%Y/%m/%d')
     query = {
         '$inc': {
             'total': 1,
@@ -29,8 +29,9 @@ def increment_user_activity_counters(user_id, action, date):
     return True
 
 
-def get_total_activity_count(user_id):
-    collection = db['useractivitycounters']
+def get_total_activity_count(user_id, db=None):
+    db = db or database
+    collection = database['useractivitycounters']
     result = collection.find_one(
         {'_id': user_id}, {'total': 1}
     )
@@ -39,9 +40,18 @@ def get_total_activity_count(user_id):
     return 0
 
 
-# TODO: Test me
-def update_counters(rex):
+def update_counters(rex, db=None):
+    """
+    Create a decorator that updates analytics in `pagecounters` when the decorated
+    function is called.
+
+    :param rex: Pattern for building page key from keyword arguments of decorated function
+
+    """
+    db = db or database
+
     def wrapper(func):
+        @functools.wraps(func)
         def wrapped(*args, **kwargs):
             date = datetime.utcnow()
             date = date.strftime('%Y/%m/%d')
@@ -84,15 +94,19 @@ def update_counters(rex):
                 visited.append(page)
                 session.data['visited'] = visited
             d['$inc']['total'] = 1
+            collection = database['pagecounters']
             collection.update({'_id': page}, d, True, False)
             return func(*args, **kwargs)
         return wrapped
     return wrapper
 
 
-def get_basic_counters(page):
+def get_basic_counters(page, db=None):
+    db = db or database
+    collection = db['pagecounters']
     unique = 0
     total = 0
+    collection = database['pagecounters']
     result = collection.find_one(
         {'_id': page}, {'total': 1, 'unique': 1}
     )

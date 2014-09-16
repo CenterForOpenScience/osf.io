@@ -9,10 +9,9 @@ from modularodm.exceptions import ModularOdmException
 from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
-from framework.auth.utils import privacy_info_handle
-from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
+from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo
+from framework.forms.utils import sanitize
 
 from website import language
 
@@ -160,6 +159,21 @@ def project_before_fork(**kwargs):
 
 
 @must_be_logged_in
+@must_be_valid_project  # returns project
+def project_before_template(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    prompts = []
+
+    for addon in node.get_addons():
+        if 'node' in addon.config.configs:
+            if addon.to_json(auth.user)['addon_full_name']:
+                prompts.append(addon.to_json(auth.user)['addon_full_name'])
+
+    return {'prompts': prompts}
+
+
+@must_be_logged_in
 @must_be_valid_project
 def node_fork_page(**kwargs):
     project = kwargs['project']
@@ -176,7 +190,13 @@ def node_fork_page(**kwargs):
     else:
         node_to_use = project
 
-    fork = node_to_use.fork_node(auth)
+    try:
+        fork = node_to_use.fork_node(auth)
+    except PermissionsError:
+        raise HTTPError(
+            http.FORBIDDEN,
+            redirect_url=node_to_use.url
+        )
 
     return fork.url
 
@@ -226,7 +246,7 @@ def node_setting(**kwargs):
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and 'node' not in addon.added_mandatory
-        and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['node']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
     rv['addon_enabled_settings'] = addon_enabled_settings
@@ -601,7 +621,7 @@ def _view_project(node, auth, primary=False):
             'title': parent.title if parent else '',
             'url': parent.url if parent else '',
             'api_url': parent.api_url if parent else '',
-            'absolute_url':  parent.absolute_url if parent else '',
+            'absolute_url': parent.absolute_url if parent else '',
             'is_public': parent.is_public if parent else '',
             'is_contributor': parent.is_contributor(user) if parent else '',
             'can_view': (auth.private_key in parent.private_link_keys_active) if parent else False
@@ -1012,4 +1032,3 @@ def get_pointed(**kwargs):
         }
         for each in node.pointed
     ]}
-
