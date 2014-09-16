@@ -25,7 +25,8 @@ from website.routes import OsfWebRenderer
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATES_PATH = os.path.join(HERE, 'templates')
 
-class RendererTestCase(OsfTestCase, AppTestCase):
+
+class RendererTestCase(AppTestCase):
     def setUp(self):
         super(RendererTestCase, self).setUp()
         self.r = Renderer()
@@ -97,7 +98,7 @@ class JSONRendererTestCase(RendererTestCase):
         pass
 
 
-class WebRendererTestCase(AppTestCase):
+class WebRendererTestCase(OsfTestCase):
 
     def setUp(self):
         super(WebRendererTestCase, self).setUp()
@@ -116,44 +117,42 @@ class WebRendererTestCase(AppTestCase):
         Note that this behavior is inconsistent with that of raising an
         ``HTTPError`` in a view function, which serves the same purpose.
         """
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            resp = self.r(
-                ({},  # data
-                302,  # status code
-                None,  # headers
-                'http://google.com/',  # redirect_uri
-                )
+        resp = self.r(
+            ({},  # data
+            302,  # status code
+            None,  # headers
+            'http://google.com/',  # redirect_uri
             )
+        )
 
-            self.assertIsInstance(
-                resp,
-                werkzeug.wrappers.Response,
-            )
-            self.assertEqual(302, resp.status_code)
-            self.assertEqual('http://google.com/', resp.location)
+        self.assertIsInstance(
+            resp,
+            werkzeug.wrappers.Response,
+        )
+        self.assertEqual(302, resp.status_code)
+        self.assertEqual('http://google.com/', resp.location)
 
     def test_input_dict(self):
         """When only a dict is passed it, a Flask-style tuple is returned, of
         which the 0th element must be the rendered template, including the dict
         as part of the context.
         """
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            input_dict = {'foo': 'bar'}
+        input_dict = {'foo': 'bar'}
 
-            resp = self.r(input_dict)
+        resp = self.r(input_dict)
 
-            self.assertIsInstance(
-                resp, werkzeug.wrappers.Response
-            )
+        self.assertIsInstance(
+            resp, werkzeug.wrappers.Response
+        )
 
-            self.assertIn(
-                'foo:bar',
-                resp.data
-            )
+        self.assertIn(
+            'foo:bar',
+            resp.data
+        )
 
     def test_http_error_raised(self):
         """When an HTTPError is raised in the view function, it is passed as
@@ -164,21 +163,20 @@ class WebRendererTestCase(AppTestCase):
         which yields the appropriate error message text.
         """
 
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            err = HTTPError(http.NOT_FOUND)
+        err = HTTPError(http.NOT_FOUND)
 
-            resp = self.r(err)
+        resp = self.r(err)
 
-            self.assertIn(
-                err.to_data()['message_short'],
-                resp[0],
-            )
-            self.assertEqual(
-                http.NOT_FOUND,
-                resp[1],
-            )
+        self.assertIn(
+            err.to_data()['message_short'],
+            resp[0],
+        )
+        self.assertEqual(
+            http.NOT_FOUND,
+            resp[1],
+        )
 
     def test_http_error_raise_with_redirect(self):
         """Some status codes passed to HTTPError may contain a ``resource_uri``
@@ -208,30 +206,29 @@ class WebRendererTestCase(AppTestCase):
         self.assertEqual('http://google.com/', resp.location)
 
 
-class WebRendererTemplateTestCase(AppTestCase):
+class WebRendererTemplateTestCase(OsfTestCase):
 
     def test_nested_templates(self):
         """When a template passed to ``WebRenderer`` contains references to
         nested templates, those nested templates should be rendered recursively
-        prior to return."""
+        prior to return.
+        """
+        self.app.app.preprocess_request()
 
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        # Create a ``WebRenderer`` for a nested template file.
+        r = WebRenderer(
+            'nested_parent.html',
+            render_mako_string,
+            template_dir=TEMPLATES_PATH,
+        )
 
-            # Create a ``WebRenderer`` for a nested template file.
-            r = WebRenderer(
-                'nested_parent.html',
-                render_mako_string,
-                template_dir=TEMPLATES_PATH,
-            )
+        # render the template (with an empty context)
+        resp = r({})
 
-            # render the template (with an empty context)
-            resp = r({})
-
-            # The result should be a Response
-            self.assertIsInstance(resp, werkzeug.wrappers.Response)
-            # The contents of the inner template should be present in the page.
-            self.assertIn('child template content', resp.data)
+        # The result should be a Response
+        self.assertIsInstance(resp, werkzeug.wrappers.Response)
+        # The contents of the inner template should be present in the page.
+        self.assertIn('child template content', resp.data)
 
     def test_render_included_template(self):
         """``WebRenderer.render_element()`` is the internal method called when
@@ -239,33 +236,32 @@ class WebRendererTemplateTestCase(AppTestCase):
         functionality as ``test_nested_templates()`` (above), but does so
         without relying on the parent template being found and processed.
         """
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            r = WebRenderer(
-                'nested_child.html',
-                render_mako_string,
-                template_dir=TEMPLATES_PATH,
-            )
+        r = WebRenderer(
+            'nested_child.html',
+            render_mako_string,
+            template_dir=TEMPLATES_PATH,
+        )
 
-            html = fragment_fromstring(
-                ''.join((
-                    "<div mod-meta='",
-                    '{"tpl":"nested_child.html","replace": true}',
-                    "'></div>",
-                )),
-                create_parent='remove-me',
-            )
+        html = fragment_fromstring(
+            ''.join((
+                "<div mod-meta='",
+                '{"tpl":"nested_child.html","replace": true}',
+                "'></div>",
+            )),
+            create_parent='remove-me',
+        )
 
-            result = r.render_element(
-                html.findall('.//*[@mod-meta]')[0],
-                data={},
-            )
+        result = r.render_element(
+            html.findall('.//*[@mod-meta]')[0],
+            data={},
+        )
 
-            self.assertEqual(
-                ('<p>child template content</p>', True),
-                result,
-            )
+        self.assertEqual(
+            ('<p>child template content</p>', True),
+            result,
+        )
 
     def test_broken_template_uri(self):
         """When a template contains an embedded template that can't be found,
@@ -274,21 +270,20 @@ class WebRendererTemplateTestCase(AppTestCase):
         NOTE: This functionality is currently failing. Instead of including the
         appropriate message in the output, an IOError is raised.
         """
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            r = WebRenderer(
-                'nested_parent_broken.html',
-                render_mako_string,
-                template_dir=TEMPLATES_PATH,
-            )
+        r = WebRenderer(
+            'nested_parent_broken.html',
+            render_mako_string,
+            template_dir=TEMPLATES_PATH,
+        )
 
-            resp = r({})
+        resp = r({})
 
-            self.assertIn(
-                '<div>Template not_a_valid_file.html not found.</div>',
-                resp.data,
-            )
+        self.assertIn(
+            '<div>Template not_a_valid_file.html not found.</div>',
+            resp.data,
+        )
 
     def test_render_included_template_not_found(self):
         """``WebRenderer.render_element()`` is the internal method called when
@@ -296,33 +291,32 @@ class WebRendererTemplateTestCase(AppTestCase):
         functionality as ``test_broken_template_uri()`` (above), but does so
         without relying on the parent template being found and processed.
         """
-        with self.app.test_request_context():
-            self.app.preprocess_request()
+        self.app.app.preprocess_request()
 
-            r = WebRenderer(
-                'nested_child.html',
-                render_mako_string,
-                template_dir='tests/templates',
-            )
+        r = WebRenderer(
+            'nested_child.html',
+            render_mako_string,
+            template_dir='tests/templates',
+        )
 
-            html = fragment_fromstring(
-                ''.join((
-                    "<div mod-meta='",
-                    '{"tpl":"not_a_real_file.html","replace": true}',
-                    "'></div>",
-                )),
-                create_parent='remove-me',
-            )
+        html = fragment_fromstring(
+            ''.join((
+                "<div mod-meta='",
+                '{"tpl":"not_a_real_file.html","replace": true}',
+                "'></div>",
+            )),
+            create_parent='remove-me',
+        )
 
-            result = r.render_element(
-                html.findall('.//*[@mod-meta]')[0],
-                data={},
-            )
+        result = r.render_element(
+            html.findall('.//*[@mod-meta]')[0],
+            data={},
+        )
 
-            self.assertEqual(
-                ('<div>Template not_a_real_file.html not found.</div>', True),
-                result,
-            )
+        self.assertEqual(
+            ('<div>Template not_a_real_file.html not found.</div>', True),
+            result,
+        )
 
 
 class JSONRendererEncoderTestCase(unittest.TestCase):

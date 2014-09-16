@@ -36,17 +36,19 @@
         // TODO: should I populate this? (@mambocab)
         self.registered = ko.observable(null);
         $.ajax({
-            url: url, type: 'GET', dataType: 'json',
-            // On success, update the revisions observable
-            success: function(response) {
-                self.versions(ko.utils.arrayMap(response.versions, function(rev) {
-                    return new Version(rev);
-                }));
-                self.node_title(response.node_title);
-                self.file_name(response.file_name);
-                self.node_title(response.node_title);
-            }
-        });
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            self.versions(ko.utils.arrayMap(response.versions, function(rev) {
+                return new Version(rev);
+            }));
+            self.node_title(response.node_title);
+            self.file_name(response.file_name);
+            self.node_title(response.node_title);
+        }).fail(
+            $.osf.handleJSONError
+        );
     }
     // Public API
     function VersionTable(selector, url) {

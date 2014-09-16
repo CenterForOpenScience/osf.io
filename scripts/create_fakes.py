@@ -29,9 +29,10 @@ from website import models, security
 from framework.auth import utils
 from tests.factories import UserFactory, ProjectFactory
 
+
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 fake = Factory.create()
-app = init_app('website.settings', set_backends=True, routes=True)
 
 
 def create_fake_user():
@@ -47,7 +48,7 @@ def create_fake_user():
     )
     user.set_password('faker123')
     user.save()
-    print('Created user: {0} <{1}>'.format(user.fullname, user.username))
+    logger.info('Created user: {0} <{1}>'.format(user.fullname, user.username))
     return user
 
 def parse_args():
@@ -70,7 +71,7 @@ def create_fake_project(creator, n_users, privacy, name):
         contrib = create_fake_user()
         project.add_contributor(contrib, auth=auth)
     project.save()
-    print('Created project: {0}'.format(project.title))
+    logger.info('Created project: {0}'.format(project.title))
     return project
 
 
@@ -83,5 +84,8 @@ def main():
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 
+
 if __name__ == '__main__':
+    app = init_app('website.settings', set_backends=True, routes=True)
     main()
+

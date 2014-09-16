@@ -41,68 +41,65 @@
     </div><!-- end row -->
 </div><!-- end wiki -->
 
-<%def name="javascript_bottom()">
+<script src="/static/vendor/bower_components/ace-builds/src/ace.js"></script>
+<script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
+<script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
+<script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
 
-    <script src="/static/vendor/bower_components/ace-builds/src/ace.js"></script>
-    <script src="/static/vendor/pagedown-ace/Markdown.Converter.js"></script>
-    <script src="/static/vendor/pagedown-ace/Markdown.Sanitizer.js"></script>
-    <script src="/static/vendor/pagedown-ace/Markdown.Editor.js"></script>
+<!-- Necessary for ShareJS communication -->
+<script src="http://localhost:7007/channel/bcsocket.js"></script>
+<script src="http://localhost:7007/share/share.js"></script>
+<script src="http://localhost:7007/share/ace.js"></script>
 
-    <!-- Necessary for ShareJS communication -->
-    <script src="http://localhost:7007/channel/bcsocket.js"></script>
-    <script src="http://localhost:7007/share/share.js"></script>
-    <script src="http://localhost:7007/share/ace.js"></script>
+<script>
 
-    <script>
+    var doc = null;
+    var editor;
 
-        var doc = null;
-        var editor;
+    // ShareJS supports multiple document backends per server based on key/
+    // value stores. It is possible to expose the document name to switch between
+    // different documents, like in a wiki.
+    var setDoc = function(docName) {
 
-        // ShareJS supports multiple document backends per server based on key/
-        // value stores. It is possible to expose the document name to switch between
-        // different documents, like in a wiki.
-        var setDoc = function(docName) {
+        editor.setReadOnly(true);
 
-            editor.setReadOnly(true);
+        sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
 
-            sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
+            if (doc != null) {
+                doc.close();
+                doc.detach_ace();
+            }
 
-                if (doc != null) {
-                    doc.close();
-                    doc.detach_ace();
-                }
+            doc = newDoc;
 
-                doc = newDoc;
+            if (error) {
+                console.error(error);
+                return;
+            }
+            doc.attach_ace(editor);
 
-                if (error) {
-                    console.error(error);
-                    return;
-                }
-                doc.attach_ace(editor);
-
-                editor.setReadOnly(false);
-            });
-        };
-
-        var langTools = ace.require("ace/ext/language_tools");
-        var editor = ace.edit("editor");
-        editor.getSession().setMode("ace/mode/markdown");
-
-        setDoc('${node['id']}-${pageName}');
-
-        // Settings
-        editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
-        editor.getSession().setUseWrapMode(true);   // Wraps text
-        editor.renderer.setShowGutter(false);       // Hides line number
-        editor.setShowPrintMargin(false);           // Hides print margin
-
-    </script>
-
-    <script>
-
-        $script('/static/addons/wiki/WikiEditor.js', function() {
-            WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+            editor.setReadOnly(false);
         });
+    };
 
-   </script>
-</%def>
+    var langTools = ace.require("ace/ext/language_tools");
+    var editor = ace.edit("editor");
+    editor.getSession().setMode("ace/mode/markdown");
+
+    setDoc('${node['id']}-${pageName}');
+
+    // Settings
+    editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces
+    editor.getSession().setUseWrapMode(true);   // Wraps text
+    editor.renderer.setShowGutter(false);       // Hides line number
+    editor.setShowPrintMargin(false);           // Hides print margin
+
+</script>
+
+<script>
+
+    $script('/static/addons/wiki/WikiEditor.js', function() {
+        WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+    });
+
+</script>
