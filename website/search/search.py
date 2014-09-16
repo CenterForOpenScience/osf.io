@@ -19,14 +19,22 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, start=0):
-    result, tags, counts = search_engine.search(query, start)
+def search(query, start=0, size=10, index='website', _type=None):
+    if index == 'metadata':
+        return search_engine.search_metadata(query, _type, start, size)
+
+    result, tags, counts = search_engine.search(query, start, size)
     return result, tags, counts
 
 
 @requires_search
-def update_node(node):
-    search_engine.update_node(node)
+def update_node(node, index='website'):
+    search_engine.update_node(node, index)
+
+
+@requires_search
+def update_metadata(metadata):
+    search_engine.update_metadata(metadata)
 
 
 @requires_search
@@ -40,6 +48,11 @@ def delete_all():
 
 
 @requires_search
-def search_contributor(query, exclude=None, current_user = None):
+def search_contributor(query, exclude=None, current_user=None):
     result = search_engine.search_contributor(query, exclude, current_user)
     return result
+
+
+@requires_search
+def get_mapping(index, _type):
+    search_engine.get_mapping(index, _type)
