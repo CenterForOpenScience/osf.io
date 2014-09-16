@@ -513,7 +513,7 @@ def make_url_map(app):
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
         Rule('/folder/<nid>', 'get', project_views.node.folder_new, OsfWebRenderer('project/new_folder.mako')),
-        Rule('/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
+        Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
         Rule(
             [
                 '/project/<pid>/contributors/',

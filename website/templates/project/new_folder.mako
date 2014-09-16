@@ -29,7 +29,7 @@
 <script>
     $script(['/static/js/folderCreator.js'], function() {
 
-        var folderCreator = new FolderCreator('#creationForm');
+        var folderCreator = new FolderCreator('#creationForm', '/api/v1/folder/${node_id}');
     });
 </script>
 </%def>
