@@ -509,6 +509,8 @@ def make_url_map(app):
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
 
+        Rule('/project/new/<pid>/beforeTemplate/', 'get', project_views.node.project_before_template, json_renderer),
+
         Rule(
             [
                 '/project/<pid>/contributors/',
