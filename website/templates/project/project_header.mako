@@ -96,7 +96,16 @@
         </div><!-- end row -->
 
 
-        <div id="contributors">Contributors:
+        <div id="contributors">
+            <style type="text/css">
+                #projectScope .form-control {
+                    width: 400px;
+                }
+                #description {
+                    vertical-align: top;
+                }
+            </style>
+            Contributors:
             % if node['anonymous'] and not node['is_public']:
                 <ol>Anonymous Contributors</ol>
 
@@ -127,7 +136,7 @@
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % elif node['description'] or 'write' in user['permissions']:
-                 <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
+                 <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description" data-type="textarea">${node['description']}</span>
             % endif
         </div>
 
