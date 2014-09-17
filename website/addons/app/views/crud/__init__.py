@@ -5,7 +5,9 @@ import httplib as http
 from flask import request, redirect
 
 from framework.auth import Auth
+from framework.flask import app
 from framework.exceptions import HTTPError
+from framework.guid.model import Guid
 
 from website.search.search import search
 from website.project import new_node, Node
@@ -42,7 +44,7 @@ def create_application_project(node_addon, **kwargs):
 
     try:
         assert len(request.json['title']) > 1 and len(request.json['title']) < 201
-    except KeyError, AssertionError:
+    except (KeyError, AssertionError):
         raise HTTPError(http.BAD_REQUEST)
 
     node = new_node('project', request.json['title'], node_addon.system_user, request.json.get('description'))
@@ -82,7 +84,6 @@ def create_report(node_addon, **kwargs):
 
     node_addon.attach_data(report_node._id, report)
 
-
     return {
         'id': report_node._id,
         'url': report_node.url,
@@ -97,5 +98,22 @@ def create_report(node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('app', 'node')
-def act_as_application(node_addon, tid, **kwargs):
-    target_node = Node.load(tid)
+def act_as_application(node_addon, route, **kwargs):
+    route = route.split('/')
+
+    try:
+        route[0] = Guid.load(route[0]).referent.deep_url[1:-1]
+    except ValueError:
+        pass
+
+    proxied_action = '/api/v1/{}/'.format('/'.join(route))
+
+    match = app.url_map.bind('').match(proxied_action, method=request.method)
+
+    if match[0] == 'JSONRenderer__resolve_guid':
+        raise HTTPError(http.NOT_FOUND)
+
+    match[1].update({
+        'auth': Auth(node_addon.system_user)
+    })
+    return app.view_functions[match[0]](**match[1])
