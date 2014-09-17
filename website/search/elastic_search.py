@@ -194,6 +194,9 @@ def update_node(node, index='website'):
         elastic_document_id = node._id
         parent_id = None
         category = 'registration' if node.is_registration else category
+    elif category == 'report':
+        elastic_document_id = node._id
+        parent_id = node.parent_id
     else:
         try:
             elastic_document_id = node._id
@@ -202,6 +205,7 @@ def update_node(node, index='website'):
         except IndexError:
             # Skip orphaned components
             return
+
     if node.is_deleted or not node.is_public:
         delete_doc(elastic_document_id, node)
     else:
@@ -210,7 +214,7 @@ def update_node(node, index='website'):
             'contributors': [
                 x.fullname for x in node.visible_contributors
                 if x is not None
-                and x.is_active()
+                and (x.is_active() or category == 'report')
             ],
             'contributors_url': [
                 x.profile_url for x in node.visible_contributors
