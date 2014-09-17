@@ -45,10 +45,10 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/app/<tid>/<path:route>/',
-                '/project/<pid>/node/<nid>/app/<tid>/<path:route>/'
+                '/project/<pid>/app/<path:route>/',
+                '/project/<pid>/node/<nid>/app/<path:route>/'
             ],
-            'post',
+            ['post', 'put', 'get', 'delete'],
             views.crud.act_as_application,
             json_renderer
         ),
