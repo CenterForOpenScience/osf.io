@@ -14,13 +14,13 @@
             <%include file="projectGridTemplates.html"/>
 
             <div class="hgrid" id="project-grid"></div>
-            <img src="/static/img/hgrid/folder.png">Folder
-            <img src="/static/img/hgrid/smart-folder.png">Smart Folder
-            <img src="/static/img/hgrid/project.png">Project
-            <img src="/static/img/hgrid/reg-project.png">Registration
-            <img src="/static/img/hgrid/component.png">Component
-            <img src="/static/img/hgrid/reg-component.png">Registered Component
-            <img src="/static/img/hgrid/pointer.png">Link
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/folder.png">Folder</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/smart-folder.png">Smart Folder</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/project.png">Project</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/reg-project.png">Registration</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/component.png">Component</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/reg-component.png">Registered Component</span>
+            <span class = 'organizer-legend'><img src="/static/img/hgrid/pointer.png">Link</span>
 
 
         </div>

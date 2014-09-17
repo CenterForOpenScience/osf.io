@@ -165,6 +165,10 @@ input.typeahead{
 
 }
 
+.organizer-legend {
+    display: inline-block;
+}
+
 /* Typeahead scaffolding */
 /* ----------- */
 
