@@ -68,13 +68,12 @@ class Guid(StoredObject):
     def __getitem__(self, app):
         metadata = Metadata.load(self.metastore.get(app.namespace))
 
-        if metadata:
-            return metadata
+        if not metadata:
+            metadata = Metadata(app=app, guid=self._id)
+            metadata.save()
+            self.metastore[app.namespace] = metadata._id
+            self.save()
 
-        metadata = Metadata(app=app, guid=self._id)
-        metadata.save()
-        self.metastore[app.namespace] = metadata._id
-        self.save()
         return metadata
 
     def __repr__(self):

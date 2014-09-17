@@ -23,10 +23,24 @@
         self.customQuery = ko.observable('');
 
         self.createCustomRoute = function() {
-            $.osf.postJSON(self.url, {route: self.customUrl(),  query: self.customQuery()}, function(resp) {
-                self.customRoutes.push({url: self.customUrl(),  query: self.customQuery()});
-                self.customUrl('');
-                self.customQuery('');
+            var route = {
+                route: self.customUrl(),
+                query: self.customQuery()
+            };
+            $.ajax({
+                url: self.url,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(route),
+                success: function() {
+                    route.url = self.url + route.route;
+                    self.customRoutes.push(route);
+                    self.customUrl('');
+                    self.customQuery('');
+                },
+                error: function() {
+                    self.message('Failed to create custom route.');
+                }
             });
         };
 

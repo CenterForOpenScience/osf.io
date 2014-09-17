@@ -19,19 +19,7 @@ web_routes = {
             views.web.application_page,
             OsfWebRenderer('../addons/app/templates/app_page.mako'),
         ),
-
-
-    #     ##### Download file #####
-    #     Rule(
-    #         [
-    #             '/project/<pid>/app/files/<path:path>/download/',
-    #             '/project/<pid>/node/<nid>/app/files/<path:path>/download/',
-    #         ],
-    #         'get',
-    #         views.crud.app_download,
-    #         notemplate,
-    #     ),
-    ],
+    ]
 }
 
 # JSON endpoints
@@ -54,18 +42,16 @@ api_routes = {
             'post',
             views.crud.create_report,
             json_renderer
-        )
-
-    ],
-
-    ## Your routes here
-
-    'prefix': '/api/v1'
-}
-
-
-custom_routing_routes = {
-    'rules': [
+        ),
+        Rule(
+            [
+                '/project/<pid>/app/<path:route>/',
+                '/project/<pid>/node/<nid>/app/<path:route>/'
+            ],
+            ['post', 'put', 'get', 'delete'],
+            views.crud.act_as_application,
+            json_renderer
+        ),
         Rule(
             ['/project/<pid>/app/',
              '/project/<pid>/node/<nid>/app/'],
@@ -73,39 +59,46 @@ custom_routing_routes = {
             views.crud.query_app,
             json_renderer
         ),
+    ],
+    'prefix': '/api/v1'
+}
+
+
+custom_routing_routes = {
+    'rules': [
         Rule(
             ['/project/<pid>/app/routes/',
              '/project/<pid>/node/<nid>/app/routes/'],
             'get',
-            views.crud.list_custom_routes,
+            views.crud.customroutes.list_custom_routes,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/routes/',
              '/project/<pid>/node/<nid>/app/routes/'],
             'post',
-            views.crud.create_route,
+            views.crud.customroutes.create_route,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/routes/<path:route>/',
              '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'get',
-            views.crud.resolve_route,
+            views.crud.customroutes.resolve_route,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/routes/<path:route>/',
              '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'put',
-            views.crud.update_route,
+            views.crud.customroutes.update_route,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/routes/<path:route>/',
              '/project/<pid>/node/<nid>/app/routes/<path:route>/'],
             'delete',
-            views.crud.delete_route,
+            views.crud.customroutes.delete_route,
             json_renderer
         ),
     ],
@@ -118,21 +111,21 @@ metadata_routes = {
             ['/project/<pid>/app/<guid>/',
              '/project/<pid>/node/<nid>/app/<guid>/'],
             'get',
-            views.crud.get_metadata,
+            views.crud.metadata.get_metadata,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/<guid>/',
              '/project/<pid>/node/<nid>/app/<guid>/'],
             ['put', 'post'],
-            views.crud.add_metadata,
+            views.crud.metadata.add_metadata,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/app/<guid>/',
              '/project/<pid>/node/<nid>/app/<guid>/'],
             'delete',
-            views.crud.delete_metadata,
+            views.crud.metadata.delete_metadata,
             json_renderer
         ),
     ],

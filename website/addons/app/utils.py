@@ -1,33 +1,36 @@
 # -*- coding: utf-8 -*-
 """Utility functions for the Application add-on.
 """
+from website.project import new_node, Node
+from website.search.search import search
 
-def serialize_urls(node_settings):
-    node = node_settings.owner
-    urls = {
-        'config': node.api_url_for('ctmdv_config_put'),
+def find_or_create_from_report(report, app):
+    search_map = {
+        'doi': ['id', 'doi'],
+        'title': ['title']
     }
-    return urls
+    # @chrisseto TODO: Find a better way to do this
+    # The parent projects need to be marked, currently
+    # this could be overwritten
+    search_string = 'is_project:true;'
+
+    for key, val in search_map.items():
+        tmp = report
+        for _key in val:
+            tmp = tmp[_key]
+
+        search_string += '{}:{};'.format(key, tmp)
+        ret = search(search_string, _type=app.namespace, index='metadata')
+
+        if ret['hits']['total'] == 1:
+            return Node.load(ret['hits']['hits'][0]['_source']['guid'])
+        elif ret['hits']['total'] == 0:
+            break
 
 
-def serialize_settings(node_settings, current_user):
-    """
-    View helper that returns a dictionary representation of a AppNodeSettings record. Provides the return value for the app config endpoints.
-    """
-    user_settings = node_settings.user_settings
-    user_is_owner = user_settings is not None and (
-        user_settings.owner._primary_key == current_user._primary_key
-    )
-    current_user_settings = current_user.get_addon('app')
-    rv = {
-        'nodeHasAuth': node_settings.has_auth,
-        'userIsOwner': user_is_owner,
-        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'urls': serialize_urls(node_settings)
-    }
-    if node_settings.has_auth:
-    # Add owner's profile URL
-        result['urls']['owner'] = web_url_for('profile_view_id',
-                                               uid=user_settings.owner._primary_key)
-        result['ownerName'] = user_settings.owner.fullname
-    return rv
+    resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
+    resource.set_privacy('public')
+    resource.save()
+    app.attach_data(resource._id, {'is_project': 'true'})
+    return resource
+

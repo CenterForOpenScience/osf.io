@@ -10,7 +10,8 @@
 
     % if sentry_dsn_js:
     <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
-    <script type="">
+    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
+    <script>
         Raven.config('${ sentry_dsn_js }', {}).install();
     </script>
     % endif

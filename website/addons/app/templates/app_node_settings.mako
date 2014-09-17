@@ -39,6 +39,6 @@
 
 <script>
     $script('/static/addons/app/appNodeConfig.js', function() {
-        AppNodeConfig('#appScope', '${'/api/v1/%s/app/q/' % node['id']}');
+        AppNodeConfig('#appScope', '${node['api_url'] + 'app/routes/'}');
     });
 </script>

@@ -659,8 +659,8 @@ class TestProjectViews(OsfTestCase):
     def test_fork_private_project_non_contributor(self):
         url = self.project.api_url_for('node_fork_page')
         non_contributor = AuthUserFactory()
-        res = self.app.post_json(url, {}, 
-                                 auth=non_contributor.auth, 
+        res = self.app.post_json(url, {},
+                                 auth=non_contributor.auth,
                                  expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
@@ -2357,6 +2357,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
 
 if __name__ == '__main__':
     unittest.main()
