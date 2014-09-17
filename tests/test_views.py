@@ -2138,6 +2138,7 @@ class TestTagViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
+    @unittest.skip('Tags endpoint disabled for now.')
     def test_tag_get_returns_200(self):
         url = web_url_for('project_tag', tag='foo')
         res = self.app.get(url)
