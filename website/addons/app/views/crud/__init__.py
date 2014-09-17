@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 
 from framework.auth import Auth
 from framework.flask import app
@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 from framework.guid.model import Guid
 
 from website.search.search import search
-from website.project import new_node, Node
+from website.project import new_node
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon, must_have_permission,
@@ -31,7 +31,7 @@ def query_app(node_addon, **kwargs):
 
     ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
     return {
-        'results': [ blob['_source'] for blob in ret['hits']['hits']],
+        'results': [blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
     }
 
@@ -48,7 +48,6 @@ def create_application_project(node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     node = new_node('project', request.json['title'], node_addon.system_user, request.json.get('description'))
-    node.system_tags.append('application_created')
     node.set_privacy('public', auth=Auth(node_addon.system_user))
 
     return {
@@ -103,7 +102,7 @@ def act_as_application(node_addon, route, **kwargs):
 
     try:
         route[0] = Guid.load(route[0]).referent.deep_url[1:-1]
-    except ValueError:
+    except AttributeError:
         pass
 
     proxied_action = '/api/v1/{}/'.format('/'.join(route))
