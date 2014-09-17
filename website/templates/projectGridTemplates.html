@@ -13,7 +13,7 @@
               <form action="">
               <fieldset class="project-detail-fields">
                 <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}" autofocus>
-                <input type="submit" class = "renameNodeBtn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                <input type="submit" class = "rename-node-btn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
                 <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
               </fieldset>
               </form>
@@ -28,10 +28,10 @@
         {{#if theItem.isFolder}}
         <div class = "organize-project-controls">
             <div id = "buttons{{theItem.node_id}}">
-            <div class = "organizeBtn btn btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
-            <div id="add-folder-{{theItem.node_id}}" class = "organizeBtn btn btn-default">New Folder</div>
+            <div class = "orgnaize-btn btn btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
+            <div id="add-folder-{{theItem.node_id}}" class = "orgnaize-btn btn btn-default">New Folder</div>
                 {{#unless theItem.isDashboard}}
-                    <div class = "organizeBtn btn btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
+                    <div class = "orgnaize-btn btn btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
                 {{/unless}}
             </div>
             <div id="findNode{{theItem.node_id}}">
@@ -63,7 +63,7 @@
                 {{#unless parentIsSmartFolder}}
                     <div class = "organize-project-controls">
                         <div id = "buttons{{theItem.node_id}}">
-                            <div class="organizeBtn btn btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
+                            <div class="orgnaize-btn btn btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
                         </div>
                     </div>
                 {{/unless}}
@@ -77,7 +77,7 @@
     <div class="project-detail-box" id="ptd-multi">
         <span class="title">Selection of {{ itemsCount }} items.</span>
         <div class = "project-detail-content">
-            <p><div class="organizeBtn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
+            <p><div class="orgnaize-btn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
         </div>
     </div>
 </script>

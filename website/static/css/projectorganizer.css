@@ -146,7 +146,7 @@ div.organize-project-controls {
     margin-top: 10px;
 }
 
-.organize-project-controls .organizeBtn.btn.btn-default {
+.organize-project-controls .organize-btn.btn.btn-default {
     display: block;
     margin-right: 10px;
     float: left;
