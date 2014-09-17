@@ -3,7 +3,7 @@ import logging
 from email.mime.text import MIMEText
 
 from framework.tasks import celery
-from website import settings  # TODO: Use framework's config module instead
+from website import settings
 
 logger = logging.getLogger(__name__)
 

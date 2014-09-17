@@ -545,7 +545,7 @@ def claim_user_form(**kwargs):
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
-    user = get_user(id=uid)  # The unregistered user
+    user = User.load(uid)  # The unregistered user
     # user ID is invalid. Unregistered user is not in database
     if not user:
         raise HTTPError(http.BAD_REQUEST)

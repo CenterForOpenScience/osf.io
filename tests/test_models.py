@@ -44,6 +44,7 @@ from tests.factories import (
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
     AuthUserFactory
 )
+from tests.test_features import requires_piwik
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -364,7 +365,7 @@ class TestUser(OsfTestCase):
         assert_equal(self.user.gravatar_url, expected)
 
     def test_activity_points(self):
-        assert_equal(self.user.activity_points,
+        assert_equal(self.user.get_activity_points(db=self.db),
                     get_total_activity_count(self.user._primary_key))
 
     def test_serialize_user(self):
@@ -399,7 +400,6 @@ class TestUser(OsfTestCase):
         assert_equal(d['gravatar_url'], gravatar)
         assert_equal(d['absolute_url'], user.absolute_url)
         assert_equal(d['date_registered'], user.date_registered.strftime('%Y-%m-%d'))
-        assert_equal(d['activity_points'], user.activity_points)
         assert_equal(d['is_merged'], user.is_merged)
         assert_equal(d['merged_by']['url'], user.merged_by.url)
         assert_equal(d['merged_by']['absolute_url'], user.merged_by.absolute_url)
@@ -1881,6 +1881,14 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.files_current, {})
         assert_equal(new.files_versions, {})
 
+    @requires_piwik
+    def test_template_piwik_site_id_not_copied(self):
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_not_equal(new.piwik_site_id, self.project.piwik_site_id)
+        assert_true(new.piwik_site_id is not None)
+
     def test_template_wiki_pages_not_copied(self):
         self.project.update_node_wiki(
             'template', 'lol',
@@ -2112,8 +2120,11 @@ class TestForkNode(OsfTestCase):
         )
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
+        fork = None
         # New user forks the project
         fork = self.project.fork_node(user2_auth)
+        #except Exception:
+        #    pass
 
         # fork correct children
         assert_equal(len(fork.nodes), 2)
@@ -2134,8 +2145,8 @@ class TestForkNode(OsfTestCase):
     def test_cannot_fork_private_node(self):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        fork = self.project.fork_node(user2_auth)
-        assert_false(fork)
+        with assert_raises(PermissionsError):
+            self.project.fork_node(user2_auth)
 
     def test_can_fork_public_node(self):
         self.project.set_privacy('public')

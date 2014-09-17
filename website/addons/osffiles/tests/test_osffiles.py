@@ -10,7 +10,7 @@ from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website import settings
 from website.project.views.file import prepare_file
 
-from website.addons.osffiles.model import OsfGuidFile
+from website.addons.osffiles.model import OsfGuidFile, NodeFile
 from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
 from website.addons.osffiles.exceptions import FileNotFoundError
 
@@ -219,6 +219,13 @@ class TestFilesViews(OsfTestCase):
             OsfGuidFile.find().count(),
             guid_count + 1
         )
+
+    def test_guid_url_returns_404(self):
+        f = NodeFile()
+        f.save()
+        url = '/{}/'.format(f._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 def make_file_like(name='file', content='data'):
     sio = StringIO(content)
