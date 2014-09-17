@@ -7,12 +7,8 @@ from flask import redirect, send_from_directory
 from framework import status
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       xml_renderer,
-                       render_mako_string)
 from framework.routing import (
-    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string, xml_renderer
 )
 from framework.auth import views as auth_views
 from framework.auth import get_current_user

@@ -5,7 +5,7 @@ import logging
 
 from website.publishers import rss
 
-from framework import request
+from framework.flask import request
 
 logger = logging.getLogger(__name__)
 
