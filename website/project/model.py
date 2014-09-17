@@ -1364,8 +1364,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        # Recursively fork child nodes 
-        for node_contained in original.nodes:            
+        # Recursively fork child nodes
+        for node_contained in original.nodes:
             forked_node = None
             try: # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
