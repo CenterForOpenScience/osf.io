@@ -1,8 +1,10 @@
-<div class="navbar-outer navbar-collapse" style="text-align: center">
+<div class="nav" style="display: block">
 
-    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block;">
-        <ul class="nav navbar-nav">
-            <li><a href="${node['url']}wiki/${pageName}">View</a></li>
+    <nav class="navbar navbar-default navbar-collapse">
+
+        <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
+
+        <li><a href="${node['url']}wiki/${pageName}">View</a></li>
             % if user['can_edit']:
                 <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
             % else:

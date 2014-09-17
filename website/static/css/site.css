@@ -1383,6 +1383,12 @@ h1.unavailable {
     margin-bottom: 0;
   }
 }
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
   .osf-sidenav.affix-bottom,

@@ -93,7 +93,7 @@ def _get_wiki_versions(node, wid, anonymous=False):
 @must_be_valid_project # returns project
 @must_be_contributor_or_public # returns user, project
 @must_have_addon('wiki', 'node')
-def project_wiki_compare(auth, **kwargs):
+def project_wiki_compare(auth, compare_id, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = kwargs['wid']
 
@@ -104,7 +104,6 @@ def project_wiki_compare(auth, **kwargs):
     if not wiki_page:
         wiki_page = NodeWikiPage()
 
-    compare_id = kwargs['compare_id']
     comparison_page = node.get_wiki_page(wid, compare_id)
     if comparison_page:
         current = wiki_page.content
@@ -116,7 +115,7 @@ def project_wiki_compare(auth, **kwargs):
             'pageName': wid,
             'wiki_content': content,
             'wiki_id': wiki_page._primary_key if wiki_page else None,
-            'versions': _get_wiki_versions(node, wid),
+            'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
             'is_edit': True,
             'version': wiki_page.version,
@@ -131,25 +130,7 @@ def project_wiki_compare(auth, **kwargs):
         }
         rv.update(_view_project(node, auth, primary=True))
         return rv
-    if wiki_page:
-        compare_id = kwargs['compare_id']
-        comparison_page = node.get_wiki_page(wid, compare_id)
-        if comparison_page:
-            current = wiki_page.content
-            comparison = comparison_page.content
-            sm = difflib.SequenceMatcher(None, comparison, current)
-            content = show_diff(sm)
-            content = content.replace('\n', '<br />')
-            rv = {
-                'pageName': wid,
-                'wiki_content': content,
-                'versions': _get_wiki_versions(node, wid, anonymous),
-                'is_current': True,
-                'is_edit': True,
-                'version': wiki_page.version,
-            }
-            rv.update(_view_project(node, auth, primary=True))
-            return rv
+
     raise HTTPError(http.NOT_FOUND)
 
 
@@ -184,7 +165,6 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'url': child.web_url_for('project_wiki_page', wid=HOME),
             'pages': sorted(child.wiki_pages_current.keys()) if child.wiki_pages_current else [],
             'url': child.web_url_for('project_wiki_page', wid=HOME),
             'is_pointer': not child.primary,
@@ -364,9 +344,9 @@ def project_wiki_rename(**kwargs):
 @must_have_permission('write') # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_delete(auth, **kwargs):
+def project_wiki_delete(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    page = NodeWikiPage.load(kwargs['wid'])
+    page = NodeWikiPage.load(wid)
     node.delete_node_wiki(node, page, auth)
     node.save()
     return {}
