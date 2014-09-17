@@ -1,6 +1,9 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Contributors</%def>
 
+<%include file="project/modal_generate_private_link.mako"/>
+<%include file="project/modal_add_contributor.mako"/>
+
 <div class="row">
     <div class="col-md-12">
 
@@ -216,12 +219,31 @@
     <% import json %>
 
     <script type="text/javascript">
+
+    $script(['/static/js/contribAdder.js'], 'contribAdder');
+
+    $('body').on('nodeLoad', function(event, data) {
+        // If user is a contributor, initialize the contributor modal
+        // controller
+        if (data.user.can_edit) {
+            $script.ready('contribAdder', function() {
+                var contribAdder = new ContribAdder(
+                    '#addContributors',
+                    data.node.title,
+                    data.parent_node.id,
+                    data.parent_node.title
+                );
+            });
+        }
+        });
+
     $script(['/static/js/contribManager.js'], function() {
         var contributors = ${json.dumps(contributors)};
         var user = ${json.dumps(user)};
         var isRegistration = ${json.dumps(node['is_registration'])};
         var manager = new ContribManager('#manageContributors', contributors, user, isRegistration);
     });
+
     % if 'admin' in user['permissions']:
         $script(['/static/js/privateLinkManager.js',
                  '/static/js/privateLinkTable.js']);
