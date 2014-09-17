@@ -258,7 +258,11 @@ class NodeProjectCollector(object):
         modified_delta = delta_date(node.date_modified)
         date_modified = node.date_modified.isoformat()
         contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
-        modified_by = node.logs[-1].user.family_name
+        try:
+            user = node.logs[-1].user
+            modified_by = user.family_name
+        except AttributeError:
+            modified_by = ''
         # test_children = self._collect_addons(node)
         child_nodes = node.nodes
         readable_children = []

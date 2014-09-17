@@ -389,7 +389,11 @@
             if (row.modifiedDelta === 0) {
                 return '';
             }
-            return moment.utc(row.dateModified).fromNow() + ', ' + row.modifiedBy.toString();
+            var returnString = moment.utc(row.dateModified).fromNow()
+            if (row.modifiedBy !== '') {
+                returnString +=  ', ' + row.modifiedBy.toString();
+            }
+            return returnString
         },
         folderView: function (row) {
             if (row.modifiedDelta === 0) {
