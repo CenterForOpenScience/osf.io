@@ -176,8 +176,6 @@ def process_project_search_results(results, **kwargs):
             authors_html += '<a href="%s">%s</a>' % (a.url, a.fullname)
             authors_html += author['separator'] + ' '
         authors_html += ' ' + authors['others_count']
-        if authors['others_count']:
-            authors_html += ' other' + authors['others_suffix']
 
         out.append({
             'id': project._id,
