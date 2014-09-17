@@ -177,7 +177,7 @@ def _build_query(raw_query, start, size):
             }
         },
         'from': start,
-        'size': size,
+        'size': 10,
     }
 
     return query, raw_query
@@ -226,6 +226,7 @@ def update_node(node, index='website'):
             'registeredproject': node.is_registration,
             'wikis': {},
             'parent_id': parent_id,
+            'iso_timestamp': node.date_created,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         for wiki in [
@@ -554,3 +555,56 @@ def _strings_to_types(mapping):
             mapping[key] = _strings_to_types(val)
 
     return mapping
+@requires_search
+def get_recent_documents(raw_query='', start=0, size=10):
+
+    query = _recent_document_query(raw_query, start, size)
+    raw_results = elastic.search(query, index='website', doc_type='project')
+    results = [hit['_source'] for hit in raw_results['hits']['hits']]
+    count = raw_results['hits']['total']
+
+    return {'results': results, 'count': count}
+
+
+def _recent_document_query(raw_query, start=0, size=10):
+    inner_query = {}
+    if not raw_query or ':' not in raw_query:
+        inner_query = {'match_all': {}} if not raw_query else {'match': {'_all': raw_query}}
+    else:
+        items = raw_query.split(';')
+        filters = []
+        for item in items:
+            item = item.split(':')
+            if len(item) == 1:
+                item = ['_all', item[0]]
+
+            filters.append({
+                "query": {
+                    'match': {
+                        item[0]: {
+                            'query': item[1],
+                            'operator': 'and',
+                            'type': 'phrase',
+                        }
+                    }
+                }
+            })
+
+        inner_query = {
+            'filtered': {
+                'filter': {
+                    'and': filters
+                },
+            },
+        }
+
+    return {
+        'sort': [{
+            'iso_timestamp': {
+                'order': 'desc'
+            }
+        }],
+        'query': inner_query,
+        'from': start,
+        'size': size
+    }

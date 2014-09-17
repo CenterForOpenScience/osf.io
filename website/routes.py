@@ -8,14 +8,16 @@ from framework import status
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
 from framework.routing import (
-    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string, xml_renderer
 )
 from framework.auth import views as auth_views
+from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
 from website.addons.base import views as addon_views
 from website.search import views as search_views
+from website.publishers import views as rss_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -332,6 +334,8 @@ def make_url_map(app):
         Rule([
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+
+        Rule('/rss/', 'get', rss_views.recent_rss, xml_renderer),
 
     ])
 

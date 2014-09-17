@@ -56,3 +56,8 @@ def search_contributor(query, exclude=None, current_user=None):
 @requires_search
 def get_mapping(index, _type):
     search_engine.get_mapping(index, _type)
+
+
+@requires_search
+def get_recent_documents(query='', start=0, size=10):
+    return search_engine.get_recent_documents(query, start, size)
