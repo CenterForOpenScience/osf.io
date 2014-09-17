@@ -602,6 +602,8 @@
                     var children;
                     $.getJSON(getChildrenURL, function (data) {
                         children = data;
+                    }).fail(function (jqxhr, textStatus, errorThrown){
+                        bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
                     });
                 }
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
