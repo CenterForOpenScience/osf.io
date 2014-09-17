@@ -123,11 +123,11 @@ def find_dashboard(user):
 
 
 @must_be_logged_in
-def get_dashboard(nid=None, **kwargs):
-    user = kwargs['auth'].user
+def get_dashboard(auth, nid=None, **kwargs):
+    user = auth.user
     if nid is None:
         node = find_dashboard(user)
-        dashboard_projects = [rubeus.to_project_root(node, **kwargs)]
+        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
         return_value = {'data': dashboard_projects}
     elif nid == ALL_MY_PROJECTS_ID:
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
@@ -135,14 +135,14 @@ def get_dashboard(nid=None, **kwargs):
         return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
     else:
         node = Node.load(nid)
-        dashboard_projects = rubeus.to_project_hgrid(node, **kwargs)
+        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
         return_value = {'data': dashboard_projects}
     return return_value
 
 @must_be_logged_in
-def get_all_projects_smart_folder(**kwargs):
+def get_all_projects_smart_folder(auth, **kwargs):
 
-    user = kwargs['auth'].user
+    user = auth.user
 
     contributed = user.node__contributed
 
@@ -166,14 +166,14 @@ def get_all_projects_smart_folder(**kwargs):
         Q('is_registration', 'eq', False)
     )
 
-    return_value = [rubeus.to_project_root(comp, **kwargs) for comp in comps]
-    return_value.extend([rubeus.to_project_root(node, **kwargs) for node in nodes])
+    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
-def get_all_registrations_smart_folder(**kwargs):
+def get_all_registrations_smart_folder(auth, **kwargs):
 
-    user = kwargs['auth'].user
+    user = auth.user
     contributed = user.node__contributed
 
     nodes = contributed.find(
@@ -196,8 +196,8 @@ def get_all_registrations_smart_folder(**kwargs):
         Q('is_registration', 'eq', True)
     )
 
-    return_value = [rubeus.to_project_root(comp, **kwargs) for comp in comps]
-    return_value.extend([rubeus.to_project_root(node, **kwargs) for node in nodes])
+    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
