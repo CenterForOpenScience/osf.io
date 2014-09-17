@@ -41,6 +41,7 @@ from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, RegistrationFactory,
+    ProjectWithAddonFactory
 )
 
 
@@ -658,8 +659,8 @@ class TestProjectViews(OsfTestCase):
     def test_fork_private_project_non_contributor(self):
         url = self.project.api_url_for('node_fork_page')
         non_contributor = AuthUserFactory()
-        res = self.app.post_json(url, {}, 
-                                 auth=non_contributor.auth, 
+        res = self.app.post_json(url, {},
+                                 auth=non_contributor.auth,
                                  expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
@@ -2338,6 +2339,17 @@ class TestProjectCreation(OsfTestCase):
         assert_true(node)
         assert_true(node.template_node, other_node)
 
+    def test_project_before_template_no_addons(self):
+        project = ProjectFactory()
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_equal(res.json['prompts'], [])
+
+    def test_project_before_template_with_addons(self):
+        project = ProjectWithAddonFactory(addon='github')
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_in('GitHub', res.json['prompts'])
+
+
 class TestUnconfirmedUserViews(OsfTestCase):
 
     def test_can_view_profile(self):
@@ -2345,6 +2357,7 @@ class TestUnconfirmedUserViews(OsfTestCase):
         url = web_url_for('profile_view_id', uid=user._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
+
 
 if __name__ == '__main__':
     unittest.main()

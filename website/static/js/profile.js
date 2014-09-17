@@ -28,13 +28,14 @@
                 return match[1];
             }
             return value;
-        }
+        };
     };
 
     var SerializeMixin = function() {};
 
+    /** Serialize to a JS Object. */
     SerializeMixin.prototype.serialize = function() {
-        return ko.toJSON(this);
+        return ko.toJS(this);
     };
 
     SerializeMixin.prototype.unserialize = function(data) {
@@ -63,11 +64,11 @@
         self.tracked = [];  // Define for each view model that inherits
 
         self.setOriginal = function() {
-            self.original(ko.toJSON(self.tracked));
+            self.original(ko.toJS(self.tracked));
         };
 
         self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
         });
 
         // Must be set after isValid is defined in inherited view models
@@ -161,7 +162,7 @@
 
     BaseViewModel.prototype.submit = function() {
         if (this.enableSubmit() === false) {
-            return
+            return;
         }
         $.osf.putJSON(
             this.urls.crud,
@@ -210,7 +211,7 @@
 
         self.impute = function() {
             if (! self.hasFirst()) {
-                return
+                return;
             }
             $.ajax({
                 type: 'GET',
@@ -237,10 +238,10 @@
 
         var suffix = function(suffix) {
             var suffixLower = suffix.toLowerCase();
-            if ($.inArray(suffixLower, ['jr', 'sr']) != -1) {
+            if ($.inArray(suffixLower, ['jr', 'sr']) !== -1) {
                 suffix = suffix + '.';
                 suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) != -1) {
+            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) !== -1) {
                 suffix = suffix.toUpperCase();
             }
             return suffix;
@@ -428,15 +429,13 @@
             return new self.ContentModel(self).unserialize(each);
         }));
         // Ensure at least one item is visible
-        if (self.contents().length == 0) {
+        if (self.contents().length === 0) {
             self.addContent();
         }
     };
 
     ListViewModel.prototype.serialize = function() {
-        return JSON.stringify({
-            contents: ko.toJS(this.contents)
-        });
+        return {contents: ko.toJS(this.contents)};
     };
 
     ListViewModel.prototype.addContent = function() {

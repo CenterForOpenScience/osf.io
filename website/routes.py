@@ -37,6 +37,7 @@ def get_globals():
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
@@ -515,6 +516,8 @@ def make_url_map(app):
         Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
+
+        Rule('/project/new/<pid>/beforeTemplate/', 'get', project_views.node.project_before_template, json_renderer),
 
         Rule(
             [

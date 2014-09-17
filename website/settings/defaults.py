@@ -66,7 +66,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
-USE_TOKU_MX = True
+USE_TOKU_MX = False
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -175,6 +175,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+SENTRY_DSN_JS = None
 
 
 # TODO: Delete me after merging GitLab

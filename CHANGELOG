@@ -14,6 +14,12 @@ transactions.
 callbacks as arguments. They return jQuery XHR objects, so use the Promise
 interface instead.
 
+0.16.1 (2014-09-12)
+===================
+
+- Developers: Add JS error handling where it was missing.
+- Developers: Add code for TokuMX transactions, but disable it for now.
+
 0.16.0 (2014-09-04)
 ===================
 
