@@ -481,7 +481,6 @@
         var self = this;
         self.gridData = self.grid.grid.getData();
         self.myProjects = [];
-        self.publicProjects = [];
         self.grid.registerPlugin(draggable);
         // Expand/collapse All functions
         $('.pg-expand-all').click(function () {
