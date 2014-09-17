@@ -174,6 +174,7 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+SENTRY_DSN_JS = None
 
 
 # TODO: Delete me after merging GitLab

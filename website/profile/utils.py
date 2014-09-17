@@ -43,7 +43,7 @@ def serialize_user(user, node=None, full=False):
     }
     if node is not None:
         rv.update({
-            'visible': user in node.visible_contributors,
+            'visible': user._id in node.visible_contributor_ids,
             'permission': reduce_permissions(node.get_permissions(user)),
         })
     if user.is_registered:
@@ -69,9 +69,9 @@ def serialize_user(user, node=None, full=False):
             'number_public_projects': len(get_public_projects(user)),
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
-        ),
+                user, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_PROFILE
+            ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })

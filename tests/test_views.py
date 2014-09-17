@@ -2642,5 +2642,6 @@ class TestUnconfirmedUserViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+
 if __name__ == '__main__':
     unittest.main()
