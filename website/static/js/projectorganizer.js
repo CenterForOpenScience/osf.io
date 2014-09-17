@@ -597,13 +597,7 @@
                 var linkName;
                 var linkID;
                 var theItem = self.grid.grid.getDataItem(selectedRows[0]);
-                if (theItem.isFolder && !theItem.isSmartFolder) {
-                    var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
-                    var children;
-                    $.getJSON(getChildrenURL, function (data) {
-                        children = data;
-                    }).fail($.osf.handleJSONError);
-                }
+
                 var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
                 if (typeof theParentNode === 'undefined') {
                     theParentNode = theItem;
@@ -679,13 +673,19 @@
                         }
                     });
                     $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-                        if (children.indexOf(datum.node_id) === -1) {
-                            $('#add-link-' + theItem.node_id).removeAttr('disabled');
-                            linkName = datum.name;
-                            linkID = datum.node_id;
-                        } else {
-                            $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
-                        }
+                        var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
+                        var children;
+                        $.getJSON(getChildrenURL, function (data) {
+                            children = data;
+                            if (children.indexOf(datum.node_id) === -1) {
+                                $('#add-link-' + theItem.node_id).removeAttr('disabled');
+                                linkName = datum.name;
+                                linkID = datum.node_id;
+                            } else {
+                                $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
+                            }
+                        }).fail($.osf.handleJSONError);
+
                     });
                     $('#add-link-' + theItem.node_id).click(function () {
                         var url = '/api/v1/pointer/';
