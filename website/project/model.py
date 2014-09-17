@@ -77,7 +77,11 @@ def has_anonymous_link(node, auth):
         return False
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == view_only_link])
+    return any(
+        link.anonymous
+        for link in node.private_links_active
+        if link.key == view_only_link
+    )
 
 
 signals = blinker.Namespace()
