@@ -261,7 +261,7 @@ class TestAUser(OsfTestCase):
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
         # user2 creates a public project and adds no wiki content
-        project = ProjectFactory(creator=user2, is_Public=True)
+        project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki at all (since non-contributor and no content)

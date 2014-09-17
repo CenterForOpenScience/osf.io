@@ -516,7 +516,7 @@ def _render_addon(node, user):
         if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
             wiki_page = node.get_wiki_page('home')
             wiki_html = wiki_page.html(node)
-            if not wiki_page or len(wiki_html) == 0:
+            if not (wiki_page or wiki_html):
                 continue
 
         configs[addon.config.short_name] = addon.config.to_json()
@@ -542,7 +542,7 @@ def _view_project(node, auth, primary=False):
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
-    widgets, configs, js, css = _render_addon(node)
+    widgets, configs, js, css = _render_addon(node, user)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
