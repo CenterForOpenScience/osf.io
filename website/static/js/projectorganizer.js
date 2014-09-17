@@ -84,10 +84,7 @@
             if (typeof callback !== 'undefined') {
                 callback();
             }
-        });
-        postAction.fail(function (jqxhr, textStatus, errorThrown){
-                bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
-            });
+        }).fail($.osf.handleJSONError);
     }
 
     function reloadFolder(hgrid, theItem, theParentNode) {
@@ -763,7 +760,7 @@
                             var putAction = $.osf.putJSON(url, postData);
                             putAction.done(function () {
                                 reloadFolder(self.grid, theItem, theParentNode);
-                            });
+                            }).fail($.osf.handleJSONError);
 
                         });
                         return false;
@@ -793,7 +790,7 @@
                         var postAction = $.osf.postJSON(url, postData);
                         postAction.done(function () {
                                 reloadFolder(self.grid, theParentNode);
-                            });
+                            }).fail($.osf.handleJSONError);
                         return false;
                     });
                     $('.cancel-button-' + theItem.node_id).click(function() {
@@ -932,6 +929,11 @@
                 draggable.grid.grid.render();
                 self.options.success.call();
             },
+            fetchError: function(error) {
+                if($(".modal-dialog").length === 0) {
+                    bootbox.alert('Error: ' + error);
+                }
+            },
             getExpandState: function(folder) {
                 return folder.expand;
             },
@@ -951,7 +953,8 @@
                     postAction.done(function() {
                         item.expand = false;
                         draggable.grid.resetLoadedState(item);
-                    });
+                    }).fail($.osf.handleJSONError);
+
                 }else if(typeof event !== 'undefined') {
                     draggable.grid.resetLoadedState(item);
                 }
