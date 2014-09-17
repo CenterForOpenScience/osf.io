@@ -505,8 +505,8 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
-        # TODO: Add API endpoint for tags
-        Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # # TODO: Add API endpoint for tags
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
 
