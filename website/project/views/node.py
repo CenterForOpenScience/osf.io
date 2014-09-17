@@ -6,7 +6,6 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 from framework.flask import request
-from framework import push_errors_to_status, Q
 
 from framework import status
 from framework.mongo import StoredObject
@@ -531,12 +530,22 @@ def _render_addon(node, user):
     js = []
     css = []
 
+    addon_list = node.get_addon_names()
+    remove_wiki = False
+
     for addon in node.get_addons():
 
         if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
             wiki_page = node.get_wiki_page('home')
-            wiki_html = wiki_page.html(node)
-            if not (wiki_page or wiki_html):
+
+            # If the page doesn't exist, skip and remove from addon list
+            if wiki_page is None:
+                remove_wiki = True
+                continue
+
+            # If the page has no content, skip and remove from addon list
+            if not wiki_page.html(node):
+                remove_wiki = True
                 continue
 
         configs[addon.config.short_name] = addon.config.to_json()
@@ -546,7 +555,10 @@ def _render_addon(node, user):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    return widgets, configs, js, css
+    if remove_wiki:
+        addon_list.remove('wiki')
+
+    return widgets, configs, js, css, addon_list
 
 
 def _view_project(node, auth, primary=False):
@@ -562,7 +574,7 @@ def _view_project(node, auth, primary=False):
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
     recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
-    widgets, configs, js, css = _render_addon(node, user)
+    widgets, configs, js, css, addon_list = _render_addon(node, user)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -625,6 +637,7 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
+            'has_wiki_content': False,
 
         },
         'parent_node': {
@@ -650,7 +663,7 @@ def _view_project(node, auth, primary=False):
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': node.get_addon_names(),
+        'addons_enabled': addon_list,
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
