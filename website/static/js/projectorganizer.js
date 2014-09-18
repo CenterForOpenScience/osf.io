@@ -951,16 +951,19 @@
             },
             onCollapse: function(event, item) {
                 item.expand = false;
-                if(typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
+                if (typeof event !== 'undefined' && typeof item.apiURL !== 'undefined' && item.type !== 'pointer') {
                     var collapseUrl = item.apiURL + 'collapse/';
                     var postAction = $.osf.postJSON(collapseUrl, {});
                     postAction.done(function() {
                         item.expand = false;
-                        draggable.grid.resetLoadedState(item);
+                        if (item._node._load_status === HGrid.LOADING_FINISHED) {
+                            draggable.grid.resetLoadedState(item);
+                        }
                     }).fail($.osf.handleJSONError);
-
-                }else if(typeof event !== 'undefined') {
-                    draggable.grid.resetLoadedState(item);
+                } else if(typeof event !== 'undefined') {
+                    if (item._node._load_status === HGrid.LOADING_FINISHED) {
+                        draggable.grid.resetLoadedState(item);
+                    }
                 }
             },
 
