@@ -1446,7 +1446,6 @@ class TestPointerViews(OsfTestCase):
         project2 = ProjectFactory()
         project2.set_privacy('public')
         project2.save()
-        project2.reload()
 
         url = self.project.api_url_for('add_pointers')
 
@@ -1466,7 +1465,7 @@ class TestPointerViews(OsfTestCase):
         user2 = AuthUserFactory()
         self.project.add_contributor(user2)
         self.project.save()
-        self.project.reload()
+
         url = self.project.api_url_for('add_pointers')
         node_ids = [
             NodeFactory()._id
@@ -2315,7 +2314,6 @@ class TestForkViews(OsfTestCase):
     def test_fork_private_project_non_contributor(self):
         self.project.set_privacy("private")
         self.project.save()
-        self.project.reload()
 
         url = self.project.api_url_for('node_fork_page')
         non_contributor = AuthUserFactory()
@@ -2335,7 +2333,6 @@ class TestForkViews(OsfTestCase):
         self.project.set_privacy("private")
         self.project.add_contributor(contributor)
         self.project.save()
-        self.project.reload()
 
         url = self.project.api_url_for('node_fork_page')
         res = self.app.post_json(url, auth=contributor.auth)
