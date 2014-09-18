@@ -119,7 +119,7 @@ div.project-details {
     position: fixed;
     z-index: 9999999;
     display: none;
-    overflow: visible;
+    overflow: auto;
 
     padding: 1px;
     text-align: left;
