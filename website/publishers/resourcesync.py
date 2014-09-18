@@ -14,12 +14,12 @@ from resync.capability_list import CapabilityList
 
 @search.requires_search
 def gen_resourcelist(): 
-    ''' Right now this only returns the most recent 100 
-    osf projects, but could be modified if I knew better
-    how ... '''
+    ''' Returns a list of all projects in the current OSF as a
+        resourceSync XML Document'''
 
     raw_query = ''
     results = search.get_recent_documents(raw_query, start=0, size=100)
+    all_results = search.get_recent_documents(raw_query, start=0, size=results['count'])
 
     rl = ResourceList()
     # results is a dict with keys count, results
@@ -27,7 +27,7 @@ def gen_resourcelist():
 
     # import pdb; pdb.set_trace()
 
-    for result in results['results']:
+    for result in all_results['results']:
         url = settings.DOMAIN + result.get('url')[1:],
         resource = Resource(url)
         rl.add(resource)
