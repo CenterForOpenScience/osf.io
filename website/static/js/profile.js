@@ -18,7 +18,7 @@
         scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
         twitter: /twitter\.com\/(\w+)/i,
         linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
-        impactStory: /impactstory\.org\/(\w+)/i,
+        impactStory: /impactstory\.org\/([\w\.-]+)/i,
         github: /github\.com\/(\w+)/i,
     };
 
