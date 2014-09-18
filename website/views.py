@@ -155,11 +155,18 @@ def get_all_projects_smart_folder(auth, **kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
+    )
+
     comps = contributed.find(
         # components only
         Q('category', 'ne', 'project') &
         # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
@@ -185,11 +192,18 @@ def get_all_registrations_smart_folder(auth, **kwargs):
         Q('__backrefs.parent.node.nodes', 'eq', None)
     ).sort('-title')
 
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False)
+    )
+
     comps = contributed.find(
         # components only
         Q('category', 'ne', 'project') &
         # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
