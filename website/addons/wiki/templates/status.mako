@@ -21,7 +21,7 @@
 
 <script type="text/javascript">
     if($('#pageName').height() >= $('#wikiName').height()) {
-        $('#wikiName').html('<h4 class="long-wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h4>')
+        $('#wikiName').addClass('long-wiki-title');
     }
 </script>
 

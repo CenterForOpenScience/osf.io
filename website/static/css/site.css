@@ -970,6 +970,7 @@ h1.node-title, h1.node-parent-title {
 }
 
 .long-wiki-title {
+    font-size: 18px;
     line-height: 20px;
     border-bottom: none;
     margin-top: 0;
