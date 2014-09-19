@@ -262,7 +262,13 @@ def get_target_user(auth, uid=None):
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):
     if date:
-        return date.strftime(fmt)
+        try:
+            return date.strftime(fmt)
+        except ValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Year entered must be after 1900')
+            )
     return None
 
 

@@ -126,6 +126,24 @@
         message: 'Date must be greater than or equal to {0}.'
     };
 
+        ko.validation.rules['pyDate'] = {
+        validator: function (val) {
+            // Skip if values empty
+            var uwVal = ko.utils.unwrapObservable(val);
+            if (uwVal === null) {
+                return true;
+            }
+            // Skip if dates invalid
+            var dateVal = new Date(uwVal);
+            if (dateVal == 'Invalid Date') {
+                return true;
+            }
+            // Compare dates
+            return dateVal.getFullYear() >= 1900
+        },
+        message: 'Date must be greater than or equal to 1900.'
+    };
+
     ko.validation.rules['url'] = makeRegexValidator(
         new RegExp(
             '^(?:http|ftp)s?://' +

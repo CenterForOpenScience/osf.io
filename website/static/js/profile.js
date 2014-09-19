@@ -459,12 +459,14 @@
 
         self.start = ko.observable().extend({
             date: true,
-            asDate: true
+            asDate: true,
+            pyDate: true,
         });
         self.end = ko.observable().extend({
             date: true,
             asDate: true,
-            minDate: self.start
+            pyDate: true,
+            minDate: self.start,
         });
 
         var validated = ko.validatedObservable(self);
