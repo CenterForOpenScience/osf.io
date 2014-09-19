@@ -8,7 +8,7 @@ import sys
 import code
 import platform
 
-from invoke import task, run
+from invoke import task, run, Collection
 from invoke.exceptions import Failure
 
 from website import settings
@@ -460,3 +460,7 @@ def clear_sessions(months=1, dry_run=False):
 def clear_mfr_cache():
     run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
+
+import release_tasks
+namespace = Collection()
+namespace.add_collection(release_tasks, 'release')
