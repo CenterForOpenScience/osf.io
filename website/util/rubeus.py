@@ -257,7 +257,18 @@ class NodeProjectCollector(object):
         children = []
         modified_delta = delta_date(node.date_modified)
         date_modified = node.date_modified.isoformat()
-        contributors = [{'name': contributor.family_name, 'url': contributor.url} for contributor in node.contributors]
+        contributors = []
+        for contributor in node.contributors:
+            contributor_name = \
+                [
+                    contributor.family_name,
+                    contributor.given_name,
+                    contributor.fullname,
+                ]
+            contributors.append({
+                'name': next(name for name in contributor_name if name),
+                'url': contributor.url,
+            })
         try:
             user = node.logs[-1].user
             modified_by = user.family_name
