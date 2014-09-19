@@ -90,6 +90,36 @@ class TestWikiViews(OsfTestCase):
         assert_equal(new_wiki.content, 'new content')
 
 
+class TestWikiDelete(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiDelete, self).setUp()
+
+        self.project = ProjectFactory(is_public=True)
+        api_key = ApiKeyFactory()
+        self.project.creator.api_keys.append(api_key)
+        self.project.creator.save()
+        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
+        self.auth = ('test', api_key._primary_key)
+        self.project.update_node_wiki('Elephants', 'Hello Elephants', self.consolidate_auth)
+        self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
+        self.elephant_wiki = self.project.get_wiki_page('Elephants')
+        self.lion_wiki = self.project.get_wiki_page('Lions')
+        self.url = self.project.api_url_for(
+            'project_wiki_delete',
+            wid=self.elephant_wiki._id
+        )
+
+    def test_project_wiki_delete(self):
+        assert 'elephants' in self.project.wiki_pages_current
+        self.app.delete(
+            self.url,
+            auth=self.auth
+        )
+        self.project.reload()
+        assert 'elephants' not in self.project.wiki_pages_current
+
+
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
