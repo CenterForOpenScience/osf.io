@@ -918,7 +918,7 @@
                 enableCellNavigation: true,
                 multiSelect: true,
                 forceFitColumns: true,
-                autoEdit: false,
+                autoEdit: false
             },
             data: '/api/v1/dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
