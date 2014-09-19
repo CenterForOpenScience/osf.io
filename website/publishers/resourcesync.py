@@ -22,10 +22,6 @@ def gen_resourcelist():
     all_results = search.get_recent_documents(raw_query, start=0, size=results['count'])
 
     rl = ResourceList()
-    # results is a dict with keys count, results
-    # results['results'] is a list
-
-    # import pdb; pdb.set_trace()
 
     for result in all_results['results']:
         url = settings.DOMAIN + result.get('url')[1:],

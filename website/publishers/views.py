@@ -33,9 +33,7 @@ def recent_rss():
 
 
 def recent_resourcelist(): 
-    ''' Right now this only returns the most recent 100 
-    scrapi results, but could be modified if I knew better
-    how ... '''
+    ''' Returns a resourcelist with everything in it'''
 
     resourcelist = resourcesync.gen_resourcelist()
 
