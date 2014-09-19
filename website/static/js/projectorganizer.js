@@ -349,6 +349,11 @@
         }
     });
 
+    $(document).ready(function() {
+        document.oncontextmenu = function () {
+            return false;
+        };
+    });
     function addFormKeyBindings(nodeID){
         $('#ptd-'+nodeID).keyup(function (e){
             /*if(e.which == 13){ //return
