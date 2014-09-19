@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%def name="title()">${node['title']} Wiki (History)</%def>
 
 <div>
     <div class="col-md-9 wiki">
