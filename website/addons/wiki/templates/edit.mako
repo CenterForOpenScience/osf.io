@@ -3,7 +3,12 @@
 
 <div class="wiki">
     <div class="row">
-        <div class="col-md-9">
+        <div class="col-md-3">
+            <%include file="wiki/templates/nav.mako"/>
+            <%include file="wiki/templates/toc.mako"/>
+        </div>
+         <div class="col-md-9">
+                 <%include file="wiki/templates/status.mako/"/>
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
@@ -17,12 +22,6 @@
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
             </form>
-        </div>
-        <div class="col-md-3">
-            <div>
-                <%include file="wiki/templates/nav.mako" />
-                <%include file="wiki/templates/history.mako" />
-            </div>
         </div>
     </div><!-- end row -->
 </div><!-- end wiki -->
