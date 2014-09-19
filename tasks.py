@@ -465,7 +465,7 @@ def clear_mfr_cache():
 # Release tasks
 
 @task
-def hotfix(name=None, finish=False):
+def hotfix(name=None, finish=False, push=False):
     """Rename current hotfix branch to hotfix/<next-patch-version> and optionally
     finish hotfix.
     """
@@ -482,7 +482,11 @@ def hotfix(name=None, finish=False):
 
     run('git branch -m {}'.format(new_branch_name), echo=True)
     if finish:
-        run('git flow finish {}'.format(next_patch_version), echo=True)
+        run('git flow hotfix finish {}'.format(next_patch_version), echo=True)
+    if push:
+        run('git push origin master', echo=True)
+        run('git push origin develop', echo=True)
+
 
 # Adapted from bumpversion
 def latest_tag_info():
