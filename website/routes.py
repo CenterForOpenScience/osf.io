@@ -44,6 +44,7 @@ def get_globals():
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
+        'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,

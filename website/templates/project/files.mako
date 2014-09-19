@@ -4,7 +4,7 @@
 <div class="row">
 <div class="col-md-8">
     <div class='help-block'>
-        % if 'write' in user['permissions']:
+        % if 'write' in user['permissions'] and not disk_saving_mode:
             <p>To Upload: Drag files from your desktop into a folder below OR click an upload (<button class="btn btn-default btn-mini" disabled><i class="icon-upload"></i></button>) button.</p>
         % endif
     </div>
@@ -41,10 +41,14 @@ window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
 $script.ready(['rubeus'], function() {
-    var filebrowser = new Rubeus('#myGrid', {
+    var rubeusOpts = {
         data: nodeApiUrl + 'files/grid/',
         searchInput: '#fileSearch'
-    });
+    };
+    % if disk_saving_mode:
+    rubeusOpts.uploads = false;
+    % endif
+    var filebrowser = new Rubeus('#myGrid', rubeusOpts);
 });
 
 </script>
