@@ -39,13 +39,22 @@
 </div>
 % endif
 
-<div class="page-header">
-    <a href="#changeAvatarModal" data-toggle="modal">
-        <img id='profile-gravatar' src="${profile['gravatar_url']}"
-                 rel="tooltip" title="click to change avatar" />
-    </a>
-    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
-</div><!-- end-page-header -->
+% if user['is_profile']:
+    <div class="page-header">
+        <a href="#changeAvatarModal" data-toggle="modal">
+            <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                rel="tooltip" title="click to change avatar"/>
+        </a>
+        <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+    </div><!-- end-page-header -->
+% else:
+    <div class="page-header">
+        <a href="#changeAvatarModal" data-toggle="modal">
+            <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+        </a>
+        <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+    </div><!-- end-page-header -->
+% endif
 
 <div class="row">
 
