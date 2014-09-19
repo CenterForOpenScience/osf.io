@@ -187,6 +187,7 @@
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
+        $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
 </%def>

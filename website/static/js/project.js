@@ -182,7 +182,7 @@
                 pointerId: pointerId
             }),
             contentType: 'application/json',
-            dataType: 'json',
+            dataType: 'json'
         }).done(function() {
             pointerElm.remove();
         }).fail(

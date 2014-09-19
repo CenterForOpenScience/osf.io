@@ -40,9 +40,10 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, RegistrationFactory,
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory
 )
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -171,6 +172,39 @@ class TestProjectViews(OsfTestCase):
         assert_in('watched_count', data['node'])
         assert_in('registered_from_url', data['node'])
         # TODO: Test "parent" and "user" output
+
+    def test_api_get_folder_pointers(self):
+        dashboard = DashboardFactory(creator=self.user1)
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = dashboard.api_url_for("get_folder_pointers")
+        dashboard.add_pointer(project_one, auth=self.consolidate_auth1)
+        dashboard.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_in(project_one._id, pointers)
+        assert_in(project_two._id, pointers)
+        assert_equal(len(pointers), 2)
+
+    def test_api_get_folder_pointers_from_non_folder(self):
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = project_one.api_url_for("get_folder_pointers")
+        project_one.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_equal(len(pointers), 0)
+
+    def test_new_user_gets_dashboard_on_dashboard_path(self):
+        my_user = AuthUserFactory()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        assert_equal(dashboard.count(), 0)
+        url = api_url_for('get_dashboard')
+        self.app.get(url, auth=my_user.auth)
+        my_user.reload()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        assert_equal(dashboard.count(), 1)
+
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -1438,6 +1472,32 @@ class TestPointerViews(OsfTestCase):
         with assert_raises(AppError):
             self.app.post_json(url, {}, auth=self.user.auth)
 
+    def test_move_pointers(self):
+        project_two = ProjectFactory(creator=self.user)
+        url = api_url_for('move_pointers')
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+
+        assert_equal(len(self.project.nodes), 1)
+        assert_equal(len(project_two.nodes), 0)
+
+        user_auth = self.user.auth
+        move_request = \
+            {
+                'fromNodeId': self.project._id,
+                'toNodeId': project_two._id,
+                'pointerIds': [pointer.node._id],
+            }
+        self.app.post_json(
+            url,
+            move_request,
+            auth=user_auth,
+        ).maybe_follow()
+        self.project.reload()
+        project_two.reload()
+        assert_equal(len(self.project.nodes), 0)
+        assert_equal(len(project_two.nodes), 1)
+
     def test_remove_pointer(self):
         url = self.project.api_url + 'pointer/'
         node = NodeFactory()
@@ -2198,6 +2258,135 @@ class TestSearchViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
 
+class TestODMTitleSearch(OsfTestCase):
+    """ Docs from original method:
+    :arg term: The substring of the title.
+    :arg category: Category of the node.
+    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg includePublic: yes or no. Whether the projects listed should include public projects.
+    :arg includeContributed: yes or no. Whether the search should include projects the current user has
+        contributed to.
+    :arg ignoreNode: a list of nodes that should not be included in the search.
+    :return: a list of dictionaries of projects
+    """
+    def setUp(self):
+        super(TestODMTitleSearch, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, title="foo")
+        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
+        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
+        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
+        self.folder = FolderFactory(creator=self.user, title="quux")
+        self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
+        self.url = api_url_for('search_projects_by_title')
+
+    def test_search_projects_by_title(self):
+        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 2)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+
+
 class TestReorderComponents(OsfTestCase):
 
     def setUp(self):
@@ -2237,6 +2426,7 @@ class TestDashboardViews(OsfTestCase):
         super(TestDashboardViews, self).setUp()
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
+        self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with__are_accessible_from_dashboard(self):
@@ -2244,11 +2434,105 @@ class TestDashboardViews(OsfTestCase):
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
-
-        url = api_url_for('get_dashboard_nodes')
+        # Get the All My Projects smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
-        assert_equal(len(res.json['nodes']), 1)
+        assert_equal(len(res.json), 1)
+
+    def test_registered_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+        project.register_node(
+            None, Auth(self.creator), '', '',
+        )
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json), 1)
+
+    def test_untouched_node_is_collapsed(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_expand_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_collapse_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+
+        # Expand the folder
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+        # Collapse the folder
+        found_item = False
+        url = api_url_for('collapse', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_folder_new_post(self):
+        url = api_url_for('folder_new_post', nid=self.dashboard._id)
+        found_item = False
+
+        # Make the folder
+        title = 'New test folder'
+        payload = {'title': title, }
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'name'] == title:
+                found_item = True
+        assert_true(found_item, "Did not find the folder in the dashboard.")
 
 
 class TestForkViews(OsfTestCase):

@@ -42,7 +42,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory
+    AuthUserFactory, DashboardFactory, FolderFactory
 )
 from tests.test_features import requires_piwik
 
@@ -1187,6 +1187,31 @@ class TestNode(OsfTestCase):
         #todo Add file series of tests
         pass
 
+    def test_not_a_folder(self):
+        assert_equal(self.node.is_folder, False)
+
+    def test_not_a_dashboard(self):
+        assert_equal(self.node.is_dashboard, False)
+
+    def test_cannot_link_to_folder_more_than_once(self):
+        folder = FolderFactory(creator=self.user)
+        node_two = ProjectFactory(creator=self.user)
+        self.node.add_pointer(folder, auth=self.consolidate_auth)
+        with assert_raises(ValueError):
+            node_two.add_pointer(folder, auth=self.consolidate_auth)
+
+    def test_is_expanded_default_false_with_user(self):
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
+    def test_expand_sets_true_with_user(self):
+        self.node.expand(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), True)
+
+    def test_collapse_sets_false_with_user(self):
+        self.node.expand(user=self.user)
+        self.node.collapse(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
 
 class TestRemoveNode(OsfTestCase):
 
@@ -1238,6 +1263,51 @@ class TestRemoveNode(OsfTestCase):
 
         # target node shouldn't be deleted
         assert_false(target.is_deleted)
+
+
+class TestDashboard(OsfTestCase):
+
+    def setUp(self):
+        super(TestDashboard, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = DashboardFactory(creator=self.user)
+
+    def test_dashboard_is_dashboard(self):
+        assert_equal(self.project.is_dashboard, True)
+
+    def test_dashboard_is_folder(self):
+        assert_equal(self.project.is_folder, True)
+
+    def test_cannot_remove_dashboard(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.consolidate_auth)
+
+    def test_cannot_have_two_dashboards(self):
+        with assert_raises(NodeStateError):
+            DashboardFactory(creator=self.user)
+
+    def test_cannot_link_to_dashboard(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(ValueError):
+            new_node.add_pointer(self.project, auth=self.consolidate_auth)
+
+    def test_can_remove_empty_folder(self):
+        new_folder = FolderFactory(creator=self.user)
+        assert_equal(new_folder.is_folder, True)
+        new_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(new_folder.is_deleted)
+
+    def test_can_remove_folder_structure(self):
+        outer_folder = FolderFactory(creator=self.user)
+        assert_equal(outer_folder.is_folder, True)
+        inner_folder = FolderFactory(creator=self.user)
+        assert_equal(inner_folder.is_folder, True)
+        outer_folder.add_pointer(inner_folder, self.consolidate_auth)
+        outer_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(outer_folder.is_deleted)
+        assert_true(inner_folder.is_deleted)
 
 
 class TestAddonCallbacks(OsfTestCase):
