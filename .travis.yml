@@ -14,9 +14,6 @@ before_install:
     - sudo apt-get -y install tokumx
     - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i elasticsearch-1.2.1.deb && sudo service elasticsearch restart
 
-env:
-  - CMD="invoke test_osf"
-  - CMD="invoke test_addons"
 
 install:
     - cp website/settings/local-travis.py website/settings/local.py
@@ -28,7 +25,7 @@ install:
     - npm install -g bower
     - bower install
 
-script: $CMD
+script: invoke test_all
 
 cache:
   directories:
