@@ -180,7 +180,7 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        return self.repo(user, repo).contents(path.encode("utf-8", ref))
+        return self.repo(user, repo).contents(path.encode('utf-8'), ref)
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):

@@ -3,13 +3,13 @@
 import os
 import matplotlib.pyplot as plt
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
 from .utils import plot_dates, mkdirp
 
 
-link_collection = db['privatelink']
+link_collection = database['privatelink']
 
 FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'features')
 mkdirp(FIG_PATH)

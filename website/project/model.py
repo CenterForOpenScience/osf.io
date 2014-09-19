@@ -951,6 +951,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
+        new.piwik_site_id = None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1360,8 +1361,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
-        # Recursively fork child nodes 
-        for node_contained in original.nodes:            
+        # Recursively fork child nodes
+        for node_contained in original.nodes:
             forked_node = None
             try: # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')

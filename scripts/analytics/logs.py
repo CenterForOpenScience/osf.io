@@ -3,13 +3,13 @@
 import os
 import matplotlib.pyplot as plt
 
-from framework.mongo import db
+from framework.mongo import database
 from website import settings
 
 from .utils import plot_dates, mkdirp
 
 
-log_collection = db['nodelog']
+log_collection = database['nodelog']
 
 FIG_PATH = os.path.join(settings.ANALYTICS_PATH, 'figs', 'logs')
 mkdirp(FIG_PATH)
