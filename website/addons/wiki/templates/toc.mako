@@ -1,6 +1,6 @@
 <div class="osf-sidenav hidden-print" role="complementary">
 
-    <ul class="nav bs-sidenav navbar-default navbar navbar-collapse" style="margin: 0;">
+    <ul class="nav bs-sidenav" style="margin: 0;">
 
         <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>

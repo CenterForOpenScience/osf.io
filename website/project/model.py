@@ -524,7 +524,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('other', 'Other')
-        ])
+    ])
 
     _id = fields.StringField(primary=True)
 
@@ -1365,10 +1365,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Recursively fork child nodes
         for node_contained in original.nodes:
             forked_node = None
-            try: # Catch the potential PermissionsError above
+            try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass # If this excpetion is thrown omit the node from the result set
+                pass  # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1475,7 +1475,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                 schema, auth, template, data
+                schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
@@ -1504,9 +1504,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'tag':tag,
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
                 },
                 auth=auth,
                 save=False,
@@ -1755,7 +1755,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.files_current[file_name_key] = node_file._primary_key
 
         # Create a version history if necessary
-        if not file_name_key in self.files_versions:
+        if file_name_key not in self.files_versions:
             self.files_versions[file_name_key] = []
 
         # Add reference to the version history
@@ -2603,4 +2603,3 @@ class PrivateLink(StoredObject):
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
-
