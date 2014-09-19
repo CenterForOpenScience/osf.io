@@ -688,6 +688,10 @@
                         }).fail($.osf.handleJSONError);
 
                     });
+                    $('#close-' + theItem.node_id).click(function () {
+                        $('.project-details').hide();
+                        return false;
+                    });
                     $('#add-link-' + theItem.node_id).click(function () {
                         var url = '/api/v1/pointer/';
                         var postData = JSON.stringify(
@@ -844,6 +848,10 @@
                     $('#remove-links-multiple').click(function(){
                         deleteMultiplePointersFromFolder(self.grid, pointerIds, theParentNode);
                     });
+                    $('#close-multi-select').click(function () {
+                        $('.project-details').hide();
+                        return false;
+                    });
 
                 } else {
                     $('.project-details').hide();
@@ -905,7 +913,7 @@
                 enableCellNavigation: true,
                 multiSelect: true,
                 forceFitColumns: true,
-                autoEdit: false
+                autoEdit: false,
             },
             data: '/api/v1/dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
