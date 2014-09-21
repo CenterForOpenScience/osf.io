@@ -458,9 +458,13 @@
         var url = row.urls.fetch;
         var linkString = name;
         var extraClass = '';
-//        if (url != null) {
-//            linkString = '<a href='' + url + ''>' + name + '</a>';
-//        }
+        var nodeLink = '';
+        var nodeLinkEnd = '';
+        if (url != null) {
+            nodeLink = '<a href=' + url + '>';
+            nodeLinkEnd = '</a>'
+        }
+
 
         var type = row.type;
 
@@ -473,8 +477,8 @@
             regType = 'reg-';
             extraClass += ' registration';
         }
-        return "<img src='/static/img/hgrid/" + regType + type + ".png'><span class='project-"
-            + type + extraClass + "'>" + linkString + "</span>";
+        return nodeLink + "<span class='project-organizer-icon-" + regType + type + "'></span>" + nodeLinkEnd +
+            "<span class='project-" + type + extraClass + "'>" + linkString + "</span>";
     };
     ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
 

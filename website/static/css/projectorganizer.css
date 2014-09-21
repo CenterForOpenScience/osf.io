@@ -30,6 +30,105 @@ span.project-smart-folder.smart-folder{
     font-style: italic;
 }
 
+/* Project organizer icons */
+span.project-organizer-icon-folder {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/folder.png');
+}
+
+span.project-organizer-icon-smart-folder {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/smart-folder.png');
+}
+
+span.project-organizer-icon-project {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/project.png');
+}
+
+span.project-organizer-icon-project:hover {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/project-hover.png');
+}
+
+span.project-organizer-icon-component {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/component.png');
+}
+
+span.project-organizer-icon-component:hover {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/component-hover.png');
+}
+
+span.project-organizer-icon-link {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/link.png');
+}
+
+span.project-organizer-icon-link:hover {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/link-hover.png');
+}
+
+span.project-organizer-icon-reg-project {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-project.png');
+}
+
+span.project-organizer-icon-reg-project:hover {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-project-hover.png');
+}
+
+span.project-organizer-icon-reg-component {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-component.png');
+}
+
+span.project-organizer-icon-reg-component:hover {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    background-image: url('/static/img/hgrid/reg-component-hover.png');
+}
+
+
+
 /* Preventing folders that are HGrid leaves from showing underlines when hovered over */
 
 .project-folder:hover {
@@ -109,6 +208,11 @@ div.project-details span.title {
 
 div.project-detail-content {
     padding:9px 14px;
+}
+
+.project-action-icons img {
+    margin-right: 4px;
+    cursor:pointer;cursor:hand
 }
 
 div.project-details {
