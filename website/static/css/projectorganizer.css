@@ -79,20 +79,20 @@ span.project-organizer-icon-component:hover {
     background-image: url('/static/img/hgrid/component-hover.png');
 }
 
-span.project-organizer-icon-link {
+span.project-organizer-icon-pointer {
     display: inline-block;
     width: 16px;
     height: 16px;
     vertical-align: middle;
-    background-image: url('/static/img/hgrid/link.png');
+    background-image: url('/static/img/hgrid/pointer.png');
 }
 
-span.project-organizer-icon-link:hover {
+span.project-organizer-icon-pointer:hover {
     display: inline-block;
     width: 16px;
     height: 16px;
     vertical-align: middle;
-    background-image: url('/static/img/hgrid/link-hover.png');
+    background-image: url('/static/img/hgrid/pointer-hover.png');
 }
 
 span.project-organizer-icon-reg-project {
