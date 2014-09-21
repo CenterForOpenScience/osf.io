@@ -141,7 +141,7 @@ def get_dashboard(auth, nid=None, **kwargs):
 
 @must_be_logged_in
 def get_all_projects_smart_folder(auth, **kwargs):
-
+    #TODO: Unit tests
     user = auth.user
 
     contributed = user.node__contributed
@@ -163,23 +163,24 @@ def get_all_projects_smart_folder(auth, **kwargs):
     )
 
     comps = contributed.find(
-        # components only
-        Q('category', 'ne', 'project') &
+        Q('is_folder', 'eq', False) &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
         Q('is_registration', 'eq', False)
     )
 
-    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
+    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
-
+    #TODO: Unit tests
     user = auth.user
     contributed = user.node__contributed
 
@@ -200,10 +201,11 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     )
 
     comps = contributed.find(
-        # components only
-        Q('category', 'ne', 'project') &
+        Q('is_folder', 'eq', False) &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
