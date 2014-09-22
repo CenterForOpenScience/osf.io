@@ -863,6 +863,48 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
 
+class TestDeleteNodeWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestDeleteNodeWiki, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.project)
+        # user updates the wiki
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_delete_log(self):
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Deletion is logged
+        assert_equal(self.project.logs[-1].action, 'wiki_deleted')
+
+    def test_wiki_versions(self):
+        # Number of versions is correct
+        assert_equal(len(self.versions['home']), 1)
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Number of versions is still correct
+        assert_equal(len(self.versions['home']), 1)
+
+    def test_wiki_delete(self):
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        assert_false(self.project.get_wiki_page('home'))
+
+    def test_deleted_versions(self):
+        # Update wiki a second time
+        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Check versions
+        assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
+        assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
+
+
 class TestNode(OsfTestCase):
 
     def setUp(self):

@@ -318,6 +318,7 @@ class NodeLog(StoredObject):
     POINTER_REMOVED = 'pointer_removed'
 
     WIKI_UPDATED = 'wiki_updated'
+    WIKI_DELETED = 'wiki_deleted'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -531,7 +532,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('other', 'Other')
-        ])
+    ])
 
     _id = fields.StringField(primary=True)
 
@@ -1447,10 +1448,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Recursively fork child nodes
         for node_contained in original.nodes:
             forked_node = None
-            try: # Catch the potential PermissionsError above
+            try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass # If this excpetion is thrown omit the node from the result set
+                pass  # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1560,7 +1561,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                 schema, auth, template, data
+                schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
@@ -1589,9 +1590,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'tag':tag,
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
                 },
                 auth=auth,
                 save=False,
@@ -1840,7 +1841,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.files_current[file_name_key] = node_file._primary_key
 
         # Create a version history if necessary
-        if not file_name_key in self.files_versions:
+        if file_name_key not in self.files_versions:
             self.files_versions[file_name_key] = []
 
         # Add reference to the version history
@@ -2510,7 +2511,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = page.lower()
 
         if page not in self.wiki_pages_current:
-            version = 1
+            if page in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[page]) + 1
+            else:
+                version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[page])
             current.is_current = False
@@ -2542,6 +2546,20 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=new_wiki.date
+        )
+
+    def delete_node_wiki(self, node, page, auth):
+
+        del node.wiki_pages_current[page.page_name.lower()]
+        self.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+            },
+            auth=auth,
+            log_date=page.date
         )
 
     def get_stats(self, detailed=False):
@@ -2671,4 +2689,3 @@ class PrivateLink(StoredObject):
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
-

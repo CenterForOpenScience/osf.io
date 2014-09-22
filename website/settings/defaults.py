@@ -40,6 +40,7 @@ SECRET_KEY = 'CHANGEME'
 DEV_MODE = False
 DEBUG_MODE = False
 
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -66,7 +67,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
-USE_TOKU_MX = False
+USE_TOKU_MX = True
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -185,3 +186,7 @@ ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+
+# FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
+# and uploads in order to save disk space.
+DISK_SAVING_MODE = False

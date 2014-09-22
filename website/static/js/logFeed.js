@@ -95,9 +95,10 @@
                 data:{
                     pageNum: pageNum
                 },
-                cache: false,
+                cache: false
             }).done(function(response) {
                 // Initialize LogViewModel
+                var logModelObjects = createLogs(response.logs); // Array of Log model objects
                 for (var i=0; i<logModelObjects.length; i++) {
                     self.logs.push(logModelObjects[i]);
                 }

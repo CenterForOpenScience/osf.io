@@ -159,7 +159,7 @@
 
         // Check through possible move and copy options, and set the copyMode appropriately.
         if (!(canMove && canCopy && canAcceptDrop(items, folder))) {
-            copyMode = 'forbidden'
+            copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
             if (altKey) {
@@ -692,7 +692,7 @@
             if (row.modifiedBy !== '') {
                 returnString +=  ', ' + row.modifiedBy.toString();
             }
-            return returnString
+            return returnString;
         },
         folderView: function (row) {
             if (row.modifiedDelta === 0) {
@@ -756,7 +756,7 @@
         var nodeLinkEnd = '';
         if (url != null) {
             nodeLink = '<a href=' + url + '>';
-            nodeLinkEnd = '</a>'
+            nodeLinkEnd = '</a>';
         }
 
 
@@ -869,8 +869,10 @@
 
                 selectedRows.forEach(function(item){
                     var thisItem = self.grid.grid.getDataItem(item);
-                    someItemsAreFolders = someItemsAreFolders || thisItem.isFolder || thisItem.isSmartFolder
-                        || thisItem.parentIsSmartFolder;
+                    someItemsAreFolders = someItemsAreFolders ||
+                                          thisItem.isFolder ||
+                                          thisItem.isSmartFolder ||
+                                          thisItem.parentIsSmartFolder;
                     pointerIds.push(thisItem.node_id);
                 });
 
@@ -922,7 +924,7 @@
             dropLogic(event, items, folder);
         },
         canDrag: function (item) {
-            return item.permissions.copyable || item.permissions.movable
+            return item.permissions.copyable || item.permissions.movable;
         },
         acceptDrop: function (item, folder, done) {
             done();
@@ -992,7 +994,7 @@
                 self.options.success.call();
             },
             fetchError: function(error) {
-                if($(".modal-dialog").length === 0) {
+                if($('.modal-dialog').length === 0) {
                     bootbox.alert('Error: ' + error);
                 }
             },

@@ -4,6 +4,7 @@ import importlib
 
 from modularodm import storage
 
+import framework
 from framework.flask import app, add_handlers
 from framework.mongo import database
 from framework.logging import logger
@@ -73,6 +74,11 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     if settings.USE_TOKU_MX:
         add_handlers(app, transaction_handlers.handlers)
 
+    # Attach handler for checking view-only link keys.
+    # NOTE: This must be attached AFTER the TokuMX to avoid calling
+    # a commitTransaction (in toku's after_request handler) when no transaction
+    # has been created
+    add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
     else:

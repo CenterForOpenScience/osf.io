@@ -368,6 +368,7 @@ def unserialize_social(auth, **kwargs):
     user.social['twitter'] = json_data.get('twitter')
     user.social['github'] = json_data.get('github')
     user.social['scholar'] = json_data.get('scholar')
+    user.social['impactStory'] = json_data.get('impactStory')
     user.social['linkedIn'] = json_data.get('linkedIn')
 
     try:
