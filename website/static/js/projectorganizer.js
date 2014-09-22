@@ -158,7 +158,7 @@
 
         // Check through possible move and copy options, and set the copyMode appropriately.
         if (!(canMove && canCopy && canAcceptDrop(items, folder))) {
-            copyMode = 'forbidden'
+            copyMode = 'forbidden';
         }
         else if (canMove && canCopy) {
             if (altKey) {
@@ -394,11 +394,11 @@
             if (row.modifiedDelta === 0) {
                 return '';
             }
-            var returnString = moment.utc(row.dateModified).fromNow()
+            var returnString = moment.utc(row.dateModified).fromNow();
             if (row.modifiedBy !== '') {
                 returnString +=  ', ' + row.modifiedBy.toString();
             }
-            return returnString
+            return returnString;
         },
         folderView: function (row) {
             if (row.modifiedDelta === 0) {
@@ -458,9 +458,13 @@
         var url = row.urls.fetch;
         var linkString = name;
         var extraClass = '';
-//        if (url != null) {
-//            linkString = '<a href='' + url + ''>' + name + '</a>';
-//        }
+        var nodeLink = '';
+        var nodeLinkEnd = '';
+        if (url != null) {
+            nodeLink = '<a href=' + url + '>';
+            nodeLinkEnd = '</a>';
+        }
+
 
         var type = row.type;
 
@@ -473,8 +477,8 @@
             regType = 'reg-';
             extraClass += ' registration';
         }
-        return "<img src='/static/img/hgrid/" + regType + type + ".png'><span class='project-"
-            + type + extraClass + "'>" + linkString + "</span>";
+        return nodeLink + "<span class='project-organizer-icon-" + regType + type + "'></span>" + nodeLinkEnd +
+            "<span class='project-" + type + extraClass + "'>" + linkString + "</span>";
     };
     ProjectOrganizer.Col.Name.folderView = ProjectOrganizer.Col.Name.itemView;
 
@@ -630,7 +634,7 @@
                             source: mySourceWithEmptySelectable,
                             templates: {
                                 header: function () {
-                                    return '<h3 class="category">My Projects</h3>'
+                                    return '<h3 class="category">My Projects</h3>';
                                 },
                                 suggestion: function (data) {
                                     if(typeof data.name !== 'undefined') {
@@ -678,7 +682,7 @@
                             linkID = '';
                         }
                     });
-                    $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
+                    $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum) {
                         var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
                         var children;
                         $.getJSON(getChildrenURL, function (data) {
@@ -832,8 +836,10 @@
 
                 selectedRows.forEach(function(item){
                     var thisItem = self.grid.grid.getDataItem(item);
-                    someItemsAreFolders = someItemsAreFolders || thisItem.isFolder || thisItem.isSmartFolder
-                        || thisItem.parentIsSmartFolder;
+                    someItemsAreFolders = someItemsAreFolders ||
+                                          thisItem.isFolder ||
+                                          thisItem.isSmartFolder ||
+                                          thisItem.parentIsSmartFolder;
                     pointerIds.push(thisItem.node_id);
                 });
 
@@ -885,7 +891,7 @@
             dropLogic(event, items, folder);
         },
         canDrag: function (item) {
-            return item.permissions.copyable || item.permissions.movable
+            return item.permissions.copyable || item.permissions.movable;
         },
         acceptDrop: function (item, folder, done) {
             done();
@@ -918,7 +924,8 @@
                 enableCellNavigation: true,
                 multiSelect: true,
                 forceFitColumns: true,
-                autoEdit: false
+                autoEdit: false,
+                addExtraRowsAtEnd: 1
             },
             data: '/api/v1/dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
@@ -947,7 +954,7 @@
                 self.options.success.call();
             },
             fetchError: function(error) {
-                if($(".modal-dialog").length === 0) {
+                if($('.modal-dialog').length === 0) {
                     bootbox.alert('Error: ' + error);
                 }
             },
