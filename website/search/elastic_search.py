@@ -270,6 +270,7 @@ def update_user(user):
 def delete_all():
     try:
         elastic.delete_index('website')
+        elastic.delete_index('metadata')
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
         logger.error("The index 'website' was not deleted from elasticsearch")
