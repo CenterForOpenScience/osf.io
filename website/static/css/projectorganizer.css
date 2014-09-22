@@ -127,6 +127,24 @@ span.project-organizer-icon-reg-component:hover {
     background-image: url('/static/img/hgrid/reg-component-hover.png');
 }
 
+button.project-organizer-icon-info {
+    width: 20px;
+    height: 20px;
+    background-image: url('/static/img/hgrid/info.png');
+    background-repeat: no-repeat;
+}
+
+button.project-organizer-icon-visit {
+    width: 20px;
+    height: 20px;
+    background-image: url('/static/img/hgrid/visit.png');
+    background-repeat: no-repeat;
+}
+
+button.hg-btn {
+    background-color: white;
+    border: 0px;
+}
 
 
 /* Preventing folders that are HGrid leaves from showing underlines when hovered over */
