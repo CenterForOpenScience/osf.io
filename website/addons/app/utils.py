@@ -27,10 +27,15 @@ def find_or_create_from_report(report, app):
         elif ret['hits']['total'] == 0:
             break
 
-
     resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
     resource.set_privacy('public')
     resource.save()
     app.attach_data(resource._id, {'is_project': 'true'})
     return resource
 
+
+def is_claimed(node):
+    for contributor in node.contributors:
+        if contributor.is_claimed:
+            return True
+    return False

@@ -19,7 +19,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_contributor_or_public
 )
 
-from website.addons.app.utils import find_or_create_from_report
+from website.addons.app.utils import find_or_create_from_report, is_claimed
 
 from . import metadata, customroutes
 
@@ -85,6 +85,13 @@ def create_report(node_addon, **kwargs):
 
     report_node.set_privacy('public')
     report_node.save()
+
+    claimed = is_claimed(resource)
+
+    for tag in report['tags']:
+        report_node.add_tag(tag, Auth(node_addon.system_user))
+        if not claimed:
+            resource.add_tag(tag, Auth(node_addon.system_user))
 
     node_addon.attach_data(report_node._id, report)
 
