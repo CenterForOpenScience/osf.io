@@ -71,6 +71,9 @@ def _profile_view(uid=None):
         # from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
+            # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+            # empty lists. When badges are enabled, use the utility functions
+            # that are currently commented out
             'assertions': [],  # get_sorted_user_badges(profile),
             'badges': [],  # _get_user_created_badges(profile),
             'user': {
