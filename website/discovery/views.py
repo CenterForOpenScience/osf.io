@@ -68,7 +68,7 @@ def activity():
         recent_query &
         Q('is_registration', 'eq', True)
     ).sort(
-        '-date_created'
+        '-registered_date'
     ).limit(10)
 
     return {
