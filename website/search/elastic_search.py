@@ -74,12 +74,9 @@ def search(full_query, start=0):
         cloud_results = elastic.search(cloud_query, index='website')
         cloud_results = [hit['_source'] for hit in cloud_results['hits']['hits']]
         word_cloud = {}
-        for result in cloud_results:
-            if result.get('tags'):
-                for tag in result['tags']:
-                    if tag not in tags:
-                        word_cloud[tag] = 1 if word_cloud.get(tag) is None \
-                            else word_cloud[tag] + 1
+        for tag in get_cloud_tags(cloud_results,tags):
+            word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                else word_cloud[tag] + 1
         word_cloud = sorted(word_cloud.iteritems(), key=lambda item: -item[1])
         if len(word_cloud) > 10:
             word_cloud = word_cloud[:10]
@@ -101,6 +98,25 @@ def search(full_query, start=0):
     }
 
     return full_result
+
+
+def get_cloud_tags(results,search_tags):
+    """Gets all tags that were not in the search from a list of results"""
+
+    tags = []
+
+    for result in results:
+        item_tags = []
+
+        for tag in result['tags'] if result.get('tags') else []:
+            # Check both tags in search and those already used by this result,
+            # in case of multiple tags being seen by the system as the same
+            if not tag in search_tags + item_tags:
+                item_tags.append(tag)
+
+        tags.extend(item_tags)
+
+    return tags
 
 
 def _build_query(full_query, start=0):
@@ -159,6 +175,9 @@ def _build_query(full_query, start=0):
         }
         for tag in tags:
             tag_filter['bool']['must'].append({'term': {'tags': tag}})
+    # Need to make sure that tags is a list, even if an empty one
+    else:
+        tags = []
 
     # Cleanup string before using it to query
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
