@@ -131,7 +131,8 @@ session = LocalProxy(get_session)
 
 # Request callbacks
 
-@app.before_request
+# NOTE: This gets attached in website.app.init_app to ensure correct callback
+# order
 def before_request():
 
     if request.authorization:

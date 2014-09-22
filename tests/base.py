@@ -9,6 +9,7 @@ import blinker
 from webtest_plus import TestApp
 
 from faker import Factory
+from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 
@@ -202,3 +203,8 @@ def capture_signals():
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
 
+
+def assert_before(lst, item1, item2):
+    """Assert that item1 appears before item2 in lst."""
+    assert_less(lst.index(item1), lst.index(item2),
+        '{0!r} appears before {1!r}'.format(item1, item2))
