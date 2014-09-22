@@ -62,6 +62,8 @@
 
         editor.setReadOnly(true);
 
+        // TODO: Wiki renames and other share issues cause blank initialization.
+        // Can undefined values instead grab data from OSF backend?
         sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
 
             if (doc != null) {
