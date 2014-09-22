@@ -29,7 +29,9 @@ def find_or_create_from_report(report, app):
 
     resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
     resource.set_privacy('public')
+    resource.set_visible(app.system_user, False, log=False)
     resource.save()
+    # TODO Address this issue
     app.attach_data(resource._id, {'is_project': 'true'})
     return resource
 
