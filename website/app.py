@@ -38,6 +38,24 @@ def init_addons(settings, routes=True):
     settings.ADDON_CAPABILITIES = render_addon_capabilities(settings.ADDONS_AVAILABLE)
 
 
+def attach_handlers(app, settings):
+    """Add callback handlers to ``app`` in the correct order."""
+    # Add callback handlers to application
+    add_handlers(app, mongo_handlers.handlers)
+    if settings.USE_TOKU_MX:
+        add_handlers(app, transaction_handlers.handlers)
+
+    # Attach handler for checking view-only link keys.
+    # NOTE: This must be attached AFTER the TokuMX to avoid calling
+    # a commitTransaction (in toku's after_request handler) when no transaction
+    # has been created
+    add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
+    # framework.session's before_request handler must go after
+    # prepare_private_key, else view-only links won't work
+    add_handlers(app, {'before_request': framework.sessions.before_request})
+    return app
+
+
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
@@ -69,16 +87,8 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         except AssertionError:  # Route map has already been created
             pass
 
-    # Add callback handlers to application
-    add_handlers(app, mongo_handlers.handlers)
-    if settings.USE_TOKU_MX:
-        add_handlers(app, transaction_handlers.handlers)
+    attach_handlers(app, settings)
 
-    # Attach handler for checking view-only link keys.
-    # NOTE: This must be attached AFTER the TokuMX to avoid calling
-    # a commitTransaction (in toku's after_request handler) when no transaction
-    # has been created
-    add_handlers(app, {'before_request': framework.sessions.prepare_private_key})
     if app.debug:
         logger.info("Sentry disabled; Flask's debug mode enabled")
     else:

@@ -653,7 +653,7 @@
                             source: publicSourceWithEmptySelectable,
                             templates: {
                                 header: function () {
-                                    return '<h3 class="category">Public Projects</h3>'
+                                    return '<h3 class="category">Public Projects</h3>';
                                 },
                                 suggestion: function (data) {
                                     if(typeof data.name !== 'undefined') {
@@ -692,7 +692,7 @@
                                 linkName = datum.name;
                                 linkID = datum.node_id;
                             } else {
-                                $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
+                                $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder');
                             }
                         }).fail($.osf.handleJSONError);
 
