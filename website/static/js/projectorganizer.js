@@ -913,9 +913,6 @@
         onBeforeDrag: function(){
             $('.project-details').hide();
         },
-        onBeforeDrop: function(){
-            $('.project-details').show();
-        },
         onDrag: function (event, items, folder) {
 
             dragLogic(event, items, folder);
