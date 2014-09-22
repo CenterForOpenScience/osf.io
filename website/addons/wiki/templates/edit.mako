@@ -27,7 +27,7 @@
             </div>
             <div class="pull-right">
                 <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
-                <button class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
+                <button id="revert-button" class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
                 <input type="submit" class="btn btn-success" value="Save Version"
                        data-bind="enable: changed,
                                   click: function() {updateChanged('${node['url']}wiki/${pageName}/edit/')}"
@@ -62,9 +62,14 @@
 
         editor.setReadOnly(true);
 
-        // TODO: Wiki renames and other share issues cause blank initialization.
-        // Can undefined values instead grab data from OSF backend?
+        // TODO: No security from users accessing sharejs from JS console
         sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
+
+            // If no share data is loaded, retrieve most recent wiki from osf
+            // TODO: If we rename a wiki to a deleted wiki, we get old content
+            if (newDoc.version === 0) {
+                $("#revert-button").click()
+            }
 
             if (doc != null) {
                 doc.close();
