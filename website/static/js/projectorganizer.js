@@ -665,19 +665,24 @@
 
     var iconButtons = function (row) {
         var url = row.urls.fetch;
-        var buttonDefs = [{
-                text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
-                action: 'showProjectDetails',
-                cssClass: 'project-organizer-icon-info'
-            }];
-        if(url !== null){
-            buttonDefs.push({
-                text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
-                action: 'visitPage',
-                cssClass: 'project-organizer-icon-visit'
-            });
+        if (!row.isSmartFolder) {
+            var buttonDefs = [
+                {
+                    text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
+                    action: 'showProjectDetails',
+                    cssClass: 'project-organizer-icon-info'
+                }
+            ];
+            if (url !== null) {
+                buttonDefs.push({
+                    text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
+                    action: 'visitPage',
+                    cssClass: 'project-organizer-icon-visit'
+                });
+            }
+            return HGrid.Fmt.buttons(buttonDefs);
         }
-        return HGrid.Fmt.buttons(buttonDefs);
+
     };
 
     var dateModifiedColumn = {
