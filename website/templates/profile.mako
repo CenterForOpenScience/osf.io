@@ -44,7 +44,7 @@
         <img id='profile-gravatar' src="${profile['gravatar_url']}"
                  rel="tooltip" title="click to change avatar" />
     </a>
-    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+    <h1 id="profile-fullname"><span class="overflow">${profile["fullname"]}</span></h1>
 </div><!-- end-page-header -->
 
 <div class="row">
