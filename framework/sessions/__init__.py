@@ -29,8 +29,14 @@ def add_key_to_url(url, scheme, key):
     return urlparse.urlunparse(parsed_redirect_url)
 
 
-@app.before_request
 def prepare_private_key():
+    """`before_request` handler that checks the Referer header to see if the user
+    is requesting from a view-only link. If so, reappend the view-only key.
+
+    NOTE: In order to ensure the execution order of the before_request callbacks,
+    this is attached in website.app.init_app rather than using
+    @app.before_request.
+    """
 
     # Done if not GET request
     if request.method != 'GET':
