@@ -25,6 +25,7 @@
     var rnfToReload = '';
     // copyMode can be 'copy', 'move', 'forbidden', or null.
     var copyMode = null;
+    var projectOrganizer = null;
 
     var fadeTime = 100;
 
@@ -382,9 +383,302 @@
     // HGrid Customization
     //
 
+    HGrid.Actions['visitPage'] = {
+        on: 'click',
+        callback: function(event, item) {
+            var url = item.urls.fetch;
+            window.location = url;
+        }
+    };
+    HGrid.Actions['showProjectDetails'] =  {
+       on: 'click',
+        callback: function(evt, item) {
+
+            projectOrganizer.myProjects.initialize();
+            projectOrganizer.publicProjects.initialize();
+            // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
+
+            var mySourceWithEmptySelectable = function(q, cb) {
+              var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
+              projectOrganizer.myProjects.get(q, injectEmptySelectable);
+
+              function injectEmptySelectable(suggestions) {
+                if (suggestions.length === 0) {
+                  cb(emptyMyProjects);
+                }
+
+                else {
+                  cb(suggestions);
+                }
+              }
+            };
+
+            var publicSourceWithEmptySelectable = function(q, cb) {
+              var emptyPublicProjects = { error: 'There are no matching public projects.' };
+              projectOrganizer.publicProjects.get(q, injectEmptySelectable);
+
+              function injectEmptySelectable(suggestions) {
+                if (suggestions.length === 0) {
+                  cb([emptyPublicProjects]);
+                }
+
+                else {
+                  cb(suggestions);
+                }
+              }
+
+            };
+
+            var linkName;
+            var linkID;
+            var theItem = item;
+
+            var theParentNode = projectOrganizer.grid.grid.getData().getItemById(theItem.parentID);
+            if (typeof theParentNode === 'undefined') {
+                theParentNode = theItem;
+                theItem.parentIsSmartFolder = true;
+            }
+            theItem.parentNode = theParentNode;
+
+                var theParentNodeID = theParentNode.node_id;
+                theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
+                theItem.parentNodeID = theParentNodeID;
+
+
+            if (!theItem.isSmartFolder) {
+                createProjectDetailHTMLFromTemplate(theItem);
+                $('#findNode' + theItem.node_id).hide();
+                $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
+                        highlight: true
+                    },
+                    {
+                        name: 'my-projects',
+                        displayKey: function (data) {
+                            return data.name;
+                        },
+                        source: mySourceWithEmptySelectable,
+                        templates: {
+                            header: function () {
+                                return '<h3 class="category">My Projects</h3>'
+                            },
+                            suggestion: function (data) {
+                                if(typeof data.name !== 'undefined') {
+                                    return '<p>' + data.name + '</p>';
+                                } else {
+                                    return '<p>' + data.error + '</p>';
+                                }
+                            }
+                        }
+                    },
+                    {
+                        name: 'public-projects',
+                        displayKey: function (data) {
+                            return data.name;
+                        },
+                        source: publicSourceWithEmptySelectable,
+                        templates: {
+                            header: function () {
+                                return '<h3 class="category">Public Projects</h3>'
+                            },
+                            suggestion: function (data) {
+                                if(typeof data.name !== 'undefined') {
+                                    return '<p>' + data.name + '</p>';
+                                } else {
+                                    return '<p>' + data.error + '</p>';
+                                }
+                            }
+                        }
+                    });
+
+
+                $('#input' + theItem.node_id).bind('keyup', function (event) {
+                    var key = event.keyCode || event.which;
+                    var buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
+
+                    if (key === 13) {
+                        if (buttonEnabled) {
+                            $('#add-link-' + theItem.node_id).click(); //submits if the control is active
+                        }
+                    }
+                    else {
+                        $('#add-link-warn-' + theItem.node_id).text('');
+                        $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
+                        linkName = '';
+                        linkID = '';
+                    }
+                });
+                $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
+                    var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
+                    var children;
+                    $.getJSON(getChildrenURL, function (data) {
+                        children = data;
+                        if (children.indexOf(datum.node_id) === -1) {
+                            $('#add-link-' + theItem.node_id).removeAttr('disabled');
+                            linkName = datum.name;
+                            linkID = datum.node_id;
+                        } else {
+                            $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
+                        }
+                    }).fail($.osf.handleJSONError);
+
+                });
+                $('#close-' + theItem.node_id).click(function () {
+                    $('.project-details').hide();
+                    return false;
+                });
+                $('#add-link-' + theItem.node_id).click(function () {
+                    var url = '/api/v1/pointer/';
+                    var postData = JSON.stringify(
+                        {
+                            pointerID: linkID,
+                            toNodeID: theItem.node_id
+                        });
+                    setItemToExpand(theItem, function() {
+                        var postAction = $.ajax({
+                            type: 'POST',
+                            url: url,
+                            data: postData,
+                            contentType: 'application/json',
+                            dataType: 'json'
+                        });
+                        postAction.done(function () {
+                            reloadFolder(projectOrganizer.grid, theItem, theParentNode);
+                        });
+                    });
+                    return false;
+                });
+
+                $('#remove-link-' + theItem.node_id).click(function () {
+                    var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
+                    var deleteAction = $.ajax({
+                        type: 'DELETE',
+                        url: url,
+                        contentType: 'application/json',
+                        dataType: 'json'
+                    });
+                    deleteAction.done(function () {
+                        reloadFolder(projectOrganizer.grid, theParentNode);
+                    });
+                });
+                $('#delete-folder-' + theItem.node_id).click(function () {
+                    var confirmationText = 'Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.';
+                    bootbox.confirm(confirmationText, function (result) {
+                        if (result !== null && result) {
+                            var url = '/api/v1/folder/'+ theItem.node_id;
+                            var deleteAction = $.ajax({
+                                type: 'DELETE',
+                                url: url,
+                                contentType: 'application/json',
+                                dataType: 'json'
+                            });
+                            deleteAction.done(function () {
+                                reloadFolder(projectOrganizer.grid, theParentNode);
+                            });
+                        }
+                    });
+                });
+                $('#add-folder-' + theItem.node_id).click(function () {
+                    $('#buttons' + theItem.node_id).hide();
+                    $('#rnc-' + theItem.node_id).hide();
+                    $('#findNode' + theItem.node_id).hide();
+                    $('#afc-' + theItem.node_id).show();
+                });
+                $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
+                    var contents = $.trim($(this).val());
+                    if (contents === '') {
+                        $('#add-folder-button' + theItem.node_id).attr('disabled', 'disabled');
+                    } else {
+                        $('#add-folder-button' + theItem.node_id).removeAttr('disabled');
+                    }
+                });
+
+                $('#add-folder-button' + theItem.node_id).click(function () {
+                    var url = '/api/v1/folder/';
+                    var postData = {
+                        node_id: theItem.node_id,
+                        title: $.trim($('#add-folder-input' + theItem.node_id).val())
+                    };
+                    setItemToExpand(theItem, function() {
+                        var putAction = $.osf.putJSON(url, postData);
+                        putAction.done(function () {
+                            reloadFolder(projectOrganizer.grid, theItem, theParentNode);
+                        }).fail($.osf.handleJSONError);
+
+                    });
+                    return false;
+                });
+                $('#rename-node-' + theItem.node_id).click(function () {
+                    $('#buttons' + theItem.node_id).hide();
+                    $('#afc-' + theItem.node_id).hide();
+                    $('#findNode' + theItem.node_id).hide();
+                    $('#nc-' + theItem.node_id).hide();
+                    $('#rnc-' + theItem.node_id).show();
+                });
+                $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
+                    var contents = $.trim($(this).val());
+                    if (contents === '' || contents === theItem.name) {
+                        $('#rename-node-button' + theItem.node_id).attr('disabled', 'disabled');
+                    } else {
+                        $('#rename-node-button' + theItem.node_id).removeAttr('disabled');
+                    }
+                });
+
+                $('#rename-node-button' + theItem.node_id).click(function () {
+                    var url = theItem.apiURL + 'edit/';
+                    var postData = {
+                        name: 'title',
+                        value: $.trim($('#rename-node-input' + theItem.node_id).val())
+                    };
+                    var postAction = $.osf.postJSON(url, postData);
+                    postAction.done(function () {
+                            reloadFolder(projectOrganizer.grid, theParentNode);
+                        }).fail($.osf.handleJSONError);
+                    return false;
+                });
+                $('.cancel-button-' + theItem.node_id).click(function() {
+                    $('#afc-' + theItem.node_id).hide();
+                    $('#rnc-' + theItem.node_id).hide();
+                    $('#findNode' + theItem.node_id).hide();
+                    $('#nc-' + theItem.node_id).show();
+                    $('#buttons' + theItem.node_id).show();
+
+                });
+
+                $('#add-item-' + theItem.node_id).click(function () {
+                    $('#buttons' + theItem.node_id).hide();
+                    $('#afc-' + theItem.node_id).hide();
+                    $('#rnc-' + theItem.node_id).hide();
+                    $('#findNode' + theItem.node_id).show();
+                });
+
+                $('.project-details').show();
+            } else {
+                $('.project-details').hide();
+            }
+
+        }
+    };
+
     ProjectOrganizer.Html = $.extend({}, HGrid.Html);
     ProjectOrganizer.Col = {};
     ProjectOrganizer.Col.Name = $.extend({}, HGrid.Col.Name);
+
+    var iconButtons = function (row) {
+        var url = row.urls.fetch;
+        var buttonDefs = [{
+                text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
+                action: 'showProjectDetails',
+                cssClass: 'project-organizer-icon-info'
+            }];
+        if(url !== null){
+            buttonDefs.push({
+                text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
+                action: 'visitPage',
+                cssClass: 'project-organizer-icon-visit'
+            });
+        }
+        return HGrid.Fmt.buttons(buttonDefs);
+    };
 
     var dateModifiedColumn = {
         id: 'date-modified',
@@ -394,7 +688,7 @@
             if (row.modifiedDelta === 0) {
                 return '';
             }
-            var returnString = moment.utc(row.dateModified).fromNow()
+            var returnString = moment.utc(row.dateModified).fromNow();
             if (row.modifiedBy !== '') {
                 returnString +=  ', ' + row.modifiedBy.toString();
             }
@@ -565,272 +859,11 @@
         // to Knockout.js
         //
 
+
         self.grid.grid.onSelectedRowsChanged.subscribe(function (e, args) {
             var selectedRows = self.grid.grid.getSelectedRows();
             var multipleItems = false;
-            if (selectedRows.length === 1) {
-                self.myProjects.initialize();
-                self.publicProjects.initialize();
-                // injecting error into search results from https://github.com/twitter/typeahead.js/issues/747
-
-                var mySourceWithEmptySelectable = function(q, cb) {
-                  var emptyMyProjects = [{ error: 'There are no matching projects to which you contribute.' }];
-                  self.myProjects.get(q, injectEmptySelectable);
-
-                  function injectEmptySelectable(suggestions) {
-                    if (suggestions.length === 0) {
-                      cb(emptyMyProjects);
-                    }
-
-                    else {
-                      cb(suggestions);
-                    }
-                  }
-                };
-
-                var publicSourceWithEmptySelectable = function(q, cb) {
-                  var emptyPublicProjects = { error: 'There are no matching public projects.' };
-                  self.publicProjects.get(q, injectEmptySelectable);
-
-                  function injectEmptySelectable(suggestions) {
-                    if (suggestions.length === 0) {
-                      cb([emptyPublicProjects]);
-                    }
-
-                    else {
-                      cb(suggestions);
-                    }
-                  }
-
-                };
-
-                var linkName;
-                var linkID;
-                var theItem = self.grid.grid.getDataItem(selectedRows[0]);
-
-                var theParentNode = self.grid.grid.getData().getItemById(theItem.parentID);
-                if (typeof theParentNode === 'undefined') {
-                    theParentNode = theItem;
-                    theItem.parentIsSmartFolder = true;
-                }
-                theItem.parentNode = theParentNode;
-
-                    var theParentNodeID = theParentNode.node_id;
-                    theItem.parentIsSmartFolder = theParentNode.isSmartFolder;
-                    theItem.parentNodeID = theParentNodeID;
-
-
-                if (!theItem.isSmartFolder) {
-                    createProjectDetailHTMLFromTemplate(theItem);
-                    $('#findNode' + theItem.node_id).hide();
-                    $('#findNode' + theItem.node_id + ' .typeahead').typeahead({
-                            highlight: true
-                        },
-                        {
-                            name: 'my-projects',
-                            displayKey: function (data) {
-                                return data.name;
-                            },
-                            source: mySourceWithEmptySelectable,
-                            templates: {
-                                header: function () {
-                                    return '<h3 class="category">My Projects</h3>'
-                                },
-                                suggestion: function (data) {
-                                    if(typeof data.name !== 'undefined') {
-                                        return '<p>' + data.name + '</p>';
-                                    } else {
-                                        return '<p>' + data.error + '</p>';
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            name: 'public-projects',
-                            displayKey: function (data) {
-                                return data.name;
-                            },
-                            source: publicSourceWithEmptySelectable,
-                            templates: {
-                                header: function () {
-                                    return '<h3 class="category">Public Projects</h3>'
-                                },
-                                suggestion: function (data) {
-                                    if(typeof data.name !== 'undefined') {
-                                        return '<p>' + data.name + '</p>';
-                                    } else {
-                                        return '<p>' + data.error + '</p>';
-                                    }
-                                }
-                            }
-                        });
-
-
-                    $('#input' + theItem.node_id).bind('keyup', function (event) {
-                        var key = event.keyCode || event.which;
-                        var buttonEnabled = (typeof $('#add-link-' + theItem.node_id).prop('disabled') !== 'undefined');
-
-                        if (key === 13) {
-                            if (buttonEnabled) {
-                                $('#add-link-' + theItem.node_id).click(); //submits if the control is active
-                            }
-                        }
-                        else {
-                            $('#add-link-warn-' + theItem.node_id).text('');
-                            $('#add-link-' + theItem.node_id).attr('disabled', 'disabled');
-                            linkName = '';
-                            linkID = '';
-                        }
-                    });
-                    $('#input' + theItem.node_id).bind('typeahead:selected', function (obj, datum, name) {
-                        var getChildrenURL = theItem.apiURL + 'get_folder_pointers/';
-                        var children;
-                        $.getJSON(getChildrenURL, function (data) {
-                            children = data;
-                            if (children.indexOf(datum.node_id) === -1) {
-                                $('#add-link-' + theItem.node_id).removeAttr('disabled');
-                                linkName = datum.name;
-                                linkID = datum.node_id;
-                            } else {
-                                $('#add-link-warn-' + theItem.node_id).text('This project is already in the folder')
-                            }
-                        }).fail($.osf.handleJSONError);
-
-                    });
-                    $('#close-' + theItem.node_id).click(function () {
-                        $('.project-details').hide();
-                        return false;
-                    });
-                    $('#add-link-' + theItem.node_id).click(function () {
-                        var url = '/api/v1/pointer/';
-                        var postData = JSON.stringify(
-                            {
-                                pointerID: linkID,
-                                toNodeID: theItem.node_id
-                            });
-                        setItemToExpand(theItem, function() {
-                            var postAction = $.ajax({
-                                type: 'POST',
-                                url: url,
-                                data: postData,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                            postAction.done(function () {
-                                reloadFolder(self.grid, theItem, theParentNode);
-                            });
-                        });
-                        return false;
-                    });
-
-                    $('#remove-link-' + theItem.node_id).click(function () {
-                        var url = '/api/v1/folder/' + theParentNodeID + '/pointer/' + theItem.node_id;
-                        var deleteAction = $.ajax({
-                            type: 'DELETE',
-                            url: url,
-                            contentType: 'application/json',
-                            dataType: 'json'
-                        });
-                        deleteAction.done(function () {
-                            reloadFolder(self.grid, theParentNode);
-                        });
-                    });
-                    $('#delete-folder-' + theItem.node_id).click(function () {
-                        var confirmationText = 'Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.';
-                        bootbox.confirm(confirmationText, function (result) {
-                            if (result !== null && result) {
-                                var url = '/api/v1/folder/'+ theItem.node_id;
-                                var deleteAction = $.ajax({
-                                    type: 'DELETE',
-                                    url: url,
-                                    contentType: 'application/json',
-                                    dataType: 'json'
-                                });
-                                deleteAction.done(function () {
-                                    reloadFolder(self.grid, theParentNode);
-                                });
-                            }
-                        });
-                    });
-                    $('#add-folder-' + theItem.node_id).click(function () {
-                        $('#buttons' + theItem.node_id).hide();
-                        $('#rnc-' + theItem.node_id).hide();
-                        $('#findNode' + theItem.node_id).hide();
-                        $('#afc-' + theItem.node_id).show();
-                    });
-                    $('#add-folder-input' + theItem.node_id).bind('keyup', function () {
-                        var contents = $.trim($(this).val());
-                        if (contents === '') {
-                            $('#add-folder-button' + theItem.node_id).attr('disabled', 'disabled');
-                        } else {
-                            $('#add-folder-button' + theItem.node_id).removeAttr('disabled');
-                        }
-                    });
-
-                    $('#add-folder-button' + theItem.node_id).click(function () {
-                        var url = '/api/v1/folder/';
-                        var postData = {
-                            node_id: theItem.node_id,
-                            title: $.trim($('#add-folder-input' + theItem.node_id).val())
-                        };
-                        setItemToExpand(theItem, function() {
-                            var putAction = $.osf.putJSON(url, postData);
-                            putAction.done(function () {
-                                reloadFolder(self.grid, theItem, theParentNode);
-                            }).fail($.osf.handleJSONError);
-
-                        });
-                        return false;
-                    });
-                    $('#rename-node-' + theItem.node_id).click(function () {
-                        $('#buttons' + theItem.node_id).hide();
-                        $('#afc-' + theItem.node_id).hide();
-                        $('#findNode' + theItem.node_id).hide();
-                        $('#nc-' + theItem.node_id).hide();
-                        $('#rnc-' + theItem.node_id).show();
-                    });
-                    $('#rename-node-input' + theItem.node_id).bind('keyup', function () {
-                        var contents = $.trim($(this).val());
-                        if (contents === '' || contents === theItem.name) {
-                            $('#rename-node-button' + theItem.node_id).attr('disabled', 'disabled');
-                        } else {
-                            $('#rename-node-button' + theItem.node_id).removeAttr('disabled');
-                        }
-                    });
-
-                    $('#rename-node-button' + theItem.node_id).click(function () {
-                        var url = theItem.apiURL + 'edit/';
-                        var postData = {
-                            name: 'title',
-                            value: $.trim($('#rename-node-input' + theItem.node_id).val())
-                        };
-                        var postAction = $.osf.postJSON(url, postData);
-                        postAction.done(function () {
-                                reloadFolder(self.grid, theParentNode);
-                            }).fail($.osf.handleJSONError);
-                        return false;
-                    });
-                    $('.cancel-button-' + theItem.node_id).click(function() {
-                        $('#afc-' + theItem.node_id).hide();
-                        $('#rnc-' + theItem.node_id).hide();
-                        $('#findNode' + theItem.node_id).hide();
-                        $('#nc-' + theItem.node_id).show();
-                        $('#buttons' + theItem.node_id).show();
-
-                    });
-
-                    $('#add-item-' + theItem.node_id).click(function () {
-                        $('#buttons' + theItem.node_id).hide();
-                        $('#afc-' + theItem.node_id).hide();
-                        $('#rnc-' + theItem.node_id).hide();
-                        $('#findNode' + theItem.node_id).show();
-                    });
-
-                    $('.project-details').show();
-                } else {
-                    $('.project-details').hide();
-                }
-            } else if(selectedRows.length > 1) {
+            if(selectedRows.length > 1) {
                 var someItemsAreFolders = false;
                 var pointerIds = [];
 
@@ -849,8 +882,8 @@
                         itemsCount: selectedRows.length
                     };
                     var sampleItem = self.grid.grid.getDataItem(selectedRows[0]);
-                    theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
-                    theParentNodeID = theParentNode.node_id;
+                    var theParentNode = self.grid.grid.getData().getItemById(sampleItem.parentID);
+                    var theParentNodeID = theParentNode.node_id;
                     var displayHTML = detailTemplate(detailTemplateContext);
                     $('.project-details').html(displayHTML);
                     $('.project-details').show();
@@ -908,11 +941,18 @@
 
     function ProjectOrganizer(selector, options) {
         var self = this;
+        projectOrganizer = self;
         var baseHGridOptions = {
             width: '98%',
             height: '600',
             columns: [
                 ProjectOrganizer.Col.Name,
+                {
+                    text: 'Info',
+                    itemView: iconButtons,
+                    folderView: iconButtons,
+                    width: 10
+                },
                 contributorsColumn,
                 dateModifiedColumn
             ],
