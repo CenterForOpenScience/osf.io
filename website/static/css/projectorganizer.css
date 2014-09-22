@@ -238,6 +238,10 @@ div.project-details {
 
 }
 
+div.contributors {
+    overflow-x: hidden;
+}
+
 div.project-details span.title {
     overflow-x: hidden;
 }
