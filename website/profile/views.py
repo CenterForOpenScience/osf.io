@@ -68,15 +68,15 @@ def _profile_view(uid=None):
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
         # TODO: Fix circular import
-        from website.addons.badges.util import get_sorted_user_badges
+        # from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
-            'assertions': get_sorted_user_badges(profile),
-            'badges': _get_user_created_badges(profile),
+            'assertions': [],  # get_sorted_user_badges(profile),
+            'badges': [],  # _get_user_created_badges(profile),
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
-                'permissions': [], # necessary for rendering nodes
+                'permissions': [],  # necessary for rendering nodes
             },
         }
 
