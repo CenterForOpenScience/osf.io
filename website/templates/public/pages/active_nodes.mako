@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Explore</%def>
+<%def name="title()">Public Activity</%def>
 <%def name="content()">
 <%
     from framework.auth import get_user

@@ -8,6 +8,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
+    % if sentry_dsn_js:
+    <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
+    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
+    <script>
+        Raven.config('${ sentry_dsn_js }', {}).install();
+    </script>
+    % endif
     ${includes_top()}
     ${self.stylesheets()}
     ${self.javascript()}
@@ -180,6 +187,7 @@
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
+        $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
 </%def>

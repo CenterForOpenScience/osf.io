@@ -42,8 +42,9 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory
+    AuthUserFactory, DashboardFactory, FolderFactory
 )
+from tests.test_features import requires_piwik
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -862,6 +863,48 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
 
+class TestDeleteNodeWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestDeleteNodeWiki, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.project)
+        # user updates the wiki
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_delete_log(self):
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Deletion is logged
+        assert_equal(self.project.logs[-1].action, 'wiki_deleted')
+
+    def test_wiki_versions(self):
+        # Number of versions is correct
+        assert_equal(len(self.versions['home']), 1)
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Number of versions is still correct
+        assert_equal(len(self.versions['home']), 1)
+
+    def test_wiki_delete(self):
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        assert_false(self.project.get_wiki_page('home'))
+
+    def test_deleted_versions(self):
+        # Update wiki a second time
+        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
+        # Delete wiki
+        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        # Check versions
+        assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
+        assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
+
+
 class TestNode(OsfTestCase):
 
     def setUp(self):
@@ -1144,6 +1187,31 @@ class TestNode(OsfTestCase):
         #todo Add file series of tests
         pass
 
+    def test_not_a_folder(self):
+        assert_equal(self.node.is_folder, False)
+
+    def test_not_a_dashboard(self):
+        assert_equal(self.node.is_dashboard, False)
+
+    def test_cannot_link_to_folder_more_than_once(self):
+        folder = FolderFactory(creator=self.user)
+        node_two = ProjectFactory(creator=self.user)
+        self.node.add_pointer(folder, auth=self.consolidate_auth)
+        with assert_raises(ValueError):
+            node_two.add_pointer(folder, auth=self.consolidate_auth)
+
+    def test_is_expanded_default_false_with_user(self):
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
+    def test_expand_sets_true_with_user(self):
+        self.node.expand(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), True)
+
+    def test_collapse_sets_false_with_user(self):
+        self.node.expand(user=self.user)
+        self.node.collapse(user=self.user)
+        assert_equal(self.node.is_expanded(user=self.user), False)
+
 
 class TestRemoveNode(OsfTestCase):
 
@@ -1195,6 +1263,51 @@ class TestRemoveNode(OsfTestCase):
 
         # target node shouldn't be deleted
         assert_false(target.is_deleted)
+
+
+class TestDashboard(OsfTestCase):
+
+    def setUp(self):
+        super(TestDashboard, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = DashboardFactory(creator=self.user)
+
+    def test_dashboard_is_dashboard(self):
+        assert_equal(self.project.is_dashboard, True)
+
+    def test_dashboard_is_folder(self):
+        assert_equal(self.project.is_folder, True)
+
+    def test_cannot_remove_dashboard(self):
+        with assert_raises(NodeStateError):
+            self.project.remove_node(self.consolidate_auth)
+
+    def test_cannot_have_two_dashboards(self):
+        with assert_raises(NodeStateError):
+            DashboardFactory(creator=self.user)
+
+    def test_cannot_link_to_dashboard(self):
+        new_node = ProjectFactory(creator=self.user)
+        with assert_raises(ValueError):
+            new_node.add_pointer(self.project, auth=self.consolidate_auth)
+
+    def test_can_remove_empty_folder(self):
+        new_folder = FolderFactory(creator=self.user)
+        assert_equal(new_folder.is_folder, True)
+        new_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(new_folder.is_deleted)
+
+    def test_can_remove_folder_structure(self):
+        outer_folder = FolderFactory(creator=self.user)
+        assert_equal(outer_folder.is_folder, True)
+        inner_folder = FolderFactory(creator=self.user)
+        assert_equal(inner_folder.is_folder, True)
+        outer_folder.add_pointer(inner_folder, self.consolidate_auth)
+        outer_folder.remove_node(auth=self.consolidate_auth)
+        assert_true(outer_folder.is_deleted)
+        assert_true(inner_folder.is_deleted)
 
 
 class TestAddonCallbacks(OsfTestCase):
@@ -1879,6 +1992,14 @@ class TestTemplateNode(OsfTestCase):
         )
         assert_equal(new.files_current, {})
         assert_equal(new.files_versions, {})
+
+    @requires_piwik
+    def test_template_piwik_site_id_not_copied(self):
+        new = self.project.use_as_template(
+            auth=self.consolidate_auth
+        )
+        assert_not_equal(new.piwik_site_id, self.project.piwik_site_id)
+        assert_true(new.piwik_site_id is not None)
 
     def test_template_wiki_pages_not_copied(self):
         self.project.update_node_wiki(
