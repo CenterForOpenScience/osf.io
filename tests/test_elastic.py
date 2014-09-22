@@ -330,11 +330,9 @@ class TestPublicNodes(SearchTestCase):
         res = search.search({'query': self.title, 'type': '', 'tags': ''})
         cloud = res['cloud']
 
-        if len(cloud) == 2:
-            assert_equal(cloud[0], (tag1, 2))
-            assert_equal(cloud[1], (tag2, 1))
-        else:
-            assert 0
+        assert_equal(len(cloud), 2)
+        assert_equal(cloud[0], (tag1, 2))
+        assert_equal(cloud[1], (tag2, 1))
 
     def test_wrong_order_search(self):
         title_parts = self.title.split(' ')
