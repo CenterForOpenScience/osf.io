@@ -947,7 +947,7 @@
             columns: [
                 ProjectOrganizer.Col.Name,
                 {
-                    text: 'Info',
+                    text: 'Action',
                     itemView: iconButtons,
                     folderView: iconButtons,
                     width: 10
