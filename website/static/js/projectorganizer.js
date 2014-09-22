@@ -922,7 +922,8 @@
                 enableCellNavigation: true,
                 multiSelect: true,
                 forceFitColumns: true,
-                autoEdit: false
+                autoEdit: false,
+                addExtraRowsAtEnd: 1
             },
             data: '/api/v1/dashboard/',  // Where to get the initial data
             fetchUrl: function (folder) {
