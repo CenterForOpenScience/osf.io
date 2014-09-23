@@ -85,7 +85,7 @@
             '/api/v1/project/new/' + nodeId + '/',
             {}
         ).done(function(response) {
-            window.location = data.url;
+            window.location = response.url;
         }).fail(function(response) {
             $.osf.unblock();
             $.osf.handleJSONError(response);
