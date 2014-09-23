@@ -53,6 +53,13 @@
 
 
         <div>
+            <style type="text/css">
+                .fullname {
+                    width: 25%;
+                    display: block;
+                    word-wrap: break-word;
+                }
+            </style>
             <table class="table table-plain">
                 <tr>
                   <td>Name</td>
