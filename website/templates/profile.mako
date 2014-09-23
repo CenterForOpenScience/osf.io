@@ -53,17 +53,10 @@
 
 
         <div>
-            <style type="text/css">
-                .fullname {
-                    width: 25%;
-                    display: block;
-                    word-wrap: break-word;
-                }
-            </style>
             <table class="table table-plain">
                 <tr>
                   <td>Name</td>
-                  <td class="fullname">${profile["fullname"]}</td>
+                  <td class="fullname overflow-block" width="20%">${profile["fullname"]}</td>
                 </tr>
                 % if profile.get('date_registered'):
                     <tr>

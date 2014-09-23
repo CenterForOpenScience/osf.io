@@ -92,7 +92,7 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name" data-bind="text: name, tooltip: {title: linkName}"></span>
+                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: linkName}" style="width: 200px"></span>
                             </div>
                             <div class="btn-group">
                             <button class="btn btn-default btn-mini copy-button" data-trigger="manual" rel="tooltip" title="Click to copy the link"
@@ -116,7 +116,7 @@
                             <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
                         </td>
                         <td class="col-sm-2" >
-                            <a data-bind="text: creator.fullname, attr: {href: creator.url}"></a>
+                            <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
                         </td>
                         <td class="col-sm-1">
                             <span data-bind="text: anonymousDisplay"></span>
@@ -143,10 +143,10 @@
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
             <span data-bind="ifnot: profileUrl">
-                <span data-bind="text: contributor.fullname"></span>
+                <span data-bind="text: contributor.shortname"></span>
             </span>
             <span data-bind="if: profileUrl">
-                <a data-bind="text: contributor.fullname, attr:{href: profileUrl}"></a>
+                <a data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
         <td>
