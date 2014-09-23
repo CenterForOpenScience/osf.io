@@ -20,7 +20,11 @@ def find_or_create_from_report(report, app):
             tmp = tmp[_key]
 
         search_string += '{}:{};'.format(key, tmp)
+
         ret = search(search_string, _type=app.namespace, index='metadata')
+
+        if not ret:
+            break
 
         if ret['hits']['total'] == 1:
             return Node.load(ret['hits']['hits'][0]['_source']['guid'])
@@ -29,7 +33,7 @@ def find_or_create_from_report(report, app):
 
     resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
     resource.set_privacy('public')
-    resource.set_visible(app.system_user, False, log=False)
+    # resource.set_visible(app.system_user, False, log=False)
     resource.save()
     # TODO Address this issue
     app.attach_data(resource._id, {'is_project': 'true'})
@@ -38,6 +42,6 @@ def find_or_create_from_report(report, app):
 
 def is_claimed(node):
     for contributor in node.contributors:
-        if contributor.is_claimed:
+        if contributor.is_claimed and not contributor.is_system_user:
             return True
     return False
