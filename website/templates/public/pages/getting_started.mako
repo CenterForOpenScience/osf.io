@@ -73,9 +73,9 @@
             <div class="row" >
                 <p class="gs-header">Dashboards</p>
                 <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is linked in the black navigation bar at the top of the page. From the Project Organizer, you can open any of your projects or components by clicking on the "open" icon to the right of the project's name.</p>
-                <br /><div ><img src="/static/img/help/go-to-project.gif "></div><br />
+                <br /><div ><img src="/static/img/help/go-to-project.gif" class="img-responsive"></div><br />
                 <p>You can shrink or expand each project to display nested components by clicking the + or - to the left of the projects name. A more detailed description of the <a href="#organizer">Project Organizer</a> is below.</p>
-                <br /><div ><img src="/static/img/help/expand-collapse.gif"></div><br />
+                <br /><div ><img src="/static/img/help/expand-collapse.gif" class="img-responsive"></div><br />
                 </div>
                 <span id="projects" class="anchor"></span>
                 <div class="row">
@@ -138,12 +138,12 @@
                     <p class="gs-header">Project Organizer</p>
                     <p> In addition to displaying your projects, components, and registrations, the Project Organizer makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
                     <p>To create a folder, click the “New Folder” button above the Project Organizer and give the folder a name.  </p>
-                    <br /><div ><img src="/static/img/help/new-folder-1.gif"></div><br />
+                    <br /><div ><img src="/static/img/help/new-folder-1.gif" class="img-responsive"></div><br />
                     <p>Then simply drag and drop projects or components you’d like associated with this folder, or click on the folder name and choose “Add Existing Project.” </p>
-                    <br /><div ><img src="/static/img/help/drag-project-to-folder.gif "></div><br />
+                    <br /><div ><img src="/static/img/help/drag-project-to-folder.gif " class="img-responsive"></div><br />
                     <p> It is important to understand that dropping projects or components into these folders will not change the structure of the original projects themselves, but simply create a new way for you to access your projects and components.</p>
                     <p>Folders can be rearranged by dragging and dropping them wherever you like. Folders can be renamed by clicking on the “info” icon adjacent to the folder, and then clicking on the pencil icon next to the folder name. Projects and components can be renamed in this way too. Folders can be deleted by clicking on the “info” icon and choosing “Delete Folder.”</p>
-                    <br /><div ><img src="/static/img/help/rename-folder.gif"></div>
+                    <br /><div ><img src="/static/img/help/rename-folder.gif" class="img-responsive"></div>
                 </div>
                 <br><br><br><br><br><br>
                 
