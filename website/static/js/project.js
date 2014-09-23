@@ -194,8 +194,8 @@
 
 
     /*
-Display recent logs for for a node on the project view page.
-*/
+    Display recent logs for for a node on the project view page.
+    */
     NodeActions.openCloseNode = function(nodeId) {
         var $logs = $('#logs-' + nodeId);
         if (!$logs.hasClass('active')) {
