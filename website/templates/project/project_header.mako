@@ -46,7 +46,7 @@
                     %endif
                 %endif
                 <h1 class="node-title">
-                    <span id="nodeTitleEditable">${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h1>
             </div><!-- end col-md-->
 
