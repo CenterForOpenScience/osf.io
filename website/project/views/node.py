@@ -635,17 +635,13 @@ def _render_addon(node):
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
-
     project.view.mako.
-
     """
-
     user = auth.user
 
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
@@ -678,7 +674,6 @@ def _view_project(node, auth, primary=False):
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
-            'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
@@ -701,8 +696,6 @@ def _view_project(node, auth, primary=False):
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'logs': recent_logs,
-            'has_more_logs': has_more_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
 

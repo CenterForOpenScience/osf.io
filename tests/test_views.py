@@ -162,9 +162,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(data['node']['id'], self.project._primary_key)
         assert_equal(data['node']['watched_count'], 0)
         assert_true(data['user']['is_contributor'])
-        assert_equal(data['node']['logs'][-1]['action'], 'project_created')
-        assert_equal(data['node']['children_ids'],
-                     [str(n._primary_key) for n in self.project.nodes])
         assert_equal(data['node']['description'], self.project.description)
         assert_equal(data['node']['url'], self.project.url)
         assert_equal(data['node']['tags'], [t._primary_key for t in self.project.tags])
@@ -600,22 +597,6 @@ class TestProjectViews(OsfTestCase):
                 for log in res.json['logs']
             ]
         )
-
-    def test_logs_from_api_url(self):
-        # Add some logs
-        for _ in range(12):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action="file_added",
-                    params={"project": self.project._id}
-                )
-            )
-        self.project.save()
-        url = "/api/v1/project/{0}/".format(self.project._primary_key)
-        res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['node']['logs']), 10)
-        assert_true(res.json['node']['has_more_logs'])
 
     def test_remove_project(self):
         url = self.project.api_url
@@ -2217,6 +2198,7 @@ class TestTagViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
+    @unittest.skip('Tags endpoint disabled for now.')
     def test_tag_get_returns_200(self):
         url = web_url_for('project_tag', tag='foo')
         res = self.app.get(url)

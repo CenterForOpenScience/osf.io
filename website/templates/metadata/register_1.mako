@@ -85,7 +85,7 @@
         registrationViewModel = new MetaData.ViewModel(
             ${schema},
             ${int(registered)},
-            ${[str(node['id'])] + node['children_ids']}
+            ${[str(node['id'])] + [str(each) for each in children_ids]}
         );
         ko.applyBindings(registrationViewModel, $('#registration_template')[0]);
         registrationViewModel.updateIdx('add', true);
