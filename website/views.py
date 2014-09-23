@@ -16,6 +16,7 @@ from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
+from framework.sessions import get_session, set_session
 from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
@@ -188,7 +189,6 @@ def get_all_projects_smart_folder(auth, **kwargs):
 
     return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
-    retu
     return return_value
 
 @must_be_logged_in
@@ -262,9 +262,16 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
-
+    session = get_session()
+    if 'seen_dashboard' in session.data:
+        seen_dashboard = session.data['seen_dashboard']
+    else:
+        seen_dashboard = False
+    session.data['seen_dashboard'] = True
+    set_session(session)
     return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': dashboard_id
+            'dashboard_id': dashboard_id,
+            'seen_dashboard': seen_dashboard,
             }
 
 
