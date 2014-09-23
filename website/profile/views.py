@@ -63,6 +63,10 @@ def _profile_view(uid=None):
     if not (uid or user):
         return redirect('/login/?next={0}'.format(request.path))
 
+    if profile.is_system_user:
+        # System users dont get a profile page
+        raise HTTPError(http.BAD_REQUEST)
+
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
         # TODO: Fix circular import
