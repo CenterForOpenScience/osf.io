@@ -32,7 +32,7 @@ from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, abbrev_authors
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
@@ -1561,6 +1561,29 @@ class TestPointerViews(OsfTestCase):
             if 'Links will be copied into your registration' in prompt
         ]
         assert_equal(len(prompts), 0)
+
+    def test_get_pointed(self):
+        pointing_node = ProjectFactory(creator=self.user)
+        pointing_node.add_pointer(self.project, auth=Auth(self.user))
+        url = self.project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        pointed = res.json['pointed']
+        assert_equal(len(pointed), 1)
+        assert_equal(pointed[0]['url'], pointing_node.url)
+        assert_equal(pointed[0]['title'], pointing_node.title)
+        assert_equal(pointed[0]['authorShort'], abbrev_authors(pointing_node))
+
+    def test_get_pointed_private(self):
+        secret_user = UserFactory()
+        pointing_node = ProjectFactory(creator=secret_user)
+        pointing_node.add_pointer(self.project, auth=Auth(secret_user))
+        url = self.project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        pointed = res.json['pointed']
+        assert_equal(len(pointed), 1)
+        assert_equal(pointed[0]['url'], None)
+        assert_equal(pointed[0]['title'], 'Private Component')
+        assert_equal(pointed[0]['authorShort'], 'Private Author(s)')
 
 
 class TestPublicViews(OsfTestCase):

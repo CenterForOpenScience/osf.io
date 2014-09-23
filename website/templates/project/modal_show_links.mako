@@ -13,7 +13,12 @@
                     </thead>
                     <tr data-bind="foreach: links">
                         <td>
-                            <a data-bind="text: title, attr: {href: url}"></a>
+                            <!-- ko if: url -->
+                                <a data-bind="text: title, attr: {href: url}"></a>
+                            <!-- /ko -->
+                            <!-- ko ifnot: url -->
+                                <span data-bind="text: title"></span>
+                            <!-- /ko -->
                         </td>
                         <td data-bind="text: authorShort"></td>
                     </tr>
