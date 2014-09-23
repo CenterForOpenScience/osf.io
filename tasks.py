@@ -466,7 +466,7 @@ def clear_mfr_cache():
 
 @task
 def hotfix(name, finish=False, push=False):
-    """Rename current hotfix branch to hotfix/<next-patch-version> and optionally
+    """Rename hotfix branch to hotfix/<next-patch-version> and optionally
     finish hotfix.
     """
     print('Checking out master to calculate curent version')
@@ -485,6 +485,17 @@ def hotfix(name, finish=False, push=False):
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push origin develop', echo=True)
+
+
+@task
+def feature(name, finish=False, push=False):
+    """Rename the current branch to a feature branch and optionally finish it."""
+    print('Renaming branch...')
+    run('git br -m feature/{}'.format(name), echo=True)
+    if finish:
+        run('git flow feature finish {}'.format(name), echo=True)
+    if push:
         run('git push origin develop', echo=True)
 
 
