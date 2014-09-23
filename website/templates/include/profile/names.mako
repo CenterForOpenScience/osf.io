@@ -42,21 +42,28 @@
 
         <h4>Citation Preview</h4>
 
+        <style type="text/css">
+            .citation {
+                display: block;
+                width: 30%;
+                word-wrap: break-word;
+            }
+        </style>
         <table class="table">
             <thead>
                 <tr>
                     <th>Style</th>
-                    <th>Citation Format</th>
+                    <th class="citation">Citation Format</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td>{{ citeApa }}</td>
+                    <td class="citation">{{ citeApa }}</td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td>{{ citeMla }}</td>
+                    <td class="citation">{{ citeMla }}</td>
                 </tr>
             </tbody>
         </table>
