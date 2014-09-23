@@ -786,6 +786,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             contributor._id
             for contributor in self.contributors
             if contributor._id in self.visible_contributor_ids
+            and not contributor.is_system_user
         ]
         if save:
             self.save()
