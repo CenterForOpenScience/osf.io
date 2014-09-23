@@ -168,15 +168,19 @@
      * @param {string} url
      * @param {object} options
      */
-    function LogFeed(selector, url, options) {
+    function LogFeed(selector, data, options) {
         var self = this;
         self.selector = selector;
         self.$element = $(selector);
         self.options = $.extend({}, defaults, options);
         self.$progBar = $(self.options.progBar);
-        $.getJSON(url, function(response) {
-            initViewModel(self, response.logs, response.has_more_logs, url);
-        });
+        if (Array.isArray(data)) { // data is an array of log object from server
+            initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
+        } else { // data is an URL
+            $.getJSON(data, function(response) {
+                initViewModel(self, response.logs, response.has_more_logs, data);
+            });
+        }
     }
 
     LogFeed.prototype.init = function() {
