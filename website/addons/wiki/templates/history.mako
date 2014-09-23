@@ -1,5 +1,5 @@
 % for version in versions:
-	<p>
+	<p style="text-align: right">
         <a href="${node['url']}wiki/${pageName}/compare/${version['version']}">
             Version ${version['version']} edited
             % if not node['anonymous']:

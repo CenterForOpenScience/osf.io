@@ -1,9 +1,8 @@
 <div class="osf-sidenav hidden-print" role="complementary">
 
-    <ul class="nav bs-sidenav">
+    <ul class="nav bs-sidenav" style="margin: 0;">
 
-
-    <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
+        <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>
                 <a href=${web_url_for('project_wiki_page', wid='home', pid=node['id'])}>${'home'}</a>
             </li>
@@ -15,7 +14,7 @@
                 % endif
             %endfor
 
-    % if category == 'project':
+        % if category == 'project':
 
         <hr />
         <h4 style="margin-left: 10px;">Component Wiki Pages</h4>
@@ -44,6 +43,6 @@
                     </ul>
                 </li>
             % endfor
-    </ul>
+        </ul>
    %endif
 </div>

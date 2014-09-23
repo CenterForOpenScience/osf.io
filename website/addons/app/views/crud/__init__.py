@@ -4,6 +4,8 @@ import httplib as http
 
 from flask import request
 
+from modularodm.exceptions import ValidationError
+
 from framework.auth import Auth
 from framework.flask import app
 from framework.exceptions import HTTPError
@@ -68,7 +70,10 @@ def create_report(node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     for contributor in report['contributors']:
-        resource.add_unregistered_contributor(contributor['full_name'], contributor.get('email'), Auth(node_addon.system_user))
+        try:
+            resource.add_unregistered_contributor(contributor['full_name'], contributor.get('email'), Auth(node_addon.system_user))
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
 
     # This may not be the best behavior
     # This will just merge the documents in a not super smart way
