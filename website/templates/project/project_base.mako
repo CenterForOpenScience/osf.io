@@ -1,5 +1,15 @@
 <%inherit file="../base.mako"/>
 
+<%def name="og_description()">
+
+    %if node['description']:
+        ${node['description'] + ' | '}
+    %endif
+    Hosted on the Open Science Framework
+
+
+</%def>
+
 <%def name="content()">
 
 <%include file="project_header.mako"/>

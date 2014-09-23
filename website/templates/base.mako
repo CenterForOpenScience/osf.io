@@ -15,6 +15,13 @@
         Raven.config('${ sentry_dsn_js }', {}).install();
     </script>
     % endif
+
+    <!-- Facebook display -->
+    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:title" content="${self.title()}"/>
+    <meta name="og:ttl" content="3"/>
+    <meta name="og:description" content="${self.og_description()}"/>
+
     ${includes_top()}
     ${self.stylesheets()}
     ${self.javascript()}
@@ -127,6 +134,10 @@
 
 <%def name="description()">
     ### The page description ###
+</%def>
+
+<%def name="og_description()">
+    Hosted on the Open Science Framework
 </%def>
 
 <%def name="stylesheets()">
