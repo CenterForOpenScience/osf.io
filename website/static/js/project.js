@@ -100,15 +100,17 @@
         NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
             $.osf.block();
 
-            $.osf.postJSON('/api/v1/project/new/' + nodeId + '/',
-                function (data) {
-                    window.location = data.url;
-                }).fail(function (response) {
-                    $.osf.unblock();
-                    $.osf.handleJSONError(response);
-                });
+            $.osf.postJSON(
+                '/api/v1/project/new/' + nodeId + '/',
+                {}
+            ).done(function(response) {
+                window.location = response.url;
+            }).fail(function(response) {
+                $.osf.unblock();
+                $.osf.handleJSONError(response);
             });
-        };
+        });
+    };
 
     $(function() {
 
