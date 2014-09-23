@@ -7,7 +7,6 @@ from dateutil.parser import parse as parse_date
 from flask import request, redirect
 from modularodm.exceptions import ValidationError
 
-from framework.auth import get_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
@@ -56,6 +55,8 @@ def date_or_none(date):
 
 
 def _profile_view(uid=None):
+    # TODO: Fix circular import
+    from website.addons.badges.util import get_sorted_user_badges
 
     user = get_current_user()
     profile = User.load(uid) if uid else user
@@ -63,18 +64,25 @@ def _profile_view(uid=None):
     if not (uid or user):
         return redirect('/login/?next={0}'.format(request.path))
 
+    if 'badges' in settings.ADDONS_REQUESTED:
+        badge_assertions = get_sorted_user_badges(profile),
+        badges = _get_user_created_badges(profile)
+    else:
+        # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+        # empty lists.
+        badge_assertions = []
+        badges = []
+
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
-        # TODO: Fix circular import
-        from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
-            'assertions': get_sorted_user_badges(profile),
-            'badges': _get_user_created_badges(profile),
+            'assertions': badge_assertions,
+            'badges': badges,
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
-                'permissions': [], # necessary for rendering nodes
+                'permissions': [],  # necessary for rendering nodes
             },
         }
 
