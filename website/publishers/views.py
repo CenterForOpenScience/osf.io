@@ -3,11 +3,6 @@
 import bleach
 import logging
 
-from resync.resource import Resource
-from resync.resource_list import ResourceList
-from resync.change_list import ChangeList
-from resync.capability_list import CapabilityList
-
 from website.publishers import rss, resourcesync
 
 from framework.flask import request
