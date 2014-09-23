@@ -21,13 +21,13 @@
             <div class="form-group wmd-panel">
                 <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
                 <div id="wmd-button-bar"></div>
-                <div id="editor" class="wmd-input" data-bind="ace: wikiText, value: wikiText">
-                    Loading. . .
-                </div>
+                <div id="editor" class="wmd-input"
+                     data-bind="ace: wikiText, value: wikiText">Loading. . .</div>
             </div>
             <div class="pull-right">
                 <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
-                <button id="revert-button" class="btn btn-primary" data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
+                <button id="revert-button" class="btn btn-primary"
+                        data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
                 <input type="submit" class="btn btn-success" value="Save Version"
                        data-bind="enable: changed,
                                   click: function() {updateChanged('${node['url']}wiki/${pageName}/edit/')}"
@@ -60,16 +60,7 @@
     // different documents, like in a wiki.
     var setDoc = function(docName) {
 
-        editor.setReadOnly(true);
-
-        // TODO: No security from users accessing sharejs from JS console
         sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
-
-            // If no share data is loaded, retrieve most recent wiki from osf
-            // TODO: If we rename a wiki to a deleted wiki, we get old content
-            if (newDoc.version === 0) {
-                $("#revert-button").click()
-            }
 
             if (doc != null) {
                 doc.close();
@@ -82,17 +73,25 @@
                 console.error(error);
                 return;
             }
-            doc.attach_ace(editor);
 
+            // Initializes editor
+            doc.attach_ace(editor);
             editor.setReadOnly(false);
+
+            // If no share data is loaded, fetch most recent wiki from osf
+            if (newDoc.version === 0) {
+                $("#revert-button").click();
+                console.log('she was clicked...');
+            }
         });
     };
 
     var langTools = ace.require("ace/ext/language_tools");
     var editor = ace.edit("editor");
     editor.getSession().setMode("ace/mode/markdown");
+    editor.setReadOnly(true); // Read only until initialized
 
-    setDoc('${node['id']}-${pageName}');
+    setDoc('${share_uuid}');
 
     // Settings
     editor.getSession().setUseSoftTabs(true);   // Replace tabs with spaces

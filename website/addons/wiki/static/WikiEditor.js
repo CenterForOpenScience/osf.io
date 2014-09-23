@@ -14,15 +14,19 @@
     var editor;
 
     ko.bindingHandlers.ace = {
-        init: function(element, valueAccessor) {
+        init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
             editor = ace.edit(element.id);
             var value = ko.unwrap(valueAccessor());
 
-            // Initialize value
-            editor.setValue(value);
-            editor.setReadOnly(false);
+            // Initialize value if not yet initialized. TODO: Is this needed?
+            if (editor.getReadOnly() === true) {
+                editor.setValue(value);
+                editor.setReadOnly(false);
+            }
 
-            // Change view model on editor change
+            // TODO: Load data from server if no data from server
+
+            // Updates the view model based on changes to the editor
             editor.getSession().on('change', function () {
                 valueAccessor()(editor.getValue());
             });
@@ -31,7 +35,8 @@
             var content = editor.getValue();        // Content of ace editor
             var value = ko.unwrap(valueAccessor()); // Value from view model
 
-            if (content !== value) {
+            // Updates the editor based on changes to the view model
+            if (value !== undefined && content !== value) {
                 editor.setValue(value);
             }
         }
@@ -85,6 +90,7 @@
                 success: function (response) {
                     self.initText(response.wiki_content);
                     self.wikiText(response.wiki_content);
+                    console.log('new content', response.wiki_content);
                 },
                 error: function (xhr, textStatus, error) {
                     console.error(textStatus);

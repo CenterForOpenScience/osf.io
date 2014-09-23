@@ -255,6 +255,9 @@ def project_wiki_edit(auth, **kwargs):
         is_current = False
         content = ''
 
+    if wiki_page.share_uuid is None:
+        wiki_page.generate_share_uuid()
+
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'pageName': wid,
@@ -263,6 +266,7 @@ def project_wiki_edit(auth, **kwargs):
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
         'wiki_id': wiki_page._primary_key if wiki_page else None,
+        'share_uuid': wiki_page.share_uuid,
         'is_current': is_current,
         'is_edit': True,
         'pages_current': [

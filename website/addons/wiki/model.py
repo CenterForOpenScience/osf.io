@@ -4,6 +4,7 @@
 
 import datetime
 import functools
+import uuid
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -41,6 +42,7 @@ class NodeWikiPage(GuidStoredObject):
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()
     content = fields.StringField(default='')
+    share_uuid = fields.StringField()
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')
@@ -84,6 +86,13 @@ class NodeWikiPage(GuidStoredObject):
         """ The raw text of the page, suitable for using in a test search"""
 
         return sanitize(self.html(node), tags=[], strip=True)
+
+    def generate_share_uuid(self, save=True):
+        """Generates uuid for use in sharejs namespacing"""
+
+        self.share_uuid = str(uuid.uuid5(uuid.uuid1(), str(self._id)))
+        if save:
+            self.save()
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
