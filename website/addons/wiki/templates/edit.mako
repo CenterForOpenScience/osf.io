@@ -8,7 +8,7 @@
             <%include file="wiki/templates/toc.mako"/>
         </div>
          <div class="col-md-9">
-                 <%include file="wiki/templates/status.mako/"/>
+                 <%include file="wiki/templates/status.mako"/>
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
