@@ -10,6 +10,7 @@
             <h3>Projects</h3>
         </div>
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
+        <div class="alert alert-info">The OSF has a new dashboard. Find out how it works on our <a href="/getting-started/#dashboards">getting started</a> page.</div>
         <div id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
 
