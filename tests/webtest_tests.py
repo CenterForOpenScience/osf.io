@@ -1123,5 +1123,24 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert_not_in(self.project._primary_key, self.user.unclaimed_records)
 
 
+class TestExplorePublicActivity(OsfTestCase):
+
+    def setUp(self):
+        super(TestExplorePublicActivity, self).setUp()
+        self.project = ProjectFactory(is_public=True)
+        self.registration = RegistrationFactory(project=self.project)
+        self.private_project = ProjectFactory(title="Test private project")
+
+    def test_newest_public_project_and_registrations_show_in_explore_activity(self):
+        url = self.project.web_url_for('activity')
+        res = self.app.get(url)
+
+        assert_in(str(self.project.title), res)
+        assert_in(str(self.project.date_created.date()),res)
+        assert_in(str(self.registration.title), res)
+        assert_in(str(self.registration.registered_date.date()), res)
+        assert_not_in(str(self.private_project.title), res)
+
+
 if __name__ == '__main__':
     unittest.main()
