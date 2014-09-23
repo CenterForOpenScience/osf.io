@@ -17,7 +17,7 @@
             <%include file="wiki/templates/toc.mako" />
         </div>
         <div class="col-md-9">
-            <%include file="wiki/templates/status.mako/"/>
+            <%include file="wiki/templates/status.mako"/>
             <div class="form-group wmd-panel">
                 <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
                 <div id="wmd-button-bar"></div>
