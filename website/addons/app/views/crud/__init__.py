@@ -69,24 +69,35 @@ def create_report(node_addon, **kwargs):
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
-    for contributor in report['contributors']:
-        try:
-            resource.add_unregistered_contributor(contributor['full_name'], contributor.get('email'), Auth(node_addon.system_user))
-        except ValidationError:
-            pass  # A contributor with the given email has already been added
-
     # This may not be the best behavior
     # This will just merge the documents in a not super smart way
     # Keys and nested key will be updated and empty fields filled in
     node_addon.attach_data(resource._id, report)
 
+    claimed = is_claimed(resource)
+
     report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
             description=report.get('description'), project=resource)
 
     report_node.set_privacy('public')
-    report_node.save()
 
-    claimed = is_claimed(resource)
+    for contributor in report['contributors']:
+        if not claimed:
+            try:
+                resource.add_unregistered_contributor(contributor['full_name'],
+                        contributor.get('email'), Auth(node_addon.system_user),
+                        permissions=['admin'])  # TODO Discuss this
+            except ValidationError:
+                pass  # A contributor with the given email has already been added
+
+        try:
+            report_node.add_unregistered_contributor(contributor['full_name'],
+                    contributor.get('email'), Auth(node_addon.system_user),
+                    permissions=['read'])
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+
+    report_node.save()
 
     for tag in report['tags']:
         report_node.add_tag(tag, Auth(node_addon.system_user))
