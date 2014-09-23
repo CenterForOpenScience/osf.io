@@ -17,6 +17,7 @@ from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 from framework.guid.model import GuidStoredObject
+from framework.sessions import get_session, set_session
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
 from website.project import model, new_dashboard
@@ -125,6 +126,7 @@ def find_dashboard(user):
 @must_be_logged_in
 def get_dashboard(auth, nid=None, **kwargs):
     user = auth.user
+
     if nid is None:
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
@@ -141,7 +143,7 @@ def get_dashboard(auth, nid=None, **kwargs):
 
 @must_be_logged_in
 def get_all_projects_smart_folder(auth, **kwargs):
-    #TODO: Unit tests
+
     user = auth.user
 
     contributed = user.node__contributed
@@ -163,24 +165,37 @@ def get_all_projects_smart_folder(auth, **kwargs):
     )
 
     comps = contributed.find(
-        Q('is_folder', 'eq', False) &
+        # components only
+        Q('category', 'ne', 'project') &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
         Q('is_registration', 'eq', False)
     )
 
+    subprojects = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # has a parent
+        Q('__backrefs.parent.node.nodes', 'neq', None)&
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys())
+        # is not in the nodes list
+
+    )
+
     return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in subprojects])
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):
-    #TODO: Unit tests
+
     user = auth.user
     contributed = user.node__contributed
 
@@ -201,11 +216,10 @@ def get_all_registrations_smart_folder(auth, **kwargs):
     )
 
     comps = contributed.find(
-        Q('is_folder', 'eq', False) &
+        # components only
+        Q('category', 'ne', 'project') &
         # parent is not in the nodes list
         Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
-        # is not in the nodes list
-        Q('_id', 'nin', nodes.get_keys()) &
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
@@ -248,9 +262,16 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
-
+    session = get_session()
+    if 'seen_dashboard' in session.data:
+        seen_dashboard = session.data['seen_dashboard']
+    else:
+        seen_dashboard = False
+    session.data['seen_dashboard'] = True
+    set_session(session)
     return {'addons_enabled': user.get_addon_names(),
-            'dashboard_id': dashboard_id
+            'dashboard_id': dashboard_id,
+            'seen_dashboard': seen_dashboard,
             }
 
 
