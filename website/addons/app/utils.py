@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Utility functions for the Application add-on.
 """
+from __future__ import unicode_literals
+
 from website.project import new_node, Node
 from website.search.search import search
 
