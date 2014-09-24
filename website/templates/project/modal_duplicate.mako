@@ -6,13 +6,19 @@
                 <div class="row">
                     <div class="col-md-4">
                         <h4>Links
-                            <a class="btn btn-primary pull-right"
-                               href="#showLinks"
-                               data-toggle="modal"
-                               data-dismiss="modal"
-                            >
-                                ${ node['points'] }
-                            </a>
+                            % if node['points'] > 0:
+                                <a class="btn btn-primary pull-right"
+                                   href="#showLinks"
+                                   data-toggle="modal"
+                                   data-dismiss="modal"
+                                >
+                                    ${ node['points'] }
+                                </a>
+                            % else:
+                                 <span class="well well-inline pull-right">
+                                    ${ node['points'] }
+                                </span>
+                            % endif
                         </h4>
                         ${ language.LINK_DESCRIPTION }
                     </div>
