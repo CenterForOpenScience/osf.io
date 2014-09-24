@@ -19,7 +19,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_contributor_or_public
 )
 
-from website.addons.app.utils import find_or_create_from_report, is_claimed
+from website.addons.app.utils import find_or_create_from_report, is_claimed, find_or_create_report
 
 from . import metadata, customroutes
 
@@ -76,10 +76,7 @@ def create_report(node_addon, **kwargs):
 
     claimed = is_claimed(resource)
 
-    report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
-            description=report.get('description'), project=resource)
-
-    report_node.set_privacy('public')
+    report_node = find_or_create_report(resource, report, node_addon)
 
     for contributor in report['contributors']:
         if not claimed:
@@ -90,21 +87,9 @@ def create_report(node_addon, **kwargs):
             except ValidationError:
                 pass  # A contributor with the given email has already been added
 
-        try:
-            report_node.add_unregistered_contributor(contributor['full_name'],
-                    contributor.get('email'), Auth(node_addon.system_user),
-                    permissions=['read'])
-        except ValidationError:
-            pass  # A contributor with the given email has already been added
-
-    report_node.save()
-
-    for tag in report['tags']:
-        report_node.add_tag(tag, Auth(node_addon.system_user))
-        if not claimed:
+    if not claimed:
+        for tag in report['tags']:
             resource.add_tag(tag, Auth(node_addon.system_user))
-
-    node_addon.attach_data(report_node._id, report)
 
     return {
         'id': report_node._id,
