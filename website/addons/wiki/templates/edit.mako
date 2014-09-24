@@ -16,7 +16,11 @@
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
-                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    % if wiki_created:
+                        <a href="${node['url']}wiki/home/" class="btn btn-default">Cancel</a>
+                    % else:
+                        <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    % endif
                     <input type="submit" class="btn btn-primary" value="Save"  data-bind="enable: changed" onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>

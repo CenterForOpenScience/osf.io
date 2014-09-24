@@ -249,11 +249,13 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
+        wiki_created = False
     else:
         wiki_page = NodeWikiPage()
         version = 'NA'
         is_current = False
         content = ''
+        wiki_created = True
 
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
@@ -262,6 +264,7 @@ def project_wiki_edit(auth, **kwargs):
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
+        'wiki_created': wiki_created,
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'is_current': is_current,
         'is_edit': True,
