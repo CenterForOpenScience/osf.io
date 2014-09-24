@@ -1,0 +1,86 @@
+<script id="project-detail-template" type="text/x-handlebars-template">
+    <div class="project-detail-box" id="ptd-{{ theItem.node_id }}">
+    <span class = "title">
+        <div class="close-project-details-button pull-right btn btn-default btn-xs" id="close-{{ theItem.node_id }}">X</div>
+          <span class = "name-container" id="nc-{{theItem.node_id}}">
+              {{#if theItem.isFolder}}{{{ theItem.name }}}{{/if}}
+              {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{{ theItem.name }}}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+              {{/unless}}
+              {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+                  <img src="/static/img/pen.png" id="rename-node-{{theItem.node_id}}">
+              {{/if}}{{/unless}}{{/unless}}
+          </span>
+          <span class="rename-container" id="rnc-{{theItem.node_id}}">
+              <form action="">
+              <fieldset class="project-detail-fields">
+                <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{{theItem.name}}}" autofocus>
+                <input type="submit" class = "rename-node-btn btn btn-default submit-button-{{ theItem.node_id }}" id="rename-node-button{{theItem.node_id}}" disabled="disabled" value="Rename">
+                <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+              </fieldset>
+              </form>
+          </span>
+
+        </span>
+        <div class = "project-detail-content">
+        {{#unless theItem.isFolder}}
+        <div class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{{ this.name }}}</a>{{/commalist}}</span>
+        {{/unless}}
+        {{#if theItem.description}}<br /><span class="description">Description: {{ theItem.description }}</span>{{/if}}
+        {{#if theItem.isFolder}}
+        <div class = "organize-project-controls">
+            <div id = "buttons{{theItem.node_id}}">
+            <div class = "orgnaize-btn btn btn-default" id="add-item-{{theItem.node_id}}">Add Existing Project</div>
+            <div id="add-folder-{{theItem.node_id}}" class = "orgnaize-btn btn btn-default">New Folder</div>
+                {{#unless theItem.isDashboard}}
+                    <div class = "orgnaize-btn btn btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
+                {{/unless}}
+            </div>
+            <div id="findNode{{theItem.node_id}}">
+                <form action="">
+                <fieldset class="project-detail-fields">
+                    <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Name of project to find" autofocus>
+                    <input type="submit" class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled" value="Add the project">
+                    <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                    <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
+                </fieldset>
+                    </form>
+            </div>
+            <div class="add-folder-container" id="afc-{{theItem.node_id}}">
+                <form action="">
+                <fieldset class="project-detail-fields">
+                    <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name" autofocus>
+                    <input type="submit" class = "addFolderBtn btn btn-default submit-button-{{ theItem.node_id }}" id="add-folder-button{{theItem.node_id}}" disabled="disabled" value="Add the folder">
+                    <input type="reset" class = "btn btn-default cancel-button-{{ theItem.node_id }}" value="Cancel">
+                </fieldset>
+                    </form>
+            </div>
+
+
+        </div>
+
+        {{/if}}
+        {{#unless theItem.isFolder}}
+            {{#if theItem.parentIsFolder}}
+                {{#unless parentIsSmartFolder}}
+                    <div class = "organize-project-controls">
+                        <div id = "buttons{{theItem.node_id}}">
+                            <div class="orgnaize-btn btn btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
+                        </div>
+                    </div>
+                {{/unless}}
+            {{/if}}
+        {{/unless}}
+        </div>
+        </div>
+</script>
+
+<script id="project-detail-multi-item-template" type="text/x-handlebars-template">
+    <div class="project-detail-box" id="ptd-multi">
+        <span class="title">Selection of {{ itemsCount }} items.
+            <div class="close-project-details-button pull-right btn btn-default btn-xs" id="close-multi-select">X</div>
+        </span>
+        <div class = "project-detail-content">
+            <p><div class="orgnaize-btn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
+        </div>
+    </div>
+</script>

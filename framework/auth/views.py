@@ -153,7 +153,7 @@ def confirm_email_get(**kwargs):
 
     methods: GET
     """
-    user = get_user(id=kwargs['uid'])
+    user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
         if user.confirm_email(token):  # Confirm and register the usre
@@ -195,7 +195,6 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    # TODO: Move this logic to ODM
     if request.json['email1'] != request.json['email2']:
         raise HTTPError(
             http.BAD_REQUEST,
@@ -255,8 +254,6 @@ def auth_register_post():
                 return auth_login(registration_form=form)
             else:
                 return redirect('/login/first/')
-                #status.push_status_message('You may now log in')
-            return redirect(web_url_for('auth_login'))
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)

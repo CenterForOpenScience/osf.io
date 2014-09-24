@@ -12,7 +12,9 @@ from dateutil.parser import parse
 from requests.adapters import HTTPAdapter
 
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError, GitHubError
+from website.addons.github.exceptions import (
+    NotFoundError, EmptyRepoError, TooBigError, GitHubError
+)
 
 # Initialize caches
 https_cache = cachecontrol.CacheControlAdapter()
@@ -163,7 +165,12 @@ class GitHub(object):
         :returns: A tuple of the form (<filename>, <file_content>, <file_size):
 
         """
-        req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        try:
+            req = self.contents(user=user, repo=repo, path=path, ref=ref)
+        except GitHubError as error:
+            if 'requested blob is too large' in error.message:
+                raise TooBigError()
+            raise
         if req:
             return req.name, req.decoded, req.size
         return None, None, None
@@ -173,7 +180,7 @@ class GitHub(object):
         http://developer.github.com/v3/repos/contents/#get-contents
 
         """
-        return self.repo(user, repo).contents(path.encode("utf-8", ref))
+        return self.repo(user, repo).contents(path.encode('utf-8'), ref)
 
     # TODO: Test
     def starball(self, user, repo, archive='tar', ref='master'):

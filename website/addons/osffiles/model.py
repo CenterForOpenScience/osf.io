@@ -36,7 +36,7 @@ class OsfGuidFile(GuidFile):
 
 class NodeFile(GuidStoredObject):
 
-    redirect_mode = 'redirect'
+    redirect_mode = None
 
     _id = fields.StringField(primary=True)
 

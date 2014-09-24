@@ -6,13 +6,14 @@ from website import settings
 
 
 def get_projects(user):
-    '''Return a list of user's projects, excluding registrations.'''
+    '''Return a list of user's projects, excluding registrations and folders.'''
     return [
         node
         for node in user.node__contributed
         if node.category == 'project'
         and not node.is_registration
         and not node.is_deleted
+        and not node.is_folder
     ]
 
 
@@ -42,7 +43,7 @@ def serialize_user(user, node=None, full=False):
     }
     if node is not None:
         rv.update({
-            'visible': user in node.visible_contributors,
+            'visible': user._id in node.visible_contributor_ids,
             'permission': reduce_permissions(node.get_permissions(user)),
         })
     if user.is_registered:
@@ -66,11 +67,11 @@ def serialize_user(user, node=None, full=False):
         rv.update({
             'number_projects': len(get_projects(user)),
             'number_public_projects': len(get_public_projects(user)),
-            'activity_points': user.activity_points,
+            'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
-            user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
-        ),
+                user, use_ssl=True,
+                size=settings.GRAVATAR_SIZE_PROFILE
+            ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
         })

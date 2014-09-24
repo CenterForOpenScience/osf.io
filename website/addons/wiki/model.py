@@ -40,7 +40,7 @@ class NodeWikiPage(GuidStoredObject):
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()
-    content = fields.StringField()
+    content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')

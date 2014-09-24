@@ -10,6 +10,8 @@ from website.project.decorators import (
 )
 
 
+# Disabled for now. Should implement pagination, or at least cap the number of
+# nodes serialized, before re-enabling.
 @collect_auth
 def project_tag(tag, auth, **kwargs):
     tag_obj = Tag.load(tag)

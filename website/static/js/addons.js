@@ -28,29 +28,24 @@ var AddonHelper = (function() {
             ? '/api/v1/settings/' + addon + '/'
             : nodeApiUrl + addon + '/settings/';
 
-        $.ajax({
-            url: url,
-            data: JSON.stringify(formToObj($this)),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
+        $.osf.postJSON(
+            url,
+            formToObj($this)
+        ).done(function() {
             msgElm.text('Settings updated')
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
-            },
-            error: function(xhr) {
-                var message = 'Error: ';
-                var response = JSON.parse(xhr.responseText);
-                if (response && response.message) {
-                    message += response.message;
-                } else {
-                    message += 'Settings not updated.'
-                }
-                msgElm.text(message)
-                    .removeClass('text-success').addClass('text-danger')
-                    .fadeOut(100).fadeIn();
+        }).fail(function(response) {
+            var message = 'Error: ';
+            var response = JSON.parse(response.responseText);
+            if (response && response.message) {
+                message += response.message;
+            } else {
+                message += 'Settings not updated.'
             }
+            msgElm.text(message)
+                .removeClass('text-success').addClass('text-danger')
+                .fadeOut(100).fadeIn();
         });
 
         return false;

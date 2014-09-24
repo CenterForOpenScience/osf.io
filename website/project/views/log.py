@@ -5,8 +5,10 @@ import logging
 from flask import request
 
 from framework.auth import Auth, get_current_user, get_api_key, get_current_node
+from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import collect_auth
 from framework.exceptions import HTTPError
+
 
 from website.project.model import NodeLog, has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -15,6 +17,7 @@ from website.views import serialize_log
 logger = logging.getLogger(__name__)
 
 
+@no_auto_transaction
 def get_log(log_id):
 
     log = NodeLog.load(log_id)
@@ -49,14 +52,9 @@ def _get_logs(node, count, auth, link=None, offset=0):
         # log can be None; its `node__logged` back-ref can be empty, and the
         # 0th logged node can be None. Catch and log these errors and ignore
         # the offending logs.
-        try:
-            can_view = all(x.can_view(auth) for x in log.node__logged)
-        except (AttributeError, IndexError) as error:
-            logger.exception(error)
-            continue
-
-        if can_view:
-            anonymous = has_anonymous_link(log.node, auth)
+        log_node = log.resolve_node(node)
+        if log.can_view(node, auth):
+            anonymous = has_anonymous_link(log_node, auth)
             if len(logs) < count:
                 logs.append(serialize_log(log, anonymous))
             else:
@@ -65,6 +63,7 @@ def _get_logs(node, count, auth, link=None, offset=0):
     return logs, has_more_logs
 
 
+@no_auto_transaction
 @collect_auth
 @must_be_valid_project
 def get_logs(auth, **kwargs):
@@ -92,3 +91,4 @@ def get_logs(auth, **kwargs):
     # logs that the current user / API key cannot access
     logs, has_more_logs = _get_logs(node, count, auth, link, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}
+
