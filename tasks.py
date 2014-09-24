@@ -479,7 +479,7 @@ def hotfix(name, finish=False, push=False):
     print('Renaming branch...')
 
     new_branch_name = 'hotfix/{}'.format(next_patch_version)
-    run('git checkout hotfix/{}'.format(name), echo=True)
+    run('git checkout {}'.format(name), echo=True)
     run('git branch -m {}'.format(new_branch_name), echo=True)
     if finish:
         run('git flow hotfix finish {}'.format(next_patch_version), echo=True)
