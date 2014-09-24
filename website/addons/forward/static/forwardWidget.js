@@ -21,7 +21,14 @@
         var self = this;
 
         self.url = ko.observable();
-	self.label = ko.observable();
+	    self.label = ko.observable();
+        self.linkDisplay = ko.computed(function() {
+            if (self.label()) {
+                return self.label();
+            } else {
+                return self.url();
+            }
+        });
         self.redirectBool = ko.observable();
         self.redirectSecs = ko.observable();
 
@@ -77,7 +84,6 @@
                 }
             });
         };
-
     };
 
     // Public API
