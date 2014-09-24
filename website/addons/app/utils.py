@@ -35,7 +35,7 @@ def find_or_create_from_report(report, app):
     return resource
 
 
-def find_or_create_report(node, report, node_addon):
+def find_or_create_report(node, report, node_addon, metadata=None):
     for child in node.nodes:
         provider = child.split(' :')[0]
         if provider == report['source']:
@@ -59,9 +59,17 @@ def find_or_create_report(node, report, node_addon):
 
     report_node.save()
 
-    node_addon.attach_data(report_node._id, report)
+    if not metadata:
+        node_addon.attach_data(report_node._id, report)
+    else:
+        metadata.guid = report_node._id
+        metadata.save()
 
-    return child
+        guid = Guid.load(report_node._id)
+        guid.metastore[node_addon.namespace] = metadata._id
+        guid.save()
+
+    return report_node
 
 
 def create_orphaned_metadata(node_addon, report):
