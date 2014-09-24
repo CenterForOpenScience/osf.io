@@ -322,16 +322,16 @@ def project_wiki_rename(**kwargs):
 
     if page and new_name:
         try:
-            exist_check = node.wiki_pages_versions[new_name.lower()]
+            exist_check = node.wiki_pages_versions[new_name]
         except KeyError:
             exist_check = None
         if exist_check:
             raise HTTPError(http.CONFLICT)
 
-        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
-        del node.wiki_pages_versions[page.page_name.lower()]
-        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
-        del node.wiki_pages_current[page.page_name.lower()]
+        node.wiki_pages_versions[new_name] = node.wiki_pages_versions[page.page_name]
+        del node.wiki_pages_versions[page.page_name]
+        node.wiki_pages_current[new_name] = node.wiki_pages_current[page.page_name]
+        del node.wiki_pages_current[page.page_name]
         node.save()
         page.rename(new_name)
         return {'message': new_name}

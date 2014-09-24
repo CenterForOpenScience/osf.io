@@ -2475,7 +2475,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
 
-        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2512,7 +2511,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         page = urllib.unquote_plus(page)
         page = to_mongo(page)
-        page = page.lower()
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2554,7 +2552,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def delete_node_wiki(self, node, page, auth):
 
-        del node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page.page_name]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
