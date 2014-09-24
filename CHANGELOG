@@ -5,6 +5,7 @@ Changelog
 0.17.0 (unreleased)
 ===================
 
+- New project organizer on user dashboard.
 - Improvements to wiki interface.
 - Allow wiki pages to be deleted.
 - Developers: Switch to the TokuMX MongoDB distribution for handling database
