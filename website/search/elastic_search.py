@@ -247,7 +247,7 @@ def update_node(node, index='website'):
 
 @requires_search
 def update_user(user):
-    if not user.is_active():
+    if not user.is_active() or user.is_system_user:
         try:
             elastic.delete('website', 'user', user._id, refresh=True)
             return
