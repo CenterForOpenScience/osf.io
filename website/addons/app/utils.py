@@ -6,9 +6,10 @@ from __future__ import unicode_literals
 from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
+from framework.guid.model import Metadata, Guid
 
 from website.project import new_node, Node
-from website.search.search import search
+from website.search import search
 
 def find_or_create_from_report(report, app):
     # @chrisseto TODO: Find a better way to do this
@@ -18,7 +19,7 @@ def find_or_create_from_report(report, app):
     search_string = search_string.format(doc=report)
 
     try:
-        ret = search(search_string, _type=app.namespace, index='metadata')
+        ret = search.search(search_string, _type=app.namespace, index='metadata')
     except Exception:
         ret = None
 
@@ -61,6 +62,18 @@ def find_or_create_report(node, report, node_addon):
     node_addon.attach_data(report_node._id, report)
 
     return child
+
+
+def create_orphaned_metadata(node_addon, report):
+    metastore = Metadata(app=node_addon)
+    metastore.update(report)
+    metastore.system_data['is_orphan'] = True
+    metastore.system_data['guid'] = metastore._id
+    metastore.save()
+
+    search.update_metadata(metastore)
+
+    return metastore
 
 
 def is_claimed(node):
