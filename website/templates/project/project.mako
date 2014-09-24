@@ -151,7 +151,6 @@ ${parent.javascript_bottom()}
 <script type="text/javascript">
 
     $script(['/static/js/logFeed.js'], 'logFeed');
-    $script(['/static/js/pointers.js'], 'pointers');
 
     $('body').on('nodeLoad', function(event, data) {
         $script.ready('logFeed', function() {
@@ -159,9 +158,9 @@ ${parent.javascript_bottom()}
         });
     });
 
+    ##  NOTE: pointers.js is loaded in project_base.mako
     $script.ready('pointers', function() {
         var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
     });
 
     var $comments = $('#comments');
