@@ -387,11 +387,16 @@ def _format_result(result, parent, parent_info):
 
 
 @requires_search
-def search_contributor(query, exclude=None, current_user=None):
+def search_contributor(query, start=0, size=10, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
-    :param: Search query, current_user
+    :param: query - The substring of the username to search for
+    :param: start - For pagination, the current page to start on
+    :param: size - For pagination, the number of results per page
+    :param: exclude - A list of User objects to exclude from the search
+    :param: current_user - A User object of the current user
+
     :return: List of dictionaries, each containing the ID, full name,
         most recent employment and education, gravatar URL of an OSF user
 
@@ -399,26 +404,40 @@ def search_contributor(query, exclude=None, current_user=None):
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
+    bool_filter = \
+        {
+            "must": [],
+            "should": [],
+            "must_not": [],
+        }
+    if exclude is not None:
+        for excluded in exclude:
+            bool_filter['must_not'].append({
+                'term': {
+                    'id': excluded._id
+                }
+            })
 
     if len(query) > 1:
-        and_filter = {'and': []}
         for item in query:
-            and_filter['and'].append({
+            bool_filter['must'].append({
                 'prefix': {
                     'user': item.lower()
                 }
             })
     else:
-        and_filter = {
+        bool_filter['must'].append({
             'prefix': {
                 'user': query[0].lower()
             }
-        }
+        })
 
     query = {
         'query': {
             'filtered': {
-                'filter': and_filter
+                'filter': {
+                    'bool': bool_filter
+                }
             }
         }
     }
@@ -426,8 +445,8 @@ def search_contributor(query, exclude=None, current_user=None):
     results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
 
-    if exclude:
-        docs = (x for x in docs if x.get('id') not in exclude)
+    # if exclude:
+    #     docs = (x for x in docs if x.get('id') not in exclude)
 
     users = []
     for doc in docs:
@@ -468,7 +487,5 @@ def search_contributor(query, exclude=None, current_user=None):
                 'active': user.is_active()
 
             })
-
-
 
     return {'users': users}
