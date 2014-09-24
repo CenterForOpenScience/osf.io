@@ -29,6 +29,7 @@ from website.project.views.contributor import (
     deserialize_contributors
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
@@ -668,6 +669,13 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
+
+    def test_fmt_date_or_none(self):
+        with assert_raises(HTTPError) as cm:
+            #enter a date before 1900
+            fmt_date_or_none(dt.datetime(1890, 10, 31, 18, 23, 29, 227))
+        # error should be raised because date is before 1900
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
 
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
