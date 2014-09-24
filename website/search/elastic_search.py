@@ -392,7 +392,7 @@ def search_contributor(query, start=0, size=10, exclude=None, current_user=None)
     include JSON data with a "query" field.
 
     :param: query - The substring of the username to search for
-    :param: start - For pagination, the current page to start on
+    :param: start - For pagination, the number of results to skip
     :param: size - For pagination, the number of results per page
     :param: exclude - A list of User objects to exclude from the search
     :param: current_user - A User object of the current user
@@ -444,9 +444,6 @@ def search_contributor(query, start=0, size=10, exclude=None, current_user=None)
 
     results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
-
-    # if exclude:
-    #     docs = (x for x in docs if x.get('id') not in exclude)
 
     users = []
     for doc in docs:
