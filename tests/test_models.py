@@ -1123,6 +1123,7 @@ class TestNode(OsfTestCase):
         node2 = NodeFactory(creator=self.user)
         pointer = self.node.add_pointer(node2, auth=self.consolidate_auth)
         self.node.rm_pointer(pointer, auth=self.consolidate_auth)
+        assert_is(Pointer.load(pointer._id), None)
         assert_equal(len(self.node.nodes), 0)
         assert_equal(node2.points, 0)
         assert_equal(

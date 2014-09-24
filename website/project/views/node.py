@@ -1137,7 +1137,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth, save=False)
+        node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1232,7 +1232,12 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    node = pointer.node__parent[0]
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    node = parent_refs[0]
     if node.can_view(auth):
         return {
             'url': node.url,
