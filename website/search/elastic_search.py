@@ -268,12 +268,19 @@ def update_user(user):
 
 @requires_search
 def delete_all():
-    try:
-        elastic.delete_index('website')
-        elastic.delete_index('metadata')
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-        logger.error(e)
-        logger.error("The index 'website' was not deleted from elasticsearch")
+    indices = [
+        'website',
+        'metadata',
+        'application',
+        'application_created'
+    ]
+
+    for index in indices:
+        try:
+            elastic.delete_index(index)
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            logger.warn(e)
+            logger.warn('The index "{}" was not deleted from elasticsearch'.format(index))
 
 
 @requires_search
