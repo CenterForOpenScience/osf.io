@@ -1,17 +1,13 @@
 from __future__ import unicode_literals
 
-import sys
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 
-from framework.auth import Auth
+from framework.guid.model import Metadata
 from framework.exceptions import HTTPError
 
-from website.search.search import search
-from website.project import new_node, Node
 from website.project.decorators import (
-    must_be_valid_project,
     must_have_addon, must_have_permission,
     must_not_be_registration, must_be_contributor_or_public
 )
@@ -23,6 +19,11 @@ from website.project.decorators import (
 def get_metadata(node_addon, guid, **kwargs):
     try:
         return node_addon.get_data(guid)
+    except TypeError:
+        pass
+
+    try:
+        return Metadata.load(guid).to_json()
     except TypeError:
         raise HTTPError(http.NOT_FOUND)
 
@@ -53,7 +54,7 @@ def delete_metadata(node_addon, guid, **kwargs):
 
     try:
         node_addon.delete_data(guid, keys=key)
-    except KeyError as e:
+    except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
     if key:
