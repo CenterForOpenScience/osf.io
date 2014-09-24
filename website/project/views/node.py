@@ -1224,21 +1224,33 @@ def fork_pointer(**kwargs):
 
 
 def abbrev_authors(node):
-    rv = node.contributors[0].family_name
-    if len(node.visiblecontributors) > 1:
-        rv += ' et al.'
-    return rv
+    lead_author = node.visible_contributors[0]
+    ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
+    if len(node.visible_contributor_ids) > 1:
+        ret += ' et al.'
+    return ret
+
+
+def serialize_pointer(pointer, auth):
+    node = pointer.node__parent[0]
+    if node.can_view(auth):
+        return {
+            'url': node.url,
+            'title': node.title,
+            'authorShort': abbrev_authors(node),
+        }
+    return {
+        'url': None,
+        'title': 'Private Component',
+        'authorShort': 'Private Author(s)',
+    }
 
 
 @must_be_contributor_or_public
-def get_pointed(**kwargs):
-
+def get_pointed(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
-        {
-            'url': each.node__parent[0].url,
-            'title': each.node__parent[0].title,
-            'authorShort': abbrev_authors(node),
-        }
+        serialize_pointer(each, auth)
         for each in node.pointed
     ]}
+
