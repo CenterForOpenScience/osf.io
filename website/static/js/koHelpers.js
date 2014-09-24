@@ -43,9 +43,10 @@
     var makeRegexValidator = function(regex, message, match) {
         match = match || match === undefined;
         return {
-            validator: function(value, options) {
-                if (ko.validation.utils.isEmptyVal(value))
+            validator: function(value) {
+                if (ko.validation.utils.isEmptyVal(value)) {
                     return true;
+                }
                 return match === regex.test(ko.utils.unwrapObservable(value));
             },
             message: message
@@ -68,7 +69,7 @@
       return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
     }
 
-    addExtender('asDate', function(value, options) {
+    addExtender('asDate', function(value) {
         var out;
         if (value) {
             value.replace(/-/g,'/');
@@ -78,7 +79,7 @@
             } else {
                 date = moment(value).toDate();
             }
-            out = date != 'Invalid Date' ? printDate(date) : value;
+            out = date !== 'Invalid Date' ? printDate(date) : value;
         }
         return out;
     });
@@ -87,7 +88,7 @@
         return !!value ? cleaner(value) : '';
     });
 
-    addExtender('ensureHttp', function(value, options) {
+    addExtender('ensureHttp', function(value) {
         if (!value || value.search(/^https?:\/\//i) === 0) {
             return value;
         }
@@ -126,7 +127,7 @@
         message: 'Date must be greater than or equal to {0}.'
     };
 
-        ko.validation.rules['pyDate'] = {
+    ko.validation.rules['pyDate'] = {
         validator: function (val) {
             // Skip if values empty
             var uwVal = ko.utils.unwrapObservable(val);
@@ -139,7 +140,7 @@
                 return true;
             }
             // Compare dates
-            return dateVal.getFullYear() >= 1900
+            return dateVal.getFullYear() >= 1900;
         },
         message: 'Date must be greater than or equal to 1900.'
     };
