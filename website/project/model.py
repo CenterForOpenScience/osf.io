@@ -77,7 +77,11 @@ def has_anonymous_link(node, auth):
         return False
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == view_only_link])
+    return any(
+        link.anonymous
+        for link in node.private_links_active
+        if link.key == view_only_link
+    )
 
 
 signals = blinker.Namespace()
@@ -318,6 +322,7 @@ class NodeLog(StoredObject):
     POINTER_REMOVED = 'pointer_removed'
 
     WIKI_UPDATED = 'wiki_updated'
+    WIKI_DELETED = 'wiki_deleted'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -489,6 +494,14 @@ def validate_category(value):
     return True
 
 
+def validate_user(value):
+    if value != {}:
+        user_id = value.iterkeys().next()
+        if User.find(Q('_id', 'eq', user_id)).count() != 1:
+            raise ValidationValueError('User does not exist.')
+    return True
+
+
 class Node(GuidStoredObject, AddonModelMixin):
 
     redirect_mode = 'proxy'
@@ -523,7 +536,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('other', 'Other')
-        ])
+    ])
 
     _id = fields.StringField(primary=True)
 
@@ -535,6 +548,17 @@ class Node(GuidStoredObject, AddonModelMixin):
     # User mappings
     permissions = fields.DictionaryField()
     visible_contributor_ids = fields.StringField(list=True)
+
+    # Project Organization
+    is_dashboard = fields.BooleanField(default=False)
+    is_folder = fields.BooleanField(default=False)
+
+    # Expanded: Dictionary field mapping user IDs to expand state of this node:
+    # {
+    #   'icpnw': True,
+    #   'cdi38': False,
+    # }
+    expanded = fields.DictionaryField(default={}, validate=validate_user)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -592,7 +616,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     }
 
     def __init__(self, *args, **kwargs):
-
         super(Node, self).__init__(*args, **kwargs)
 
         # Crash if parent provided and not project
@@ -663,6 +686,27 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.is_public or auth.user \
             and self.has_permission(auth.user, 'read') \
             or auth.private_key in self.private_link_keys_active
+
+    def is_expanded(self, user=None):
+        """Return if a user is has expanded the folder in the dashboard view.
+        Must specify one of (`auth`, `user`).
+
+        :param User user: User object to check
+        :returns: Boolean if the folder is expanded.
+
+        """
+        if user._id in self.expanded:
+            return self.expanded[user._id]
+        else:
+            return False
+
+    def expand(self, user=None):
+        self.expanded[user._id] = True
+        self.save()
+
+    def collapse(self, user=None):
+        self.expanded[user._id] = False
+        self.save()
 
     def is_derived_from(self, other, attr):
         derived_from = getattr(self, attr)
@@ -836,6 +880,14 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+        if first_save and self.is_dashboard:
+            existing_dashboards = self.creator.node__contributed.find(
+                Q('is_dashboard', 'eq', True)
+            )
+            if existing_dashboards.count() > 0:
+                raise NodeStateError("Only one dashboard allowed per user.")
+
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -890,6 +942,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
+        if self.is_folder:
+            need_update = False
         if need_update:
             self.update_search()
 
@@ -1020,6 +1074,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'Pointer to node {0} already in list'.format(node._id)
             )
 
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
+        # Also, no pointers to the dashboard project, which could cause loops as well.
+        already_pointed = node.pointed
+        if node.is_folder and len(already_pointed) > 0:
+            raise ValueError(
+                'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
+            )
+        if node.is_dashboard:
+            raise ValueError(
+                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+            )
+
         # Append pointer
         pointer = Pointer(node=node)
         pointer.save()
@@ -1120,6 +1186,19 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def pointed(self):
         return getattr(self, '_pointed', [])
+
+    def pointing_at(self, pointed_node_id):
+        """This node is pointed at another node.
+
+        :param Node pointed_node_id: The node id of the node being pointed at.
+        :return: pointer_id
+
+        """
+        for pointer in self.nodes_pointer:
+            node_id = pointer.node._id
+            if node_id == pointed_node_id:
+                return pointer._id
+        return None
 
     @property
     def points(self):
@@ -1271,8 +1350,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
+        if self.is_dashboard:
+            raise NodeStateError("Dashboards may not be deleted.")
+
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
+
+        #if this is a folder, remove all the folders that this is pointing at.
+        if self.is_folder:
+            for pointed in self.nodes_pointer:
+                if pointed.node.is_folder:
+                    pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
@@ -1364,10 +1452,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         # Recursively fork child nodes
         for node_contained in original.nodes:
             forked_node = None
-            try: # Catch the potential PermissionsError above
+            try:  # Catch the potential PermissionsError above
                 forked_node = node_contained.fork_node(auth=auth, title='')
             except PermissionsError:
-                pass # If this excpetion is thrown omit the node from the result set
+                pass  # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1428,6 +1516,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.can_edit(auth):
             return
 
+        if self.is_folder:
+            raise NodeStateError("Folders may not be registered")
+
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
@@ -1474,7 +1565,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                 schema, auth, template, data
+                schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
@@ -1503,9 +1594,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'tag':tag,
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
                 },
                 auth=auth,
                 save=False,
@@ -1754,7 +1845,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.files_current[file_name_key] = node_file._primary_key
 
         # Create a version history if necessary
-        if not file_name_key in self.files_versions:
+        if file_name_key not in self.files_versions:
             self.files_versions[file_name_key] = []
 
         # Add reference to the version history
@@ -2424,7 +2515,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = page.lower()
 
         if page not in self.wiki_pages_current:
-            version = 1
+            if page in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[page]) + 1
+            else:
+                version = 1
         else:
             current = NodeWikiPage.load(self.wiki_pages_current[page])
             current.is_current = False
@@ -2456,6 +2550,20 @@ class Node(GuidStoredObject, AddonModelMixin):
             },
             auth=auth,
             log_date=new_wiki.date
+        )
+
+    def delete_node_wiki(self, node, page, auth):
+
+        del node.wiki_pages_current[page.page_name.lower()]
+        self.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+            },
+            auth=auth,
+            log_date=page.date
         )
 
     def get_stats(self, detailed=False):
@@ -2585,4 +2693,3 @@ class PrivateLink(StoredObject):
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
-

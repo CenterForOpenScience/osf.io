@@ -145,6 +145,12 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
         ], 'get', views.project_wiki_version, json_renderer),
 
+        # Delete
+        Rule([
+            '/project/<pid>/wiki/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/<wid>/',
+        ], 'delete', views.project_wiki_delete, json_renderer),
+
     ],
 
     'prefix': '/api/v1',

@@ -73,22 +73,42 @@
         );
     };
 
+    NodeActions.beforeTemplate = function(url, done) {
+        $.ajax({
+            url: url,
+            contentType: 'application/json'
+        }).success(function(response) {
+            bootbox.confirm(
+                $.osf.joinPrompts(response.prompts,
+                    ('Are you sure you want to create a new project using this project as a template? ' +
+                     'Any add-ons configured for this project will not be authenticated in the new project.')),
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
+        });
+    };
+
     NodeActions.addonFileRedirect = function(item) {
         window.location.href = item.params.urls.view;
         return false;
     };
 
     NodeActions.useAsTemplate = function() {
-        $.osf.block();
+        NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
+            $.osf.block();
 
-        $.osf.postJSON(
-            '/api/v1/project/new/' + nodeId + '/',
-            {}
-        ).done(function(response) {
-            window.location = response.url;
-        }).fail(function(response) {
-            $.osf.unblock();
-            $.osf.handleJSONError(response);
+            $.osf.postJSON(
+                '/api/v1/project/new/' + nodeId + '/',
+                {}
+            ).done(function(response) {
+                window.location = response.url;
+            }).fail(function(response) {
+                $.osf.unblock();
+                $.osf.handleJSONError(response);
+            });
         });
     };
 
@@ -96,25 +116,25 @@
 
         $('#newComponent form').on('submit', function(e) {
 
-            $("#add-component-submit")
-                .attr("disabled", "disabled")
-                .text("Adding");
+            $('#add-component-submit')
+                .attr('disabled', 'disabled')
+                .text('Adding');
 
-            if ($.trim($("#title").val()) == '') {
+            if ($.trim($('#title').val()) === '') {
 
-                $("#alert").text("The new component title cannot be empty");
+                $('#alert').text('The new component title cannot be empty');
 
-                $("#add-component-submit")
-                    .removeAttr("disabled", "disabled")
-                    .text("OK");
+                $('#add-component-submit')
+                    .removeAttr('disabled', 'disabled')
+                    .text('OK');
 
                 e.preventDefault();
-            } else if ($(e.target).find("#title").val().length > 200) {
-                $("#alert").text("The new component title cannot be more than 200 characters.");
+            } else if ($(e.target).find('#title').val().length > 200) {
+                $('#alert').text('The new component title cannot be more than 200 characters.');
 
-                $("#add-component-submit")
-                    .removeAttr("disabled", "disabled")
-                    .text("OK");
+                $('#add-component-submit')
+                    .removeAttr('disabled', 'disabled')
+                    .text('OK');
 
                 e.preventDefault();
 
@@ -164,7 +184,7 @@
                 pointerId: pointerId
             }),
             contentType: 'application/json',
-            dataType: 'json',
+            dataType: 'json'
         }).done(function() {
             pointerElm.remove();
         }).fail(
@@ -174,8 +194,8 @@
 
 
     /*
-Display recent logs for for a node on the project view page.
-*/
+    Display recent logs for for a node on the project view page.
+    */
     NodeActions.openCloseNode = function(nodeId) {
         var $logs = $('#logs-' + nodeId);
         if (!$logs.hasClass('active')) {
