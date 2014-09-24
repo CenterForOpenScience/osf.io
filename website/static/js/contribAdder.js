@@ -105,7 +105,7 @@
                     '/api/v1/user/search/',
                     {
                         query: self.query(),
-                        excludeNode: nodeId,
+                        excludeNode: nodeId
                     },
                     function(result) {
                         var contributors = result.users.map(function(userData) {
