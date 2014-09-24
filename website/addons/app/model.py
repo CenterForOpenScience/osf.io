@@ -104,6 +104,14 @@ class AppNodeSettings(GuidStoredObject):
 
         update_metadata(metastore)
 
+    def attach_system_data(self, guid, data):
+        metastore = self._guid_to_metadata(guid)
+
+        metastore.system_data.update(data)
+        metastore.save()
+
+        update_metadata(metastore)
+
     def delete_data(self, guid, keys=None):
         metadata = self._guid_to_metadata(guid)
         if keys:

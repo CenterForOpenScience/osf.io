@@ -7,8 +7,12 @@ from framework.mongo import StoredObject, ObjectId
 # Todo have a reference back to guid?
 class Metadata(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
-    data = fields.DictionaryField()
+
     guid = fields.StringField()
+
+    data = fields.DictionaryField()
+    system_data = fields.DictionaryField()
+
     app = fields.ForeignField('appnodesettings', backref='data')
 
     @classmethod
@@ -21,7 +25,7 @@ class Metadata(StoredObject):
             if isinstance(val, dict):
                 cls._merge_dicts(dict1[key], val)
             elif isinstance(val, list):
-                dict1[key] += [index for index in val if not index in dict1[key]]
+                dict1[key] += [index for index in val if index not in dict1[key]]
             else:
                 dict1[key] = val
 
@@ -48,10 +52,9 @@ class Metadata(StoredObject):
         return self._merge_dicts(self.data, val)
 
     def to_json(self):
-        ret = {
-            'guid': self.guid  # TODO
-        }
+        ret = {}
         ret.update(self.data)
+        ret.update(self.system_data)
         return ret
 
 
@@ -70,6 +73,7 @@ class Guid(StoredObject):
 
         if not metadata:
             metadata = Metadata(app=app, guid=self._id)
+            metadata.system_data['guid'] = self._id  # TODO discuss this functionality
             metadata.save()
             self.metastore[app.namespace] = metadata._id
             self.save()
