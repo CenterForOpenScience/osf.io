@@ -38,12 +38,13 @@ def resolve_templated_orphan(orphan):
     candidate_parents = find_candidate_parents(orphan)
     if candidate_parents.count() != 1:
         logger.warn('Could not identify unique candidate parent for node {}'.format(orphan._id))
-        return
+        return False
     if candidate_parents[0].date_created != orphan.date_created:
         logger.warn('Creation dates of candidate parent and orphan {} did not match'.format(orphan._id))
     logger.info('Adding orphan to `nodes` list of candidate parent')
     candidate_parents[0].nodes.append(orphan)
     candidate_parents[0].save()
+    return True
 
 
 def find_templated_orphans():
@@ -57,8 +58,12 @@ def find_templated_orphans():
 if __name__ == '__main__':
     init_app()
     orphans = find_templated_orphans()
+    n_resolved = 0
     for orphan in orphans:
-        resolve_templated_orphan(orphan)
+        resolved = resolve_templated_orphan(orphan)
+        if resolved:
+            n_resolved += 1
+    logger.info('Done. Resolved {} nodes.'.format(n_resolved))
 
 
 class TestResolveTemplatedOrphans(OsfTestCase):
