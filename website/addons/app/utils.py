@@ -3,6 +3,10 @@
 """
 from __future__ import unicode_literals
 
+from modularodm.exceptions import ValidationError
+
+from framework.auth import Auth
+
 from website.project import new_node, Node
 from website.search.search import search
 
@@ -28,6 +32,35 @@ def find_or_create_from_report(report, app):
     # TODO Address this issue
     app.attach_data(resource._id, {'is_project': 'true'})
     return resource
+
+
+def find_or_create_report(node, report, node_addon):
+    for child in node.nodes:
+        provider = child.split(' :')[0]
+        if provider == report['source']:
+            return child
+
+    report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
+            description=report.get('description'), project=node)
+
+    report_node.set_privacy('public')
+
+    for contributor in report['contributors']:
+        try:
+            report_node.add_unregistered_contributor(contributor['full_name'],
+                    contributor.get('email'), Auth(node_addon.system_user),
+                    permissions=['read'])
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+
+    for tag in report['tags']:
+        report_node.add_tag(tag, Auth(node_addon.system_user))
+
+    report_node.save()
+
+    node_addon.attach_data(report_node._id, report)
+
+    return child
 
 
 def is_claimed(node):
