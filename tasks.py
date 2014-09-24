@@ -487,7 +487,7 @@ def hotfix(name, finish=False, push=False):
     run('git checkout {}'.format(name), echo=True)
     run('git branch -m {}'.format(new_branch_name), echo=True)
     if finish:
-        run('git flow hotfix finish {}'.format(next_patch_version), echo=True)
+        run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
         run('git push origin develop', echo=True)
