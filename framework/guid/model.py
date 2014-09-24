@@ -33,6 +33,10 @@ class Metadata(StoredObject):
     def namespace(self):
         return self.app.namespace
 
+    @property
+    def is_orphan(self):
+        return not self.guid
+
     def __getitem__(self, key):
         return self.data[key]
 
