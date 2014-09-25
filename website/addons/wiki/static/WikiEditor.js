@@ -14,11 +14,11 @@
     var editor;
 
     ko.bindingHandlers.ace = {
-        init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        init: function(element, valueAccessor) {
             editor = ace.edit(element.id);
             var value = ko.unwrap(valueAccessor());
 
-            // Initialize value if not yet initialized. TODO: Is this needed?
+            // Initialize value if not yet initialized.
             if (editor.getReadOnly() === true) {
                 editor.setValue(value);
                 editor.setReadOnly(false);

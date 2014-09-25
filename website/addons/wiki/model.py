@@ -14,6 +14,8 @@ from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from modularodm import fields
 
+from pymongo import MongoClient
+
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 
@@ -93,6 +95,31 @@ class NodeWikiPage(GuidStoredObject):
         self.share_uuid = str(uuid.uuid5(uuid.uuid1(), str(self._id)))
         if save:
             self.save()
+
+    # TODO: This only deletes and generates new uuid
+    def migrate_uuid(self, save=True):
+        """Migrates uuid to new namespace."""
+
+        # TODO: Use domain and port
+        client = MongoClient('localhost', settings.DB_PORT)
+        db = client.sharejs
+
+        # Drop index from list
+        db['ops.{}'.format(self.share_uuid.replace('-', '%2D'))].drop()
+
+        # Remove op history
+        db['system.indexes'].find_and_modify(
+            {'ns': 'sharejs.ops.{0}'.format(
+                self.share_uuid.replace('-', '%2D'))
+            }, remove=True
+        )
+
+        # Remove document
+        db['docs'].find_and_modify(
+            {'_id': self.share_uuid}, remove=True
+        )
+
+        self.generate_share_uuid(save)
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
