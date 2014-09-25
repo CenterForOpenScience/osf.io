@@ -6,7 +6,6 @@ import httplib as http
 from mako.template import Template
 from flask import request
 
-from framework.status import push_status_message
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public
@@ -16,7 +15,7 @@ from website.util import rubeus
 from website.addons.github.exceptions import ApiError
 from website.addons.github.api import GitHub, build_github_urls, ref_to_params
 from website.addons.github.utils import get_refs, check_permissions
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.exceptions import NotFoundError
 
 
 logger = logging.getLogger(__name__)
@@ -184,9 +183,12 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
-    buttons = [rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" data-placement="right" class="icon-download-alt"></i>', 'githubDownloadZip'),
-               rubeus.build_addon_button('<i title="Visit Repository" data-toggle="tooltip" data-placement="right" class="icon-external-link"></i>', 'githubVisitRepo'),
-               ]
+    buttons = [
+        rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" '
+            'data-placement="right" class="icon-download-alt"></i>', 'githubDownloadZip'),
+        rubeus.build_addon_button('<i title="Visit Repository" data-toggle="tooltip" '
+            'data-placement="right" class="icon-external-link"></i>', 'githubVisitRepo'),
+    ]
 
     return [rubeus.build_addon_root(
         node_settings,
