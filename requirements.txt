@@ -33,3 +33,4 @@ cssmin>=0.2.0
 requests==2.3.0
 requests-oauthlib==0.4.1
 raven==5.0.0
+resync==1.0.0
