@@ -96,30 +96,28 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
-    # TODO: This only deletes and generates new uuid
+    def delete_share_document(self, share_uuid):
+        """Allows deletion of a share document"""
+
+        db = share_db()
+
+        db[ops_uuid(share_uuid)].drop()
+        db['docs'].remove({'_id': share_uuid})
+
     def migrate_uuid(self, save=True):
         """Migrates uuid to new namespace."""
 
-        # TODO: Use domain and port
-        client = MongoClient('localhost', settings.DB_PORT)
-        db = client.sharejs
+        db = share_db()
 
-        # Drop index from list
-        db['ops.{}'.format(self.share_uuid.replace('-', '%2D'))].drop()
-
-        # Remove op history
-        db['system.indexes'].find_and_modify(
-            {'ns': 'sharejs.ops.{0}'.format(
-                self.share_uuid.replace('-', '%2D'))
-            }, remove=True
-        )
-
-        # Remove document
-        db['docs'].find_and_modify(
-            {'_id': self.share_uuid}, remove=True
-        )
-
+        old_uuid = self.share_uuid
         self.generate_share_uuid(save)
+
+        db[ops_uuid(old_uuid)].rename(ops_uuid(self.share_uuid))
+
+        new_doc = db['docs'].find_one({'_id': old_uuid}) or {}
+        new_doc['_id'] = self.share_uuid
+        db['docs'].insert(new_doc)
+        db['docs'].remove({'_id': old_uuid})
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
@@ -134,3 +132,14 @@ class NodeWikiPage(GuidStoredObject):
 
     def to_json(self):
         return {}
+
+
+def ops_uuid(uuid):
+    return 'ops.{0}'.format(uuid.replace('-', '%2D'))
+
+
+def share_db():
+
+    # TODO: Use domain and port
+    client = MongoClient('localhost', settings.DB_PORT)
+    return client.sharejs
