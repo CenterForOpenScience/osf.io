@@ -1417,6 +1417,12 @@ h1.unavailable {
     max-width: 100%;
 }
 
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
+}
+
 .preview-overflow{
     overflow:hidden;
     width:100%;

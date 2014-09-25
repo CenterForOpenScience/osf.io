@@ -46,7 +46,7 @@
                     %endif
                 %endif
                 <h1 class="node-title">
-                    <span id="nodeTitleEditable">${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h1>
             </div><!-- end col-md-->
 
@@ -132,7 +132,7 @@
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % elif node['description'] or 'write' in user['permissions']:
-                 <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
+                 <br />Description: <span id="nodeDescriptionEditable" class="node-description overflow">${node['description']}</span>
             % endif
         </div>
 
