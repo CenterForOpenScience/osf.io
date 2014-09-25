@@ -12,7 +12,9 @@
                     <a href="${owner_url}" target="_blank">
                         ${owner}
                     </a>
-                    <a id="s3RemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % if not is_registration:
+                        <a id="s3RemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % endif
                 % elif user_has_auth:
                     <a id="s3ImportToken" class="text-primary pull-right addon-auth">Import Credentials</a>
                 % endif

@@ -137,15 +137,20 @@ def shell():
     return
 
 @task(aliases=['mongo'])
-def mongoserver(daemon=False,
-          logpath="/usr/local/var/log/mongodb/mongo.log",
-          logappend=True):
+def mongoserver(daemon=False, config=None):
     """Run the mongod process.
     """
+    if not config:
+        platform_configs = {
+            'darwin': '/usr/local/etc/tokumx.conf',  # default for homebrew install
+            'linux': '/etc/tokumx.conf',
+        }
+        platform = str(sys.platform).lower()
+        config = platform_configs.get(platform)
     port = settings.DB_PORT
-    cmd = "mongod --port {0} --logpath {1}".format(port, logpath)
-    if logappend:
-        cmd += " --logappend"
+    cmd = 'mongod --port {0}'.format(port)
+    if config:
+        cmd += ' --config {0}'.format(config)
     if daemon:
         cmd += " --fork"
     run(cmd, echo=True)
@@ -476,26 +481,37 @@ def clear_mfr_cache():
 # Release tasks
 
 @task
-def hotfix(name=None, finish=False, push=False):
-    """Rename current hotfix branch to hotfix/<next-patch-version> and optionally
+def hotfix(name, finish=False, push=False):
+    """Rename hotfix branch to hotfix/<next-patch-version> and optionally
     finish hotfix.
     """
-    if name:
-        run('git checkout hotfix/{}'.format(name), echo=True)
+    print('Checking out master to calculate curent version')
+    run('git checkout master')
     latest_version = latest_tag_info()['current_version']
-    print('Current version is; {}'.format(latest_version))
+    print('Current version is: {}'.format(latest_version))
     major, minor, patch = latest_version.split('.')
     next_patch_version = '.'.join([major, minor, str(int(patch) + 1)])
     print('Bumping to next patch version: {}'.format(next_patch_version))
     print('Renaming branch...')
 
     new_branch_name = 'hotfix/{}'.format(next_patch_version)
-
+    run('git checkout {}'.format(name), echo=True)
     run('git branch -m {}'.format(new_branch_name), echo=True)
     if finish:
-        run('git flow hotfix finish {}'.format(next_patch_version), echo=True)
+        run('git flow hotfix finish {}'.format(next_patch_version), echo=True, pty=True)
     if push:
         run('git push origin master', echo=True)
+        run('git push origin develop', echo=True)
+
+
+@task
+def feature(name, finish=False, push=False):
+    """Rename the current branch to a feature branch and optionally finish it."""
+    print('Renaming branch...')
+    run('git br -m feature/{}'.format(name), echo=True)
+    if finish:
+        run('git flow feature finish {}'.format(name), echo=True)
+    if push:
         run('git push origin develop', echo=True)
 
 

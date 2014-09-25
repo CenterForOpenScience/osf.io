@@ -635,17 +635,13 @@ def _render_addon(node):
 
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
-
     project.view.mako.
-
     """
-
     user = auth.user
 
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    recent_logs, has_more_logs = _get_logs(node, 10, auth, view_only_link)
     widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
@@ -678,7 +674,6 @@ def _view_project(node, auth, primary=False):
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
-            'children_ids': [str(child._primary_key) for child in node.nodes],
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
@@ -701,8 +696,6 @@ def _view_project(node, auth, primary=False):
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'logs': recent_logs,
-            'has_more_logs': has_more_logs,
             'points': node.points,
             'piwik_site_id': node.piwik_site_id,
 
@@ -1144,7 +1137,7 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth, save=False)
+        node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -1231,21 +1224,38 @@ def fork_pointer(**kwargs):
 
 
 def abbrev_authors(node):
-    rv = node.contributors[0].family_name
-    if len(node.visiblecontributors) > 1:
-        rv += ' et al.'
-    return rv
+    lead_author = node.visible_contributors[0]
+    ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
+    if len(node.visible_contributor_ids) > 1:
+        ret += ' et al.'
+    return ret
+
+
+def serialize_pointer(pointer, auth):
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    node = parent_refs[0]
+    if node.can_view(auth):
+        return {
+            'url': node.url,
+            'title': node.title,
+            'authorShort': abbrev_authors(node),
+        }
+    return {
+        'url': None,
+        'title': 'Private Component',
+        'authorShort': 'Private Author(s)',
+    }
 
 
 @must_be_contributor_or_public
-def get_pointed(**kwargs):
-
+def get_pointed(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
-        {
-            'url': each.node__parent[0].url,
-            'title': each.node__parent[0].title,
-            'authorShort': abbrev_authors(node),
-        }
+        serialize_pointer(each, auth)
         for each in node.pointed
     ]}
+

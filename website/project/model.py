@@ -77,7 +77,11 @@ def has_anonymous_link(node, auth):
         return False
     if node.is_public:
         return False
-    return any([x.anonymous for x in node.private_links_active if x.key == view_only_link])
+    return any(
+        link.anonymous
+        for link in node.private_links_active
+        if link.key == view_only_link
+    )
 
 
 signals = blinker.Namespace()
@@ -1110,16 +1114,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return pointer
 
-    def rm_pointer(self, pointer, auth, save=True):
+    def rm_pointer(self, pointer, auth):
         """Remove a pointer.
 
         :param Pointer pointer: Pointer to remove
         :param Auth auth: Consolidated authorization
-        :param bool save: Save changes
-
         """
-        # Remove pointer from `nodes`
-        self.nodes.remove(pointer)
+        if pointer not in self.nodes:
+            raise ValueError
+
+        # Remove `Pointer` object; will also remove self from `nodes` list of
+        # parent node
+        Pointer.remove_one(pointer)
 
         # Add log
         self.add_log(
@@ -1137,11 +1143,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             auth=auth,
             save=False,
         )
-
-        # Optionally save changes
-        if save:
-            self.save()
-            pointer.remove_one(pointer)
 
     @property
     def node_ids(self):

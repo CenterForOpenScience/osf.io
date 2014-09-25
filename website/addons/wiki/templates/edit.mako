@@ -25,7 +25,12 @@
                      data-bind="ace: wikiText, value: wikiText">Loading. . .</div>
             </div>
             <div class="pull-right">
-                <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
+                <!-- clicking "Cancel" overrides unsaved changes check -->
+                % if wiki_created:
+                    <a href="${node['url']}wiki/home/" class="btn btn-default">Return</a>
+                % else:
+                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
+                % endif
                 <button id="revert-button" class="btn btn-primary"
                         data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
                 <input type="submit" class="btn btn-success" value="Save Version"

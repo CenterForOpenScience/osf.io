@@ -39,13 +39,19 @@
 </div>
 % endif
 
+
 <div class="page-header">
     <a href="#changeAvatarModal" data-toggle="modal">
-        <img id='profile-gravatar' src="${profile['gravatar_url']}"
-                 rel="tooltip" title="click to change avatar" />
+        % if user['is_profile']:
+            <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                rel="tooltip" title="click to change avatar"/>
+        % else:
+             <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+        % endif
     </a>
-    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+    <h1 id="profile-fullname"><span class="overflow">${profile["fullname"]}</span></h1>
 </div><!-- end-page-header -->
+
 
 <div class="row">
 
@@ -56,7 +62,7 @@
             <table class="table table-plain">
                 <tr>
                   <td>Name</td>
-                  <td class="fullname">${profile["fullname"]}</td>
+                  <td class="fullname overflow-block" width="300px">${profile["fullname"]}</td>
                 </tr>
                 % if profile.get('date_registered'):
                     <tr>

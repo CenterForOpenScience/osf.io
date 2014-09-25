@@ -52,10 +52,14 @@ def node_register_template_page(auth, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
     # Error to raise if template can't be found
-    not_found_error = HTTPError(http.NOT_FOUND, data=dict(
-                                message_short='Template not found.',
-                                message_long='The registration template you entered '
-                                                'in the URL is not valid.'))
+    not_found_error = HTTPError(
+        http.NOT_FOUND,
+        data=dict(
+            message_short='Template not found.',
+            message_long='The registration template you entered '
+                         'in the URL is not valid.'
+        )
+    )
 
     if node.is_registration and node.registered_meta:
         registered = True
@@ -99,6 +103,7 @@ def node_register_template_page(auth, **kwargs):
         'schema_version': meta_schema.schema_version,
         'registered': registered,
         'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import operator
 import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
@@ -140,23 +141,27 @@ def user_addons(auth, **kwargs):
 
     out = {}
 
+    addons = [addon.config for addon in user.get_addons()]
+    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
 
-    for addon in user.get_addons():
+    # sort addon_enabled_settings alphabetically by category
+    for category in sorted(settings.ADDON_CATEGORIES):
+        for addon_config in addons:
+            if addon_config.categories[0] == category:
+                addons_enabled.append(addon_config.short_name)
+                if 'user' in addon_config.configs:
+                    addon_enabled_settings.append(addon_config.short_name)
 
-        addons_enabled.append(addon.config.short_name)
-
-        if 'user' in addon.config.configs:
-            addon_enabled_settings.append(addon.config.short_name)
-
-    out['addon_categories'] = settings.ADDON_CATEGORIES
+    out['addon_categories'] = sorted(settings.ADDON_CATEGORIES)
     out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
             and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
     ]
+    out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
     return out
@@ -270,7 +275,13 @@ def get_target_user(auth, uid=None):
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):
     if date:
-        return date.strftime(fmt)
+        try:
+            return date.strftime(fmt)
+        except ValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Year entered must be after 1900')
+            )
     return None
 
 
