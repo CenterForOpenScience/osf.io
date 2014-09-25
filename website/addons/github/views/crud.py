@@ -5,6 +5,7 @@ import hashlib
 import logging
 import datetime
 import httplib as http
+from mimetypes import MimeTypes
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -64,7 +65,10 @@ def github_download_file(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     # Build response
+    mime = MimeTypes()
+    mimetype = mime.guess_type(path)
     resp = make_response(data)
+    resp.headers['Content-Type'] = mimetype
     resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
         name
     )
