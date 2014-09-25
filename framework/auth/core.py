@@ -679,7 +679,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
