@@ -122,7 +122,7 @@
         self.links = ko.observableArray([]);
 
         $elm.on('shown.bs.modal', function() {
-            if (self.links().length == 0) {
+            if (self.links().length === 0) {
                 $.ajax({
                     type: 'GET',
                     url: nodeApiUrl + 'pointer/',
@@ -163,6 +163,7 @@
         this.selector = selector;
         this.$element = $(selector);
         this.viewModel = new LinksViewModel(this.$element);
+        ko.applyBindings(this.viewModel, this.$element[0]);
     }
 
     return {

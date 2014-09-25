@@ -11,7 +11,9 @@
                         <a href="${auth_osf_url}" target="_blank">
                             ${auth_osf_name}
                         </a>
-                    <a id="githubRemoveToken" class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % if not is_registration:
+                        <a id="githubRemoveToken" class="text-danger pull-right addon-auth" >Deauthorize</a>
+                    % endif
                 % else:
                     % if user_has_auth:
                         <a id="githubImportToken" class="text-primary pull-right addon-auth">
