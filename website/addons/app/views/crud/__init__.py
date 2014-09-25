@@ -19,7 +19,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_contributor_or_public
 )
 
-from website.addons.app.utils import find_or_create_from_report
+from website.addons.app.utils import find_or_create_from_report, is_claimed, find_or_create_report
 
 from . import metadata, customroutes
 
@@ -69,24 +69,27 @@ def create_report(node_addon, **kwargs):
     except KeyError:
         raise HTTPError(http.BAD_REQUEST)
 
-    for contributor in report['contributors']:
-        try:
-            resource.add_unregistered_contributor(contributor['full_name'], contributor.get('email'), Auth(node_addon.system_user))
-        except ValidationError:
-            pass  # A contributor with the given email has already been added
-
     # This may not be the best behavior
     # This will just merge the documents in a not super smart way
     # Keys and nested key will be updated and empty fields filled in
     node_addon.attach_data(resource._id, report)
 
-    report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
-            description=report.get('description'), project=resource)
+    claimed = is_claimed(resource)
 
-    report_node.set_privacy('public')
-    report_node.save()
+    report_node = find_or_create_report(resource, report, node_addon)
 
-    node_addon.attach_data(report_node._id, report)
+    for contributor in report['contributors']:
+        if not claimed:
+            try:
+                resource.add_unregistered_contributor(contributor['full_name'],
+                        contributor.get('email'), Auth(node_addon.system_user),
+                        permissions=['admin'])  # TODO Discuss this
+            except ValidationError:
+                pass  # A contributor with the given email has already been added
+
+    if not claimed:
+        for tag in report['tags']:
+            resource.add_tag(tag, Auth(node_addon.system_user))
 
     return {
         'id': report_node._id,
