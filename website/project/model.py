@@ -2642,6 +2642,9 @@ class WatchConfig(StoredObject):
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
 
+    def __repr__(self):
+        return '<WatchConfig(node="{self.node}")>'.format(self=self)
+
 
 class MailRecord(StoredObject):
 
