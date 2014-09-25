@@ -97,14 +97,6 @@
 
 
         <div id="contributors">
-            <style type="text/css">
-                #projectScope .form-control {
-                    width: 400px;
-                }
-                #description {
-                    vertical-align: top;
-                }
-            </style>
             Contributors:
             % if node['anonymous'] and not node['is_public']:
                 <ol>Anonymous Contributors</ol>
