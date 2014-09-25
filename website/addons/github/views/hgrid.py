@@ -184,7 +184,7 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
         'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
-    buttons = [rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" data-placement="right" class="icon-cloud-download"></i>', 'githubDownloadZip'),
+    buttons = [rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" data-placement="right" class="icon-download-alt"></i>', 'githubDownloadZip'),
                rubeus.build_addon_button('<i title="Visit Repository" data-toggle="tooltip" data-placement="right" class="icon-external-link"></i>', 'githubVisitRepo'),
                ]
 
