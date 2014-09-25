@@ -393,11 +393,11 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
-    :param: query - The substring of the username to search for
-    :param: page - For pagination, the page number to use for results
-    :param: size - For pagination, the number of results per page
-    :param: exclude - A list of User objects to exclude from the search
-    :param: current_user - A User object of the current user
+    :param query: The substring of the username to search for
+    :param page: For pagination, the page number to use for results
+    :param size: For pagination, the number of results per page
+    :param exclude: A list of User objects to exclude from the search
+    :param current_user: A User object of the current user
 
     :return: List of dictionaries, each containing the ID, full name,
         most recent employment and education, gravatar URL of an OSF user
