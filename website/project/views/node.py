@@ -210,7 +210,6 @@ def node_registrations(**kwargs):
     return _view_project(node_to_use, auth, primary=True)
 
 
-
 @must_be_valid_project
 @must_be_contributor_or_public  # returns user, project
 def node_forks(**kwargs):
@@ -219,7 +218,6 @@ def node_forks(**kwargs):
     auth = kwargs['auth']
     node_to_use = node or project
     return _view_project(node_to_use, auth, primary=True)
-
 
 
 @must_be_valid_project
@@ -365,7 +363,6 @@ def project_statistics(**kwargs):
     if not (node.can_edit(auth) or node.is_public):
         raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
-
 
 
 ###############################################################################
