@@ -23,7 +23,7 @@ def search(query, start=0, size=10, index='website', _type=None):
     if index == 'metadata':
         return search_engine.search_metadata(query, _type, start, size)
 
-    result, tags, counts = search_engine.search(query, start, size)
+    result, tags, counts = search_engine.search(query, start, size, index=index)
     return result, tags, counts
 
 

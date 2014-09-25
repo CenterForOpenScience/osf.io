@@ -42,9 +42,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0, size=10):
+def search(raw_query, start=0, size=10, index='website'):
     orig_query = raw_query
-
     query, filtered_query = _build_query(raw_query, start, size)
 
     # Get document counts by type
@@ -58,7 +57,7 @@ def search(raw_query, start=0, size=10):
         except KeyError:
             pass
 
-        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
+        counts[type + 's'] = elastic.count(count_query, index=index, doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
@@ -68,7 +67,7 @@ def search(raw_query, start=0, size=10):
         counts['total'] = sum([x for x in counts.values()])
 
     # Run the real query and get the results
-    raw_results = elastic.search(query, index='website')
+    raw_results = elastic.search(query, index=index)
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, counts)
 
