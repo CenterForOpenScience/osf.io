@@ -1448,12 +1448,12 @@ div#logScope a.moreLogs{
     margin-bottom:10px;
 }
 
-#contributors #projectScope .form-control {
-  width: 400px;
-}
-
 #contributors #description {
     vertical-align: top;
+}
+
+#contributors .form-control {
+    width: 400px;
 }
 
 #contributors ol {
