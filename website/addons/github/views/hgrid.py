@@ -114,8 +114,8 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
-def github_repo_url(owner, repo):
-    url = "https://github.com/{0}/{1}".format(owner, repo)
+def github_repo_url(owner, repo, branch):
+    url = "https://github.com/{0}/{1}/tree/{2}".format(owner, repo, branch)
     return url
 
 
@@ -182,10 +182,10 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
-        'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo)
+        'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
-    buttons = [rubeus.build_addon_button('<i class="icon-cloud-download"></i> Download ZIP', 'githubDownloadZip'),
-               rubeus.build_addon_button('<i class="icon"></i>Visit Repository', 'githubVisitRepo'),
+    buttons = [rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" data-placement="right" class="icon-cloud-download"></i>', 'githubDownloadZip'),
+               rubeus.build_addon_button('<i title="Visit Repository" data-toggle="tooltip" data-placement="right" class="icon-external-link"></i>', 'githubVisitRepo'),
                ]
 
     return [rubeus.build_addon_root(
