@@ -407,12 +407,11 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
-    bool_filter = \
-        {
-            "must": [],
-            "should": [],
-            "must_not": [],
-        }
+    bool_filter = {
+        'must': [],
+        'should': [],
+        'must_not': [],
+    }
     if exclude is not None:
         for excluded in exclude:
             bool_filter['must_not'].append({
