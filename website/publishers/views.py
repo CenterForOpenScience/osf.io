@@ -3,7 +3,7 @@
 import bleach
 import logging
 
-from website.publishers import rss
+from website.publishers import rss, resourcesync
 
 from framework.flask import request
 
@@ -25,3 +25,11 @@ def recent_rss():
     feed = rss.gen_rss_feed(query)
 
     return feed
+
+
+def recent_resourcelist(): 
+    ''' Returns a resourcelist with everything in it'''
+
+    resourcelist = resourcesync.gen_resourcelist()
+
+    return resourcelist
