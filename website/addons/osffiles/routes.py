@@ -68,7 +68,7 @@ web_routes = {
                 '/api/v1/project/<pid>/node/<nid>/osffiles/<fid>/version/<vid>/',
                 '/api/v1/project/<pid>/files/download/<fid>/version/<vid>/',
                 '/api/v1/project/<pid>/node/<nid>/files/download/<fid>/version/<vid>/',
-            ], 'get', views.download_file_by_version, json_renderer,
+            ], 'get', views.download_file_by_version, OsfWebRenderer('', render_mako_string),
         ),
 
     ]
