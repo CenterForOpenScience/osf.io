@@ -65,7 +65,6 @@ def github_download_file(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     # Build response
-    mimetypes.init()
     mimetype = mimetypes.guess_type(path)
     resp = make_response(data)
     resp.headers['Content-Type'] = mimetype
@@ -73,9 +72,8 @@ def github_download_file(**kwargs):
         name
     )
 
-    # Add binary MIME type if extension missing
-    _, ext = os.path.splitext(name)
-    if not ext:
+    # Add binary MIME type if mimetype not found
+    if mimetype == (None, None):
         resp.headers['Content-Type'] = 'application/octet-stream'
 
     return resp
