@@ -2297,7 +2297,7 @@ class TestSearchViews(OsfTestCase):
         self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
         self.contrib = UserFactory(fullname='Brian May')
         for i in range(0, 12):
-            UserFactory()
+            UserFactory(fullname='Freddie Mercury{}'.format(i))
 
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
