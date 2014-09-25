@@ -37,7 +37,7 @@ def find_or_create_from_report(report, app):
 
 def find_or_create_report(node, report, node_addon, metadata=None):
     for child in node.nodes:
-        provider = child.split(' :')[0]
+        provider = child.title.split(' :')[0]
         if provider == report['source']:
             return child
 
