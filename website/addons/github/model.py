@@ -34,17 +34,56 @@ class GithubGuidFile(GuidFile):
         return os.path.join('github', 'file', self.path)
 
 
-class AddonGitHubUserSettings(AddonUserSettingsBase):
+class AddonGitHubOauthSettings(AddonUserSettingsBase):
 
     github_user = fields.StringField()
-
-    oauth_state = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
+
+class AddonGitHubUserSettings(AddonUserSettingsBase):
+
+    oauth_state = fields.StringField()
+
+    oauth_settings = fields.ForeignField(
+        'addongithuboauthsettings', backref='authormatched'
+    )
+
     @property
     def has_auth(self):
-        return self.oauth_access_token is not None
+        if self.oauth_access_token:
+            return self.oauth_access_token is not None
+        return False
+
+    @property
+    def github_user(self):
+        if self.oauth_settings:
+            return self.oauth_settings.github_user
+        return None
+
+    @github_user.setter
+    def github_user(self, user):
+        self.oauth_settings.github_user = user
+
+    @property
+    def oauth_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token
+        return None
+
+    @oauth_access_token.setter
+    def oauth_access_token(self, oauth_access_token):
+        self.oauth_settings.oauth_access_token = oauth_access_token
+
+    @property
+    def oauth_token_type(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_token_type
+        return None
+
+    @oauth_token_type.setter
+    def oauth_token_type(self, oauth_token_type):
+        self.oauth_settings.oauth_token_type = oauth_token_type
 
     @property
     def public_id(self):
@@ -60,18 +99,8 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-        connection = GitHub.from_settings(self)
-        try:
-            connection.revoke_token()
-        except GitHubError as error:
-            if error.code == http.UNAUTHORIZED:
-                return (
-                    'Your GitHub credentials were removed from the OSF, but we '
-                    'were unable to revoke your access token from GitHub. Your '
-                    'GitHub credentials may no longer be valid.'
-                )
-            else:
-                raise
+        self.oauth_settings.oauth_token_type = None
+        self.oauth_settings.oauth_access_token = None
 
     def clear_auth(self, save=False):
         for node_settings in self.addongithubnodesettings__authorized:

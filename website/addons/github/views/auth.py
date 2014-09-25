@@ -4,7 +4,7 @@ import os
 import httplib as http
 
 from flask import request, redirect
-
+from modularodm import Q
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -16,6 +16,7 @@ from website.util import web_url_for
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+from ..model import AddonGitHubOauthSettings
 
 
 def get_profile_view(user_settings):
@@ -71,6 +72,7 @@ def github_oauth_callback(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     user_settings = user.get_addon('github')
+
     if user_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -84,6 +86,20 @@ def github_oauth_callback(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     token = oauth_get_token(code)
+
+    gh = GitHub(token['access_token'], token['token_type'])
+    user = gh.user()
+
+    oauth_settings = AddonGitHubOauthSettings.find_one(Q("_id", "eq", user.id))
+
+    if not oauth_settings:
+        oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings._id = user.id
+        oauth_settings.save()
+
+    user_settings.oauth_settings = oauth_settings
+    user_settings.save()
+        # oauth_settings._id = user.id
 
     user_settings.oauth_state = None
     user_settings.oauth_access_token = token['access_token']
