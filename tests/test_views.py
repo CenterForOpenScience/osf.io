@@ -2295,8 +2295,9 @@ class TestSearchViews(OsfTestCase):
         search.delete_all()
 
         self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib1 = UserFactory(fullname='Freddie Mercury')
-        self.contrib2 = UserFactory(fullname='Brian May')
+        self.contrib = UserFactory(fullname='Brian May')
+        for i in range(0, 12):
+            UserFactory()
 
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
@@ -2305,15 +2306,57 @@ class TestSearchViews(OsfTestCase):
 
     def test_search_contributor(self):
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib1.fullname})
+        res = self.app.get(url, {'query': self.contrib.fullname})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         assert_equal(len(result), 1)
-        freddie = result[0]
-        assert_equal(freddie['fullname'], self.contrib1.fullname)
-        assert_in('gravatar_url', freddie)
-        assert_equal(freddie['registered'], self.contrib1.is_registered)
-        assert_equal(freddie['active'], self.contrib1.is_active())
+        brian = result[0]
+        assert_equal(brian['fullname'], self.contrib.fullname)
+        assert_in('gravatar_url', brian)
+        assert_equal(brian['registered'], self.contrib.is_registered)
+        assert_equal(brian['active'], self.contrib.is_active())
+
+    def test_search_pagination_default(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr'})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 10)
+        assert_equal(pages, 2)
+        assert_equal(page, 0)
+
+    def test_search_pagination_default_page_1(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 1})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 1)
+
+    def test_search_pagination_smaller_pages(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'size': 5})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 5)
+        assert_equal(page, 0)
+        assert_equal(pages, 3)
+
+    def test_search_pagination_smaller_pages_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
+        assert_equal(pages, 3)
 
     def test_search_projects(self):
         url = web_url_for('search_search')
