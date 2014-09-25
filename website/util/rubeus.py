@@ -9,8 +9,8 @@ import hurry
 from modularodm import Q
 
 from framework.auth.decorators import Auth
-from website.settings import ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, \
-    ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
+from website.settings import ALL_MY_APPS_ID, ALL_MY_PROJECTS_ID, ALL_MY_REGISTRATIONS_ID, \
+    ALL_MY_APPS_NAME, ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME
 
 
 FOLDER = 'folder'
@@ -148,11 +148,24 @@ class NodeProjectCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
-        for child in reversed(node.nodes): #(child.resolve()._id not in visited or node.is_folder) and
+        for child in reversed(node.nodes):  # (child.resolve()._id not in visited or node.is_folder) and
             if child is not None and not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
         return rv
+
+    def collect_all_applications_smart_folder(self):
+        contributed = self.auth.user.node__contributed
+        all_my_apps = contributed.find(
+            Q('category', 'eq', 'app') &
+            Q('is_deleted', 'eq', False) &
+            Q('is_registration', 'eq', False) &
+            Q('is_folder', 'eq', False) &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'eq', None)
+        )
+
+        return self.make_smart_folder(ALL_MY_APPS_NAME, ALL_MY_APPS_ID, all_my_apps.count())
 
     def collect_all_projects_smart_folder(self):
         contributed = self.auth.user.node__contributed
@@ -242,6 +255,7 @@ class NodeProjectCollector(object):
         root = self._collect_components(self.node, visited=None)
         # This will be important when we mix files and projects together: self._collect_addons(self.node) +
         if self.node.is_dashboard:
+            root.insert(0, self.collect_all_applications_smart_folder())
             root.insert(0, self.collect_all_projects_smart_folder())
             root.insert(0, self.collect_all_registrations_smart_folder())
         return root

@@ -23,7 +23,7 @@ from website.util import web_url_for, rubeus
 from website.project import model, new_dashboard
 from website import settings
 
-from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, ALL_MY_APPS_ID
 
 logger = logging.getLogger(__name__)
 
@@ -130,6 +130,8 @@ def get_dashboard(auth, nid=None, **kwargs):
         node = find_dashboard(user)
         dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
         return_value = {'data': dashboard_projects}
+    elif nid == ALL_MY_APPS_ID:
+        return_value = {'data': get_all_apps_smart_folder(**kwargs)}
     elif nid == ALL_MY_PROJECTS_ID:
         return_value = {'data': get_all_projects_smart_folder(**kwargs)}
     elif nid == ALL_MY_REGISTRATIONS_ID:
@@ -172,12 +174,31 @@ def get_all_projects_smart_folder(auth, **kwargs):
         # exclude deleted nodes
         Q('is_deleted', 'eq', False) &
         # exclude registrations
-        Q('is_registration', 'eq', False)
+        Q('is_registration', 'eq', False) &
+        # exclude applications
+        Q('category', 'ne', 'app')
     )
 
     return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
     return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
     return return_value
+
+@must_be_logged_in
+def get_all_apps_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
+    user = auth.user
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'app') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes]
 
 @must_be_logged_in
 def get_all_registrations_smart_folder(auth, **kwargs):

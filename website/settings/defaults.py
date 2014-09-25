@@ -183,8 +183,10 @@ SENTRY_DSN_JS = None
 MISSING_FILE_NAME = 'untitled'
 
 # Dashboard
+ALL_MY_APPS_ID = '-ama'
 ALL_MY_PROJECTS_ID = '-amp'
 ALL_MY_REGISTRATIONS_ID = '-amr'
+ALL_MY_APPS_NAME = 'All my apps'
 ALL_MY_PROJECTS_NAME = 'All my projects'
 ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 
