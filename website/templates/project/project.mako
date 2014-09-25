@@ -2,6 +2,12 @@
 
 <%def name="title()">${node['title']}</%def>
 
+<%include file="project/modal_add_pointer.mako"/>
+
+% if node['node_type'] == 'project':
+    <%include file="project/modal_add_component.mako"/>
+% endif
+
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />
 % endif
@@ -143,6 +149,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
+
+    $script(['/static/js/logFeed.js'], 'logFeed');
+
+    $('body').on('nodeLoad', function(event, data) {
+        $script.ready('logFeed', function() {
+            var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+        });
+    });
+
+    ##  NOTE: pointers.js is loaded in project_base.mako
+    $script.ready('pointers', function() {
+        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+    });
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';

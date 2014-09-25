@@ -89,6 +89,15 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
+    def test_wiki_edit_get_new(self):
+        url = self.project.web_url_for('project_wiki_edit', wid='a new page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_wiki_edit_get_home(self):
+        url = self.project.web_url_for('project_wiki_edit', wid='home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
 
 class TestWikiDelete(OsfTestCase):
 

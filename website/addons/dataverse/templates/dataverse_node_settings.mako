@@ -10,8 +10,10 @@
                     authorized by <a data-bind="attr.href: urls().owner">
                         {{ownerName}}
                     </a>
-                    <a data-bind="click: clickDeauth"
-                        class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % if not is_registration:
+                        <a data-bind="click: clickDeauth"
+                            class="text-danger pull-right addon-auth">Deauthorize</a>
+                    % endif
             </span>
 
             <span data-bind="if: showLinkDataverse">

@@ -2,6 +2,7 @@
 import logging
 import itertools
 import httplib as http
+
 from flask import request, redirect
 from modularodm import Q
 
@@ -15,13 +16,14 @@ from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
-from framework.guid.model import Guid, GuidStoredObject
-
-from website.util import web_url_for
-from website.project import model
+from framework.sessions import get_session, set_session
+from framework.guid.model import GuidStoredObject
+from website.models import Guid, Node
+from website.util import web_url_for, rubeus
+from website.project import model, new_dashboard
 from website import settings
 
-
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +62,6 @@ def _render_node(node):
         'api_url': node.api_url,
         'primary': node.primary,
     }
-
 
 
 def _render_nodes(nodes):
@@ -109,16 +110,124 @@ def index(auth, **kwargs):
     return {}
 
 
+def find_dashboard(user):
+    dashboard_folder = user.node__contributed.find(
+        Q('is_dashboard', 'eq', True)
+    )
+
+    if dashboard_folder.count() == 0:
+        new_dashboard(user)
+        dashboard_folder = user.node__contributed.find(
+            Q('is_dashboard', 'eq', True)
+        )
+    return dashboard_folder[0]
+
+
 @must_be_logged_in
-def get_dashboard_nodes(auth, **kwargs):
+def get_dashboard(auth, nid=None, **kwargs):
+    user = auth.user
+    if nid is None:
+        node = find_dashboard(user)
+        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
+        return_value = {'data': dashboard_projects}
+    elif nid == ALL_MY_PROJECTS_ID:
+        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
+    elif nid == ALL_MY_REGISTRATIONS_ID:
+        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
+    else:
+        node = Node.load(nid)
+        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
+        return_value = {'data': dashboard_projects}
+    return return_value
+
+@must_be_logged_in
+def get_all_projects_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
     user = auth.user
 
-    contributed = user.node__contributed  # nodes user cotributed to
+    contributed = user.node__contributed
 
     nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
+    )
+
+    comps = contributed.find(
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
         Q('is_registration', 'eq', False)
+    )
+
+    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return return_value
+
+@must_be_logged_in
+def get_all_registrations_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
+    user = auth.user
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False)
+    )
+
+    comps = contributed.find(
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', True)
+    )
+
+    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return return_value
+
+@must_be_logged_in
+def get_dashboard_nodes(auth, **kwargs):
+    user = auth.user
+
+    contributed = user.node__contributed  # nodes user contributed to
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
     )
 
     comps = contributed.find(
@@ -136,21 +245,21 @@ def get_dashboard_nodes(auth, **kwargs):
 
 
 @must_be_logged_in
-def get_dashboard_apps(auth, **kwargs):
+def dashboard(auth):
     user = auth.user
-
-    contributed = user.node__contributed  # nodes user cotributed to
-
-    return _render_nodes(list(contributed.find(
-        Q('category', 'eq', 'app') &
-        Q('is_deleted', 'eq', False) &
-        Q('is_registration', 'eq', False)
-    )))
-
-
-@must_be_logged_in
-def dashboard(**kwargs):
-    return {'addons_enabled': kwargs['auth'].user.get_addon_names()}
+    dashboard_folder = find_dashboard(user)
+    dashboard_id = dashboard_folder._id
+    session = get_session()
+    if 'seen_dashboard' in session.data:
+        seen_dashboard = session.data['seen_dashboard']
+    else:
+        seen_dashboard = False
+    session.data['seen_dashboard'] = True
+    set_session(session)
+    return {'addons_enabled': user.get_addon_names(),
+            'dashboard_id': dashboard_id,
+            'seen_dashboard': seen_dashboard,
+            }
 
 
 @must_be_logged_in

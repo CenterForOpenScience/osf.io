@@ -8,7 +8,7 @@
             <%include file="wiki/templates/toc.mako"/>
         </div>
          <div class="col-md-9">
-                 <%include file="wiki/templates/status.mako/"/>
+                 <%include file="wiki/templates/status.mako"/>
             <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
@@ -16,7 +16,11 @@
                 </div>
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
-                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    % if wiki_created:
+                        <a href="${node['url']}wiki/home/" class="btn btn-default">Cancel</a>
+                    % else:
+                        <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                    % endif
                     <input type="submit" class="btn btn-primary" value="Save"  data-bind="enable: changed" onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>

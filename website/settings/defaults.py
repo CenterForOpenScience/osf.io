@@ -40,6 +40,7 @@ SECRET_KEY = 'CHANGEME'
 DEV_MODE = False
 DEBUG_MODE = False
 
+
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
@@ -180,3 +181,13 @@ SENTRY_DSN_JS = None
 
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
+
+# Dashboard
+ALL_MY_PROJECTS_ID = '-amp'
+ALL_MY_REGISTRATIONS_ID = '-amr'
+ALL_MY_PROJECTS_NAME = 'All my projects'
+ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+
+# FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
+# and uploads in order to save disk space.
+DISK_SAVING_MODE = False
