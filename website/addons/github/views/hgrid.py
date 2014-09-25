@@ -98,6 +98,7 @@ github_branch_template = Template('''
     % endif
 ''')
 
+
 def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
     name field of HGrid file trees.
@@ -111,6 +112,11 @@ def github_branch_widget(branches, owner, repo, branch, sha):
         repo=repo
     )
     return rendered
+
+
+def github_repo_url(owner, repo):
+    url = "https://github.com/{0}/{1}".format(owner, repo)
+    return url
 
 
 def github_hgrid_data(node_settings, auth, **kwargs):
@@ -176,10 +182,11 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
         'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
+        'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo)
     }
-    buttons = [rubeus.build_addon_button(
-        '<i class="icon-cloud-download"></i> Download ZIP',
-        'githubDownloadZip')]
+    buttons = [rubeus.build_addon_button('<i class="icon-cloud-download"></i> Download ZIP', 'githubDownloadZip'),
+               rubeus.build_addon_button('<i class="icon"></i>Visit Repository', 'githubVisitRepo'),
+               ]
 
     return [rubeus.build_addon_root(
         node_settings,
