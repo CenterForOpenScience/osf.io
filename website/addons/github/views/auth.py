@@ -122,10 +122,11 @@ def github_oauth_callback(**kwargs):
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('user_addons'))
 
-
+@must_be_logged_in
 @must_have_addon('github', 'user')
 def github_oauth_delete_user(user_addon, **kwargs):
-    user_addon.clear_auth(save=True)
+    auth = kwargs['auth']
+    user_addon.clear_auth(auth=auth, save=True)
     return {}
 
 
