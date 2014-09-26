@@ -99,14 +99,12 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-        self.oauth_settings.oauth_token_type = None
-        self.oauth_settings.oauth_access_token = None
+        self.oauth_settings = None
 
     def clear_auth(self, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
             node_settings.deauthorize(save=True)
         self.revoke_token()
-        self.oauth_access_token, self.oauth_token_type = None, None
         if save:
             self.save()
 

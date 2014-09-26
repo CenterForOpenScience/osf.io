@@ -100,14 +100,11 @@ def github_oauth_callback(**kwargs):
     user_settings.oauth_settings = oauth_settings
     user_settings.save()
 
-    #in user
+    #in user_settings
     user_settings.oauth_state = None
+    #in oauth_settings
     user_settings.oauth_access_token = token['access_token']
     user_settings.oauth_token_type = token['token_type']
-
-    # redundant?
-    # connection = GitHub.from_settings(user_settings)
-    # user = connection.user()
 
     user_settings.github_user = user.login
 
