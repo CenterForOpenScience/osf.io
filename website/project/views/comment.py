@@ -168,21 +168,20 @@ def list_comments(**kwargs):
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
-    user = get_current_user()
     comments = serialize_comments(target, auth, anonymous)
     n_unread = 0
 
-    if node.is_contributor(user):
+    if node.is_contributor(auth.user):
         view_timestamp = datetime(1970, 1, 1, 12, 0, 0).isoformat()
 
-        if user.comments_viewed_timestamp is None:
-            user.comments_viewed_timestamp = {}
-            user.save()
+        if auth.user.comments_viewed_timestamp is None:
+            auth.user.comments_viewed_timestamp = {}
+            auth.user.save()
 
-        if user.comments_viewed_timestamp.get(node._id, None):
-            view_timestamp = user.comments_viewed_timestamp[node._id]
+        if auth.user.comments_viewed_timestamp.get(node._id, None):
+            view_timestamp = auth.user.comments_viewed_timestamp[node._id]
 
-        n_unread = n_unread_comments(view_timestamp, comments, user)
+        n_unread = n_unread_comments(view_timestamp, comments, auth.user)
 
     return {
 
