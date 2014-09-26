@@ -5,6 +5,8 @@ import pyelasticsearch
 import re
 import copy
 
+import exceptions
+
 from framework import sentry
 
 from website import settings
@@ -36,7 +38,10 @@ except pyelasticsearch.exceptions.ConnectionError as e:
 def requires_search(func):
     def wrapped(*args, **kwargs):
         if elastic is not None:
-            return func(*args, **kwargs)
+            try:
+                return func(*args, **kwargs)
+            except ElasticHttpError as e:
+                raise SearchException(e.error)
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 
@@ -69,6 +74,7 @@ def search(raw_query, start=0, size=10):
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
+
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, counts)
 
@@ -244,7 +250,6 @@ def update_node(node, index='website'):
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
             elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
-
 @requires_search
 def update_user(user):
     if not user.is_active() or user.is_system_user:
@@ -265,7 +270,6 @@ def update_user(user):
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
-
 @requires_search
 def delete_all():
     indices = [
@@ -282,7 +286,6 @@ def delete_all():
             logger.warn(e)
             logger.warn('The index "{}" was not deleted from elasticsearch'.format(index))
 
-
 @requires_search
 def delete_doc(elastic_document_id, node):
     category = 'registration' if node.is_registration else node.project_or_component
@@ -290,7 +293,6 @@ def delete_doc(elastic_document_id, node):
         elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
-
 
 def _load_parent(parent):
     parent_info = {}
@@ -492,7 +494,6 @@ def update_metadata(metadata):
     app_id = metadata.namespace
     data = metadata.to_json()
     elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id)
-
 
 @requires_search
 def search_metadata(query, _type, start, size):
