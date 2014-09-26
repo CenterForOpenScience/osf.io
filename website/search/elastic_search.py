@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import logging
-import pyelasticsearch
 import re
 import copy
+import logging
+import pyelasticsearch
 
-import exceptions
+from requests.exceptions import ConnectionError
 
 from framework import sentry
 
 from website import settings
 from website.filters import gravatar
+from website.search import exceptions
 from website.models import User, Node
 
 logger = logging.getLogger(__name__)
@@ -40,8 +41,11 @@ def requires_search(func):
         if elastic is not None:
             try:
                 return func(*args, **kwargs)
-            except ElasticHttpError as e:
-                raise exception.SearchException(e.error)
+            except pyelasticsearch.exceptions.ElasticHttpError as e:
+                raise exceptions.SearchException(e.error)
+            except ConnectionError:
+                raise exceptions.SearchException('Can not connect to ElasticSearch' )
+
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 
