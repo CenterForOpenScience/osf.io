@@ -41,7 +41,7 @@ def requires_search(func):
             try:
                 return func(*args, **kwargs)
             except ElasticHttpError as e:
-                raise SearchException(e.error)
+                raise exception.SearchException(e.error)
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 
