@@ -1,3 +1,4 @@
+% if not disk_saving_mode:
 <div class="modal fade" id="duplicateModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -5,13 +6,19 @@
                 <div class="row">
                     <div class="col-md-4">
                         <h4>Links
-                            <a class="btn btn-primary pull-right"
-                               href="#showLinks"
-                               data-toggle="modal"
-                               data-dismiss="modal"
-                            >
-                                ${ node['points'] }
-                            </a>
+                            % if node['points'] > 0:
+                                <a class="btn btn-primary pull-right"
+                                   href="#showLinks"
+                                   data-toggle="modal"
+                                   data-dismiss="modal"
+                                >
+                                    ${ node['points'] }
+                                </a>
+                            % else:
+                                 <span class="well well-inline pull-right">
+                                    ${ node['points'] }
+                                </span>
+                            % endif
                         </h4>
                         ${ language.LINK_DESCRIPTION }
                     </div>
@@ -62,3 +69,22 @@
         </div><!-- /.modal-content -->
     </div><!-- /.modal-dialog -->
 </div><!-- /.modal -->
+
+## Alternate modal for when undergoing a disk upgrade.
+% else:
+<div class="modal fade" id="duplicateModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Temporarily Disabled</h4>
+            </div>
+            <div class="modal-body">
+                Forks and registrations are currently disabled while the OSF is undergoing a server upgrade. These features will return shortly.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">OK</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+% endif

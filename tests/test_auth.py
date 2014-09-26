@@ -53,7 +53,7 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_by_id(self):
         user = UserFactory()
-        assert_equal(auth.get_user(id=user._id), user)
+        assert_equal(User.load(user._id), user)
 
     def test_get_user_by_username(self):
         user = UserFactory()

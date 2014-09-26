@@ -51,6 +51,8 @@
 
                     % endfor
 
+                    <br />
+
                     <button id="settings-submit" class="btn btn-success">
                         Submit
                     </button>
@@ -107,36 +109,33 @@
 
         var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
 
-        var submit = function(){
-            $.osf.postJSON(
-                '/api/v1/settings/addons/',
-                formData,
-                function() {
-                    window.location.reload();
-                },
-                function() {
-                    var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                    bootbox.alert(msg);
-                }
-            );
-        };
+        var submit = function() {
+            var request = $.osf.postJSON('/api/v1/settings/addons/', formData);
+            request.done(function() {
+                window.location.reload();
+            });
+            request.fail(function() {
+                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+                bootbox.alert({title: 'Request failed', message: msg});
+            });
+        }
 
         if(unchecked.length > 0) {
-        var uncheckedText = $.map(unchecked, function(el){
-            return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
-        }).join('');
-        uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
-        bootbox.confirm({
-            title: 'Are you sure you want to remove the add-ons you have deselected? ',
-            message: uncheckedText,
-            callback: function(result) {
-                if (result) {
-                    submit();
-                } else{
-                    unchecked.each(function(i, el){ $(el).prop('checked', true); });
+            var uncheckedText = $.map(unchecked, function(el){
+                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
+            }).join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
+            bootbox.confirm({
+                title: 'Are you sure you want to remove the add-ons you have deselected? ',
+                message: uncheckedText,
+                callback: function(result) {
+                    if (result) {
+                        submit();
+                    } else{
+                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
+                    }
                 }
-            }
-        });
+            });
         }
     else {
         submit();

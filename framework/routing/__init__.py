@@ -35,6 +35,7 @@ REDIRECT_CODES = [
     http.FOUND,
 ]
 
+
 class Rule(object):
     """ Container for routing and rendering rules."""
 
@@ -328,6 +329,7 @@ class JSONRenderer(Renderer):
 
 # Create a single JSONRenderer instance to avoid repeated construction
 json_renderer = JSONRenderer()
+
 
 class WebRenderer(Renderer):
     """Renderer for web views. Generates HTML; follows redirects

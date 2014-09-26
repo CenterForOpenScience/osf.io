@@ -17,12 +17,11 @@
         var url = item.urls.branch + '?' + $.param({branch: branch});
         $.ajax({
             type: 'get',
-            url: url,
-            success: function(data) {
-                // Update the item with the new branch data
-                $.extend(item, data[0]);
-                grid.reloadFolder(item);
-            }
+            url: url
+        }).done(function(response) {
+            // Update the item with the new branch data
+            $.extend(item, response[0]);
+            grid.reloadFolder(item);
         });
     }
 
@@ -47,6 +46,14 @@
             var url = row.urls.zip;
             window.location = url;
         }
-    }
+    };
+
+    HGrid.Actions['githubVisitRepo'] = {
+        on: 'click',
+        callback: function (evt, row) {
+            var url = row.urls.repo;
+            window.location = url;
+        }
+    };
 
 }));

@@ -151,7 +151,6 @@
         return deferred;
     };
 
-
     BaseComment.prototype.submitReply = function() {
         var self = this;
         if (!self.replyContent()) {
@@ -205,7 +204,6 @@
 
         $.extend(self, ko.mapping.fromJS(data));
         self.dateCreated(data.dateCreated);
-
         self.dateModified(data.dateModified);
 
         self.prettyDateCreated = ko.computed(function() {
@@ -292,20 +290,17 @@
         }
         $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
-            {
-                content: self.content()
-            },
-            function(response) {
-                self.content(response.content);
-                self.dateModified(response.dateModified);
-                self.editing(false);
-                self.modified(true);
-                self.editErrorMessage('');
-                self.$root.editors -= 1;
-                // Refresh tooltip on date modified, if present
-                $tips.tooltip('destroy').tooltip();
-            }
-        ).fail(function() {
+            {content: self.content()}
+        ).done(function(response) {
+            self.content(response.content);
+            self.dateModified(response.dateModified);
+            self.editing(false);
+            self.modified(true);
+            self.editErrorMessage('');
+            self.$root.editors -= 1;
+            // Refresh tooltip on date modified, if present
+            $tips.tooltip('destroy').tooltip();
+        }).fail(function() {
             self.cancelEdit();
             self.errorMessage('Could not submit comment');
         });
@@ -332,7 +327,9 @@
             function() {
                 self.isAbuse(true);
             }
-        )
+        ).fail(function() {
+            self.errorMessage('Could not report abuse.');
+        });
     };
 
     CommentModel.prototype.startDelete = function() {
@@ -344,13 +341,11 @@
         $.ajax({
             type: 'DELETE',
             url: nodeApiUrl + 'comment/' + self.id() + '/',
-            success: function(response) {
-                self.isDeleted(true);
-                self.deleting(false);
-            },
-            error: function() {
-                self.deleting(false);
-            }
+        }).done(function() {
+            self.isDeleted(true);
+            self.deleting(false);
+        }).fail(function() {
+            self.deleting(false);
         });
     };
 
@@ -364,17 +359,13 @@
 
     CommentModel.prototype.submitUndelete = function() {
         var self = this;
-        $.ajax({
-            type: 'PUT',
-            url: nodeApiUrl + 'comment/' + self.id() + '/undelete/',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                self.isDeleted(false);
-            },
-            complete: function() {
-                self.undeleting(false);
-            }
+        $.osf.putJSON(
+            nodeApiUrl + 'comment/' + self.id() + '/undelete/',
+            {}
+        ).done(function() {
+            self.isDeleted(false);
+        }).fail(function() {
+            self.undeleting(false);
         });
     };
 
@@ -388,17 +379,13 @@
 
     CommentModel.prototype.submitUnreportAbuse = function() {
         var self = this;
-        $.ajax({
-            type: 'POST',
-            url: nodeApiUrl + 'comment/' + self.id() + '/unreport/',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                self.isAbuse(false);
-            },
-            complete: function() {
-                self.unreporting(false);
-            }
+        $.osf.postJSON(
+            nodeapiurl + 'comment/' + self.id() + '/unreport/',
+            {}
+        ).done(function() {
+            self.isAbuse(false);
+        }).fail(function() {
+            self.unreporting(false);
         });
     };
 
@@ -422,7 +409,6 @@
     CommentModel.prototype.onSubmitSuccess = function(response) {
         this.showChildren(true);
     };
-
 
     /*
      *

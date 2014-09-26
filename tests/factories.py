@@ -121,6 +121,14 @@ class ProjectFactory(AbstractNodeFactory):
     category = 'project'
 
 
+class FolderFactory(ProjectFactory):
+    is_folder = True
+
+
+class DashboardFactory(FolderFactory):
+    is_dashboard = True
+
+
 class NodeFactory(AbstractNodeFactory):
     category = 'hypothesis'
     project = SubFactory(ProjectFactory)

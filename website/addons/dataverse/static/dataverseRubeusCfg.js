@@ -39,11 +39,10 @@
                 function(result) {
                     if (result) {
                         self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
-                        $.ajax({
-                            url: url,
-                            type: 'PUT',
-                            dataType: 'json'
-                        }).success(function() {
+                        $.osf.putJSON(
+                            url,
+                            {}
+                        ).done(function() {
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
@@ -58,9 +57,9 @@
                         });
                     }
                 }
-            )
+            );
         }
-    }
+    };
 
     // Register configuration
     Rubeus.cfg.dataverse = {

@@ -969,6 +969,28 @@ h1.node-title, h1.node-parent-title {
   margin-top: 0.3em;
 }
 
+.wiki-title {
+    line-height: 36px;
+    border-bottom: none;
+    margin-top: 0.2em;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.long-wiki-title {
+    font-size: 18px;
+    line-height: 20px;
+    border-bottom: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.wiki-title-container {
+    display: inline-block;
+    width:80%;
+}
+
 .btn-toolbar.node-control {
     margin-top: 0.9em;
 }
@@ -1217,7 +1239,7 @@ h1.unavailable {
     margin-left: 5px;
     margin-right: 5px;
     margin-bottom: 5px;
-    margin-top: 10px;
+    margin-top: 0px;
     padding: 0px;
     height: 20px;
 }
@@ -1370,6 +1392,12 @@ h1.unavailable {
     margin-bottom: 0;
   }
 }
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
   .osf-sidenav.affix-bottom,
@@ -1395,6 +1423,12 @@ h1.unavailable {
 .overflow {
     word-wrap: break-word;
     max-width: 100%;
+}
+
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
 }
 
 .preview-overflow{
