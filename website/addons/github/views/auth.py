@@ -4,7 +4,7 @@ import os
 import httplib as http
 
 from flask import request, redirect
-from modularodm import Q
+
 from framework.auth import get_current_user
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
@@ -90,30 +90,33 @@ def github_oauth_callback(**kwargs):
     gh = GitHub(token['access_token'], token['token_type'])
     user = gh.user()
 
-    oauth_settings = AddonGitHubOauthSettings.find_one(Q("_id", "eq", user.id))
+    oauth_settings = AddonGitHubOauthSettings.load(user.id)
 
     if not oauth_settings:
         oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings._id = user.id
+        oauth_settings._id = str(user.id)
         oauth_settings.save()
 
     user_settings.oauth_settings = oauth_settings
     user_settings.save()
-        # oauth_settings._id = user.id
 
+    #in user
     user_settings.oauth_state = None
     user_settings.oauth_access_token = token['access_token']
     user_settings.oauth_token_type = token['token_type']
 
-    connection = GitHub.from_settings(user_settings)
-    user = connection.user()
+    # redundant?
+    # connection = GitHub.from_settings(user_settings)
+    # user = connection.user()
 
     user_settings.github_user = user.login
 
+    oauth_settings.save()
     user_settings.save()
 
     if node_settings:
         node_settings.user_settings = user_settings
+        # previously connected to Github?
         if node_settings.user and node_settings.repo:
             node_settings.add_hook(save=False)
         node_settings.save()

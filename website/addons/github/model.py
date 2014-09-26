@@ -11,7 +11,7 @@ from github3 import GitHubError
 from framework.auth import Auth
 
 from website import settings
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import settings as github_settings
@@ -34,7 +34,7 @@ class GithubGuidFile(GuidFile):
         return os.path.join('github', 'file', self.path)
 
 
-class AddonGitHubOauthSettings(AddonUserSettingsBase):
+class AddonGitHubOauthSettings(AddonSettingsBase):
 
     github_user = fields.StringField()
     oauth_access_token = fields.StringField()
@@ -51,8 +51,8 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     @property
     def has_auth(self):
-        if self.oauth_access_token:
-            return self.oauth_access_token is not None
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token is not None
         return False
 
     @property
