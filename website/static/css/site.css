@@ -1442,6 +1442,10 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
+#projectScope .form-control {
+    width: 400px;
+}
+
 /* Contributors list */
 
 #contributors {
@@ -1450,10 +1454,6 @@ div#logScope a.moreLogs{
 
 #contributors #description {
     vertical-align: top;
-}
-
-#contributors .form-control {
-    width: 400px;
 }
 
 #contributors ol {
