@@ -3,7 +3,7 @@
 
 <div class="page-header">
   <div class="pull-right">
-    % if 'admin' in user['permissions'] and node['node_type'] == 'project':
+      % if 'admin' in user['permissions'] and node['node_type'] == 'project' and not disk_saving_mode:
       <a href="${node['url']}register" class="btn btn-default" type="button">New Registration</a>
     % endif
   </div>

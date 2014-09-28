@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import operator
 import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
@@ -7,7 +8,6 @@ from dateutil.parser import parse as parse_date
 from flask import request, redirect
 from modularodm.exceptions import ValidationError
 
-from framework.auth import get_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
 from framework.forms.utils import sanitize
@@ -56,6 +56,8 @@ def date_or_none(date):
 
 
 def _profile_view(uid=None):
+    # TODO: Fix circular import
+    from website.addons.badges.util import get_sorted_user_badges
 
     user = get_current_user()
     profile = User.load(uid) if uid else user
@@ -63,18 +65,25 @@ def _profile_view(uid=None):
     if not (uid or user):
         return redirect('/login/?next={0}'.format(request.path))
 
+    if 'badges' in settings.ADDONS_REQUESTED:
+        badge_assertions = get_sorted_user_badges(profile),
+        badges = _get_user_created_badges(profile)
+    else:
+        # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+        # empty lists.
+        badge_assertions = []
+        badges = []
+
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
-        # TODO: Fix circular import
-        from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
-            'assertions': get_sorted_user_badges(profile),
-            'badges': _get_user_created_badges(profile),
+            'assertions': badge_assertions,
+            'badges': badges,
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
-                'permissions': [], # necessary for rendering nodes
+                'permissions': [],  # necessary for rendering nodes
             },
         }
 
@@ -132,23 +141,27 @@ def user_addons(auth, **kwargs):
 
     out = {}
 
+    addons = [addon.config for addon in user.get_addons()]
+    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
 
-    for addon in user.get_addons():
+    # sort addon_enabled_settings alphabetically by category
+    for category in sorted(settings.ADDON_CATEGORIES):
+        for addon_config in addons:
+            if addon_config.categories[0] == category:
+                addons_enabled.append(addon_config.short_name)
+                if 'user' in addon_config.configs:
+                    addon_enabled_settings.append(addon_config.short_name)
 
-        addons_enabled.append(addon.config.short_name)
-
-        if 'user' in addon.config.configs:
-            addon_enabled_settings.append(addon.config.short_name)
-
-    out['addon_categories'] = settings.ADDON_CATEGORIES
+    out['addon_categories'] = sorted(settings.ADDON_CATEGORIES)
     out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
             and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
     ]
+    out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
     return out
@@ -262,7 +275,13 @@ def get_target_user(auth, uid=None):
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):
     if date:
-        return date.strftime(fmt)
+        try:
+            return date.strftime(fmt)
+        except ValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Year entered must be after 1900')
+            )
     return None
 
 

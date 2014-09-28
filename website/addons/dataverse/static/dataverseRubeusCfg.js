@@ -42,7 +42,7 @@
                         $.osf.putJSON(
                             url,
                             {}
-                        ).success(function() {
+                        ).done(function() {
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
@@ -57,9 +57,9 @@
                         });
                     }
                 }
-            )
+            );
         }
-    }
+    };
 
     // Register configuration
     Rubeus.cfg.dataverse = {

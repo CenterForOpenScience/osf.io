@@ -610,6 +610,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         url = web_url_for('dataverse_view_file',
                           pid=self.project._primary_key, path='foo')
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        assert_true(mock_connection.called)
+        assert_true(mock_get_files.called)
         assert_equal(res.status_code, 200)
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')

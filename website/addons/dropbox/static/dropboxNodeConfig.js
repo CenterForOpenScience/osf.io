@@ -195,8 +195,9 @@
          * Send a PUT request to change the linked Dropbox folder.
          */
         self.submitSettings = function() {
-            $.osf.putJSON(self.urls().config, ko.toJS(self),
-                onSubmitSuccess, onSubmitError);
+            $.osf.putJSON(self.urls().config, ko.toJS(self))
+                .done(onSubmitSuccess)
+                .fail(onSubmitError);
         };
 
         /**
@@ -280,8 +281,9 @@
                 message: 'Are you sure you want to authorize this project with your Dropbox access token?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        return $.osf.putJSON(self.urls().importAuth, {},
-                            onImportSuccess, onImportError);
+                        return $.osf.putJSON(self.urls().importAuth, {})
+                            .done(onImportSuccess)
+                            .fail(onImportError);
                     }
                 }
             });

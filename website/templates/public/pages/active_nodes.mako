@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Explore</%def>
+<%def name="title()">Public Activity</%def>
 <%def name="content()">
 <%
     from framework.auth import get_user
@@ -28,7 +28,7 @@
         <section id='newPublicRegistrations'>
             <h3>Newest Public Registrations</h3>
             <ul class='project-list list-group'>
-                ${node_list(recent_public_registrations, prefix='newest_public', metric='date_created')}
+                ${node_list(recent_public_registrations, prefix='newest_public', metric='registered_date')}
             </ul>
         </section>
         <section id='popularPublicProjects'>
@@ -52,10 +52,18 @@
         <%
             #import locale
             #locale.setlocale(locale.LC_ALL, 'en_US')
-            explicit_date = '{month} {dt.day} {dt.year}'.format(
+
+            if node.is_registration:
+                explicit_date = '{month} {dt.day} {dt.year}'.format(
+                    dt=node.registered_date.date(),
+                    month=node.registered_date.date().strftime('%B')
+                )
+            else:
+                explicit_date = '{month} {dt.day} {dt.year}'.format(
                 dt=node.date_created.date(),
                 month=node.date_created.date().strftime('%B')
             )
+
         %>
         <li class="project list-group-item list-group-item-node">
             <div class="row">
@@ -72,6 +80,10 @@
                     % elif metric == 'date_created':
                         <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Created: ${explicit_date}'>
                             ${node.date_created.date()}
+                        </span>
+                    % elif metric == 'registered_date':
+                        <span class="project-meta pull-right text-primary" rel='tooltip' data-original-title='Registered: ${explicit_date}'>
+                            ${node.registered_date.date()}
                         </span>
                     % endif
                 </div>
