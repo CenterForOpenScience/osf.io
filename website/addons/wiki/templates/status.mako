@@ -38,8 +38,12 @@
                dataType: 'json'
             },
             validate: function(value) {
-              if($.trim(value) == '')
+              if($.trim(value) == ''){
                 return 'The wiki page name cannot be empty.';
+              } else if(value.length>100){
+                return 'The wiki page name cannot be more than 100 characters.';
+              }
+
             },
             params: function(params) {
                params.pk = '${wiki_id}';
