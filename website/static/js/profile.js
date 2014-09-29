@@ -28,7 +28,7 @@
                 return match[1];
             }
             return value;
-        }
+        };
     };
 
     var SerializeMixin = function() {};
@@ -161,7 +161,7 @@
 
     BaseViewModel.prototype.submit = function() {
         if (this.enableSubmit() === false) {
-            return
+            return;
         }
         $.ajax({
             type: 'PUT',
@@ -209,7 +209,7 @@
 
         self.impute = function() {
             if (! self.hasFirst()) {
-                return
+                return;
             }
             $.ajax({
                 type: 'GET',

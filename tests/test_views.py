@@ -642,8 +642,8 @@ class TestUserProfile(OsfTestCase):
         )
         assert_not_in('addons', res.json)
 
-    def test_userialize_and_serialize_jobs(self):
-        self.jobs = [{
+    def test_unserialize_and_serialize_jobs(self):
+        jobs = [{
             'institution': 'an institution',
             'department': 'a department',
             'title': 'a title',
@@ -658,7 +658,7 @@ class TestUserProfile(OsfTestCase):
             'end': None,
             'ongoing': True,
         }]
-        payload = {'contents': self.jobs}
+        payload = {'contents': jobs}
         url = api_url_for('unserialize_jobs')
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -668,12 +668,11 @@ class TestUserProfile(OsfTestCase):
             url,
             auth=self.user.auth,
         )
-        for job in range(len(self.jobs)):
-            for part in list(self.jobs[job].keys()):
-                assert_equal(self.jobs[job][part], res.json['contents'][job][part])
-                
+        for i, job in enumerate(jobs):
+            assert_equal(job, res.json['contents'][i])
+
     def test_userialize_and_serialize_schools(self):
-        self.schools = [{
+        schools = [{
             'institution': 'an institution',
             'department': 'a department',
             'degree': 'a degree',
@@ -688,7 +687,7 @@ class TestUserProfile(OsfTestCase):
             'end': None,
             'ongoing': True,
         }]
-        payload = {'contents': self.schools}
+        payload = {'contents': schools}
         url = api_url_for('unserialize_schools')
         self.app.put_json(url, payload, auth=self.user.auth)
         self.user.reload()
@@ -698,9 +697,8 @@ class TestUserProfile(OsfTestCase):
             url,
             auth=self.user.auth,
         )
-        for school in range(len(self.schools)):
-            for part in list(self.schools[school].keys()):
-                assert_equal(self.schools[school][part], res.json['contents'][school][part])
+        for i, job in enumerate(schools):
+            assert_equal(job, res.json['contents'][i])
 
 
 class TestAddingContributorViews(OsfTestCase):

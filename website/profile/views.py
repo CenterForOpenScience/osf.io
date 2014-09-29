@@ -76,7 +76,7 @@ def _profile_view(uid=None):
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
-                'permissions': [], # necessary for rendering nodes
+                'permissions': [],  # necessary for rendering nodes
             },
         }
 
@@ -149,7 +149,7 @@ def user_addons(auth, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
-            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
@@ -299,7 +299,7 @@ def serialize_job(job):
         'title': job.get('title'),
         'start': fmt_date_or_none(job.get('start')),
         'end': fmt_date_or_none(job.get('end')),
-        'ongoing': job.get('ongoing'),
+        'ongoing': job.get('ongoing', False),
     }
 
 
@@ -310,7 +310,7 @@ def serialize_school(school):
         'degree': school.get('degree'),
         'start': fmt_date_or_none(school.get('start')),
         'end': fmt_date_or_none(school.get('end')),
-        'ongoing': school.get('ongoing'),
+        'ongoing': school.get('ongoing', False),
     }
 
 
