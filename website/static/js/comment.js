@@ -140,7 +140,7 @@
         var self = this;
         if (!self.replyContent()) {
             self.replyErrorMessage('Please enter a comment');
-            return
+            return;
         }
         // Quit if already submitting reply
         if (self.submittingReply()) {
@@ -243,7 +243,7 @@
 
     CommentModel.prototype = new BaseComment();
 
-    CommentModel.prototype.edit = function(data) {
+    CommentModel.prototype.edit = function() {
         if (this.canEdit()) {
             this._content = this.content();
             this.editing(true);
@@ -270,7 +270,7 @@
             .find('[data-toggle="tooltip"]');
         if (!self.content()) {
             self.errorMessage('Please enter a comment');
-            return
+            return;
         }
         $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
@@ -389,7 +389,7 @@
         this.showChildren(!this.showChildren());
     };
 
-    CommentModel.prototype.onSubmitSuccess = function(response) {
+    CommentModel.prototype.onSubmitSuccess = function() {
         this.showChildren(true);
     };
 
