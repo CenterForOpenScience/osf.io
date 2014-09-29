@@ -152,24 +152,23 @@
             {
                 target: self.id(),
                 content: self.replyContent(),
-            },
-            function(response) {
-                self.cancelReply();
-                self.replyContent(null);
-                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
-                if (!self.hasChildren()) {
-                    self.hasChildren(true);
-                }
-                self.replyErrorMessage('');
-                // Update discussion in case we aren't already in it
-                // TODO: This can lead to unnecessary API calls; fix this
-                if (!self.$root.commented()) {
-                    self.$root.fetchDiscussion();
-                    self.$root.commented(true);
-                }
-                self.onSubmitSuccess(response);
             }
-        ).fail(function(xhr) {
+        ).done(function(response) {
+            self.cancelReply();
+            self.replyContent(null);
+            self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+            if (!self.hasChildren()) {
+                self.hasChildren(true);
+            }
+            self.replyErrorMessage('');
+            // Update discussion in case we aren't already in it
+            // TODO: This can lead to unnecessary API calls; fix this
+            if (!self.$root.commented()) {
+                self.$root.fetchDiscussion();
+                self.$root.commented(true);
+            }
+            self.onSubmitSuccess(response);
+        }).fail(function() {
             self.cancelReply();
             self.errorMessage('Could not submit comment');
         });
@@ -308,11 +307,10 @@
             {
                 category: self.abuseCategory(),
                 text: self.abuseText()
-            },
-            function() {
-                self.isAbuse(true);
             }
-        ).fail(function() {
+        ).done(function() {
+            self.isAbuse(true);
+        }).fail(function() {
             self.errorMessage('Could not report abuse.');
         });
     };
