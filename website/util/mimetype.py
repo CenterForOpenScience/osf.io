@@ -1,10 +1,11 @@
 import os
 import mimetypes
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+MIMEMAP = os.path.join(HERE, 'mime.types')
+
 
 def get_mimetype(path, data=None):
-    HERE = os.path.dirname(os.path.abspath(__file__))
-    MIMEMAP = os.path.join(HERE, 'mime.types')
     mimetypes.init([MIMEMAP])
     mimetype, _ = mimetypes.guess_type(path)
 
