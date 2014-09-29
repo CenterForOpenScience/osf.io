@@ -485,6 +485,9 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            # Clear unclaimed records, so user's name shows up correctly on
+            # all projects
+            self.unclaimed_records = {}
             self.save()
             # Note: We must manually update search here because the fullname
             # field has not changed
