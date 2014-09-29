@@ -159,7 +159,7 @@ def user_addons(auth, **kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'user' in addon.owners
-            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
@@ -316,6 +316,7 @@ def serialize_job(job):
         'title': job.get('title'),
         'start': fmt_date_or_none(job.get('start')),
         'end': fmt_date_or_none(job.get('end')),
+        'ongoing': job.get('ongoing', False),
     }
 
 
@@ -326,6 +327,7 @@ def serialize_school(school):
         'degree': school.get('degree'),
         'start': fmt_date_or_none(school.get('start')),
         'end': fmt_date_or_none(school.get('end')),
+        'ongoing': school.get('ongoing', False),
     }
 
 
@@ -403,6 +405,7 @@ def unserialize_job(job):
         'title': job.get('title'),
         'start': date_or_none(job.get('start')),
         'end': date_or_none(job.get('end')),
+        'ongoing': job.get('ongoing'),
     }
 
 
@@ -413,6 +416,7 @@ def unserialize_school(school):
         'degree': school.get('degree'),
         'start': date_or_none(school.get('start')),
         'end': date_or_none(school.get('end')),
+        'ongoing': school.get('ongoing'),
     }
 
 

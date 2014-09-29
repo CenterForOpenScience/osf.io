@@ -245,6 +245,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -256,6 +257,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -485,6 +487,9 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            # Clear unclaimed records, so user's name shows up correctly on
+            # all projects
+            self.unclaimed_records = {}
             self.save()
             # Note: We must manually update search here because the fullname
             # field has not changed
@@ -679,7 +684,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)

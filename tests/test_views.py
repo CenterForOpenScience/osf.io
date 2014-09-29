@@ -755,6 +755,64 @@ class TestUserProfile(OsfTestCase):
         )
         assert_not_in('addons', res.json)
 
+    def test_unserialize_and_serialize_jobs(self):
+        jobs = [{
+            'institution': 'an institution',
+            'department': 'a department',
+            'title': 'a title',
+            'start': '2001-01-01',
+            'end': '2001-01-02',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'department': None,
+            'title': None,
+            'start': '2001-05-03',
+            'end': None,
+            'ongoing': True,
+        }]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(len(self.user.jobs), 2)
+        url = api_url_for('serialize_jobs')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        for i, job in enumerate(jobs):
+            assert_equal(job, res.json['contents'][i])
+
+    def test_userialize_and_serialize_schools(self):
+        schools = [{
+            'institution': 'an institution',
+            'department': 'a department',
+            'degree': 'a degree',
+            'start': '2001-01-01',
+            'end': '2001-01-02',
+            'ongoing': False,
+        }, {
+            'institution': 'another institution',
+            'department': None,
+            'degree': None,
+            'start': '2001-05-03',
+            'end': None,
+            'ongoing': True,
+        }]
+        payload = {'contents': schools}
+        url = api_url_for('unserialize_schools')
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
+        assert_equal(len(self.user.schools), 2)
+        url = api_url_for('serialize_schools')
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        for i, job in enumerate(schools):
+            assert_equal(job, res.json['contents'][i])
+
 
 class TestAddingContributorViews(OsfTestCase):
 
@@ -1799,6 +1857,29 @@ class TestAuthViews(OsfTestCase):
         res = self.app.get('/resend/')
         assert_equal(res.status_code, 200)
 
+    def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
+        unclaimed_user = UnconfirmedUserFactory()
+        # unclaimed user has been invited to a project.
+        referrer = UserFactory()
+        project = ProjectFactory(creator=referrer)
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.save()
+
+        # sanity check
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 1)
+
+        # user goes to email confirmation link
+        token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
+        url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+
+        # unclaimed records and token are cleared
+        unclaimed_user.reload()
+        assert_equal(unclaimed_user.unclaimed_records, {})
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
+
+
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
@@ -2295,8 +2376,9 @@ class TestSearchViews(OsfTestCase):
         search.delete_all()
 
         self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib1 = UserFactory(fullname='Freddie Mercury')
-        self.contrib2 = UserFactory(fullname='Brian May')
+        self.contrib = UserFactory(fullname='Brian May')
+        for i in range(0, 12):
+            UserFactory(fullname='Freddie Mercury{}'.format(i))
 
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
@@ -2305,15 +2387,57 @@ class TestSearchViews(OsfTestCase):
 
     def test_search_contributor(self):
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib1.fullname})
+        res = self.app.get(url, {'query': self.contrib.fullname})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         assert_equal(len(result), 1)
-        freddie = result[0]
-        assert_equal(freddie['fullname'], self.contrib1.fullname)
-        assert_in('gravatar_url', freddie)
-        assert_equal(freddie['registered'], self.contrib1.is_registered)
-        assert_equal(freddie['active'], self.contrib1.is_active())
+        brian = result[0]
+        assert_equal(brian['fullname'], self.contrib.fullname)
+        assert_in('gravatar_url', brian)
+        assert_equal(brian['registered'], self.contrib.is_registered)
+        assert_equal(brian['active'], self.contrib.is_active())
+
+    def test_search_pagination_default(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr'})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 10)
+        assert_equal(pages, 2)
+        assert_equal(page, 0)
+
+    def test_search_pagination_default_page_1(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 1})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 1)
+
+    def test_search_pagination_smaller_pages(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'size': 5})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 5)
+        assert_equal(page, 0)
+        assert_equal(pages, 3)
+
+    def test_search_pagination_smaller_pages_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
+        assert_equal(pages, 3)
 
     def test_search_projects(self):
         url = web_url_for('search_search')

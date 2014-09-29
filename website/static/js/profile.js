@@ -475,6 +475,16 @@
             pyDate: true,
             minDate: self.start
         });
+        self.ongoing = ko.observable(false);
+
+        self.clearEnd = function() {
+            self.end('');
+            return true;
+        };
+
+        self.endView = ko.computed(function() {
+            return (self.ongoing() ? 'ongoing' : self.end());
+        }, self);
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -505,6 +515,16 @@
             pyDate: true,
             minDate: self.start
         });
+        self.ongoing = ko.observable(false);
+
+        self.clearEnd = function() {
+            self.end('');
+            return true;
+        };
+
+        self.endView = ko.computed(function() {
+            return (self.ongoing() ? 'ongoing' : self.end());
+        }, self);
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {

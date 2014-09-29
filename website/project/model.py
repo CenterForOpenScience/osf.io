@@ -2232,7 +2232,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         users = []
+        user_ids = []
         permissions_changed = {}
+        to_retain = []
+        to_remove = []
         for user_dict in user_dicts:
             user = User.load(user_dict['id'])
             if user is None:
@@ -2247,15 +2250,13 @@ class Node(GuidStoredObject, AddonModelMixin):
                 permissions_changed[user._id] = permissions
             self.set_visible(user, user_dict['visible'], auth=auth)
             users.append(user)
+            user_ids.append(user_dict['id'])
 
-        to_retain = [
-            user for user in self.contributors
-            if user in users
-        ]
-        to_remove = [
-            user for user in self.contributors
-            if user not in users
-        ]
+        for user in self.contributors:
+            if user._id in user_ids:
+                to_retain.append(user)
+            else:
+                to_remove.append(user)
 
         # TODO: Move to validator or helper @jmcarp
         # TODO: Test me @jmcarp
@@ -2641,6 +2642,9 @@ class WatchConfig(StoredObject):
     node = fields.ForeignField('Node', backref='watched')
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
+
+    def __repr__(self):
+        return '<WatchConfig(node="{self.node}")>'.format(self=self)
 
 
 class MailRecord(StoredObject):

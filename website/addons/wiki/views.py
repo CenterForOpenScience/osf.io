@@ -118,10 +118,10 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'is_current': True,
             'is_edit': True,
             'version': wiki_page.version,
-            'pages_current': [
+            'pages_current': sorted([
                 from_mongo(version)
                 for version in node.wiki_pages_current
-            ],
+            ]),
             'toc': toc,
             'url': node.url,
             'api_url': node.api_url,
@@ -272,10 +272,10 @@ def project_wiki_edit(auth, **kwargs):
         'share_uuid': wiki_page.share_uuid,
         'is_current': is_current,
         'is_edit': True,
-        'pages_current': [
+        'pages_current': sorted([
             from_mongo(each)
             for each in node.wiki_pages_current
-        ],
+        ]),
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
