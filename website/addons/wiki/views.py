@@ -116,7 +116,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'wiki_id': wiki_page._primary_key if wiki_page else None,
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
-            'is_edit': True,
+            'is_edit': False,
             'version': wiki_page.version,
             'pages_current': sorted([
                 from_mongo(version)

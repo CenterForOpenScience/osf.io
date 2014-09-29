@@ -33,10 +33,12 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 def build_wiki_url(node, label, base, end):
     return node.web_url_for('project_wiki_page', wid=label)
 
+
 def validate_page_name(value):
     if value and len(value) > 100:
         raise ValidationValueError('Page name cannot be greater than 100 characters.')
     return True
+
 
 class NodeWikiPage(GuidStoredObject):
 
