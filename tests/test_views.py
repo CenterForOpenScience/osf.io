@@ -1767,6 +1767,52 @@ class TestAuthViews(OsfTestCase):
         users = User.find(Q('username', 'eq', email))
         assert_equal(users.count(), 0)
 
+    def test_register_after_being_invited_as_unreg_contributor(self):
+        # Regression test for:
+        #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/861
+        #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/1021
+        #    https://github.com/CenterForOpenScience/openscienceframework.org/issues/1026
+        # A user is invited as an unregistered contributor
+        project = ProjectFactory()
+
+        name, email = fake.name(), fake.email()
+
+        project.add_unregistered_contributor(fullname=name, email=email,
+                auth=Auth(project.creator))
+        project.save()
+
+        # The new, unregistered user
+        new_user = User.find_one(Q('username', 'eq', email))
+
+        # Instead of following the invitation link, they register at the regular
+        # registration page
+
+        # They use a different name when they register, but same email
+        real_name = fake.name()
+        password = 'myprecious'
+
+        url = api_url_for('register_user')
+        payload = {
+            'fullName': real_name,
+            'email1': email,
+            'email2': email,
+            'password': password,
+        }
+        # Send registration request
+        self.app.post_json(url, payload)
+
+        new_user.reload()
+
+        # New user confirms by following confirmation link
+        confirm_url = new_user.get_confirmation_url(email, external=False)
+        self.app.get(confirm_url)
+
+        new_user.reload()
+        # Password and fullname should be updated
+        assert_true(new_user.is_confirmed())
+        assert_true(new_user.check_password(password))
+        assert_equal(new_user.fullname, real_name)
+
     def test_register_sends_user_registered_signal(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake.email(), 'underpressure'
