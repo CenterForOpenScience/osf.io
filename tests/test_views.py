@@ -1857,6 +1857,29 @@ class TestAuthViews(OsfTestCase):
         res = self.app.get('/resend/')
         assert_equal(res.status_code, 200)
 
+    def test_confirm_email_clears_unclaimed_records_and_revokes_token(self):
+        unclaimed_user = UnconfirmedUserFactory()
+        # unclaimed user has been invited to a project.
+        referrer = UserFactory()
+        project = ProjectFactory(creator=referrer)
+        unclaimed_user.add_unclaimed_record(project, referrer, 'foo')
+        unclaimed_user.save()
+
+        # sanity check
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 1)
+
+        # user goes to email confirmation link
+        token = unclaimed_user.get_confirmation_token(unclaimed_user.username)
+        url = web_url_for('confirm_email_get', uid=unclaimed_user._id, token=token)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+
+        # unclaimed records and token are cleared
+        unclaimed_user.reload()
+        assert_equal(unclaimed_user.unclaimed_records, {})
+        assert_equal(len(unclaimed_user.email_verifications.keys()), 0)
+
+
     @mock.patch('framework.auth.views.mails.send_mail')
     def test_resend_confirmation_post_sends_confirm_email(self, send_mail):
         # Make sure user has a confirmation token for their primary email
