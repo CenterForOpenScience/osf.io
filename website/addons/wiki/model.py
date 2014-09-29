@@ -100,6 +100,10 @@ class NodeWikiPage(GuidStoredObject):
         """Generates uuid for use in sharejs namespacing"""
 
         self.share_uuid = str(uuid.uuid5(uuid.uuid1(), str(self._id)))
+
+        self.node.wiki_sharejs_uuid[self.page_name.lower()] = self.share_uuid
+        self.node.save()
+
         if save:
             self.save()
 
@@ -112,6 +116,10 @@ class NodeWikiPage(GuidStoredObject):
         db['docs'].remove({'_id': self.share_uuid})
 
         self.share_uuid = None
+
+        self.node.wiki_sharejs_uuid[self.page_name.lower()] = None
+        self.node.save()
+
         if save:
             self.save()
 
@@ -126,7 +134,7 @@ class NodeWikiPage(GuidStoredObject):
         db[ops_uuid(old_uuid)].rename(ops_uuid(self.share_uuid))
 
         # TODO: Migrating before doc is in docs causes sharejs to crash
-        # TODO: What event puts the doc in docs?
+        # docs is only updated every 20 ops
         new_doc = db['docs'].find_one({'_id': old_uuid}) or {}
         new_doc['_id'] = self.share_uuid
         db['docs'].insert(new_doc)
