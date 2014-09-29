@@ -70,7 +70,6 @@
                     content: self.wikiText()
                 },
                 success: function() {
-                    console.log('successful post');
                     self.initText(self.wikiText());
                 },
                 error: function(xhr, textStatus, error) {
@@ -90,7 +89,6 @@
                 success: function (response) {
                     self.initText(response.wiki_content);
                     self.wikiText(response.wiki_content);
-                    console.log('new content', response.wiki_content);
                 },
                 error: function (xhr, textStatus, error) {
                     console.error(textStatus);

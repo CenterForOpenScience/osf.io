@@ -22,7 +22,7 @@
                 <p><em>Changes will be stored but not published until you click "Save Version."</em></p>
                 <div id="wmd-button-bar"></div>
                 <div id="editor" class="wmd-input"
-                     data-bind="ace: wikiText, value: wikiText">Loading. . .</div>
+                     data-bind="ace: wikiText">Loading. . .</div>
             </div>
             <div class="pull-right">
                 <!-- clicking "Cancel" overrides unsaved changes check -->
@@ -86,7 +86,6 @@
             // If no share data is loaded, fetch most recent wiki from osf
             if (newDoc.version === 0) {
                 $("#revert-button").click();
-                console.log('she was clicked...');
             }
         });
     };
