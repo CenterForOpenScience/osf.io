@@ -96,13 +96,17 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
-    def delete_share_document(self, share_uuid):
-        """Allows deletion of a share document"""
+    def delete_share_document(self, save=True):
+        """Deletes share document and removes namespace from model."""
 
         db = share_db()
 
-        db[ops_uuid(share_uuid)].drop()
-        db['docs'].remove({'_id': share_uuid})
+        db[ops_uuid(self.share_uuid)].drop()
+        db['docs'].remove({'_id': self.share_uuid})
+
+        self.share_uuid = None
+        if save:
+            self.save()
 
     def migrate_uuid(self, save=True):
         """Migrates uuid to new namespace."""
