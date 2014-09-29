@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import unittest
 from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -6,7 +7,15 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.routing import Rule, json_renderer
 from website.routes import process_rules, OsfWebRenderer
 from website.util import web_url_for, api_url_for, is_json_request
+from website.util.mimetype import get_mimetype
 
+try:
+    import magic
+    LIBMAGIC_AVAILABLE = True
+except ImportError:
+    LIBMAGIC_AVAILABLE = False
+
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 class TestUrlForHelpers(unittest.TestCase):
 
@@ -51,3 +60,31 @@ class TestUrlForHelpers(unittest.TestCase):
             assert_false(is_json_request())
         with self.app.test_request_context(content_type='application/json;charset=UTF-8'):
             assert_true(is_json_request())
+
+
+class TestGetMimeTypes(unittest.TestCase):
+    def test_get_markdown_mimetype_from_filename(self):
+        name = 'test.md'
+        mimetype = get_mimetype(name)
+        assert_equal('text/x-markdown', mimetype)
+
+    def test_unknown_extension_with_no_contents_not_real_file_results_in_exception(self):
+        name = 'test.thisisnotarealextensionidonotcarwhatyousay'
+        with assert_raises(IOError):
+            get_mimetype(name)
+
+    @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
+    def test_unknown_extension_with_real_file_results_in_python_mimetype(self):
+        name = 'test_views.notarealfileextension'
+        maybe_python_file = os.path.join(HERE, 'test_files', name)
+        mimetype = get_mimetype(maybe_python_file)
+        assert_equal('text/x-python', mimetype)
+
+    @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
+    def test_unknown_extension_with_python_contents_results_in_python_mimetype(self):
+        name = 'test.thisisnotarealextensionidonotcarwhatyousay'
+        python_file = os.path.join(HERE, 'test_utils.py')
+        with open(python_file, 'r') as the_file:
+            content = the_file.read()
+        mimetype = get_mimetype(name, content)
+        assert_equal('text/x-python', mimetype)
