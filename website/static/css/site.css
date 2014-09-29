@@ -1662,6 +1662,12 @@ a {
     color: #505050;
 }
 
+/* Fix for pydocx bug */
+div.pydocx-center{
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
 /* jQuery UI Autocomplete (WTForms Widget) */
 .ui-autocomplete-category { font-weight: bold }
 
