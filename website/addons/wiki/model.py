@@ -118,6 +118,8 @@ class NodeWikiPage(GuidStoredObject):
 
         db[ops_uuid(old_uuid)].rename(ops_uuid(self.share_uuid))
 
+        # TODO: Migrating before doc is in docs causes sharejs to crash
+        # TODO: What event puts the doc in docs?
         new_doc = db['docs'].find_one({'_id': old_uuid}) or {}
         new_doc['_id'] = self.share_uuid
         db['docs'].insert(new_doc)
@@ -138,8 +140,8 @@ class NodeWikiPage(GuidStoredObject):
         return {}
 
 
-def ops_uuid(uuid):
-    return 'ops.{0}'.format(uuid.replace('-', '%2D'))
+def ops_uuid(share_uuid):
+    return 'ops.{0}'.format(share_uuid.replace('-', '%2D'))
 
 
 def share_db():
