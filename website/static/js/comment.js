@@ -140,7 +140,7 @@
         var self = this;
         if (!self.replyContent()) {
             self.replyErrorMessage('Please enter a comment');
-            return
+            return;
         }
         // Quit if already submitting reply
         if (self.submittingReply()) {
@@ -152,24 +152,23 @@
             {
                 target: self.id(),
                 content: self.replyContent(),
-            },
-            function(response) {
-                self.cancelReply();
-                self.replyContent(null);
-                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
-                if (!self.hasChildren()) {
-                    self.hasChildren(true);
-                }
-                self.replyErrorMessage('');
-                // Update discussion in case we aren't already in it
-                // TODO: This can lead to unnecessary API calls; fix this
-                if (!self.$root.commented()) {
-                    self.$root.fetchDiscussion();
-                    self.$root.commented(true);
-                }
-                self.onSubmitSuccess(response);
             }
-        ).fail(function(xhr) {
+        ).done(function(response) {
+            self.cancelReply();
+            self.replyContent(null);
+            self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+            if (!self.hasChildren()) {
+                self.hasChildren(true);
+            }
+            self.replyErrorMessage('');
+            // Update discussion in case we aren't already in it
+            // TODO: This can lead to unnecessary API calls; fix this
+            if (!self.$root.commented()) {
+                self.$root.fetchDiscussion();
+                self.$root.commented(true);
+            }
+            self.onSubmitSuccess(response);
+        }).fail(function() {
             self.cancelReply();
             self.errorMessage('Could not submit comment');
         });
@@ -244,7 +243,7 @@
 
     CommentModel.prototype = new BaseComment();
 
-    CommentModel.prototype.edit = function(data) {
+    CommentModel.prototype.edit = function() {
         if (this.canEdit()) {
             this._content = this.content();
             this.editing(true);
@@ -271,7 +270,7 @@
             .find('[data-toggle="tooltip"]');
         if (!self.content()) {
             self.errorMessage('Please enter a comment');
-            return
+            return;
         }
         $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
@@ -308,11 +307,10 @@
             {
                 category: self.abuseCategory(),
                 text: self.abuseText()
-            },
-            function() {
-                self.isAbuse(true);
             }
-        ).fail(function() {
+        ).done(function() {
+            self.isAbuse(true);
+        }).fail(function() {
             self.errorMessage('Could not report abuse.');
         });
     };
@@ -391,7 +389,7 @@
         this.showChildren(!this.showChildren());
     };
 
-    CommentModel.prototype.onSubmitSuccess = function(response) {
+    CommentModel.prototype.onSubmitSuccess = function() {
         this.showChildren(true);
     };
 
