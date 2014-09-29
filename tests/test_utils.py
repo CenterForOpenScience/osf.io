@@ -67,8 +67,7 @@ class TestGetMimeTypes(unittest.TestCase):
 
     def test_unknown_extension_with_python_contents_results_in_python_mimetype(self):
         name = 'test.thisisnotarealextensionidonotcarwhatyousay'
-        HERE = os.path.dirname(os.path.abspath(__file__))
-        python_file = os.path.join(HERE, 'test_utils.py')
+        python_file = os.path.abspath(__file__)
         with open(python_file, 'r') as the_file:
             content = the_file.read()
         mimetype = get_mimetype(name, content)
