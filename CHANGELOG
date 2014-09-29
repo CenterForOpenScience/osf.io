@@ -6,6 +6,8 @@ Changelog
 ===================
 
 - Paginate search results in Add Contributor widget.
+- Speed improvements to contributor manager widget.
+- Add "ongoing" option to Education and Employment sections of user profile.
 
 0.17.0 (2014-09-23)
 ===================
