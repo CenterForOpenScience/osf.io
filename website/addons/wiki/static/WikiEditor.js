@@ -18,10 +18,14 @@
             editor = ace.edit(element.id);
             var value = ko.unwrap(valueAccessor());
 
-            // Initialize value if not yet initialized.
+            // Initialize editor value if not yet initialized.
             if (editor.getReadOnly() === true) {
                 editor.setValue(value);
                 editor.setReadOnly(false);
+            }
+            // Initialize view model if editor was initialized
+            else {
+                valueAccessor()(editor.getValue());
             }
 
             // TODO: Load data from server if no data from server

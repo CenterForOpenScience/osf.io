@@ -57,12 +57,6 @@
 
 <script>
 
-    var doc = null;
-    var editor;
-
-    // ShareJS supports multiple document backends per server based on key/
-    // value stores. It is possible to expose the document name to switch between
-    // different documents, like in a wiki.
     var setDoc = function(docName) {
 
         sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
@@ -84,12 +78,14 @@
             editor.setReadOnly(false);
 
             // If no share data is loaded, fetch most recent wiki from osf
+            // TODO: Only works sometimes, likely based on order of execution
             if (newDoc.version === 0) {
                 $("#revert-button").click();
             }
         });
     };
 
+    var doc = null;
     var langTools = ace.require("ace/ext/language_tools");
     var editor = ace.edit("editor");
     editor.getSession().setMode("ace/mode/markdown");

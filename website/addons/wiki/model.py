@@ -123,6 +123,9 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
+    """ TODO: Migrate when page is open, followed by edits to the old doc,
+        leads to a sharejs document with no pointer. This is both a security
+        risk and a memory leak."""
     def migrate_uuid(self, save=True):
         """Migrates uuid to new namespace."""
 
