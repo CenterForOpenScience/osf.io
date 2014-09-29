@@ -15,6 +15,8 @@ try:
 except ImportError:
     LIBMAGIC_AVAILABLE = False
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+
 class TestUrlForHelpers(unittest.TestCase):
 
     def setUp(self):
@@ -66,15 +68,21 @@ class TestGetMimeTypes(unittest.TestCase):
         mimetype = get_mimetype(name)
         assert_equal('text/x-markdown', mimetype)
 
-    def test_unknown_extension_with_no_contents_results_in_no_mimetype(self):
+    def test_unknown_extension_with_no_contents_not_real_file_results_in_exception(self):
         name = 'test.thisisnotarealextensionidonotcarwhatyousay'
-        mimetype = get_mimetype(name)
-        assert_equal(None, mimetype)
+        with assert_raises(IOError):
+            get_mimetype(name)
+
+    @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
+    def test_unknown_extension_with_real_file_results_in_none(self):
+        name = 'test_views.notarealfileextension'
+        maybe_python_file = os.path.join(HERE, 'test_files', name)
+        mimetype = get_mimetype(maybe_python_file)
+        assert_equal('text/x-python', mimetype)
 
     @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
     def test_unknown_extension_with_python_contents_results_in_python_mimetype(self):
         name = 'test.thisisnotarealextensionidonotcarwhatyousay'
-        HERE = os.path.dirname(os.path.abspath(__file__))
         python_file = os.path.join(HERE, 'test_utils.py')
         with open(python_file, 'r') as the_file:
             content = the_file.read()
