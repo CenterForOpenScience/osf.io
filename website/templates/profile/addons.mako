@@ -51,6 +51,8 @@
 
                     % endfor
 
+                    <br />
+
                     <button id="settings-submit" class="btn btn-success">
                         Submit
                     </button>
@@ -94,42 +96,6 @@
         return rv;
     }
 
-    function on_submit_settings() {
-        var $this = $(this),
-            addon = $this.attr('data-addon'),
-            owner = $this.find('span[data-owner]').attr('data-owner'),
-            msgElm = $this.find('.addon-settings-message');
-
-        var url = owner == 'user'
-            ? '/api/v1/settings/' + addon + '/'
-            : nodeApiUrl + addon + '/settings/';
-
-        $.ajax({
-            url: url,
-            data: JSON.stringify(formToObj($this)),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json'
-        }).success(function() {
-            msgElm.text('Settings updated')
-                .removeClass('text-danger').addClass('text-success')
-                .fadeOut(100).fadeIn();
-        }).fail(function(xhr) {
-            var message = 'Error: ';
-            var response = JSON.parse(xhr.responseText);
-            if (response && response.message) {
-                message += response.message;
-            } else {
-                message += 'Settings not updated.'
-            }
-            msgElm.text(message)
-                .removeClass('text-success').addClass('text-danger')
-                .fadeOut(100).fadeIn();
-        });
-
-        return false;
-    }
-
     // Set up submission for addon selection form
     var checkedOnLoad = $("#selectAddonsForm input:checked");
 
@@ -143,33 +109,38 @@
 
         var unchecked = checkedOnLoad.filter($("#selectAddonsForm input:not(:checked)"));
 
-        if(unchecked.length > 0) {
-            bootbox.confirm(
-                "Are you sure you want to remove the add-ons you have deselected?",
-                function(result) {
-                    if(result) {
-                        $.ajax({
-                            type: 'POST',
-                            url: '/api/v1/settings/addons/',
-                            data: JSON.stringify(formData),
-                            contentType: 'application/json',
-                            dataType: 'json',
-                            success: function() {
-                                window.location.reload();
-                            }
-                        });
-                    }
-                }
-            )
+        var submit = function() {
+            var request = $.osf.postJSON('/api/v1/settings/addons/', formData);
+            request.done(function() {
+                window.location.reload();
+            });
+            request.fail(function() {
+                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+                bootbox.alert({title: 'Request failed', message: msg});
+            });
         }
 
-
-
-        return false;
-
+        if(unchecked.length > 0) {
+            var uncheckedText = $.map(unchecked, function(el){
+                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
+            }).join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
+            bootbox.confirm({
+                title: 'Are you sure you want to remove the add-ons you have deselected? ',
+                message: uncheckedText,
+                callback: function(result) {
+                    if (result) {
+                        submit();
+                    } else{
+                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
+                    }
+                }
+            });
+        }
+    else {
+        submit();
+    }
+    return false;
     });
-
 </script>
-
-
 </%def>

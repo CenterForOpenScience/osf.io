@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 import urllib
 import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from flask import request, redirect
+from framework.flask import app
 
 from website import settings
-from framework.flask import app, request, redirect
+
 from .model import Session
 
 
@@ -26,8 +29,14 @@ def add_key_to_url(url, scheme, key):
     return urlparse.urlunparse(parsed_redirect_url)
 
 
-@app.before_request
 def prepare_private_key():
+    """`before_request` handler that checks the Referer header to see if the user
+    is requesting from a view-only link. If so, reappend the view-only key.
+
+    NOTE: In order to ensure the execution order of the before_request callbacks,
+    this is attached in website.app.init_app rather than using
+    @app.before_request.
+    """
 
     # Done if not GET request
     if request.method != 'GET':
@@ -122,7 +131,8 @@ session = LocalProxy(get_session)
 
 # Request callbacks
 
-@app.before_request
+# NOTE: This gets attached in website.app.init_app to ensure correct callback
+# order
 def before_request():
 
     if request.authorization:

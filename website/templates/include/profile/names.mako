@@ -41,22 +41,21 @@
         <hr />
 
         <h4>Citation Preview</h4>
-
         <table class="table">
             <thead>
                 <tr>
                     <th>Style</th>
-                    <th>Citation Format</th>
+                    <th class="overflow-block" width="30%">Citation Format</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td>{{ citeApa }}</td>
+                    <td class="overflow-block" width="30%">{{ citeApa }}</td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td>{{ citeMla }}</td>
+                    <td class="overflow-block" width="30%">{{ citeMla }}</td>
                 </tr>
             </tbody>
         </table>

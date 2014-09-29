@@ -1,18 +1,21 @@
-"""
+# -*- coding: utf-8 -*-
 
-"""
 import difflib
 import httplib as http
 import logging
 
 from bs4 import BeautifulSoup
+from flask import request
 
-from framework import request, status, url_for
+from framework import status
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
+from framework.auth.utils import privacy_info_handle
+
 from website.project.views.node import _view_project
 from website.project import show_diff
+from website.project.model import has_anonymous_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -25,21 +28,6 @@ from .model import NodeWikiPage
 logger = logging.getLogger(__name__)
 
 HOME = 'home'
-
-
-def get_wiki_url(node, page=HOME):
-    """Get the URL for the wiki page for a node or pointer."""
-    view_spec = 'OsfWebRenderer__project_wiki_page'
-    if node.category != 'project':
-        pid = node.parent_node._id
-        nid = node._id
-        return url_for(view_spec, pid=pid, nid=nid, wid=page)
-    else:
-        if not node.primary:
-            pid = node.node._id
-        else:
-            pid = node._id
-        return url_for(view_spec, pid=pid, wid=page)
 
 
 @must_be_contributor_or_public
@@ -65,6 +53,7 @@ def wiki_widget(**kwargs):
         'complete': True,
         'content': wiki_html,
         'more': more,
+        'include': False,
     }
     rv.update(wiki.config.to_json())
     return rv
@@ -77,7 +66,7 @@ def project_wiki_home(**kwargs):
     return {}, None, None, '{}wiki/home/'.format(node.url)
 
 
-def _get_wiki_versions(node, wid):
+def _get_wiki_versions(node, wid, anonymous=False):
 
     # Skip if page doesn't exist; happens on new projects before
     # default "home" page is created
@@ -92,46 +81,60 @@ def _get_wiki_versions(node, wid):
     return [
         {
             'version': version.version,
-            'user_fullname': version.user.fullname,
+            'user_fullname': privacy_info_handle(
+                version.user.fullname, anonymous, name=True
+            ),
             'date': version.date.replace(microsecond=0),
         }
         for version in reversed(versions)
     ]
 
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # injects project
+@must_be_contributor_or_public  # injects user, project
 @must_have_addon('wiki', 'node')
-def project_wiki_compare(auth, **kwargs):
+def project_wiki_compare(auth, wid, compare_id, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wid = kwargs['wid']
 
+    anonymous = has_anonymous_link(node, auth)
     wiki_page = node.get_wiki_page(wid)
+    toc = serialize_wiki_toc(node, auth=auth)
 
-    if wiki_page:
-        compare_id = kwargs['compare_id']
-        comparison_page = node.get_wiki_page(wid, compare_id)
-        if comparison_page:
-            current = wiki_page.content
-            comparison = comparison_page.content
-            sm = difflib.SequenceMatcher(None, comparison, current)
-            content = show_diff(sm)
-            content = content.replace('\n', '<br />')
-            rv = {
-                'pageName': wid,
-                'wiki_content': content,
-                'versions': _get_wiki_versions(node, wid),
-                'is_current': True,
-                'is_edit': True,
-                'version': wiki_page.version,
-            }
-            rv.update(_view_project(node, auth, primary=True))
-            return rv
+    if not wiki_page:
+        wiki_page = NodeWikiPage()
+
+    comparison_page = node.get_wiki_page(wid, compare_id)
+    if comparison_page:
+        current = wiki_page.content
+        comparison = comparison_page.content
+        sm = difflib.SequenceMatcher(None, comparison, current)
+        content = show_diff(sm)
+        content = content.replace('\n', '<br />')
+        ret = {
+            'pageName': wid,
+            'wiki_content': content,
+            'wiki_id': wiki_page._primary_key if wiki_page else None,
+            'versions': _get_wiki_versions(node, wid, anonymous),
+            'is_current': True,
+            'is_edit': True,
+            'version': wiki_page.version,
+            'pages_current': [
+                from_mongo(version)
+                for version in node.wiki_pages_current
+            ],
+            'toc': toc,
+            'url': node.url,
+            'api_url': node.api_url,
+            'category': node.category
+        }
+        ret.update(_view_project(node, auth, primary=True))
+        return ret
+
     raise HTTPError(http.NOT_FOUND)
 
 
-@must_be_valid_project # returns project
-@must_have_permission('write') # returns user, project
+@must_be_valid_project  # injects project
+@must_have_permission('write')  # injects auth, project
 @must_have_addon('wiki', 'node')
 def project_wiki_version(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -161,8 +164,8 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': child.wiki_pages_current.keys() if child.wiki_pages_current else [],
-            'url': get_wiki_url(child, page=HOME),
+            'pages': sorted(child.wiki_pages_current.keys()) if child.wiki_pages_current else [],
+            'url': child.web_url_for('project_wiki_page', wid=HOME),
             'is_pointer': not child.primary,
             'link': auth.private_key
         }
@@ -174,14 +177,14 @@ def serialize_wiki_toc(project, auth):
     return toc
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def project_wiki_page(auth, **kwargs):
 
     wid = kwargs['wid']
     node = kwargs['node'] or kwargs['project']
-
+    anonymous = has_anonymous_link(node, auth)
     wiki_page = node.get_wiki_page(wid)
 
     # todo breaks on /<script>; why?
@@ -202,13 +205,14 @@ def project_wiki_page(auth, **kwargs):
         'pageName': wid,
         'page': wiki_page,
         'version': version,
+        'versions': _get_wiki_versions(node, wid, anonymous=anonymous),
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
-        'pages_current': [
-            from_mongo(version)
-            for version in node.wiki_pages_versions
-        ],
+        'pages_current': sorted([
+            from_mongo(each)
+            for each in node.wiki_pages_current
+        ]),
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
@@ -245,18 +249,33 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
+        wiki_created = False
     else:
+        wiki_page = NodeWikiPage()
         version = 'NA'
         is_current = False
         content = ''
+        wiki_created = True
+
+    toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'pageName': wid,
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
+        'wiki_created': wiki_created,
+        'wiki_id': wiki_page._primary_key if wiki_page else None,
         'is_current': is_current,
         'is_edit': True,
+        'pages_current': [
+            from_mongo(each)
+            for each in node.wiki_pages_current
+        ],
+        'toc': toc,
+        'url': node.url,
+        'api_url': node.api_url,
+        'category': node.category
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -266,16 +285,9 @@ def project_wiki_edit(auth, **kwargs):
 @must_have_permission('write')  # injects user
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_edit_post(auth, **kwargs):
+def project_wiki_edit_post(wid, auth, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-    user = auth.user
-    wid = kwargs['wid']
-    logger.debug(
-        '{user} edited wiki page: {wid}'.format(
-            user=user.username, wid=wid
-        )
-    )
 
     if wid != sanitize(wid):
         status.push_status_message("This is an invalid wiki page name")
@@ -325,3 +337,14 @@ def project_wiki_rename(**kwargs):
         return {'message': new_name}
 
     raise HTTPError(http.BAD_REQUEST)
+
+@must_be_valid_project  # injects project
+@must_have_permission('write')  # injects user, project
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def project_wiki_delete(auth, wid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    page = NodeWikiPage.load(wid)
+    node.delete_node_wiki(node, page, auth)
+    node.save()
+    return {}

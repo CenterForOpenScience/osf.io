@@ -25,23 +25,21 @@
         self.search = function(includePublic) {
             self.results([]);
             self.errorMsg('');
-            $.ajax({
-                type: 'POST',
-                url: '/api/v1/search/node/',
-                data: JSON.stringify({
+            $.osf.postJSON(
+                '/api/v1/search/node/',
+                {
                     query: self.query(),
                     nodeId: nodeId,
-                    includePublic: includePublic
-                }),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(result) {
-                    if (!result.nodes.length) {
-                        self.errorMsg('No results found.');
-                    }
-                    self.results(result.nodes);
+                    includePublic: includePublic,
                 }
-            });
+            ).done(function(result) {
+                if (!result.nodes.length) {
+                    self.errorMsg('No results found.');
+                }
+                self.results(result.nodes);
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.addTips = function(elements) {
@@ -91,18 +89,14 @@
 
         self.submit = function() {
             var nodeIds = $.osf.mapByProperty(self.selection(), 'id');
-            $.ajax({
-                type: 'post',
-                url: nodeApiUrl + 'pointer/',
-                data: JSON.stringify({
-                    nodeIds: nodeIds
-                }),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function() {
-                    window.location.reload();
-                }
-            });
+            $.osf.postJSON(
+                nodeApiUrl + 'pointer/',
+                {nodeIds: nodeIds}
+            ).done(function() {
+                window.location.reload();
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.clear = function() {
@@ -128,18 +122,16 @@
         self.links = ko.observableArray([]);
 
         $elm.on('shown.bs.modal', function() {
-            if (self.links().length == 0) {
+            if (self.links().length === 0) {
                 $.ajax({
                     type: 'GET',
                     url: nodeApiUrl + 'pointer/',
                     dataType: 'json',
-                    success: function(response) {
-                        self.links(response.pointed);
-                    },
-                    error: function() {
-                        $elm.modal('hide');
-                        bootbox.alert('Could not get links');
-                    }
+                }).done(function(response) {
+                    self.links(response.pointed);
+                }).fail(function() {
+                    $elm.modal('hide');
+                    bootbox.alert('Could not get links');
                 });
             }
         });
@@ -171,6 +163,7 @@
         this.selector = selector;
         this.$element = $(selector);
         this.viewModel = new LinksViewModel(this.$element);
+        ko.applyBindings(this.viewModel, this.$element[0]);
     }
 
     return {

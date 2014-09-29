@@ -4,6 +4,8 @@ import uuid
 from .model import Node, NodeLog, Pointer, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
+from modularodm import Q
+from website.exceptions import NodeStateError
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -55,6 +57,54 @@ def new_node(category, title, user, description=None, project=None):
 
     return node
 
+def new_dashboard(user):
+    """Create a new dashboard project.
+
+    :param User user: User object
+    :return Node: Created node
+
+    """
+    existing_dashboards = user.node__contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_dashboard','eq', True)
+    )
+
+    if existing_dashboards.count() > 0:
+        raise NodeStateError("Users may only have one dashboard")
+
+    node = Node(
+        title='Dashboard',
+        creator=user,
+        category='project',
+        is_dashboard=True,
+        is_folder=True
+    )
+
+    node.save()
+
+    return node
+
+
+def new_folder(title, user):
+    """Create a new folder project.
+
+    :param str title: Node title
+    :param User user: User object
+    :return Node: Created node
+
+    """
+    title = sanitize(title.strip())
+
+    node = Node(
+        title=title,
+        creator=user,
+        category='project',
+        is_folder=True
+    )
+
+    node.save()
+
+    return node
 
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
@@ -83,7 +133,6 @@ def new_private_link(name, user, nodes, anonymous):
     private_link.save()
 
     return private_link
-
 
 
 template_name_replacements = {

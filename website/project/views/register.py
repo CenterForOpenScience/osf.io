@@ -2,8 +2,11 @@
 import json
 import httplib as http
 
-from framework import Q
-from framework import request
+
+from flask import request
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+
 from framework.exceptions import HTTPError
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
@@ -48,6 +51,15 @@ def node_register_template_page(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     template_name = kwargs['template'].replace(' ', '_')
+    # Error to raise if template can't be found
+    not_found_error = HTTPError(
+        http.NOT_FOUND,
+        data=dict(
+            message_short='Template not found.',
+            message_long='The registration template you entered '
+                         'in the URL is not valid.'
+        )
+    )
 
     if node.is_registration and node.registered_meta:
         registered = True
@@ -58,10 +70,13 @@ def node_register_template_page(auth, **kwargs):
         if node.registered_schema:
             meta_schema = node.registered_schema
         else:
-            meta_schema = MetaSchema.find_one(
-                Q('name', 'eq', template_name) &
-                Q('schema_version', 'eq', 1)
-            )
+            try:
+                meta_schema = MetaSchema.find_one(
+                    Q('name', 'eq', template_name) &
+                    Q('schema_version', 'eq', 1)
+                )
+            except NoResultsFound:
+                raise not_found_error
     else:
         # Anyone with view access can see this page if the current node is
         # registered, but only admins can view the registration page if not
@@ -70,10 +85,13 @@ def node_register_template_page(auth, **kwargs):
             raise HTTPError(http.FORBIDDEN)
         registered = False
         payload = None
-        meta_schema = MetaSchema.find(
+        metaschema_query = MetaSchema.find(
             Q('name', 'eq', template_name)
-        ).sort('-schema_version')[0]
-
+        ).sort('-schema_version')
+        if metaschema_query:
+            meta_schema = metaschema_query[0]
+        else:
+            raise not_found_error
     schema = meta_schema.schema
 
     # TODO: Notify if some components will not be registered
@@ -85,6 +103,7 @@ def node_register_template_page(auth, **kwargs):
         'schema_version': meta_schema.schema_version,
         'registered': registered,
         'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

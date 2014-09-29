@@ -2,14 +2,16 @@
 # -*- coding: utf-8 -*-
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.auth import get_current_user
+from framework.exceptions import HTTPError
+
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
-from framework.exceptions import HTTPError
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
@@ -149,6 +151,7 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
+@must_not_be_registration
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()

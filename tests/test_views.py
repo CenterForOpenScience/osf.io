@@ -17,11 +17,11 @@ from werkzeug.wrappers import Response
 from modularodm import Q
 
 from framework import auth
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-import website.app
+# import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -29,10 +29,11 @@ from website.project.views.contributor import (
     deserialize_contributors
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
+from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
-from website import settings, mails
+from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project
+from website.project.views.node import _view_project, abbrev_authors
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
@@ -40,13 +41,10 @@ from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
-    CommentFactory, PrivateLinkFactory
+    RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
+    ProjectWithAddonFactory
 )
-
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
@@ -67,7 +65,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.set_privacy('public')
         self.project.save()
         self.project.reload()
-        assert_false(has_anonymous_link(self.project, anonymous_link.key))
+        auth = Auth(user=self.user, private_key=anonymous_link.key)
+        assert_false(has_anonymous_link(self.project, auth))
 
     def test_has_private_link_key(self):
         res = self.app.get(self.project_url, {'view_only': self.link.key})
@@ -84,11 +83,12 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
 
     def test_logged_in_no_private_key(self):
         res = self.app.get(self.project_url, {'view_only': None}, auth=self.user.auth,
-            expect_errors=True)
+                           expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_logged_in_has_key(self):
-        res = self.app.get(self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
+        res = self.app.get(
+            self.project_url, {'view_only': self.link.key}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
     @unittest.skip('Skipping for now until we find a way to mock/set the referrer')
@@ -145,8 +145,8 @@ class TestProjectViews(OsfTestCase):
     def test_edit_description(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         self.app.post_json(url,
-                            {"name": "description", "value": "Deep-fried"},
-                            auth=self.auth)
+                           {"name": "description", "value": "Deep-fried"},
+                           auth=self.auth)
         self.project.reload()
         assert_equal(self.project.description, "Deep-fried")
 
@@ -163,9 +163,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(data['node']['id'], self.project._primary_key)
         assert_equal(data['node']['watched_count'], 0)
         assert_true(data['user']['is_contributor'])
-        assert_equal(data['node']['logs'][-1]['action'], 'project_created')
-        assert_equal(data['node']['children_ids'],
-                        [str(n._primary_key) for n in self.project.nodes])
         assert_equal(data['node']['description'], self.project.description)
         assert_equal(data['node']['url'], self.project.url)
         assert_equal(data['node']['tags'], [t._primary_key for t in self.project.tags])
@@ -173,6 +170,39 @@ class TestProjectViews(OsfTestCase):
         assert_in('watched_count', data['node'])
         assert_in('registered_from_url', data['node'])
         # TODO: Test "parent" and "user" output
+
+    def test_api_get_folder_pointers(self):
+        dashboard = DashboardFactory(creator=self.user1)
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = dashboard.api_url_for("get_folder_pointers")
+        dashboard.add_pointer(project_one, auth=self.consolidate_auth1)
+        dashboard.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_in(project_one._id, pointers)
+        assert_in(project_two._id, pointers)
+        assert_equal(len(pointers), 2)
+
+    def test_api_get_folder_pointers_from_non_folder(self):
+        project_one = ProjectFactory(creator=self.user1)
+        project_two = ProjectFactory(creator=self.user1)
+        url = project_one.api_url_for("get_folder_pointers")
+        project_one.add_pointer(project_two, auth=self.consolidate_auth1)
+        res = self.app.get(url, auth=self.auth)
+        pointers = res.json
+        assert_equal(len(pointers), 0)
+
+    def test_new_user_gets_dashboard_on_dashboard_path(self):
+        my_user = AuthUserFactory()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        assert_equal(dashboard.count(), 0)
+        url = api_url_for('get_dashboard')
+        self.app.get(url, auth=my_user.auth)
+        my_user.reload()
+        dashboard = my_user.node__contributed.find(Q('is_dashboard', 'eq', True))
+        assert_equal(dashboard.count(), 1)
+
 
     def test_add_contributor_post(self):
         # Two users are added as a contributor via a POST request
@@ -218,9 +248,12 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': self.project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': self.user1._id, 'permission': 'read', 'registered': True, 'visible': True},
-                    {'id': self.user2._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': self.project.creator._id, 'permission': 'admin',
+                        'registered': True, 'visible': True},
+                    {'id': self.user1._id, 'permission': 'read',
+                        'registered': True, 'visible': True},
+                    {'id': self.user2._id, 'permission': 'admin',
+                        'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -238,8 +271,10 @@ class TestProjectViews(OsfTestCase):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         project.add_contributors(
             [
-                {'user': reg_user1, 'permissions': ['read', 'write', 'admin'], 'visible': True},
-                {'user': reg_user2, 'permissions': ['read', 'write', 'admin'], 'visible': False},
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
             ]
         )
         # Add a non-registered user
@@ -254,10 +289,14 @@ class TestProjectViews(OsfTestCase):
             url,
             {
                 'contributors': [
-                    {'id': reg_user2._id, 'permission': 'admin', 'registered': True, 'visible': False},
-                    {'id': project.creator._id, 'permission': 'admin', 'registered': True, 'visible': True},
-                    {'id': unregistered_user._id, 'permission': 'admin', 'registered': False, 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'registered': True, 'visible': True},
+                    {'id': reg_user2._id, 'permission': 'admin',
+                        'registered': True, 'visible': False},
+                    {'id': project.creator._id, 'permission': 'admin',
+                        'registered': True, 'visible': True},
+                    {'id': unregistered_user._id, 'permission': 'admin',
+                        'registered': False, 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin',
+                        'registered': True, 'visible': True},
                 ]
             },
             auth=self.auth,
@@ -280,18 +319,47 @@ class TestProjectViews(OsfTestCase):
         url = "/api/v1/project/{0}/removecontributors/".format(self.project._id)
         # User 1 removes user2
         self.app.post(url, json.dumps({"id": self.user2._id}),
-                            content_type="application/json",
-                            auth=self.auth).maybe_follow()
+                      content_type="application/json",
+                      auth=self.auth).maybe_follow()
         self.project.reload()
         assert_not_in(self.user2._id, self.project.contributors)
         # A log event was added
         assert_equal(self.project.logs[-1].action, "contributor_removed")
 
+    def test_get_contributors_abbrev(self):
+        # create a project with 3 registered contributors
+        project = ProjectFactory(creator=self.user1, is_public=True)
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+            ]
+        )
+
+        # add an unregistered contributor
+        unregistered_user = project.add_unregistered_contributor(
+            fullname=fake.name(), email=fake.email(),
+            auth=self.consolidate_auth1,
+            save=True,
+        )
+
+        url = project.api_url_for('get_node_contributors_abbrev')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(len(project.contributors), 4)
+        assert_equal(len(res.json['contributors']), 3)
+        assert_equal(len(res.json['others_count']), 1)
+        assert_equal(res.json['contributors'][0]['separator'], ',')
+        assert_equal(res.json['contributors'][1]['separator'], ',')
+        assert_equal(res.json['contributors'][2]['separator'], '&nbsp;&')
+
     def test_edit_node_title(self):
         url = "/api/v1/project/{0}/edit/".format(self.project._id)
         # The title is changed though posting form data
         self.app.post_json(url, {"name": "title", "value": "Bacon"},
-                            auth=self.auth).maybe_follow()
+                           auth=self.auth).maybe_follow()
         self.project.reload()
         # The title was changed
         assert_equal(self.project.title, "Bacon")
@@ -363,7 +431,8 @@ class TestProjectViews(OsfTestCase):
         assert_not_in("footag", self.project.tags)
 
     def test_register_template_page(self):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(self.project._primary_key)
+        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
+            self.project._primary_key)
         self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
@@ -374,7 +443,16 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.registration_list[-1])
         assert_true(reg.is_registration)
 
-    def test_get_logs(self):
+    def test_register_template_page_with_invalid_template_name(self):
+        url = self.project.web_url_for('node_register_template_page', template='invalid')
+        res = self.app.get(url, expect_errors=True, auth=self.auth)
+        assert_equal(res.status_code, 404)
+        assert_in('Template not found', res)
+
+    @mock.patch('framework.transactions.commands.begin')
+    @mock.patch('framework.transactions.commands.rollback')
+    @mock.patch('framework.transactions.commands.commit')
+    def test_get_logs(self, *mock_commands):
         # Add some logs
         for _ in range(5):
             self.project.logs.append(
@@ -387,6 +465,8 @@ class TestProjectViews(OsfTestCase):
         self.project.save()
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url, auth=self.auth)
+        for mock_command in mock_commands:
+            assert_false(mock_command.called)
         self.project.reload()
         data = res.json
         assert_equal(len(data['logs']), len(self.project.logs))
@@ -464,6 +544,7 @@ class TestProjectViews(OsfTestCase):
                 action='file_added',
                 params={'project': child._id}
             )
+
         url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
         res = self.app.get(url).maybe_follow()
         assert_equal(len(res.json['logs']), 10)
@@ -476,21 +557,47 @@ class TestProjectViews(OsfTestCase):
             ]
         )
 
-    def test_logs_from_api_url(self):
-        # Add some logs
-        for _ in range(12):
-            self.project.logs.append(
-                NodeLogFactory(
-                    user=self.user1,
-                    action="file_added",
-                    params={"project": self.project._id}
-                )
-            )
-        self.project.save()
-        url = "/api/v1/project/{0}/".format(self.project._primary_key)
+    def test_can_view_public_log_from_private_project(self):
+        project = ProjectFactory(is_public=True)
+        fork = project.fork_node(auth=self.consolidate_auth1)
+        url = fork.api_url_for('get_logs')
         res = self.app.get(url, auth=self.auth)
-        assert_equal(len(res.json['node']['logs']), 10)
-        assert_true(res.json['node']['has_more_logs'])
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+        project.is_public = False
+        project.save()
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(
+            [each['action'] for each in res.json['logs']],
+            ['node_forked', 'project_created'],
+        )
+
+    def test_for_private_component_log(self):
+        for _ in range(5):
+            self.project.add_log(
+                auth=self.consolidate_auth1,
+                action='file_added',
+                params={'project': self.project._id}
+            )
+        self.project.is_public = True
+        self.project.save()
+        child = NodeFactory(project=self.project)
+        child.is_public = False
+        child.set_title("foo", auth=self.consolidate_auth1)
+        child.set_title("bar", auth=self.consolidate_auth1)
+        child.save()
+        url = '/api/v1/project/{0}/log/'.format(self.project._primary_key)
+        res = self.app.get(url).maybe_follow()
+        assert_equal(len(res.json['logs']), 7)
+        assert_not_in(
+            child._id,
+            [
+                log['params']['project']
+                for log in res.json['logs']
+            ]
+        )
 
     def test_remove_project(self):
         url = self.project.api_url
@@ -565,12 +672,18 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
-
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
+
+    def test_fmt_date_or_none(self):
+        with assert_raises(HTTPError) as cm:
+            #enter a date before 1900
+            fmt_date_or_none(dt.datetime(1890, 10, 31, 18, 23, 29, 227))
+        # error should be raised because date is before 1900
+        assert_equal(cm.exception.code, http.BAD_REQUEST)
 
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
@@ -757,13 +870,13 @@ class TestAddingContributorViews(OsfTestCase):
         serialized[0]['visible'] = True
         with capture_signals() as mock_signals:
             deserialize_contributors(self.project, serialized,
-                auth=Auth(self.creator))
+                                     auth=Auth(self.creator))
         assert_equal(mock_signals.signals_sent(), set([unreg_contributor_added]))
 
     def test_serialize_unregistered_with_record(self):
         name, email = fake.name(), fake.email()
         user = self.project.add_unregistered_contributor(fullname=name,
-            email=email, auth=Auth(self.project.creator))
+                                                         email=email, auth=Auth(self.project.creator))
         self.project.save()
         res = serialize_unregistered(
             fullname=name,
@@ -799,7 +912,7 @@ class TestAddingContributorViews(OsfTestCase):
         self.app.post_json(url, payload).maybe_follow()
         self.project.reload()
         assert_equal(len(self.project.contributors),
-            n_contributors_pre + len(payload['users']))
+                     n_contributors_pre + len(payload['users']))
 
         new_unreg = auth.get_user(username=email)
         assert_false(new_unreg.is_registered)
@@ -814,7 +927,8 @@ class TestAddingContributorViews(OsfTestCase):
     def test_add_contributors_post_only_sends_one_email_to_unreg_user(
             self, mock_send_claim_email):
         # Project has components
-        comp1, comp2 = NodeFactory(creator=self.creator), NodeFactory(creator=self.creator)
+        comp1, comp2 = NodeFactory(
+            creator=self.creator), NodeFactory(creator=self.creator)
         self.project.nodes.append(comp1)
         self.project.nodes.append(comp2)
         self.project.save()
@@ -909,7 +1023,7 @@ class TestAddingContributorViews(OsfTestCase):
         self.app.post_json(url, payload).maybe_follow()
         child.reload()
         assert_equal(len(child.contributors),
-            n_contributors_pre + len(payload['users']))
+                     n_contributors_pre + len(payload['users']))
 
 
 class TestUserInviteViews(OsfTestCase):
@@ -919,7 +1033,8 @@ class TestUserInviteViews(OsfTestCase):
         ensure_schemas()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
-        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(self.project._primary_key)
+        self.invite_url = '/api/v1/project/{0}/invite_contributor/'.format(
+            self.project._primary_key)
 
     def test_invite_contributor_post_if_not_in_db(self):
         name, email = fake.name(), fake.email()
@@ -938,10 +1053,10 @@ class TestUserInviteViews(OsfTestCase):
         name, email = fake.name(), fake.email()
         project2 = ProjectFactory()
         unreg_user = project2.add_unregistered_contributor(fullname=name, email=email,
-            auth=Auth(project2.creator))
+                                                           auth=Auth(project2.creator))
         project2.save()
         res = self.app.post_json(self.invite_url,
-            {'fullname': name, 'email': email}, auth=self.user.auth)
+                                 {'fullname': name, 'email': email}, auth=self.user.auth)
         expected = add_contributor_json(unreg_user)
         expected['fullname'] = name
         expected['email'] = email
@@ -951,8 +1066,8 @@ class TestUserInviteViews(OsfTestCase):
         reg_user = UserFactory()
         # Tries to invite user that is already regiestered
         res = self.app.post_json(self.invite_url,
-            {'fullname': fake.name(), 'email': reg_user.username},
-            auth=self.user.auth, expect_errors=True)
+                                 {'fullname': fake.name(), 'email': reg_user.username},
+                                 auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_invite_contributor_post_if_user_is_already_contributor(self):
@@ -963,14 +1078,14 @@ class TestUserInviteViews(OsfTestCase):
         self.project.save()
         # Tries to invite unreg user that is already a contributor
         res = self.app.post_json(self.invite_url,
-            {'fullname': fake.name(), 'email': unreg_user.username},
-            auth=self.user.auth, expect_errors=True)
+                                 {'fullname': fake.name(), 'email': unreg_user.username},
+                                 auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_invite_contributor_with_no_email(self):
         name = fake.name()
         res = self.app.post_json(self.invite_url,
-            {'fullname': name, 'email': None}, auth=self.user.auth)
+                                 {'fullname': name, 'email': None}, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)
         data = res.json
         assert_equal(data['status'], 'success')
@@ -980,8 +1095,8 @@ class TestUserInviteViews(OsfTestCase):
 
     def test_invite_contributor_requires_fullname(self):
         res = self.app.post_json(self.invite_url,
-            {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
-            expect_errors=True)
+                                 {'email': 'brian@queen.com', 'fullname': ''}, auth=self.user.auth,
+                                 expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
@@ -1008,8 +1123,9 @@ class TestUserInviteViews(OsfTestCase):
         referrer = project.creator
         given_email, real_email = fake.email(), fake.email()
         unreg_user = project.add_unregistered_contributor(fullname=fake.name(),
-            email=given_email, auth=Auth(referrer)
-        )
+                                                          email=given_email, auth=Auth(
+                                                              referrer)
+                                                          )
         project.save()
         send_claim_email(email=real_email, user=unreg_user, node=project)
 
@@ -1144,7 +1260,7 @@ class TestClaimViews(OsfTestCase):
         # user has multiple unclaimed records
         p2 = ProjectFactory(creator=self.referrer)
         self.user.add_unclaimed_record(node=p2, referrer=self.referrer,
-            given_name=fake.name())
+                                       given_name=fake.name())
         self.user.save()
         assert_true(len(self.user.unclaimed_records.keys()) > 1)  # sanity check
         url = self.user.get_claim_url(self.project._primary_key)
@@ -1185,10 +1301,11 @@ class TestClaimViews(OsfTestCase):
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_claim_user_post_returns_fullname(self, send_mail):
         url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
-            self.project._primary_key)
+                                                         self.project._primary_key)
         res = self.app.post_json(url,
-            {'value': self.given_email, 'pk': self.user._primary_key},
-            auth=self.referrer.auth)
+                                 {'value': self.given_email,
+                                     'pk': self.user._primary_key},
+                                 auth=self.referrer.auth)
         assert_equal(res.json['fullname'], self.given_name)
         assert_true(send_mail.called)
         assert_true(send_mail.called_with(to_addr=self.given_email))
@@ -1197,10 +1314,10 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_post_if_email_is_different_from_given_email(self, send_mail):
         email = fake.email()  # email that is different from the one the referrer gave
         url = '/api/v1/user/{0}/{1}/claim/email/'.format(self.user._primary_key,
-            self.project._primary_key)
+                                                         self.project._primary_key)
         self.app.post_json(url,
-            {'value': email, 'pk': self.user._primary_key}
-        )
+                           {'value': email, 'pk': self.user._primary_key}
+                           )
         assert_true(send_mail.called)
         assert_equal(send_mail.call_count, 2)
         call_to_invited = send_mail.mock_calls[0]
@@ -1283,14 +1400,14 @@ class TestWatchViews(OsfTestCase):
     def test_watching_project_twice_returns_400(self):
         url = "/api/v1/project/{0}/watch/".format(self.project._id)
         res = self.app.post_json(url,
-                            params={},
-                            auth=self.auth)
+                                 params={},
+                                 auth=self.auth)
         assert_equal(res.status_code, 200)
         # User tries to watch a node she's already watching
         res2 = self.app.post_json(url,
-                            params={},
-                            auth=self.auth,
-                            expect_errors=True)
+                                  params={},
+                                  auth=self.auth,
+                                  expect_errors=True)
         assert_equal(res2.status_code, http.BAD_REQUEST)
 
     def test_unwatching_a_project_removes_from_watched_list(self):
@@ -1325,7 +1442,7 @@ class TestWatchViews(OsfTestCase):
         # The project has a public sub-node
         node = NodeFactory(creator=self.user, project=self.project, is_public=True)
         url = "/api/v1/project/{}/node/{}/togglewatch/".format(self.project._id,
-                                                                node._id)
+                                                               node._id)
         res = self.app.post_json(url, {}, auth=self.auth)
         assert_equal(res.status_code, 200)
         self.user.reload()
@@ -1389,10 +1506,94 @@ class TestPointerViews(OsfTestCase):
             5
         )
 
+    def test_add_pointers_no_user_logg_in(self):
+
+        url = self.project.api_url_for('add_pointers')
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        with assert_raises(AppError):
+            res = self.app.post_json(
+                url,
+                {'nodeIds': node_ids},
+                auth=None,
+            ).maybe_follow()
+
+            assert_equal(res.status_code, 401)
+
+    def test_add_pointers_public_non_contributor(self):
+
+        project2 = ProjectFactory()
+        project2.set_privacy('public')
+        project2.save()
+
+        url = self.project.api_url_for('add_pointers')
+
+        self.app.post_json(
+            url,
+            {'nodeIds': [project2._id]},
+            auth=self.user.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            1
+        )
+
+    def test_add_pointers_contributor(self):
+        user2 = AuthUserFactory()
+        self.project.add_contributor(user2)
+        self.project.save()
+
+        url = self.project.api_url_for('add_pointers')
+        node_ids = [
+            NodeFactory()._id
+            for _ in range(5)
+        ]
+        self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=user2.auth,
+        ).maybe_follow()
+
+        self.project.reload()
+        assert_equal(
+            len(self.project.nodes),
+            5
+        )
+
     def test_add_pointers_not_provided(self):
         url = self.project.api_url + 'pointer/'
         with assert_raises(AppError):
             self.app.post_json(url, {}, auth=self.user.auth)
+
+    def test_move_pointers(self):
+        project_two = ProjectFactory(creator=self.user)
+        url = api_url_for('move_pointers')
+        node = NodeFactory()
+        pointer = self.project.add_pointer(node, auth=self.consolidate_auth)
+
+        assert_equal(len(self.project.nodes), 1)
+        assert_equal(len(project_two.nodes), 0)
+
+        user_auth = self.user.auth
+        move_request = \
+            {
+                'fromNodeId': self.project._id,
+                'toNodeId': project_two._id,
+                'pointerIds': [pointer.node._id],
+            }
+        self.app.post_json(
+            url,
+            move_request,
+            auth=user_auth,
+        ).maybe_follow()
+        self.project.reload()
+        project_two.reload()
+        assert_equal(len(self.project.nodes), 0)
+        assert_equal(len(project_two.nodes), 1)
 
     def test_remove_pointer(self):
         url = self.project.api_url + 'pointer/'
@@ -1519,6 +1720,29 @@ class TestPointerViews(OsfTestCase):
         ]
         assert_equal(len(prompts), 0)
 
+    def test_get_pointed(self):
+        pointing_node = ProjectFactory(creator=self.user)
+        pointing_node.add_pointer(self.project, auth=Auth(self.user))
+        url = self.project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        pointed = res.json['pointed']
+        assert_equal(len(pointed), 1)
+        assert_equal(pointed[0]['url'], pointing_node.url)
+        assert_equal(pointed[0]['title'], pointing_node.title)
+        assert_equal(pointed[0]['authorShort'], abbrev_authors(pointing_node))
+
+    def test_get_pointed_private(self):
+        secret_user = UserFactory()
+        pointing_node = ProjectFactory(creator=secret_user)
+        pointing_node.add_pointer(self.project, auth=Auth(secret_user))
+        url = self.project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        pointed = res.json['pointed']
+        assert_equal(len(pointed), 1)
+        assert_equal(pointed[0]['url'], None)
+        assert_equal(pointed[0]['title'], 'Private Component')
+        assert_equal(pointed[0]['authorShort'], 'Private Author(s)')
+
 
 class TestPublicViews(OsfTestCase):
 
@@ -1535,8 +1759,10 @@ class TestAuthViews(OsfTestCase):
         self.auth = self.user.auth
 
     def test_merge_user(self):
-        dupe = UserFactory(username="copy@cat.com",
-                            emails=['copy@cat.com'])
+        dupe = UserFactory(
+            username="copy@cat.com",
+            emails=['copy@cat.com']
+        )
         dupe.set_password("copycat")
         dupe.save()
         url = "/api/v1/user/merge/"
@@ -1680,7 +1906,6 @@ class TestAddonUserViews(OsfTestCase):
         super(TestAddonUserViews, self).setUp()
         self.user = AuthUserFactory()
 
-
     def test_choose_addons_add(self):
         """Add add-ons; assert that add-ons are attached to project.
 
@@ -1749,7 +1974,6 @@ class TestComments(OsfTestCase):
         self.project = ProjectFactory(is_public=True)
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_contributor = AuthUserFactory()
-
 
     def _configure_project(self, project, comment_level):
 
@@ -2113,6 +2337,7 @@ class TestTagViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
+    @unittest.skip('Tags endpoint disabled for now.')
     def test_tag_get_returns_200(self):
         url = web_url_for('project_tag', tag='foo')
         res = self.app.get(url)
@@ -2128,8 +2353,9 @@ class TestSearchViews(OsfTestCase):
         search.delete_all()
 
         self.project = ProjectFactory(creator=UserFactory(fullname='Robbie Williams'))
-        self.contrib1 = UserFactory(fullname='Freddie Mercury')
-        self.contrib2 = UserFactory(fullname='Brian May')
+        self.contrib = UserFactory(fullname='Brian May')
+        for i in range(0, 12):
+            UserFactory(fullname='Freddie Mercury{}'.format(i))
 
     def tearDown(self):
         super(TestSearchViews, self).tearDown()
@@ -2138,20 +2364,191 @@ class TestSearchViews(OsfTestCase):
 
     def test_search_contributor(self):
         url = api_url_for('search_contributor')
-        res = self.app.get(url, {'query': self.contrib1.fullname})
+        res = self.app.get(url, {'query': self.contrib.fullname})
         assert_equal(res.status_code, 200)
         result = res.json['users']
         assert_equal(len(result), 1)
-        freddie = result[0]
-        assert_equal(freddie['fullname'], self.contrib1.fullname)
-        assert_in('gravatar_url', freddie)
-        assert_equal(freddie['registered'], self.contrib1.is_registered)
-        assert_equal(freddie['active'], self.contrib1.is_active())
+        brian = result[0]
+        assert_equal(brian['fullname'], self.contrib.fullname)
+        assert_in('gravatar_url', brian)
+        assert_equal(brian['registered'], self.contrib.is_registered)
+        assert_equal(brian['active'], self.contrib.is_active())
+
+    def test_search_pagination_default(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr'})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 10)
+        assert_equal(pages, 2)
+        assert_equal(page, 0)
+
+    def test_search_pagination_default_page_1(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 1})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 1)
+
+    def test_search_pagination_smaller_pages(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'size': 5})
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 5)
+        assert_equal(page, 0)
+        assert_equal(pages, 3)
+
+    def test_search_pagination_smaller_pages_page_2(self):
+        url = api_url_for('search_contributor')
+        res = self.app.get(url, {'query': 'fr', 'page': 2, 'size': 5, })
+        assert_equal(res.status_code, 200)
+        result = res.json['users']
+        pages = res.json['pages']
+        page = res.json['page']
+        assert_equal(len(result), 2)
+        assert_equal(page, 2)
+        assert_equal(pages, 3)
 
     def test_search_projects(self):
         url = web_url_for('search_search')
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
+
+
+class TestODMTitleSearch(OsfTestCase):
+    """ Docs from original method:
+    :arg term: The substring of the title.
+    :arg category: Category of the node.
+    :arg isDeleted: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isFolder: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg isRegistration: yes, no, or either. Either will not add a qualifier for that argument in the search.
+    :arg includePublic: yes or no. Whether the projects listed should include public projects.
+    :arg includeContributed: yes or no. Whether the search should include projects the current user has
+        contributed to.
+    :arg ignoreNode: a list of nodes that should not be included in the search.
+    :return: a list of dictionaries of projects
+    """
+    def setUp(self):
+        super(TestODMTitleSearch, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, title="foo")
+        self.project_two = ProjectFactory(creator=self.user_two, title="bar")
+        self.public_project = ProjectFactory(creator=self.user_two, is_public=True, title="baz")
+        self.registration_project = RegistrationFactory(creator=self.user, title="qux")
+        self.folder = FolderFactory(creator=self.user, title="quux")
+        self.dashboard = DashboardFactory(creator=self.user, title="Dashboard")
+        self.url = api_url_for('search_projects_by_title')
+
+    def test_search_projects_by_title(self):
+        res = self.app.get(self.url, {'term': self.project.title}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'no',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.public_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'either'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 2)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.registration_project.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isRegistration': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.folder.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'no'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 0)
+        res = self.app.get(self.url,
+                           {
+                               'term': self.dashboard.title,
+                               'includePublic': 'yes',
+                               'includeContributed': 'yes',
+                               'isFolder': 'yes'
+                           }, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json), 1)
 
 
 class TestReorderComponents(OsfTestCase):
@@ -2193,6 +2590,7 @@ class TestDashboardViews(OsfTestCase):
         super(TestDashboardViews, self).setUp()
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
+        self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with__are_accessible_from_dashboard(self):
@@ -2200,11 +2598,265 @@ class TestDashboardViews(OsfTestCase):
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
-
-        url = api_url_for('get_dashboard_nodes')
+        # Get the All My Projects smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_PROJECTS_ID)
         res = self.app.get(url, auth=self.contrib.auth)
 
+        assert_equal(len(res.json), 1)
+
+    def test_registered_components_with__are_accessible_from_dashboard(self):
+        project = ProjectFactory(creator=self.creator, public=False)
+        component = NodeFactory(creator=self.creator, project=project)
+        component.add_contributor(self.contrib, auth=Auth(self.creator))
+        component.save()
+        project.register_node(
+            None, Auth(self.creator), '', '',
+        )
+        # Get the All My Registrations smart folder from the dashboard
+        url = api_url_for('get_dashboard', nid=ALL_MY_REGISTRATIONS_ID)
+        res = self.app.get(url, auth=self.contrib.auth)
+
+        assert_equal(len(res.json), 1)
+
+    def test_untouched_node_is_collapsed(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_expand_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_collapse_node_sets_expand_to_true(self):
+        found_item = False
+        folder = FolderFactory(creator=self.creator, public=True)
+        self.dashboard.add_pointer(folder, auth=Auth(self.creator))
+
+        # Expand the folder
+        url = api_url_for('expand', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_true(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+        # Collapse the folder
+        found_item = False
+        url = api_url_for('collapse', pid=folder._id)
+        self.app.post(url, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'node_id'] == folder._id:
+                found_item = True
+                assert_false(dashboard_item[u'expand'], "Expand state was not set properly.")
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+    def test_folder_new_post(self):
+        url = api_url_for('folder_new_post', nid=self.dashboard._id)
+        found_item = False
+
+        # Make the folder
+        title = 'New test folder'
+        payload = {'title': title, }
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # Serialize the dashboard and test
+        url = api_url_for('get_dashboard', nid=self.dashboard._id)
+        dashboard_data = self.app.get(url, auth=self.creator.auth)
+        dashboard_json = dashboard_data.json[u'data']
+        for dashboard_item in dashboard_json:
+            if dashboard_item[u'name'] == title:
+                found_item = True
+        assert_true(found_item, "Did not find the folder in the dashboard.")
+
+
+class TestForkViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestForkViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory.build(creator=self.user, is_public=True)
+        self.consolidated_auth = Auth(user=self.project.creator)
+        self.user.save()
+        self.project.save()
+
+    def test_fork_private_project_non_contributor(self):
+        self.project.set_privacy("private")
+        self.project.save()
+
+        url = self.project.api_url_for('node_fork_page')
+        non_contributor = AuthUserFactory()
+        res = self.app.post_json(url,
+                                 auth=non_contributor.auth,
+                                 expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_fork_public_project_non_contributor(self):
+        url = self.project.api_url_for('node_fork_page')
+        non_contributor = AuthUserFactory()
+        res = self.app.post_json(url, auth=non_contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_fork_project_contributor(self):
+        contributor = AuthUserFactory()
+        self.project.set_privacy("private")
+        self.project.add_contributor(contributor)
+        self.project.save()
+
+        url = self.project.api_url_for('node_fork_page')
+        res = self.app.post_json(url, auth=contributor.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_registered_forks_dont_show_in_fork_list(self):
+        fork = self.project.fork_node(self.consolidated_auth)
+        RegistrationFactory(project=fork)
+
+        url = self.project.api_url_for('get_forks')
+        res = self.app.get(url, auth=self.user.auth)
+
         assert_equal(len(res.json['nodes']), 1)
+        assert_equal(res.json['nodes'][0]['id'], fork._id)
+
+
+class TestProjectCreation(OsfTestCase):
+
+    def setUp(self):
+        super(TestProjectCreation, self).setUp()
+        self.creator = AuthUserFactory()
+        self.url = api_url_for('project_new_post')
+
+    def test_needs_title(self):
+        res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_only_needs_title(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+
+    def test_title_must_be_one_long(self):
+        payload = {
+            'title': ''
+        }
+        res = self.app.post_json(
+            self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_title_must_be_less_than_200(self):
+        payload = {
+            'title': ''.join([str(x) for x in xrange(0, 250)])
+        }
+        res = self.app.post_json(
+            self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_creates_a_project(self):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        assert_true(node)
+        assert_true(node.title, 'Im a real title')
+
+    def test_description_works(self):
+        payload = {
+            'title': 'Im a real title',
+            'description': 'I describe things!'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        assert_true(node)
+        assert_true(node.description, 'I describe things!')
+
+    def test_can_template(self):
+        other_node = ProjectFactory(creator=self.creator)
+        payload = {
+            'title': 'Im a real title',
+            'template': other_node._id
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        assert_equal(res.status_code, 201)
+        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        assert_true(node)
+        assert_true(node.template_node, other_node)
+
+    def test_project_before_template_no_addons(self):
+        project = ProjectFactory()
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_equal(res.json['prompts'], [])
+
+    def test_project_before_template_with_addons(self):
+        project = ProjectWithAddonFactory(addon='github')
+        res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
+        assert_in('GitHub', res.json['prompts'])
+
+    def test_project_new_from_template_non_user(self):
+        project = ProjectFactory()
+        url = api_url_for('project_new_from_template', nid=project._id)
+        res = self.app.post(url, auth = None)
+        assert_equal(res.status_code, 302)
+        res2 = res.maybe_follow()
+        assert_in("Sign up or Log in", res2.body)
+
+    def test_project_new_from_template_public_non_contributor(self):
+        non_contributor = AuthUserFactory()
+        project = ProjectFactory(is_public=True)
+        url = api_url_for('project_new_from_template', nid=project._id)
+        res = self.app.post(url, auth = non_contributor.auth)
+        assert_equal(res.status_code, 201)
+
+    def test_project_new_from_template_contributor(self):
+        contributor = AuthUserFactory()
+        project = ProjectFactory(is_public=False)
+        project.add_contributor(contributor)
+        project.save()
+
+        url = api_url_for('project_new_from_template', nid=project._id)
+        res = self.app.post(url, auth = contributor.auth)
+        assert_equal(res.status_code, 201)
+
+
+class TestUnconfirmedUserViews(OsfTestCase):
+
+    def test_can_view_profile(self):
+        user = UnconfirmedUserFactory()
+        url = web_url_for('profile_view_id', uid=user._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
 
 
 if __name__ == '__main__':

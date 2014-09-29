@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import os
 
-from flask import redirect
+from flask import redirect, send_from_directory
 
-import framework
 from framework import status
+from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
-from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
@@ -25,26 +25,27 @@ from website.assets import env as assets_env
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
-
     """
-    user = framework.auth.get_current_user()
+    user = get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
         'user_api_url': user.api_url if user else '',
-        'display_name': framework.auth.get_display_name(user.fullname) if user else '',
+        'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
-        'status': framework.status.pop_status_messages(),
+        'status': status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
+        'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
@@ -62,7 +63,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
@@ -180,9 +181,13 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-
+        Rule(
+            [
+                '/dashboard/<nid>',
+                '/dashboard/',
+            ],
+            'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
     ### Meta-data ###
@@ -278,7 +283,6 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
@@ -498,7 +502,7 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-        # Create
+        # Create a new subproject/component
         Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
 
         Rule([
@@ -506,11 +510,13 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
-        # TODO: Add API endpoint for tags
-        Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # # TODO: Add API endpoint for tags
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
+        Rule('/folder/<nid>', 'get', project_views.node.folder_new, OsfWebRenderer('project/new_folder.mako')),
+        Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
+        Rule('/project/new/<pid>/beforeTemplate/', 'get', project_views.node.project_before_template, json_renderer),
 
         Rule(
             [
@@ -544,13 +550,6 @@ def make_url_map(app):
         ),
 
         ### Logs ###
-
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
 
         # View forks
         Rule([
@@ -609,6 +608,9 @@ def make_url_map(app):
             json_renderer,
         ),
 
+        # Create project, used by projectCreator.js
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
+
         Rule([
             '/project/<pid>/contributors_abbrev/',
             '/project/<pid>/node/<nid>/contributors_abbrev/',
@@ -620,6 +622,14 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/expand/',
+            '/project/<pid>/node/<nid>/expand/',
+        ], 'post', project_views.node.expand, json_renderer),
+        Rule([
+            '/project/<pid>/collapse/',
+            '/project/<pid>/node/<nid>/collapse/',
+        ], 'post', project_views.node.collapse, json_renderer),
 
         Rule(
             [
@@ -641,6 +651,22 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointer,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/pointers/move/',
+            ],
+            'post',
+            project_views.node.move_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
@@ -648,7 +674,31 @@ def make_url_map(app):
             project_views.node.remove_pointer,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/folder/<pid>/pointer/<pointer_id>',
+            ],
+            'delete',
+            project_views.node.remove_pointer_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>/pointers/',
+            ],
+            'delete',
+            project_views.node.remove_pointers_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>',
+            ],
+            'delete',
+            project_views.node.delete_folder,
+            json_renderer,
+        ),
+        Rule('/folder/', 'put', project_views.node.add_folder, json_renderer),
         Rule([
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
@@ -658,6 +708,9 @@ def make_url_map(app):
             '/project/<pid>/get_children/',
             '/project/<pid>/node/<nid>/get_children/',
         ], 'get', project_views.node.get_children, json_renderer),
+        Rule([
+            '/project/<pid>/get_folder_pointers/'
+        ], 'get', project_views.node.get_folder_pointers, json_renderer),
         Rule([
             '/project/<pid>/get_forks/',
             '/project/<pid>/node/<nid>/get_forks/',
@@ -705,16 +758,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
-        # Create
-        Rule(
-            [
-                '/project/new/',
-                '/project/<pid>/newnode/',
-            ],
-            'post',
-            project_views.node.project_new_node,
-            json_renderer,
-        ),
 
         # Private Link
         Rule([
@@ -946,3 +989,12 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    # Set up static routing for addons
+    # NOTE: We use nginx to serve static addon assets in production
+    addon_base_path = os.path.abspath('website/addons')
+    if settings.DEV_MODE:
+        @app.route('/static/addons/<addon>/<path:filename>')
+        def addon_static(addon, filename):
+            addon_path = os.path.join(addon_base_path, addon, 'static')
+            return send_from_directory(addon_path, filename)

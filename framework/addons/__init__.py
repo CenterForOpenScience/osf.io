@@ -1,8 +1,6 @@
-"""
+# -*- coding: utf-8 -*-
 
-"""
-
-from framework import StoredObject
+from framework.mongo import StoredObject
 from website import settings
 
 
@@ -56,12 +54,15 @@ class AddonModelMixin(StoredObject):
     def has_addon(self, addon_name, deleted=False):
         return bool(self.get_addon(addon_name, deleted=deleted))
 
-    def add_addon(self, addon_name, auth=None, override=False):
+    def add_addon(self, addon_name, auth=None, override=False, _force=False):
         """Add an add-on to the node.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool override: For shell use only, Allows adding of system addons
+        :param bool __force: For migration testing ONLY. Do not set to True
+            in the application, or else project's will be allowed to have
+            duplicate addons!
         :return bool: Add-on was added
 
         """
@@ -75,7 +76,8 @@ class AddonModelMixin(StoredObject):
             if addon.deleted:
                 addon.undelete(save=True)
                 return True
-            return False
+            if not _force:
+                return False
 
         # Get add-on settings model
         addon_config = settings.ADDONS_AVAILABLE_DICT.get(addon_name)
@@ -84,6 +86,7 @@ class AddonModelMixin(StoredObject):
 
         # Instantiate model
         model = addon_config.settings_models[self._name](owner=self)
+        model.on_add()
         model.save()
 
         return True
@@ -111,6 +114,7 @@ class AddonModelMixin(StoredObject):
             statuses
 
         """
+
         for addon_name, enabled in config.iteritems():
             if enabled:
                 self.add_addon(addon_name, auth)

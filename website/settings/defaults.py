@@ -18,6 +18,7 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
+ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
 GNUPG_BINARY = 'gpg'
@@ -38,6 +39,7 @@ SECRET_KEY = 'CHANGEME'
 # May set these to True in local.py for development
 DEV_MODE = False
 DEBUG_MODE = False
+
 
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
@@ -65,6 +67,7 @@ USE_GNUPG = True
 MFR_TIMEOUT = 30000
 
 # TODO: Override in local.py in production
+USE_TOKU_MX = True
 DB_PORT = os_env.get('OSF_DB_PORT', 27017)
 DB_NAME = 'osf20130903'
 DB_USER = None
@@ -86,7 +89,7 @@ SHORT_DOMAIN = 'osf.io'
 COMMENT_MAXLENGTH = 500
 
 # Gravatar options
-GRAVATAR_SIZE_PROFILE = 120
+GRAVATAR_SIZE_PROFILE = 70
 GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
 GRAVATAR_SIZE_DISCUSSION = 20
 
@@ -138,15 +141,24 @@ CELERY_IMPORTS = (
 # Add-ons
 
 ADDONS_REQUESTED = [
-    'wiki', 'osffiles',
-    'github', 's3', 'figshare',
-    'dropbox', 'dataverse',
     # 'badges',
+    'dataverse',
+    'dropbox',
+    'figshare',
     'forward',
+    'github',
+    'osffiles',
+    's3',
+    'twofactor',
+    'wiki',
 ]
 
 ADDON_CATEGORIES = [
-    'documentation', 'storage', 'bibliography', 'other',
+    'documentation',
+    'storage',
+    'bibliography',
+    'other',
+    'security',
 ]
 
 SYSTEM_ADDED_ADDONS = {
@@ -163,7 +175,18 @@ PIWIK_ADMIN_TOKEN = None
 PIWIK_SITE_ID = None
 
 SENTRY_DSN = None
+SENTRY_DSN_JS = None
 
 
 # TODO: Delete me after merging GitLab
 MISSING_FILE_NAME = 'untitled'
+
+# Dashboard
+ALL_MY_PROJECTS_ID = '-amp'
+ALL_MY_REGISTRATIONS_ID = '-amr'
+ALL_MY_PROJECTS_NAME = 'All my projects'
+ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
+
+# FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
+# and uploads in order to save disk space.
+DISK_SAVING_MODE = False

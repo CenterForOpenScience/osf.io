@@ -3,17 +3,18 @@
 """
 
 import datetime
+import functools
 
 from bleach import linkify
 from bleach.callbacks import nofollow
-import functools
 
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 
+from modularodm import fields
+
 from framework.forms.utils import sanitize
-from framework import fields
-from framework import GuidStoredObject
+from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
@@ -39,7 +40,7 @@ class NodeWikiPage(GuidStoredObject):
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()
-    content = fields.StringField()
+    content = fields.StringField(default='')
 
     user = fields.ForeignField('user')
     node = fields.ForeignField('node')

@@ -797,8 +797,8 @@ border-radius: 6px;
 #profile-gravatar{
     float:left;
     margin-right:.5em;
-    width:40px;
-    height:40px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
@@ -959,6 +959,28 @@ h1.node-title, h1.node-parent-title {
   line-height: 36px;
   border-bottom: none;
   margin-top: 0.3em;
+}
+
+.wiki-title {
+    line-height: 36px;
+    border-bottom: none;
+    margin-top: 0.2em;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.long-wiki-title {
+    font-size: 18px;
+    line-height: 20px;
+    border-bottom: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.wiki-title-container {
+    display: inline-block;
+    width:80%;
 }
 
 .btn-toolbar.node-control {
@@ -1139,25 +1161,43 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
@@ -1191,7 +1231,7 @@ h1.unavailable {
     margin-left: 5px;
     margin-right: 5px;
     margin-bottom: 5px;
-    margin-top: 10px;
+    margin-top: 0px;
     padding: 0px;
     height: 20px;
 }
@@ -1344,6 +1384,12 @@ h1.unavailable {
     margin-bottom: 0;
   }
 }
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
   .osf-sidenav.affix-bottom,
@@ -1369,6 +1415,12 @@ h1.unavailable {
 .overflow {
     word-wrap: break-word;
     max-width: 100%;
+}
+
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
 }
 
 .preview-overflow{
@@ -1448,6 +1500,10 @@ div#logScope a.moreLogs{
 
 #contributors ol li:last-child:after {
     content: "";
+}
+
+.contributor-name {
+    margin-right: -4px;
 }
 
 /* Contributor page */
@@ -1670,3 +1726,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+

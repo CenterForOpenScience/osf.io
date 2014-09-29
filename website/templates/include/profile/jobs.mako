@@ -7,7 +7,8 @@
             <div data-bind="sortable: {
                     data: contents,
                     options: {
-                        handle: '.sort-handle'
+                        handle: '.sort-handle',
+                        containment: '#containDrag'
                     }
                 }">
 
@@ -107,8 +108,8 @@
                         <th>Institution</th>
                         <th>Department</th>
                         <th>Title</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
+                        <th>Start&nbsp;Date</th>
+                        <th>End&nbsp;Date</th>
                     </tr>
                 </thead>
 

@@ -2,6 +2,12 @@
 
 <%def name="title()">${node['title']}</%def>
 
+<%include file="project/modal_add_pointer.mako"/>
+
+% if node['node_type'] == 'project':
+    <%include file="project/modal_add_component.mako"/>
+% endif
+
 % if user['can_comment'] or node['has_comments']:
     <%include file="include/comment_template.mako" />
 % endif
@@ -54,21 +60,22 @@
     <div class="col-md-6">
 
         <!-- Citations -->
-        <div class="citations">
-            <span class="citation-label">Citation:</span>
-            <span>${node['display_absolute_url']}</span>
-            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-            <dl class="citation-list">
-                <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-            </dl>
-        </div>
-
+        % if not node['anonymous']:
+            <div class="citations">
+                <span class="citation-label">Citation:</span>
+                <span>${node['display_absolute_url']}</span>
+                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                <dl class="citation-list">
+                    <dt>APA</dt>
+                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dt>MLA</dt>
+                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dt>Chicago</dt>
+                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                </dl>
+            </div><!-- end .citations -->
         <hr />
+        % endif
 
         <!-- Show child on right if widgets -->
         % if addons:
@@ -85,12 +92,7 @@
         <hr />
 
         <div class="logs">
-            <div id='logScope'>
-                <%include file="log_list.mako"/>
-                <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-            </div><!-- end #logScope -->
-            ## Hide More widget until paging for logs is implemented
-            ##<div class="paginate pull-right">more</div>
+            <%include file="log_list.mako"/>
         </div>
 
     </div>
@@ -147,6 +149,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
+
+    $script(['/static/js/logFeed.js'], 'logFeed');
+
+    $('body').on('nodeLoad', function(event, data) {
+        $script.ready('logFeed', function() {
+            var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+        });
+    });
+
+    ##  NOTE: pointers.js is loaded in project_base.mako
+    $script.ready('pointers', function() {
+        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+    });
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';

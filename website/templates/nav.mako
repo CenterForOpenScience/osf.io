@@ -15,7 +15,7 @@
         <ul class="nav navbar-nav">
           <li class="visible-xs"><a href="/">Home</a></li>
           %if user_name:
-          <li><a rel="tooltip" title="My Dashboard" href="${ web_url_for('dashboard') }">My Dashboard</a></li>
+          <li><a href="${ web_url_for('dashboard') }">My Dashboard</a></li>
           %endif
           <li class="dropdown">
             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
@@ -36,23 +36,29 @@
           </li><!-- end dropdown -->
         </ul><!-- end nav navbar-nav -->
         <!-- Search bar -->
-        <form id="searchBar" class="navbar-form navbar-left hidden-xs" action="${ web_url_for('search_search') }" method="get" role="search">
+        <form id="searchBar" class="navbar-form navbar-left" action="${ web_url_for('search_search') }" method="get" role="search">
           <div class="form-group">
             <input type="text" class="form-control search-query" placeholder="Search" name="q">
           </div>
         </form>
         <ul class="nav navbar-nav navbar-right">
           %if user_name and display_name:
-          <li rel="tooltip" title="${user_name}">
-            <a class="hidden-lg" href="/profile/">
-              <span class="icon-user"></span>
+          <li>
+            <a class="hidden-lg hidden-xs" href="/profile/">
+              <span rel="tooltip" title="${user_name}" class="icon-user"></span>
             </a>
-            <a class="visible-lg"href="/profile/">
-              <span>${display_name}</span>
+            <a class="visible-lg visible-xs"href="/profile/">
+              <span rel="tooltip" title="${user_name}">${display_name}</span>
             </a>
           </li>
-          <li><a rel="tooltip" title="Settings" href="${ web_url_for('user_profile') }"><span class="icon-cog"></span></a></li>
-          <li><a rel="tooltip" title="Log out" href="${ web_url_for('auth_logout') }"><span class="icon-signout"></span></a></li>
+          <li><a href="${ web_url_for('user_profile') }">
+              <span rel="tooltip" title="Settings" class="icon-cog hidden-xs"></span>
+              <span class="visible-xs">Settings</span>
+          </a></li>
+          <li><a href="${ web_url_for('auth_logout') }">
+              <span rel="tooltip" title="Log out" class="icon-signout hidden-xs"></span>
+              <span class="visible-xs">Log out</span>
+          </a></li>
           %else:
               %if allow_login:
               <a class="btn btn-primary navbar-btn" href="${ web_url_for('auth_login') }">Create an Account or Sign-In</a>

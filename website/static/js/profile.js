@@ -18,7 +18,8 @@
         scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
         twitter: /twitter\.com\/(\w+)/i,
         linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
-        github: /github\.com\/(\w+)/i
+        impactStory: /impactstory\.org\/([\w\.-]+)/i,
+        github: /github\.com\/(\w+)/i,
     };
 
     var cleanByRule = function(rule) {
@@ -33,8 +34,9 @@
 
     var SerializeMixin = function() {};
 
+    /** Serialize to a JS Object. */
     SerializeMixin.prototype.serialize = function() {
-        return ko.toJSON(this);
+        return ko.toJS(this);
     };
 
     SerializeMixin.prototype.unserialize = function(data) {
@@ -63,11 +65,11 @@
         self.tracked = [];  // Define for each view model that inherits
 
         self.setOriginal = function() {
-            self.original(ko.toJSON(self.tracked));
+            self.original(ko.toJS(self.tracked));
         };
 
         self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
         });
 
         // Must be set after isValid is defined in inherited view models
@@ -163,15 +165,16 @@
         if (this.enableSubmit() === false) {
             return;
         }
-        $.ajax({
-            type: 'PUT',
-            url: this.urls.crud,
-            data: this.serialize(),
-            contentType: 'application/json',
-            dataType: 'json',
-            success: [this.handleSuccess.bind(this), this.setOriginal],
-            error: this.handleError.bind(this)
-        });
+        $.osf.putJSON(
+            this.urls.crud,
+            this.serialize()
+        ).done(
+            this.handleSuccess.bind(this)
+        ).done(
+            this.setOriginal
+        ).fail(
+            this.handleError.bind(this)
+        );
     };
 
     var NameViewModel = function(urls, modes) {
@@ -236,10 +239,10 @@
 
         var suffix = function(suffix) {
             var suffixLower = suffix.toLowerCase();
-            if ($.inArray(suffixLower, ['jr', 'sr']) != -1) {
+            if ($.inArray(suffixLower, ['jr', 'sr']) !== -1) {
                 suffix = suffix + '.';
                 suffix = suffix.charAt(0).toUpperCase() + suffix.slice(1);
-            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) != -1) {
+            } else if ($.inArray(suffixLower, ['ii', 'iii', 'iv', 'v']) !== -1) {
                 suffix = suffix.toUpperCase();
             }
             return suffix;
@@ -341,6 +344,10 @@
             ko.observable().extend({cleanup: cleanByRule(socialRules.linkedIn)}),
             self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
         );
+        self.impactStory = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.impactStory)}),
+            self, 'impactStory', 'https://www.impactstory.org/'
+        );
         self.github = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.github)}),
             self, 'github', 'https://github.com/'
@@ -353,7 +360,8 @@
             self.twitter,
             self.scholar,
             self.linkedIn,
-            self.github
+            self.impactStory,
+            self.github,
         ];
 
         var validated = ko.validatedObservable(self);
@@ -366,10 +374,11 @@
             return [
                 {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
                 {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
-                {label: 'ResearcherId', text: self.researcherId(), value: self.researcherId.url()},
+                {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
                 {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
                 {label: 'GitHub', text: self.github(), value: self.github.url()},
                 {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
+                {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
                 {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
             ];
         });
@@ -427,15 +436,13 @@
             return new self.ContentModel(self).unserialize(each);
         }));
         // Ensure at least one item is visible
-        if (self.contents().length == 0) {
+        if (self.contents().length === 0) {
             self.addContent();
         }
     };
 
     ListViewModel.prototype.serialize = function() {
-        return JSON.stringify({
-            contents: ko.toJS(this.contents)
-        });
+        return {contents: ko.toJS(this.contents)};
     };
 
     ListViewModel.prototype.addContent = function() {
@@ -458,12 +465,14 @@
         self.title = ko.observable('');
 
         self.start = ko.observable().extend({
+            date: true,
             asDate: true,
-            date: true
+            pyDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
+            pyDate: true,
             minDate: self.start
         });
         self.ongoing = ko.observable(false);
@@ -496,12 +505,14 @@
         self.degree = ko.observable('');
 
         self.start = ko.observable().extend({
+            date: true,
             asDate: true,
-            date: true
+            pyDate: true
         });
         self.end = ko.observable().extend({
-            asDate: true,
             date: true,
+            asDate: true,
+            pyDate: true,
             minDate: self.start
         });
         self.ongoing = ko.observable(false);

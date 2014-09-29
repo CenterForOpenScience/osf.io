@@ -8,13 +8,15 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
-from framework import session
+import framework
+from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields, Q, analytics
+from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
@@ -94,12 +96,19 @@ def get_api_key():
     return ApiKey.load(api_key)
 
 
-# TODO: This should be a class method of User
-def get_user(id=None, username=None, password=None, verification_key=None):
+# TODO: This should be a class method of User?
+def get_user(username=None, password=None, verification_key=None):
+    """Get an instance of User matching the provided params.
+
+    :return: The instance of User requested
+    :rtype: User or None
+    """
     # tag: database
+    if password and not username:
+        raise AssertionError("If a password is provided, a username must also "
+                             "be provided.")
+
     query_list = []
-    if id:
-        query_list.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
         query_list.append(Q('username', 'eq', username))
@@ -138,6 +147,11 @@ class Auth(object):
         self.api_node = api_node
         self.private_key = private_key
 
+    def __repr__(self):
+        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
+                'api_node={self.api_node}, '
+                'private_key={self.private_key})>').format(self=self)
+
     @property
     def logged_in(self):
         return self.user is not None
@@ -174,7 +188,13 @@ class User(GuidStoredObject, AddonModelMixin):
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
+
+    # TODO: Migrate unclaimed users to the new style, then remove this attribute
+    # Note: No new users should be created where is_claimed is False.
+    #   As of 9 Sep 2014, there were 331 legacy unclaimed users in the system.
+    #   When those users are migrated to the new style, this attribute should be
+    #   removed.
+    is_claimed = fields.BooleanField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -259,7 +279,7 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     def __repr__(self):
-        return '<User {0!r}>'.format(self.username)
+        return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
@@ -429,7 +449,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: KeyError if there no token for the email
         """
         for token, info in self.email_verifications.items():
-            if info['email'] == email:
+            if info['email'].lower() == email.lower():
                 return token
         raise KeyError('No confirmation token for email {0!r}'.format(email))
 
@@ -548,9 +568,9 @@ class User(GuidStoredObject, AddonModelMixin):
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
-    @property
-    def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.database
+        return analytics.get_total_activity_count(self._primary_key, db=db)
 
     @property
     def is_merged(self):
@@ -596,13 +616,13 @@ class User(GuidStoredObject, AddonModelMixin):
         except:
             return []
 
-    def serialize(self):
+    def serialize(self, anonymous=False):
         return {
-            'id': self._primary_key,
-            'fullname': self.fullname,
+            'id': utils.privacy_info_handle(self._primary_key, anonymous),
+            'fullname': utils.privacy_info_handle(self.fullname, anonymous, name=True),
             'registered': self.is_registered,
-            'url': self.url,
-            'api_url': self.api_url,
+            'url': utils.privacy_info_handle(self.url, anonymous),
+            'api_url': utils.privacy_info_handle(self.api_url, anonymous),
         }
 
     ###### OSF-Specific methods ######
@@ -661,7 +681,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)

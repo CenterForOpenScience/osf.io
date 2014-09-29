@@ -15,6 +15,7 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SEARCH_ENGINE = 'elastic'
 USE_EMAIL = False
 USE_CELERY = False
+USE_GNUPG = False
 
 # Email
 MAIL_SERVER = 'localhost:1025'  # For local testing

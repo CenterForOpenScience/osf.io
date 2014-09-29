@@ -46,15 +46,9 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
-                            <!-- start making changes -->
 
                             <table>
                                 <thead data-bind="visible: foundResults">
-                                    <th></th>
-                                    <th></th>
-                                    <th>
-                                        Name
-                                    </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -70,7 +64,7 @@
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
                                         <td >
-                                            <a data-bind = "attr: {href: contributor.profile_url}" >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
                                                 <span data-bind= "text:contributor.fullname"></span>
                                             </a><br>
 
@@ -108,8 +102,12 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    If the person you are looking for is not listed above, try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    <a class='btn btn-default' href='#' data-bind='click: previousPage, visible: currentPage() > 0'>Previous</a>
+                                    <a class='btn btn-default' href='#' data-bind='click: nextPage, visible: currentPage() < numberOfPages() - 1'>Next</a>
+
+                                    <p><strong>
+                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
+                                    </strong></p>
                                 </div>
                                 <div data-bind="if: noResults">
                                     No results found. Try a more specific search or <strong><a href="#"

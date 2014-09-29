@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import os
 
-from framework import request
+from flask import request
 from mako.template import Template
+
 from website.addons.dataverse.client import get_study, get_files, \
     get_dataverse, connect_from_settings
 

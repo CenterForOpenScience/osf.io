@@ -6,8 +6,11 @@ import os
 import logging
 import datetime
 
-from framework import GuidStoredObject, fields
+from modularodm import fields
+
+from framework.guid.model import GuidStoredObject
 from framework.analytics import get_basic_counters
+
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 
@@ -33,7 +36,7 @@ class OsfGuidFile(GuidFile):
 
 class NodeFile(GuidStoredObject):
 
-    redirect_mode = 'redirect'
+    redirect_mode = None
 
     _id = fields.StringField(primary=True)
 
