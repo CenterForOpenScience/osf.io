@@ -43,10 +43,7 @@ def get_targets():
 
 def main():
     init_app(routes=False)
-    if 'dry' in sys.argv:
-        do_migration(dry=True)
-    else:
-        do_migration(dry=False)
+    do_migration(dry='dry' in sys.argv)
 
 class TestMigrateNodeCategories(OsfTestCase):
 
