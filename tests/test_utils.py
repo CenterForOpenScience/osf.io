@@ -74,7 +74,8 @@ class TestGetMimeTypes(unittest.TestCase):
     @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
     def test_unknown_extension_with_python_contents_results_in_python_mimetype(self):
         name = 'test.thisisnotarealextensionidonotcarwhatyousay'
-        python_file = os.path.abspath(__file__)
+        HERE = os.path.dirname(os.path.abspath(__file__))
+        python_file = os.path.join(HERE, 'test_utils.py')
         with open(python_file, 'r') as the_file:
             content = the_file.read()
         mimetype = get_mimetype(name, content)
