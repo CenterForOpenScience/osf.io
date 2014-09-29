@@ -158,8 +158,8 @@ def user_addons(auth, **kwargs):
     out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
-        if 'user' in addon.owners
-        and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
+        if ('user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user'])
+        or addon.added_mandatory != []
     ]
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
