@@ -7,6 +7,10 @@ so that their full name shows up correctly on all projects.
 To run: ::
 
     $ python -m scripts.clear_invalid_unclaimed_records
+
+Log:
+
+    - Run by SL on 2014-09-29. There were 35 migrated user records.
 """
 
 import sys
