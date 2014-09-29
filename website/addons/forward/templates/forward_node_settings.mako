@@ -47,7 +47,7 @@
             </div>
 
             <div class="row">
-                <div class="col-md-10">
+                <div class="col-md-10 overflow">
                     <p data-bind="html: message, attr.class: messageClass"></p>
                 </div>
                 <div class="col-md-2">
