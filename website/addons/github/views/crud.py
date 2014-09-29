@@ -5,7 +5,6 @@ import hashlib
 import logging
 import datetime
 import httplib as http
-import mimetypes
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -24,6 +23,7 @@ from website.project.views.file import get_cache_content
 from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
+from website.util.mimetype import get_mimetype
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import (
@@ -32,6 +32,7 @@ from website.addons.github.exceptions import (
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
+
 
 
 logger = logging.getLogger(__name__)
@@ -65,16 +66,16 @@ def github_download_file(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     # Build response
-    mimetype, _ = mimetypes.guess_type(path)
     resp = make_response(data)
-    resp.headers['Content-Type'] = mimetype
-    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
-        name
-    )
-
+    mimetype = get_mimetype(path, data)
     # Add binary MIME type if mimetype not found
     if mimetype is None:
         resp.headers['Content-Type'] = 'application/octet-stream'
+    else:
+        resp.headers['Content-Type'] = mimetype
+
+    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
+        name)
 
     return resp
 
