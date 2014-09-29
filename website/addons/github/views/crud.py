@@ -117,7 +117,7 @@ def github_view_file(auth, **kwargs):
         commits = connection.history(
             node_settings.user, node_settings.repo, path, ref,
         )
-        if commits is None:
+        if not commits:
             raise HTTPError(http.NOT_FOUND)
         guid = GithubGuidFile(
             node=node,

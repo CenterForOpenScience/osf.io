@@ -6,6 +6,7 @@ import mock
 import unittest
 
 from nose.tools import *  # PEP8 asserts
+from webtest import AppError
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
@@ -458,6 +459,37 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.history')
     @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_view_not_found_does_not_create_guid(self, mock_repo, mock_contents, mock_history):
+
+        mock_repo.return_value = github_mock.repo.return_value
+        mock_contents.return_value = github_mock.contents.return_value['octokit']
+        mock_history.return_value = []
+
+        guid_count = GithubGuidFile.find().count()
+
+        # View file for the first time
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
+        url = self.project.url + 'github/file/test.py'
+        with assert_raises(AppError) as raised:
+            res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+
+        assert_in(
+            '404',
+            raised.exception.message,
+        )
+
+        guids = GithubGuidFile.find()
+
+        # GUID count has not changed
+        assert_equal(
+            guids.count(),
+            guid_count,
+        )
+
+    @mock.patch('website.addons.github.api.GitHub.history')
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    @mock.patch('website.addons.github.api.GitHub.repo')
     def test_view_creates_guid(self, mock_repo, mock_contents, mock_history):
 
         mock_repo.return_value = github_mock.repo.return_value
@@ -467,6 +499,8 @@ class TestGithubViews(OsfTestCase):
         guid_count = GithubGuidFile.find().count()
 
         # View file for the first time
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
         url = self.project.url + 'github/file/test.py'
         res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
 
