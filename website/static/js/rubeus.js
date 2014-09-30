@@ -86,6 +86,55 @@
                                 'data-toggle="tooltip" ';
     }
 
+       /**
+    * Render the html for a button, given an item and buttonDef. buttonDef is an
+    * object of the form {text: "My button", cssClass: "btn btn-primary",
+    *                     action: "download" }}
+    * @class  renderButton
+    * @private
+    */
+    var tpl_fn_cache = {};
+    var tpl = function(template, data) {
+        /*jshint quotmark:false */
+        if (!template) {
+            return '';
+        }
+        tpl_fn_cache[template] = tpl_fn_cache[template] || new Function("_",
+            "return '" + template
+            .replace(/\n/g, "\\n")
+            .replace(/\r/g, "\\r")
+            .replace(/'/g, "\\'")
+            .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+''):(_.$1===0?0:''))+'") + "'"
+        );
+        return tpl_fn_cache[template](data);
+    };
+
+    function renderButton(buttonDef) {
+        var cssClass;
+        var tag = buttonDef.tag || 'button';
+        // For now, buttons are required to have the hg-btn class so that a click
+        // event listener can be attacked to them later
+        if (buttonDef.cssClass) {
+            cssClass = HGrid.Html.buttonClass + ' ' + buttonDef.cssClass;
+        } else {
+            cssClass = HGrid.Html.buttonClass;
+        }
+        var action = buttonDef.action || 'noop';
+        var data = {action: action, cssClass: cssClass, tag: tag, text: buttonDef.text};
+        var action_text = action.charAt(0).toUpperCase() + action.slice(1);
+        var html = tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}" data-placement="right" data-toggle="tooltip" data-original-title=" ' + action_text + ' ">{{text}}</{{tag}}>',
+          data);
+        return html;
+    }
+
+    function renderButtons(buttonDefs) {
+        var renderedButtons = buttonDefs.map(function(btn) {
+            var html = renderButton(btn);
+            return html;
+        }).join('');
+        return renderedButtons;
+    }
+
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
     var buttonDefs = [];
@@ -114,7 +163,7 @@
             });
         });
     }
-    return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
+    return ['<span class="rubeus-buttons">', renderButtons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
@@ -146,7 +195,7 @@
             });
         }
         if (buttonDefs) {
-            return ['<span class="' + Rubeus.buttonContainer + '">', HGrid.Fmt.buttons(buttonDefs),
+            return ['<span class="' + Rubeus.buttonContainer + '">', renderButtons(buttonDefs),
                 '</span><span data-status></span>'].join('');
         }
         return '';
