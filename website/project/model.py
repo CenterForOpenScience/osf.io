@@ -2259,7 +2259,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 to_remove.append(user)
 
         # TODO: Move to validator or helper @jmcarp
-        # TODO: Test me @jmcarp
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
