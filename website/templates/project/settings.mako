@@ -113,7 +113,7 @@
                                                 name="${addon.short_name}"
                                                 class="addon-select"
                                                 ${'checked' if addon.short_name in addons_enabled else ''}
-                                                ${'disabled' if (node['is_registration'] or addon.added_mandatory != []) else ''}
+                                                ${'disabled' if (node['is_registration'] or bool(addon.added_mandatory)) else ''}
                                             />
                                             ${addon.full_name}
                                         </label>
