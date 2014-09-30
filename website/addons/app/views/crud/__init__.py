@@ -9,17 +9,18 @@ from modularodm.exceptions import ValidationError
 from framework.auth import Auth
 from framework.flask import app
 from framework.exceptions import HTTPError
-from framework.guid.model import Guid
+from framework.guid.model import Guid, Metadata
 
 from website.search.search import search
-from website.project import new_node
+from website.project import new_node, Node
 from website.project.decorators import (
     must_be_valid_project,
     must_have_addon, must_have_permission,
     must_not_be_registration, must_be_contributor_or_public
 )
 
-from website.addons.app.utils import find_or_create_from_report, is_claimed, find_or_create_report
+from website.addons.app.utils import elastic_to_rss
+from website.addons.app.utils import create_orphaned_metadata
 
 from . import metadata, customroutes
 
@@ -36,6 +37,18 @@ def query_app(node_addon, **kwargs):
         'results': [blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
     }
+
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_rss(node_addon, **kwargs):
+    q = request.args.get('q', '')
+    start = request.args.get('page', 0)
+
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
+
+    return elastic_to_rss(ret)
 
 
 @must_have_permission('admin')
