@@ -87,7 +87,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     @property
     def public_id(self):
-        return self.github_user
+        return self.oauth_settings.github_user
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
