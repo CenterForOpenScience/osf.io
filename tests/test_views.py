@@ -1462,7 +1462,7 @@ class TestPointerViews(OsfTestCase):
                 url,
                 {'nodeIds': [double_node._id]},
                 auth=self.user.auth,
-            ).maybe_follow()
+            )
 
     def test_add_pointers_no_user_logg_in(self):
 
