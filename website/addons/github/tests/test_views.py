@@ -4,6 +4,7 @@ import httplib as http
 
 import mock
 import unittest
+import urlparse
 
 from nose.tools import *  # PEP8 asserts
 from webtest import AppError
@@ -17,6 +18,7 @@ from github3.repos.contents import Contents
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
+from website.util import web_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
@@ -470,13 +472,12 @@ class TestGithubViews(OsfTestCase):
         # View file for the first time
         # Because we've overridden mock_history above, it doesn't matter if the
         #   file exists.
-        url = self.project.url + 'github/file/test.py'
-        with assert_raises(AppError) as raised:
-            res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
 
-        assert_in(
-            '404',
-            raised.exception.message,
+        assert_equal(
+            404,
+            res.status_code,
         )
 
         guids = GithubGuidFile.find()
@@ -501,8 +502,8 @@ class TestGithubViews(OsfTestCase):
         # View file for the first time
         # Because we've overridden mock_history above, it doesn't matter if the
         #   file exists.
-        url = self.project.url + 'github/file/test.py'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth)
 
         guids = GithubGuidFile.find()
 
@@ -512,14 +513,29 @@ class TestGithubViews(OsfTestCase):
             guid_count + 1
         )
 
+        file_guid = guids[guids.count() - 1]._id
+        file_url = web_url_for('resolve_guid', guid=file_guid)
+
         # Client has been redirected to GUID
-        assert_in(
-            guids[guids.count() - 1]._id,
-            res.request.path
+        assert_equal(
+            302,
+            res.status_code
+        )
+        assert_equal(
+            file_url,
+            urlparse.urlparse(res.location).path
+        )
+
+        # View the file
+        res = self.app.get(file_url, auth=self.user.auth)
+
+        assert_equal(
+            200,
+            res.status_code
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(file_url, auth=self.user.auth)
 
         # GUID count has not been incremented
         assert_equal(
