@@ -42,7 +42,7 @@
                                             type="checkbox"
                                             name="${addon.short_name}"
                                             ${'checked' if (addon.short_name in addons_enabled or bool(addon.added_mandatory)) else ''}
-                                            ${'disabled' if addons_enabled or bool(addon.added_mandatory) else ''}
+                                            ${'disabled' if bool(addon.added_mandatory) else ''}
                                         />
                                         ${addon.full_name}
                                     </label>
