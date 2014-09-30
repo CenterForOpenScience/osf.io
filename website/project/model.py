@@ -2224,7 +2224,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param list user_dicts: Ordered list of contributors represented as
             dictionaries of the form:
-            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -2259,7 +2259,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 to_remove.append(user)
 
         # TODO: Move to validator or helper @jmcarp
-        # TODO: Test me @jmcarp
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
@@ -2270,7 +2269,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'Must have at least one registered admin contributor'
             )
 
-        # TODO: Test me @jmcarp
         if to_retain != users:
             self.add_log(
                 action=NodeLog.CONTRIB_REORDERED,
