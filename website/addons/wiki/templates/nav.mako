@@ -7,8 +7,6 @@
         <li><a href="${node['url']}wiki/${pageName}">View</a></li>
             % if user['can_edit']:
                 <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
-            % else:
-                <li><a class="disabled">Edit</a></li>
             % endif
             % if not versions:
                 <li><a class="disabled">History</a></li>
