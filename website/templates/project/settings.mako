@@ -290,8 +290,11 @@ ${parent.javascript_bottom()}
          * Pulls a random name from the scientist list to use as confirmation string
         *  Ignores case and whitespace
         */
-        function getConfirmationCode() {            
+        function getConfirmationCode() {  
             var key = randomScientist();
+            function successHandler(response) {
+                window.location.href = response.url;
+            }          
             bootbox.prompt(
                 '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
@@ -300,27 +303,24 @@ ${parent.javascript_bottom()}
                         result = result.toLowerCase();
                     }
                     if ($.trim(result) === key.toLowerCase()) {
-                        $.ajax({
+                        var request = $.ajax({
                             type: 'DELETE',
                             dataType: 'json',
-                            url: nodeApiUrl,
-                            success: function(response) {
-                                window.location.href = response.url;
-                            },
-                            error: $.osf.handleJSONError
+                            url: nodeApiUrl
                         });
+                        request.done(successHandler);
+                        request.fail($.osf.handleJSONError);
                     } else if (result != null) {
-                            bootbox.alert({
-                                title: 'Incorrect confirmation',
-                                message: 'The confirmation string you provided was incorrect. Please try again.'}) 
-                            }
+                        bootbox.alert({
+                            title: 'Incorrect confirmation',
+                            message: 'The confirmation string you provided was incorrect. Please try again.'
+                        }); 
+                    }
                 }
-            )
+            );
         }
 
-        $('#deleteNode').on('click', function() {
-            getConfirmationCode();
-        });
+        $('#deleteNode').on('click', getConfirmationCode);
 
         // Show capabilities modal on selecting an addon; unselect if user
         // rejects terms
