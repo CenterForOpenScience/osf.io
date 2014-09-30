@@ -256,8 +256,8 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comments_timestamp/',
-                '/project/<pid>/node/<nid>/comments_timestamp/',
+                '/project/<pid>/comments/timestamp/',
+                '/project/<pid>/node/<nid>/comments/timestamp/',
             ],
             'put',
             project_views.comment.view_comments,

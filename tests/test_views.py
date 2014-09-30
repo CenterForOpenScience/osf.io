@@ -2294,6 +2294,7 @@ class TestComments(OsfTestCase):
 
     def test_view_comments_updates_user_comments_view_timestamp(self):
         self.project.add_contributor(self.user)
+        self.project.save()
         view_timestamp = dt.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')
         CommentFactory(node=self.project)
 
@@ -2304,25 +2305,29 @@ class TestComments(OsfTestCase):
         user_timestamp = str(self.user.comments_viewed_timestamp[self.project._id]).split('.')[0]
         assert_equal(user_timestamp, view_timestamp)
 
-    def test_confirm_non_contrib_viewers_have_no_comments_view_timestamp(self):
+    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
         url = self.project.api_url_for('view_comments')
         res = self.app.put_json(url, auth=self.user.auth)
 
         self.non_contributor.reload()
-        assert_false(self.non_contributor.comments_viewed_timestamp)
+        assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
 
     def test_n_unread_comments_updates_when_comment_is_added(self):
+        self.project.add_contributor(self.user)
+        self.project.save()
+
         self._add_comment(self.project, auth=self.project.creator.auth)
         self.project.reload()
 
         url = self.project.api_url_for('list_comments')
         res = self.app.get(url, auth=self.project.creator.auth)
         comments = res.json.get('comments')
-
         view_timestamp = dt.datetime.strptime('01/01/70 17:00:00', '%m/%d/%y %H:%M:%S').isoformat()
         assert_equal(n_unread_comments(view_timestamp, comments, self.user), 1)
 
-        self.test_view_comments_updates_user_comments_view_timestamp()
+        url = self.project.api_url_for('view_comments')
+        res = self.app.put_json(url, auth=self.user.auth)
+        self.user.reload()
         view_timestamp = self.user.comments_viewed_timestamp[self.project._id]
         assert_equal(n_unread_comments(view_timestamp, comments, self.user), 0)
 
