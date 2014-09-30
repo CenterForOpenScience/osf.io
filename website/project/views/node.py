@@ -134,7 +134,10 @@ def folder_new_post(auth, nid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     folder = new_folder(strip_html(title), user)
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     return {
         'projectUrl': '/dashboard/',
@@ -158,7 +161,10 @@ def add_folder(**kwargs):
         title, user
     )
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
     return {}, 201, None
 
 ##############################################################################
@@ -1073,7 +1079,10 @@ def move_pointers(auth):
             raise HTTPError(http.BAD_REQUEST)
 
         from_node.save()
-        _add_pointers(to_node, [pointer_node], auth)
+        try:
+            _add_pointers(to_node, [pointer_node], auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     return {}, 200, None
 
@@ -1091,8 +1100,10 @@ def add_pointer(auth):
 
     pointer = Node.load(pointer_to_move)
     to_node = Node.load(to_node_id)
-
-    _add_pointers(to_node, [pointer], auth)
+    try:
+        _add_pointers(to_node, [pointer], auth)
+    except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1112,7 +1123,10 @@ def add_pointers(**kwargs):
         for node_id in node_ids
     ]
 
-    _add_pointers(node, nodes, auth)
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     return {}
 
