@@ -92,7 +92,7 @@
     if(item.permissions){
         if(item.permissions.download !== false){
             buttonDefs.push({
-                text: '<i class="icon-download-alt icon-white"></i>',
+                text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
                 cssClass: 'btn btn-primary btn-mini'
             });
@@ -131,7 +131,7 @@
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload" ></i>',
+                text: '<i class="icon-upload" title=""></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
             });
