@@ -62,57 +62,39 @@ def create_application_project(node_addon, **kwargs):
     except (KeyError, AssertionError):
         raise HTTPError(http.BAD_REQUEST)
 
-    node = new_node('project', request.json['title'], node_addon.system_user, request.json.get('description'))
-    node.set_privacy('public', auth=Auth(node_addon.system_user))
+    auth = Auth(node_addon.system_user)
+
+    tags = request.json.get('tags', [])
+    _metadata = request.json.get('metadata')
+    privacy = request.json('privacy', 'public')
+    parent = Node.load(request.json.get('parent'))
+    contributors = request.json('contributors', [])
+    system_metadata = request.json.get('systemData')
+    category = request.json.get('category', 'project')
+    permissions = request.json('permissions', ['admin'])
+
+    node = new_node(category, request.json['title'], node_addon.system_user, request.json.get('description'), project=parent)
+
+    for tag in tags:
+        node.add_tag(tag, auth)
+
+    for contributor in contributors:
+        try:
+            node.add_unregistered_contributor(contributor['full_name'],
+                contributor.get('email'), auth,
+                permissions=permissions)
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+
+    node.set_privacy(privacy, auth=auth)
+
+    node_addon.attach_data(node._id, _metadata)
+    node_addon.attach_system_data(node._id, system_metadata)
 
     return {
         'id': node._id,
         'url': node.url,
         'apiUrl': node.api_url
-    }, http.CREATED
-
-
-@must_have_permission('admin')
-@must_have_addon('app', 'node')
-def create_report(node_addon, **kwargs):
-    report = request.json
-
-    try:
-        resource = find_or_create_from_report(report, node_addon)
-    except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    # This may not be the best behavior
-    # This will just merge the documents in a not super smart way
-    # Keys and nested key will be updated and empty fields filled in
-    node_addon.attach_data(resource._id, report)
-
-    claimed = is_claimed(resource)
-
-    report_node = find_or_create_report(resource, report, node_addon)
-
-    for contributor in report['contributors']:
-        if not claimed:
-            try:
-                resource.add_unregistered_contributor(contributor['full_name'],
-                        contributor.get('email'), Auth(node_addon.system_user),
-                        permissions=['admin'])  # TODO Discuss this
-            except ValidationError:
-                pass  # A contributor with the given email has already been added
-
-    if not claimed:
-        for tag in report['tags']:
-            resource.add_tag(tag, Auth(node_addon.system_user))
-
-    return {
-        'id': report_node._id,
-        'url': report_node.url,
-        'apiUrl': report_node.api_url,
-        'resource': {
-            'id': resource._id,
-            'url': resource.url,
-            'apiUrl': resource.api_url
-        }
     }, http.CREATED
 
 
@@ -137,3 +119,37 @@ def act_as_application(node_addon, route, **kwargs):
         'auth': Auth(node_addon.system_user)
     })
     return app.view_functions[match[0]](**match[1])
+
+
+def adopt_metadata(node_addon, mid, **kwargs):
+    metastore = Metadata.load(mid)
+
+    if not metastore:
+        raise HTTPError(http.NOT_FOUND)
+
+    resource = find_or_create_from_report(metastore.data, node_addon)
+
+    report_node = find_or_create_report(resource, metastore.data,
+            node_addon, metadata=metastore)
+
+    for contributor in metastore.data['contributors']:
+        try:
+            resource.add_unregistered_contributor(contributor['full_name'],
+                    contributor.get('email'), Auth(node_addon.system_user),
+                    permissions=['admin'])  # TODO Discuss this
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+
+    for tag in metastore.data['tags']:
+        resource.add_tag(tag, Auth(node_addon.system_user))
+
+    return {
+        'id': report_node._id,
+        'url': report_node.url,
+        'apiUrl': report_node.api_url,
+        'resource': {
+            'id': resource._id,
+            'url': resource.url,
+            'apiUrl': resource.api_url
+        }
+    }, http.CREATED
