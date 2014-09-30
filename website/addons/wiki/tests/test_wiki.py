@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
+
 # PEP8 asserts
 from nose.tools import *  # noqa
-
-
-from framework.auth import Auth
 from webtest.app import AppError
+from modularodm.exceptions import ValidationValueError
+
 from tests.base import OsfTestCase
 from tests.factories import (
     UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
@@ -12,6 +12,16 @@ from tests.factories import (
 )
 
 from website.addons.wiki.views import serialize_wiki_toc
+from website.addons.wiki.model import NodeWikiPage
+from framework.auth import Auth
+
+class TestNodeWikiPageModel(OsfTestCase):
+
+    def test_page_name_cannot_be_greater_than_100_characters(self):
+        bad_name = 'a' * 101
+        page = NodeWikiPage(page_name=bad_name)
+        with assert_raises(ValidationValueError):
+            page.save()
 
 
 class TestWikiViews(OsfTestCase):

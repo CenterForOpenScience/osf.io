@@ -1,6 +1,6 @@
 <div class="nav" style="display: block">
 
-    <nav class="navbar navbar-default navbar-collapse">
+    <nav class="navbar navbar-default">
 
         <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
 

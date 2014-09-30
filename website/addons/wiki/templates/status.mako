@@ -2,6 +2,7 @@
     <div class="wiki-title-container">
 	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
+
     % if user['can_edit']:
     <nav class="navbar navbar-default navbar-collapse" style="display: inline-block; float: right">
         <ul class="nav navbar-nav">
@@ -35,8 +36,11 @@
                dataType: 'json'
             },
             validate: function(value) {
-              if($.trim(value) == '')
-                return 'The wiki page name cannot be empty.';
+                if($.trim(value) == ''){
+                    return 'The wiki page name cannot be empty.';
+                } else if(value.length > 100){
+                    return 'The wiki page name cannot be more than 100 characters.';
+                }
             },
             params: function(params) {
                params.pk = '${wiki_id}';
