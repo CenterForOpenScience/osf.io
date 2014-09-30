@@ -21,6 +21,14 @@
         var self = this;
 
         self.url = ko.observable();
+	    self.label = ko.observable();
+        self.linkDisplay = ko.computed(function() {
+            if (self.label()) {
+                return self.label();
+            } else {
+                return self.url();
+            }
+        });
         self.redirectBool = ko.observable();
         self.redirectSecs = ko.observable();
 
@@ -47,7 +55,7 @@
             self.interval = setInterval(
                 self.tryRedirect,
                 1000
-            )
+            );
         };
 
         self.cancelRedirect = function() {
@@ -69,13 +77,13 @@
                 dataType: 'json',
                 success: function(response) {
                     self.url(response.url);
+		    self.label(response.label);
                     self.redirectBool(response.redirectBool);
                     self.redirectSecs(response.redirectSecs);
                     self.execute();
                 }
             });
         };
-
     };
 
     // Public API

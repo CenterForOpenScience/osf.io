@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+import hashlib
 import logging
 import urllib
 
-from modularodm import Q
+from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
-from slugify import slugify
 
-from framework import fields
 from framework.auth import Auth
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
 
@@ -89,7 +88,12 @@ class DropboxFile(GuidFile):
             revision = metadata['rev']
         else:
             revision = rev
-        return "{slug}_{rev}.html".format(slug=slugify(self.path), rev=revision)
+        # Note: Use hash of file path instead of file path in case paths are
+        # very long; see https://github.com/CenterForOpenScience/openscienceframework.org/issues/769
+        return '{digest}_{rev}.html'.format(
+            digest=hashlib.md5(self.path).hexdigest(),
+            rev=revision,
+        )
 
     @classmethod
     def get_or_create(cls, node, path):
@@ -147,7 +151,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
         return self
 
     def __repr__(self):
-        return '<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
+        return u'<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
 class DropboxNodeSettings(AddonNodeSettingsBase):
@@ -201,7 +205,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def __repr__(self):
-        return '<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
+        return u'<DropboxNodeSettings(node_id={self.owner._primary_key!r})>'.format(self=self)
 
     ##### Callback overrides #####
 
@@ -211,7 +215,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     #     """
     #     category, title = node.project_or_component, node.title
     #     if self.user_settings and self.user_settings.has_auth:
-    #         return ('Registering {category} "{title}" will copy Dropbox add-on '
+    #         return (u'Registering {category} "{title}" will copy Dropbox add-on '
     #                 'authentication to the registered {category}.').format(**locals())
     #
     # # backwards compatibility
@@ -223,13 +227,13 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         """
         category = node.project_or_component
         if self.user_settings and self.user_settings.owner == user:
-            return ('Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authentication to '
+            return (u'Because you have authorized the Dropbox add-on for this '
+                '{category}, forking it will also transfer your authentication token to '
                 'the forked {category}.').format(category=category)
 
         else:
-            return ('Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
+            return (u'Because the Dropbox add-on has been authorized by a different '
+                    'user, forking it will not transfer authentication token to the forked '
                     '{category}.').format(category=category)
 
     # backwards compatibility
@@ -242,7 +246,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         if self.user_settings and self.user_settings.owner == removed:
             category = node.project_or_component
             name = removed.fullname
-            return ('The Dropbox add-on for this {category} is authenticated by {name}. '
+            return (u'The Dropbox add-on for this {category} is authenticated by {name}. '
                     'Removing this user will also remove write access to Dropbox '
                     'unless another contributor re-authenticates the add-on.'
                     ).format(**locals())
@@ -282,12 +286,20 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
         if self.user_settings and self.user_settings.owner == user:
             clone.user_settings = self.user_settings
-            message = 'Dropbox authorization copied to fork.'
+            message = (
+                'Dropbox authorization copied to forked {cat}.'
+            ).format(
+                cat=fork.project_or_component
+            )
         else:
-            message = ('Dropbox authorization not copied to fork. You may '
-                        'authorize this fork on the <a href="{url}">Settings</a>'
-                        'page.').format(
-                        url=fork.web_url_for('node_setting'))
+            message = (
+                u'Dropbox authorization not copied to forked {cat}. You may '
+                'authorize this fork on the <a href="{url}">Settings</a> '
+                'page.'
+            ).format(
+                url=fork.web_url_for('node_setting'),
+                cat=fork.project_or_component
+            )
         if save:
             clone.save()
         return clone, message
@@ -302,7 +314,11 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             self.save()
             name = removed.fullname
             url = node.web_url_for('node_setting')
-            return ('Because the Dropbox add-on for this project was authenticated'
+            return (u'Because the Dropbox add-on for this project was authenticated'
                     'by {name}, authentication information has been deleted. You '
                     'can re-authenticate on the <a href="{url}">Settings</a> page'
                     ).format(**locals())
+
+    def after_delete(self, node, user):
+        self.deauthorize(Auth(user=user), add_log=True)
+        self.save()

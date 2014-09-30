@@ -15,12 +15,14 @@
         self.url = url;
         self.title = ko.observable('');
         self.name = ko.observable(null);
+        self.anonymous = ko.observable(false);
         self.pageTitle = 'Generate New Link to Share Project';
         self.errorMsg = ko.observable('');
 
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
-
+        self.disableSubmit = ko.observable(false);
+        self.submitText = ko.observable('Submit');
         /**
          * Fetches the node info from the server and updates the viewmodel.
          */
@@ -34,15 +36,21 @@
         }
 
         function onFetchError() {
-          //TODO
-          console.log('an error occurred');
+            bootbox.alert('Could not retrieve projects. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
         }
 
         function fetch() {
-            $.ajax({url: url, type: 'GET', dataType: 'json',
-              success: onFetchSuccess,
-              error: onFetchError
-            });
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+            }).done(
+                onFetchSuccess
+            ).fail(
+                onFetchError
+            );
         }
 
         // Initial fetch of data
@@ -58,26 +66,30 @@
         self.selectNodes = function() {
             self.nodesToChange($.osf.mapByProperty(self.nodes(), 'id'));
         };
+
         self.deselectNodes = function() {
             self.nodesToChange([]);
         };
 
         self.submit = function() {
-            $.ajax(
+
+            self.disableSubmit(true);
+            self.submitText('Please wait');
+
+            $.osf.postJSON(
                 nodeApiUrl + 'private_link/',
                 {
-                    type: 'post',
-                    data: JSON.stringify({
-                        node_ids: self.nodesToChange(),
-                        name: self.name()
-                    }),
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    success: function(response) {
-                        window.location.reload();
-                    }
+                    node_ids: self.nodesToChange(),
+                    name: self.name(),
+                    anonymous: self.anonymous()
                 }
-            )
+            ).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                bootbox.alert('Failed to create a view-only Link.');
+                self.disableSubmit(false);
+                self.submitText('Submit');
+            });
         };
 
         self.clear = function() {

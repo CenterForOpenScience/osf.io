@@ -2,10 +2,10 @@
 import os
 import logging
 import httplib as http
-from mako.template import Template
 
-from framework import request
-from framework.status import push_status_message
+from mako.template import Template
+from flask import request
+
 from framework.exceptions import HTTPError
 
 from website.project.decorators import must_be_contributor_or_public
@@ -15,7 +15,7 @@ from website.util import rubeus
 from website.addons.github.exceptions import ApiError
 from website.addons.github.api import GitHub, build_github_urls, ref_to_params
 from website.addons.github.utils import get_refs, check_permissions
-from website.addons.github.exceptions import NotFoundError, EmptyRepoError
+from website.addons.github.exceptions import NotFoundError
 
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,7 @@ github_branch_template = Template('''
     % endif
 ''')
 
+
 def github_branch_widget(branches, owner, repo, branch, sha):
     """Render branch selection widget for GitHub add-on. Displayed in the
     name field of HGrid file trees.
@@ -112,6 +113,11 @@ def github_branch_widget(branches, owner, repo, branch, sha):
     return rendered
 
 
+def github_repo_url(owner, repo, branch):
+    url = "https://github.com/{0}/{1}/tree/{2}".format(owner, repo, branch)
+    return url
+
+
 def github_hgrid_data(node_settings, auth, **kwargs):
 
     # Quit if no repo linked
@@ -125,13 +131,14 @@ def github_hgrid_data(node_settings, auth, **kwargs):
     repo = None
 
     # Quit if privacy mismatch and not contributor
-    if node_settings.owner.is_public:
+    node = node_settings.owner
+    if node.is_public and not node.is_contributor(auth.user):
         try:
             repo = connection.repo(node_settings.user, node_settings.repo)
         except NotFoundError:
             # TODO: Test me @jmcarp
             # TODO: Add warning message
-            logging.error('Could not access GitHub repo')
+            logger.error('Could not access GitHub repo')
             return None
         if repo.private:
             return None
@@ -173,13 +180,23 @@ def github_hgrid_data(node_settings, auth, **kwargs):
         'upload': node_settings.owner.api_url + 'github/file/' + (ref or ''),
         'fetch': node_settings.owner.api_url + 'github/hgrid/' + (ref or ''),
         'branch': node_settings.owner.api_url + 'github/hgrid/root/',
+        'zip': node_settings.owner.api_url + 'github/zipball/' + (ref or ''),
+        'repo': github_repo_url(owner=node_settings.user, repo=node_settings.repo, branch=branch)
     }
+    buttons = [
+        rubeus.build_addon_button('<i title="Download Zip" data-toggle="tooltip" '
+            'data-placement="right" class="icon-download-alt"></i>', 'githubDownloadZip'),
+        rubeus.build_addon_button('<i title="Visit Repository" data-toggle="tooltip" '
+            'data-placement="right" class="icon-external-link"></i>', 'githubVisitRepo'),
+    ]
+
     return [rubeus.build_addon_root(
         node_settings,
         name_tpl,
         urls=urls,
         permissions=permissions,
-        extra=name_append
+        extra=name_append,
+        buttons=buttons,
     )]
 
 

@@ -46,11 +46,9 @@
                             <!-- ko if: notification -->
                             <div data-bind="text: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
+
                             <table>
                                 <thead data-bind="visible: foundResults">
-                                    <th></th>
-                                    <th></th>
-                                    <th>Name</th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -65,20 +63,51 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td>
-                                            <span data-bind="text: contributor.fullname"></span>
+                                        <td >
+                                            <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
+                                                <span data-bind= "text:contributor.fullname"></span>
+                                            </a><br>
+
+
+                                                <span data-bind="if: contributor.employment">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind="text: contributor.employment">
+                                                    </span><br>
+                                                </span>
+
+
+                                                <span data-bind="if: contributor.education">
+                                                    <span
+                                                        class = 'small'
+                                                        data-bind= "text: contributor.education">
+                                                    </span><br>
+                                                </span>
+
+                                                <span class= 'small'
+                                                      data-bind= "text: contributor.displayProjectsInCommon">
+                                                </span>
+
                                             <span
                                                     class='text-muted'
                                                     data-bind="visible: !contributor.registered">(unregistered)</span>
+
                                         </td>
+
                                     </tr>
+
+
                                 </tbody>
                             </table>
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    If the person you are looking for is not listed above, try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    <a class='btn btn-default' href='#' data-bind='click: previousPage, visible: currentPage() > 0'>Previous</a>
+                                    <a class='btn btn-default' href='#' data-bind='click: nextPage, visible: currentPage() < numberOfPages() - 1'>Next</a>
+
+                                    <p><strong>
+                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
+                                    </strong></p>
                                 </div>
                                 <div data-bind="if: noResults">
                                     No results found. Try a more specific search or <strong><a href="#"
@@ -122,13 +151,15 @@
                                         <td>
                                             <img data-bind="attr: {src: contributor.gravatar_url}" />
                                         </td>
-                                        <td><span data-bind="text: contributor.fullname"></span>
-                                            <a href="#" class='text-muted'
-                                                    data-bind="
-                                                        visible: !contributor.registered,
-                                                        click: $root.goToPage.bind($data, 'invite')">(unregistered)
-                                            </a>
+
+                                        <td>
+                                            <span   data-bind="text: contributor.fullname"></span>
+
+                                            <span
+                                                    class='text-muted'
+                                                    data-bind="visible: !contributor.registered">(unregistered)</span>
                                         </td>
+
                                         <td>
                                             <a href="#" class="permission-editable" data-type="select"></a>
                                         </td>
@@ -163,7 +194,7 @@
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
                             <div data-bind="foreach:nodes">
-                                <div data-bind="style:{'margin-left':margin}">
+                                <div data-bind="style:{marginLeft: margin}">
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <span data-bind="text:title"></span>
                                 </div>
@@ -230,3 +261,4 @@
         </div><!-- end modal-content -->
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
+

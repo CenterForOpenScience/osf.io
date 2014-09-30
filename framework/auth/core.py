@@ -8,13 +8,15 @@ import datetime as dt
 import pytz
 import bson
 
+from modularodm import fields, Q
 from modularodm.validators import URLValidator
 from modularodm.exceptions import ValidationValueError
 
-from framework import session
+import framework
+from framework.sessions import session
 from framework.analytics import piwik
 from framework.bcrypt import generate_password_hash, check_password_hash
-from framework import fields, Q, analytics
+from framework import analytics
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 from framework.auth import utils
@@ -94,12 +96,19 @@ def get_api_key():
     return ApiKey.load(api_key)
 
 
-# TODO: This should be a class method of User
-def get_user(id=None, username=None, password=None, verification_key=None):
+# TODO: This should be a class method of User?
+def get_user(username=None, password=None, verification_key=None):
+    """Get an instance of User matching the provided params.
+
+    :return: The instance of User requested
+    :rtype: User or None
+    """
     # tag: database
+    if password and not username:
+        raise AssertionError("If a password is provided, a username must also "
+                             "be provided.")
+
     query_list = []
-    if id:
-        query_list.append(Q('_id', 'eq', id))
     if username:
         username = username.strip().lower()
         query_list.append(Q('username', 'eq', username))
@@ -111,7 +120,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
                 query = query & query_part
             user = User.find_one(query)
         except Exception as err:
-            logging.error(err)
+            logger.error(err)
             user = None
         if user and not user.check_password(password):
             return False
@@ -125,7 +134,7 @@ def get_user(id=None, username=None, password=None, verification_key=None):
         user = User.find_one(query)
         return user
     except Exception as err:
-        logging.error(err)
+        logger.error(err)
         return None
 
 
@@ -137,6 +146,11 @@ class Auth(object):
         self.api_key = api_key
         self.api_node = api_node
         self.private_key = private_key
+
+    def __repr__(self):
+        return ('<Auth(user="{self.user}", api_key={self.api_key}, '
+                'api_node={self.api_node}, '
+                'private_key={self.private_key})>').format(self=self)
 
     @property
     def logged_in(self):
@@ -163,6 +177,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Node fields that trigger an update to the search engine on save
     SEARCH_UPDATE_FIELDS = {
         'fullname',
+        'merged_by',
     }
 
     _id = fields.StringField(primary=True)
@@ -173,8 +188,13 @@ class User(GuidStoredObject, AddonModelMixin):
     password = fields.StringField()
     fullname = fields.StringField(required=True, validate=string_required)
     is_registered = fields.BooleanField()
-    is_claimed = fields.BooleanField()  # TODO: Unused. Remove me?
-    private_links = fields.ForeignField('privatelink', list=True)
+
+    # TODO: Migrate unclaimed users to the new style, then remove this attribute
+    # Note: No new users should be created where is_claimed is False.
+    #   As of 9 Sep 2014, there were 331 legacy unclaimed users in the system.
+    #   When those users are migrated to the new style, this attribute should be
+    #   removed.
+    is_claimed = fields.BooleanField()
 
     # Tags for internal use
     system_tags = fields.StringField(list=True)
@@ -225,6 +245,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -236,6 +257,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -257,11 +279,7 @@ class User(GuidStoredObject, AddonModelMixin):
     _meta = {'optimistic' : True}
 
     def __repr__(self):
-        return '<User {0!r}>'.format(self.username)
-
-    @property
-    def private_link_keys(self):
-        return [x.key for x in self.private_links]
+        return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
 
     @classmethod
     def create_unregistered(cls, fullname, email=None):
@@ -328,6 +346,8 @@ class User(GuidStoredObject, AddonModelMixin):
         self.is_registered = True
         self.is_claimed = True
         self.date_confirmed = dt.datetime.utcnow()
+        self.update_search()
+        self.update_search_nodes()
         return self
 
     def add_unclaimed_record(self, node, referrer, given_name, email=None):
@@ -429,7 +449,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :raises: KeyError if there no token for the email
         """
         for token, info in self.email_verifications.items():
-            if info['email'] == email:
+            if info['email'].lower() == email.lower():
                 return token
         raise KeyError('No confirmation token for email {0!r}'.format(email))
 
@@ -467,13 +487,26 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            # Clear unclaimed records, so user's name shows up correctly on
+            # all projects
+            self.unclaimed_records = {}
             self.save()
             # Note: We must manually update search here because the fullname
             # field has not changed
             self.update_search()
+            self.update_search_nodes()
             return True
         else:
             return False
+
+    def update_search_nodes(self):
+        """Call `update_search` on all nodes on which the user is a
+        contributor. Needed to add self to contributor lists in search upon
+        registration or claiming.
+
+        """
+        for node in self.node__contributed:
+            node.update_search()
 
     def is_confirmed(self):
         return bool(self.date_confirmed)
@@ -538,9 +571,9 @@ class User(GuidStoredObject, AddonModelMixin):
             size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
         )
 
-    @property
-    def activity_points(self):
-        return analytics.get_total_activity_count(self._primary_key)
+    def get_activity_points(self, db=None):
+        db = db or framework.mongo.database
+        return analytics.get_total_activity_count(self._primary_key, db=db)
 
     @property
     def is_merged(self):
@@ -563,9 +596,8 @@ class User(GuidStoredObject, AddonModelMixin):
     def save(self, *args, **kwargs):
         self.username = self.username.lower().strip() if self.username else None
         rv = super(User, self).save(*args, **kwargs)
-        if self.is_active():
-            if self.SEARCH_UPDATE_FIELDS.intersection(rv):
-                self.update_search()
+        if self.SEARCH_UPDATE_FIELDS.intersection(rv):
+            self.update_search()
         if settings.PIWIK_HOST and not self.piwik_token:
             try:
                 piwik.create_user(self)
@@ -574,9 +606,6 @@ class User(GuidStoredObject, AddonModelMixin):
         return rv
 
     def update_search(self):
-        if not settings.SEARCH_ENGINE:
-            return
-
         from website.search import search
         search.update_user(self)
 
@@ -590,45 +619,43 @@ class User(GuidStoredObject, AddonModelMixin):
         except:
             return []
 
-    def serialize(self):
+    def serialize(self, anonymous=False):
         return {
-            'id': self._primary_key,
-            'fullname': self.fullname,
+            'id': utils.privacy_info_handle(self._primary_key, anonymous),
+            'fullname': utils.privacy_info_handle(self.fullname, anonymous, name=True),
             'registered': self.is_registered,
-            'url': self.url,
-            'api_url': self.api_url,
+            'url': utils.privacy_info_handle(self.url, anonymous),
+            'api_url': utils.privacy_info_handle(self.api_url, anonymous),
         }
 
     ###### OSF-Specific methods ######
 
-    def watch(self, watch_config, save=False):
-        '''Watch a node by adding its WatchConfig to this user's ``watched``
+    def watch(self, watch_config):
+        """Watch a node by adding its WatchConfig to this user's ``watched``
         list. Raises ``ValueError`` if the node is already watched.
 
         :param watch_config: The WatchConfig to add.
         :param save: Whether to save the user.
-        '''
+
+        """
         watched_nodes = [each.node for each in self.watched]
         if watch_config.node in watched_nodes:
-            raise ValueError("Node is already being watched.")
+            raise ValueError('Node is already being watched.')
         watch_config.save()
         self.watched.append(watch_config)
-        if save:
-            self.save()
         return None
 
-    def unwatch(self, watch_config, save=False):
-        '''Unwatch a node by removing its WatchConfig from this user's ``watched``
+    def unwatch(self, watch_config):
+        """Unwatch a node by removing its WatchConfig from this user's ``watched``
         list. Raises ``ValueError`` if the node is not already being watched.
 
         :param watch_config: The WatchConfig to remove.
         :param save: Whether to save the user.
-        '''
+
+        """
         for each in self.watched:
             if watch_config.node._id == each.node._id:
                 each.__class__.remove_one(each)
-                if save:
-                    self.save()
                 return None
         raise ValueError('Node not being watched.')
 
@@ -657,7 +684,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
@@ -674,11 +702,11 @@ class User(GuidStoredObject, AddonModelMixin):
         return self.get_recent_log_ids(since=midnight)
 
     def merge_user(self, user, save=False):
-        '''Merge a registered user into this account. This user will be
+        """Merge a registered user into this account. This user will be
         a contributor on any project
 
         :param user: A User object to be merged.
-        '''
+        """
         # Inherit emails
         self.emails.extend(user.emails)
         # Inherit projects the user was a contributor for
@@ -686,7 +714,7 @@ class User(GuidStoredObject, AddonModelMixin):
             node.add_contributor(
                 contributor=self,
                 permissions=node.get_permissions(user),
-                visible=node.is_visible_contributor(user),
+                visible=node.get_visible(user),
                 log=False,
             )
             try:
@@ -709,6 +737,21 @@ class User(GuidStoredObject, AddonModelMixin):
         if save:
             self.save()
         return None
+
+    def get_projects_in_common(self, other_user, primary_keys= True):
+        """Returns either a collection of "shared projects" (projects that both users are contributors for)
+        or just their primary keys
+        """
+        if primary_keys:
+            projects_contributed_to = set(self.node__contributed._to_primary_keys())
+            return projects_contributed_to.intersection(other_user.node__contributed._to_primary_keys())
+        else:
+            projects_contributed_to = set(self.node__contributed)
+            return projects_contributed_to.intersection(other_user.node__contributed)
+
+    def n_projects_in_common(self, other_user):
+        """Returns number of "shared projects" (projects that both users are contributors for)"""
+        return len(self.get_projects_in_common(other_user, primary_keys=True))
 
 
 def _merge_into_reversed(*iterables):

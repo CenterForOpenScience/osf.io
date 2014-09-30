@@ -2,23 +2,26 @@ import unittest
 from nose.tools import *  # PEP8 asserts
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory, UnregUserFactory
+from tests.test_features import requires_search
+from tests.factories import (
+    UserFactory, ProjectFactory, NodeFactory,
+    UnregUserFactory, UnconfirmedUserFactory
+)
 
-from website.search.utils import clean_solr_doc
-from framework.auth.decorators import Auth
-from website import settings
+from framework.auth.core import Auth
 
-#if settings.SEARCH_ENGINE is not None: #Uncomment to force elasticsearch to load for testing
+#Uncomment to force elasticsearch to load for testing
+# if settings.SEARCH_ENGINE is not None:
 #    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
-#reload(search)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+
+@requires_search
 class SearchTestCase(OsfTestCase):
 
-        
     def tearDown(self):
-        search.delete_all() 
+        super(SearchTestCase, self).tearDown()
+        search.delete_all()
 
 
 def query(term):
@@ -30,16 +33,26 @@ def query_user(name):
     term = 'user:"{}"'.format(name)
     return query(term)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+
+@requires_search
 class TestUserUpdate(SearchTestCase):
 
-    def test_new_user(self):
-        """Add a user, then verify that user is present in search
+    def setUp(self):
+        super(TestUserUpdate, self).setUp()
+        self.user = UserFactory(fullname='David Bowie')
 
-        """
-        # Create user
-        user = UserFactory(fullname='David Bowie')
-        # Verify that user has been added to Solr
+    def test_new_user(self):
+        # Verify that user has been added to Elastic Search
+        docs = query_user(self.user.fullname)
+        assert_equal(len(docs), 1)
+
+    def test_new_user_unconfirmed(self):
+        user = UnconfirmedUserFactory()
+        docs = query_user(user.fullname)
+        assert_equal(len(docs), 0)
+        token = user.get_confirmation_token(user.username)
+        user.confirm_email(token)
+        user.save()
         docs = query_user(user.fullname)
         assert_equal(len(docs), 1)
 
@@ -59,36 +72,67 @@ class TestUserUpdate(SearchTestCase):
         docs_current = query_user(user.fullname)
         assert_equal(len(docs_current), 1)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+    def test_merged_user(self):
+        user = UserFactory(fullname='Annie Lennox')
+        merged_user = UserFactory(fullname='Lisa Stansfield')
+        user.save()
+        merged_user.save()
+        assert_equal(len(query_user(user.fullname)), 1)
+        assert_equal(len(query_user(merged_user.fullname)), 1)
+
+        user.merge_user(merged_user)
+
+        assert_equal(len(query_user(user.fullname)), 1)
+        assert_equal(len(query_user(merged_user.fullname)), 0)
+
+
+@requires_search
 class TestProject(SearchTestCase):
 
     def setUp(self):
+        super(TestProject, self).setUp()
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
     def test_new_project_private(self):
-        """Verify that a private project is not present in Solr.
+        """Verify that a private project is not present in Elastic Search.
         """
         docs = query(self.project.title)
         assert_equal(len(docs), 0)
 
     def test_make_public(self):
-        """Make project public, and verify that it is present in Solr.
+        """Make project public, and verify that it is present in Elastic
+        Search.
         """
         self.project.set_privacy('public')
         docs = query(self.project.title)
         assert_equal(len(docs), 1)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
-class TestPublicProject(SearchTestCase):
+
+@requires_search
+class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
+        super(TestPublicNodes, self).setUp()
         self.user = UserFactory(usename='Doug Bogie')
+        self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(
-            title='Red Special',
+            title=self.title,
             creator=self.user,
             is_public=True
+        )
+        self.component = NodeFactory(
+            project=self.project,
+            title=self.title,
+            creator=self.user,
+            is_public=True
+        )
+        self.registration = ProjectFactory(
+            title=self.title,
+            creator=self.user,
+            is_public=True,
+            is_registration=True
         )
 
     def test_make_private(self):
@@ -96,15 +140,27 @@ class TestPublicProject(SearchTestCase):
         in search.
         """
         self.project.set_privacy('private')
-        docs = query(self.project.title)
+        docs = query('project:' + self.title)
+        assert_equal(len(docs), 0)
+
+        self.component.set_privacy('private')
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 0)
+
+        self.registration.set_privacy('private')
+        docs = query('registration:' + self.title)
         assert_equal(len(docs), 0)
 
     def test_delete_project(self):
         """
 
         """
+        self.component.remove_node(self.consolidate_auth)
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 0)
+
         self.project.remove_node(self.consolidate_auth)
-        docs = query(self.project.title)
+        docs = query('project:' + self.title)
         assert_equal(len(docs), 0)
 
     def test_change_title(self):
@@ -113,35 +169,36 @@ class TestPublicProject(SearchTestCase):
         """
         title_original = self.project.title
         self.project.set_title(
-            self.project.title[::-1], self.consolidate_auth, save=True)
+            'Blue Ordinary', self.consolidate_auth, save=True)
 
-        docs = query(title_original)
+        docs = query('project:' + title_original)
         assert_equal(len(docs), 0)
 
-        docs = query(self.project.title)
+        docs = query('project:' + self.project.title)
         assert_equal(len(docs), 1)
 
-    def test_add_tag(self):
+    def test_add_tags(self):
 
-        tag_text = 'stonecoldcrazy'
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        docs = query(tag_text)
-        assert_equal(len(docs), 0)
+        for tag in tags:
+            docs = query(tag)
+            assert_equal(len(docs), 0)
+            self.project.add_tag(tag, self.consolidate_auth, save=True)
 
-        self.project.add_tag(tag_text, self.consolidate_auth, None)
-
-        docs = query(tag_text)
-        assert_equal(len(docs), 1)
+        for tag in tags:
+            docs = query(tag)
+            assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
 
-        tag_text = 'stonecoldcrazy'
+        tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
-        self.project.add_tag(tag_text, self.consolidate_auth, None)
-        self.project.remove_tag(tag_text, self.consolidate_auth, None)
-
-        docs = query(tag_text)
-        assert_equal(len(docs), 0)
+        for tag in tags:
+            self.project.add_tag(tag, self.consolidate_auth, save=True)
+            self.project.remove_tag(tag, self.consolidate_auth, save=True)
+            docs = query(tag)
+            assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
         """Add text to a wiki page, then verify that project is found when
@@ -154,7 +211,8 @@ class TestPublicProject(SearchTestCase):
         assert_equal(len(docs), 0)
 
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
 
         docs = query(wiki_content)
         assert_equal(len(docs), 1)
@@ -166,7 +224,8 @@ class TestPublicProject(SearchTestCase):
         """
         wiki_content = 'Hammer to fall'
         self.project.update_node_wiki(
-            'home', wiki_content, self.consolidate_auth)
+            'home', wiki_content, self.consolidate_auth,
+        )
         self.project.update_node_wiki('home', '', self.consolidate_auth)
 
         docs = query(wiki_content)
@@ -200,17 +259,28 @@ class TestPublicProject(SearchTestCase):
         docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
-@unittest.skipIf(settings.SEARCH_ENGINE != 'elastic', 'Elastic search disabled')
+    def test_hide_contributor(self):
+        user2 = UserFactory(fullname='Brian May')
+        self.project.add_contributor(user2)
+        self.project.set_visible(user2, False, save=True)
+        docs = query('project:"{}"'.format(user2.fullname))
+        assert_equal(len(docs), 0)
+        self.project.set_visible(user2, True, save=True)
+        docs = query('project:"{}"'.format(user2.fullname))
+        assert_equal(len(docs), 1)
+
+
+@requires_search
 class TestAddContributor(SearchTestCase):
     """Tests of the search.search_contributor method
 
     """
 
     def setUp(self):
+        super(TestAddContributor, self).setUp()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
-
 
     def test_unreg_users_dont_show_in_search(self):
         unreg = UnregUserFactory()

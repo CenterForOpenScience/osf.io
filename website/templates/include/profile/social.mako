@@ -35,6 +35,11 @@
             </div>
 
             <div class="form-group">
+                <label>ImpactStory</label>
+                <input class="form-control" data-bind="value: impactStory" />
+            </div>
+
+            <div class="form-group">
                 <label>GitHub</label>
                 <div data-bind="css: {'input-group': github.hasAddon()}">
                     <input class="form-control" data-bind="value: github" />
@@ -61,7 +66,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: isValid"
+                        data-bind="enable: enableSubmit"
                     >Submit</button>
 
             </div>

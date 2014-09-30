@@ -9,15 +9,6 @@ from . import views
 
 settings_routes = {
     'rules': [
-        #Configuration
-        Rule([
-            '/project/<pid>/figshare/unlink/',
-            '/project/<pid>/node/<nid>/figshare/unlink/'
-        ], 'post', views.config.figshare_unlink, json_renderer),
-        Rule([
-            '/project/<pid>/figshare/settings/',
-            '/project/<pid>/node/<nid>/figshare/settings/',
-        ], 'post', views.config.figshare_set_config, json_renderer),
         # Widget
         Rule([
             '/project/<pid>/figshare/widget/',
@@ -121,19 +112,19 @@ api_routes = {
         Rule([
             '/project/<pid>/figshare/hgrid/',
             '/project/<pid>/node/<nid>/figshare/hgrid/',
-            '/project/<pid>/figshare/hgrid/<type>/<id>',
-            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>',
+            '/project/<pid>/figshare/hgrid/<type>/<id>/',
+            '/project/<pid>/node/<nid>/figshare/hgrid/<type>/<id>/',
 
         ], 'get', views.hgrid.figshare_hgrid_data_contents, json_renderer),
         Rule([
-            '/project/<pid>/figshare/render/article/<aid>/file/<fid>',
-            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>'
+            '/project/<pid>/figshare/render/article/<aid>/file/<fid>/',
+            '/project/<pid>/node/<nid>/figshare/render/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_get_rendered_file, json_renderer,),
         Rule([
             '/project/<pid>/figshare/download/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/download/article/<aid>/file/<fid>/'
         ], 'get', views.crud.figshare_download_file, json_renderer,),
-     ],
+    ],
     'prefix': '/api/v1',
 }
 

@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
-import logging
 import httplib as http
 
-from framework import Q
-from framework import request
+
+from flask import request
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
+
 from framework.exceptions import HTTPError
 from framework.forms.utils import process_payload, unprocess_payload
 from framework.mongo.utils import to_mongo
@@ -22,18 +24,14 @@ from .node import _view_project
 from .. import clean_template_name
 
 
-logger = logging.getLogger(__name__)
-
-
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_page(**kwargs):
+def node_register_page(auth, **kwargs):
 
-    auth = kwargs['auth']
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
-    rv = {
+    out = {
         'options': [
             {
                 'template_name': metaschema['name'],
@@ -42,19 +40,26 @@ def node_register_page(**kwargs):
             for metaschema in OSF_META_SCHEMAS
         ]
     }
-    rv.update(_view_project(node_to_use, auth, primary=True))
-    return rv
+    out.update(_view_project(node, auth, primary=True))
+    return out
 
 
 @must_be_valid_project
 @must_be_contributor_or_public
-def node_register_template_page(**kwargs):
+def node_register_template_page(auth, **kwargs):
 
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
-    template_name = kwargs['template']\
-        .replace(' ', '_')
+    template_name = kwargs['template'].replace(' ', '_')
+    # Error to raise if template can't be found
+    not_found_error = HTTPError(
+        http.NOT_FOUND,
+        data=dict(
+            message_short='Template not found.',
+            message_long='The registration template you entered '
+                         'in the URL is not valid.'
+        )
+    )
 
     if node.is_registration and node.registered_meta:
         registered = True
@@ -65,10 +70,13 @@ def node_register_template_page(**kwargs):
         if node.registered_schema:
             meta_schema = node.registered_schema
         else:
-            meta_schema = MetaSchema.find_one(
-                Q('name', 'eq', template_name) &
-                Q('schema_version', 'eq', 1)
-            )
+            try:
+                meta_schema = MetaSchema.find_one(
+                    Q('name', 'eq', template_name) &
+                    Q('schema_version', 'eq', 1)
+                )
+            except NoResultsFound:
+                raise not_found_error
     else:
         # Anyone with view access can see this page if the current node is
         # registered, but only admins can view the registration page if not
@@ -77,10 +85,13 @@ def node_register_template_page(**kwargs):
             raise HTTPError(http.FORBIDDEN)
         registered = False
         payload = None
-        meta_schema = MetaSchema.find(
+        metaschema_query = MetaSchema.find(
             Q('name', 'eq', template_name)
-        ).sort('-schema_version')[0]
-
+        ).sort('-schema_version')
+        if metaschema_query:
+            meta_schema = metaschema_query[0]
+        else:
+            raise not_found_error
     schema = meta_schema.schema
 
     # TODO: Notify if some components will not be registered
@@ -92,6 +103,7 @@ def node_register_template_page(**kwargs):
         'schema_version': meta_schema.schema_version,
         'registered': registered,
         'payload': payload,
+        'children_ids': node.nodes._to_primary_keys(),
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -107,8 +119,7 @@ def project_before_register(**kwargs):
 
     prompts = node.callback('before_register', user=user)
 
-    pointers = node.get_pointers()
-    if pointers:
+    if node.has_pointers_recursive:
         prompts.append(
             language.BEFORE_REGISTER_HAS_POINTERS.format(
                 category=node.project_or_component
@@ -121,11 +132,9 @@ def project_before_register(**kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 @must_not_be_registration
-def node_register_template_page_post(**kwargs):
+def node_register_template_page_post(auth, **kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
-
+    node = kwargs['node'] or kwargs['project']
     data = request.json
 
     # Sanitize payload data
@@ -138,7 +147,7 @@ def node_register_template_page_post(**kwargs):
     schema = MetaSchema.find(
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
-    register = node_to_use.register_node(
+    register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
 

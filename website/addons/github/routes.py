@@ -1,9 +1,7 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 from framework.routing import Rule, json_renderer
-from website.routes import OsfWebRenderer
+from website.routes import OsfWebRenderer, notemplate
 
 from website.addons.github import views
 
@@ -112,9 +110,12 @@ settings_routes = {
             [
                 '/project/<pid>/github/oauth/',
                 '/project/<pid>/node/<nid>/github/oauth/',
+                '/project/<pid>/github/config/',
+                '/project/<pid>/node/<nid>/github/config/'
+
             ],
             'delete',
-            views.auth.github_oauth_delete_node,
+            views.auth.github_oauth_deauthorize_node,
             json_renderer,
         ),
 
@@ -196,7 +197,8 @@ page_routes = {
             ],
             'get',
             views.crud.github_download_file,
-            json_renderer,
+            notemplate,
         ),
     ],
 }
+

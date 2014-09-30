@@ -17,15 +17,10 @@
                 });
             } else {
                 bucketName = bucketName.toLowerCase();
-                $.ajax({
-                    type: 'POST',
-                    url: nodeApiUrl + 's3/newbucket/',
-                    contentType: 'application/json',
-                    dataType: 'json',
-                    data: JSON.stringify({
-                        bucket_name: bucketName
-                    })
-                }).done(function() {
+                $.osf.postJSON(
+                    nodeApiUrl + 's3/newbucket/',
+                    {bucket_name: bucketName}
+                ).done(function() {
                     $select.append('<option value="' + bucketName + '">' + bucketName + '</option>');
                     $select.val(bucketName);
                 }).fail(function(xhr) {
@@ -47,15 +42,24 @@
             type: 'DELETE',
             url: nodeApiUrl + 's3/settings/',
             contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                window.location.reload();
-            },
-            error: function(xhr) {
-                //TODO Do something here
-            }
-        });
+            dataType: 'json'
+        }).done(function(response) {
+            window.location.reload();
+        }).fail(
+            $.osf.handleJSONError
+        );
     };
+
+    function importNodeAuth() {
+        $.osf.postJSON(
+            nodeApiUrl + 's3/import-auth/',
+            {}
+        ).done(function() {
+            window.location.reload();
+        }).fail(
+            $.osf.handleJSONError
+        );
+    }
 
     $(document).ready(function() {
 
@@ -71,6 +75,10 @@
                     }
                 }
             );
+        });
+
+        $('#s3ImportToken').on('click', function() {
+            importNodeAuth();
         });
 
         $('#addonSettingsS3 .addon-settings-submit').on('click', function() {

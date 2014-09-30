@@ -3,8 +3,9 @@ import mock
 
 from tests.factories import UserFactory, ProjectFactory
 from framework.auth.decorators import Auth
-from website.addons.dataverse.model import AddonDataverseUserSettings, \
-    AddonDataverseNodeSettings, DataverseFile
+from website.addons.dataverse.model import (
+    AddonDataverseUserSettings, AddonDataverseNodeSettings, DataverseFile
+)
 from website.addons.dataverse.tests.utils import DataverseAddonTestCase
 
 
@@ -179,3 +180,13 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         self.node_settings.save()
         assert_is_none(self.node_settings.user_settings)
         assert_true(message)
+
+    def test_after_delete(self):
+        self.project.remove_node(Auth(user=self.project.creator))
+        # Ensure that changes to node settings have been saved
+        self.node_settings.reload()
+        assert_true(self.node_settings.user_settings is None)
+        assert_true(self.node_settings.dataverse_alias is None)
+        assert_true(self.node_settings.dataverse is None)
+        assert_true(self.node_settings.study_hdl is None)
+        assert_true(self.node_settings.study is None)

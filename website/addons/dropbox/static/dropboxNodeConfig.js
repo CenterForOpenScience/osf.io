@@ -23,8 +23,9 @@
     /**
      * Knockout view model for the Dropbox node settings widget.
      */
-    var ViewModel = function(url, folderPicker) {
+    var ViewModel = function(url, selector, folderPicker) {
         var self = this;
+        self.selector = selector;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         // whether current user is authorizer of the addon
@@ -93,7 +94,7 @@
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
-                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
                         'text-warning');
                 }
             });
@@ -107,7 +108,7 @@
                 self.currentDisplay(null);
             } else {
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
                 self.currentDisplay(self.SHARE);
                 self.activateShare();
             }
@@ -183,7 +184,7 @@
             // Update folder in ViewModel
             self.folder(response.result.folder);
             self.urls(response.result.urls);
-            self.selected(null);
+            self.cancelSelection();
         }
 
         function onSubmitError() {
@@ -194,12 +195,17 @@
          * Send a PUT request to change the linked Dropbox folder.
          */
         self.submitSettings = function() {
-            $.osf.putJSON(self.urls().config, ko.toJS(self),
-                onSubmitSuccess, onSubmitError);
+            $.osf.putJSON(self.urls().config, ko.toJS(self))
+                .done(onSubmitSuccess)
+                .fail(onSubmitError);
         };
 
+        /**
+         * Must be used to update radio buttons and knockout view model simultaneously
+         */
         self.cancelSelection = function() {
             self.selected(null);
+            $(selector + ' input[type="radio"]').prop('checked', false);
         };
 
         /** Change the flashed message. */
@@ -226,7 +232,7 @@
                 success: function() {
                     // Update observables
                     self.nodeHasAuth(false);
-                    self.selected(null);
+                    self.cancelSelection();
                     self.currentDisplay(null);
                     self.changeMessage('Deauthorized Dropbox.', 'text-warning', 3000);
                 },
@@ -275,8 +281,9 @@
                 message: 'Are you sure you want to authorize this project with your Dropbox access token?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        return $.osf.putJSON(self.urls().importAuth, {},
-                            onImportSuccess, onImportError);
+                        return $.osf.putJSON(self.urls().importAuth, {})
+                            .done(onImportSuccess)
+                            .fail(onImportError);
                     }
                 }
             });
@@ -345,7 +352,7 @@
             } else {
                 self.currentDisplay(null);
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
             }
         };
     };
@@ -355,8 +362,9 @@
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
-        self.viewModel = new ViewModel(url, folderPicker);
+        self.viewModel = new ViewModel(url, selector, folderPicker);
         $.osf.applyBindings(self.viewModel, selector);
+        window.bobob = self.viewModel;
     }
 
     return DropboxNodeConfig;

@@ -231,7 +231,7 @@
         UPLOAD_PROGRESS: function(progress) {
             return '<span class="text-info">' + Math.floor(progress) + '%</span>';
         },
-        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>',
+        RELEASING_STUDY: '<span class="text-info">Releasing Study. . .</span>'
     };
 
     var statusType = {
@@ -319,6 +319,9 @@
         ajaxOptions: {
             cache: false  // Prevent caching in IE
         },
+        preprocessFilename: function(filename) {
+            return $('<div>').text(filename).html();
+        },
         fetchUrl: function(row) {
             return row.urls.fetch || null;
         },
@@ -395,11 +398,18 @@
             return cfgOption || null;
         },
         uploadError: function(file, message, item, folder) {
+            var messageText = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
+            if (!messageText) {
+                if (typeof(message) === 'string') {
+                    messageText = message;
+                } else {
+                    messageText = message.message_long;
+                }
+            }
             // FIXME: can't use change status, because the folder item is updated
             // on complete, which replaces the html row element
             // for now, use bootbox
-            var cfgOption = resolveCfgOption.call(this, item, 'UPLOAD_ERROR');
-            bootbox.alert(cfgOption || message);
+            bootbox.alert(messageText);
         },
         uploadSuccess: function(file, row, data) {
             // If file hasn't changed, remove the duplicate item
@@ -482,7 +492,7 @@
         },
         uploadDenied: function(evt, row) {
             this.removeHighlight('highlight-denied');
-        },
+        }
     };
 
     function updateTooltips() {
@@ -581,4 +591,3 @@
 
     return Rubeus;
 }));
-

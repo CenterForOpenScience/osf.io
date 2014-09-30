@@ -2,7 +2,7 @@
 '''Custom exceptions for the framework.'''
 import copy
 import httplib as http
-from framework.flask import request
+from flask import request
 
 class FrameworkError(Exception):
     """Base class from which framework-related errors inherit."""
@@ -56,7 +56,7 @@ class HTTPError(FrameworkError):
             }
         else:
             data['message_short'] = 'Unable to resolve'
-            data['message_long'] = 'OSF was unable to resolve your request.  If this issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+            data['message_long'] = 'OSF was unable to resolve your request. If this issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
         data.update(self.data)
         data['code'] = self.code
         data['referrer'] = self.referrer

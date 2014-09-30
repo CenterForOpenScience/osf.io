@@ -1,9 +1,9 @@
 <%
     import json
-    is_project = node['category'] == 'project'
+    is_project = node['node_type'] == 'project'
 %>
 % if node['is_registration']:
-    <div class="alert alert-info">This ${node['category']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node["category"]}</a>; the content of the ${node["category"]} has been frozen and cannot be edited.
+  <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
     </div>
     <style type="text/css">
     .watermarked {
@@ -13,10 +13,19 @@
     </style>
 % endif
 
+% if node['anonymous'] and user['is_contributor']:
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
+% endif
+
 % if node['link'] and not node['is_public'] and not user['can_edit']:
-    <div class="alert alert-info">This ${node['category']} is being viewed through the read-only, private link. Anyone with the link can view this project. Keep the link safe.
+  <div class="alert alert-info">This ${node['node_type']} is being viewed through a private, view-only link. Anyone with the link can view this project. Keep the link safe.
     </div>
 % endif
+
+% if disk_saving_mode:
+    <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
+% endif
+
 
 <div id="projectScope">
     <header class="subhead" id="overview">
@@ -27,17 +36,17 @@
                 %if parent_node['id']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h1 class="node-parent-title">
-                            <a href="${parent_node['url']}">${parent_node['title']}</a> /
+                            <a href="${parent_node['url']}">${parent_node['title']}</a>&nbsp;/
 
                         </h1>
                     % else:
                          <h1 class="node-parent-title unavailable">
-                             <span>Private Project</span> /
+                             <span>Private Project</span>&nbsp;/
                          </h1>
                     %endif
                 %endif
                 <h1 class="node-title">
-                    <span id="nodeTitleEditable">${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h1>
             </div><!-- end col-md-->
 
@@ -92,12 +101,18 @@
         </div><!-- end row -->
 
 
-        <p id="contributors">Contributors:
-            <span id="contributorsview"><div mod-meta='{
+        <div id="contributors">Contributors:
+            % if node['anonymous'] and not node['is_public']:
+                <ol>Anonymous Contributors</ol>
+
+            % else:
+            <ol><div mod-meta='{
                     "tpl": "util/render_contributors.mako",
                     "uri": "${node["api_url"]}get_contributors/",
                     "replace": true
-                }'></div></span>
+                }'></div></ol>
+            % endif
+
             % if node['is_fork']:
                 <br />Forked from <a class="node-forked-from" href="/${node['forked_from_id']}/">${node['forked_from_display_absolute_url']}</a> on
                 <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
@@ -117,13 +132,13 @@
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % elif node['description'] or 'write' in user['permissions']:
-                 <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
+                 <br />Description: <span id="nodeDescriptionEditable" class="node-description overflow">${node['description']}</span>
             % endif
-        </p>
+        </div>
 
         <nav id="projectSubnav" class="navbar navbar-default ">
             <a class="navbar-brand collapse visible-xs">
-                ${'Project' if node['category'] == 'project' else 'Component'} Navigation
+              ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
             </a>
             <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
               <span class="sr-only">Toggle navigation</span>
@@ -134,7 +149,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
-                        <li><a href="${node['url']}">Dashboard</a></li>
+                        <li><a href="${node['url']}">Overview</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
@@ -158,7 +173,7 @@
                         % endif
                         <li><a href="${node['url']}forks/">Forks</a></li>
                         % if user['is_contributor']:
-                            <li><a href="${node['url']}contributors/">Contributors</a></li>
+                            <li><a href="${node['url']}contributors/">Sharing</a></li>
                         %endif
                         % if 'write' in user['permissions']:
                             <li><a href="${node['url']}settings/">Settings</a></li>

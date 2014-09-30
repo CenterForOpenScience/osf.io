@@ -8,8 +8,9 @@ import importlib
 import mimetypes
 from bson import ObjectId
 from mako.lookup import TemplateLookup
+from modularodm import fields
 
-from framework import StoredObject, fields
+from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
 
@@ -66,6 +67,7 @@ class AddonConfig(object):
         self.configs = configs or []
 
         self.has_hgrid_files = has_hgrid_files
+        # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
         self.get_hgrid_data = get_hgrid_data #if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
         self.accept_extensions = accept_extensions
@@ -175,7 +177,6 @@ class GuidFile(GuidStoredObject):
         )
 
 
-
 class AddonSettingsBase(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -187,11 +188,13 @@ class AddonSettingsBase(StoredObject):
 
     def delete(self, save=True):
         self.deleted = True
+        self.on_delete()
         if save:
             self.save()
 
     def undelete(self, save=True):
         self.deleted = False
+        self.on_add()
         if save:
             self.save()
 
@@ -200,6 +203,18 @@ class AddonSettingsBase(StoredObject):
             'addon_short_name': self.config.short_name,
             'addon_full_name': self.config.full_name,
         }
+
+    #############
+    # Callbacks #
+    #############
+
+    def on_add(self):
+        """Called when the addon is added (or re-added) to the owner (User or Node)."""
+        pass
+
+    def on_delete(self):
+        """Called when the addon is deleted from the owner (User or Node)."""
+        pass
 
 
 class AddonUserSettingsBase(AddonSettingsBase):
@@ -213,6 +228,42 @@ class AddonUserSettingsBase(AddonSettingsBase):
     @property
     def public_id(self):
         return None
+
+    def get_backref_key(self, schema, backref_name):
+        return schema._name + '__' + backref_name
+
+    # TODO: Test me @asmacdo
+    @property
+    def nodes_authorized(self):
+        """Get authorized, non-deleted nodes. Returns an empty list if the
+        attached add-on does not include a node model.
+
+        """
+        try:
+            schema = self.config.settings_models['node']
+        except KeyError:
+            return []
+        nodes_backref = self.get_backref_key(schema, 'authorized')
+        return [
+            node_addon.owner
+            for node_addon in getattr(self, nodes_backref)
+            if not node_addon.owner.is_deleted
+        ]
+
+    def to_json(self, user):
+        ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret.update({
+            'nodes': [
+                {
+                    '_id': node._id,
+                    'url': node.url,
+                    'title': node.title,
+                    'registered': node.is_registration,
+                }
+                for node in self.nodes_authorized
+            ]
+        })
+        return ret
 
 
 class AddonNodeSettingsBase(AddonSettingsBase):
@@ -281,6 +332,25 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+    def before_make_public(self, node):
+
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
+    def before_make_private(self, node):
+        """
+
+        :param Node node:
+        :returns: Alert message or None
+
+        """
+        pass
+
     def after_set_privacy(self, node, permissions):
         """
 
@@ -295,7 +365,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -307,7 +377,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node fork:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -323,7 +393,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
         :param Node node:
         :param User user:
-        :return str: Alert message
+        :returns: Alert message
 
         """
         pass
@@ -335,7 +405,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         :param Node registration:
         :param User user:
         :param bool save:
-        :return tuple: Tuple of cloned settings and alert message
+        :returns: Tuple of cloned settings and alert message
 
         """
         clone = self.clone()
@@ -345,6 +415,15 @@ class AddonNodeSettingsBase(AddonSettingsBase):
             clone.save()
 
         return clone, None
+
+    def after_delete(self, node, user):
+        """
+
+        :param Node node:
+        :param User user:
+
+        """
+        pass
 
 
 # TODO: Move this

@@ -4,44 +4,61 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <div data-bind="foreach: contents">
+            <div data-bind="sortable: {
+                    data: contents,
+                    options: {
+                        handle: '.sort-handle',
+                        containment: '#containDrag'
+                    }
+                }">
 
-                <div class="well well-sm">
-                    Position {{ $index() + 1 }}
-                    <a
-                            class="text-danger pull-right"
-                            data-bind="click: $parent.removeContent,
-                                       visible: $parent.canRemove"
-                        >Remove</a>
+                <div>
+
+                    <div class="well well-sm sort-handle">
+                        <span>Position {{ $index() + 1 }}</span>
+                        <span data-bind="visible: $parent.hasMultiple()">
+                            [ drag to reorder ]
+                        </span>
+                        <a
+                                class="text-danger pull-right"
+                                data-bind="click: $parent.removeContent,
+                                           visible: $parent.canRemove"
+                            >Remove</a>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Institution / Employer</label>
+                        <input class="form-control" data-bind="value: institution" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Department</label>
+                        <input class="form-control" data-bind="value: department" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Job Title</label>
+                        <input class="form-control" data-bind="value: title" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Start Date</label>
+                        <input class="form-control" data-bind="value: start" />
+                    </div>
+
+                    <div class="form-group" data-bind="ifnot: ongoing">
+                        <label>End Date</label>
+                        <input class="form-control" data-bind="value: end" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ongoing</label>
+                        <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
+                    </div>
+
+                    <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
+
                 </div>
-
-
-                <div class="form-group">
-                    <label>Institution / Employer</label>
-                    <input class="form-control" data-bind="value: institution" />
-                </div>
-
-                <div class="form-group">
-                    <label>Department</label>
-                    <input class="form-control" data-bind="value: department" />
-                </div>
-
-                <div class="form-group">
-                    <label>Job Title</label>
-                    <input class="form-control" data-bind="value: title" />
-                </div>
-
-                <div class="form-group">
-                    <label>Start Date</label>
-                    <input class="form-control" data-bind="value: start" />
-                </div>
-
-                <div class="form-group">
-                    <label>End Date</label>
-                    <input class="form-control" data-bind="value: end" />
-                </div>
-
-                <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 
             </div>
 
@@ -62,7 +79,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: isValid"
+                        data-bind="enable: enableSubmit"
                     >Submit</button>
 
             </div>
@@ -91,8 +108,8 @@
                         <th>Institution</th>
                         <th>Department</th>
                         <th>Title</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
+                        <th>Start&nbsp;Date</th>
+                        <th>End&nbsp;Date</th>
                     </tr>
                 </thead>
 
@@ -104,7 +121,7 @@
                         <td>{{ department }}</td>
                         <td>{{ title }}</td>
                         <td>{{ start }}</td>
-                        <td>{{ end }}</td>
+                        <td>{{ endView }}</td>
 
                     </tr>
 

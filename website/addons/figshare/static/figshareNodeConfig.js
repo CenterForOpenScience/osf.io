@@ -22,11 +22,12 @@
     /**
      * Knockout view model for the Figshare node settings widget.
      */
-    var ViewModel = function(url, folderPicker) {
+    var ViewModel = function(url, selector, folderPicker) {
         var self = this;
         // Auth information
         self.nodeHasAuth = ko.observable(false);
         self.userHasAuth = ko.observable(false);
+	self.userIsOwner = ko.observable(false);
         // Currently linked folder, an Object of the form {name: ..., path: ...}
         self.linked = ko.observable({});
         self.ownerName = ko.observable('');
@@ -59,7 +60,8 @@
             self.ownerName(data.ownerName);
             self.nodeHasAuth(data.nodeHasAuth);
             self.userHasAuth(data.userHasAuth);
-	    self.linked(data.linked);
+	    self.userIsOwner(data.userIsOwner);
+	    self.linked(data.linked || {});
             self.urls(data.urls);
         };
 
@@ -75,7 +77,7 @@
                     self.changeMessage('Could not retrieve Figshare settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
-                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
+                        '<a href="mailto:support@osf.io">support@osf.io</a>.',
                         'text-warning');
                 }
             });
@@ -119,26 +121,26 @@
         });
 
         self.selectedFolderName = ko.computed(function() {
-            var userHasAuth = self.userHasAuth();
+            var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            return (userHasAuth && selected) ? selected.title : '';
+            return (userIsOwner && selected) ? selected.title : '';
         });
 
-	self.selectedFolderType = ko.computed(function(){
-	    var userHasAuth = self.userHasAuth();
-            var selected = self.selected();
-            return (userHasAuth && selected) ? selected.type : '';
-	});
+        self.selectedFolderType = ko.computed(function(){
+            var userHasAuth = self.userHasAuth();
+                var selected = self.selected();
+                return (userHasAuth && selected) ? selected.type : '';
+        });
 
         function onSubmitSuccess(response) {
-            self.changeMessage('Successfully linked "' + self.selected().name +
+            self.changeMessage('Successfully linked "' + self.selected().title +
                 '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your files.',
                 'text-success', 5000);
             // Update folder in ViewModel
-	    self.linked(response.result.linked);
+	        self.linked(response.result.linked);
             self.urls(response.result.urls);
-            self.selected(null);
+            self.cancelSelection();
         }
 
         function onSubmitError() {
@@ -149,12 +151,17 @@
          * Send a PUT request to change the linked Figshare folder.
          */
         self.submitSettings = function() {
-            $.osf.putJSON(self.urls().config, ko.toJS(self),
-                onSubmitSuccess, onSubmitError);
+            $.osf.putJSON(self.urls().config, ko.toJS(self))
+                .done(onSubmitSuccess)
+                .fail(onSubmitError);
         };
 
+        /**
+         * Must be used to update radio buttons and knockout view model simultaneously
+         */
         self.cancelSelection = function() {
             self.selected(null);
+            $(selector + ' input[type="radio"]').prop('checked', false);
         };
 
         /** Change the flashed message. */
@@ -181,7 +188,7 @@
                 success: function() {
                     // Update observables
                     self.nodeHasAuth(false);
-                    self.selected(null);
+                    self.cancelSelection();
                     self.currentDisplay(null);
                     self.changeMessage('Deauthorized Figshare.', 'text-warning', 3000);
                 },
@@ -230,8 +237,9 @@
                 message: 'Are you sure you want to authorize this project with your Figshare access token?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        return $.osf.putJSON(self.urls().importAuth, {},
-                            onImportSuccess, onImportError);
+                        return $.osf.putJSON(self.urls().importAuth, {})
+                            .done(onImportSuccess)
+                            .fail(onImportError);
                     }
                 }
             });
@@ -295,7 +303,7 @@
             } else {
                 self.currentDisplay(null);
                 // Clear selection
-                self.selected(null);
+                self.cancelSelection();
             }
         };
     };
@@ -305,7 +313,7 @@
         var self = this;
         self.url = url;
         self.folderPicker = folderPicker;
-        self.viewModel = new ViewModel(url, folderPicker);
+        self.viewModel = new ViewModel(url, selector, folderPicker);
         $.osf.applyBindings(self.viewModel, selector);
     }
 

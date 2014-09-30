@@ -73,6 +73,7 @@ page_routes = {
             OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako')),
         ),
 
+
         # Compare
         Rule(
             [
@@ -100,20 +101,37 @@ page_routes = {
 }
 
 api_routes = {
-    
+
     'rules': [
-        
+
         # View
         Rule([
             '/project/<pid>/wiki/<wid>/',
             '/project/<pid>/node/<nid>/wiki/<wid>/',
         ], 'get', views.project_wiki_page, json_renderer),
 
+        #justcontent
+        Rule([
+            '/project/<pid>/wiki/content/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/content/<wid>/',
+        ], 'get', views.wiki_page_content, json_renderer),
+
         # Edit | POST
         Rule([
             '/project/<pid>/wiki/<wid>/edit/',
             '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
         ], 'post', views.project_wiki_edit_post, json_renderer),
+
+        # Rename
+        Rule(
+            [
+                '/project/<pid>/wiki/<wid>/rename/',
+                '/project/<pid>/node/<nid>/wiki/<wid>/rename/',
+            ],
+            'put',
+            views.project_wiki_rename,
+            json_renderer,
+        ),
 
         # Compare
         Rule([
@@ -126,9 +144,15 @@ api_routes = {
             '/project/<pid>/wiki/<wid>/version/<vid>/',
             '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
         ], 'get', views.project_wiki_version, json_renderer),
-        
+
+        # Delete
+        Rule([
+            '/project/<pid>/wiki/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/<wid>/',
+        ], 'delete', views.project_wiki_delete, json_renderer),
+
     ],
-    
+
     'prefix': '/api/v1',
-    
+
 }

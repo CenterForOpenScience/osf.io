@@ -6,11 +6,11 @@
 - Public Repo: https://github.com/CenterForOpenScience/openscienceframework.org/
 - Issues: https://github.com/CenterForOpenScience/openscienceframework.org/issues?state=open
 - Huboard: https://huboard.com/CenterForOpenScience/openscienceframework.org#/
-- Wiki: https://osf.io/a92ji/wiki/home/
+- Docs: http://cosdev.rtfd.org/
 
 ## Help
 
-Solutions to many common issues may be found at the [OSF Wiki](https://osf.io/a92ji/wiki/home/).
+Solutions to many common issues may be found at the [OSF Developer Docs](http://cosdev.rtfd.org/).
 
 ## Quickstart
 
@@ -26,12 +26,15 @@ $ cp website/settings/local-dist.py website/settings/local.py
 
 - You will need to:
     - Create local.py files for addons that need them.
-    - Install MongoDB.
+    - Install TokuMX.
     - Install libxml2 and libxslt (required for installing lxml).
     - Install elasticsearch.
     - Install GPG.
     - Install requirements.
     - Create a GPG key.
+    - Install npm
+    - Install bower
+    - Use bower to install Javascript components
 
 - To do so, on MacOSX with [homebrew](http://brew.sh/) (click link for homebrew installation instructions), run:
 
@@ -40,9 +43,22 @@ $ pip install invoke
 $ invoke setup
 ```
 
-- On Linux systems, you may have to install python-pip, MongoDB, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
 
-- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like: 
+- Optionally, you may install the requirements for the Modular File Renderer:
+
+```bash
+$ invoke mfr_requirements
+```
+
+and for addons:
+
+```bash
+$ invoke addon_requirements
+```
+
+- On Linux systems, you may have to install python-pip, TokuMX, libxml2, libxslt, elasticsearch, and GPG manually before running the above commands.
+
+- If invoke setup hangs when 'Generating GnuPG key' (especially under linux), you may need to install some additonal software to make this work. For apt-getters this looks like:
 
 ```bash
 sudo apt-get install rng-tools
@@ -127,6 +143,42 @@ Sent emails will show up in your server logs.
 $ invoke mailserver -p 1025
 ```
 
+## Using TokUMX
+
+TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments. 
+TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and 
+`commitTransaction` commands.
+
+If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
+
+### Installing with Mac OS
+
+```bash
+$ brew tap tokutek/tokumx
+$ brew install tokumx-bin
+```
+
+### Installing on Ubuntu
+
+```bash
+$ apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
+$ echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
+$ apt-get update
+$ apt-get install tokumx
+```
+
+### Migrating from MongoDB
+
+TokuMX and MongoDB use different binary formats. To migrate data from MongoDB to TokuMX:
+* Back up the MongoDB data
+    * `invoke mongodump --path dump`
+* Shut down the MongoDB server
+* Uninstall MongoDB
+* Install TokuMX (see instructions above)
+* Restore the data to TokuMX
+    * `invoke mongorestore --path dump/osf20130903 --drop`
+* Verify that the migrated data are available in TokuMX
+
 ## Using Celery
 
 ### Installing Celery + RabbitMQ
@@ -162,30 +214,6 @@ invoke celery_worker
 
 ## Using Search
 
-### Solr
-- Make sure [Java is installed](https://www.java.com/en/download/help/index_installing.xml)
-
-- In your `website/settings/local.py` file, set `SEARCH_ENGINE` to 'solr'.
-
-```python
-SEARCH_ENGINE = 'solr'
-```
-
-- Start the Solr server and migrate the models.
-
-```bash
-$ invoke solr
-$ invoke migrate_search
-```
-
-#### Starting A Local Solr Server
-
-```bash
-$ invoke solr
-```
-
-This will start a Solr server on port 8983.
-
 ### Elasticsearch
 
 - Install Elasticsearch
@@ -195,11 +223,11 @@ This will start a Solr server on port 8983.
 ```bash
 $ brew install elasticsearch
 ```
-_note: JDK 7 must be installed for elasticsearch to run_
+_note: Oracle JDK 7 must be installed for elasticsearch to run_
 
 #### Ubuntu 
 
-````bash
+```bash
 $ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
 $ sudo dpkg -i elasticsearch-1.2.1.deb
 ```
@@ -225,16 +253,39 @@ $ invoke elasticsearch
 
 ## Using Bower for front-end dependencies
 
-We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries.
+We use [bower](http://bower.io/) to automatically download and manage dependencies for front-end libraries. This should
+be installed with `invoke setup` (above)
 
 To get the bower CLI, you must have Node installed.
 
 ```bash
+# For MacOSX
 $ brew update && brew install node
 $ npm install -g bower
 ```
 
-To install a library:
+Installing Node and Bower on Ubuntu is slightly more complicated. Node is installed as `nodejs`, but Bower expects
+the binary to be called `node`. Symlink `nodejs` to `node` to fix, then verify that `node` is properly aliased:
+
+```bash
+# For Ubuntu
+$ sudo apt-get install nodejs
+$ sudo ln -s /usr/bin/nodejs /usr/bin/node
+$ node --version      # v0.10.25
+$ npm install -g bower
+```
+
+### To update existing front-end dependencies
+
+This will be the most common command you will use with `bower`. It will update all your front-end dependencies to the version required by the OSF. Think of it as the `pip install -r requirements.txt` for front-end assets.
+
+```bash
+$ bower install
+```
+
+### To add a new front-end library
+
+Use this command when adding a new front-end dependency
 
 ```bash
 $ bower install zeroclipboard --save
@@ -254,7 +305,7 @@ invoke mongo -d  # Runs mongod as a daemon
 invoke mailserver
 invoke rabbitmq
 invoke celery_worker
-invoke solr
+invoke elasticsearch
 invoke server
 ```
 

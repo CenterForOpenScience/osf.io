@@ -1,5 +1,9 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Forks</%def>
+<%def name="title()">${node['title']} Forks</%def>
+
+<div class="page-header">
+    <h2>Forks</h2>
+</div>
 
 % if node['fork_count']:
     <div mod-meta='{

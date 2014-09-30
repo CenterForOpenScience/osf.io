@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import logging
 import datetime
 import httplib as http
 from flask import request, redirect
@@ -7,7 +6,7 @@ from flask import request, redirect
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
-from framework import set_previous_url
+from framework.sessions import set_previous_url
 from framework import status, exceptions
 from framework import forms
 from framework import auth
@@ -20,9 +19,6 @@ import website.settings
 from website.models import User
 from website.util import web_url_for
 from website import security, mails, language
-
-
-logger = logging.getLogger(__name__)
 
 
 def reset_password(**kwargs):
@@ -98,8 +94,15 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if request.method == 'POST' and not direct_call:
         form = SignInForm(request.form)
         if form.validate():
+            twofactor_code = None
+            if 'twofactor' in website.settings.ADDONS_REQUESTED:
+                twofactor_code = form.two_factor.data
             try:
-                response = login(form.username.data, form.password.data)
+                response = login(
+                    form.username.data,
+                    form.password.data,
+                    twofactor_code
+                )
                 return response
             except auth.LoginNotAllowedError:
                 status.push_status_message(language.UNCONFIRMED, 'warning')
@@ -107,6 +110,8 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
                 return {'next': ''}
             except auth.PasswordIncorrectError:
                 status.push_status_message(language.LOGIN_FAILED)
+            except auth.TwoFactorValidationError:
+                status.push_status_message(language.TWO_FACTOR_FAILED)
         forms.push_errors_to_status(form.errors)
 
     if kwargs.get('first', False):
@@ -148,7 +153,7 @@ def confirm_email_get(**kwargs):
 
     methods: GET
     """
-    user = get_user(id=kwargs['uid'])
+    user = User.load(kwargs['uid'])
     token = kwargs['token']
     if user:
         if user.confirm_email(token):  # Confirm and register the usre
@@ -190,7 +195,6 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    # TODO: Move this logic to ODM
     if request.json['email1'] != request.json['email2']:
         raise HTTPError(
             http.BAD_REQUEST,
@@ -250,8 +254,6 @@ def auth_register_post():
                 return auth_login(registration_form=form)
             else:
                 return redirect('/login/first/')
-                #status.push_status_message('You may now log in')
-            return redirect(web_url_for('auth_login'))
     else:
         forms.push_errors_to_status(form.errors)
         return auth_login(registration_form=form)

@@ -12,20 +12,13 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 
 # Comment out to use solr in development
 SEARCH_ENGINE = 'elastic'
+ELASTIC_TIMEOUT = 10
 
 # Comment out to use celery in development
 USE_CELERY = False
 
 # Comment out to use GnuPG in development
-USE_GNUPG = False # Changing this may require you to re-enter encrypted fields
-
-# Which addons are enabled
-ADDONS_REQUESTED = [
-    'wiki', 'osffiles',
-    'github', 's3', 'figshare',
-    'dropbox', 'dataverse',
-    # 'badges', 'forward',
-]
+USE_GNUPG = False  # Changing this may require you to re-enter encrypted fields
 
 # Email
 USE_EMAIL = False

@@ -3,28 +3,22 @@ import mock
 from contextlib import contextmanager
 
 from webtest_plus import TestApp
+from modularodm import storage
 
-from framework import storage
-from framework.mongo import db, set_up_storage
+from framework.mongo import database, set_up_storage
 
 import website
 from website.addons.base.testing import AddonTestCase
 from website.addons.dropbox import MODELS
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 
 def init_storage():
-    set_up_storage(MODELS, storage_class=storage.MongoStorage, db=db)
+    set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
 
 class DropboxAddonTestCase(AddonTestCase):
-    ADDON_SHORT_NAME = 'dropbox'
 
-    def create_app(self):
-        return TestApp(app)
+    ADDON_SHORT_NAME = 'dropbox'
 
     def set_user_settings(self, settings):
         settings.access_token = '12345abc'
@@ -32,6 +26,7 @@ class DropboxAddonTestCase(AddonTestCase):
 
     def set_node_settings(self, settings):
         settings.folder = 'foo'
+
 
 mock_responses = {
     'put_file': {
@@ -158,7 +153,7 @@ class MockDropbox(object):
 
 
 @contextmanager
-def patch_client(target):
+def patch_client(target, mock_client=None):
     """Patches a function that returns a DropboxClient, returning an instance
     of MockDropbox instead.
 
@@ -168,6 +163,6 @@ def patch_client(target):
             # test view that uses the dropbox client.
     """
     with mock.patch(target) as client_getter:
-        client = MockDropbox()
+        client = mock_client or MockDropbox()
         client_getter.return_value = client
         yield client

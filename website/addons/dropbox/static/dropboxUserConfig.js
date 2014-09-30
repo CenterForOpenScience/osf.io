@@ -34,7 +34,7 @@
             error: function(xhr, textStatus, error){
                 console.error(textStatus); console.error(error);
                 self.changeMessage('Could not retrieve settings. Please refresh the page or ' +
-                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'contact <a href="mailto: support@osf.io">support@osf.io</a> if the ' +
                     'problem persists.', 'text-warning');
             }
         });
@@ -43,15 +43,20 @@
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
 
+
         /** Send DELETE request to deauthorize Dropbox */
         function sendDeauth() {
             return $.ajax({
                 url: self.urls().delete,
                 type: 'DELETE',
                 success: function() {
-                    // User no longer has auth; update viewmodel
-                    self.userHasAuth(false);
-                    self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+                    // Page must be refreshed to remove the list of authorized nodes
+                    location.reload()
+
+                    // KO logic. Uncomment if page ever doesn't need refreshing
+                    // self.userHasAuth(false);
+                    // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+
                 },
                 error: function() {
                     self.changeMessage(language.deauthError, 'text-danger');
@@ -85,7 +90,6 @@
                 }
             });
         };
-
     }
 
     function DropboxUserConfig(selector, url) {

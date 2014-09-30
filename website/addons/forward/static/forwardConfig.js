@@ -23,7 +23,7 @@
     /**
      * Knockout view model for the Forward node settings widget.
      */
-    var ViewModel = function(url) {
+    var ViewModel = function(url, nodeId) {
 
         var self = this;
 
@@ -31,14 +31,23 @@
         self.boolLabels = {
             true: 'Yes',
             false: 'No'
-        }
+        };
 
         // Forward configuration
         self.url = ko.observable().extend({
-            required: true,
-            // From https://gist.github.com/searls/1033143
-            pattern: /\b((?:https?:\/\/|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}\/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'".,<>?«»“”‘’]))/i
+            ensureHttp: true,
+            url: true,
+            required: true
         });
+        ko.validation.addAnonymousRule(
+            self.url,
+            $.osf.ko.makeRegexValidator(
+                new RegExp(nodeId, 'i'),
+                'Components cannot link to themselves',
+                false
+            )
+        );
+	    self.label = $.osf.ko.sanitizedObservable();
         self.redirectBool = ko.observable(DEFAULT_FORWARD_BOOL);
         self.redirectSecs = ko.observable(DEFAULT_FORWARD_TIME).extend({
             required: true,
@@ -65,6 +74,7 @@
          */
         self.updateFromData = function(data) {
             self.url(data.url);
+	    self.label(data.label);
             self.redirectBool(data.redirectBool);
             self.redirectSecs(data.redirectSecs);
         };
@@ -73,19 +83,17 @@
             $.ajax({
                 type: 'GET',
                 url: url,
-                dataType: 'json',
-                success: function(response) {
-                    self.updateFromData(response);
-                },
-                error: function(xhr, textStatus, error) {
-                    console.error(textStatus);
-                    console.error(error);
-                    self.changeMessage('Could not retrieve Forward settings at ' +
-                        'this time. Please refresh ' +
-                        'the page. If the problem persists, email ' +
-                        '<a href="mailto:support@cos.io">support@cos.io</a>.',
-                        'text-warning');
-                }
+                dataType: 'json'
+            }).done(function(response) {
+                self.updateFromData(response);
+            }).fail(function(xhr, textStatus, error) {
+                console.error(textStatus);
+                console.error(error);
+                self.changeMessage('Could not retrieve Forward settings at ' +
+                    'this time. Please refresh ' +
+                    'the page. If the problem persists, email ' +
+                    '<a href="mailto:support@osf.io">support@osf.io</a>.',
+                    'text-warning');
             });
         };
 
@@ -100,7 +108,7 @@
             );
         }
 
-        function onSubmitError() {
+        function onSubmitError(xhr, status) {
             self.changeMessage(
                 'Could not change settings. Please try again later.',
                 'text-danger'
@@ -113,8 +121,10 @@
         self.submitSettings = function() {
             $.osf.putJSON(
                 url,
-                ko.toJS(self),
-                onSubmitSuccess,
+                ko.toJS(self)
+            ).done(
+                onSubmitSuccess
+            ).fail(
                 onSubmitError
             );
         };
@@ -136,9 +146,9 @@
     };
 
     // Public API
-    function ForwardConfig(selector, url) {
+    function ForwardConfig(selector, url, nodeId) {
         var self = this;
-        self.viewModel = new ViewModel(url);
+        self.viewModel = new ViewModel(url, nodeId);
         $.osf.applyBindings(self.viewModel, selector);
     }
 

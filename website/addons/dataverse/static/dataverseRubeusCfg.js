@@ -10,19 +10,6 @@
 }(this, function(Rubeus) {
 
     // Private members
-
-    function getCitation(item) {
-        bootbox.alert(
-            '<dl class="dl-horizontal">' +
-                '<dt>Title</dt> <dd>' + item.study + '</dd>' +
-                '<dt>Study Global ID</dt> <dd><a href="http://dx.doi.org/' + item.doi.split(":")[1] + '">' + item.doi + '</a></dd>' +
-                '<dt>Dataverse</dt> <dd>' + item.dataverse + '</dd>' +
-                '<dt>&nbsp</dt><dd>&nbsp</dd>' +
-                '<dt>Citation</dt> <dd>' + item.citation + '</dd>' +
-            '</dl>'
-        )
-    }
-
     function refreshDataverseTree(grid, item, state) {
         var data = item.data || {};
         data.state = state;
@@ -52,11 +39,10 @@
                 function(result) {
                     if (result) {
                         self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
-                        $.ajax({
-                            url: url,
-                            type: 'PUT',
-                            dataType: 'json'
-                        }).success(function() {
+                        $.osf.putJSON(
+                            url,
+                            {}
+                        ).done(function() {
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
@@ -71,9 +57,9 @@
                         });
                     }
                 }
-            )
+            );
         }
-    }
+    };
 
     // Register configuration
     Rubeus.cfg.dataverse = {
@@ -86,13 +72,6 @@
                     var $this = $(evt.target);
                     var state = $this.val();
                     refreshDataverseTree(grid, row, state);
-                }
-            },
-            {
-                on: 'click',
-                selector: '#dataverseGetCitation',
-                callback: function(evt, row) {
-                    getCitation(row)
                 }
             }
         ],

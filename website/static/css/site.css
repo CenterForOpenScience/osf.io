@@ -94,6 +94,9 @@
 
  }
 
+#conferenceViewTable td {
+    vertical-align: middle;
+}
 
 /*CSS Johanna added for front page*/
 
@@ -190,10 +193,10 @@
     margin-top: 40px;
     float: right;
 }
-.center {
+.text-center {
     text-align: center;
 }
-.right {
+.text-right {
     text-align: right;
 }
 
@@ -354,7 +357,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
@@ -406,6 +410,10 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+}
+
+.addon-auth {
+    margin-top: 4.8px;
 }
 
 /* Make embedded iframes responsive */
@@ -594,6 +602,20 @@ h4 {
     color: #666666;
 }
 
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
+}
+
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
     background-position: top;
@@ -641,6 +663,10 @@ h4 {
     font-size: 50px;
 }
 
+.table-less {
+    max-height: 140px;
+    overflow-y: hidden;
+}
 
 /* RESPONSIVE CSS */
 
@@ -771,8 +797,8 @@ border-radius: 6px;
 #profile-gravatar{
     float:left;
     margin-right:.5em;
-    width:40px;
-    height:40px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
@@ -933,6 +959,28 @@ h1.node-title, h1.node-parent-title {
   line-height: 36px;
   border-bottom: none;
   margin-top: 0.3em;
+}
+
+.wiki-title {
+    line-height: 36px;
+    border-bottom: none;
+    margin-top: 0.2em;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.long-wiki-title {
+    font-size: 18px;
+    line-height: 20px;
+    border-bottom: none;
+    margin-top: 0;
+    margin-bottom: 0;
+    height: 36px;
+}
+
+.wiki-title-container {
+    display: inline-block;
+    width:80%;
 }
 
 .btn-toolbar.node-control {
@@ -1113,31 +1161,50 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
 .search-contributor-result td {
     padding-right: 10px;
 }
+
 
 /* Markdown editing */
 
@@ -1164,7 +1231,7 @@ h1.unavailable {
     margin-left: 5px;
     margin-right: 5px;
     margin-bottom: 5px;
-    margin-top: 10px;
+    margin-top: 0px;
     padding: 0px;
     height: 20px;
 }
@@ -1317,6 +1384,12 @@ h1.unavailable {
     margin-bottom: 0;
   }
 }
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
   .osf-sidenav.affix-bottom,
@@ -1342,6 +1415,12 @@ h1.unavailable {
 .overflow {
     word-wrap: break-word;
     max-width: 100%;
+}
+
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
 }
 
 .preview-overflow{
@@ -1396,6 +1475,37 @@ div#logScope a.moreLogs{
 #privateLinkTable .btn-group .btn-mini{
     padding:5px;
 }
+
+/* Contributors list */
+
+#contributors {
+    margin-bottom:10px;
+}
+
+#contributors ol {
+    margin:0;
+    padding:0;
+    display:inline;
+}
+
+#contributors ol li {
+    list-style-type:none;
+    display:inline;
+    white-space: nowrap;
+}
+
+#contributors ol li:after {
+    content: ",";
+}
+
+#contributors ol li:last-child:after {
+    content: "";
+}
+
+.contributor-name {
+    margin-right: -4px;
+}
+
 /* Contributor page */
 
 #addContributors form .col-md-6 > a {
@@ -1440,6 +1550,10 @@ li.contributor-list-item img {
 
 li.contributor-list-item a.name {
     margin-left:30px;
+}
+
+.contributor-anonymous {
+    font-style: italic;
 }
 
 /* Handle popovers inside modals */
@@ -1540,6 +1654,20 @@ a {
   background-color: #F3F3F3;
 }
 
+.collapse-button {
+   color: #b0b0b0;
+}
+
+.collapse-button:hover {
+    color: #505050;
+}
+
+/* Fix for pydocx bug */
+div.pydocx-center{
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
 /* jQuery UI Autocomplete (WTForms Widget) */
 .ui-autocomplete-category { font-weight: bold }
 
@@ -1604,3 +1732,4 @@ a {
     font-weight:normal;
     font-size:14px;
 }
+

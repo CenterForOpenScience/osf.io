@@ -32,23 +32,49 @@
     var PRIVATE = 'private';
 
     function setPermissions(permissions) {
+
         var msgKey = permissions === PUBLIC ? 'makePublicWarning' : 'makePrivateWarning';
         var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
-        bootbox.confirm({
-            title: 'Warning',
-            message: MESSAGES[msgKey],
-            callback: function(result) {
-                if (result) {
-                    $.osf.postJSON(URLS[urlKey], {permissions: permissions},
-                        function(data){
-                            window.location.href = data.redirect_url;
-                        }
-                    );
-                }
-            }
-        });
-    }
+        var message = MESSAGES[msgKey];
 
+        var confirmModal = function (message) {
+            bootbox.confirm({
+                title: 'Warning',
+                message: message,
+                callback: function(result) {
+                    if (result) {
+                        $.osf.postJSON(
+                            URLS[urlKey],
+                            {permissions: permissions}
+                        ).done(function() {
+                            window.location.reload();
+                        }).fail(
+                            $.osf.handleJSONError
+                        );
+                    }
+                }
+            });
+        };
+
+        if (permissions === PUBLIC) {
+            $.getJSON(
+                window.nodeApiUrl + 'permissions/beforepublic/',
+                {},
+                function(data) {
+                    var alerts = '';
+                    var addonMessages = data.prompts;
+                        for(var i=0; i<addonMessages.length; i++) {
+                            alerts += '<div class="alert alert-warning">' +
+                                       addonMessages[i] + '</div>';
+                        }
+                    confirmModal(alerts + message);
+                }
+            )
+        } else {
+            confirmModal(message);
+        }
+
+    }
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -74,7 +100,7 @@
             return self.watchedCount().toString();
         });
         self.watchButtonAction = ko.computed(function() {
-            return self.userIsWatching() ? "Unwatch" : "Watch";
+            return self.userIsWatching() ? 'Unwatch' : 'Watch';
         });
 
         // Editable Title and Description
@@ -84,9 +110,9 @@
                 pk:    self._id,
                 url:   self.apiUrl + 'edit/',
                 ajaxOptions: {
-                    'type': 'POST',
-                    "dataType": "json",
-                    "contentType": "application/json"
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
                 },
                 params: function(params){
                     // Send JSON data
@@ -95,6 +121,7 @@
                 success: function(data){
                     document.location.reload(true);
                 },
+                error: $.osf.handleEditableError,
                 placement: 'bottom'
             };
 
@@ -116,18 +143,16 @@
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
-            $.ajax({
-                url: self.apiUrl + "togglewatch/",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({}),
-                contentType: "application/json",
-                success: function(data, status, xhr) {
-                    // Update watch count in DOM
-                    self.userIsWatching(data['watched']);
-                    self.watchedCount(data['watchCount']);
-                }
-            });
+            $.osf.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function(data) {
+                // Update watch count in DOM
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.forkNode = function() {
@@ -150,7 +175,6 @@
     var defaults = {
         removeCss: '.user-quickedit'
     };
-
 
     function NodeControl (selector, data, options) {
         var self = this;

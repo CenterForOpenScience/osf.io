@@ -37,6 +37,8 @@
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
+        self.numberOfPages = ko.observable(0);
+        self.currentPage = ko.observable(0);
 
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
@@ -44,10 +46,10 @@
             nodeApiUrl + 'get_editable_children/',
             {},
             function(result) {
-                $.each(result['children'] || [], function(idx, child) {
-                    child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
+                $.each(result.children || [], function(idx, child) {
+                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
                 });
-                self.nodes(result['children']);
+                self.nodes(result.children);
             }
         );
 
@@ -56,7 +58,7 @@
         });
 
         self.noResults = ko.computed(function() {
-            return self.query() && !self.results().length
+            return self.query() && !self.results().length;
         });
 
         self.inviteName = ko.observable();
@@ -80,6 +82,24 @@
             self.page(page);
         };
 
+        /**
+         * A simple Contributor model that receives data from the
+         * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+         * attribute which is the human-readable display of the number of projects the
+         * currently logged-in user has in common with the contributor.
+         */
+        function Contributor(data) {
+            $.extend(this, data);
+            if (data.n_projects_in_common === 1) {
+                this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
+            } else if (data.n_projects_in_common !== 0) {
+                this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
+            } else {
+                this.displayProjectsInCommon = '';
+            }
+        }
+
+
         self.search = function() {
             self.notification(false);
             if (self.query()) {
@@ -88,14 +108,32 @@
                     {
                         query: self.query(),
                         excludeNode: nodeId,
+                        page: self.currentPage
                     },
                     function(result) {
-                        self.results(result['users']);
+                        var contributors = result.users.map(function(userData) {
+                            return new Contributor(userData);
+                        });
+                        self.results(contributors);
+                        self.currentPage(result.page);
+                        self.numberOfPages(result.pages);
                     }
-                )
+                );
             } else {
                 self.results([]);
+                self.currentPage(0);
+                self.totalPages(0);
             }
+        };
+
+        self.nextPage = function() {
+            self.currentPage(self.currentPage() + 1);
+            self.search();
+        };
+
+        self.previousPage = function() {
+            self.currentPage(self.currentPage() - 1);
+            self.search();
         };
 
         self.importFromParent = function() {
@@ -110,9 +148,9 @@
                             'level': 'info'
                         });
                     }
-                    self.results(result['contributors']);
+                    self.results(result.contributors);
                 }
-            )
+            );
         };
 
         self.recentlyAdded = function() {
@@ -127,9 +165,13 @@
                             'level': 'info'
                         });
                     }
-                    self.results(result['contributors']);
+                    var contribs = [];
+                    for (var i=0; i< result.contributors.length; i++) {
+                        contribs.push(new Contributor(result.contributors[i]));
+                    }
+                    self.results(contribs);
                 }
-            )
+            );
         };
 
 
@@ -162,13 +204,14 @@
         };
 
         function postInviteRequest(fullname, email, options) {
-            var ajaxOpts = $.extend({
-                url: nodeApiUrl + 'invite_contributor/',
-                type: 'POST',
-                data: JSON.stringify({'fullname': fullname, 'email': email}),
-                dataType: 'json', contentType: 'application/json'
-            }, options);
-            return $.ajax(ajaxOpts);
+            $.osf.postJSON(
+                nodeApiUrl + 'invite_contributor/',
+                {'fullname': fullname, 'email': email}
+            ).done(
+                onInviteSuccess
+            ).fail(
+                onInviteError
+            );
         }
 
         function onInviteSuccess(result) {
@@ -178,7 +221,7 @@
             self.add(result.contributor);
         }
 
-        function onInviteError(xhr, status, error) {
+        function onInviteError(xhr) {
             var response = JSON.parse(xhr.responseText);
             // Update error message
             self.inviteError(response.message);
@@ -212,12 +255,7 @@
                 self.inviteError(validated);
                 return false;
             }
-            return postInviteRequest(self.inviteName(), self.inviteEmail(),
-                {
-                    success: onInviteSuccess,
-                    error: onInviteError
-                }
-            );
+            return postInviteRequest(self.inviteName(), self.inviteEmail());
         };
 
         self.add = function(data) {
@@ -242,7 +280,7 @@
 
         self.addAll = function() {
             $.each(self.results(), function(idx, result) {
-                if (self.selection().indexOf(result) == -1) {
+                if (self.selection().indexOf(result) === -1) {
                     self.add(result);
                 }
             });
@@ -255,10 +293,10 @@
         };
 
         self.cantSelectNodes = function() {
-            return self.nodesToChange().length == self.nodes().length;
+            return self.nodesToChange().length === self.nodes().length;
         };
         self.cantDeselectNodes = function() {
-            return self.nodesToChange().length == 0;
+            return self.nodesToChange().length === 0;
         };
 
         self.selectNodes = function() {
@@ -270,8 +308,9 @@
 
         self.selected = function(data) {
             for (var idx=0; idx < self.selection().length; idx++) {
-                if (data.id == self.selection()[idx].id)
+                if (data.id === self.selection()[idx].id){
                     return true;
+                }
             }
             return false;
         };
@@ -279,7 +318,7 @@
 
         self.addingSummary = ko.computed(function() {
             var names = $.map(self.selection(), function(result) {
-                return result.fullname
+                return result.fullname;
             });
             return names.join(', ');
         });
@@ -287,24 +326,19 @@
         self.submit = function() {
             $.osf.block();
             $('.modal').modal('hide');
-            $.ajax({
-                url: nodeApiUrl + 'contributors/',
-                type: "post",
-                contentType: "application/json",
-                dataType: "json",
-                data: JSON.stringify({
+            $.osf.postJSON(
+                nodeApiUrl + 'contributors/',
+                {
                     users: self.selection().map(function(user) {
                         return ko.toJS(user);
                     }),
                     node_ids: self.nodesToChange()
-                }),
-                success: function(response) {
-                        window.location.reload();
-                },
-                error: function(response){
-                    $.osf.unblock();
-                    bootbox.alert("Add contributor failed.");
                 }
+            ).done(function() {
+                window.location.reload();
+            }).fail(function() {
+                $.osf.unblock();
+                bootbox.alert('Add contributor failed.');
             });
         };
 

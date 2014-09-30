@@ -1,5 +1,5 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Project Settings</%def>
+<%def name="title()">${node['title']} Settings</%def>
 
 ##<!-- Show API key settings -->
 ##<div mod-meta='{
@@ -16,7 +16,7 @@
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
-                    <li><a href="#configureNode">Configure ${node['category'].capitalize()}</a></li>
+                  <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
                 <li><a href="#configureCommenting">Configure Commenting</a></li>
                 % if not node['is_registration']:
@@ -33,10 +33,10 @@
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
-            <div id="configureNode" class="panel panel-default">
+            <div class="panel panel-default">
 
                 <div class="panel-heading">
-                    <h3 class="panel-title">Configure ${node['category'].capitalize()}</h3>
+                    <h3 id="configureNode" class="anchor panel-title">Configure ${node['node_type'].capitalize()}</h3>
                 </div>
                 <div class="panel-body">
                     <div class="help-block">
@@ -44,7 +44,7 @@
                         To delete a parent project, you must first delete all child components
                         by visiting their settings pages.
                     </div>
-                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['category']}</button>
+                    <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
 
                 </div>
                 <!-- Delete node -->
@@ -52,8 +52,8 @@
             </div>
 
         % endif
-
-        <div id="configureCommenting" class="panel panel-default">
+        <div class="panel panel-default">
+            <span id="configureCommenting" class="anchor"></span>
 
             <div class="panel-heading">
                 <h3 class="panel-title">Configure Commenting</h3>
@@ -72,19 +72,24 @@
                     <div class="radio">
                         <label>
                             <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                            When the ${node['category']} is public, any OSF user can post comments
+                            When the ${node['node_type']} is public, any OSF user can post comments
                         </label>
                     </div>
 
                     <button class="btn btn-success">Submit</button>
 
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p id="configureCommentingMessage"></p>
+                    </div>
                 </form>
 
             </div>
 
         </div>
 
-        <div id="selectAddons" class="panel panel-default">
+        <div class="panel panel-default">
+            <span id="selectAddons" class="anchor"></span>
              <div class="panel-heading">
                  <h3 class="panel-title">Select Add-ons</h3>
              </div>
@@ -155,7 +160,6 @@
                             % endif
 
                         % endfor
-
                     </div>
                 </div>
 
@@ -205,18 +209,21 @@ ${parent.javascript_bottom()}
 
     $(document).ready(function() {
 
+        ## TODO: Knockout-ify me
         $('#commentSettings').on('submit', function() {
+            var $commentMsg = $('#configureCommentingMessage');
 
             var $this = $(this);
             var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
 
             $.osf.postJSON(
                 nodeApiUrl + 'settings/comments/',
-                {commentLevel: commentLevel},
-                function() {
-                    window.location.reload();
-                }
-            ).fail(function() {
+                {commentLevel: commentLevel}
+            ).done(function() {
+                $commentMsg.addClass('text-success');
+                $commentMsg.text('Successfully updated settings.');
+                window.location.reload();
+            }).fail(function() {
                 bootbox.alert('Could not set commenting configuration. Please try again.');
             });
 
@@ -252,7 +259,7 @@ ${parent.javascript_bottom()}
         $('#deleteNode').on('click', function() {
             var key = randomString();
             bootbox.prompt(
-                '<div>Delete this ${node['category']}? This is IRREVERSIBLE.</div>' +
+              '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
                     '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
                 function(result) {
                     if (result === key) {

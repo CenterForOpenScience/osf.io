@@ -1,6 +1,6 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'zeroclipboard', 'osfutils'], factory);
+        define(['knockout', 'jquery', 'zeroclipboard', 'editable', 'osfutils'], factory);
     } else {
         $script.ready(['zeroclipboard'], function (){
             global.PrivateLinkTable  = factory(ko, jQuery, ZeroClipboard);
@@ -46,6 +46,32 @@
 
     };
 
+    var setupEditable = function(elm, data) {
+        var $elm = $(elm);
+        var $editable = $elm.find('.link-name');
+        $editable.editable({
+            type: 'text',
+            url: nodeApiUrl + 'private_link/edit/',
+            placement: 'bottom',
+            ajaxOptions: {
+                type: 'PUT',
+                dataType: 'json',
+                contentType: 'application/json',
+            },
+            send:"always",
+            title:"Edit Link Name",
+            params: function(params){
+                // Send JSON data
+                params.pk = data.id;
+                return JSON.stringify(params);
+            },
+            success: function(response, value) {
+                data.name(value);
+            },
+            error: $.osf.handleEditableError,
+        });
+    };
+
     function LinkViewModel(data, $root) {
 
         var self = this;
@@ -54,6 +80,7 @@
         $.extend(self, data);
 
         self.collapse = "Collapse";
+        self.name = ko.observable(data.name);
         self.linkName = "Link Name";
         self.readonly = "readonly";
         self.selectText = "this.setSelectionRange(0, this.value.length);";
@@ -65,8 +92,13 @@
         });
         self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
         self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
+        self.removeLink = "Remove this link";
         self.hasMoreText = ko.computed(function(){
             return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
+        });
+
+        self.anonymousDisplay = ko.computed(function() {
+            return data.anonymous ? 'Yes' : 'No';
         });
 
         self.displayAllNodes = function() {
@@ -79,6 +111,7 @@
             self.moreNode(true);
             self.collapseNode(false);
         };
+
     }
 
     function ViewModel(url) {
@@ -96,49 +129,54 @@
         }
 
         function onFetchError() {
-          //TODO
-          console.log('an error occurred');
+          bootbox.alert('Could not retrieve view-only links. Please refresh the page or ' +
+                    'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                    'problem persists.');
         }
 
         function fetch() {
-            $.ajax({url: url, type: 'GET', dataType: 'json',
-              success: onFetchSuccess,
-              error: onFetchError
-            });
+            $.ajax({
+                url: url, 
+                type: 'GET', 
+                dataType: 'json',
+            }).done(
+                onFetchSuccess
+            ).fail(
+                onFetchError
+            );
         }
 
         fetch();
 
-        self.removeLink = function(data){
-            var data_to_send={
+        self.removeLink = function(data) {
+            var dataToSend = {
                 'private_link_id': data.id
             };
-            bootbox.confirm('Are you sure to remove this private link?', function(result) {
+            bootbox.confirm('Are you sure to remove this view only link?', function(result) {
                 if (result) {
                     $.ajax({
                         type: 'delete',
                         url: nodeApiUrl + 'private_link/',
                         contentType: 'application/json',
                         dataType: 'json',
-                        data: JSON.stringify(data_to_send),
-                        success: function(response) {
-                            self.privateLinks.remove(data);
-                        },
-                        error: function(xhr) {
-                            bootbox.alert('Failed to delete the private link.')
-                        }
+                        data: JSON.stringify(dataToSend),
+                    }).done(function() {
+                        self.privateLinks.remove(data);
+                    }).fail(function() {
+                        bootbox.alert('Failed to delete the private link.')
                     });
                 }
              });
         };
 
-        self.updateClipboard = function(elm) {
+        self.afterRenderLink = function(elm, data) {
 
             var $tr = $(elm);
             // Add this to client
             var target = $tr.find('.copy-button');
             updateClipboard(target);
             $tr.find('.remove-private-link').tooltip();
+            setupEditable(elm, data);
         };
 
     }

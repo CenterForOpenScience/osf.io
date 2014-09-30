@@ -1,17 +1,15 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 import functools
-import logging
 
 from furl import furl
-from framework import request, redirect, status
+from flask import request, redirect
+
+from framework import status
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
-from framework.sessions import add_key_to_url
 from website.models import Node
-
-logger = logging.getLogger(__name__)
-
-debug = logger.debug
 
 
 def _kwargs_to_nodes(kwargs):
@@ -69,7 +67,7 @@ def must_not_be_registration(func):
     return wrapped
 
 
-def check_can_access(node, user, api_node=None, has_deleted_keys=False):
+def check_can_access(node, user, key=None, api_node=None):
     """View helper that returns whether a given user can access a node.
     If ``user`` is None, returns False.
 
@@ -78,10 +76,9 @@ def check_can_access(node, user, api_node=None, has_deleted_keys=False):
     """
     if user is None:
         return False
-    if not node.is_contributor(user) \
-            and api_node != node:
-        if has_deleted_keys:
-            status.push_status_message("The private links you used are expired.")
+    if not node.is_contributor(user) and api_node != node:
+        if key in node.private_link_keys_deleted:
+            status.push_status_message("The view-only links you used are expired.")
         raise HTTPError(http.FORBIDDEN)
     return True
 
@@ -98,47 +95,6 @@ def check_key_expired(key, node, url):
         url = furl(url).add({'status': 'expired'}).url
 
     return url
-
-
-def has_deleted_keys(key_ring, node, user):
-    """check if there is deleted keys, if there is delete it from user.private_links
-        :param set key_ring: the set of kings user have
-        :param Node node: the node object wants to access
-        :param User user: the user who requires to access the node
-        :return: True if there are expired keys to delete and delete the key else return False
-    """
-    deleted_keys = key_ring.intersection(node.private_link_keys_deleted)
-
-    for link in deleted_keys:
-        for x in user.private_links:
-            if x.key == link:
-                user.private_links.remove(x)
-                break
-
-    if deleted_keys:
-        user.save()
-        return True
-
-    return False
-
-
-def choose_key(key, key_ring, node, auth, api_node=None):
-    """Returns ``None`` if the given key is valid, else return a redirect
-    response to the requested URL with the correct key from the key_ring.
-    """
-    if key in node.private_link_keys_active:
-        auth.private_key = key
-        return
-
-    auth.private_key = key_ring.intersection(
-        node.private_link_keys_active
-    ).pop()
-    #do a redirect to reappend the key to url only if the user
-    # isn't a contributor
-    if auth.user is None or (not node.is_contributor(auth.user) and api_node != node):
-        new_url = add_key_to_url(request.path, auth.private_key)
-        return redirect(new_url)
-
 
 
 def _must_be_contributor_factory(include_public):
@@ -168,51 +124,16 @@ def _must_be_contributor_factory(include_public):
 
             key = request.args.get('view_only', '').strip('/')
             #if not login user check if the key is valid or the other privilege
-            if not kwargs['auth'].user:
-                kwargs['auth'].private_key = key
-                if not node.is_public or not include_public:
-                    if key not in node.private_link_keys_active:
-                        if not check_can_access(node=node, user=user,
-                                api_node=api_node):
-                            url = '/login/?next={0}'.format(request.path)
-                            redirect_url = check_key_expired(key=key, node=node, url = url)
-                            response = redirect(redirect_url)
 
-            #for login user
-            else:
-                #key first time show up record it in the key ring
-                if key not in kwargs['auth'].user.private_link_keys:
-                    for node_link in node.private_links_active:
-                        if node_link.key == key:
-                            user.private_links.append(node_link)
-                            kwargs['auth'].user.save()
-                            break
+            kwargs['auth'].private_key = key
+            if not node.is_public or not include_public:
+                if key not in node.private_link_keys_active:
+                    if not check_can_access(node=node, user=user,
+                            api_node=api_node, key=key):
+                        url = '/login/?next={0}'.format(request.path)
+                        redirect_url = check_key_expired(key=key, node=node, url = url)
+                        response = redirect(redirect_url)
 
-                key_ring = set(kwargs['auth'].user.private_link_keys)
-
-                #check if the keyring has intersection with node's private link
-                # if no intersction check other privilege
-                if not node.is_public or not include_public:
-                    if key_ring.isdisjoint(node.private_link_keys_active):
-                        delete_key_check = has_deleted_keys(
-                            key_ring=key_ring, node=node, user=kwargs['auth'].user)
-
-                        if not check_can_access(node=node, user=user, has_deleted_keys=delete_key_check,
-                                api_node=api_node):
-                            url = '/login/?next={0}'.format(request.path)
-                            redirect_url = check_key_expired(key=key, node=node, url = url)
-                            response = redirect(redirect_url)
-
-                        kwargs['auth'].private_key = None
-
-                    #has intersection: check if the link is valid if not use other key
-                    # in the key ring
-                    else:
-                        response = choose_key(
-                            key=key, key_ring=key_ring, node=node,
-                            auth=kwargs['auth'], api_node=api_node)
-                else:
-                    kwargs['auth'].private_key = None
             return response or func(*args, **kwargs)
 
         return wrapped
@@ -233,7 +154,7 @@ def must_have_addon(addon_name, model):
 
     :param str addon_name: Name of addon
     :param str model: Name of model
-    :return function: Decorator function
+    :returns: Decorator function
 
     """
     def wrapper(func):
@@ -242,7 +163,8 @@ def must_have_addon(addon_name, model):
         def wrapped(*args, **kwargs):
 
             if model == 'node':
-                owner = kwargs['node'] or kwargs['project']
+                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+                owner = kwargs.get('node') or kwargs.get('project')
             elif model == 'user':
                 owner = get_current_user()
                 if owner is None:
@@ -254,6 +176,42 @@ def must_have_addon(addon_name, model):
             if addon is None:
                 raise HTTPError(http.BAD_REQUEST)
             kwargs['{0}_addon'.format(model)] = addon
+
+            return func(*args, **kwargs)
+
+        return wrapped
+
+    return wrapper
+
+
+def must_be_addon_authorizer(addon_name):
+    """
+
+    :param str addon_name: Name of addon
+    :returns: Decorator function
+
+    """
+    def wrapper(func):
+
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+
+            node_addon = kwargs.get('node_addon')
+            if not node_addon:
+                kwargs['project'], kwargs['node'] = _kwargs_to_nodes(kwargs)
+                node = kwargs.get('node') or kwargs.get('project')
+                node_addon = node.get_addon(addon_name)
+
+            if not node_addon:
+                raise HTTPError(http.BAD_REQUEST)
+
+            if not node_addon.user_settings:
+                raise HTTPError(http.BAD_REQUEST)
+
+            user = kwargs.get('user') or get_current_user()
+
+            if node_addon.user_settings.owner != user:
+                raise HTTPError(http.FORBIDDEN)
 
             return func(*args, **kwargs)
 

@@ -61,7 +61,7 @@
         self.visible = ko.observable(contributor.visible);
         self.permission = ko.observable(contributor.permission);
         self.deleteStaged = ko.observable(contributor.deleteStaged);
-
+        self.removeContributor = "Remove contributor";
         self.pageOwner = pageOwner;
         self.serialize = function() {
             return ko.toJS(self);
@@ -78,7 +78,7 @@
             // Allow default action
             return true;
         };
-
+        self.profileUrl = ko.observable(contributor.url);
         self.notDeleteStaged = ko.computed(function() {
             return !self.deleteStaged();
         });
@@ -103,34 +103,31 @@
             };
             $.osf.postJSON(
                 nodeApiUrl + 'beforeremovecontributors/',
-                payload,
-                function(response) {
-
-                    var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
-                    bootbox.confirm({
-                        title: 'Delete Contributor?',
-                        message: prompt,
-                        callback: function(result) {
-                            if (result) {
-                                $.osf.postJSON(
-                                    nodeApiUrl + 'removecontributors/',
-                                    payload,
-                                    function(response) {
-
-                                        if (response.redirectUrl) {
-                                            window.location.href = response.redirectUrl;
-                                        } else {
-                                            window.location.reload();
-                                        }
-                                    }
-                                ).fail(function(xhr) {
-                                    var response = JSON.parse(xhr.responseText);
-                                    bootbox.alert('Error: ' + response.message_long);
-                                });
-                            }
+                payload
+            ).done(function(response) {
+                var prompt = $.osf.joinPrompts(response.prompts, 'Remove <strong>' + name + '</strong> from contributor list?');
+                bootbox.confirm({
+                    title: 'Delete Contributor?',
+                    message: prompt,
+                    callback: function(result) {
+                        if (result) {
+                            $.osf.postJSON(
+                                nodeApiUrl + 'removecontributors/',
+                                payload
+                            ).done(function(response) {
+                                if (response.redirectUrl) {
+                                    window.location.href = response.redirectUrl;
+                                } else {
+                                    window.location.reload();
+                                }
+                            }).fail(
+                                $.osf.handleJSONError
+                            );
                         }
-                    });
-                }
+                    }
+                })
+            }).fail(
+                $.osf.handleJSONError
             );
             return false;
         };
@@ -333,26 +330,25 @@
                 if (result) {
                     $.osf.postJSON(
                         nodeApiUrl + 'contributors/manage/',
-                        {contributors: self.serialize()},
-                        function(response) {
-                            // TODO: Don't reload the page here; instead use code below
-                            if (response.redirectUrl) {
-                                window.location.href = response.redirectUrl;
-                            } else {
-                                window.location.reload();
-                            }
-//                            self.contributors(ko.utils.arrayFilter(self.contributors(), function(item) {
-//                                return !item.deleteStaged();
-//                            }));
-//                            self.original(ko.utils.arrayMap(self.contributors(), function(item) {
-//                                return item.serialize();
-//                            }));
-//                            self.messageText('Submission successful');
-//                            self.messageType('success');
+                        {contributors: self.serialize()}
+                    ).done(function(response) {
+                        // TODO: Don't reload the page here; instead use code below
+                        if (response.redirectUrl) {
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            window.location.reload();
                         }
-                    ).fail(function(xhr) {
+//                        self.contributors(ko.utils.arrayFilter(self.contributors(), function(item) {
+//                            return !item.deleteStaged();
+//                        }));
+//                        self.original(ko.utils.arrayMap(self.contributors(), function(item) {
+//                            return item.serialize();
+//                        }));
+//                        self.messageText('Submission successful');
+//                        self.messageType('success');
+                    }).fail(function(xhr) {
                         self.init();
-                        var response = JSON.parse(xhr.responseText);
+                        var response = xhr.responseJSON;
                         self.messages.push(
                             new MessageModel(
                                 'Submission failed: ' + response.message_long,

@@ -1,33 +1,42 @@
 # -*- coding: utf-8 -*-
+
 import httplib as http
 import urllib
 import urlparse
-import logging
-from framework.exceptions import HTTPError
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
+from flask import request, redirect
+from framework.flask import app
 
 from website import settings
-from framework.flask import app, request, redirect
+
 from .model import Session
 
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
-def add_key_to_url(url, key):
+def add_key_to_url(url, scheme, key):
     """Redirects the user to the requests URL with the given key appended
     to the query parameters.
-    """
-    parsed_path = urlparse.urlparse(url)
-    args = request.args.to_dict()
-    args['view_only'] = key
-    new_parsed_path = parsed_path._replace(query=urllib.urlencode(args))
-    new_path = urlparse.urlunparse(new_parsed_path)
-    return new_path
 
-@app.before_request
+    """
+    query = request.args.to_dict()
+    query['view_only'] = key
+    replacements = {'query': urllib.urlencode(query)}
+    if scheme:
+        replacements['scheme'] = scheme
+    parsed_url = urlparse.urlparse(url)
+    parsed_redirect_url = parsed_url._replace(**replacements)
+    return urlparse.urlunparse(parsed_redirect_url)
+
+
 def prepare_private_key():
+    """`before_request` handler that checks the Referer header to see if the user
+    is requesting from a view-only link. If so, reappend the view-only key.
+
+    NOTE: In order to ensure the execution order of the before_request callbacks,
+    this is attached in website.app.init_app rather than using
+    @app.before_request.
+    """
 
     # Done if not GET request
     if request.method != 'GET':
@@ -38,20 +47,23 @@ def prepare_private_key():
     if key_from_args:
         return
 
-    #grab querry key from previous request for not login user
+    # grab query key from previous request for not login user
     if request.referrer:
+        referrer_parsed = urlparse.urlparse(request.referrer)
+        scheme = referrer_parsed.scheme
         key = urlparse.parse_qs(
             urlparse.urlparse(request.referrer).query
         ).get('view_only')
         if key:
             key = key[0]
     else:
+        scheme = None
         key = None
 
     # Update URL and redirect
     if key and not session:
-        new_url = add_key_to_url(request.path, key)
-        return redirect(new_url, code=307)
+        new_url = add_key_to_url(request.url, scheme, key)
+        return redirect(new_url, code=http.TEMPORARY_REDIRECT)
 
 
 # todo 2-back page view queue
@@ -119,7 +131,8 @@ session = LocalProxy(get_session)
 
 # Request callbacks
 
-@app.before_request
+# NOTE: This gets attached in website.app.init_app to ensure correct callback
+# order
 def before_request():
 
     if request.authorization:
@@ -177,6 +190,7 @@ def before_request():
     ## Retry request, preserving status code
     #response = redirect(request.path, code=307)
     return create_session(None)
+
 
 @app.after_request
 def after_request(response):

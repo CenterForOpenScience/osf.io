@@ -1,29 +1,133 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import httplib as http
+
 import mock
 import unittest
+
 from nose.tools import *  # PEP8 asserts
 from tests.base import OsfTestCase
-from webtest_plus import TestApp
+from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
+from github3.git import Commit
 from github3.repos.branch import Branch
+from github3.repos.contents import Contents
 
 from framework.exceptions import HTTPError
-import website.app
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth import Auth
+
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
+from website.addons.github.utils import MESSAGES
+from website.addons.github.exceptions import TooBigError
 
 github_mock = create_mock_github(user='fred', private=False)
 
-class TestHGridViews(OsfTestCase):
+
+# TODO: Test remaining CRUD methods
+# TODO: Test exception handling
+class TestCRUD(OsfTestCase):
+
     def setUp(self):
+        super(TestCRUD, self).setUp()
+        self.github = github_mock
+        self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github', auth=self.consolidated_auth)
+        self.project.creator.add_addon('github')
+        self.node_settings = self.project.get_addon('github')
+        self.node_settings.user_settings = self.project.creator.get_addon('github')
+        # Set the node addon settings to correspond to the values of the mock repo
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
+        self.node_settings.save()
+
+    @mock.patch('website.addons.github.views.crud.build_github_urls')
+    @mock.patch('website.addons.github.api.GitHub.create_file')
+    @mock.patch('website.addons.github.api.GitHub.tree')
+    def test_create_file(self, mock_tree, mock_create, mock_urls):
+        sha = '12345'
+        size = 128
+        file_name = 'my_file'
+        file_content = 'my_data'
+        branch = 'master'
+        mock_tree.return_value.tree = []
+        mock_create.return_value = {
+            'commit': Commit(dict(sha=sha)),
+            'content': Contents(dict(size=size, url='http://fake.url/')),
+        }
+        mock_urls.return_value = {}
+        url = self.project.api_url_for('github_upload_file', branch=branch)
+        self.app.post(
+            url,
+            upload_files=[
+                ('file', file_name, file_content),
+            ],
+            auth=self.user.auth,
+        )
+        mock_create.assert_called_once_with(
+            self.node_settings.user,
+            self.node_settings.repo,
+            file_name,
+            MESSAGES['add'],
+            file_content,
+            branch=branch,
+            author={
+                'name': self.user.fullname,
+                'email': '{0}@osf.io'.format(self.user._id),
+            },
+        )
+
+    @unittest.skip('Finish me')
+    def test_update_file(self):
+        assert 0
+
+    @unittest.skip('Finish me')
+    def def_view_file(self):
+        assert 0
+
+    @mock.patch('website.addons.github.api.GitHub.file')
+    def test_download_file(self, mock_file):
+        file_name = 'my_file'
+        file_content = 'my_content'
+        file_size = 1024
+        mock_file.return_value = (file_name, file_content, file_size)
+        url = self.project.web_url_for(
+            'github_download_file',
+            path='my_file',
+            branch='master',
+        )
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.body, file_content)
+
+    @mock.patch('website.addons.github.api.GitHub.file')
+    def test_download_file_too_big(self, mock_file):
+        mock_file.side_effect = TooBigError
+        url = self.project.web_url_for(
+            'github_download_file',
+            path='my_file',
+            branch='master',
+        )
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_delete_file(self):
+        pass
+
+
+class TestHGridViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestHGridViews, self).setUp()
         self.github = github_mock
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -64,12 +168,11 @@ class TestHGridViews(OsfTestCase):
 class TestGithubViews(OsfTestCase):
 
     def setUp(self):
-
-        self.app = TestApp(app)
+        super(TestGithubViews, self).setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -203,6 +306,24 @@ class TestGithubViews(OsfTestCase):
     def test_github_contents(self):
         pass
 
+    def check_hook_urls(self, urls, node, path, sha):
+        assert_equal(
+            urls['view'],
+            node.web_url_for(
+                'github_view_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+        assert_equal(
+            urls['download'],
+            node.web_url_for(
+                'github_download_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
@@ -227,6 +348,13 @@ class TestGithubViews(OsfTestCase):
         ).maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_added")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
@@ -245,6 +373,13 @@ class TestGithubViews(OsfTestCase):
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
@@ -263,6 +398,8 @@ class TestGithubViews(OsfTestCase):
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
+        urls = self.project.logs[-1].params['urls']
+        assert_equal(urls, {})
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
@@ -357,6 +494,37 @@ class TestGithubViews(OsfTestCase):
         )
 
 
+    ######################
+    # This test currently won't work with webtest; self.app.get() fails
+    # on a url containing Unicode.
+    #
+    # In addition, this test currently is incorrect: it really just ensures
+    # a guid is created for the file
+    #
+    # @mambocab
+    #
+    # @mock.patch('website.addons.github.api.GitHub.history')
+    # @mock.patch('website.addons.github.api.GitHub.contents')
+    # @mock.patch('website.addons.github.api.GitHub.repo')
+    # def test_file_view(self, mock_repo, mock_contents, mock_history):
+    #
+    #     mock_repo.return_value = github_mock.repo.return_value
+    #     mock_contents.return_value = github_mock.contents.return_value['octokit.rb']
+    #     mock_history.return_value = github_mock.commits.return_value
+    #
+    #     # View file for the first time
+    #     url = self.project.url + 'github/file/' + mock_contents.return_value.name
+    #     res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+    #
+    #     guids = GithubGuidFile.find()
+    #
+    #     # Client has been redirected to GUID
+    #     assert_in(
+    #         guids[guids.count() - 1]._id,
+    #         res.request.path
+    #     )
+
+
 class TestRegistrationsWithGithub(OsfTestCase):
 
     def setUp(self):
@@ -445,7 +613,7 @@ class TestGithubSettings(OsfTestCase):
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
-        self.app = TestApp(app)
+
         self.project = ProjectFactory.build()
         self.project.save()
         self.auth = self.project.creator.auth
@@ -577,8 +745,9 @@ class TestGithubSettings(OsfTestCase):
         assert_equal(self.node_settings.repo, None)
         assert_equal(self.node_settings.user_settings, None)
 
-        assert_equal(self.project.logs[-1].action, 'github_repo_unlinked')
+        assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
 
 if __name__ == '__main__':
     unittest.main()
+
