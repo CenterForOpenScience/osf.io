@@ -2224,7 +2224,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param list user_dicts: Ordered list of contributors represented as
             dictionaries of the form:
-            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
