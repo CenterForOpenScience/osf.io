@@ -2439,9 +2439,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
-            # If the node doesn't have a piwik site, make one.
-            if settings.PIWIK_HOST:
-                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
