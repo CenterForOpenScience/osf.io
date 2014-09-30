@@ -4,8 +4,10 @@ import httplib as http
 
 import mock
 import unittest
+import urlparse
 
 from nose.tools import *  # PEP8 asserts
+from webtest import AppError
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
@@ -16,6 +18,7 @@ from github3.repos.contents import Contents
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
+from website.util import web_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
 from website.addons.github.model import GithubGuidFile
@@ -458,6 +461,36 @@ class TestGithubViews(OsfTestCase):
     @mock.patch('website.addons.github.api.GitHub.history')
     @mock.patch('website.addons.github.api.GitHub.contents')
     @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_view_not_found_does_not_create_guid(self, mock_repo, mock_contents, mock_history):
+
+        mock_repo.return_value = github_mock.repo.return_value
+        mock_contents.return_value = github_mock.contents.return_value['octokit']
+        mock_history.return_value = []
+
+        guid_count = GithubGuidFile.find().count()
+
+        # View file for the first time
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(
+            404,
+            res.status_code,
+        )
+
+        guids = GithubGuidFile.find()
+
+        # GUID count has not changed
+        assert_equal(
+            guids.count(),
+            guid_count,
+        )
+
+    @mock.patch('website.addons.github.api.GitHub.history')
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    @mock.patch('website.addons.github.api.GitHub.repo')
     def test_view_creates_guid(self, mock_repo, mock_contents, mock_history):
 
         mock_repo.return_value = github_mock.repo.return_value
@@ -467,8 +500,10 @@ class TestGithubViews(OsfTestCase):
         guid_count = GithubGuidFile.find().count()
 
         # View file for the first time
-        url = self.project.url + 'github/file/test.py'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth)
 
         guids = GithubGuidFile.find()
 
@@ -478,14 +513,29 @@ class TestGithubViews(OsfTestCase):
             guid_count + 1
         )
 
+        file_guid = guids[guids.count() - 1]._id
+        file_url = web_url_for('resolve_guid', guid=file_guid)
+
         # Client has been redirected to GUID
-        assert_in(
-            guids[guids.count() - 1]._id,
-            res.request.path
+        assert_equal(
+            302,
+            res.status_code
+        )
+        assert_equal(
+            file_url,
+            urlparse.urlparse(res.location).path
+        )
+
+        # View the file
+        res = self.app.get(file_url, auth=self.user.auth)
+
+        assert_equal(
+            200,
+            res.status_code
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(file_url, auth=self.user.auth)
 
         # GUID count has not been incremented
         assert_equal(
