@@ -61,6 +61,7 @@
                                                 >+</a>
                                         </td>
                                         <td>
+                                            <!-- height and width are explicitly specified for faster rendering -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
                                         </td>
                                         <td >
