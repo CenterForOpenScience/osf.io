@@ -93,22 +93,6 @@
     * @class  renderButton
     * @private
     */
-    var tpl_fn_cache = {};
-    var tpl = function(template, data) {
-        /*jshint quotmark:false */
-        if (!template) {
-            return '';
-        }
-        tpl_fn_cache[template] = tpl_fn_cache[template] || new Function("_",
-            "return '" + template
-            .replace(/\n/g, "\\n")
-            .replace(/\r/g, "\\r")
-            .replace(/'/g, "\\'")
-            .replace(/\{\{\s*(\w+)\s*\}\}/g, "'+(_.$1?(_.$1+''):(_.$1===0?0:''))+'") + "'"
-        );
-        return tpl_fn_cache[template](data);
-    };
-
     function renderButton(buttonDef) {
         var cssClass;
         var tag = buttonDef.tag || 'button';
@@ -122,7 +106,7 @@
         var action = buttonDef.action || 'noop';
         var data = {action: action, cssClass: cssClass, tag: tag, text: buttonDef.text};
         var action_text = action.charAt(0).toUpperCase() + action.slice(1);
-        var html = tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}" data-placement="right" data-toggle="tooltip" data-original-title=" ' + action_text + ' ">{{text}}</{{tag}}>',
+        var html = HGrid.Fmt.tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}" data-placement="right" data-toggle="tooltip" data-original-title=" ' + action_text + ' ">{{text}}</{{tag}}>',
           data);
         return html;
     }
