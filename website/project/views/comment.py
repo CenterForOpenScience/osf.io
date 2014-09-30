@@ -62,8 +62,8 @@ def comment_discussion(**kwargs):
                 'isContributor': node.is_contributor(user),
                 'gravatarUrl': privacy_info_handle(
                     gravatar(
-                        user, use_ssl=True,size=settings.GRAVATAR_SIZE_DISCUSSION,
-                        ),
+                        user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
+                    ),
                     anonymous
                 ),
 
@@ -94,7 +94,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'dateModified': comment.date_modified.isoformat(),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
-        'canEdit': comment.user == auth.user ,
+        'canEdit': comment.user == auth.user,
         'modified': comment.modified,
         'isDeleted': comment.is_deleted,
         'isAbuse': auth.user and auth.user._id in comment.reports,
@@ -157,7 +157,7 @@ def add_comment(**kwargs):
 
     return {
         'comment': serialize_comment(comment, auth)
-   }, http.CREATED
+    }, http.CREATED
 
 
 @must_be_contributor_or_public

@@ -2,7 +2,7 @@
     <div class="wiki-title-container">
 	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
     </div>
-    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block; float: right">
+    <nav class="navbar navbar-default" style="display: inline-block; float: right">
         <ul class="nav navbar-nav">
             % if user['can_edit']:
                 <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
@@ -38,8 +38,11 @@
                dataType: 'json'
             },
             validate: function(value) {
-              if($.trim(value) == '')
-                return 'The wiki page name cannot be empty.';
+                if($.trim(value) == ''){
+                    return 'The wiki page name cannot be empty.';
+                } else if(value.length > 100){
+                    return 'The wiki page name cannot be more than 100 characters.';
+                }
             },
             params: function(params) {
                params.pk = '${wiki_id}';

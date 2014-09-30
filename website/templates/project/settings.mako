@@ -78,6 +78,10 @@
 
                     <button class="btn btn-success">Submit</button>
 
+                    <!-- Flashed Messages -->
+                    <div class="help-block">
+                        <p id="configureCommentingMessage"></p>
+                    </div>
                 </form>
 
             </div>
@@ -205,18 +209,21 @@ ${parent.javascript_bottom()}
 
     $(document).ready(function() {
 
+        ## TODO: Knockout-ify me
         $('#commentSettings').on('submit', function() {
+            var $commentMsg = $('#configureCommentingMessage');
 
             var $this = $(this);
             var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
 
             $.osf.postJSON(
                 nodeApiUrl + 'settings/comments/',
-                {commentLevel: commentLevel},
-                function() {
-                    window.location.reload();
-                }
-            ).fail(function() {
+                {commentLevel: commentLevel}
+            ).done(function() {
+                $commentMsg.addClass('text-success');
+                $commentMsg.text('Successfully updated settings.');
+                window.location.reload();
+            }).fail(function() {
                 bootbox.alert('Could not set commenting configuration. Please try again.');
             });
 
