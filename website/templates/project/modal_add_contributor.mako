@@ -61,7 +61,8 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                                            <!-- height and width are explicitly specified for faster rendering -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
                                         </td>
                                         <td >
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
