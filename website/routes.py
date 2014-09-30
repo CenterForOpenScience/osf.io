@@ -20,6 +20,7 @@ from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 from website.assets import env as assets_env
+from website.util import sanitize
 
 
 def get_globals():
@@ -49,6 +50,7 @@ def get_globals():
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
+        'sanitize': sanitize,
     }
 
 
