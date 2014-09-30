@@ -31,7 +31,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-from .log import _get_logs
 
 logger = logging.getLogger(__name__)
 
@@ -1103,7 +1102,7 @@ def add_pointer(auth):
     try:
         _add_pointers(to_node, [pointer], auth)
     except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1126,7 +1125,7 @@ def add_pointers(**kwargs):
     try:
         _add_pointers(node, nodes, auth)
     except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
 
     return {}
 
@@ -1157,7 +1156,7 @@ def remove_pointer(**kwargs):
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointer_from_folder(pointer_id, **kwargs):
@@ -1185,7 +1184,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointers_from_folder(**kwargs):
@@ -1213,7 +1212,6 @@ def remove_pointers_from_folder(**kwargs):
             raise HTTPError(http.BAD_REQUEST)
 
     node.save()
-
 
 
 @must_have_permission('write')
@@ -1272,4 +1270,3 @@ def get_pointed(auth, **kwargs):
         serialize_pointer(each, auth)
         for each in node.pointed
     ]}
-
