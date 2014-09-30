@@ -173,7 +173,6 @@ class TestAUser(OsfTestCase):
             self.user,
             permissions=['read', 'write', 'admin'],
             save=True)
-        res = self._login(self.user.username, 'science')
         res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
         assert_in('OSF Storage', res)
 
