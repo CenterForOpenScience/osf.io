@@ -162,6 +162,20 @@ class TestAUser(OsfTestCase):
         # TODO: (bgeiger) figure out how to make this assertion work with hgrid view
         #assert_in(project.title, res)
 
+    def test_sees_osffiles_in_user_addon_settings(self):
+        res = self._login(self.user.username, 'science')
+        res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
+        assert_in('OSF Storage', res)
+
+    def test_sees_osffiles_in_project_addon_settings(self):
+        project = ProjectFactory(creator=self.user)
+        project.add_contributor(
+            self.user,
+            permissions=['read', 'write', 'admin'],
+            save=True)
+        res = self.app.get('/{0}/settings/'.format(project._primary_key), auth=self.auth, auto_follow=True)
+        assert_in('OSF Storage', res)
+
     @unittest.skip("Can't test this, since logs are dynamically loaded")
     def test_sees_log_events_on_watched_projects(self):
         # Another user has a public project
