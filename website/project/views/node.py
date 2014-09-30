@@ -137,7 +137,7 @@ def folder_new_post(auth, nid, **kwargs):
     try:
         _add_pointers(node, folders, auth)
     except ValueError:
-            raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST)
 
     return {
         'projectUrl': '/dashboard/',
