@@ -350,7 +350,7 @@ def download_file(fid, **kwargs):
         vid = get_latest_version_number(fid, node) + 1
     except FileNotFoundError:
         raise FILE_NOT_FOUND_ERROR
-    redirect_url = node.api_url_for('download_file_by_version', fid=fid, vid=vid)
+    redirect_url = node.web_url_for('download_file_by_version', fid=fid, vid=vid)
     return redirect(redirect_url)
 
 
