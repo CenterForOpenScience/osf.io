@@ -1456,13 +1456,14 @@ class TestPointerViews(OsfTestCase):
             url,
             {'nodeIds': [double_node._id]},
             auth=self.user.auth,
-        ).maybe_follow()
-        with assert_raises(AppError):
-            self.app.post_json(
-                url,
-                {'nodeIds': [double_node._id]},
-                auth=self.user.auth,
-            )
+        )
+        res = self.app.post_json(
+            url,
+            {'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     def test_add_pointers_no_user_logg_in(self):
 
