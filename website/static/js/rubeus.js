@@ -92,14 +92,14 @@
     if(item.permissions){
         if(item.permissions.download !== false){
             buttonDefs.push({
-                text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+                text: '<i class="icon-download-alt icon-white"></i>',
                 action: 'download',
                 cssClass: 'btn btn-primary btn-mini'
             });
         }
         if (item.permissions.edit) {
             buttonDefs.push({
-                text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+                text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
                 cssClass: 'btn btn-link btn-mini btn-delete'
             });
@@ -131,7 +131,7 @@
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
+                text: '<i class="icon-upload" ></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini'
             });
