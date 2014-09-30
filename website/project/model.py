@@ -2269,7 +2269,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'Must have at least one registered admin contributor'
             )
 
-        # TODO: Test me @jmcarp
         if to_retain != users:
             self.add_log(
                 action=NodeLog.CONTRIB_REORDERED,
