@@ -1462,6 +1462,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.piwik_site_id = None
 
         # Forks default to private status
         forked.is_public = False
@@ -1545,6 +1546,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
+        registered.piwik_site_id = None
 
         registered.save()
 
