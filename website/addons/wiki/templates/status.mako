@@ -7,7 +7,7 @@
             % endif
         </h3>
     </div>
-    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block; float: right">
+    <nav class="navbar navbar-default" style="display: inline-block; float: right">
         <ul class="nav navbar-nav">
             % if user['can_edit']:
                 <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
