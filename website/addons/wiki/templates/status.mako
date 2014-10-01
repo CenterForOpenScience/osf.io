@@ -15,7 +15,7 @@
                % endif
         </ul>
     </nav>
-        % endif
+    % endif
 </div>
 
 <script type="text/javascript">
