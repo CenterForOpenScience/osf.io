@@ -32,7 +32,6 @@ from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
-from framework.git.exceptions import FileNotModified
 from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
@@ -47,6 +46,7 @@ from website.util.permissions import (
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import language, settings
 from website.util import web_url_for, api_url_for
+from website.addons.osffiles.exceptions import FileNotModified
 
 html_parser = HTMLParser()
 
@@ -886,7 +886,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
-
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
