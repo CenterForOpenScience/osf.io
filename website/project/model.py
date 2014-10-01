@@ -46,7 +46,6 @@ from website.util.permissions import (
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website import language, settings
 from website.util import web_url_for, api_url_for
-from website.addons.osffiles.exceptions import FileNotModified
 
 html_parser = HTMLParser()
 
@@ -1768,6 +1767,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         necessary.
         """
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotModified
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
