@@ -11,7 +11,7 @@ from website.project.decorators import (
     must_have_addon, must_have_permission,
     must_not_be_registration, must_be_contributor_or_public
 )
-
+from website.addons.app.utils import create_orphaned_metadata
 
 # GET
 @must_be_contributor_or_public
@@ -52,6 +52,12 @@ def delete_metadata(node_addon, guid, **kwargs):
     if key:
         key = key.split(',')
 
+    metastore = Metadata.load(guid)
+    # Note: You cannot delete keys from orphan metadata
+    if metastore:
+        Metadata.remove_one(metastore, True)
+        return HTTPError(http.NO_CONTENT)
+
     try:
         node_addon.delete_data(guid, keys=key)
     except KeyError:
@@ -63,3 +69,18 @@ def delete_metadata(node_addon, guid, **kwargs):
         }, http.OK
 
     return HTTPError(http.NO_CONTENT)
+
+
+@must_have_permission('write')
+@must_have_addon('app', 'node')
+def create_ophan_metadata(node_addon, **kwargs):
+    metadata = request.json
+
+    if not metadata:
+        raise HTTPError(http.BAD_REQUEST)
+    try:
+        metastore = create_ophan_metadata(node_addon, metadata)
+        metastore.save()
+        node_addon.save()
+    except TypeError:
+        raise HTTPError(http.BAD_REQUEST)
