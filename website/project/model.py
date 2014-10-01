@@ -887,7 +887,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
-
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -2065,7 +2064,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-            self.save() # TODO: here, or outside the conditional? @mambocab
+            self.save()  # TODO: here, or outside the conditional? @mambocab
         return ret
 
     def delete_addon(self, addon_name, auth):
@@ -2158,7 +2157,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         admins = [
             user for user in self.contributors
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if not admins:
             return False
@@ -2262,7 +2261,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if users is None or not admins:
             raise ValueError(
@@ -2455,8 +2454,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=action,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
+                'project': self.parent_id,
+                'node': self._primary_key,
             },
             auth=auth,
             save=False,
@@ -2478,13 +2477,13 @@ class Node(GuidStoredObject, AddonModelMixin):
             except:
                 return None
 
-            if not page in self.wiki_pages_versions:
+            if page not in self.wiki_pages_versions:
                 return None
 
             if version > len(self.wiki_pages_versions[page]):
                 return None
             else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version-1])
+                return NodeWikiPage.load(self.wiki_pages_versions[page][version - 1])
 
         if page in self.wiki_pages_current:
             pw = NodeWikiPage.load(self.wiki_pages_current[page])
