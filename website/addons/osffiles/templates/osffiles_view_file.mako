@@ -21,6 +21,9 @@
                 % endif
                 <th colspan=2>Downloads</th>
             </tr>
+            <tr>
+                <a href="{{latest_version_url}}" class="btn-lg" style="color:green">Download <i class="icon-download-alt" ></i></a>
+            </tr>
             </thead>
 
             <tbody data-bind="foreach: versions">
@@ -35,7 +38,7 @@
                     <!-- download url; 'Downloads' column 2 -->
                     <td>
                         <a href="{{download_url}}">
-                            <i class="icon-download-alt btn btn-xl"></i>
+                            <i class="icon-download-alt btn"></i>
                         </a>
                     </td>
                 </tr>

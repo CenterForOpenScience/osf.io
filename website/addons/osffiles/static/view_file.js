@@ -30,6 +30,7 @@
         self.file_name = ko.observable(null);
         self.files_url = ko.observable(null);
         self.node_title = ko.observable(null);
+        self.latest_version_url = ko.observable(null);
 
 
         // Date when this project was registered, or null if not a registration
@@ -46,6 +47,7 @@
             self.node_title(response.node_title);
             self.file_name(response.file_name);
             self.node_title(response.node_title);
+            self.latest_version_url(response.latest_version_url);
         }).fail(
             $.osf.handleJSONError
         );

@@ -231,6 +231,9 @@ def file_info(**kwargs):
         files_versions = node.files_versions[file_name_clean]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
+    latest_version_number = get_latest_version_number(file_name_clean, node) + 1
+    # latest_version_file = NodeFile.load(latest_version_number)
+    # latest_version_url = latest_version_file.download_url(node)
     for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
         number = len(files_versions) - idx
@@ -239,9 +242,10 @@ def file_info(**kwargs):
             file_name_clean,
             number,
         ))
+        download_url = node_file.download_url(node)
         versions.append({
             'file_name': file_name,
-            'download_url': node_file.download_url(node),
+            'download_url': download_url,
             'version_number': number,
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
@@ -251,11 +255,14 @@ def file_info(**kwargs):
             ),
             'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
+        if number == latest_version_number:
+            latest_version_url = download_url
     return {
         'files_url': node.url + "files/",
         'node_title': node.title,
         'file_name': file_name,
         'versions': versions,
+        'latest_version_url': latest_version_url,
     }
 
 @must_be_valid_project # returns project

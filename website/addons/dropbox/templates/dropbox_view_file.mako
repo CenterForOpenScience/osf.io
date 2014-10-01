@@ -28,8 +28,8 @@
                 </td>
                 <td>{{ revision.modified.local }}</td>
                 <td>
-                    <a data-bind="attr: {href: revision.download}">
-                        <i class="icon-download-alt btn btn-lg"> Download</i>
+                    <a data-bind="attr: {href: revision.download}" class="btn btn-lg">
+                        Download <i class="icon-download-alt"></i>
                     </a>
                 </td>
             </tr>

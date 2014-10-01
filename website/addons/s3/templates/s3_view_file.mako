@@ -24,8 +24,8 @@
                         ${version['date']}
                     </td>
                     <td>
-                        <a href="${version['download']}" download="${file_name}">
-                            <i class="icon-download-alt btn btn-lg"> Download</i>
+                        <a href="${version['download']}" class ="btn btn-lg"download="${file_name}">
+                             Download <i class="icon-download-alt"></i>
                         </a>
                     </td>
                 </tr>

@@ -38,8 +38,8 @@
                         </td>
                     % endif
                     <td>
-                        <a href="${commit['download']}" download="${file_name}">
-                            <i class="icon-download-alt btn btn-lg"> Download</i>
+                        <a href="${commit['download']}" class="btn btn-lg" download="${file_name}">
+                            Download <i class="icon-download-alt"></i>
                         </a>
                     </td>
                 </tr>
