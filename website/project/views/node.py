@@ -182,7 +182,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
