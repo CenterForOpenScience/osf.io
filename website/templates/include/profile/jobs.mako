@@ -41,24 +41,20 @@
                         <input class="form-control" data-bind="value: title" />
                     </div>
 
+                    <div class="form-group">
                         <label>Start Date</label>
                         <div class="row">
-                        <div class ="col-md-3">
-                             <select data-bind="options: startMonths,
-                                 optionsCaption: 'Month',
-                                 value: startMonth">
-                             </select>
-
-                           </div>
-                             <div class="form-group">
-                                <div class="col-md-6">
-                                    <input class="form-control" placeholder="Year" data-bind="value: startYear" />
-                                </div>
+                            <div class ="col-md-3">
+                                <select class="form-control" data-bind="options: startMonths,
+                                         optionsCaption: 'Month',
+                                         value: startMonth">
+                                </select>
                             </div>
-
-
-
+                            <div class="col-md-3">
+                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                            </div>
                         </div>
+                    </div>
                     <p data-bind="validationMessage: start, style:{color: '#a94442'}" ></p>
 
 
@@ -66,12 +62,12 @@
                         <label>End Date</label>
                             <div class="row">
                                 <div class ="col-md-3">
-                                    <select data-bind="options: endMonths,
+                                    <select class="form-control" data-bind="options: endMonths,
                                          optionsCaption: 'Month',
                                          value: endMonth">
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-3">
                                     <input class="form-control" placeholder="Year" data-bind="value: endYear" />
                                 </div>
                             </div>
