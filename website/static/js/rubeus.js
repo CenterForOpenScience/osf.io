@@ -91,19 +91,21 @@
     var buttonDefs = [];
     if(item.permissions){
         if(item.permissions.download !== false){
+            var tooltipMarkup = genTooltipMarkup('Download');
             buttonDefs.push({
                 text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
                 cssClass: 'btn btn-primary btn-mini',
-                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Download" '
+                attributes: tooltipMarkup
             });
         }
         if (item.permissions.edit) {
+            var tooltipMarkup = genTooltipMarkup('Remove');
             buttonDefs.push({
                 text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
                 cssClass: 'btn btn-link btn-mini btn-delete',
-                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Remove" '
+                attributes: tooltipMarkup
             });
         }
     }
@@ -137,7 +139,7 @@
                 text: '<i class="icon-upload" title=""></i>',
                 action: 'upload',
                 cssClass: 'btn btn-default btn-mini',
-                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Upload" '
+                attributes: tooltipMarkup
             });
         }
         if (row.buttons) {
