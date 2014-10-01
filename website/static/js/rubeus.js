@@ -86,39 +86,6 @@
                                 'data-toggle="tooltip" ';
     }
 
-       /**
-    * Render the html for a button, given an item and buttonDef. buttonDef is an
-    * object of the form {text: "My button", cssClass: "btn btn-primary",
-    *                     action: "download" }}
-    * @class  renderButton
-    * @private
-    */
-    function renderButton(buttonDef) {
-        var cssClass;
-        var tag = buttonDef.tag || 'button';
-        // For now, buttons are required to have the hg-btn class so that a click
-        // event listener can be attacked to them later
-        if (buttonDef.cssClass) {
-            cssClass = HGrid.Html.buttonClass + ' ' + buttonDef.cssClass;
-        } else {
-            cssClass = HGrid.Html.buttonClass;
-        }
-        var action = buttonDef.action || 'noop';
-        var data = {action: action, cssClass: cssClass, tag: tag, text: buttonDef.text};
-        var action_text = action.charAt(0).toUpperCase() + action.slice(1);
-        var html = HGrid.Fmt.tpl('<{{tag}} data-hg-action="{{action}}" class="{{cssClass}}" data-placement="right" data-toggle="tooltip" data-original-title=" ' + action_text + ' ">{{text}}</{{tag}}>',
-          data);
-        return html;
-    }
-
-    function renderButtons(buttonDefs) {
-        var renderedButtons = buttonDefs.map(function(btn) {
-            var html = renderButton(btn);
-            return html;
-        }).join('');
-        return renderedButtons;
-    }
-
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
     var buttonDefs = [];
@@ -127,14 +94,16 @@
             buttonDefs.push({
                 text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Download" '
             });
         }
         if (item.permissions.edit) {
             buttonDefs.push({
                 text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
-                cssClass: 'btn btn-link btn-mini btn-delete'
+                cssClass: 'btn btn-link btn-mini btn-delete',
+                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Remove" '
             });
         }
     }
@@ -143,11 +112,12 @@
             buttonDefs.push({
                 text: button.text,
                 action: button.action,
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: button.attributes
             });
         });
     }
-    return ['<span class="rubeus-buttons">', renderButtons(buttonDefs),
+    return ['<span class="rubeus-buttons">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
     };
 
@@ -166,7 +136,8 @@
             buttonDefs.push({
                 text: '<i class="icon-upload" title=""></i>',
                 action: 'upload',
-                cssClass: 'btn btn-default btn-mini'
+                cssClass: 'btn btn-default btn-mini',
+                attributes: ' data-placement="right" data-toggle="tooltip" data-original-title= "Upload" '
             });
         }
         if (row.buttons) {
@@ -174,12 +145,13 @@
                 buttonDefs.push({
                     text: button.text,
                     action: button.action,
-                    cssClass: 'btn btn-primary btn-mini'
+                    cssClass: 'btn btn-primary btn-mini',
+                    attributes: button.attributes
                 });
             });
         }
         if (buttonDefs) {
-            return ['<span class="' + Rubeus.buttonContainer + '">', renderButtons(buttonDefs),
+            return ['<span class="' + Rubeus.buttonContainer + '">', HGrid.Fmt.buttons(buttonDefs),
                 '</span><span data-status></span>'].join('');
         }
         return '';
