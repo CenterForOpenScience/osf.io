@@ -32,7 +32,6 @@ from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
-from framework.git.exceptions import FileNotModified
 from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
@@ -1768,6 +1767,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         necessary.
         """
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotModified
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
