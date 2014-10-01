@@ -50,12 +50,12 @@
                                          value: startMonth">
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-4">
                                 <input class="form-control" placeholder="Year" data-bind="value: startYear" />
                             </div>
                         </div>
                     </div>
-                    <p data-bind="validationMessage: start, style:{color: '#a94442'}" ></p>
+                    <p data-bind="validationMessage: start, style:{color: 'red'}" ></p>
 
 
                     <div class="form-group" data-bind="ifnot: ongoing">
@@ -67,7 +67,7 @@
                                          value: endMonth">
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-4">
                                     <input class="form-control" placeholder="Year" data-bind="value: endYear" />
                                 </div>
                             </div>
@@ -80,7 +80,7 @@
                     </div>
 
                     <!--knockout validation messages-->
-                        <p data-bind="validationMessage: end, style:{color: '#a94442'}"></p>
+                        <p data-bind="validationMessage: end, style:{color: 'red'}"></p>
                     <!--->
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />

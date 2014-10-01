@@ -53,38 +53,6 @@
         };
     };
 
-    var printDate = function(date, dlm) {
-        dlm = dlm || '/';
-        var formatted = date.getFullYear() + dlm + pad((date.getMonth() + 1), 2);
-        if (date.getDate()) {
-            formatted += dlm + pad(date.getDate(), 2);
-        }
-        return formatted;
-    };
-
-    // Handy pad function from http://stackoverflow.com/a/10073788
-    function pad(n, width, z) {
-      z = z || '0';
-      n = n + '';
-      return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-    }
-
-//    addExtender('asDate', function(value) {
-//        var out;
-//        if (value) {
-//            //value.replace(/-/g,'/');
-//            var date;
-//            if (value.match(/^\d{4}$/)) {
-//                date = new Date(value, 0, 1);
-//                //date = value;
-//            } else {
-//                date = '';
-//            }
-//            //out = date !== 'Invalid Date' ? value: '';
-//        }
-//        return date;
-//    });
-
     addExtender('cleanup', function(value, cleaner) {
         return !!value ? cleaner(value) : '';
     });
@@ -120,6 +88,10 @@
             var dateVal = new Date(uwVal);
             var dateMin = new Date(uwMin);
             if (dateVal == 'Invalid Date' || dateMin == 'Invalid Date') {
+                return true;
+            }
+            // Check if end date is ongoing
+            if (uwVal === 'ongoing') {
                 return true;
             }
             // Compare dates
@@ -165,7 +137,6 @@
         },
         message: 'Please enter a date prior to the current date.'
     };
-
 
     ko.validation.rules['url'] = makeRegexValidator(
         new RegExp(
