@@ -13,7 +13,8 @@ class HTTPError(FrameworkError):
     error_msgs = {
         http.BAD_REQUEST: {
             'message_short': 'Bad request',
-            'message_long': 'If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+            'message_long': ('If this should not have occurred and the issue persists, '
+            'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
         http.UNAUTHORIZED: {
             'message_short': 'Unauthorized',
@@ -21,15 +22,21 @@ class HTTPError(FrameworkError):
         },
         http.FORBIDDEN: {
             'message_short': 'Forbidden',
-            'message_long': 'You do not have permission to perform this action. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+            'message_long': ('You do not have permission to perform this action. '
+                'If this should not have occurred and the issue persists, '
+                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
         http.NOT_FOUND: {
             'message_short': 'Page not found',
-            'message_long': 'The requested resource could not be found. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+            'message_long': ('The requested resource could not be found. If this '
+                'should not have occurred and the issue persists, please report it '
+                'to <a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
         http.GONE: {
             'message_short': 'Resource deleted',
-            'message_long': 'The requested resource has been deleted. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
+            'message_long': ('The requested resource has been deleted. If this should '
+                'not have occurred and the issue persists, please report it to '
+                '<a href="mailto:support@osf.io">support@osf.io</a>.'),
         },
     }
 
@@ -56,7 +63,9 @@ class HTTPError(FrameworkError):
             }
         else:
             data['message_short'] = 'Unable to resolve'
-            data['message_long'] = 'OSF was unable to resolve your request. If this issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'
+            data['message_long'] = ('OSF was unable to resolve your request. If this '
+                'issue persists, please report it to '
+                '<a href="mailto:support@osf.io">support@osf.io</a>.')
         data.update(self.data)
         data['code'] = self.code
         data['referrer'] = self.referrer
