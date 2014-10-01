@@ -1457,6 +1457,23 @@ class TestPointerViews(OsfTestCase):
             5
         )
 
+    def test_add_the_same_pointer_more_than_once(self):
+        url = self.project.api_url + 'pointer/'
+        double_node = NodeFactory()
+
+        self.app.post_json(
+            url,
+            {'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+        )
+        res = self.app.post_json(
+            url,
+            {'nodeIds': [double_node._id]},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+
     def test_add_pointers_no_user_logg_in(self):
 
         url = self.project.api_url_for('add_pointers')
