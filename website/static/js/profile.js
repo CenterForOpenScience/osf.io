@@ -174,7 +174,7 @@
             this.setOriginal
         ).fail(
             this.handleError.bind(this)
-        );
+        ).fail(JobsViewModel.checkValidDate);
     };
 
     var NameViewModel = function(urls, modes) {
@@ -463,7 +463,8 @@
         });
         self.department = ko.observable('');
         self.title = ko.observable('');
-        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']);
+        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+            'September', 'October', 'November', 'December']);
         self.startMonth = ko.observable('');
         self.startYear = ko.observable('').extend({
             pattern: /^\d{4}$/,
@@ -474,7 +475,9 @@
         }, self).extend({
             notInFuture:true
         });
-        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']);
+
+        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+            'September', 'October', 'November', 'December']);
         self.endMonth = ko.observable('');
         self.endYear = ko.observable('').extend({
             pattern: /^\d{4}$/,

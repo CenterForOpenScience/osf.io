@@ -125,7 +125,7 @@
             // Compare dates
             return dateVal >= dateMin;
         },
-        message: 'Date must be greater than or equal to {0}.'
+        message: 'End date must be greater than or equal to the start date.'
     };
 
     ko.validation.rules['pyDate'] = {
@@ -160,10 +160,10 @@
             }
             // Compare dates
             var now = new Date();
-            return val < now;
+            return val <= now;
 
         },
-        message: 'Please enter a valid date'
+        message: 'Please enter a date prior to the current date.'
     };
 
 

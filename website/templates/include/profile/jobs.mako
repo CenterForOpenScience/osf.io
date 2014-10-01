@@ -43,52 +43,49 @@
 
                         <label>Start Date</label>
                         <div class="row">
-                        <div class ="col-md-2">
-                         <select data-bind="options: startMonths,
-                             optionsCaption: 'Month',
-                             value: startMonth">
-                         </select>
+                        <div class ="col-md-3">
+                             <select data-bind="options: startMonths,
+                                 optionsCaption: 'Month',
+                                 value: startMonth">
+                             </select>
 
                            </div>
                              <div class="form-group">
-                            <div class="col-md-3">
-                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                                <div class="col-md-6">
+                                    <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                                </div>
                             </div>
-                            </div>
+
+
+
                         </div>
+                    <p data-bind="validationMessage: start, style:{color: '#a94442'}" ></p>
 
 
                     <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
                             <div class="row">
-                                <div class ="col-md-2">
+                                <div class ="col-md-3">
                                     <select data-bind="options: endMonths,
                                          optionsCaption: 'Month',
                                          value: endMonth">
                                     </select>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-6">
                                     <input class="form-control" placeholder="Year" data-bind="value: endYear" />
                                 </div>
                             </div>
                     </div>
+
 
                     <div class="form-group">
                         <label>Ongoing</label>
                         <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
 
-
-##                    <div class="form-group" data-bind="ifnot: ongoing">
-##                        <label>End Date</label>
-##                        <input class="form-control" data-bind="value: end" />
-##                    </div>
-##
-##                    <div class="form-group">
-##                        <label>Ongoing</label>
-##                        <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
-##                    </div>
-
+                    <!--knockout validation messages-->
+                        <p data-bind="validationMessage: end, style:{color: '#a94442'}"></p>
+                    <!--->
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 
