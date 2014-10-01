@@ -11,7 +11,6 @@ import logging
 from flask import request, redirect, send_file
 from modularodm import Q
 
-from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from framework.auth.utils import privacy_info_handle
@@ -28,6 +27,7 @@ from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
+from website.addons.osffiles.exceptions import FileNotModified
 from website.addons.osffiles.utils import get_latest_version_number
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,

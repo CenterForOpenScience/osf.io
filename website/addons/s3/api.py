@@ -164,7 +164,7 @@ class RegistrationWrapper(S3Wrapper):
             S3Key(x)
             for x in self.bucket.list_versions(delimiter='/', prefix=directory)
             if isinstance(x, Key) and x.key != directory
-                and self.is_right_version(x)
+            and self.is_right_version(x)
         ]
 
     def get_wrapped_directories_in_dir(self, directory=None):

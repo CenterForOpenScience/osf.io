@@ -148,7 +148,7 @@ class NodeProjectCollector(object):
 
     def _collect_components(self, node, visited):
         rv = []
-        for child in reversed(node.nodes): #(child.resolve()._id not in visited or node.is_folder) and
+        for child in reversed(node.nodes):  # (child.resolve()._id not in visited or node.is_folder) and
             if child is not None and not child.is_deleted and child.resolve().can_view(auth=self.auth) and node.can_view(self.auth):
                 # visited.append(child.resolve()._id)
                 rv.append(self._serialize_node(child, visited=None, parent_is_folder=node.is_folder))
@@ -287,58 +287,42 @@ class NodeProjectCollector(object):
         is_component = node.category != "project"
         is_project = node.category == "project"
         is_file = False
-        type = "project"
+        type_ = "project"
         if is_file:
-            type = "file"
+            type_ = "file"
         if is_pointer and not parent_is_folder:
-            type = "pointer"
+            type_ = "pointer"
         if node.is_folder:
-            type = "folder"
+            type_ = "folder"
         if is_component:
-            type = "component"
+            type_ = "component"
 
         if node.is_dashboard:
             to_expand = True
-        elif type != "pointer":
+        elif type_ != "pointer":
             to_expand = expanded
         else:
             to_expand = False
 
         return {
-            'name': node.title
-                if can_view
-                else u'Private Component',
+            'name': node.title if can_view else u'Private Component',
             'kind': FOLDER,
             # Once we get files into the project organizer, files would be kind of FILE
             'permissions': {
                 'edit': can_edit,
                 'view': can_view,
-                'copyable': False
-                    if node.is_folder
-                    else True,
-                'movable': True
-                    if parent_is_folder
-                    else False,
-                'acceptsFolders': True
-                    if node.is_folder
-                    else False,
-                'acceptsMoves': True
-                    if node.is_folder
-                    else False,
-                'acceptsCopies': True
-                    if node.is_folder or is_project
-                    else False,
-                'acceptsComponents': True
-                    if node.is_folder
-                    else False,
+                'copyable': not node.is_folder,
+                'movable': parent_is_folder,
+                'acceptsFolders': node.is_folder,
+                'acceptsMoves': node.is_folder,
+                'acceptsCopies': node.is_folder or is_project,
+                'acceptsComponents': node.is_folder,
             },
             'urls': {
                 'upload': None,
-                'fetch': node.url
-                    if not node.is_folder
-                    else None,
+                'fetch': node.url if not node.is_folder else None,
             },
-            'type': type,
+            'type': type_,
             'children': children,
             'expand': to_expand,
             # TODO: (bgeiger) replace these flags with a Kind property or something
@@ -401,8 +385,6 @@ class NodeProjectCollector(object):
         return data
 
 
-
-
 class NodeFileCollector(object):
 
     """A utility class for creating rubeus formatted node data"""
@@ -428,13 +410,6 @@ class NodeFileCollector(object):
                 rv.append(self._serialize_node(child, visited=visited))
         return rv
 
-    def to_hgrid(self):
-        """Return the Rubeus.JS representation of the node's file data, including
-        addons and components
-        """
-        root = self._serialize_node(self.node)
-        return [root]
-
     def _serialize_node(self, node, visited=None):
         """Returns the rubeus representation of a node folder.
         """
@@ -448,8 +423,8 @@ class NodeFileCollector(object):
             children = []
         return {
             'name': u'{0}: {1}'.format(node.project_or_component.capitalize(), node.title)
-                if can_view
-                else u'Private Component',
+            if can_view
+            else u'Private Component',
             'kind': FOLDER,
             'permissions': {
                 'edit': can_edit,
