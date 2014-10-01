@@ -89,9 +89,10 @@
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
     var buttonDefs = [];
+    var tooltipMarkup = '';
     if(item.permissions){
         if(item.permissions.download !== false){
-            var tooltipMarkup = genTooltipMarkup('Download');
+            tooltipMarkup = genTooltipMarkup('Download');
             buttonDefs.push({
                 text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
@@ -100,7 +101,7 @@
             });
         }
         if (item.permissions.edit) {
-            var tooltipMarkup = genTooltipMarkup('Remove');
+            tooltipMarkup = genTooltipMarkup('Remove');
             buttonDefs.push({
                 text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
@@ -176,8 +177,9 @@
      }
 
     HGrid.prototype.showButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch(error) {
             return this;
         }
@@ -187,8 +189,9 @@
     };
 
     HGrid.prototype.hideButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (error) {
             return this;
         }
@@ -201,13 +204,14 @@
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
+        var $rowElem, $status;
         try {
             // Raises TypeError if row's HTML is not rendered.
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (err) {
             return;
         }
-        var $status = $rowElem.find(Rubeus.statusSelector);
+        $status = $rowElem.find(Rubeus.statusSelector);
         this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {
