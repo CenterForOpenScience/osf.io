@@ -143,8 +143,8 @@ def get_most_in_common_contributors(auth, **kwargs):
             most_common_contribs.append((contrib, count))
 
     contribs = [
-        utils.add_contributor_json(contrib, get_current_user())
-        for contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
+        utils.add_contributor_json(most_contrib, get_current_user())
+        for most_contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
     ]
 
     return {'contributors': contribs}
