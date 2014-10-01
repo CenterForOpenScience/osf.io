@@ -10,6 +10,8 @@ from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
+from framework.mongo.utils import from_mongo
+
 from website import language
 
 from website.exceptions import NodeStateError
