@@ -80,37 +80,37 @@ def main():
 
     if 'dry' in sys.argv:
         if 'list' in sys.argv:
-            print "=== Finding broken templated nodes ==="
+            print("=== Finding broken templated nodes ===")
             for node in broken_templated:
-                print node._id
+                print(node._id)
 
-            print "=== Finding broken forks ==="
+            print("=== Finding broken forks ===")
             for node in broken_forks:
-                print node._id
+                print(node._id)
 
-            print "=== Finding broken registrations ==="
+            print("=== Finding broken registrations ===")
             for node in broken_registrations:
-                print node._id
+                print(node._id)
         else:
-            print "=== Broken nodes ==="
-            print "  Templated  :", len(list(broken_templated))
-            print "  Forked     :", len(list(broken_forks))
-            print "  Registered :", len(list(broken_registrations))
+            print("=== Broken nodes ===")
+            print("  Templated  :{}".format(len(list(broken_templated))))
+            print("  Forked     :{}".format(len(list(broken_forks))))
+            print("  Registered :{}".format(len(list(broken_registrations))))
     else:
-        print "Templates"
-        print "Fixed {} nodes\n".format(
+        print("Templates")
+        print("Fixed {} nodes\n".format(
             fix_nodes(get_broken_templated())
-        )
+        ))
 
-        print "Forks..."
-        print "Fixed {} nodes\n".format(
+        print("Forks...")
+        print("Fixed {} nodes\n".format(
             fix_nodes(get_broken_forks())
-        )
+        ))
 
-        print "Registrations..."
-        print "Fixed {} nodes\n".format(
+        print("Registrations...")
+        print("Fixed {} nodes\n".format(
             fix_nodes(get_broken_registrations())
-        )
+        ))
 
 
 class TestMigrateRegistrations(OsfTestCase):
