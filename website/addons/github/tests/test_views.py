@@ -6,8 +6,7 @@ import mock
 import unittest
 import urlparse
 
-from nose.tools import *  # PEP8 asserts
-from webtest import AppError
+from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 
@@ -215,7 +214,7 @@ class TestGithubViews(OsfTestCase):
             branch,
             github_mock.repo.return_value.default_branch
         )
-        assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
+        assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
         assert_equal(
             branches,
             github_mock.branches.return_value
@@ -340,8 +339,8 @@ class TestGithubViews(OsfTestCase):
                     "message": "foo",
                     "timestamp": "2014-01-08T14:15:51-08:00",
                     "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                    "author": {"name":"Illidan","email":"njqpw@osf.io"},
-                    "committer": {"name":"Testor","email":"test@osf.io","username":"tester"},
+                    "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                    "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
                     "added": ["PRJWN3TV"],
                     "removed": [],
                     "modified": [],
@@ -365,14 +364,15 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "distinct":True,
-                              "message":"foo",
-                              "timestamp":"2014-01-08T14:15:51-08:00",
-                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]},
+                 "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct": True,
+                              "message": " foo",
+                              "timestamp": "2014-01-08T14:15:51-08:00",
+                              "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                              "committer": {"name": "Testor", "email": "test@osf.io",
+                                            "username": "tester"},
+                              "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
@@ -390,14 +390,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"foo",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":["PRJWN3TV"],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "foo",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed": ["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
@@ -410,14 +410,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Added via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":["PRJWN3TV"],"removed":[],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Added via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": ["PRJWN3TV"], "removed":[], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_added")
@@ -428,14 +428,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Updated via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":[],"modified":["PRJWN3TV"]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Updated via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_updated")
@@ -446,14 +446,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Deleted via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":["PRJWN3TV"],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Deleted via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed":["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_removed")
@@ -542,7 +542,6 @@ class TestGithubViews(OsfTestCase):
             GithubGuidFile.find().count(),
             guid_count + 1
         )
-
 
     ######################
     # This test currently won't work with webtest; self.app.get() fails
@@ -800,4 +799,3 @@ class TestGithubSettings(OsfTestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

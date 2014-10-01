@@ -1,5 +1,5 @@
 import mock
-from nose.tools import *
+from nose.tools import *  # noqa
 
 import httplib as http
 from boto.exception import S3ResponseError
@@ -105,7 +105,6 @@ class TestS3ViewsConfig(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
-
 
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
@@ -275,7 +274,7 @@ class TestS3ViewsCRUD(OsfTestCase):
         self.node_settings.user_settings = self.project.creator.get_addon('s3')
 
         self.node_settings.save()
-        self.node_url =  '/api/v1/project/{0}/'.format(self.project._id)
+        self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_view_faux_file(self, mock_from_addon):
