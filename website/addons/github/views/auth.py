@@ -61,6 +61,38 @@ def github_oauth_start(**kwargs):
     return redirect(authorization_url)
 
 
+def create_and_attach_oauth(user_settings, access_token, token_type):
+    """helper function to set the AddonGitHubOauthsettings and link it with
+    AddonGitHubUserSettings
+    :param json token: a json object contains the access_token and token_type info
+    :param object user_settings: user_setting object of the osf user
+
+    """
+    gh = GitHub(access_token, token_type)
+    github_user = gh.user()
+
+    oauth_settings = AddonGitHubOauthSettings.load(github_user.id)
+
+    if not oauth_settings:
+        oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings._id = str(github_user.id)
+        oauth_settings.save()
+
+    user_settings.oauth_settings = oauth_settings
+    user_settings.save()
+
+    #in user_settings
+    user_settings.oauth_state = None
+    #in oauth_settings
+    user_settings.oauth_access_token = access_token
+    user_settings.oauth_token_type = token_type
+
+    user_settings.github_user = github_user.login
+
+    oauth_settings.save()
+    user_settings.save()
+
+
 def github_oauth_callback(**kwargs):
 
     user = models.User.load(kwargs.get('uid'))
@@ -87,29 +119,7 @@ def github_oauth_callback(**kwargs):
 
     token = oauth_get_token(code)
 
-    gh = GitHub(token['access_token'], token['token_type'])
-    user = gh.user()
-
-    oauth_settings = AddonGitHubOauthSettings.load(user.id)
-
-    if not oauth_settings:
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings._id = str(user.id)
-        oauth_settings.save()
-
-    user_settings.oauth_settings = oauth_settings
-    user_settings.save()
-
-    #in user_settings
-    user_settings.oauth_state = None
-    #in oauth_settings
-    user_settings.oauth_access_token = token['access_token']
-    user_settings.oauth_token_type = token['token_type']
-
-    user_settings.github_user = user.login
-
-    oauth_settings.save()
-    user_settings.save()
+    create_and_attach_oauth(user_settings, token['access_token'], token['token_type'])
 
     if node_settings:
         node_settings.user_settings = user_settings
@@ -124,8 +134,7 @@ def github_oauth_callback(**kwargs):
 
 @must_be_logged_in
 @must_have_addon('github', 'user')
-def github_oauth_delete_user(user_addon, **kwargs):
-    auth = kwargs['auth']
+def github_oauth_delete_user(auth, user_addon, **kwargs):
     user_addon.clear_auth(auth=auth, save=True)
     return {}
 

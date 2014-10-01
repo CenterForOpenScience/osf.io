@@ -9,6 +9,7 @@ from modularodm import fields
 from github3 import GitHubError
 
 from framework.auth import Auth
+from framework.mongo import StoredObject
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonSettingsBase
@@ -34,9 +35,9 @@ class GithubGuidFile(GuidFile):
         return os.path.join('github', 'file', self.path)
 
 
-class AddonGitHubOauthSettings(AddonSettingsBase):
+class AddonGitHubOauthSettings(StoredObject):
 
-    github_user = fields.StringField()
+    github_user = fields.StringField(primary=True)
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
@@ -44,9 +45,8 @@ class AddonGitHubOauthSettings(AddonSettingsBase):
 class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     oauth_state = fields.StringField()
-
     oauth_settings = fields.ForeignField(
-        'addongithuboauthsettings', backref='authormatched'
+        'addongithuboauthsettings', backref='accessed'
     )
 
     @property
