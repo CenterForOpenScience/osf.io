@@ -32,13 +32,13 @@ def create_orphaned_metadata(node_addon, metadata):
     return metastore
 
 
-def elastic_to_rss(name, data, query, url_base):
+def elastic_to_rss(name, data, query):
     count = len(data)
 
     items = [
         pyrss.RSSItem(
             guid=doc['guid'],
-            link=url_base.format(doc['guid']),
+            link='{}{}/'.format(settings.DOMAIN, doc['guid']),
             title=doc.get('title', 'No title provided'),
             description=doc.get('description', 'No description provided'),
             pubDate=parse(doc.get('timestamp'))

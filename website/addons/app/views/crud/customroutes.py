@@ -13,6 +13,7 @@ from website.project.decorators import (
     must_not_be_registration, must_be_contributor_or_public
 )
 
+from website.addons.app.utils import elastic_to_rss
 
 # GET
 @must_be_contributor_or_public
@@ -39,11 +40,29 @@ def resolve_route(node_addon, route, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     ret = search(route, _type=node_addon.namespace, index='metadata', start=start)
+    results = [blob['_source'] for blob in ret['hits']['hits']]
 
     return {
-        'results': ret['hits']['hits'],
+        'results': results,
         'total': ret['hits']['total']
     }
+
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def resolve_route_rss(node_addon, route, **kwargs):
+    start = request.args.get('page', 0)
+
+    try:
+        route = node_addon[route]
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+
+    ret = search(route, _type=node_addon.namespace, index='metadata', start=start)
+    results = [blob['_source'] for blob in ret['hits']['hits']]
+
+    return elastic_to_rss(node_addon.system_user.username, results, route)
 
 
 # POST

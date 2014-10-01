@@ -46,10 +46,9 @@ def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
     start = request.args.get('page', 0)
     name = node_addon.system_user.username
-    base = '{}{{}}/'.format(settings.DOMAIN)
     ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100)
 
-    return elastic_to_rss(name, [blob['_source'] for blob in ret['hits']['hits']], q, base)
+    return elastic_to_rss(name, [blob['_source'] for blob in ret['hits']['hits']], q)
 
 
 @must_have_permission('admin')
