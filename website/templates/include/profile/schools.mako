@@ -43,18 +43,45 @@
 
                     <div class="form-group">
                         <label>Start Date</label>
-                        <input class="form-control" data-bind="value: start" />
+                        <div class="row">
+                            <div class ="col-md-3">
+                                <select class="form-control" data-bind="options: startMonths,
+                                         optionsCaption: 'Month',
+                                         value: startMonth">
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                            </div>
+                        </div>
                     </div>
+                    <p data-bind="validationMessage: start, style:{color: 'red'}" ></p>
+
 
                     <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
-                        <input class="form-control" data-bind="value: end" />
+                            <div class="row">
+                                <div class ="col-md-3">
+                                    <select class="form-control" data-bind="options: endMonths,
+                                         optionsCaption: 'Month',
+                                         value: endMonth">
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <input class="form-control" placeholder="Year" data-bind="value: endYear" />
+                                </div>
+                            </div>
                     </div>
+
 
                     <div class="form-group">
                         <label>Ongoing</label>
                         <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
+
+                    <!--knockout validation messages-->
+                        <p data-bind="validationMessage: end, style:{color: 'red'}"></p>
+                    <!--->
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 

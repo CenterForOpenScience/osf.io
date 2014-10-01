@@ -327,9 +327,11 @@ def serialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': fmt_date_or_none(school.get('start')),
-        'end': fmt_date_or_none(school.get('end')),
-        # 'ongoing': school.get('ongoing', False),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
+        'ongoing': school.get('ongoing', False),
     }
 
 
@@ -418,9 +420,11 @@ def unserialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': date_or_none(school.get('start')),
-        'end': date_or_none(school.get('end')),
-        # 'ongoing': school.get('ongoing'),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
+        'ongoing': school.get('ongoing'),
     }
 
 
