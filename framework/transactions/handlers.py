@@ -2,12 +2,10 @@
 
 import httplib
 import logging
-import functools
 
-from flask import request, make_response, current_app
+from flask import request, current_app
 from pymongo.errors import OperationFailure
 
-from framework.flask import add_handler
 from framework.transactions import utils, commands, messages
 
 from website import settings
@@ -89,4 +87,3 @@ handlers = {
     'after_request': transaction_after_request,
     'teardown_request': transaction_teardown_request,
 }
-

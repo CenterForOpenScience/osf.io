@@ -2,7 +2,7 @@
 import os
 import hashlib
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 from website.addons.dropbox.model import (
@@ -82,8 +82,6 @@ class TestUserSettingsModel(OsfTestCase):
         user_settings = DropboxUserSettingsFactory()
         node_settings.user_settings = user_settings
         node_settings.save()
-
-        old_logs = node_settings.owner.logs
 
         user_settings.delete()
         user_settings.save()

@@ -126,6 +126,7 @@
             };
 
             // TODO: Remove hardcoded selectors.
+            $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
                 title: 'Edit Title'

@@ -8,7 +8,6 @@ from website import settings
 from . import rubeus  # noqa
 
 
-
 def api_url_for(view_name, _absolute=False, *args, **kwargs):
     """Reverse URL lookup for API routes (those that use the JSONRenderer).
     Takes the same arguments as Flask's url_for, with the addition of
@@ -51,4 +50,3 @@ def is_json_request():
     """Return True if the current request is a JSON/AJAX request."""
     content_type = request.content_type
     return content_type and ('application/json' in content_type)
-
