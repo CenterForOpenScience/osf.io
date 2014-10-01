@@ -5,3 +5,4 @@ factory-boy==2.2.1
 webtest-plus
 mock
 fake-factory
+flake8

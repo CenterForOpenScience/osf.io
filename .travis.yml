@@ -25,6 +25,9 @@ install:
     - npm install -g bower
     - bower install
 
+before_script:
+    - flake8 .
+
 script: invoke test_all
 
 cache:
