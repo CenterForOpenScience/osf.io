@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
-import bleach
 
 from flask import request
 from modularodm import Q
@@ -67,9 +66,6 @@ def project_new_post(auth, **kwargs):
     title = strip_html(request.json.get('title'))
     template = request.json.get('template')
     description = strip_html(request.json.get('description'))
-
-    print title
-    print description
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
