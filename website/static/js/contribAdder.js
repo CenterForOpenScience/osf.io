@@ -161,7 +161,7 @@
                 function(result) {
                     if (!result.contributors.length) {
                         self.notification({
-                            'message': 'No recently added contributors not already included.',
+                            'message': 'No recent collaborators not already included.',
                             'level': 'info'
                         });
                     }
@@ -174,6 +174,26 @@
             );
         };
 
+        self.mostInCommon = function() {
+            self.notification(false);
+            $.getJSON(
+                nodeApiUrl + 'get_most_in_common_contributors/',
+                {},
+                function(result) {
+                    if (!result.contributors.length) {
+                        self.notification({
+                            'message': 'No frequent collaborators not already included.',
+                            'level': 'info'
+                        });
+                    }
+                    var contribs = [];
+                    for (var i=0; i< result.contributors.length; i++) {
+                        contribs.push(new Contributor(result.contributors[i]));
+                    }
+                    self.results(contribs);
+                }
+            );
+        };
 
         self.addTips = function(elements) {
             elements.forEach(function(element) {

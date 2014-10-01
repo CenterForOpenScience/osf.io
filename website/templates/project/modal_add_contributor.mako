@@ -13,8 +13,8 @@
 
                     <!-- Find contributors -->
                     <form class='form'>
-                        <div class="row">
-                            <div class="col-md-6">
+                        <div class="row" style="padding-bottom: 10px;">
+                            <div class="col-md-8">
                                 <div class="input-group">
                                     <input class='form-control'
                                             data-bind="value:query"
@@ -24,11 +24,19 @@
                                     </span>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <!-- ko if:parentId -->
-                                    <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                <!-- /ko -->
-                                <a data-bind="click:recentlyAdded, text:'Get list of recently added contributors'"></a>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div style="padding-bottom: 10px;">
+                                    <!-- ko if:parentId -->
+                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
+                                    <!-- /ko -->
+                                </div>
+                                <div>
+                                    Show my
+                                    <a data-bind="click:recentlyAdded, text:'recent collaborators'"></a>,
+                                    <a data-bind="click:mostInCommon, text:'most frequent collaborators'"></a>
+                                </div>
                             </div>
                         </div>
                     </form>

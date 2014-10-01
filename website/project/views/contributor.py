@@ -3,6 +3,7 @@
 import time
 import httplib as http
 
+from collections import Counter
 from flask import request, redirect
 from modularodm.exceptions import ValidationValueError
 
@@ -113,6 +114,40 @@ def get_contributors_from_parent(auth, **kwargs):
         utils.add_contributor_json(contrib)
         for contrib in parent.visible_contributors
         if contrib._id not in node.visible_contributor_ids
+    ]
+
+    return {'contributors': contribs}
+
+
+@must_have_permission(ADMIN)
+def get_most_in_common_contributors(auth, **kwargs):
+    MAX_MOST_IN_COMMON_LENGTH = 15
+
+    node = kwargs['node'] or kwargs['project']
+
+    if not node.can_view(auth):
+        raise HTTPError(http.FORBIDDEN)
+
+    contrib_counts = Counter()
+    node_contrib_ids = node.contributors._to_primary_keys()
+
+    for node in auth.user.node__contributed:
+        for contrib_id in node.contributors._to_primary_keys():
+            if contrib_id not in node_contrib_ids:
+                contrib_counts[contrib_id] += 1
+
+    most_common_contribs = []
+
+    for contrib_id, count in contrib_counts.most_common():
+        if len(most_common_contribs) >= MAX_MOST_IN_COMMON_LENGTH:
+            break
+        contrib = User.load(contrib_id)
+        if contrib.is_active():
+            most_common_contribs.append((contrib, count))
+
+    contribs = [
+        utils.add_contributor_json(contrib, get_current_user())
+        for contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
     ]
 
     return {'contributors': contribs}
