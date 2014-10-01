@@ -11,6 +11,7 @@ from framework.flask import app
 from framework.exceptions import HTTPError
 from framework.guid.model import Guid, Metadata
 
+from website import settings
 from website.search.search import search
 from website.project import new_node, Node
 from website.project.decorators import (
@@ -20,7 +21,6 @@ from website.project.decorators import (
 )
 
 from website.addons.app.utils import elastic_to_rss
-from website.addons.app.utils import create_orphaned_metadata
 
 from . import metadata, customroutes
 
@@ -43,12 +43,13 @@ def query_app(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_rss(node_addon, **kwargs):
-    q = request.args.get('q', '')
+    q = request.args.get('q', '*')
     start = request.args.get('page', 0)
+    name = node_addon.system_user.username
+    base = '{}{{}}/'.format(settings.DOMAIN)
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100)
 
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
-
-    return elastic_to_rss(ret)
+    return elastic_to_rss(name, [blob['_source'] for blob in ret['hits']['hits']], q, base)
 
 
 @must_have_permission('admin')
@@ -66,12 +67,12 @@ def create_application_project(node_addon, **kwargs):
 
     tags = request.json.get('tags', [])
     _metadata = request.json.get('metadata')
-    privacy = request.json('privacy', 'public')
     parent = Node.load(request.json.get('parent'))
-    contributors = request.json('contributors', [])
-    system_metadata = request.json.get('systemData')
+    privacy = request.json.get('privacy', 'public')
     category = request.json.get('category', 'project')
-    permissions = request.json('permissions', ['admin'])
+    contributors = request.json.get('contributors', [])
+    system_metadata = request.json.get('systemData', {})
+    permissions = request.json.get('permissions', ['admin'])
 
     node = new_node(category, request.json['title'], node_addon.system_user, request.json.get('description'), project=parent)
 
@@ -80,7 +81,7 @@ def create_application_project(node_addon, **kwargs):
 
     for contributor in contributors:
         try:
-            node.add_unregistered_contributor(contributor['full_name'],
+            node.add_unregistered_contributor(contributor['name'],
                 contributor.get('email'), auth,
                 permissions=permissions)
         except ValidationError:
@@ -119,37 +120,3 @@ def act_as_application(node_addon, route, **kwargs):
         'auth': Auth(node_addon.system_user)
     })
     return app.view_functions[match[0]](**match[1])
-
-
-def adopt_metadata(node_addon, mid, **kwargs):
-    metastore = Metadata.load(mid)
-
-    if not metastore:
-        raise HTTPError(http.NOT_FOUND)
-
-    resource = find_or_create_from_report(metastore.data, node_addon)
-
-    report_node = find_or_create_report(resource, metastore.data,
-            node_addon, metadata=metastore)
-
-    for contributor in metastore.data['contributors']:
-        try:
-            resource.add_unregistered_contributor(contributor['full_name'],
-                    contributor.get('email'), Auth(node_addon.system_user),
-                    permissions=['admin'])  # TODO Discuss this
-        except ValidationError:
-            pass  # A contributor with the given email has already been added
-
-    for tag in metastore.data['tags']:
-        resource.add_tag(tag, Auth(node_addon.system_user))
-
-    return {
-        'id': report_node._id,
-        'url': report_node.url,
-        'apiUrl': report_node.api_url,
-        'resource': {
-            'id': resource._id,
-            'url': resource.url,
-            'apiUrl': resource.api_url
-        }
-    }, http.CREATED

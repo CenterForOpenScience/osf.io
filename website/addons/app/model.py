@@ -106,7 +106,6 @@ class AppNodeSettings(GuidStoredObject):
 
     def attach_system_data(self, guid, data):
         metastore = self._guid_to_metadata(guid)
-
         metastore.system_data.update(data)
         metastore.save()
 

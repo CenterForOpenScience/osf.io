@@ -2,7 +2,7 @@
 """Routes for the app addon.
 """
 
-from framework.routing import Rule, json_renderer
+from framework.routing import Rule, json_renderer, xml_renderer
 from website.routes import OsfWebRenderer
 
 from . import views
@@ -36,15 +36,6 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/app/reports/',
-                '/project/<pid>/node/<nid>/app/reports/'
-            ],
-            'post',
-            views.crud.create_report,
-            json_renderer
-        ),
-        Rule(
-            [
                 '/project/<pid>/app/<path:route>/',
                 '/project/<pid>/node/<nid>/app/<path:route>/'
             ],
@@ -58,6 +49,13 @@ api_routes = {
             'get',
             views.crud.query_app,
             json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app.rss',
+             '/project/<pid>/node/<nid>/app.rss'],
+            'get',
+            views.crud.query_app_rss,
+            xml_renderer
         ),
     ],
     'prefix': '/api/v1'
