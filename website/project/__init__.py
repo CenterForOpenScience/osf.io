@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import datetime as dt
 import uuid
-from .model import Node, NodeLog, Pointer, PrivateLink
+
+from .model import Node, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
@@ -10,7 +10,7 @@ from website.exceptions import NodeStateError
 def show_diff(seqm):
     """Unify operations between two compared strings
 seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
-    output= []
+    output = []
     insert_el = '<span style="background:#4AA02C; font-size:1.5em; ">'
     ins_el_close = '</span>'
     del_el = '<span style="background:#D16587; font-size:1.5em;">'
@@ -66,7 +66,7 @@ def new_dashboard(user):
     """
     existing_dashboards = user.node__contributed.find(
         Q('category', 'eq', 'project') &
-        Q('is_dashboard','eq', True)
+        Q('is_dashboard', 'eq', True)
     )
 
     if existing_dashboards.count() > 0:

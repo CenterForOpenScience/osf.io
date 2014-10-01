@@ -29,7 +29,7 @@ def serialize_user(user, node=None, full=False):
     :param bool full: Include complete user properties
 
     """
-    fullname =  user.display_full_name(node=node)
+    fullname = user.display_full_name(node=node)
     rv = {
         'id': str(user._primary_key),
         'registered': user.is_registered,

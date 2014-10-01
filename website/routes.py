@@ -806,7 +806,7 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/revoke_key/',
             '/project/<pid>/node/<nid>/revoke_key/'
-        ], 'post', project_views.key.revoke_node_key,  json_renderer),
+        ], 'post', project_views.key.revoke_node_key, json_renderer),
         Rule([
             '/project/<pid>/keys/',
             '/project/<pid>/node/<nid>/keys/',
@@ -943,8 +943,9 @@ def make_url_map(app):
 
         # Endpoint to fetch Rubeus.JS/Hgrid-formatted data
         Rule(
-            ['/project/<pid>/files/grid/',
-            '/project/<pid>/node/<nid>/files/grid/'
+            [
+                '/project/<pid>/files/grid/',
+                '/project/<pid>/node/<nid>/files/grid/'
             ],
             'get',
             project_views.file.grid_data,
