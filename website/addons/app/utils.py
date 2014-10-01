@@ -4,6 +4,10 @@
 from __future__ import unicode_literals
 
 import logging
+from datetime import datetime
+from cStringIO import StringIO
+
+from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
 
@@ -13,9 +17,12 @@ from website import settings
 from website.search import search
 
 
-def create_orphaned_metadata(node_addon, report):
+logger = logging.getLogger(__name__)
+
+
+def create_orphaned_metadata(node_addon, metadata):
     metastore = Metadata(app=node_addon)
-    metastore.update(report)
+    metastore.update(metadata)
     metastore.system_data['is_orphan'] = True
     metastore.system_data['guid'] = metastore._id
     metastore.save()
@@ -25,27 +32,28 @@ def create_orphaned_metadata(node_addon, report):
     return metastore
 
 
-def elastic_to_rss(data):
+def elastic_to_rss(name, data, query, url_base):
+    count = len(data)
+
     items = [
         pyrss.RSSItem(
-            title=doc.get('title', 'No Title'),
-            link=settings.DOMAIN + doc['guid'],
+            guid=doc['guid'],
+            link=url_base.format(doc['guid']),
+            title=doc.get('title', 'No title provided'),
             description=doc.get('description', 'No description provided'),
-            guid=doc.get('id'),
-            author='; '.join([contributor for contributor in doc.get('contributors')]) or 'No contributors listed',
-            pubDate=doc.get('iso_timestamp')
+            pubDate=parse(doc.get('timestamp'))
         )
-        for doc in data.values()
+        for doc in data
     ]
 
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
 
     rss = pyrss.RSS2(
-        title='scrAPI: RSS feed for documents retrieved from query: "{query}"'.format(query=query),
+        title='{name}: RSS for query: "{query}"'.format(name=name, query=query),
         link='{base_url}rss?q={query}'.format(base_url=settings.DOMAIN, query=query),
         items=items,
         description='{n} results, {m} most recent displayed in feed'.format(n=count, m=len(items)),
-        lastBuildDate=str(datetime.datetime.now()),
+        lastBuildDate=str(datetime.now()),
     )
 
     f = StringIO()
