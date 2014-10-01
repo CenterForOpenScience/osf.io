@@ -84,9 +84,9 @@ class TestContributorViews(OsfTestCase):
         res_contribs = res.json['contributors']
         assert_equal(len(res.json['contributors']), 2)
         assert_equal(contributor_1._id, res_contribs[0]['id'])
-        assert_equal(res_contribs[0]['n_project_in_common'], 2)
+        assert_equal(res_contribs[0]['n_projects_in_common'], 2)
         assert_equal(contributor_2._id, res_contribs[1]['id'])
-        assert_equal(res_contribs[1]['n_project_in_common'], 1)
+        assert_equal(res_contribs[1]['n_projects_in_common'], 1)
 
     def test_get_recently_added_contributors(self):
         project = ProjectFactory(creator=self.user)
