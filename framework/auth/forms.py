@@ -174,8 +174,8 @@ class MergeAccountForm(Form):
         NoHtmlCharacters(),
         EmailExists(),
     ],
-    filters=[lowerstripped],
-    widget=BootstrapTextInput())
+        filters=[lowerstripped],
+        widget=BootstrapTextInput())
     merged_password = PasswordField("Duplicate User's Password",
                                     [validators.Required(message=u"Please enter the user's password")],
                                     filters=[stripped],

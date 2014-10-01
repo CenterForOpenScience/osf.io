@@ -11,23 +11,23 @@ class FrameworkError(Exception):
 class HTTPError(FrameworkError):
 
     error_msgs = {
-        http.BAD_REQUEST : {
+        http.BAD_REQUEST: {
             'message_short': 'Bad request',
             'message_long': 'If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
         },
-        http.UNAUTHORIZED : {
+        http.UNAUTHORIZED: {
             'message_short': 'Unauthorized',
             'message_long': 'You must <a href="/login/">log in</a> to access this resource.',
         },
-        http.FORBIDDEN : {
+        http.FORBIDDEN: {
             'message_short': 'Forbidden',
             'message_long': 'You do not have permission to perform this action. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
         },
-        http.NOT_FOUND : {
+        http.NOT_FOUND: {
             'message_short': 'Page not found',
             'message_long': 'The requested resource could not be found. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
         },
-        http.GONE : {
+        http.GONE: {
             'message_short': 'Resource deleted',
             'message_long': 'The requested resource has been deleted. If this should not have occurred and the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
         },
