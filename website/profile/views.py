@@ -314,8 +314,10 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': fmt_date_or_none(job.get('start')),
-        'end': fmt_date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing', False),
     }
 
@@ -327,7 +329,7 @@ def serialize_school(school):
         'degree': school.get('degree'),
         'start': fmt_date_or_none(school.get('start')),
         'end': fmt_date_or_none(school.get('end')),
-        'ongoing': school.get('ongoing', False),
+        # 'ongoing': school.get('ongoing', False),
     }
 
 
@@ -403,8 +405,10 @@ def unserialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': date_or_none(job.get('start')),
-        'end': date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing'),
     }
 
@@ -416,7 +420,7 @@ def unserialize_school(school):
         'degree': school.get('degree'),
         'start': date_or_none(school.get('start')),
         'end': date_or_none(school.get('end')),
-        'ongoing': school.get('ongoing'),
+        # 'ongoing': school.get('ongoing'),
     }
 
 

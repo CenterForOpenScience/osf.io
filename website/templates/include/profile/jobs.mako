@@ -41,20 +41,54 @@
                         <input class="form-control" data-bind="value: title" />
                     </div>
 
-                    <div class="form-group">
                         <label>Start Date</label>
-                        <input class="form-control" data-bind="value: start" />
-                    </div>
+                        <div class="row">
+                        <div class ="col-md-2">
+                         <select data-bind="options: startMonths,
+                             optionsCaption: 'Month',
+                             value: startMonth">
+                         </select>
+
+                           </div>
+                             <div class="form-group">
+                            <div class="col-md-3">
+                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                            </div>
+                            </div>
+                        </div>
+
 
                     <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
-                        <input class="form-control" data-bind="value: end" />
+                            <div class="row">
+                                <div class ="col-md-2">
+                                    <select data-bind="options: endMonths,
+                                         optionsCaption: 'Month',
+                                         value: endMonth">
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input class="form-control" placeholder="Year" data-bind="value: endYear" />
+                                </div>
+                            </div>
                     </div>
 
                     <div class="form-group">
                         <label>Ongoing</label>
                         <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
+
+
+##                    <div class="form-group" data-bind="ifnot: ongoing">
+##                        <label>End Date</label>
+##                        <input class="form-control" data-bind="value: end" />
+##                    </div>
+##
+##                    <div class="form-group">
+##                        <label>Ongoing</label>
+##                        <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
+##                    </div>
+
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 
@@ -120,7 +154,7 @@
                         <td>{{ institution }}</td>
                         <td>{{ department }}</td>
                         <td>{{ title }}</td>
-                        <td>{{ start }}</td>
+                        <td>{{ startMonth }} {{ startYear }}</td>
                         <td>{{ endView }}</td>
 
                     </tr>

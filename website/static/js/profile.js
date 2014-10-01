@@ -463,27 +463,42 @@
         });
         self.department = ko.observable('');
         self.title = ko.observable('');
-
-        self.start = ko.observable().extend({
-            date: true,
-            asDate: true,
+        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']);
+        self.startMonth = ko.observable('');
+        self.startYear = ko.observable('').extend({
+            pattern: /^\d{4}$/,
             pyDate: true
         });
-        self.end = ko.observable().extend({
-            date: true,
-            asDate: true,
-            pyDate: true,
+        self.start = ko.computed(function() {
+            return new Date(self.startMonth() + '1,' + self.startYear());
+        }, self).extend({
+            notInFuture:true
+        });
+        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']);
+        self.endMonth = ko.observable('');
+        self.endYear = ko.observable('').extend({
+            pattern: /^\d{4}$/,
+            pyDate: true
+        });
+        self.end = ko.computed(function() {
+            if (self.endMonth() == '' && self.endYear() == '') {
+                return '';
+            }
+            return new Date(self.endMonth() + '1,' + self.endYear());
+        }, self).extend({
+            notInFuture:true,
             minDate: self.start
         });
         self.ongoing = ko.observable(false);
 
         self.clearEnd = function() {
-            self.end('');
+            self.endMonth('');
+            self.endYear('');
             return true;
         };
 
         self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.end());
+            return (self.ongoing() ? 'ongoing' : self.endMonth() + ' ' + self.endYear());
         }, self);
 
         var validated = ko.validatedObservable(self);
