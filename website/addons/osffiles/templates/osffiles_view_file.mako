@@ -35,7 +35,7 @@
                     <!-- download url; 'Downloads' column 2 -->
                     <td>
                         <a href="{{download_url}}">
-                            <i class="icon-download-alt"></i>
+                            <i class="icon-download-alt btn btn-xl"></i>
                         </a>
                     </td>
                 </tr>

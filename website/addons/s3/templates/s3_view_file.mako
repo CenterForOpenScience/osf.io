@@ -25,7 +25,7 @@
                     </td>
                     <td>
                         <a href="${version['download']}" download="${file_name}">
-                            <i class="icon-download-alt"></i>
+                            <i class="icon-download-alt btn btn-lg"> Download</i>
                         </a>
                     </td>
                 </tr>

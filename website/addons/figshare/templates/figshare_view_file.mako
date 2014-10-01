@@ -24,7 +24,7 @@ $('#figsharePublishArticle').on('click', function(){
 % endif
 %if download_url:
     <a href="${download_url}">
-      <i class="icon-download-alt"></i>
+      <i class="icon-download-alt btn btn-lg"> Download</i>
     </a><br />
 %endif
 %if file_versions:

@@ -28,7 +28,7 @@
                         </td>
                         <td>
                             <a href="{{download_url}}">
-                                <i class="icon-download-alt"></i>
+                                <i class="icon-download-alt btn btn-lg"> Download</i>
                             </a>
                         </td>
                     </tr>
