@@ -1476,10 +1476,18 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
+#projectScope .form-control {
+    width: 400px;
+}
+
 /* Contributors list */
 
 #contributors {
     margin-bottom:10px;
+}
+
+#contributors #description {
+    vertical-align: top;
 }
 
 #contributors ol {

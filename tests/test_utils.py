@@ -68,10 +68,17 @@ class TestGetMimeTypes(unittest.TestCase):
         mimetype = get_mimetype(name)
         assert_equal('text/x-markdown', mimetype)
 
+    @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
     def test_unknown_extension_with_no_contents_not_real_file_results_in_exception(self):
         name = 'test.thisisnotarealextensionidonotcarwhatyousay'
         with assert_raises(IOError):
             get_mimetype(name)
+
+    @unittest.skipIf(LIBMAGIC_AVAILABLE, 'This test only runs if python-magic and libmagic are not installed')
+    def test_unknown_extension_with_no_contents_not_real_file_results_in_exception(self):
+        name = 'test.thisisnotarealextensionidonotcarwhatyousay'
+        mime_type = get_mimetype(name)
+        assert_equal(None, mime_type)
 
     @unittest.skipIf(not LIBMAGIC_AVAILABLE, 'Must have python-magic and libmagic installed')
     def test_unknown_extension_with_real_file_results_in_python_mimetype(self):
