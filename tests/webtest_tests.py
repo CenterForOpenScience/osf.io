@@ -282,6 +282,16 @@ class TestAUser(OsfTestCase):
         ), auth=self.auth)
         assert_in('No wiki content', res)
 
+    def test_noncontributor_cannot_see_wiki_if_no_content(self):
+        user2 = UserFactory()
+        # user2 creates a public project and adds no wiki content
+        project = ProjectFactory(creator=user2, is_public=True)
+        # self navigates to project
+        res = self.app.get(project.url).maybe_follow()
+        # Should not see wiki at all (since non-contributor and no content)
+        assert_not_in('Wiki', res)
+
+
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
         td1 = res.html.find('td', text=re.compile(r'Public(.*?)Profile'))
