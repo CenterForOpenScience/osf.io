@@ -19,6 +19,7 @@ from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
 from website.util.sanitize import escape_html
+from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ def edit_profile(**kwargs):
 
     response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = sanitize(form['value'])
+        user.fullname = strip_html(form['value'])
         user.save()
         response_data['name'] = user.fullname
     return response_data

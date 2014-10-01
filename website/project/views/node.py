@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import httplib as http
+import bleach
 
 from flask import request
 from modularodm import Q
@@ -10,8 +11,6 @@ from framework import status
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
-from framework.mongo.utils import from_mongo
-
 from website import language
 
 from website.exceptions import NodeStateError
@@ -65,9 +64,12 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
+
+    print title
+    print description
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
