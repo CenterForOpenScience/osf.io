@@ -82,8 +82,12 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
+
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
+        cls._original_piwik_host = settings.PIWIK_HOST
+        settings.PIWIK_HOST = None
+
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
@@ -99,6 +103,7 @@ class DbTestCase(unittest.TestCase):
         super(DbTestCase, cls).tearDownClass()
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
+        settings.PIWIK_HOST = cls._original_piwik_host
 
 
 class AppTestCase(unittest.TestCase):
