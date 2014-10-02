@@ -12,11 +12,11 @@ sentry = Sentry(dsn=settings.SENTRY_DSN)
 
 # Nothing in this module should send to Sentry if debug mode is on
 #   or if Sentry isn't configured.
-__disabled = settings.DEBUG_MODE or not settings.SENTRY_DSN
+enabled = (not settings.DEBUG_MODE) and settings.SENTRY_DSN
 
 
 def log_exception():
-    if __disabled:
+    if not enabled:
         logger.warning('Sentry called to log exception, but is not active')
         return None
 
@@ -26,7 +26,7 @@ def log_exception():
 
 
 def log_message(message):
-    if __disabled:
+    if not enabled:
         logger.warning(
             'Sentry called to log message, but is not active: %s' % message
         )

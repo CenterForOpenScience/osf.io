@@ -4,7 +4,7 @@ import os
 
 from flask import redirect, send_from_directory
 
-from framework import status
+from framework import sentry, status
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
 from framework.routing import (
@@ -38,7 +38,7 @@ def get_globals():
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
-        'sentry_dsn_js': settings.SENTRY_DSN_JS,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
