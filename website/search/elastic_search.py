@@ -509,29 +509,35 @@ def _metadata_inner_query(query):
     filters = []
     for item in query:
         item = item.split(':')
+
         if len(item) == 1:
             item = ['_all', item[0]]
-
-        filters.append({
-            "query": {
-                'match': {
-                    item[0]: {
-                        'query': item[1],
-                        'operator': 'and',
-                        'type': 'phrase',
+        if len(item[1].split(',')) > 1:
+            filters.append({
+                'terms': {
+                    item[0]: item[1].split(',')
+                }
+            })
+        else:
+            filters.append({
+                "query": {
+                    'match': {
+                        item[0]: {
+                            'query': item[1],
+                            'operator': 'and',
+                            'type': 'phrase',
+                        }
                     }
                 }
-            }
-        })
+            })
 
-        inner_query = {
-            'filtered': {
-                'filter': {
-                    'and': filters
-                },
+    inner_query = {
+        'filtered': {
+            'filter': {
+                'and': filters,
             },
-        }
-
+        },
+    }
     return inner_query
 
 
