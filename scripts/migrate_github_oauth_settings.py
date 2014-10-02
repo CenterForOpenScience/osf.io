@@ -4,23 +4,41 @@
 
 import sys
 import mock
-from modularodm import Q
+
+from nose.tools import *
+
+from framework.mongo import database
 from website.app import init_app
 from tests.base import OsfTestCase
 
-from framework.auth import User
+
 from website.addons.github.api import GitHub
 from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUserSettings
 
+
+# user_settings_collection = AddonGitHubUserSettings._storage[0].store
 
 def do_migration(records):
     # ... perform the migration ...
     
     for user_settings in records:
-        
-        access_token = user_settings.oauth_access_token
-        token_type = user_settings.oauth_token_type
-        github_user_name = user_settings.github_user
+
+        raw_user_settings = AddonGitHubUserSettings._storage[0].store.find_one({'_id': user_settings._id})
+
+        access_token = raw_user_settings['oauth_access_token']
+        token_type = raw_user_settings['oauth_token_type']
+        github_user_name = raw_user_settings['github_user']
+
+        AddonGitHubUserSettings._storage[0].store.update(
+            {'_id': user_settings._id},
+            {
+                '$unset': {
+                    'access_token': True,
+                    'token_type': True,
+                    'github_user_name': True,
+                }
+            }
+        )
         
         gh = GitHub(access_token, token_type)
         github_user = gh.user()
@@ -50,45 +68,63 @@ def main():
         # print list of affected nodes, totals, etc.
         for user_setting in user_settings:
             print "===AddonGithubUserSettings==="
-            print "github_user:"
-            print (user_setting.github_user)
+            print "user_settings_id:"
+            print (user_setting._id)
 
     else:
         do_migration(get_user_settings())
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):
+
     def setUp(self):
         super(TestMigrateGitHubOauthSettings, self).setUp()
-        self.user_settings = AddonGitHubUserSettings()
-        self.user_settings._id = "testing user settings"
-        self.user_settings.save()
-        self.user_settings.oauth_access_token = "testing acess token"
-        self.user_settings.oauth_token_type = "testing token type"
-        self.user_settings.oauth_state = "no state"
-        self.user_settings.github_user = "testing user"
-        self.user_settings.save()
+
+        self.mongo_collection = database.addongithubusersettings
+        self.mongo_collection.remove()
+        self.user_settings = {
+            "__backrefs" : {
+                "authorized" : {
+                    "addongithubnodesettings" : {
+                        "user_settings" : [
+                            "678910",
+                        ]
+                    }
+                }
+            },
+            "_id" : "123456",
+            "_version" : 1,
+            "deletedAddonGitHubUserSettings" : False,
+            "github_user" : "testing user",
+            "oauth_access_token" : "testing acess token",
+            "oauth_state" : "no state",
+            "oauth_token_type" : "testing token type",
+            "owner" : "abcde"
+        }
+        self.mongo_collection.insert(self.user_settings)
 
 
-    def test_get_targets(self):
-        records = list(get_user_settings())
+    def test_get_user_settings(self):
+        # records = list(get_user_settings())
+
+        records = list(self.mongo_collection.find())
 
         assert_equal(1, len(records))
         assert_equal(
-            records[0].github_user,
-            self.user_settings.github_user
+            records[0]['github_user'],
+            self.user_settings['github_user']
         )
         assert_equal(
-            records[0].oauth_state,
-            self.user_settings.oauth_state
+            records[0]['oauth_state'],
+            self.user_settings['oauth_state']
         )
         assert_equal(
-            records[0].oauth_access_token,
-            self.user_settings.oauth_access_token
+            records[0]['oauth_access_token'],
+            self.user_settings['oauth_access_token']
         )
         assert_equal(
-            records[0].oauth_token_type,
-            self.user_settings.oauth_token_type
+            records[0]['oauth_token_type'],
+            self.user_settings['oauth_token_type']
         )
 
     @mock.patch('website.addons.github.api.GitHub.user')
@@ -115,6 +151,9 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
             self.user_settings.oauth_settings.github_user_id,
             "testing user id"
         )
+
+    def tearDown(self):
+        self.mongo_collection.remove()
 
 if __name__ == '__main__':
     main()
