@@ -63,7 +63,7 @@ def wiki_widget(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, '{}wiki/home/'.format(node.url)
+    return {}, None, None, u'{}wiki/home/'.format(node.url)
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
@@ -304,9 +304,9 @@ def project_wiki_edit_post(wid, auth, **kwargs):
         node_to_use.update_node_wiki(wid, request.form['content'], auth)
         return {
             'status': 'success',
-        }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+        }, None, None, u'{}wiki/{}/'.format(node_to_use.url, wid)
     else:
-        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+        return {}, None, None, u'{}wiki/{}/'.format(node_to_use.url, wid)
 
 
 @must_not_be_registration
@@ -316,6 +316,11 @@ def project_wiki_rename(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = request.json.get('pk', None)
     page = NodeWikiPage.load(wid)
+    if page.page_name.lower() == 'home':
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='The wiki home page cannot be renamed.'
+        ))
     new_name = request.json.get('value', None)
     if new_name != sanitize(new_name):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)

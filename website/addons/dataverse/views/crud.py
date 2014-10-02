@@ -7,8 +7,9 @@ import requests
 from bs4 import BeautifulSoup
 from flask import request, make_response
 
-from framework.flask import secure_filename, redirect
+from framework.flask import redirect
 from framework.exceptions import HTTPError
+from framework.utils import secure_filename
 from framework.auth.utils import privacy_info_handle
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
