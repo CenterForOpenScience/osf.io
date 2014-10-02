@@ -7,7 +7,6 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from website.addons.twofactor.tests import _valid_code
 
-
 class TestCallbacks(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def setUp(self, mocked):
@@ -24,7 +23,8 @@ class TestCallbacks(OsfTestCase):
         assert_false(self.user_settings.is_confirmed)
         assert_true(self.on_add_called)
 
-    def test_remove_from_user(self):
+    @mock.patch('website.addons.twofactor.models.push_status_message')
+    def test_remove_from_user(self, mocked):
         # drift defaults to 0. Change it so we can test it was changed back.
         self.user_settings.totp_drift = 1
         self.user_settings.save()
@@ -34,6 +34,7 @@ class TestCallbacks(OsfTestCase):
         assert_equal(self.user_settings.totp_drift, 0)
         assert_is_none(self.user_settings.totp_secret)
         assert_false(self.user_settings.is_confirmed)
+        assert_true(mocked.called)
 
 
 class TestUserSettingsModel(OsfTestCase):
