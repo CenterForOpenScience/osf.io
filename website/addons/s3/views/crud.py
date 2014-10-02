@@ -137,6 +137,8 @@ def s3_view(**kwargs):
         'render_url': urls['render'],
         'versions': versions,
         'current': key.version_id,
+        'info_url': urls['info'],
+        'delete_url': urls['delete'],
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -202,3 +204,20 @@ def create_new_bucket(**kwargs):
         return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
+
+
+@must_be_contributor_or_public  # returns user, project
+@must_have_addon('s3', 'node')
+def file_delete_info(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    file_name = kwargs['fid']
+    file_name_clean = file_name.replace('.', '_')
+    files_page_url = node.web_url_for('collect_file_trees')
+    try:
+        api_url = node.api_url
+    except KeyError:
+        raise HTTPError(http.NOT_FOUND)
+    return {
+        'api_url': api_url,
+        'files_page_url': files_page_url,
+    }

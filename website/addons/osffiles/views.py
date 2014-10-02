@@ -315,6 +315,7 @@ def view_file(auth, **kwargs):
 
     download_url = file_object.download_url(node)
     render_url = file_object.render_url(node)
+    info_url = file_object.info_url(node)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -342,7 +343,7 @@ def view_file(auth, **kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'info_url': file_object.api_url(node) + 'info/',
+        'info_url': info_url,
     }
 
     rv.update(_view_project(node, auth))
