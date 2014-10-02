@@ -1,1 +1,1 @@
-from . import config, widget
+from . import config, widget  # noqa

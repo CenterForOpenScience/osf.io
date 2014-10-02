@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
+import os  # noqa
 import datetime
 import logging
 import requests
@@ -262,12 +262,12 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         ],
         rubeus.KIND: rubeus.FILE,
         'urls': {
-                'view': node.web_url_for('dataverse_view_file',
+            'view': node.web_url_for('dataverse_view_file',
+                                     path=file.id),
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file.id),
-                'download': node.web_url_for('dataverse_download_file',
-                                             path=file.id),
-                'delete': node.api_url_for('dataverse_delete_file',
-                                           path=file.id),
+            'delete': node.api_url_for('dataverse_delete_file',
+                                          path=file.id),
         },
         'permissions': {
             'view': can_view,
@@ -351,10 +351,10 @@ def scrape_dataverse(file_id, name_only=False):
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
         data = {
-            'form1':'form1',
+            'form1': 'form1',
             'javax.faces.ViewState': view_state,
-            'form1:termsAccepted':'on',
-            'form1:termsButton':'Continue',
+            'form1:termsAccepted': 'on',
+            'form1:termsButton': 'Continue',
         }
         terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
@@ -409,5 +409,5 @@ def fail_if_private(file_id):
                     'The dataverse does not allow users to download files on ' +
                     'private studies at this time. Please contact the owner ' +
                     'of this Dataverse study for access to this file.',
-              }
+            }
         )

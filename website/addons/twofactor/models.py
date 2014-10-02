@@ -46,7 +46,6 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
             return True
         return False
 
-
     #############
     # Callbacks #
     #############
@@ -78,7 +77,7 @@ def _generate_seed():
 
     :return str: A random, padded hex value
     """
-    x = SystemRandom().randint(0, 32**16-1)
+    x = SystemRandom().randint(0, 32 ** 16 - 1)
     h = hex(x).strip('L')[2:]
     if len(h) % 2:
         h = '0' + h
