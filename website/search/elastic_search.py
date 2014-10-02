@@ -505,6 +505,14 @@ def search_metadata(query, _type, start, size):
 
 
 def _metadata_inner_query(query):
+    if query == '*':
+        return {
+            'query_string': {
+                'default_field': '_all',
+                'query': '*',
+                'analyze_wildcard': True,
+            }
+        }
     query = query.split(';')
     filters = []
     for item in query:
