@@ -1,11 +1,11 @@
 <div class="navbar-outer" style="overflow: hidden">
     <div class="wiki-title-container">
         <h3 class="wiki-title" id="wikiName">
-            % if page.page_name == 'home':
+            % if pageName == 'home':
                 <i class="icon-home"></i>
             % endif
             <span id="pageName"
-                % if page.page_name == 'home':
+                % if pageName == 'home':
                     data-toggle="tooltip"
                     title="Note: Home page cannot be renamed."
                 % endif
@@ -35,7 +35,7 @@
         $('#wikiName').addClass('long-wiki-title');
     }
     // Activate editable title (except for home page)
-    %if wiki_id and page.page_name != 'home':
+    %if wiki_id and pageName != 'home':
     $(document).ready(function() {
         $pageName.editable({
             type: 'text',
