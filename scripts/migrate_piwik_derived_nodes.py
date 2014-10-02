@@ -19,30 +19,17 @@ from website.models import Node
 logger = logging.getLogger('root')
 
 
-
-
-
-def has_duplicate_piwik_id(node, attribute):
-    parent = getattr(node, attribute)
-
-    if (
-        parent
-        and parent.piwik_site_id is not None
-        and parent.piwik_site_id == node.piwik_site_id
-    ):
-        return True
-
-    if parent:
-        has_duplicate_piwik_id(parent, attribute)
-
-    return False
+def has_duplicate_piwik_id(node):
+    if node.piwik_site_id is None:
+        return False
+    return Node.find(Q('piwik_site_id', 'eq', node.piwik_site_id)).count() > 1
 
 
 def get_broken_registrations():
     return (
         node for node
         in Node.find(Q('is_registration', 'eq', True))
-        if has_duplicate_piwik_id(node, 'registered_from')
+        if has_duplicate_piwik_id(node)
     )
 
 
@@ -50,7 +37,7 @@ def get_broken_forks():
     return (
         node for node
         in Node.find(Q('is_fork', 'eq', True))
-        if has_duplicate_piwik_id(node, 'forked_from')
+        if has_duplicate_piwik_id(node)
     )
 
 
@@ -58,7 +45,7 @@ def get_broken_templated():
     return (
         node for node
         in Node.find(Q('template_node', 'ne', None))
-        if has_duplicate_piwik_id(node, 'template_node')
+        if has_duplicate_piwik_id(node)
     )
 
 
@@ -133,6 +120,10 @@ class TestMigrateRegistrations(OsfTestCase):
 
         self.broken_registration.piwik_site_id = 3
         self.broken_registration.save()
+
+    def tearDown(self):
+        super(TestMigrateRegistrations, self).tearDown()
+        Node.remove()
 
     def test_get_broken_registrations(self):
         nodes = list(get_broken_registrations())
