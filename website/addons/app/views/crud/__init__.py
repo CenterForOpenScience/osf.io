@@ -32,7 +32,15 @@ def query_app(node_addon, **kwargs):
     q = request.args.get('q', '')
     start = request.args.get('page', 0)
 
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
+    try:
+        ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
+    except Exception:
+        # TODO Fix me
+        return {
+            'results': [],
+            'total': 0
+        }
+
     return {
         'results': [blob['_source'] for blob in ret['hits']['hits']],
         'total': ret['hits']['total']
