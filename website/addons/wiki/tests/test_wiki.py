@@ -167,6 +167,13 @@ class TestWikiRename(OsfTestCase):
         self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+
+
+        self.page_name = 'page2'
+        self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
+        self.project.save()
+        self.page = self.project.get_wiki_page(self.page_name)
+
         self.wiki = self.project.get_wiki_page('home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
@@ -177,25 +184,25 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
         self.app.put_json(
             self.url,
-            {'value': new_name, 'pk': self.wiki._id},
+            {'value': new_name, 'pk': self.page._id},
             auth=self.auth,
         )
         self.project.reload()
 
-        old_wiki = self.project.get_wiki_page('home')
+        old_wiki = self.project.get_wiki_page(self.page_name)
         assert_false(old_wiki)
 
         new_wiki = self.project.get_wiki_page(new_name)
         assert_true(new_wiki)
-        assert_equal(new_wiki._id, self.wiki._id)
-        assert_equal(new_wiki.content, self.wiki.content)
-        assert_equal(new_wiki.version, self.wiki.version)
+        assert_equal(new_wiki._id, self.page._id)
+        assert_equal(new_wiki.content, self.page.content)
+        assert_equal(new_wiki.version, self.page.version)
 
     def test_rename_wiki_page_invalid(self):
         new_name = '<html>hello</html>'
 
         with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(self.url, {'value': new_name, 'pk': self.page._id}, auth=self.auth)
 
             e = cm.exception
             assert_equal(e, 422)
@@ -207,7 +214,7 @@ class TestWikiRename(OsfTestCase):
         with assert_raises(AppError) as cm:
             self.app.put_json(
                 self.url,
-                {'value': new_name, 'pk': self.wiki._id},
+                {'value': new_name, 'pk': self.page._id},
                 auth=self.auth,
             )
 
