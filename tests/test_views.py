@@ -732,9 +732,9 @@ class TestUserProfile(OsfTestCase):
         self.user.add_addon('github')
         user_github = self.user.get_addon('github')
         oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings.github_user_id = 'testuser'
         oauth_settings.save()
         user_github.oauth_settings = oauth_settings
-        oauth_settings.github_user_id = 'testuser'
         user_github.save()
         user_github.github_user_name = 'howtogithub'
         oauth_settings.save()
