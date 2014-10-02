@@ -2,7 +2,6 @@
 
 # PEP8 asserts
 from nose.tools import *  # noqa
-from webtest.app import AppError
 from modularodm.exceptions import ValidationValueError
 
 from tests.base import OsfTestCase
@@ -194,25 +193,21 @@ class TestWikiRename(OsfTestCase):
     def test_rename_wiki_page_invalid(self):
         new_name = '<html>hello</html>'
 
-        with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
-
-            e = cm.exception
-            assert_equal(e, 422)
+        res = self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id},
+                auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 422)
 
     def test_rename_wiki_page_duplicate(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
 
-        with assert_raises(AppError) as cm:
-            self.app.put_json(
-                self.url,
-                {'value': new_name, 'pk': self.wiki._id},
-                auth=self.auth,
-            )
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': self.wiki._id},
+            auth=self.auth, expect_errors=True
+        )
 
-            e = cm.exception
-            assert_equal(e, 409)
+        assert_equal(res.status_code, 409)
 
 
 class TestWikiLinks(OsfTestCase):

@@ -1246,6 +1246,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
