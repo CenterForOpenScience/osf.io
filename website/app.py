@@ -6,7 +6,6 @@ from modularodm import storage
 
 import framework
 from framework.flask import app, add_handlers
-from framework.mongo import database
 from framework.logging import logger
 from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
@@ -96,4 +95,3 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
     return app
-

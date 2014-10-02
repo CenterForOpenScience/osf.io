@@ -26,12 +26,12 @@ from website import settings, filters, security
 
 
 name_formatters = {
-   'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name if user.family_name else user.fullname,
-   'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.family_name,
-       initial=user.given_name_initial
-   ),
+    'long': lambda user: user.fullname,
+    'surname': lambda user: user.family_name if user.family_name else user.fullname,
+    'initials': lambda user: u'{surname}, {initial}.'.format(
+        surname=user.family_name,
+        initial=user.given_name_initial
+    ),
 }
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def validate_history_item(item):
 validate_url = URLValidator()
 def validate_personal_site(value):
     if value:
-       validate_url(value)
+        validate_url(value)
 
 
 def validate_social(value):
@@ -276,7 +276,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_confirmed = fields.DateTimeField()
 
-    _meta = {'optimistic' : True}
+    _meta = {'optimistic': True}
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
@@ -738,7 +738,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    def get_projects_in_common(self, other_user, primary_keys= True):
+    def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """

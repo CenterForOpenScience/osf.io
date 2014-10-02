@@ -131,7 +131,7 @@ def _must_be_contributor_factory(include_public):
                     if not check_can_access(node=node, user=user,
                             api_node=api_node, key=key):
                         url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url = url)
+                        redirect_url = check_key_expired(key=key, node=node, url=url)
                         response = redirect(redirect_url)
 
             return response or func(*args, **kwargs)

@@ -12,12 +12,12 @@ from ..model import ApiKey
 from .node import _view_project
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('admin')
 def get_node_keys(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return {
-        'keys' : [
+        'keys': [
             {
                 'key': key._id,
                 'label': key.label,
@@ -26,7 +26,7 @@ def get_node_keys(**kwargs):
         ]
     }
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('admin')
 def create_node_key(**kwargs):
 
@@ -42,7 +42,7 @@ def create_node_key(**kwargs):
     # Return response
     return {'response': 'success'}, http.CREATED
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('admin')
 def revoke_node_key(**kwargs):
 
@@ -57,7 +57,7 @@ def revoke_node_key(**kwargs):
     # Send response
     return {'response': 'success'}
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('admin')
 def node_key_history(**kwargs):
 
