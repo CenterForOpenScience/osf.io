@@ -51,6 +51,13 @@ api_routes = {
             json_renderer
         ),
         Rule(
+            ['/project/<pid>/app/projects/<guid>/',
+             '/project/<pid>/node/<nid>/app/projects/<guid>/'],
+            'put',
+            views.crud.update_application_project,
+            json_renderer
+        ),
+        Rule(
             ['/project/<pid>/app.rss',
              '/project/<pid>/node/<nid>/app.rss'],
             'get',
@@ -124,6 +131,13 @@ metadata_routes = {
              '/project/<pid>/node/<nid>/app/<guid>/'],
             ['put', 'post'],
             views.crud.metadata.add_metadata,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/app/orphans/',
+             '/project/<pid>/node/<nid>/app/orphans/'],
+            ['put', 'post'],
+            views.crud.metadata.create_ophan_metadata,
             json_renderer
         ),
         Rule(
