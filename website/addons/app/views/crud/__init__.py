@@ -135,7 +135,7 @@ def update_application_project(node_addon, guid, **kwargs):
 
     if contributors:
         for contrib in node.contributors:
-            if contrib.fullname not in contributors:
+            if contrib.fullname not in contributors and not contrib.is_system_user:
                 node.remove_contributor(contrib, auth)
 
         names = [x.fullname for x in node.contributors]
