@@ -224,7 +224,9 @@ def file_info(**kwargs):
     file_name = kwargs['fid']
     auth = kwargs['auth']
     file_name_clean = file_name.replace('.', '_')
-
+    files_page_url = node.web_url_for('collect_file_trees')
+    latest_version_url = None
+    api_url = None
     anonymous = has_anonymous_link(node, auth)
 
     try:
@@ -265,6 +267,7 @@ def file_info(**kwargs):
         'versions': versions,
         'latest_version_url': latest_version_url,
         'api_url': api_url,
+        'files_page_url': files_page_url,
     }
 
 @must_be_valid_project # returns project

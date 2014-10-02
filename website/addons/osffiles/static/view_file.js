@@ -13,6 +13,9 @@
     ko.punches.enableAll();
     ko.punches.attributeInterpolationMarkup.enable();
 
+    function confirmedDeleteFile(api_url) {
+
+    }
 
     function Version(data) {
         this.version_number = data.version_number;
@@ -23,7 +26,7 @@
         this.committer_url = data.committer_url;
         this.view = data.view;
     }
-    function VersionViewModel(url) {
+    function VersionViewModel(url, global) {
         var self = this;
         self.versions = ko.observable([]);
 
@@ -31,7 +34,8 @@
         self.files_url = ko.observable(null);
         self.node_title = ko.observable(null);
         self.latest_version_url = ko.observable(null);
-
+        self.api_url = ko.observable(null);
+        self.files_page_url = ko.observable(null);
 
         // Date when this project was registered, or null if not a registration
         // TODO: should I populate this? (@mambocab)
@@ -48,9 +52,31 @@
             self.file_name(response.file_name);
             self.node_title(response.node_title);
             self.latest_version_url(response.latest_version_url);
+            self.api_url(response.api_url);
+            self.files_page_url(response.files_page_url);
         }).fail(
             $.osf.handleJSONError
         );
+
+        self.deleteFile = function(){
+            bootbox.confirm("Are you sure you want to delete this file? It will not be recoverable.",
+                function(result) {
+                    if (result) {
+                        $('#deleting-alert').addClass('in');
+                        var result = $.ajax({
+                            type: 'DELETE',
+                            url: self.api_url()
+                        });
+                        result.done(function() {
+                            window.location = self.files_page_url();
+                        });
+                        result.fail(function( jqXHR, textStatus ) {
+                            $('#deleting-alert').removeClass('in');
+                            bootbox.alert( "Could not delete: " + textStatus );
+                        });
+                    }
+                });
+        };
     }
     // Public API
     function VersionTable(selector, url) {
