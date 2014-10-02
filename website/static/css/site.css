@@ -966,7 +966,7 @@ h1.node-title, h1.node-parent-title {
     border-bottom: none;
     margin-top: 0.2em;
     margin-bottom: 0;
-    height: 36px;
+    height: 68px;
 }
 
 .long-wiki-title {
@@ -980,7 +980,7 @@ h1.node-title, h1.node-parent-title {
 
 .wiki-title-container {
     display: inline-block;
-    width:80%;
+    width:60%;
 }
 
 .btn-toolbar.node-control {
