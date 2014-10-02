@@ -75,7 +75,7 @@ def create_and_attach_oauth(user_settings, access_token, token_type):
 
     if not oauth_settings:
         oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings._id = str(github_user.id)
+        oauth_settings.github_user_id = str(github_user.id)
         oauth_settings.save()
 
     user_settings.oauth_settings = oauth_settings
@@ -87,7 +87,7 @@ def create_and_attach_oauth(user_settings, access_token, token_type):
     user_settings.oauth_access_token = access_token
     user_settings.oauth_token_type = token_type
 
-    user_settings.github_user = github_user.login
+    user_settings.github_user_name = github_user.login
 
     oauth_settings.save()
     user_settings.save()

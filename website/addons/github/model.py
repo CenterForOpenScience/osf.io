@@ -36,8 +36,11 @@ class GithubGuidFile(GuidFile):
 
 
 class AddonGitHubOauthSettings(StoredObject):
+    #github user id
+    github_user_id = fields.StringField(primary=True, required=True)
 
-    github_user = fields.StringField(primary=True)
+    #github user name
+    github_user_name = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
@@ -56,14 +59,14 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return False
 
     @property
-    def github_user(self):
+    def github_user_name(self):
         if self.oauth_settings:
-            return self.oauth_settings.github_user
+            return self.oauth_settings.github_user_name
         return None
 
-    @github_user.setter
-    def github_user(self, user):
-        self.oauth_settings.github_user = user
+    @github_user_name.setter
+    def github_user_name(self, user_name):
+        self.oauth_settings.github_user_name = user_name
 
     @property
     def oauth_access_token(self):
@@ -87,13 +90,13 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
 
     @property
     def public_id(self):
-        return self.oauth_settings.github_user
+        return self.oauth_settings.github_user_name
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
-            'authorized_github_user': self.github_user if self.github_user else '',
+            'authorized_github_user': self.github_user_name if self.github_user_name else '',
             'show_submit': False,
         })
         return rv
@@ -217,8 +220,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'github_user_name': self.user_settings.github_user,
-                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user),
+                'github_user_name': self.user_settings.github_user_name,
+                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
             })
         return rv
