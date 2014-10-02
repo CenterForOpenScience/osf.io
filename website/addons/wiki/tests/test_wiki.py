@@ -99,6 +99,21 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
+    def test_project_wiki_edit_post_with_non_ascii_title(self):
+        # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
+        # wid doesn't exist in the db, so it will be created
+        new_wid = u'øˆ∆´ƒøßå√ß'
+        url = self.project.web_url_for('project_wiki_edit_post', wid=new_wid)
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        wiki = self.project.get_wiki_page(new_wid)
+        assert_equal(wiki.page_name, new_wid)
+
+        # updating content should return correct url as well.
+        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
     def test_wiki_edit_get_new(self):
         url = self.project.web_url_for('project_wiki_edit', wid='a new page')
         res = self.app.get(url, auth=self.user.auth)
