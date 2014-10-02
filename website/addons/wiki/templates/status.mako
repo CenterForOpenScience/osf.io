@@ -25,7 +25,7 @@
     }
 </script>
 
-%if wiki_id:
+%if wiki_id and page.page_name != 'home':
 <script>
     $(document).ready(function() {
         $('#pageName').editable({

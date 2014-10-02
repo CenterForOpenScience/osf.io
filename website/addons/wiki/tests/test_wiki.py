@@ -212,7 +212,13 @@ class TestWikiRename(OsfTestCase):
             )
 
             e = cm.exception
+            assert False
             assert_equal(e, 409)
+
+    def test_cannot_rename_home_page(self):
+        home = self.project.get_wiki_page('home')
+        res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 
 class TestWikiLinks(OsfTestCase):
