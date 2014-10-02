@@ -7,14 +7,16 @@ import json
 from urllib2 import urlopen
 from re import search
 
-from werkzeug.utils import secure_filename
 from tempfile import TemporaryFile
 
 import requests
 from requests_oauthlib import OAuth1Session
+
+from framework.utils import secure_filename
+from website.util.sanitize import escape_html
+
 from . import settings as figshare_settings
 from utils import file_to_hgrid, article_to_hgrid
-from website.util.sanitize import escape_html
 
 
 class Figshare(object):
