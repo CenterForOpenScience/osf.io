@@ -63,7 +63,6 @@
         <div class="padded">
 
             <button
-                    type="submit"
                     class="btn btn-default"
                     data-bind="visible: viewable, click: cancel"
                 >Cancel</button>
