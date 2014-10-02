@@ -60,6 +60,9 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
         self.is_confirmed = False
 
     def on_delete(self):
+        push_status_message('Successfully deauthorized two-factor'
+                            ' authentication. Please delete the'
+                            ' verification code on your device.')
         super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0
