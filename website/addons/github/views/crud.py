@@ -10,8 +10,8 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 from flask import request, redirect, make_response
 
-from framework.flask import secure_filename
 from framework.exceptions import HTTPError
+from framework.utils import secure_filename
 
 from website import models
 from website.project.decorators import (

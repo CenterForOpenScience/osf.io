@@ -99,6 +99,21 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
+    def test_project_wiki_edit_post_with_non_ascii_title(self):
+        # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
+        # wid doesn't exist in the db, so it will be created
+        new_wid = u'øˆ∆´ƒøßå√ß'
+        url = self.project.web_url_for('project_wiki_edit_post', wid=new_wid)
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        wiki = self.project.get_wiki_page(new_wid)
+        assert_equal(wiki.page_name, new_wid)
+
+        # updating content should return correct url as well.
+        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
     def test_wiki_edit_get_new(self):
         url = self.project.web_url_for('project_wiki_edit', wid='a new page')
         res = self.app.get(url, auth=self.user.auth)
@@ -152,6 +167,13 @@ class TestWikiRename(OsfTestCase):
         self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+
+
+        self.page_name = 'page2'
+        self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
+        self.project.save()
+        self.page = self.project.get_wiki_page(self.page_name)
+
         self.wiki = self.project.get_wiki_page('home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
@@ -162,25 +184,25 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
         self.app.put_json(
             self.url,
-            {'value': new_name, 'pk': self.wiki._id},
+            {'value': new_name, 'pk': self.page._id},
             auth=self.auth,
         )
         self.project.reload()
 
-        old_wiki = self.project.get_wiki_page('home')
+        old_wiki = self.project.get_wiki_page(self.page_name)
         assert_false(old_wiki)
 
         new_wiki = self.project.get_wiki_page(new_name)
         assert_true(new_wiki)
-        assert_equal(new_wiki._id, self.wiki._id)
-        assert_equal(new_wiki.content, self.wiki.content)
-        assert_equal(new_wiki.version, self.wiki.version)
+        assert_equal(new_wiki._id, self.page._id)
+        assert_equal(new_wiki.content, self.page.content)
+        assert_equal(new_wiki.version, self.page.version)
 
     def test_rename_wiki_page_invalid(self):
         new_name = '<html>hello</html>'
 
         with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
+            self.app.put_json(self.url, {'value': new_name, 'pk': self.page._id}, auth=self.auth)
 
             e = cm.exception
             assert_equal(e, 422)
@@ -192,12 +214,18 @@ class TestWikiRename(OsfTestCase):
         with assert_raises(AppError) as cm:
             self.app.put_json(
                 self.url,
-                {'value': new_name, 'pk': self.wiki._id},
+                {'value': new_name, 'pk': self.page._id},
                 auth=self.auth,
             )
 
             e = cm.exception
+            assert False
             assert_equal(e, 409)
+
+    def test_cannot_rename_home_page(self):
+        home = self.project.get_wiki_page('home')
+        res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 
 class TestWikiLinks(OsfTestCase):
