@@ -8,7 +8,7 @@
             <tr>
                 <th>Revision</th>
                 <th>Date</th>
-                <th>Download</th>
+                <th></th>
             </tr>
         </thead>
 

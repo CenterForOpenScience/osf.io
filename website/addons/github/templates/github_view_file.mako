@@ -12,7 +12,7 @@
                 % if not node['anonymous']:
                     <th>User</th>
                 % endif
-                <th>Download</th>
+                <th></th>
             </tr>
         </thead>
 

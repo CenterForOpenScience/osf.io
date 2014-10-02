@@ -8,7 +8,7 @@
             <tr>
                 <th>ID</th>
                 <th>Date</th>
-                <th>Download</th>
+                <th></th>
             </tr>
         </thead>
 

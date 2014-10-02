@@ -243,6 +243,7 @@ def file_info(**kwargs):
             number,
         ))
         download_url = node_file.download_url(node)
+        api_url = node_file.api_url(node)
         versions.append({
             'file_name': file_name,
             'download_url': download_url,
@@ -263,6 +264,7 @@ def file_info(**kwargs):
         'file_name': file_name,
         'versions': versions,
         'latest_version_url': latest_version_url,
+        'api_url': api_url,
     }
 
 @must_be_valid_project # returns project
