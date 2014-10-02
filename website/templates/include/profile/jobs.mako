@@ -50,18 +50,11 @@
                                          value: startMonth">
                                 </select>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <input class="form-control" placeholder="Year" data-bind="value: startYear" />
-                                <div data-bind="visible: $parent.showMessages">
-                                    <p data-bind="validationMessage: startYear, style:{color: 'red'}"></p>
-                                </div>
                             </div>
                         </div>
                     </div>
-                    <div data-bind="visible: $parent.showMessages">
-                        <p data-bind= "validationMessage: start, style:{color: 'red'}" ></p>
-                    </div>
-
 
                     <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
@@ -72,11 +65,8 @@
                                          value: endMonth">
                                     </select>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <input class="form-control" placeholder="Year" data-bind="value: endYear" />
-                                    <div data-bind="visible: $parent.showMessages">
-                                        <p data-bind="validationMessage: endYear, style:{color: 'red'}"></p>
-                                    </div>
                                 </div>
                             </div>
                     </div>
@@ -87,8 +77,11 @@
                         <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
 
-                    <div data-bind="visible: $parent.showMessages">
-                        <p data-bind="validationMessage: end, style:{color: 'red'}"></p>
+                    <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                        <p data-bind="validationMessage: start"></p>
+                        <p data-bind="validationMessage: end"></p>
+                        <p data-bind="validationMessage: startYear"></p>
+                        <p data-bind="validationMessage: endYear"></p>
                     </div>
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
@@ -114,7 +107,6 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-##                        data-bind="click: enableSubmit"
                     >Submit</button>
 
             </div>

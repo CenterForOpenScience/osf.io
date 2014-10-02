@@ -71,7 +71,6 @@
             <button
                     type="submit"
                     class="btn btn-primary"
-                    data-bind="enable: enableSubmit"
                 >Submit</button>
 
         </div>
