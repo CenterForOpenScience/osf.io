@@ -106,6 +106,54 @@ def create_application_project(node_addon, **kwargs):
     }, http.CREATED
 
 
+@must_have_permission('admin')
+@must_have_addon('app', 'node')
+def update_application_project(node_addon, guid, **kwargs):
+    node = Node.load(guid)
+
+    if not request.json or not node:
+        raise HTTPError(http.BAD_REQUEST)
+
+    if request.json.get('title'):
+        title_len = len(request.json['title'])
+        if title_len < 0 or title_len > 201:
+            raise HTTPError(http.BAD_REQUEST)
+        node.title = request.json['title']
+
+    if request.json.get('description'):
+        node.description = request.json['description']
+
+    auth = Auth(node_addon.system_user)
+
+    tags = request.json.get('tags', [])
+
+    for tag in tags:
+        node.add_tag(tag, auth)
+
+    contributors = request.json.get('contributors')
+    permissions = request.json.get('permissions', ['admin'])
+
+    if contributors:
+        for contrib in node.contributors:
+            if contrib.fullname not in contributors:
+                node.remove_contributor(contrib, auth)
+
+        names = [x.fullname for x in node.contributors]
+
+        for contributor in contributors:
+            if contributor['name'] not in names:
+                try:
+                    node.add_unregistered_contributor(contributor['name'],
+                        contributor.get('email'), auth,
+                        permissions=permissions)
+                except ValidationError:
+                    pass  # A contributor with the given email has already been added
+
+    node.save()
+
+    return http.OK
+
+
 @must_have_permission('write')
 @must_have_addon('app', 'node')
 def act_as_application(node_addon, route, **kwargs):
