@@ -34,7 +34,6 @@ from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -59,7 +58,7 @@ def github_download_file(**kwargs):
             data={
                 'message_short': 'File too large',
                 'message_long': 'This file is too large to download through '
-                    'the GitHub API.',
+                'the GitHub API.',
             },
         )
     if data is None:

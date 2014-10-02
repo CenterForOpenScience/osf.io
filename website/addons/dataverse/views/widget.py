@@ -57,5 +57,3 @@ def dataverse_get_widget_contents(node_addon, **kwargs):
         'citation': study.citation,
     })
     return {'data': data}, http.OK
-
-
