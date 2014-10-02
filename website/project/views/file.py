@@ -5,9 +5,9 @@ import os
 import codecs
 
 from flask import request
-from werkzeug.utils import secure_filename
 
 from framework.render.tasks import build_rendered_html
+from framework.utils import secure_filename
 
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public
