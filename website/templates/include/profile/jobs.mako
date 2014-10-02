@@ -2,7 +2,7 @@
 
     <div data-bind="if: mode() === 'edit'">
 
-        <form role="form" data-bind="submit: submit">
+        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false}">
 
             <div data-bind="sortable: {
                     data: contents,
@@ -52,10 +52,15 @@
                             </div>
                             <div class="col-md-4">
                                 <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                                <div data-bind="visible: $parent.showMessages">
+                                    <p data-bind="validationMessage: startYear, style:{color: 'red'}"></p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <p data-bind="validationMessage: start, style:{color: 'red'}" ></p>
+                    <div data-bind="visible: $parent.showMessages">
+                        <p data-bind= "validationMessage: start, style:{color: 'red'}" ></p>
+                    </div>
 
 
                     <div class="form-group" data-bind="ifnot: ongoing">
@@ -69,6 +74,9 @@
                                 </div>
                                 <div class="col-md-4">
                                     <input class="form-control" placeholder="Year" data-bind="value: endYear" />
+                                    <div data-bind="visible: $parent.showMessages">
+                                        <p data-bind="validationMessage: endYear, style:{color: 'red'}"></p>
+                                    </div>
                                 </div>
                             </div>
                     </div>
@@ -79,9 +87,9 @@
                         <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
                     </div>
 
-                    <!--knockout validation messages-->
+                    <div data-bind="visible: $parent.showMessages">
                         <p data-bind="validationMessage: end, style:{color: 'red'}"></p>
-                    <!--->
+                    </div>
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
 
@@ -106,7 +114,7 @@
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: enableSubmit"
+##                        data-bind="click: enableSubmit"
                     >Submit</button>
 
             </div>

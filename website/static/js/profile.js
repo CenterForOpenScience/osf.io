@@ -73,12 +73,7 @@
         });
 
         // Must be set after isValid is defined in inherited view models
-        // Necessary for enableSubmit to subscribe to isValid
         self.hasValidProperty = ko.observable(false);
-
-        self.enableSubmit = ko.computed(function() {
-            return self.hasValidProperty() && self.isValid() && self.dirty();
-        });
 
         // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
@@ -100,6 +95,8 @@
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
+        this.showMessages = ko.observable(false);
+
 
     };
 
@@ -162,19 +159,20 @@
     };
 
     BaseViewModel.prototype.submit = function() {
-        if (this.enableSubmit() === false) {
-            return;
+        if (this.hasValidProperty() && this.isValid()) {
+            $.osf.putJSON(
+                this.urls.crud,
+                this.serialize()
+            ).done(
+                this.handleSuccess.bind(this)
+            ).done(
+                this.setOriginal
+            ).fail(
+                this.handleError.bind(this)
+            )
+        } else {
+            this.showMessages(true);
         }
-        $.osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            this.handleSuccess.bind(this)
-        ).done(
-            this.setOriginal
-        ).fail(
-            this.handleError.bind(this)
-        ).fail(JobsViewModel.checkValidDate);
     };
 
     var NameViewModel = function(urls, modes) {
@@ -477,15 +475,6 @@
             pyDate: true
         });
         self.displayDate = ko.observable(' ');
-        self.end = ko.computed(function() {
-            if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
-                return new Date(self.endMonth() + '1,' + self.endYear());
-            }
-        }, self).extend({
-            notInFuture:true,
-            minDate: self.start
-        });
         self.ongoing = ko.observable(false);
 
         // start date
@@ -504,14 +493,25 @@
                 return new Date(self.startMonth() + '1,' + self.startYear());
             }
         }, self).extend({
-//            required: {
-//                onlyIf: function() {
-//                    if (!!self.endMonth() && !!self.endYear() || self.ongoing() === true) {
-//                        return true;
-//                }},
-//                message: "Please enter a start date."
-//            },
+            required: {
+                onlyIf: function() {
+                    if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
+                        return true;
+                    }
+                },
+                message: "Please enter a start date."
+            },
             notInFuture: true
+        });
+
+        self.end = ko.computed(function() {
+            if (self.endMonth() && self.endYear()) {
+                self.displayDate(self.endMonth() + ' ' + self.endYear());
+                return new Date(self.endMonth() + '1,' + self.endYear());
+            }
+        }, self).extend({
+            notInFuture:true,
+            minDate: self.start
         });
 
         self.clearEnd = function() {
