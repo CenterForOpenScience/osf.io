@@ -1,5 +1,5 @@
 /**
- * Simple knockout model and view model for rendering the revision table on the
+ * Simple knockout model and view model for managing crud addon delete files on the
  * file detail page.
  */
 ;(function (global, factory) {
