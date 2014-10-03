@@ -79,17 +79,15 @@ def create_and_attach_oauth(user_settings, access_token, token_type):
         oauth_settings.save()
 
     user_settings.oauth_settings = oauth_settings
-    user_settings.save()
 
     #in user_settings
     user_settings.oauth_state = None
+
     #in oauth_settings
     user_settings.oauth_access_token = access_token
     user_settings.oauth_token_type = token_type
-
     user_settings.github_user_name = github_user.login
 
-    oauth_settings.save()
     user_settings.save()
 
 

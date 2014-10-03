@@ -36,10 +36,11 @@ class GithubGuidFile(GuidFile):
 
 
 class AddonGitHubOauthSettings(StoredObject):
-    #github user id
+    #github user id, for example, "4974056"
+    # Note that this is a numeric ID, not the user's login.
     github_user_id = fields.StringField(primary=True, required=True)
 
-    #github user name
+    #github user name this is the user's login
     github_user_name = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
@@ -91,6 +92,12 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     @property
     def public_id(self):
         return self.oauth_settings.github_user_name
+
+    def save(self,*args,**kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
+
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
