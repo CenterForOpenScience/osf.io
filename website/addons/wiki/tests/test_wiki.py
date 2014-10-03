@@ -168,6 +168,12 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_project_wiki_compare_with_invalid_wid(self):
+        url = self.project.web_url_for('project_wiki_compare', wid='this-doesnt-exist', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):

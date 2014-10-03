@@ -101,7 +101,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
     toc = serialize_wiki_toc(node, auth=auth)
 
     if not wiki_page:
-        wiki_page = NodeWikiPage()
+        raise HTTPError(http.NOT_FOUND)
 
     comparison_page = node.get_wiki_page(wid, compare_id)
     if comparison_page:
