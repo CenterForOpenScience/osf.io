@@ -10,7 +10,6 @@ from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
 
