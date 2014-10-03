@@ -173,7 +173,15 @@ ${parent.javascript_bottom()}
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
         $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
+            var commentPane = new CommentPane('#commentPane',
+                {
+                    onOpen: function() {
+                        $.osf.putJSON(
+                            nodeApiUrl + 'comments/timestamps/'
+                        );
+                    }
+                }
+            );
             Comment.init('#commentPane', userName, canComment, hasChildren);
         });
 

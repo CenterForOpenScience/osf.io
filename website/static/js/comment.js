@@ -78,7 +78,7 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
-        self.unreadComments = ko.observable(' ');
+        self.unreadComments = ko.observable(0);
 
         self.displayCount = ko.computed(function() {
             if (self.unreadComments() !== 0) {
@@ -90,7 +90,7 @@
 
         /* Removes number of unread comments from tab when comments pane is opened  */
         self.removeCount = function() {
-            self.unreadComments(' ');
+            self.unreadComments(0);
         };
 
         self.replyNotEmpty = ko.computed(function() {
