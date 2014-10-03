@@ -60,7 +60,7 @@
             bootbox.confirm("Are you sure you want to delete this file? It will not be recoverable.",
                 function(result) {
                     if (result) {
-                        $('#deleting-alert').addClass('in');
+                        $('#deletingAlert').addClass('in');
                         var result = $.ajax({
                             type: 'DELETE',
                             url: self.api_url()
@@ -69,7 +69,7 @@
                             window.location = self.files_page_url();
                         });
                         result.fail(function( jqXHR, textStatus ) {
-                            $('#deleting-alert').removeClass('in');
+                            $('#deletingAlert').removeClass('in');
                             bootbox.alert( "Could not delete: " + textStatus );
                         });
                     }

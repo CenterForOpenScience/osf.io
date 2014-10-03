@@ -3,7 +3,7 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-<div id="deleting-alert" class="alert alert-warning fade">
+<div id="deletingAlert" class="alert alert-warning fade">
     Deleting your file…
 </div>
     <div class="scripted" id="osffileScope">

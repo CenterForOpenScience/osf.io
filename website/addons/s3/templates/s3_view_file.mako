@@ -3,7 +3,7 @@
 
 <%def name="file_versions()">
     <div class='scripted' id='s3Scope'>
-        <div id="deleting-alert" class="alert alert-warning fade">
+        <div id="deletingAlert" class="alert alert-warning fade">
             Deleting your file…
         </div>
         <table class="table" id="file-version-history">
