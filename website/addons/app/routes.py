@@ -38,7 +38,7 @@ api_routes = {
             json_renderer
         ),
         Rule(
-            '/app/<pid>/app/',
+            '/app/<pid>/',
             'get',
             views.crud.query_app,
             json_renderer
@@ -112,6 +112,12 @@ metadata_routes = {
             json_renderer
         ),
         Rule(
+            '/app/<pid>/metadata/',
+            'get',
+            views.crud.metadata.get_metadatums,
+            json_renderer
+        ),
+        Rule(
             '/app/<pid>/metadata/<mid>/',
             'get',
             views.crud.metadata.get_metadata,
@@ -127,6 +133,12 @@ metadata_routes = {
             '/app/<pid>/metadata/<mid>/',
             'delete',
             views.crud.metadata.delete_metadata,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/metadata/<mid>/promote/',
+            'post',
+            views.crud.metadata.promote_metadata,
             json_renderer
         ),
     ],
