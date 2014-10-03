@@ -61,14 +61,14 @@
                 function(result) {
                     if (result) {
                         $('#deletingAlert').addClass('in');
-                        var result = $.ajax({
+                        var request = $.ajax({
                             type: 'DELETE',
                             url: self.api_url()
                         });
-                        result.done(function() {
+                        request.done(function() {
                             window.location = self.files_page_url();
                         });
-                        result.fail(function( jqXHR, textStatus ) {
+                        request.fail(function( jqXHR, textStatus ) {
                             $('#deletingAlert').removeClass('in');
                             bootbox.alert( 'Could not delete: ' + textStatus );
                         });
