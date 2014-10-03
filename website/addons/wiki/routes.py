@@ -26,6 +26,7 @@ widget_routes = {
     'prefix': '/api/v1',
 }
 
+# NOTE: <wid> refers to a wiki page's name, e.g. 'home'
 page_routes = {
 
     'rules': [
@@ -112,8 +113,8 @@ api_routes = {
 
         #justcontent
         Rule([
-            '/project/<pid>/wiki/content/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/content/<wid>/',
+            '/project/<pid>/wiki/<wid>/content/',
+            '/project/<pid>/node/<nid>/wiki/<wid>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
         # Edit | POST
