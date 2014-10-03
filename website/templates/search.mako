@@ -13,7 +13,7 @@
 ##            for showing tags
             % for i, term in enumerate(components):
 ##              the first is not removable. we need it to query
-                    <span class="label label-success btn-mini" style="margin-right:.5em">${term.replace('(', ' ').replace(')',' ')}\
+                    <span class="label label-success btn-mini" style="margin-right:.5em"><span style="white-space:pre">${term.replace('(', '').replace(')','').strip()}</span>
                         % if len(components) > 1:
                         <a href="/search/?q=${'AND'.join((x for x in components if x != term)) | h }" style="color:white">&times;</a>
                         % endif
@@ -53,7 +53,7 @@
             % for key, value in tags.iteritems():
                 % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
                     <span id="tagCloud">
-                    <a href="/search/?q=(${query.replace('(', '').replace(')', '') | h} AND tags:&quot;${key}&quot;)" rel=${value}> ${key} </a>
+                    <a class="tag" href="/search/?q=(${query.replace('(', '').replace(')', '') | h} AND tags:&quot;${key}&quot;)" rel=${value}>${key}</a>
                     </span>
                 % endif
             % endfor
@@ -148,7 +148,7 @@
                             <div class="tags">
                                 % if 'tags' in result:
                                     % for tag in result['tags']:
-                                    <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini" style="margin-right:.5em">${tag}</a>
+                                    <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini tag" style="margin-right:.5em">${tag}</a>
                                     % endfor
                                 % endif
                             </div>

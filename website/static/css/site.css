@@ -1741,3 +1741,6 @@ div.pydocx-center{
     font-size:14px;
 }
 
+.tag {
+    white-space: pre;
+}
