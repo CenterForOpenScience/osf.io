@@ -168,34 +168,33 @@ def list_comments(**kwargs):
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
-    comments = serialize_comments(target, auth, anonymous)
+    serialized_comments = serialize_comments(target, auth, anonymous)
+    comments = getattr(target, 'commented', [])
     n_unread = 0
 
     if node.is_contributor(auth.user):
-        view_timestamp = datetime(1970, 1, 1, 12, 0, 0).isoformat()
+        default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
 
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
 
-        if auth.user.comments_viewed_timestamp.get(node._id, None):
-            view_timestamp = auth.user.comments_viewed_timestamp[node._id]
+        view_timestamp = auth.user.comments_viewed_timestamp.get(node._id, default_timestamp)
 
         n_unread = n_unread_comments(view_timestamp, comments, auth.user)
 
     return {
 
-        'comments': comments,
+        'comments': serialized_comments,
         'nUnread': n_unread
     }
 
 
 def n_unread_comments(view_timestamp, comments, current_user):
     count = 0
-
     for comment in comments:
-        if comment['author']['id'] != current_user._id:
-            if comment['dateCreated'] > view_timestamp or comment['dateModified'] > view_timestamp:
+        if comment.user._id != current_user._id:
+            if comment.date_created > view_timestamp or comment.date_modified > view_timestamp:
                 count += 1
 
     return count
@@ -249,15 +248,17 @@ def undelete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def view_comments(**kwargs):
+def update_comments_timestamp(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    user = get_current_user()
+    auth = kwargs['auth']
 
-    if node.is_contributor(user):
-        user.comments_viewed_timestamp[node._id] = datetime.utcnow().isoformat()
-        user.save()
+    if node.is_contributor(auth.user):
+        auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+        auth.user.save()
         list_comments(**kwargs)
-    return {}
+        return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
+    else:
+        return {}
 
 
 @must_be_logged_in

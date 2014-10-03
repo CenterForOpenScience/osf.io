@@ -263,7 +263,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/comments/timestamps/',
             ],
             'put',
-            project_views.comment.view_comments,
+            project_views.comment.update_comments_timestamp,
             json_renderer,
         ),
 
