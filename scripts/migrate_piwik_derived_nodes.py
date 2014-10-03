@@ -8,7 +8,7 @@ import json
 import logging
 import sys
 
-from modularodm.query.querydialect import DefaultQueryDialect as Q
+from modularodm import Q
 from nose.tools import *
 import requests
 import responses
@@ -34,7 +34,7 @@ class PiwikSiteCache(object):
             auth_token=PIWIK_ADMIN_TOKEN,
         )).json()
 
-    def verify_site(self, node):
+    def node_has_duplicate_piwik_id(self, node):
         if not self._cache:
             self.update_cache()
 
@@ -47,7 +47,7 @@ piwik_cache = PiwikSiteCache()
 def has_duplicate_piwik_id(node):
     if node.piwik_site_id is None:
         return False
-    return piwik_cache.verify_site(node)
+    return piwik_cache.node_has_duplicate_piwik_id(node)
 
 
 def get_broken_registrations():
@@ -111,17 +111,17 @@ def main():
     else:
         print("Templates")
         print("Fixed {} nodes\n".format(
-            fix_nodes(get_broken_templated())
+            fix_nodes(broken_templated)
         ))
 
         print("Forks...")
         print("Fixed {} nodes\n".format(
-            fix_nodes(get_broken_forks())
+            fix_nodes(broken_forks)
         ))
 
         print("Registrations...")
         print("Fixed {} nodes\n".format(
-            fix_nodes(get_broken_registrations())
+            fix_nodes(broken_registrations)
         ))
 
 
