@@ -49,7 +49,7 @@
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
                 $.osf.putJSON(
-                    nodeApiUrl + 'comments/timestamp/'
+                    nodeApiUrl + 'comments/timestamps/'
                 );
             }
             $toggleElm.animate(
