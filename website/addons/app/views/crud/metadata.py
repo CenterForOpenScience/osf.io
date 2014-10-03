@@ -12,12 +12,11 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
 
-
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
-def get_metadatums(node_addon, mid, **kwargs):
+def get_metadatums(node_addon, **kwargs):
     return {
-        'ids': [m._id for m in node_addon.Metadata__owner]
+        'ids': [m._id for m in node_addon.metadata__owner]
     }
 
 # GET
@@ -40,6 +39,7 @@ def create_metadata(node_addon, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     metastore = Metadata(app=node_addon, data=metadata)
+    metastore.save()
 
     return {
         'id': metastore._id
