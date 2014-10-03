@@ -33,7 +33,7 @@ from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors
-from website.project.views.comment import serialize_comment, n_unread_comments
+from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
 from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect

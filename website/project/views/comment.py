@@ -8,7 +8,6 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
-from framework.auth.core import get_current_user
 
 from website import settings
 from website.filters import gravatar
