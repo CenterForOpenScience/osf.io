@@ -298,6 +298,13 @@ class TestS3ViewsCRUD(OsfTestCase):
         rv = self.app.post_json(self.node_url + 's3/download/', {'path': 'faux.show'}, expect_errors=True)
         assert_equals(rv.status_int, http.NOT_FOUND)
 
+    @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
+    def test_get_info_for_deleting_file(self, mock_from_addon):
+        mock_from_addon.return_value = mock.Mock()
+        mock_from_addon.return_value.does_key_exist.return_value = False
+        rv = self.app.get(self.project.api_url_for('file_delete_info', fid='faux.sho')).follow()
+        assert_equals(rv.status_int, http.OK)
+
 
 class TestS3ViewsHgrid(OsfTestCase):
 
