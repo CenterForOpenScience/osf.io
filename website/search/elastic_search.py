@@ -495,6 +495,8 @@ def update_metadata(metadata):
 
 @requires_search
 def search_metadata(query, _type, start, size):
+    if isinstance(query, dict):
+        search_metadata_dict(query, _type)
     query = {
         'query': _metadata_inner_query(query),
         'from': start,
@@ -503,6 +505,9 @@ def search_metadata(query, _type, start, size):
 
     return elastic.search(query, index='metadata', doc_type=_type)
 
+def search_metadata_dict(query):
+    results = elastic.search(query, index='metadata', doc_type=_type)
+    return elastic.search(query, index='metadata', doc_type=_type)
 
 def _metadata_inner_query(query):
     if query == '*':
