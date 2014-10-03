@@ -66,8 +66,6 @@ def do_migration(records):
                 }
             }
         )
-
-        oauth_settings.save()
         
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
