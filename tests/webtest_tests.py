@@ -24,7 +24,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
-from website.util import api_url_for
+from website.util import api_url_for, web_url_for
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -646,6 +646,28 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # A link to the component is shown as a result
         assert_in('Foobar Component', res)
+
+
+class TestProject(OsfTestCase):
+
+    def setUp(self):
+        super(TestProject, self).setUp()
+        self.user = UserFactory()
+        # Add an API key for quicker authentication
+        api_key = ApiKeyFactory()
+        self.user.api_keys.append(api_key)
+        self.user.save()
+        self.auth = ('test', api_key._primary_key)
+        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
+        self.project = ProjectFactory(creator=self.user)
+
+    def test_create_project(self):
+        url = web_url_for('project_new_node', pid=self.project._id)
+        post_data = {'title': '<b>New <blink>Component</blink> Title</b>',  'category': ''}
+        request = self.app.post(url, post_data, auth=self.auth).follow()
+        self.project.reload()
+        child = self.project.nodes[0].title
+        assert_equal('New Component Title', child)
 
 
 class TestShortUrls(OsfTestCase):
