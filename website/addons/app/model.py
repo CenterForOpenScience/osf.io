@@ -13,11 +13,9 @@ from framework.mongo import StoredObject, ObjectId
 class Metadata(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
-    guid = fields.StringField()
-
     data = fields.DictionaryField()
 
-    app = fields.ForeignField('appnodesettings', backref='data')
+    app = fields.ForeignField('appnodesettings', backref='owner')
 
     @classmethod
     def _merge_dicts(cls, dict1, dict2):
@@ -60,10 +58,7 @@ class Metadata(StoredObject):
         super(Metadata, self).save()
 
     def to_json(self):
-        ret = {}
-        ret.update(self.data)
-        ret.update(self.system_data)
-        return ret
+        return self.data
 
 
 class AppNodeSettings(AddonNodeSettingsBase):
