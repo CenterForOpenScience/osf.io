@@ -33,7 +33,7 @@
                 contentType: 'application/json',
                 data: JSON.stringify(route),
                 success: function() {
-                    route.url = self.url + route.route;
+                    route.url = self.url + route.route + '/';
                     self.customRoutes.push(route);
                     self.customUrl('');
                     self.customQuery('');
