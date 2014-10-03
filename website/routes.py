@@ -620,7 +620,7 @@ def make_url_map(app):
             'get',
             project_views.file.collect_file_trees,
             OsfWebRenderer('project/files.mako'),
-            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
+            view_kwargs={'mode': 'page'},
         ),
 
 

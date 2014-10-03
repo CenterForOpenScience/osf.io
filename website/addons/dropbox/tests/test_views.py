@@ -92,7 +92,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
         assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
         assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
-        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
         assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
