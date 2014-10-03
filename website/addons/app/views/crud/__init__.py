@@ -9,9 +9,8 @@ from modularodm.exceptions import ValidationError
 from framework.auth import Auth
 from framework.flask import app
 from framework.exceptions import HTTPError
-from framework.guid.model import Guid, Metadata
+from framework.guid.model import Guid
 
-from website import settings
 from website.search.search import search
 from website.project import new_node, Node
 from website.project.decorators import (
