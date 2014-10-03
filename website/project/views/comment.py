@@ -260,7 +260,6 @@ def view_comments(**kwargs):
     return {}
 
 
-
 @must_be_logged_in
 @must_be_contributor_or_public
 def report_abuse(**kwargs):
