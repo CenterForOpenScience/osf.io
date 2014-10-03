@@ -11,7 +11,6 @@ import logging
 from flask import request, redirect, send_file
 from modularodm import Q
 
-from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from framework.auth.utils import privacy_info_handle
@@ -28,6 +27,7 @@ from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
+from website.addons.osffiles.exceptions import FileNotModified
 from website.addons.osffiles.utils import get_latest_version_number
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,
@@ -120,9 +120,8 @@ def get_osffiles_public(auth, **kwargs):
     return get_osffiles_hgrid(node_settings, auth)
 
 
-
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def list_file_paths(**kwargs):
 
@@ -134,7 +133,7 @@ def list_file_paths(**kwargs):
     ]}
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
@@ -152,7 +151,7 @@ def upload_file_public(auth, node_addon, **kwargs):
             data={
                 'message_short': 'File too large.',
                 'message_long': 'The file you are trying to upload exceeds '
-                    'the maximum file size limit.',
+                'the maximum file size limit.',
             },
         )
 
@@ -215,8 +214,8 @@ def upload_file_public(auth, node_addon, **kwargs):
 
     return file_info, 201
 
-@must_be_valid_project #returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def file_info(**kwargs):
     versions = []
@@ -258,8 +257,8 @@ def file_info(**kwargs):
         'versions': versions,
     }
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def view_file(auth, **kwargs):
 

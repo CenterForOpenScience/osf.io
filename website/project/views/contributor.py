@@ -17,7 +17,7 @@ from framework.sessions import session
 
 from website import mails, language
 from website.project.model import unreg_contributor_added, has_anonymous_link
-from website.models import Node, User
+from website.models import Node
 from website.profile import utils
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
@@ -26,13 +26,10 @@ from website.project.decorators import (
     must_not_be_registration, must_be_valid_project, must_be_contributor,
     must_be_contributor_or_public, must_have_permission,
 )
-from framework.auth.core import get_current_user
 
 @collect_auth
 @must_be_valid_project
 def get_node_contributors_abbrev(auth, **kwargs):
-
-
     node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
@@ -297,7 +294,7 @@ def project_contributors_post(**kwargs):
     return {'status': 'success'}, 201
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def project_manage_contributors(auth, **kwargs):
@@ -522,7 +519,7 @@ def replace_unclaimed_user_with_registered(user):
     unreg_user_info = session.data.get('unreg_user')
     if unreg_user_info:
         unreg_user = User.load(unreg_user_info['uid'])
-        pid, token = unreg_user_info['pid'], unreg_user_info['token']
+        pid = unreg_user_info['pid']
         node = Node.load(pid)
         node.replace_contributor(old=unreg_user, new=user)
         node.save()

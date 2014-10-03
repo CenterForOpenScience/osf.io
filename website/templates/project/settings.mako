@@ -117,7 +117,7 @@
                                                 name="${addon.short_name}"
                                                 class="addon-select"
                                                 ${'checked' if addon.short_name in addons_enabled else ''}
-                                                ${'disabled' if node['is_registration'] else ''}
+                                                ${'disabled' if (node['is_registration'] or bool(addon.added_mandatory)) else ''}
                                             />
                                             ${addon.full_name}
                                         </label>
@@ -186,120 +186,14 @@
 
 <%def name="javascript_bottom()">
 ${parent.javascript_bottom()}
-
-
-
 <script type="text/javascript" src="/static/js/metadata_1.js"></script>
-
-## TODO: Move to project.js
-
+<script type="text/javascript" src="/static/js/projectSettings.js"></script>
 <script type="text/javascript">
-
-    ## TODO: Replace with something more fun, like the name of a famous scientist
-    ## h/t @sloria
-    function randomString() {
-        var alphabet = 'abcdefghijkmnpqrstuvwxyz23456789',
-            text = '';
-
-        for (var i = 0; i < 5; i++)
-            text += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-
-        return text;
-    }
-
-    $(document).ready(function() {
-
-        ## TODO: Knockout-ify me
-        $('#commentSettings').on('submit', function() {
-            var $commentMsg = $('#configureCommentingMessage');
-
-            var $this = $(this);
-            var commentLevel = $this.find('input[name="commentLevel"]:checked').val();
-
-            $.osf.postJSON(
-                nodeApiUrl + 'settings/comments/',
-                {commentLevel: commentLevel}
-            ).done(function() {
-                $commentMsg.addClass('text-success');
-                $commentMsg.text('Successfully updated settings.');
-                window.location.reload();
-            }).fail(function() {
-                bootbox.alert('Could not set commenting configuration. Please try again.');
-            });
-
-            return false;
-
-        });
-
-        // Set up submission for addon selection form
-        $('#selectAddonsForm').on('submit', function() {
-
-            var formData = {};
-            $('#selectAddonsForm').find('input').each(function(idx, elm) {
-                var $elm = $(elm);
-                formData[$elm.attr('name')] = $elm.is(':checked');
-            });
-            var msgElm = $(this).find('.addon-settings-message');
-            $.ajax({
-                url: nodeApiUrl + 'settings/addons/',
-                data: JSON.stringify(formData),
-                type: 'POST',
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function() {
-                    msgElm.text('Settings updated').fadeIn();
-                    window.location.reload();
-                }
-            });
-
-            return false;
-
-        });
-
-        $('#deleteNode').on('click', function() {
-            var key = randomString();
-            bootbox.prompt(
-              '<div>Delete this ${node['node_type']}? This is IRREVERSIBLE.</div>' +
-                    '<p style="font-weight: normal; font-size: medium; line-height: normal;">If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
-                function(result) {
-                    if (result === key) {
-                        $.ajax({
-                            type: 'DELETE',
-                            dataType: 'json',
-                            url: nodeApiUrl,
-                            success: function(response) {
-                                window.location.href = response.url;
-                            },
-                            error: $.osf.handleJSONError
-                        });
-                    }
-                }
-            )
-        });
-
-        // Show capabilities modal on selecting an addon; unselect if user
-        // rejects terms
-        $('.addon-select').on('change', function() {
-            var that = this,
-                $that = $(that);
-            if ($that.is(':checked')) {
-                var name = $that.attr('name');
-                var capabilities = $('#capabilities-' + name).html();
-                if (capabilities) {
-                    bootbox.confirm(
-                        capabilities,
-                        function(result) {
-                            if (!result) {
-                                $(that).attr('checked', false);
-                            }
-                        }
-                    )
-                }
-            }
-        });
-
+$(document).ready(function() {
+    $('#deleteNode').on('click', function() {
+        ProjectSettings.getConfirmationCode('${node["node_type"]}');
     });
-
+});
 </script>
 
 </%def>

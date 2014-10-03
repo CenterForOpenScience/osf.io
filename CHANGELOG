@@ -8,6 +8,10 @@ Changelog
 - Paginate search results in Add Contributor widget.
 - Speed improvements to contributor manager widget.
 - Add "ongoing" option to Education and Employment sections of user profile.
+- Improved mimetype detection when downloading a file through the Github
+addon.
+- Larger project title and description inputs.
+- Confirmation codes for project deletion are more fun =)
 
 0.17.0 (2014-09-23)
 ===================

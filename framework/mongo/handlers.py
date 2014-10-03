@@ -5,7 +5,6 @@ from flask import g
 from pymongo import MongoClient
 from werkzeug.local import LocalProxy
 
-from framework.flask import add_handler
 from website import settings
 
 
@@ -104,4 +103,3 @@ def set_up_storage(schemas, storage_class, prefix='', addons=None, **kwargs):
                 **kwargs
             )
         )
-

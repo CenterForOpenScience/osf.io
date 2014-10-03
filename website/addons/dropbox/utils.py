@@ -180,7 +180,7 @@ def build_dropbox_urls(item, node):
         return {
             'upload': node.api_url_for('dropbox_upload', path=path),
             # Endpoint for fetching all of a folder's contents
-            'fetch':  node.api_url_for('dropbox_hgrid_data_contents', path=path),
+            'fetch': node.api_url_for('dropbox_hgrid_data_contents', path=path),
             # Add extra endpoint for fetching folders only (used by node settings page)
             # NOTE: querystring params in camel-case
             'folders': node.api_url_for('dropbox_hgrid_data_contents',
