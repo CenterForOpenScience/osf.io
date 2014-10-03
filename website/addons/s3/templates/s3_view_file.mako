@@ -44,7 +44,7 @@
     </div>
     <script>
         $script(['/static/js/delete_file.js'], function() {
-            var delete_url = '${delete_url}'
+            var delete_url = '${delete_url}';
             var url = '${info_url}';
             var deleteFile = new DeleteFile('#s3Scope', url, delete_url);
         });
