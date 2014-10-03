@@ -4,25 +4,50 @@
 
 """
 
+import json
 import logging
+import sys
 
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from nose.tools import *
+import requests
+import responses
 
 from framework.auth import Auth
 from tests.base import OsfTestCase
 from tests.factories import NodeFactory, ProjectFactory, RegistrationFactory, UserFactory
 from website.app import init_app
 from website.models import Node
+from website.settings import PIWIK_ADMIN_TOKEN, PIWIK_HOST
 
 
 logger = logging.getLogger('root')
 
 
+class PiwikSiteCache(object):
+    def __init__(self):
+        self._cache = None
+
+    def update_cache(self):
+        self._cache = requests.get('{host}index.php?module=API&method=SitesManager.getAllSites&format=JSON&token_auth={auth_token}'.format(
+            host=PIWIK_HOST,
+            auth_token=PIWIK_ADMIN_TOKEN,
+        )).json()
+
+    def verify_site(self, node):
+        if not self._cache:
+            self.update_cache()
+
+        return not self._cache[str(node.piwik_site_id)]['name'][6:] == node._id
+
+
+piwik_cache = PiwikSiteCache()
+
+
 def has_duplicate_piwik_id(node):
     if node.piwik_site_id is None:
         return False
-    return Node.find(Q('piwik_site_id', 'eq', node.piwik_site_id)).count() > 1
+    return piwik_cache.verify_site(node)
 
 
 def get_broken_registrations():
@@ -121,9 +146,30 @@ class TestMigrateRegistrations(OsfTestCase):
         self.broken_registration.piwik_site_id = 3
         self.broken_registration.save()
 
+        responses.start()
+        responses.add(
+            responses.GET,
+            '{host}index.php?module=API&method=SitesManager.getAllSites&format=JSON&token_auth={auth_token}'.format(
+                host=PIWIK_HOST,
+                auth_token=PIWIK_ADMIN_TOKEN,
+            ),
+            status=200,
+            content_type='application/json',
+            body=json.dumps({
+                '1': {'name': 'Node: ' + self.registration.registered_from._id},
+                '2': {'name': 'Node: ' + self.registration._id},
+                '3': {'name': 'Node: ' + self.broken_registration.registered_from._id},
+                '4': {'name': 'Node: ' + self.broken_registration._id},
+            }),
+            match_querystring=True,
+        )
+
     def tearDown(self):
         super(TestMigrateRegistrations, self).tearDown()
         Node.remove()
+        responses.stop()
+        responses.reset()
+        piwik_cache._cache = None
 
     def test_get_broken_registrations(self):
         nodes = list(get_broken_registrations())
@@ -195,9 +241,30 @@ class TestMigrateTemplates(OsfTestCase):
         self.bad_template_component.piwik_site_id = self.base_component.piwik_site_id
         self.bad_template_component.save()
 
+        responses.start()
+        responses.add(
+            responses.GET,
+            '{host}index.php?module=API&method=SitesManager.getAllSites&format=JSON&token_auth={auth_token}'.format(
+                host=PIWIK_HOST,
+                auth_token=PIWIK_ADMIN_TOKEN,
+            ),
+            status=200,
+            content_type='application/json',
+            body=json.dumps({
+                '1': {'name': 'Node: ' + self.base_project._id},
+                '2': {'name': 'Node: ' + self.base_component._id},
+                '3': {'name': 'Node: ' + self.template_project._id},
+                '4': {'name': 'Node: ' + self.template_component._id},
+            }),
+            match_querystring=True,
+        )
+
     def tearDown(self):
         super(TestMigrateTemplates, self).tearDown()
         Node.remove()
+        responses.stop()
+        responses.reset()
+        piwik_cache._cache = None
 
     def test_get_broken_templated(self):
         nodes = set(get_broken_templated())
@@ -267,9 +334,30 @@ class TestMigrateForks(OsfTestCase):
         self.bad_fork_component.piwik_site_id = self.base_component.piwik_site_id
         self.bad_fork_component.save()
 
+        responses.start()
+        responses.add(
+            responses.GET,
+            '{host}index.php?module=API&method=SitesManager.getAllSites&format=JSON&token_auth={auth_token}'.format(
+                host=PIWIK_HOST,
+                auth_token=PIWIK_ADMIN_TOKEN,
+            ),
+            status=200,
+            content_type='application/json',
+            body=json.dumps({
+                '1': {'name': 'Node: ' + self.base_project._id},
+                '2': {'name': 'Node: ' + self.base_component._id},
+                '3': {'name': 'Node: ' + self.fork_project._id},
+                '4': {'name': 'Node: ' + self.fork_component._id},
+            }),
+            match_querystring=True,
+        )
+
     def tearDown(self):
         super(TestMigrateForks, self).tearDown()
         Node.remove()
+        responses.stop()
+        responses.reset()
+        piwik_cache._cache = None
 
     def test_get_broken_forks(self):
         nodes = set(get_broken_forks())
