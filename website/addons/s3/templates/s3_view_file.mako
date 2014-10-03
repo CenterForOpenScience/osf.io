@@ -43,7 +43,7 @@
         </table>
     </div>
     <script>
-        $script(['/static/js/delete_file.js'], function() {
+        $script(['/static/js/deleteFile.js'], function() {
             var delete_url = '${delete_url}';
             var url = '${info_url}';
             var deleteFile = new DeleteFile('#s3Scope', url, delete_url);
