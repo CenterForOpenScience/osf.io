@@ -2848,6 +2848,15 @@ class TestProjectCreation(OsfTestCase):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_strip_html_from_title(self):
+        payload = {
+            'title': 'no html <b>here</b>'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        assert_true(node)
+        assert_equal('no html here', node.title)
+
     def test_only_needs_title(self):
         payload = {
             'title': 'Im a real title'
