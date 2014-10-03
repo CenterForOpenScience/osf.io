@@ -126,7 +126,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'url': node.url,
             'api_url': node.api_url,
             'category': node.category,
-            'wiki_page_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
+            'wiki_page_api_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
             'wiki_home_url': node.url + 'wiki/',
         }
         ret.update(_view_project(node, auth, primary=True))
@@ -195,12 +195,12 @@ def project_wiki_page(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        wiki_page_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
+        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
-        wiki_page_url = None
+        wiki_page_api_url = None
 
     toc = serialize_wiki_toc(node, auth=auth)
 
@@ -221,7 +221,7 @@ def project_wiki_page(auth, **kwargs):
         'url': node.url,
         'api_url': node.api_url,
         'category': node.category,
-        'wiki_page_url': wiki_page_url,
+        'wiki_page_api_url': wiki_page_api_url,
         'wiki_home_url': node.url + 'wiki/',
     }
 
@@ -255,12 +255,12 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
-        wiki_page_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
+        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
         content = ''
-        wiki_page_url = None
+        wiki_page_api_url = None
 
     # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
@@ -280,7 +280,7 @@ def project_wiki_edit(auth, **kwargs):
         'url': node.url,
         'api_url': node.api_url,
         'category': node.category,
-        'wiki_page_url': wiki_page_url,
+        'wiki_page_api_url': wiki_page_api_url,
         'wiki_home_url': node.url + 'wiki/',
     }
     rv.update(_view_project(node, auth, primary=True))
