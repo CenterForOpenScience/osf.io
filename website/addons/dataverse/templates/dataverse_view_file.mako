@@ -27,7 +27,7 @@
                                 {{study}}</a>
                         </td>
                         <td>
-                            <a href="{{download_url}}" class="btn btn-lg">
+                            <a href="{{download_url}}" class="btn btn-primary btn-sm">
                                Download <i class="icon-download-alt"></i>
                             </a>
                         </td>

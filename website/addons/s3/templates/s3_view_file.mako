@@ -32,7 +32,7 @@
                             ${version['date']}
                         </td>
                         <td>
-                            <a href="${version['download']}" class ="btn btn-lg"download="${file_name}">
+                            <a href="${version['download']}" class ="btn btn-primary btn-sm" download="${file_name}">
                                  Download <i class="icon-download-alt"></i>
                             </a>
                         </td>
