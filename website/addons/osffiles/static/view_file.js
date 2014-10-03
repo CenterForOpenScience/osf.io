@@ -13,10 +13,6 @@
     ko.punches.enableAll();
     ko.punches.attributeInterpolationMarkup.enable();
 
-    function confirmedDeleteFile(api_url) {
-
-    }
-
     function Version(data) {
         this.version_number = data.version_number;
         this.modified_date = new $.osf.FormattableDate(data.modified_date);
@@ -26,7 +22,7 @@
         this.committer_url = data.committer_url;
         this.view = data.view;
     }
-    function VersionViewModel(url, global) {
+    function VersionViewModel(url) {
         var self = this;
         self.versions = ko.observable([]);
 
