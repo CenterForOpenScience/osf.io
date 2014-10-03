@@ -20,7 +20,8 @@
         $(".navbar-nav li").each(function(){
             var href = $(this).find('a').attr('href');
             if (href === window.location.pathname.replace(/%20/g, ' ')) {
-                $(this).addClass('active');
+                var $this = $(this);
+                $this.addClass('active');
             }
         });
     });

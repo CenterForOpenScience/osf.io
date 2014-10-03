@@ -4,7 +4,7 @@
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 from tests.factories import (
     UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
     AuthUserFactory, NodeWikiFactory,
@@ -98,6 +98,44 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
+
+    def test_project_wiki_edit_post_with_new_wid_and_no_content(self):
+        page_name = fake.catch_phrase()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+
+
+    def test_project_wiki_edit_post_with_new_wid_and_content(self):
+        page_name, page_content = fake.catch_phrase(), fake.bs()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+        # content was set
+        assert_equal(new_page.content, page_content)
+
     def test_project_wiki_edit_post_with_non_ascii_title(self):
         # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
         # wid doesn't exist in the db, so it will be created
@@ -123,6 +161,19 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_project_wiki_compare_returns_200(self):
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_project_wiki_compare_with_invalid_wid(self):
+        url = self.project.web_url_for('project_wiki_compare', wid='this-doesnt-exist', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
@@ -138,15 +189,15 @@ class TestWikiDelete(OsfTestCase):
         self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
         self.lion_wiki = self.project.get_wiki_page('Lions')
-        self.url = self.project.api_url_for(
-            'project_wiki_delete',
-            wid=self.elephant_wiki._id
-        )
 
     def test_project_wiki_delete(self):
         assert 'elephants' in self.project.wiki_pages_current
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wid='elephants'
+        )
         self.app.delete(
-            self.url,
+            url,
             auth=self.auth
         )
         self.project.reload()
