@@ -57,7 +57,7 @@
         );
 
         self.deleteFile = function(){
-            bootbox.confirm("Are you sure you want to delete this file? It will not be recoverable.",
+            bootbox.confirm('Are you sure you want to delete this file? It will not be recoverable.',
                 function(result) {
                     if (result) {
                         $('#deletingAlert').addClass('in');
@@ -70,7 +70,7 @@
                         });
                         result.fail(function( jqXHR, textStatus ) {
                             $('#deletingAlert').removeClass('in');
-                            bootbox.alert( "Could not delete: " + textStatus );
+                            bootbox.alert( 'Could not delete: ' + textStatus );
                         });
                     }
                 });
