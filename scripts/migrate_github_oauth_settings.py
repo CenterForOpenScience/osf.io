@@ -21,21 +21,19 @@ from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUse
 def do_migration(records):
     # ... perform the migration ...
     
-    for user_settings in records:
-
-        raw_user_settings = AddonGitHubUserSettings._storage[0].store.find_one({'_id': user_settings._id})
+    for raw_user_settings in records:
 
         access_token = raw_user_settings['oauth_access_token']
         token_type = raw_user_settings['oauth_token_type']
         github_user_name = raw_user_settings['github_user']
 
         AddonGitHubUserSettings._storage[0].store.update(
-            {'_id': user_settings._id},
+            {'_id': raw_user_settings['_id']},
             {
                 '$unset': {
-                    'access_token': True,
-                    'token_type': True,
-                    'github_user_name': True,
+                    'oauth_access_token': True,
+                    'oauth_token_type': True,
+                    'github_user': True,
                 }
             }
         )
@@ -45,21 +43,35 @@ def do_migration(records):
 
         oauth_settings = AddonGitHubOauthSettings()
         oauth_settings.github_user_id = str(github_user.id)
+        oauth_settings.save()
         oauth_settings.oauth_access_token = access_token
         oauth_settings.oauth_token_type = token_type
         oauth_settings.github_user_name = github_user_name
         oauth_settings.save()
-        
-        del user_settings.oauth_access_token
-        del user_settings.oauth_token_type
-        del user_settings.github_user
-        user_settings.oauth_settings = oauth_settings
-        user_settings.save()
-        
+
+        AddonGitHubUserSettings._storage[0].store.update(
+            {'_id': raw_user_settings['_id']},
+            {
+                '$set': {
+                    'oauth_settings': oauth_settings.github_user_id,
+                }
+            }
+        )
+
+        AddonGitHubOauthSettings._storage[0].store.update(
+            {'github_user_id': oauth_settings.github_user_id},
+            {
+                '$push': {
+                    '__backrefs.accessed.addongithubusersettings.oauth_settings': raw_user_settings['_id'],
+                }
+            }
+        )
+
+        oauth_settings.save()
         
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
-    return AddonGitHubUserSettings.find()
+    return database.addongithubusersettings.find()
 
 def main():
     init_app(set_backends=True, routes=True)  # Sets the storage backends on all models
@@ -69,7 +81,7 @@ def main():
         for user_setting in user_settings:
             print "===AddonGithubUserSettings==="
             print "user_settings_id:"
-            print (user_setting._id)
+            print (user_setting['_id'])
 
     else:
         do_migration(get_user_settings())
@@ -107,7 +119,7 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
     def test_get_user_settings(self):
         # records = list(get_user_settings())
 
-        records = list(self.mongo_collection.find())
+        records = list(get_user_settings())
 
         assert_equal(1, len(records))
         assert_equal(
@@ -128,27 +140,28 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
         )
 
     @mock.patch('website.addons.github.api.GitHub.user')
-    @mock.patch('website.addons.github.api.GitHub')
-    def test_do_migration(self, mock_github, mock_github_user):
-        mock_github_user.id.return_value = "testing user id"
+    def test_do_migration(self, mock_github_user):
+        user = mock.Mock()
+        user.id = "testing user id"
+        mock_github_user.return_value = user
         do_migration(get_user_settings())
-        self.user_settings.reload()
-        assert_true(self.user_settings.oauth_settings)
-        assert_true(self.user_settings.oauth_state)
+        user_settings = AddonGitHubUserSettings.load(database.addongithubusersettings.find()[0]['_id'])
+        assert_true(user_settings.oauth_settings)
+        assert_true(user_settings.oauth_state)
         assert_equal(
-            self.user_settings.oauth_settings.github_user_name,
+            user_settings.oauth_settings.github_user_name,
             "testing user"
         )
         assert_equal(
-            self.user_settings.oauth_settings.oauth_access_token,
+            user_settings.oauth_settings.oauth_access_token,
             "testing acess token"
         )
         assert_equal(
-            self.user_settings.oauth_settings.oauth_token_type,
+            user_settings.oauth_settings.oauth_token_type,
             "testing token type"
         )
         assert_equal(
-            self.user_settings.oauth_settings.github_user_id,
+            user_settings.oauth_settings.github_user_id,
             "testing user id"
         )
 
