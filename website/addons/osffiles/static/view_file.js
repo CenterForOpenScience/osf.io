@@ -35,7 +35,7 @@
 
         // Date when this project was registered, or null if not a registration
         // TODO: should I populate this? (@mambocab)
-        self.not_registered = ko.observable(null);
+        self.registered = ko.observable(false);
 
         $.ajax({
             url: url,
@@ -51,7 +51,7 @@
             self.latest_version_url(response.latest_version_url);
             self.api_url(response.api_url);
             self.files_page_url(response.files_page_url);
-            self.not_registered(response.not_registered);
+            self.registered(response.registered);
         }).fail(
             $.osf.handleJSONError
         );

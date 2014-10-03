@@ -227,7 +227,6 @@ def file_info(**kwargs):
     latest_version_url = None
     api_url = None
     anonymous = has_anonymous_link(node, auth)
-    not_registered = not node.is_registration
 
     try:
         files_versions = node.files_versions[file_name_clean]
@@ -267,7 +266,7 @@ def file_info(**kwargs):
         'latest_version_url': latest_version_url,
         'api_url': api_url,
         'files_page_url': files_page_url,
-        'not_registered': not_registered,
+        'registered': node.is_registration,
     }
 
 @must_be_valid_project  # returns project

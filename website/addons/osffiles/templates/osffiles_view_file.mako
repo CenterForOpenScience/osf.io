@@ -12,7 +12,7 @@
             <li class="active overflow" >{{file_name}}</li>
         </ol>
             <p><a href="{{latest_version_url}}" class="btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
-            <a href="#" data-bind="visible: api_url && not_registered, click: deleteFile" class="btn-danger btn-lg">Delete <i class="icon-trash"></i></a></p>
+            <a href="#" data-bind="visible: api_url() && !registered(), click: deleteFile" class="btn-danger btn-lg">Delete <i class="icon-trash"></i></a></p>
         <table class="table table-striped" id="file-version-history">
             <thead>
             <tr>
