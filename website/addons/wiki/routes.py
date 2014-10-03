@@ -76,6 +76,7 @@ page_routes = {
 
 
         # Compare
+        # <compare_id> refers to a version number
         Rule(
             [
                 '/project/<pid>/wiki/<wid>/compare/<compare_id>/',

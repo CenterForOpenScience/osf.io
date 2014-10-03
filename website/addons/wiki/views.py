@@ -193,7 +193,7 @@ def project_wiki_page(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        wiki_page_url = '{}wiki/{}/'.format(node.api_url, wiki_page._id)
+        wiki_page_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
@@ -253,7 +253,7 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
-        wiki_page_url = '{}wiki/{}/'.format(node.api_url, wiki_page._id)
+        wiki_page_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
@@ -357,7 +357,9 @@ def project_wiki_rename(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    page = NodeWikiPage.load(wid)
+    page = node.get_wiki_page(wid)
+    if not page:
+        raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(node, page, auth)
     node.save()
     return {}

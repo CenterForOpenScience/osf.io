@@ -161,6 +161,13 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_project_wiki_compare_returns_200(self):
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
@@ -176,15 +183,15 @@ class TestWikiDelete(OsfTestCase):
         self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
         self.lion_wiki = self.project.get_wiki_page('Lions')
-        self.url = self.project.api_url_for(
-            'project_wiki_delete',
-            wid=self.elephant_wiki._id
-        )
 
     def test_project_wiki_delete(self):
         assert 'elephants' in self.project.wiki_pages_current
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wid='elephants'
+        )
         self.app.delete(
-            self.url,
+            url,
             auth=self.auth
         )
         self.project.reload()
