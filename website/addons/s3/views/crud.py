@@ -210,8 +210,6 @@ def create_new_bucket(**kwargs):
 @must_have_addon('s3', 'node')
 def file_delete_info(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    file_name = kwargs['fid']
-    file_name_clean = file_name.replace('.', '_')
     files_page_url = node.web_url_for('collect_file_trees')
     try:
         api_url = node.api_url
