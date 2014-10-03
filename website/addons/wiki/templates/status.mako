@@ -11,21 +11,20 @@
                 % endif
             >${pageName}</span></h3>
     </div>
-    <nav class="navbar navbar-default" style="display: inline-block; float: right">
+
+    % if user['can_edit']:
+    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block; float: right">
         <ul class="nav navbar-nav">
-            % if user['can_edit']:
                 <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                     <%include file="add_wiki_page.mako"/>
+                <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
                 % if wiki_id:
                 <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                     <%include file="delete_wiki_page.mako"/>
-                % endif
-                % else:
-                <li><a class="disabled">New</a></li>
-                <li><a class="disabled">Delete</a></li>
-            % endif
+               % endif
         </ul>
     </nav>
+    % endif
 </div>
 
 <script type="text/javascript">

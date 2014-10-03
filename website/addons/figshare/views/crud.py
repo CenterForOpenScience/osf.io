@@ -14,8 +14,8 @@ from framework.auth.utils import privacy_info_handle
 from framework.utils import secure_filename
 from website.addons.base.views import check_file_guid
 
-from website.project import decorators
-from website.project.decorators import must_be_contributor_or_public, must_be_contributor
+from website.project import decorators  # noqa
+from website.project.decorators import must_be_contributor_or_public, must_be_contributor  # noqa
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
@@ -30,23 +30,6 @@ from website.addons.figshare import messages
 
 
 # ----------------- PROJECTS ---------------
-# PROJECTS: C
-@decorators.must_have_permission('write')
-@decorators.must_have_addon('figshare', 'node')
-@decorators.must_not_be_registration
-def figshare_create_project(**kwargs):
-    # TODO implement me
-    pass
-
-# PROJECTS: R
-
-
-@decorators.must_have_permission('write')
-@decorators.must_have_addon('figshare', 'node')
-@decorators.must_not_be_registration
-def figshare_get_project(**kwargs):
-    # TODO implement me
-    pass
 
 # PROJECTS: U
 
@@ -212,7 +195,7 @@ def figshare_publish_article(*args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     cat = request.json.get('category', '')
-    tags = request.json.get('tags', '')
+    tags = request.json.get('tags', '')  # noqa
 
     if not cat:
         raise HTTPError(http.BAD_REQUEST)
@@ -308,7 +291,7 @@ def figshare_view_file(*args, **kwargs):
     else:
         item = connect.article(node_settings, node_settings.figshare_id)
 
-    if not article_id in str(item):
+    if article_id not in str(item):
         raise HTTPError(http.NOT_FOUND)
     article = connect.article(node_settings, article_id)
 
@@ -343,7 +326,7 @@ def figshare_view_file(*args, **kwargs):
     if private:
         figshare_url += 'preview/_preview/{0}'.format(article['items'][0]['article_id'])
     else:
-        figshare_url += 'articles/{0}/{1}'.format(article['items'][0]['title'].replace(' ', '_'),article['items'][0]['article_id'])
+        figshare_url += 'articles/{0}/{1}'.format(article['items'][0]['title'].replace(' ', '_'), article['items'][0]['article_id'])
 
     version_url = "http://figshare.com/articles/{filename}/{file_id}".format(
         filename=article['items'][0]['title'], file_id=article['items'][0]['article_id'])
@@ -355,8 +338,8 @@ def figshare_view_file(*args, **kwargs):
 
     filename = found['name']
     cache_file = get_cache_file(
-            article_id, file_id
-        )
+        article_id, file_id
+    )
     rendered = get_cache_content(node_settings, cache_file)
     if private:
         rendered = messages.FIGSHARE_VIEW_FILE_PRIVATE.format(url='http://figshare.com/')

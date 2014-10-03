@@ -53,7 +53,6 @@ class TestFilesViews(OsfTestCase):
             vid='bad'
         )
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        print res.body
         assert_equal(res.status_code, 400)
         assert_in('Invalid version', res.body)
 
