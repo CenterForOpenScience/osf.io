@@ -227,14 +227,14 @@ def file_info(**kwargs):
     latest_version_url = None
     api_url = None
     anonymous = has_anonymous_link(node, auth)
+    not_registered = not node.is_registration
 
     try:
         files_versions = node.files_versions[file_name_clean]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
     latest_version_number = get_latest_version_number(file_name_clean, node) + 1
-    # latest_version_file = NodeFile.load(latest_version_number)
-    # latest_version_url = latest_version_file.download_url(node)
+
     for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
         number = len(files_versions) - idx
@@ -267,6 +267,7 @@ def file_info(**kwargs):
         'latest_version_url': latest_version_url,
         'api_url': api_url,
         'files_page_url': files_page_url,
+        'not_registered': not_registered,
     }
 
 @must_be_valid_project  # returns project
