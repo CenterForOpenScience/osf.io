@@ -23,7 +23,7 @@ $('#figsharePublishArticle').on('click', function(){
 -->
 % endif
 %if download_url:
-    <p><a href="${download_url}" class="btn btn-lg">
+    <p><a href="${download_url}" class="btn-success btn">
     Download <i class="icon-download-alt"></i>
     </a></p>
 %endif
