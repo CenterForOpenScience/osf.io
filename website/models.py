@@ -3,7 +3,7 @@
 '''
 
 from framework.auth.core import User
-from framework.guid.model import Guid, Metadata
+from framework.guid.model import Guid
 from framework.sessions.model import Session
 
 from website.project.model import (
@@ -16,7 +16,7 @@ from website.project.model import (
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink, Metadata,
+    MailRecord, Comment, PrivateLink,
 )
 
 GUID_MODELS = (User, Node, Comment,)
