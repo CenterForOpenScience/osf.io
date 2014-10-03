@@ -149,6 +149,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
+    $script(['/static/js/logFeed.js'], 'logFeed');
+
+   $('body').on('nodeLoad', function(event, data) {
+       $script.ready('logFeed', function() {
+           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+       });
+   });
+
+   ##  NOTE: pointers.js is loaded in project_base.mako
+   $script.ready('pointers', function() {
+       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+   });
+
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
@@ -161,7 +174,7 @@ ${parent.javascript_bottom()}
 
         $script.ready('comments', function () {
             var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
+            Comment.init('#commentPane', userName, canComment, hasChildren);
         });
 
     }
