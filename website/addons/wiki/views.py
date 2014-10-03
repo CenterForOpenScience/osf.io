@@ -125,7 +125,9 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'toc': toc,
             'url': node.url,
             'api_url': node.api_url,
-            'category': node.category
+            'category': node.category,
+            'wiki_page_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
+            'wiki_home_url': node.url + 'wiki/',
         }
         ret.update(_view_project(node, auth, primary=True))
         return ret
