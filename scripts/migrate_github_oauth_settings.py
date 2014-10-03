@@ -74,7 +74,7 @@ def get_user_settings():
     return database.addongithubusersettings.find()
 
 def main():
-    init_app(set_backends=True, routes=True)  # Sets the storage backends on all models
+    init_app('website.settings', set_backends=True, routes=True)  # Sets the storage backends on all models
     user_settings = get_user_settings()
     if 'dry' in sys.argv:
         # print list of affected nodes, totals, etc.
@@ -93,7 +93,6 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
         super(TestMigrateGitHubOauthSettings, self).setUp()
 
         self.mongo_collection = database.addongithubusersettings
-        self.mongo_collection.remove()
         self.user_settings = {
             "__backrefs" : {
                 "authorized" : {
