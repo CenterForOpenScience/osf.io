@@ -63,9 +63,11 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         window.location.href = response.url;
     }
     bootbox.prompt(
-        '<div>Delete this ' + nodeType + '? This is IRREVERSIBLE.</div>' +
+        'Are you sure you want to delete this ' + nodeType + '?' +
+        '<div class="bootboxBody"><p>It will be <strong>permanently deleted</strong> for every contributor:</p>' +
+         '<ol>' + $('div#contributors ol').html() + '</ol>' +
         '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-        'If you want to continue, type <strong>' + key + '</strong> and click OK.</p>',
+        'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
         function(result) {
             if (result != null) {
                 result = result.toLowerCase();
