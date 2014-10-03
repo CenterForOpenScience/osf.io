@@ -24,6 +24,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website.util import api_url_for
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -106,6 +107,12 @@ class TestAUser(OsfTestCase):
     def test_can_see_profile_url(self):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
+
+    def test_sanitization_of_edit_profile(self):
+        url = api_url_for('edit_profile', uid=self.user._id)
+        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
+        request = self.app.post(url, post_data, auth=self.auth)
+        assert_equal('new name', request.json['name'])
 
     def test_can_see_homepage(self):
         # Goes to homepage
