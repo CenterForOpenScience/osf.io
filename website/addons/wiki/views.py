@@ -308,13 +308,13 @@ def project_wiki_edit_post(wid, auth, **kwargs):
             node_to_use.update_node_wiki(wid, request.form['content'], auth)
             ret = {'status': 'success'}
         else:
-            ret = {}
+            ret = {'status': 'unmodified'}
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
         node_to_use.update_node_wiki(wid, request.form['content'], auth)
         ret = {'status': 'success'}
-    return ret, 302, None, redirect_url
+    return ret, http.FOUND, None, redirect_url
 
 
 @must_not_be_registration

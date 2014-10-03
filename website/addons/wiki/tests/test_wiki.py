@@ -125,6 +125,10 @@ class TestWikiViews(OsfTestCase):
         # User submits to edit form with no content
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
 
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
         # Node now has the new wiki page associated with it
         self.project.reload()
         new_page = self.project.get_wiki_page(page_name)
