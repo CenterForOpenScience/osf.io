@@ -251,7 +251,6 @@ def project_wiki_edit(auth, **kwargs):
         content = wiki_page.content
         wiki_created = False
     else:
-        wiki_page = None
         version = 'NA'
         is_current = False
         content = ''
@@ -294,18 +293,22 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 
     wiki_page = node_to_use.get_wiki_page(wid)
 
-    if wiki_page:
-        content = wiki_page.content
-    else:
-        content = ''
+    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
 
-    if request.form['content'] != content:
-        node_to_use.update_node_wiki(wid, request.form['content'], auth)
-        return {
-            'status': 'success',
-        }, None, None, u'{}wiki/{}/'.format(node_to_use.url, wid)
+    if wiki_page:
+        # Only update node wiki if content has changed
+        content = wiki_page.content
+        if request.form['content'] != content:
+            node_to_use.update_node_wiki(wid, request.form['content'], auth)
+            ret = {'status': 'success'}
+        else:
+            ret = {}
     else:
-        return {}, None, None, u'{}wiki/{}/'.format(node_to_use.url, wid)
+        # update_node_wiki will create a new wiki page because a page
+        # with wid does not exist
+        node_to_use.update_node_wiki(wid, request.form['content'], auth)
+        ret = {'status': 'success'}
+    return ret, 302, None, redirect_url
 
 
 @must_not_be_registration

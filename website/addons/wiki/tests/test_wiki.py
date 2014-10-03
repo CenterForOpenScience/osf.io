@@ -4,7 +4,7 @@
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 from tests.factories import (
     UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
     AuthUserFactory, NodeWikiFactory,
@@ -97,6 +97,40 @@ class TestWikiViews(OsfTestCase):
         # page was updated with new content
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
+
+
+    def test_project_wiki_edit_post_with_new_wid_and_no_content(self):
+        page_name = fake.catch_phrase()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+
+
+    def test_project_wiki_edit_post_with_new_wid_and_content(self):
+        page_name, page_content = fake.catch_phrase(), fake.bs()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+        # content was set
+        assert_equal(new_page.content, page_content)
 
     def test_project_wiki_edit_post_with_non_ascii_title(self):
         # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
