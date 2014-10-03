@@ -193,10 +193,12 @@ def project_wiki_page(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
+        wiki_page_url = '{}wiki/{}/'.format(node.api_url, wiki_page._id)
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
+        wiki_page_url = None
 
     toc = serialize_wiki_toc(node, auth=auth)
 
@@ -216,7 +218,9 @@ def project_wiki_page(auth, **kwargs):
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
-        'category': node.category
+        'category': node.category,
+        'wiki_page_url': wiki_page_url,
+        'wiki_home_url': node.url + 'wiki/',
     }
 
     ret.update(_view_project(node, auth, primary=True))
@@ -241,7 +245,7 @@ def wiki_page_content(wid, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, **kwargs):
-    wid = kwargs['wid']
+    wid = kwargs['wid']  # the page name
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
@@ -249,21 +253,21 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
-        wiki_created = False
+        wiki_page_url = '{}wiki/{}/'.format(node.api_url, wiki_page._id)
     else:
         version = 'NA'
         is_current = False
         content = ''
-        wiki_created = True
+        wiki_page_url = None
 
+    # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'pageName': wid,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
-        'wiki_created': wiki_created,
-        'wiki_id': wiki_page,
+        'wiki_id': wiki_page._id if wiki_page else '',
         'is_current': is_current,
         'is_edit': True,
         'pages_current': sorted([
@@ -273,7 +277,9 @@ def project_wiki_edit(auth, **kwargs):
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
-        'category': node.category
+        'category': node.category,
+        'wiki_page_url': wiki_page_url,
+        'wiki_home_url': node.url + 'wiki/',
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
