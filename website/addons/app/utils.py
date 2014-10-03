@@ -11,25 +11,10 @@ from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
 
-from framework.guid.model import Metadata
-
 from website import settings
-from website.search import search
 
 
 logger = logging.getLogger(__name__)
-
-
-def create_orphaned_metadata(node_addon, metadata):
-    metastore = Metadata(app=node_addon)
-    metastore.update(metadata)
-    metastore.system_data['is_orphan'] = True
-    metastore.system_data['guid'] = metastore._id
-    metastore.save()
-
-    search.update_metadata(metastore)
-
-    return metastore
 
 
 def elastic_to_rss(name, data, query):
