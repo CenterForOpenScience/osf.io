@@ -18,7 +18,8 @@
         scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
         twitter: /twitter\.com\/(\w+)/i,
         linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
-        github: /github\.com\/(\w+)/i
+        impactStory: /impactstory\.org\/([\w\.-]+)/i,
+        github: /github\.com\/(\w+)/i,
     };
 
     var cleanByRule = function(rule) {
@@ -68,7 +69,7 @@
         };
 
         self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJS(self.tracked) !== self.original();
+            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
         });
 
         // Must be set after isValid is defined in inherited view models
@@ -343,6 +344,10 @@
             ko.observable().extend({cleanup: cleanByRule(socialRules.linkedIn)}),
             self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
         );
+        self.impactStory = extendLink(
+            ko.observable().extend({cleanup: cleanByRule(socialRules.impactStory)}),
+            self, 'impactStory', 'https://www.impactstory.org/'
+        );
         self.github = extendLink(
             ko.observable().extend({cleanup: cleanByRule(socialRules.github)}),
             self, 'github', 'https://github.com/'
@@ -355,7 +360,8 @@
             self.twitter,
             self.scholar,
             self.linkedIn,
-            self.github
+            self.impactStory,
+            self.github,
         ];
 
         var validated = ko.validatedObservable(self);
@@ -372,6 +378,7 @@
                 {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
                 {label: 'GitHub', text: self.github(), value: self.github.url()},
                 {label: 'LinkedIn', text: self.linkedIn(), value: self.linkedIn.url()},
+                {label: 'ImpactStory', text: self.impactStory(), value: self.impactStory.url()},
                 {label: 'Google Scholar', text: self.scholar(), value: self.scholar.url()}
             ];
         });
@@ -459,11 +466,13 @@
 
         self.start = ko.observable().extend({
             date: true,
-            asDate: true
+            asDate: true,
+            pyDate: true
         });
         self.end = ko.observable().extend({
             date: true,
             asDate: true,
+            pyDate: true,
             minDate: self.start
         });
 
@@ -487,11 +496,13 @@
 
         self.start = ko.observable().extend({
             date: true,
-            asDate: true
+            asDate: true,
+            pyDate: true
         });
         self.end = ko.observable().extend({
             date: true,
             asDate: true,
+            pyDate: true,
             minDate: self.start
         });
 

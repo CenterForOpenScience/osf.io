@@ -151,6 +151,7 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
+@must_not_be_registration
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()

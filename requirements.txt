@@ -23,6 +23,7 @@ furl==0.3.95
 pyelasticsearch==0.6.1
 # Development version of modular-odm
 git+https://github.com/CenterForOpenScience/modular-odm.git@develop
+PyRSS2Gen==1.1
 
 # Assets
 webassets==0.9
@@ -32,3 +33,4 @@ cssmin>=0.2.0
 requests==2.3.0
 requests-oauthlib==0.4.1
 raven==5.0.0
+resync==1.0.0

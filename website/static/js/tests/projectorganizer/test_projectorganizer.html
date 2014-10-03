@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Project Organizer Tests</title>
+  <link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.14.0.css">
+
+
+   <script src="http://ajax.aspnetcdn.com/ajax/jquery/jquery-2.1.0.min.js"></script>
+    <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
+    <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+     <!-- include source files here... -->
+    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/static/css/hgrid.min.css">
+    <link rel="stylesheet" href="/static/css/projectorganizer.css">
+    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
+    <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
+    <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
+    <script src="/static/vendor/bower_components/jquery-mockjax/jquery.mockjax.js"></script>
+    <script src="/static/vendor/jquery-drag-drop/jquery.event.drag-2.2.js"></script>
+    <script src="/static/vendor/jquery-drag-drop/jquery.event.drop-2.2.js"></script>
+    <script src="/static/js/moment.min.js"></script>
+    <script src="/static/vendor/bower_components/hgrid/dist/hgrid.js"></script>
+    <script src="/static/js/typeahead.bundle.js"></script>
+    <script src="/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js"></script>
+    <script src="/static/js/handlebars-v1.3.0.js"></script>
+    <script src="/static/js/projectorganizer.js"></script>
+
+
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  <script src="http://code.jquery.com/qunit/qunit-1.14.0.js"></script>
+  <script src="test_projectorganizer.js"></script>
+
+
+   <div id="qunit-fixutre"></div>
+   <div id="projectOrganizerScope">
+    <script id="project-detail-template" type="text/x-handlebars-template">
+    <span class = "title">
+          <span class = "name-container" id="nc-{{theItem.node_id}}">
+          {{#if theItem.isFolder}}{{ theItem.name }}{{/if}}
+          {{#unless theItem.isFolder}}<a href="{{ theItem.urls.fetch }}">{{ theItem.name }}</a>{{#if theItem.isRegistration}} (Registration){{/if}}
+          {{/unless}}
+          {{#unless theItem.isDashboard}}{{#unless theItem.isRegistration}}{{#if theItem.permissions.edit}}
+              <img src="/static/img/pen.png" id="rename-node-{{theItem.node_id}}">
+          {{/if}}{{/unless}}{{/unless}}
+          </span>
+          <span class="rename-container" id="rnc-{{theItem.node_id}}">
+                <input class="typeahead" id="rename-node-input{{theItem.node_id}}" type="text" value="{{theItem.name}}">
+                <span class = "renameNodeBtn btn btn-default" id="rename-node-button{{theItem.node_id}}" disabled="disabled">Rename</span>
+                <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
+          </span>
+
+        </span>
+        {{#unless theItem.isFolder}}
+        <br /><span class= "contributors">Contributor{{#if multipleContributors}}s{{/if}}: {{#commalist theItem.contributors}}<a href="{{ this.url }}">{{ this.name }}</a>{{/commalist}}</span>
+        {{/unless}}
+        {{#if theItem.description}}<br /><span class="description">Description: {{ theItem.description }}</span>{{/if}}
+        {{#if theItem.isFolder}}
+        <div class = "organize-project-controls">
+            <div id = "buttons{{theItem.node_id}}">
+            <div class = "organizeBtn btn btn-default" id="add-item-{{theItem.node_id}}">Add Project</div>
+            <div id="add-folder-{{theItem.node_id}}" class = "organizeBtn btn btn-default">Add a Folder</div>
+                {{#unless theItem.isDashboard}}
+                    <div class = "organizeBtn btn btn-default" id="delete-folder-{{theItem.node_id}}">Delete Folder</div>
+                {{/unless}}
+            </div>
+            <div id="findNode{{theItem.node_id}}">
+            <input class="typeahead" id="input{{theItem.node_id}}" type="text" placeholder="Project Name">
+            <span class = "findBtn btn btn-default" id="add-link-{{theItem.node_id}}" disabled="disabled">Add the project</span>
+            <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
+                <span class="add-link-warning" id="add-link-warn-{{theItem.node_id}}"></span>
+            </div>
+            <div class="add-folder-container" id="afc-{{theItem.node_id}}">
+                <input class = "typeahead" id="add-folder-input{{theItem.node_id}}" type="text" placeholder="Folder Name">
+                <span class = "addFolderBtn btn btn-default" id="add-folder-button{{theItem.node_id}}" disabled="disabled">Add the folder</span>
+                <span class = "btn btn-default cancel-button{{ theItem.node_id }}">Cancel</span>
+            </div>
+
+
+        </div>
+
+        {{/if}}
+        {{#unless theItem.isFolder}}
+            {{#if theItem.parentIsFolder}}
+                {{#unless parentIsSmartFolder}}
+                    <div class = "organize-project-controls">
+                        <div id = "buttons{{theItem.node_id}}">
+                            <div class="organizeBtn btn btn-default" id="remove-link-{{theItem.node_id}}">Remove from folder</div>
+                        </div>
+                    </div>
+                {{/unless}}
+            {{/if}}
+        {{/unless}}
+</script>
+
+<script id="project-detail-multi-item-template" type="text/x-handlebars-template">
+        <span class="title">Selection of {{ itemsCount }} pointers.</span>
+        <p><div class="organizeBtn btn btn-default" id="remove-links-multiple">Remove all from folder</div></p>
+</script>
+
+</div>
+
+
+
+</body>
+</html>

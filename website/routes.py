@@ -8,14 +8,16 @@ from framework import status
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
 from framework.routing import (
-    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string, xml_renderer
 )
 from framework.auth import views as auth_views
+from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
 from website.addons.base import views as addon_views
 from website.search import views as search_views
+from website.publishers import views as publisher_views
 from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
@@ -37,6 +39,7 @@ def get_globals():
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
@@ -44,6 +47,7 @@ def get_globals():
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
+        'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
@@ -179,9 +183,15 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-
+        # TODO Fix apps
+        # Rule('/dashboard/apps/', 'get', website_views.get_dashboard_apps, json_renderer),
+        Rule(
+            [
+                '/dashboard/<nid>',
+                '/dashboard/',
+            ],
+            'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
     ### Meta-data ###
@@ -331,6 +341,10 @@ def make_url_map(app):
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
         ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
 
+        Rule('/rss/', 'get', publisher_views.recent_rss, xml_renderer),
+
+        Rule('/resync/resourcelist.xml', 'get', publisher_views.recent_resourcelist, xml_renderer),
+
     ])
 
     ### Profile ###
@@ -365,6 +379,12 @@ def make_url_map(app):
             OsfWebRenderer('profile/addons.mako'),
         ),
 
+        Rule(
+            '/settings/api/',
+            'get',
+            profile_views.user_apikeys,
+            OsfWebRenderer('profile/apikeys.mako'),
+        ),
     ])
 
     # API
@@ -380,8 +400,8 @@ def make_url_map(app):
         Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
-        Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
-        Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
+        Rule('/settings/keys/', 'post', profile_views.create_user_key, json_renderer),
+        Rule('/settings/keys/', 'delete', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
         Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
@@ -461,7 +481,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
-
+        Rule('/search/share/', 'get', search_views.share_search, OsfWebRenderer('share_search.mako')),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(
@@ -504,10 +524,13 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
-        # TODO: Add API endpoint for tags
-        Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # # TODO: Add API endpoint for tags
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
         Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
+        Rule('/folder/<nid>', 'get', project_views.node.folder_new, OsfWebRenderer('project/new_folder.mako')),
+        Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
+        Rule('/project/new/<pid>/beforeTemplate/', 'get', project_views.node.project_before_template, json_renderer),
 
         Rule(
             [
@@ -613,6 +636,14 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/expand/',
+            '/project/<pid>/node/<nid>/expand/',
+        ], 'post', project_views.node.expand, json_renderer),
+        Rule([
+            '/project/<pid>/collapse/',
+            '/project/<pid>/node/<nid>/collapse/',
+        ], 'post', project_views.node.collapse, json_renderer),
 
         Rule(
             [
@@ -634,6 +665,22 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointer,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/pointers/move/',
+            ],
+            'post',
+            project_views.node.move_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
@@ -641,7 +688,31 @@ def make_url_map(app):
             project_views.node.remove_pointer,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/folder/<pid>/pointer/<pointer_id>',
+            ],
+            'delete',
+            project_views.node.remove_pointer_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>/pointers/',
+            ],
+            'delete',
+            project_views.node.remove_pointers_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>',
+            ],
+            'delete',
+            project_views.node.delete_folder,
+            json_renderer,
+        ),
+        Rule('/folder/', 'put', project_views.node.add_folder, json_renderer),
         Rule([
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
@@ -651,6 +722,9 @@ def make_url_map(app):
             '/project/<pid>/get_children/',
             '/project/<pid>/node/<nid>/get_children/',
         ], 'get', project_views.node.get_children, json_renderer),
+        Rule([
+            '/project/<pid>/get_folder_pointers/'
+        ], 'get', project_views.node.get_folder_pointers, json_renderer),
         Rule([
             '/project/<pid>/get_forks/',
             '/project/<pid>/node/<nid>/get_forks/',

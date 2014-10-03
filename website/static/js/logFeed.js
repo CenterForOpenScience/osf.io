@@ -95,9 +95,10 @@
                 data:{
                     pageNum: pageNum
                 },
-                cache: false,
+                cache: false
             }).done(function(response) {
                 // Initialize LogViewModel
+                var logModelObjects = createLogs(response.logs); // Array of Log model objects
                 for (var i=0; i<logModelObjects.length; i++) {
                     self.logs.push(logModelObjects[i]);
                 }
@@ -160,13 +161,13 @@
         self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
         self.init();
     };
+
     /**
      * A log list feed.
      * @param {string} selector
-     * @param {string or Array} data
+     * @param {string} url
      * @param {object} options
      */
-
     function LogFeed(selector, data, options) {
         var self = this;
         self.selector = selector;
@@ -175,9 +176,9 @@
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
             initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
-        } else { // data is a URL
+        } else { // data is an URL
             $.getJSON(data, function(response) {
-                  initViewModel(self, response.logs, response.has_more_logs, data);
+                initViewModel(self, response.logs, response.has_more_logs, data);
             });
         }
     }

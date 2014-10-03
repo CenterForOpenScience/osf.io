@@ -49,7 +49,8 @@ def activity():
     recent_query = (
         Q('category', 'eq', 'project') &
         Q('is_public', 'eq', True) &
-        Q('is_deleted', 'eq', False)
+        Q('is_deleted', 'eq', False) &
+        Q('system_tags', 'ne', 'application_created')
     )
 
     # Temporary bug fix: Skip projects with empty contributor lists
@@ -68,7 +69,7 @@ def activity():
         recent_query &
         Q('is_registration', 'eq', True)
     ).sort(
-        '-date_created'
+        '-registered_date'
     ).limit(10)
 
     return {

@@ -22,10 +22,10 @@
             </span>
             <span data-bind="ifnot:log.anonymous">
                 <span data-bind="if: log.userURL">
-                    <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
+                    <a class="overflow" data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
                 </span>
                 <span data-bind="ifnot: log.userURL">
-                    <span data-bind="text: log.userFullName"></span>
+                    <span class="overflow" data-bind="text: log.userFullName"></span>
                 </span>
             </span>
             <!-- Log actions are the same as their template name -->
@@ -40,5 +40,6 @@
 
         </dd>
     </dl><!-- end foreach logs -->
+    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
 </div><!-- end #logScope -->
 <%include file="log_templates.mako"/>
