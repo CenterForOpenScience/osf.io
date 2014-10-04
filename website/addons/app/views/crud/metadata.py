@@ -4,8 +4,12 @@ import httplib as http
 
 from flask import request
 
+from modularodm.exceptions import ValidationError
+
+from framework.auth import Auth
 from framework.exceptions import HTTPError
 
+from website.project import new_node
 from website.addons.app.model import Metadata
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
@@ -48,8 +52,44 @@ def create_metadata(node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('app', 'node')
-def promote_metadata(node_addon, **kwargs):
-    pass  # TODO
+def promote_metadata(node_addon, mid, **kwargs):
+    metastore = Metadata.load(mid)
+
+    if not metastore:
+        raise HTTPError(http.BAD_REQUEST)
+
+    creator = node_addon.system_user
+    tags = metastore.get('tags', [])
+    contributors = metastore.get('contributors', [])
+    category = request.json.get('category', 'project')
+    title = metastore.get('title') or request.json.get('title')
+    project = metastore.get('parent') or request.json.get('parent')
+    description = metastore.get('description') or request.json.get('description')
+    node = new_node(category, title, creator, description, project)
+
+    for tag in tags:
+        node.add_tag(tag, Auth(creator))
+
+    for contributor in contributors:
+        try:
+            node.add_unregistered_contributor(contributor['name'],
+                contributor.get('email'), Auth(creator))
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+    node.save()
+
+    metastore['attached'] = {
+        'nid': node._id,
+        'pid': node.parent_id
+    }
+    metastore.save()
+
+    return {
+        'id': node._id,
+        'url': node.url,
+        'apiUrl': node.api_url
+    }, http.CREATED
+
 
 # PUT
 @must_have_permission('write')
