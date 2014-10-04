@@ -17,3 +17,11 @@ class InvalidVersionError(OSFFilesError, TypeError):
     instead of an integer.
     """
     pass
+
+class FileNotModified(OSFFilesError):
+    def __init__(self, message=None):
+        message = (
+            message or
+            u'File identical to current version'
+        )
+        super(FileNotModified, self).__init__(message)

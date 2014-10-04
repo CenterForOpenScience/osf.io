@@ -11,7 +11,6 @@ import httplib as http
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
-from webtest.app import AppError
 from werkzeug.wrappers import Response
 
 from modularodm import Q
@@ -21,7 +20,7 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
-# import website.app
+import website.app
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -37,7 +36,7 @@ from website.project.views.node import _view_project, abbrev_authors
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
-from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
+from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -677,6 +676,12 @@ class TestUserProfile(OsfTestCase):
     def setUp(self):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
+
+    def test_sanitization_of_edit_profile(self):
+        url = api_url_for('edit_profile', uid=self.user._id)
+        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
+        request = self.app.post(url, post_data, auth=self.user.auth)
+        assert_equal('new name', request.json['name'])
 
     def test_fmt_date_or_none(self):
         with assert_raises(HTTPError) as cm:
@@ -1538,14 +1543,14 @@ class TestPointerViews(OsfTestCase):
             NodeFactory()._id
             for _ in range(5)
         ]
-        with assert_raises(AppError):
-            res = self.app.post_json(
-                url,
-                {'nodeIds': node_ids},
-                auth=None,
-            ).maybe_follow()
+        res = self.app.post_json(
+            url,
+            {'nodeIds': node_ids},
+            auth=None,
+            expect_errors=True
+        )
 
-            assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 401)
 
     def test_add_pointers_public_non_contributor(self):
 
@@ -1591,8 +1596,8 @@ class TestPointerViews(OsfTestCase):
 
     def test_add_pointers_not_provided(self):
         url = self.project.api_url + 'pointer/'
-        with assert_raises(AppError):
-            self.app.post_json(url, {}, auth=self.user.auth)
+        res = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_move_pointers(self):
         project_two = ProjectFactory(creator=self.user)
@@ -1637,28 +1642,30 @@ class TestPointerViews(OsfTestCase):
 
     def test_remove_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/'
-        with assert_raises(AppError):
-            self.app.delete_json(url, {}, auth=self.user.auth)
+        res = self.app.delete_json(url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_remove_pointer_not_found(self):
         url = self.project.api_url + 'pointer/'
-        with assert_raises(AppError):
-            self.app.delete_json(
-                url,
-                {'pointerId': None},
-                auth=self.user.auth
-            )
+        res = self.app.delete_json(
+            url,
+            {'pointerId': None},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     def test_remove_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/'
         node = NodeFactory()
         pointer = Pointer(node=node)
-        with assert_raises(AppError):
-            self.app.delete_json(
-                url,
-                {'pointerId': pointer._id},
-                auth=self.user.auth,
-            )
+        res = self.app.delete_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     def test_fork_pointer(self):
         url = self.project.api_url + 'pointer/fork/'
@@ -1672,28 +1679,31 @@ class TestPointerViews(OsfTestCase):
 
     def test_fork_pointer_not_provided(self):
         url = self.project.api_url + 'pointer/fork/'
-        with assert_raises(AppError):
-            self.app.post_json(url, {}, auth=self.user.auth)
+        res = self.app.post_json(url, {}, auth=self.user.auth,
+                expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_fork_pointer_not_found(self):
         url = self.project.api_url + 'pointer/fork/'
-        with assert_raises(AppError):
-            self.app.post_json(
-                url,
-                {'pointerId': None},
-                auth=self.user.auth
-            )
+        res = self.app.post_json(
+            url,
+            {'pointerId': None},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     def test_fork_pointer_not_in_nodes(self):
         url = self.project.api_url + 'pointer/fork/'
         node = NodeFactory()
         pointer = Pointer(node=node)
-        with assert_raises(AppError):
-            self.app.post_json(
-                url,
-                {'pointerId': pointer._id},
-                auth=self.user.auth
-            )
+        res = self.app.post_json(
+            url,
+            {'pointerId': pointer._id},
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
 
     def test_before_register_with_pointer(self):
         "Assert that link warning appears in before register callback."
@@ -2068,6 +2078,10 @@ class TestComments(OsfTestCase):
         self.project = ProjectFactory(is_public=True)
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_contributor = AuthUserFactory()
+        self.user = AuthUserFactory()
+        self.project.add_contributor(self.user)
+        self.project.save()
+        self.user.save()
 
     def _configure_project(self, project, comment_level):
 
@@ -2096,13 +2110,19 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], self.consolidated_auth
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
 
     def test_add_comment_public_non_contributor(self):
 
@@ -2113,13 +2133,19 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], Auth(user=self.non_contributor)
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
 
     def test_add_comment_private_contributor(self):
 
@@ -2130,13 +2156,20 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        res_comment = res.json['comment']
+        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+
+        serialized_comment = serialize_comment(self.project.commented[0], self.consolidated_auth)
+        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
+
         assert_equal(len(self.project.commented), 1)
-        assert_equal(
-            res.json['comment'],
-            serialize_comment(
-                self.project.commented[0], self.consolidated_auth
-            )
-        )
+        assert_equal(res_comment, serialized_comment)
+
 
     def test_add_comment_private_non_contributor(self):
 
@@ -2422,6 +2455,53 @@ class TestComments(OsfTestCase):
         observed = [user['id'] for user in res.json['discussion']]
         expected = [user1._id, user2._id, self.project.creator._id]
         assert_equal(observed, expected)
+
+    def test_view_comments_updates_user_comments_view_timestamp(self):
+        CommentFactory(node=self.project)
+
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, auth=self.user.auth)
+        self.user.reload()
+
+        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
+
+    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, auth=self.user.auth)
+
+        self.non_contributor.reload()
+        assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
+
+    def test_n_unread_comments_updates_when_comment_is_added(self):
+        self._add_comment(self.project, auth=self.project.creator.auth)
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+        url = self.project.api_url_for('update_comments_timestamp')
+        res = self.app.put_json(url, auth=self.user.auth)
+        self.user.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 0)
+
+    def test_n_unread_comments_updates_when_comment_is_edited(self):
+        self.test_edit_comment()
+        self.project.reload()
+
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json.get('nUnread'), 1)
+
+    def test_n_unread_comments_is_zero_when_no_comments(self):
+        url = self.project.api_url_for('list_comments')
+        res = self.app.get(url, auth=self.project.creator.auth)
+        assert_equal(res.json.get('nUnread'), 0)
 
 
 class TestTagViews(OsfTestCase):
@@ -2851,6 +2931,26 @@ class TestProjectCreation(OsfTestCase):
     def test_needs_title(self):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_create_component_strips_html(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        url = web_url_for('project_new_node', pid=project._id)
+        post_data = {'title': '<b>New <blink>Component</blink> Title</b>',  'category': ''}
+        request = self.app.post(url, post_data, auth=user.auth).follow()
+        project.reload()
+        child = project.nodes[0]
+        # HTML has been stripped
+        assert_equal(child.title, 'New Component Title')
+
+    def test_strip_html_from_title(self):
+        payload = {
+            'title': 'no html <b>here</b>'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth)
+        node = Node.load(res.json['projectUrl'].replace('/', ''))
+        assert_true(node)
+        assert_equal('no html here', node.title)
 
     def test_only_needs_title(self):
         payload = {

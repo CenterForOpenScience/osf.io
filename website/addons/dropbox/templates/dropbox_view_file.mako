@@ -8,7 +8,7 @@
             <tr>
                 <th>Revision</th>
                 <th>Date</th>
-                <th>Download</th>
+                <th></th>
             </tr>
         </thead>
 
@@ -28,8 +28,8 @@
                 </td>
                 <td>{{ revision.modified.local }}</td>
                 <td>
-                    <a data-bind="attr: {href: revision.download}">
-                        <i class="icon-download-alt"></i>
+                    <a data-bind="attr: {href: revision.download}" class="btn btn-primary btn-sm">
+                        Download <i class="icon-download-alt"></i>
                     </a>
                 </td>
             </tr>

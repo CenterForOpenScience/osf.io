@@ -21,7 +21,7 @@
                     % else:
                         <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
                     % endif
-                    <input type="submit" class="btn btn-primary" value="Save"  data-bind="enable: changed" onclick=$(window).off('beforeunload')>
+                    <input type="submit" class="btn btn-primary" value="Save"  onclick=$(window).off('beforeunload')>
                 </div>
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
@@ -35,8 +35,7 @@
 <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
 <script>
-  $script('/static/addons/wiki/WikiEditor.js', function() {
-      WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+    $script('/static/addons/wiki/WikiEditor.js', function() {
+        WikiEditor('.wiki', '${node['api_url']}wiki/${pageName}/content/');
     });
-
 </script>

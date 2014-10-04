@@ -12,7 +12,7 @@
                 % if not node['anonymous']:
                     <th>User</th>
                 % endif
-                <th>Download</th>
+                <th></th>
             </tr>
         </thead>
 
@@ -38,8 +38,8 @@
                         </td>
                     % endif
                     <td>
-                        <a href="${commit['download']}" download="${file_name}">
-                            <i class="icon-download-alt"></i>
+                        <a href="${commit['download']}" class="btn btn-primary btn-sm" download="${file_name}">
+                            Download <i class="icon-download-alt"></i>
                         </a>
                     </td>
                 </tr>

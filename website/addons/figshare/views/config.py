@@ -115,7 +115,7 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
     }

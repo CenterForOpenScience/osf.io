@@ -2,10 +2,11 @@
 
 import os
 
-from flask import Flask, request, jsonify, render_template, \
-    render_template_string, Blueprint, send_file, abort, make_response, \
+from flask import (Flask, request, jsonify, render_template,  # noqa
+    render_template_string, Blueprint, send_file, abort, make_response,
     redirect, url_for, send_from_directory, current_app
-from werkzeug.utils import secure_filename
+)
+
 from website import settings
 
 # Create app
@@ -56,4 +57,3 @@ def add_handlers(app, handlers, key=None):
     """
     for handler_name, func in handlers.iteritems():
         add_handler(app, handler_name, func, key=key)
-

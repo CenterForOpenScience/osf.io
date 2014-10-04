@@ -28,8 +28,8 @@ from website import settings
 
 framework_send_email = (
     send_email.delay
-        if settings.USE_CELERY
-        else send_email
+    if settings.USE_CELERY
+    else send_email
 )
 
 logger = logging.getLogger(__name__)

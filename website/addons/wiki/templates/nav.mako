@@ -5,11 +5,7 @@
         <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
 
         <li><a href="${node['url']}wiki/${pageName}">View</a></li>
-            % if user['can_edit']:
-                <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
-            % else:
-                <li><a class="disabled">Edit</a></li>
-            % endif
+
             % if not versions:
                 <li><a class="disabled">History</a></li>
             % else:
@@ -24,7 +20,8 @@
         $(".navbar-nav li").each(function(){
             var href = $(this).find('a').attr('href');
             if (href === window.location.pathname.replace(/%20/g, ' ')) {
-                $(this).addClass('active');
+                var $this = $(this);
+                $this.addClass('active');
             }
         });
     });

@@ -11,7 +11,6 @@ import logging
 from flask import request, redirect, send_file
 from modularodm import Q
 
-from framework.git.exceptions import FileNotModified
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from framework.auth.utils import privacy_info_handle
@@ -28,6 +27,7 @@ from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
+from website.addons.osffiles.exceptions import FileNotModified
 from website.addons.osffiles.utils import get_latest_version_number
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,
@@ -120,9 +120,8 @@ def get_osffiles_public(auth, **kwargs):
     return get_osffiles_hgrid(node_settings, auth)
 
 
-
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def list_file_paths(**kwargs):
 
@@ -134,7 +133,7 @@ def list_file_paths(**kwargs):
     ]}
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
@@ -152,7 +151,7 @@ def upload_file_public(auth, node_addon, **kwargs):
             data={
                 'message_short': 'File too large.',
                 'message_long': 'The file you are trying to upload exceeds '
-                    'the maximum file size limit.',
+                'the maximum file size limit.',
             },
         )
 
@@ -215,8 +214,8 @@ def upload_file_public(auth, node_addon, **kwargs):
 
     return file_info, 201
 
-@must_be_valid_project #returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def file_info(**kwargs):
     versions = []
@@ -224,13 +223,17 @@ def file_info(**kwargs):
     file_name = kwargs['fid']
     auth = kwargs['auth']
     file_name_clean = file_name.replace('.', '_')
-
+    files_page_url = node.web_url_for('collect_file_trees')
+    latest_version_url = None
+    api_url = None
     anonymous = has_anonymous_link(node, auth)
 
     try:
         files_versions = node.files_versions[file_name_clean]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
+    latest_version_number = get_latest_version_number(file_name_clean, node) + 1
+
     for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
         number = len(files_versions) - idx
@@ -239,9 +242,11 @@ def file_info(**kwargs):
             file_name_clean,
             number,
         ))
+        download_url = node_file.download_url(node)
+        api_url = node_file.api_url(node)
         versions.append({
             'file_name': file_name,
-            'download_url': node_file.download_url(node),
+            'download_url': download_url,
             'version_number': number,
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
@@ -251,15 +256,21 @@ def file_info(**kwargs):
             ),
             'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
+        if number == latest_version_number:
+            latest_version_url = download_url
     return {
         'files_url': node.url + "files/",
         'node_title': node.title,
         'file_name': file_name,
         'versions': versions,
+        'latest_version_url': latest_version_url,
+        'api_url': api_url,
+        'files_page_url': files_page_url,
+        'registered': node.is_registration,
     }
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def view_file(auth, **kwargs):
 
@@ -303,6 +314,7 @@ def view_file(auth, **kwargs):
 
     download_url = file_object.download_url(node)
     render_url = file_object.render_url(node)
+    info_url = file_object.info_url(node)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -330,7 +342,7 @@ def view_file(auth, **kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'info_url': file_object.api_url(node) + 'info/',
+        'info_url': info_url,
     }
 
     rv.update(_view_project(node, auth))

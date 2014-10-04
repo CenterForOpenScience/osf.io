@@ -18,11 +18,11 @@ settings_routes = {
         Rule([
             '/project/<pid>/figshare/project/<project_id>/article/<aid>',
             '/project/<pid>/node/<nid>/figshare/project/<project_id>/article/<aid>'
-        ],  'delete', views.crud.figshare_remove_article_from_project, json_renderer),
+        ], 'delete', views.crud.figshare_remove_article_from_project, json_renderer),
         Rule([
             '/project/<pid>/figshare/article/<aid>/file/<fid>/',
             '/project/<pid>/node/<nid>/figshare/article/<aid>/file/<fid>/',
-        ],  'delete', views.crud.figshare_delete_file, json_renderer),
+        ], 'delete', views.crud.figshare_delete_file, json_renderer),
         Rule([
             '/project/<pid>/figshare/',
             '/project/<pid>/figshare/<aid>/',

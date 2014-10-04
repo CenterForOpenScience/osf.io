@@ -10,8 +10,8 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 from flask import request, redirect, make_response
 
-from framework.flask import secure_filename
 from framework.exceptions import HTTPError
+from framework.utils import secure_filename
 
 from website import models
 from website.project.decorators import (
@@ -32,7 +32,6 @@ from website.addons.github.exceptions import (
 from website.addons.github.api import GitHub, ref_to_params, build_github_urls
 from website.addons.github.model import GithubGuidFile
 from website.addons.github.utils import MESSAGES, get_path
-
 
 
 logger = logging.getLogger(__name__)
@@ -59,7 +58,7 @@ def github_download_file(**kwargs):
             data={
                 'message_short': 'File too large',
                 'message_long': 'This file is too large to download through '
-                    'the GitHub API.',
+                'the GitHub API.',
             },
         )
     if data is None:

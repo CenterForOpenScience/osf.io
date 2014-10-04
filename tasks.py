@@ -263,6 +263,11 @@ def mailserver(port=1025):
 
 
 @task
+def flake():
+    run('flake8 .')
+
+
+@task
 def requirements(all=False, download_cache=None):
     """Install dependencies."""
     cmd = "pip install --upgrade -r dev-requirements.txt"

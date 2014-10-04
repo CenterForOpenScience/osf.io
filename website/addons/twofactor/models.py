@@ -46,7 +46,6 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
             return True
         return False
 
-
     #############
     # Callbacks #
     #############
@@ -60,6 +59,10 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
         self.is_confirmed = False
 
     def on_delete(self):
+        if self.is_confirmed:
+            push_status_message('Successfully deauthorized two-factor'
+                                ' authentication. Please delete the'
+                                ' verification code on your device.')
         super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0
@@ -74,7 +77,7 @@ def _generate_seed():
 
     :return str: A random, padded hex value
     """
-    x = SystemRandom().randint(0, 32**16-1)
+    x = SystemRandom().randint(0, 32 ** 16 - 1)
     h = hex(x).strip('L')[2:]
     if len(h) % 2:
         h = '0' + h

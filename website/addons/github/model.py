@@ -157,7 +157,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
 
-
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -181,7 +180,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 ]
                 rv.update({
                     'repo_names': repo_names,
-                    })
+                })
             rv.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -523,4 +522,3 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     self.save()
                 return True
         return False
-
