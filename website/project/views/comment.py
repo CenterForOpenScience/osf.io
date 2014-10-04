@@ -161,42 +161,34 @@ def add_comment(**kwargs):
 
 @must_be_contributor_or_public
 def list_comments(**kwargs):
-
     auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
     serialized_comments = serialize_comments(target, auth, anonymous)
-    comments = getattr(target, 'commented', [])
     n_unread = 0
 
     if node.is_contributor(auth.user):
-        default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-
         if auth.user.comments_viewed_timestamp is None:
             auth.user.comments_viewed_timestamp = {}
             auth.user.save()
-
-        view_timestamp = auth.user.comments_viewed_timestamp.get(node._id, default_timestamp)
-
-        n_unread = n_unread_comments(view_timestamp, comments, auth.user)
-
+        n_unread = n_unread_comments(target, auth.user)
     return {
-
         'comments': serialized_comments,
         'nUnread': n_unread
     }
 
 
-def n_unread_comments(view_timestamp, comments, current_user):
-    count = 0
-    for comment in comments:
-        if comment.user._id != current_user._id:
-            if comment.date_created > view_timestamp or comment.date_modified > view_timestamp:
-                count += 1
-
-    return count
+def n_unread_comments(node, current_user):
+    """Return the number of unread comments for current_user."""
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = current_user.comments_viewed_timestamp.get(node._id, default_timestamp)
+    comments = getattr(node, 'commented', [])
+    return sum(1 for comment in comments
+                if comment.user._id != current_user._id and
+                    (comment.date_created > view_timestamp or
+                    comment.date_modified > view_timestamp))
 
 
 @must_be_logged_in
@@ -247,9 +239,8 @@ def undelete_comment(**kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def update_comments_timestamp(**kwargs):
+def update_comments_timestamp(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    auth = kwargs['auth']
 
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
