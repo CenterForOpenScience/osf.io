@@ -24,6 +24,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website.util import api_url_for, web_url_for
 
 
 class TestAnUnregisteredUser(OsfTestCase):
