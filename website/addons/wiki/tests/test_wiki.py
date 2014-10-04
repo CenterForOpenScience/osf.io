@@ -124,6 +124,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
