@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import datetime as dt
+import functools
+import logging
 import os
 import shutil
 import unittest
-import logging
-import functools
-import blinker
+
 from webtest_plus import TestApp
+import blinker
 
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -209,3 +211,8 @@ def assert_before(lst, item1, item2):
     """Assert that item1 appears before item2 in lst."""
     assert_less(lst.index(item1), lst.index(item2),
         '{0!r} appears before {1!r}'.format(item1, item2))
+
+
+def assert_datetime_equal(dt1, dt2, allowance=500):
+    """Assert that two datetimes are about equal."""
+    assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))

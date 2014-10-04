@@ -259,6 +259,16 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comments/timestamps/',
+                '/project/<pid>/node/<nid>/comments/timestamps/',
+            ],
+            'put',
+            project_views.comment.update_comments_timestamp,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
