@@ -8,17 +8,16 @@ from modularodm.exceptions import ValidationError
 
 from framework.auth import Auth
 from framework.flask import app
-from framework.exceptions import HTTPError
 from framework.guid.model import Guid
+from framework.exceptions import HTTPError
 
 from website.search.search import search
 from website.project import new_node, Node
-from website.project.decorators import (
-    must_be_valid_project,
-    must_have_addon, must_have_permission,
-    must_not_be_registration, must_be_contributor_or_public
-)
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
+from website.project.decorators import must_be_contributor_or_public
 
+from website.addons.app.model import Metadata
 from website.addons.app.utils import elastic_to_rss
 
 from . import metadata, customroutes
@@ -45,6 +44,23 @@ def query_app(node_addon, **kwargs):
         'total': ret['hits']['total']
     }
 
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_json(node_addon, **kwargs):
+    _format = request.json.get('format', 'json')
+
+    try:
+        del request.json['format']
+    except KeyError:
+        pass
+
+    ret = search(request.json, _type=node_addon.namespace, index='metadata')
+
+    return {
+        'results': [blob['_source'] for blob in ret['hits']['hits']],
+        'total': ret['hits']['total']
+    }
 
 # GET
 @must_be_contributor_or_public
@@ -77,7 +93,6 @@ def create_application_project(node_addon, **kwargs):
     privacy = request.json.get('privacy', 'public')
     category = request.json.get('category', 'project')
     contributors = request.json.get('contributors', [])
-    system_metadata = request.json.get('systemData', {})
     permissions = request.json.get('permissions', ['admin'])
 
     node = new_node(category, request.json['title'], node_addon.system_user, request.json.get('description'), project=parent)
@@ -95,11 +110,17 @@ def create_application_project(node_addon, **kwargs):
 
     node.set_privacy(privacy, auth=auth)
 
-    node_addon.attach_data(node._id, _metadata)
-    node_addon.attach_system_data(node._id, system_metadata)
+    if _metadata:
+        _metadata['attached'] = {
+            'nid': node._id,
+            'pid': node.parent_id
+        }
+        metastore = Metadata(app=node_addon, data=_metadata)
+        metastore.save()
 
     return {
         'id': node._id,
+        'mid': metastore._id,
         'url': node.url,
         'apiUrl': node.api_url
     }, http.CREATED
