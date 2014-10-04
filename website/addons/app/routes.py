@@ -39,6 +39,12 @@ api_routes = {
         ),
         Rule(
             '/app/<pid>/',
+            'post',
+            views.crud.query_app_json,
+            json_renderer
+        ),
+        Rule(
+            '/app/<pid>/',
             'get',
             views.crud.query_app,
             json_renderer
