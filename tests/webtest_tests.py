@@ -108,12 +108,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url).maybe_follow()
         assert_in(self.user.url, res)
 
-    def test_sanitization_of_edit_profile(self):
-        url = api_url_for('edit_profile', uid=self.user._id)
-        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
-        request = self.app.post(url, post_data, auth=self.auth)
-        assert_equal('new name', request.json['name'])
-
     def test_can_see_homepage(self):
         # Goes to homepage
         res = self.app.get('/').maybe_follow()  # Redirects
@@ -646,28 +640,6 @@ class TestSearching(OsfTestCase):
         res = form.submit().maybe_follow()
         # A link to the component is shown as a result
         assert_in('Foobar Component', res)
-
-
-class TestProject(OsfTestCase):
-
-    def setUp(self):
-        super(TestProject, self).setUp()
-        self.user = UserFactory()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user.api_keys.append(api_key)
-        self.user.save()
-        self.auth = ('test', api_key._primary_key)
-        self.consolidate_auth=Auth(user=self.user, api_key=api_key)
-        self.project = ProjectFactory(creator=self.user)
-
-    def test_create_project(self):
-        url = web_url_for('project_new_node', pid=self.project._id)
-        post_data = {'title': '<b>New <blink>Component</blink> Title</b>',  'category': ''}
-        request = self.app.post(url, post_data, auth=self.auth).follow()
-        self.project.reload()
-        child = self.project.nodes[0].title
-        assert_equal('New Component Title', child)
 
 
 class TestShortUrls(OsfTestCase):

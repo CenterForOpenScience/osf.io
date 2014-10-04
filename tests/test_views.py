@@ -677,6 +677,12 @@ class TestUserProfile(OsfTestCase):
         super(TestUserProfile, self).setUp()
         self.user = AuthUserFactory()
 
+    def test_sanitization_of_edit_profile(self):
+        url = api_url_for('edit_profile', uid=self.user._id)
+        post_data = {'name': 'fullname',  'value': 'new<b> name</b>'}
+        request = self.app.post(url, post_data, auth=self.user.auth)
+        assert_equal('new name', request.json['name'])
+
     def test_fmt_date_or_none(self):
         with assert_raises(HTTPError) as cm:
             #enter a date before 1900
@@ -2847,6 +2853,17 @@ class TestProjectCreation(OsfTestCase):
     def test_needs_title(self):
         res = self.app.post_json(self.url, {}, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_create_component_strips_html(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        url = web_url_for('project_new_node', pid=project._id)
+        post_data = {'title': '<b>New <blink>Component</blink> Title</b>',  'category': ''}
+        request = self.app.post(url, post_data, auth=user.auth).follow()
+        project.reload()
+        child = project.nodes[0]
+        # HTML has been stripped
+        assert_equal(child.title, 'New Component Title')
 
     def test_strip_html_from_title(self):
         payload = {
