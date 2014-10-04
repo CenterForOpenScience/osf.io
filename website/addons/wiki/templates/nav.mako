@@ -6,7 +6,7 @@
 
         <li><a href="${node['url']}wiki/${pageName}">View</a></li>
 
-            % if not versions:
+            % if not versions or version == 'NA':
                 <li class="disabled"><a>History</a></li>
             % else:
                 <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
