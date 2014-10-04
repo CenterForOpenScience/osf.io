@@ -3,6 +3,7 @@ import collections
 import httplib as http
 
 from flask import request
+from modularodm import Q
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -160,8 +161,7 @@ def add_comment(**kwargs):
 
 
 @must_be_contributor_or_public
-def list_comments(**kwargs):
-    auth = kwargs['auth']
+def list_comments(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
@@ -180,15 +180,14 @@ def list_comments(**kwargs):
     }
 
 
-def n_unread_comments(node, current_user):
-    """Return the number of unread comments for current_user."""
+def n_unread_comments(node, user):
+    """Return the number of unread comments on a node for a user."""
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = current_user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    comments = getattr(node, 'commented', [])
-    return sum(1 for comment in comments
-                if comment.user._id != current_user._id and
-                    (comment.date_created > view_timestamp or
-                    comment.date_modified > view_timestamp))
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+    return Comment.find(Q('target', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp)).count()
 
 
 @must_be_logged_in
