@@ -25,5 +25,3 @@
         $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>' + version + '</h5>');
     }
 </script>
-
-</div>

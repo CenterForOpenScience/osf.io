@@ -3,6 +3,7 @@
 import difflib
 import httplib as http
 import logging
+import urllib
 
 from bs4 import BeautifulSoup
 from flask import request
@@ -301,7 +302,7 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 
     wiki_page = node_to_use.get_wiki_page(wid)
 
-    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
+    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, urllib.quote(wid.encode('utf-8')))
 
     if wiki_page:
         # Only update node wiki if content has changed

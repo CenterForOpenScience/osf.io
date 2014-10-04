@@ -1,3 +1,5 @@
+<%! import urllib %>
+
 <div class="navbar-outer" style="overflow: hidden">
     <div class="wiki-title-container">
         <h3 class="wiki-title" id="wikiName">
@@ -17,7 +19,7 @@
         <ul class="nav navbar-nav">
                 <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                     <%include file="add_wiki_page.mako"/>
-                <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
+                <li><a href="${node['url']}wiki/${urllib.quote(pageName.encode('utf-8'))}/edit">Edit</a></li>
                 % if wiki_id:
                 <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                     <%include file="delete_wiki_page.mako"/>
@@ -57,7 +59,7 @@
                return JSON.stringify(params);
             },
             success: function(response, value){
-                window.location.href = '${url + 'wiki/'}'+ value;
+                window.location.href = '${url + 'wiki/'}' + encodeURIComponent(value);
             },
             error: function(response) {
                 if (response.status === 422){
