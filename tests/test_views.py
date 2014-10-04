@@ -36,7 +36,7 @@ from website.project.views.node import _view_project, abbrev_authors
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 
-from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect
+from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
 from tests.factories import (
     UserFactory, ApiKeyFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
@@ -2104,8 +2104,8 @@ class TestComments(OsfTestCase):
         date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
         date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
 
-        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
-        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
 
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
@@ -2127,8 +2127,8 @@ class TestComments(OsfTestCase):
         date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
         date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
 
-        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
-        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
 
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
@@ -2150,8 +2150,8 @@ class TestComments(OsfTestCase):
         date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
         date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
 
-        assert_true((date_created - date_created2) < dt.timedelta(seconds=0.5))
-        assert_true((date_modified - date_modified2) < dt.timedelta(seconds=0.5))
+        assert_datetime_equal(date_created, date_created2)
+        assert_datetime_equal(date_modified, date_modified2)
 
         assert_equal(len(self.project.commented), 1)
         assert_equal(res_comment, serialized_comment)
@@ -2443,7 +2443,6 @@ class TestComments(OsfTestCase):
         assert_equal(observed, expected)
 
     def test_view_comments_updates_user_comments_view_timestamp(self):
-        view_timestamp = dt.datetime.utcnow()
         CommentFactory(node=self.project)
 
         url = self.project.api_url_for('update_comments_timestamp')
@@ -2451,7 +2450,8 @@ class TestComments(OsfTestCase):
         self.user.reload()
 
         user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        assert_true((user_timestamp - view_timestamp) < dt.timedelta(seconds=0.5))
+        view_timestamp = dt.datetime.utcnow()
+        assert_datetime_equal(user_timestamp, view_timestamp)
 
     def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
         url = self.project.api_url_for('update_comments_timestamp')
