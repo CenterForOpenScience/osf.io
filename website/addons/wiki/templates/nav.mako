@@ -1,17 +1,15 @@
 <div class="nav" style="display: block">
-
-    <nav class="navbar navbar-default">
-
-        <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
-
-        <li><a href="${node['url']}wiki/${pageName}">View</a></li>
-
-            % if not versions:
-                <li><a class="disabled">History</a></li>
-            % else:
-                <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
-            % endif
-        </ul>
+    <nav class="navbar navbar-default navbar-collapse">
+        <div class="navbar-collapse">
+            <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
+            <li><a href="${node['url']}wiki/${pageName}">View</a></li>
+                % if not versions:
+                    <li><a class="disabled">History</a></li>
+                % else:
+                    <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
+                % endif
+            </ul>
+        </div>
     </nav>
 </div>
 

@@ -1,31 +1,32 @@
-<div class="navbar-outer" style="overflow: hidden">
-    <div class="wiki-title-container">
-        <h3 class="wiki-title" id="wikiName">
-            % if pageName == 'home':
-                <i class="icon-home"></i>
-            % endif
-            <span id="pageName"
-                % if pageName == 'home':
-                    data-toggle="tooltip"
-                    title="Note: Home page cannot be renamed."
-                % endif
-            >${pageName}</span></h3>
-    </div>
-
-    % if user['can_edit']:
-    <nav class="navbar navbar-default navbar-collapse" style="display: inline-block; float: right">
+% if user['can_edit']:
+<nav class="navbar navbar-default" style="display: inline-block; float: right; margin-left: 20px;">
+    <div class="navbar-collapse">
         <ul class="nav navbar-nav">
-                <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
-                    <%include file="add_wiki_page.mako"/>
-                <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
-                % if wiki_id:
-                <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
-                    <%include file="delete_wiki_page.mako"/>
-               % endif
+            <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
+                <%include file="add_wiki_page.mako"/>
+            <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
+            % if wiki_id:
+            <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
+                <%include file="delete_wiki_page.mako"/>
+            % endif
         </ul>
-    </nav>
-    % endif
-</div>
+    </div>
+</nav>
+% endif
+
+<span>
+    <h3 class="wiki-title" id="wikiName">
+        % if pageName == 'home':
+            <i class="icon-home"></i>
+        % endif
+        <span id="pageName"
+            % if pageName == 'home':
+                data-toggle="tooltip"
+                title="Note: Home page cannot be renamed."
+            % endif
+        >${pageName}</span>
+    </h3>
+</span>
 
 <script type="text/javascript">
     var $pageName = $('#pageName');
