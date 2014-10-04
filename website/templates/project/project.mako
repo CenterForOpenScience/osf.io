@@ -173,18 +173,20 @@ ${parent.javascript_bottom()}
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
         $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane',
-                {
-                    onOpen: function() {
-                        $.osf.putJSON(
-                            nodeApiUrl + 'comments/timestamps/'
-                        );
-                    }
-                }
-            );
+            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
+            var onOpen = function() {
+                var request = $.osf.putJSON(timestampUrl);
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    Raven.captureMessage('Could not update comment timestamp', {
+                        url: timestampUrl,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                });
+            }
+            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
             Comment.init('#commentPane', userName, canComment, hasChildren);
         });
-
     }
 
 </script>
