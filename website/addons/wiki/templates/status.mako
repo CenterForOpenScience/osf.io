@@ -14,19 +14,17 @@
 </nav>
 % endif
 
-<span>
-    <h3 class="wiki-title" id="wikiName">
+<h3 class="wiki-title" id="wikiName">
+    % if pageName == 'home':
+        <i class="icon-home"></i>
+    % endif
+    <span id="pageName"
         % if pageName == 'home':
-            <i class="icon-home"></i>
+            data-toggle="tooltip"
+            title="Note: Home page cannot be renamed."
         % endif
-        <span id="pageName"
-            % if pageName == 'home':
-                data-toggle="tooltip"
-                title="Note: Home page cannot be renamed."
-            % endif
-        >${pageName}</span>
-    </h3>
-</span>
+    >${pageName}</span>
+</h3>
 
 <script type="text/javascript">
     var $pageName = $('#pageName');
