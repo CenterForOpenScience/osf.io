@@ -58,7 +58,9 @@ class Metadata(StoredObject):
         super(Metadata, self).save()
 
     def to_json(self):
-        return self.data
+        ret = self.data
+        ret['_id'] = self._id
+        return ret
 
 
 class AppNodeSettings(AddonNodeSettingsBase):
