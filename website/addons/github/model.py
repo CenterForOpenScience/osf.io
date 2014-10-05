@@ -118,21 +118,22 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         if there is only one osf user linked to this github user oauth, revoke the token,
         otherwise, disconnect the osf user from the addongithuboauthsettings
         """
-        if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
-            self.oauth_settings = None
-        else:
-            connection = GitHub.from_settings(self)
-            try:
-                connection.revoke_token()
-            except GitHubError as error:
-                if error.code == http.UNAUTHORIZED:
-                    return (
-                        'Your GitHub credentials were removed from the OSF, but we '
-                        'were unable to revoke your access token from GitHub. Your '
-                        'GitHub credentials may no longer be valid.'
-                    )
-                else:
-                    raise
+        if self.oauth_settings:
+            if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
+                self.oauth_settings = None
+            else:
+                connection = GitHub.from_settings(self)
+                try:
+                    connection.revoke_token()
+                except GitHubError as error:
+                    if error.code == http.UNAUTHORIZED:
+                        return (
+                            'Your GitHub credentials were removed from the OSF, but we '
+                            'were unable to revoke your access token from GitHub. Your '
+                            'GitHub credentials may no longer be valid.'
+                        )
+                    else:
+                        raise
 
 
     def clear_auth(self, auth=None, save=False):
