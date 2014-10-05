@@ -52,7 +52,7 @@ def migrate_dates():
         if changed:
             logger.info(user)
             count += 1
-            
+
     logger.info('Process completed. {n} users affected'.format(n=count))
 
 
@@ -105,29 +105,29 @@ class TestMigrateDates(OsfTestCase):
 
     def test_migrate_dates(self):
         migrate_dates()
-        assert_equal(self.user.jobs[0].get('startMonth'), 'May')
-        assert_equal(self.user.jobs[0].get('startYear'), '2014')
-        assert_equal(self.user.jobs[0].get('endMonth'), 'September')
-        assert_equal(self.user.jobs[0].get('endYear'), '2014')
+        assert_equal(self.user.jobs[0].get('startMonth'), 5)
+        assert_equal(self.user.jobs[0].get('startYear'), 2014)
+        assert_equal(self.user.jobs[0].get('endMonth'), 9)
+        assert_equal(self.user.jobs[0].get('endYear'), 2014)
         assert_false(self.user.jobs[0].get('start', None))
         assert_false(self.user.jobs[0].get('end', None))
 
-        assert_equal(self.user.jobs[1].get('startMonth'), 'May')
-        assert_equal(self.user.jobs[1].get('startYear'), '2014')
+        assert_equal(self.user.jobs[1].get('startMonth'), 5)
+        assert_equal(self.user.jobs[1].get('startYear'), 2014)
         assert_equal(self.user.jobs[1].get('endMonth'), None)
         assert_equal(self.user.jobs[1].get('endYear'), None)
         assert_false(self.user.jobs[1].get('start', None))
         assert_false(self.user.jobs[1].get('end', None))
 
-        assert_equal(self.user.schools[0].get('startMonth'), 'January')
-        assert_equal(self.user.schools[0].get('startYear'), '2014')
-        assert_equal(self.user.schools[0].get('endMonth'), 'January')
-        assert_equal(self.user.schools[0].get('endYear'), '2014')
+        assert_equal(self.user.schools[0].get('startMonth'), 1)
+        assert_equal(self.user.schools[0].get('startYear'), 2014)
+        assert_equal(self.user.schools[0].get('endMonth'), 1)
+        assert_equal(self.user.schools[0].get('endYear'), 2014)
         assert_false(self.user.schools[0].get('start', None))
         assert_false(self.user.schools[0].get('end', None))
 
-        assert_equal(self.user.schools[1].get('startMonth'), 'January')
-        assert_equal(self.user.schools[1].get('startYear'), '2014')
+        assert_equal(self.user.schools[1].get('startMonth'), 1)
+        assert_equal(self.user.schools[1].get('startYear'), 2014)
         assert_equal(self.user.schools[1].get('endMonth'), None)
         assert_equal(self.user.schools[1].get('endYear'), None)
         assert_false(self.user.schools[1].get('start', None))
