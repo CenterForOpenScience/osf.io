@@ -826,6 +826,72 @@ class TestUserProfile(OsfTestCase):
         for i, job in enumerate(schools):
             assert_equal(job, res.json['contents'][i])
 
+    def test_unserialize_jobs(self):
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # jobs field is updated
+        assert_equal(self.user.jobs, jobs)
+
+    def test_unserialize_jobs(self):
+        schools = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'degree': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': schools}
+        url = api_url_for('unserialize_schools')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # schools field is updated
+        assert_equal(self.user.schools, schools)
+
+    def test_unserialize_jobs_with_validation_error(self):
+        jobs_cached = self.user.jobs
+        # End year < start year
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2012,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
+        # 400 response because validation failed
+        assert_equal(res.status_code, 400)
+        # jobs field is unchanged
+        self.user.reload()
+        assert_equal(self.user.jobs, jobs_cached)
+
 
 class TestAddingContributorViews(OsfTestCase):
 
