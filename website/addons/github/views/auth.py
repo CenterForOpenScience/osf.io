@@ -64,8 +64,11 @@ def github_oauth_start(**kwargs):
 def create_and_attach_oauth(user_settings, access_token, token_type):
     """helper function to set the AddonGitHubOauthsettings and link it with
     AddonGitHubUserSettings
-    :param json token: a json object contains the access_token and token_type info
-    :param object user_settings: user_setting object of the osf user
+
+    :param AddonGitHubUserSettings user_settings: User settings record
+    :param str access_token: OAuth access token
+    :param str token_type: OAuth token type
+
 
     """
     gh = GitHub(access_token, token_type)

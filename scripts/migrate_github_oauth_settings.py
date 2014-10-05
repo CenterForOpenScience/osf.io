@@ -26,17 +26,6 @@ def do_migration(records):
         access_token = raw_user_settings['oauth_access_token']
         token_type = raw_user_settings['oauth_token_type']
         github_user_name = raw_user_settings['github_user']
-
-        AddonGitHubUserSettings._storage[0].store.update(
-            {'_id': raw_user_settings['_id']},
-            {
-                '$unset': {
-                    'oauth_access_token': True,
-                    'oauth_token_type': True,
-                    'github_user': True,
-                }
-            }
-        )
         
         gh = GitHub(access_token, token_type)
         github_user = gh.user()
@@ -52,6 +41,11 @@ def do_migration(records):
         AddonGitHubUserSettings._storage[0].store.update(
             {'_id': raw_user_settings['_id']},
             {
+                '$unset': {
+                    'oauth_access_token': True,
+                    'oauth_token_type': True,
+                    'github_user': True,
+                },
                 '$set': {
                     'oauth_settings': oauth_settings.github_user_id,
                 }
@@ -112,9 +106,7 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
         }
         self.mongo_collection.insert(self.user_settings)
 
-
     def test_get_user_settings(self):
-        # records = list(get_user_settings())
 
         records = list(get_user_settings())
 
@@ -142,7 +134,7 @@ class TestMigrateGitHubOauthSettings(OsfTestCase):
         user.id = "testing user id"
         mock_github_user.return_value = user
         do_migration(get_user_settings())
-        user_settings = AddonGitHubUserSettings.load(database.addongithubusersettings.find()[0]['_id'])
+        user_settings = AddonGitHubUserSettings.find()[0]
         assert_true(user_settings.oauth_settings)
         assert_true(user_settings.oauth_state)
         assert_equal(

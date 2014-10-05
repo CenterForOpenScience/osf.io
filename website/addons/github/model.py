@@ -36,6 +36,11 @@ class GithubGuidFile(GuidFile):
 
 
 class AddonGitHubOauthSettings(StoredObject):
+    """
+    this model address the problem if we have two osf user link
+    to the same github user and their access token conflicts issue
+    """
+
     #github user id, for example, "4974056"
     # Note that this is a numeric ID, not the user's login.
     github_user_id = fields.StringField(primary=True, required=True)
@@ -109,7 +114,26 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-        self.oauth_settings = None
+        """
+        if there is only one osf user linked to this github user oauth, revoke the token,
+        otherwise, disconnect the osf user from the addongithuboauthsettings
+        """
+        if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
+            self.oauth_settings = None
+        else:
+            connection = GitHub.from_settings(self)
+            try:
+                connection.revoke_token()
+            except GitHubError as error:
+                if error.code == http.UNAUTHORIZED:
+                    return (
+                        'Your GitHub credentials were removed from the OSF, but we '
+                        'were unable to revoke your access token from GitHub. Your '
+                        'GitHub credentials may no longer be valid.'
+                    )
+                else:
+                    raise
+
 
     def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
