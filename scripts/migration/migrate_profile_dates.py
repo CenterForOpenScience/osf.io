@@ -6,6 +6,7 @@ import logging
 from website.app import init_app
 from website import models
 import calendar
+from datetime import datetime
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
 from nose.tools import *
@@ -20,13 +21,13 @@ def main():
     print ('{n} dates migrated'.format(n=migrate_dates()))
 
 
-def replace_date(user_object, key, month, year):
-    parsed_date = user_object[key].split('-')
+def replace_date(user_field, key, month, year):
+    parsed_date = user_field[key].split('-')
     parsed_month = calendar.month_name[int(parsed_date[1])]
     parsed_year = parsed_date[0]
-    user_object[month] = parsed_month
-    user_object[year] = parsed_year
-    del user_object[key]
+    user_field[month] = parsed_month
+    user_field[year] = parsed_year
+    del user_field[key]
 
 
 def migrate_dates():

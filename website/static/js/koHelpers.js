@@ -127,12 +127,12 @@
             }
             //Skip if dates invalid
             var dateVal = new Date(uwVal);
-            if (dateVal == 'Invalid Date') {
+            if (dateVal === 'Invalid Date') {
                 return true;
             }
             // Compare dates
             var now = new Date();
-            return val <= now;
+            return dateVal <= now;
 
         },
         message: 'Please enter a date prior to the current date.'

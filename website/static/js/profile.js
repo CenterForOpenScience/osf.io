@@ -169,7 +169,7 @@
                 this.setOriginal
             ).fail(
                 this.handleError.bind(this)
-            )
+            );
         } else {
             this.showMessages(true);
         }
@@ -480,7 +480,7 @@
 
         self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December']);
-        self.startMonth = ko.observable('');
+        self.startMonth = ko.observable();
         self.startYear = ko.observable('').extend({
             required: {
                 onlyIf: function() {
@@ -549,7 +549,7 @@
                     return !!self.endMonth();
                 }
             },
-            pattern: /^\d{4}$/,
+            pattern: /^\d{4}$/, //checks that year input is four digits
             pyDate: true
         });
         self.displayDate = ko.observable(' ');
@@ -565,9 +565,9 @@
                         return true;
                     }
                 },
-                message: "Please enter a year for the start date."
+                message: 'Please enter a year for the start date.'
             },
-            pattern: /^\d{4}$/,
+            pattern: /^\d{4}$/, //checks that year input is four digits
             pyDate: true
         });
 
