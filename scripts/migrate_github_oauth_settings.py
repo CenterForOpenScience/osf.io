@@ -26,40 +26,41 @@ def do_migration(records):
         access_token = raw_user_settings['oauth_access_token']
         token_type = raw_user_settings['oauth_token_type']
         github_user_name = raw_user_settings['github_user']
-        
-        gh = GitHub(access_token, token_type)
-        github_user = gh.user()
 
-        oauth_settings = AddonGitHubOauthSettings()
-        oauth_settings.github_user_id = str(github_user.id)
-        oauth_settings.save()
-        oauth_settings.oauth_access_token = access_token
-        oauth_settings.oauth_token_type = token_type
-        oauth_settings.github_user_name = github_user_name
-        oauth_settings.save()
+        if access_token and token_type and github_user_name:
+            gh = GitHub(access_token, token_type)
+            github_user = gh.user()
 
-        AddonGitHubUserSettings._storage[0].store.update(
-            {'_id': raw_user_settings['_id']},
-            {
-                '$unset': {
-                    'oauth_access_token': True,
-                    'oauth_token_type': True,
-                    'github_user': True,
-                },
-                '$set': {
-                    'oauth_settings': oauth_settings.github_user_id,
+            oauth_settings = AddonGitHubOauthSettings()
+            oauth_settings.github_user_id = str(github_user.id)
+            oauth_settings.save()
+            oauth_settings.oauth_access_token = access_token
+            oauth_settings.oauth_token_type = token_type
+            oauth_settings.github_user_name = github_user_name
+            oauth_settings.save()
+
+            AddonGitHubUserSettings._storage[0].store.update(
+                {'_id': raw_user_settings['_id']},
+                {
+                    '$unset': {
+                        'oauth_access_token': True,
+                        'oauth_token_type': True,
+                        'github_user': True,
+                    },
+                    '$set': {
+                        'oauth_settings': oauth_settings.github_user_id,
+                    }
                 }
-            }
-        )
+            )
 
-        AddonGitHubOauthSettings._storage[0].store.update(
-            {'github_user_id': oauth_settings.github_user_id},
-            {
-                '$push': {
-                    '__backrefs.accessed.addongithubusersettings.oauth_settings': raw_user_settings['_id'],
+            AddonGitHubOauthSettings._storage[0].store.update(
+                {'github_user_id': oauth_settings.github_user_id},
+                {
+                    '$push': {
+                        '__backrefs.accessed.addongithubusersettings.oauth_settings': raw_user_settings['_id'],
+                    }
                 }
-            }
-        )
+            )
         
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
