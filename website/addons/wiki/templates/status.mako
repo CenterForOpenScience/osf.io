@@ -4,7 +4,7 @@
         <ul class="nav navbar-nav">
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
-            <li><a href="${node['url']}wiki/${wiki_name | u}/edit">Edit</a></li>
+            <li><a href="${wiki_edit_web_url}">Edit</a></li>
             % if wiki_id:
             <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                 <%include file="delete_wiki_page.mako"/>

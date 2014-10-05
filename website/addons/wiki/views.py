@@ -3,7 +3,6 @@
 import difflib
 import httplib as http
 import logging
-import urllib
 
 from bs4 import BeautifulSoup
 from flask import request
@@ -64,7 +63,7 @@ def wiki_widget(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, u'{}wiki/home/'.format(node.url)
+    return {}, None, None, node.web_url_for('project_wiki_home')
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
@@ -115,6 +114,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'wiki_id': wiki_page._primary_key if wiki_page else None,
             'wiki_name': wid,
             'wiki_content': content,
+            # TODO: needs to return wiki_version_web_url
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
             'is_edit': True,
@@ -127,8 +127,11 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'url': node.url,
             'api_url': node.api_url,
             'category': node.category,
-            'wiki_page_api_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
-            'wiki_home_url': node.url + 'wiki/',
+            'wiki_delete_api_url': node.api_url_for('project_wiki_delete', wid=wid),
+            'wiki_compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
+            'wiki_edit_web_url': node.web_url_for('project_wiki_edit', wid=wid),
+            'wiki_home_web_url': node.web_url_for('project_wiki_home'),
+            'wiki_page_web_url': node.web_url_for('project_wiki_page', wid=wid),
         }
         ret.update(_view_project(node, auth, primary=True))
         return ret
@@ -154,6 +157,7 @@ def project_wiki_version(auth, **kwargs):
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
             'is_edit': False,
+            'wiki_page_version_url': node.web_url_for('project_wiki_version', wid=wid, compare_id=vid),
         }
         rv.update(_view_project(node, auth, primary=True))
         return rv
@@ -196,12 +200,10 @@ def project_wiki_page(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
-        wiki_page_api_url = None
 
     toc = serialize_wiki_toc(node, auth=auth)
 
@@ -222,8 +224,11 @@ def project_wiki_page(auth, **kwargs):
         'url': node.url,
         'api_url': node.api_url,
         'category': node.category,
-        'wiki_page_api_url': wiki_page_api_url,
-        'wiki_home_url': node.url + 'wiki/',
+        'wiki_delete_api_url': node.api_url_for('project_wiki_delete', wid=wid),
+        'wiki_compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
+        'wiki_edit_web_url': node.web_url_for('project_wiki_edit', wid=wid),
+        'wiki_home_web_url': node.web_url_for('project_wiki_home'),
+        'wiki_page_web_url': node.web_url_for('project_wiki_page', wid=wid),
     }
 
     ret.update(_view_project(node, auth, primary=True))
@@ -281,8 +286,13 @@ def project_wiki_edit(auth, **kwargs):
         'url': node.url,
         'api_url': node.api_url,
         'category': node.category,
+        'wiki_content_api_url': node.api_url_for('wiki_page_content', wid=wid),
+        'wiki_delete_api_url': node.api_url_for('project_wiki_delete', wid=wid),
         'wiki_page_api_url': wiki_page_api_url,
-        'wiki_home_url': node.url + 'wiki/',
+        'wiki_compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
+        'wiki_edit_web_url': node.web_url_for('project_wiki_edit', wid=wid),
+        'wiki_home_web_url': node.web_url_for('project_wiki_home'),
+        'wiki_page_web_url': node.web_url_for('project_wiki_page', wid=wid),
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -294,28 +304,28 @@ def project_wiki_edit(auth, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(wid, auth, **kwargs):
 
-    node_to_use = kwargs['node'] or kwargs['project']
+    node = kwargs['node'] or kwargs['project']
 
     if wid != sanitize(wid):
         status.push_status_message("This is an invalid wiki page name")
-        raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
+        raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node.url))
 
-    wiki_page = node_to_use.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(wid)
 
-    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, urllib.quote(wid.encode('utf-8')))
+    redirect_url = node.web_url_for('project_wiki_page', wid=wid)
 
     if wiki_page:
         # Only update node wiki if content has changed
         content = wiki_page.content
         if request.form['content'] != content:
-            node_to_use.update_node_wiki(wid, request.form['content'], auth)
+            node.update_node_wiki(wid, request.form['content'], auth)
             ret = {'status': 'success'}
         else:
             ret = {'status': 'unmodified'}
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
-        node_to_use.update_node_wiki(wid, request.form['content'], auth)
+        node.update_node_wiki(wid, request.form['content'], auth)
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
