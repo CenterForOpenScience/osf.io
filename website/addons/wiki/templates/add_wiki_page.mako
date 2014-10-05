@@ -57,7 +57,7 @@
               if (wikiName.indexOf("/") !== -1) {
                   wikiName = wikiName.split("/").join("|");
               }
-              document.location = url_root + encodeURIComponent(wikiName) + '/edit/';
+              document.location = '${web_urls['base']}' + encodeURIComponent(wikiName) + '/edit/';
           }
      });
 

@@ -21,7 +21,6 @@
 
 <script type="text/javascript">
     window.onload = function() {
-        var version = window.location.pathname.split('/').pop();
-        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>' + version + '</h5>');
+        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>${compare_id}</h5>');
     }
 </script>

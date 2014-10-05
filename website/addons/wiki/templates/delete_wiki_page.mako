@@ -22,9 +22,9 @@
         $('#delete-wiki').on('click', function () {
             $.ajax({
                 type:'DELETE',
-                url: '${wiki_delete_api_url}',
+                url: '${api_urls['delete']}',
                 success: function(response) {
-                    window.location.href = '${wiki_home_web_url}';
+                    window.location.href = '${web_urls['home']}';
                 }
             })
         });
