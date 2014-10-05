@@ -4,7 +4,7 @@
         <ul class="nav navbar-nav">
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
-            <li><a href="${node['url']}wiki/${pageName | u}/edit">Edit</a></li>
+            <li><a href="${node['url']}wiki/${wiki_name | u}/edit">Edit</a></li>
             % if wiki_id:
             <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                 <%include file="delete_wiki_page.mako"/>
@@ -15,15 +15,15 @@
 % endif
 
 <h3 class="wiki-title" id="wikiName">
-    % if pageName == 'home':
+    % if wiki_name == 'home':
         <i class="icon-home"></i>
     % endif
     <span id="pageName"
-        % if pageName == 'home':
+        % if wiki_name == 'home':
             data-toggle="tooltip"
             title="Note: Home page cannot be renamed."
         % endif
-    >${pageName}</span>
+    >${wiki_name}</span>
 </h3>
 
 <script type="text/javascript">
@@ -33,7 +33,7 @@
         $('#wikiName').addClass('long-wiki-title');
     }
     // Activate editable title (except for home page)
-    %if wiki_id and pageName != 'home':
+    %if wiki_id and wiki_name != 'home':
     $(document).ready(function() {
         $pageName.editable({
             type: 'text',

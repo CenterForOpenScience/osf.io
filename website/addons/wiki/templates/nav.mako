@@ -1,11 +1,11 @@
 <nav class="navbar navbar-default">
     <div class="navbar-collapse">
         <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
-            <li><a href="${node['url']}wiki/${pageName | u}">View</a></li>
+            <li><a href="${node['url']}wiki/${wiki_name | u}">View</a></li>
             % if not versions or version == 'NA':
                 <li class="disabled"><a>History</a></li>
             % else:
-                <li><a href="${node['url']}wiki/${pageName | u}/compare/1">History</a></li>
+                <li><a href="${node['url']}wiki/${wiki_name | u}/compare/1">History</a></li>
             % endif
         </ul>
     </div>

@@ -112,9 +112,9 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
         content = show_diff(sm)
         content = content.replace('\n', '<br />')
         ret = {
-            'pageName': wid,
-            'wiki_content': content,
             'wiki_id': wiki_page._primary_key if wiki_page else None,
+            'wiki_name': wid,
+            'wiki_content': content,
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
             'is_edit': True,
@@ -149,7 +149,7 @@ def project_wiki_version(auth, **kwargs):
     if wiki_page:
         rv = {
             'wiki_id': wiki_page._id if wiki_page else None,
-            'pageName': wid,
+            'wiki_name': wid,
             'wiki_content': wiki_page.html(node),
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
@@ -207,11 +207,11 @@ def project_wiki_page(auth, **kwargs):
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
-        'pageName': wid,
+        'wiki_name': wid,
+        'wiki_content': content,
         'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wid, anonymous=anonymous),
-        'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
         'pages_current': sorted([
@@ -266,11 +266,11 @@ def project_wiki_edit(auth, **kwargs):
     # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
-        'pageName': wid,
+        'wiki_id': wiki_page._id if wiki_page else '',
+        'wiki_name': wid,
+        'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
-        'wiki_content': content,
-        'wiki_id': wiki_page._id if wiki_page else '',
         'is_current': is_current,
         'is_edit': True,
         'pages_current': sorted([
