@@ -1,4 +1,3 @@
-<%! import urllib %>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
@@ -10,7 +9,7 @@
         </div>
          <div class="col-md-9">
                  <%include file="wiki/templates/status.mako"/>
-            <form action="${node['url']}wiki/${urllib.quote(pageName.encode('utf-8'))}/edit/" method="POST">
+            <form action="${node['url']}wiki/${pageName | u}/edit/" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
                     <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
@@ -20,7 +19,7 @@
                     % if wiki_created:
                         <a href="${node['url']}wiki/home/" class="btn btn-default">Cancel</a>
                     % else:
-                        <a href="${node['url']}wiki/${urllib.quote(pageName.encode('utf-8'))}/" class="btn btn-default">Cancel</a>
+                        <a href="${node['url']}wiki/${pageName | u}/" class="btn btn-default">Cancel</a>
                     % endif
                     <input type="submit" class="btn btn-primary" value="Save"  onclick=$(window).off('beforeunload')>
                 </div>
@@ -37,6 +36,6 @@
 
 <script>
     $script('/static/addons/wiki/WikiEditor.js', function() {
-        WikiEditor('.wiki', '${node['api_url']}wiki/${urllib.quote(pageName.encode('utf-8'))}/content/');
+        WikiEditor('.wiki', '${node['api_url']}wiki/${pageName | u}/content/');
     });
 </script>

@@ -1,5 +1,3 @@
-<%! import urllib %>
-
 <div class="osf-sidenav hidden-print" role="complementary">
 
     <ul class="nav bs-sidenav" style="margin: 0;">
@@ -13,7 +11,7 @@
                 %if page_name != 'home':
                     <li>
                         ## Again, do not use web_url_for here either
-                        <a href="${node['url']}wiki/${urllib.quote(page_name.encode('utf-8'))}/">${page_name}</a>
+                        <a href="${node['url']}wiki/${page_name | u}/">${page_name}</a>
                     </li>
                 % endif
             %endfor

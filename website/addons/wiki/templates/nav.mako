@@ -1,17 +1,15 @@
-<%! import urllib %>
-
 <div class="nav" style="display: block">
 
     <nav class="navbar navbar-default">
 
         <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
 
-        <li><a href="${node['url']}wiki/${urllib.quote(pageName.encode('utf-8'))}">View</a></li>
+        <li><a href="${node['url']}wiki/${pageName | u}">View</a></li>
 
             % if not versions:
                 <li><a class="disabled">History</a></li>
             % else:
-                <li><a href="${node['url']}wiki/${urllib.quote(pageName.encode('utf-8'))}/compare/1">History</a> </li>
+                <li><a href="${node['url']}wiki/${pageName | u}/compare/1">History</a> </li>
             % endif
         </ul>
     </nav>
