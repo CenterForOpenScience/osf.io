@@ -247,7 +247,7 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
 
-
+# TODO: Finish testing properties and methods
 class TestAddonGithubUserSettings(OsfTestCase):
 
     def setUp(self):
@@ -265,3 +265,19 @@ class TestAddonGithubUserSettings(OsfTestCase):
         # Regression test for:
         #  https://github.com/CenterForOpenScience/openscienceframework.org/issues/1053
         assert_is_none(self.user_settings.public_id)
+
+    @unittest.skip('finish this')
+    def test_github_user_name(self):
+        assert 0
+
+    @unittest.skip('finish this')
+    def test_oauth_access_token(self):
+        assert 0
+
+    @unittest.skip('finish this')
+    def test_oauth_token_type(self):
+        assert 0
+
+    @unittest.skip('finish this')
+    def test_clear_auth(self):
+        assert 0
