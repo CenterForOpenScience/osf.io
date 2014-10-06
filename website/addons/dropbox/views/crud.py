@@ -126,6 +126,18 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
         revision['view'] = view_url
     return {
         'result': revisions,
+        # Hyperlinks sans revision ID
+        'urls': {
+            'download': node.web_url_for('dropbox_download', path=path),
+            'delete': node.api_url_for('dropbox_delete_file', path=path),
+            'view': node.web_url_for('dropbox_view_file', path=path),
+            'files': node.web_url_for('collect_file_trees'),
+        },
+        'node': {
+            'id': node._id,
+            'title': node.title,
+        },
+        'path': path,
         'registered': node.registered_date.isoformat() if node.registered_date else None,
     }, http.OK
 

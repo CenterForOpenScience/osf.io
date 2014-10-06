@@ -410,6 +410,14 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+    position: relative;
+}
+
+.unread-comments-count {
+    font-size: medium;
+    color: white;
+    position: absolute;
+    margin-left: 40px;
 }
 
 .addon-auth {
@@ -966,7 +974,7 @@ h1.node-title, h1.node-parent-title {
     border-bottom: none;
     margin-top: 0.2em;
     margin-bottom: 0;
-    height: 36px;
+    height: 68px;
 }
 
 .long-wiki-title {
@@ -980,7 +988,7 @@ h1.node-title, h1.node-parent-title {
 
 .wiki-title-container {
     display: inline-block;
-    width:80%;
+    width:60%;
 }
 
 .btn-toolbar.node-control {
@@ -1417,6 +1425,12 @@ h1.unavailable {
     max-width: 100%;
 }
 
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
+}
+
 .preview-overflow{
     overflow:hidden;
     width:100%;
@@ -1470,10 +1484,18 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
+#projectScope .form-control {
+    width: 400px;
+}
+
 /* Contributors list */
 
 #contributors {
     margin-bottom:10px;
+}
+
+#contributors #description {
+    vertical-align: top;
 }
 
 #contributors ol {
@@ -1654,6 +1676,12 @@ a {
 
 .collapse-button:hover {
     color: #505050;
+}
+
+/* Fix for pydocx bug */
+div.pydocx-center{
+	margin-left: 0 !important;
+	margin-right: 0 !important;
 }
 
 /* jQuery UI Autocomplete (WTForms Widget) */

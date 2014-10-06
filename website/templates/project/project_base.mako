@@ -3,7 +3,7 @@
 <%def name="og_description()">
 
     %if node['description']:
-        ${node['description'] + ' | '}
+        ${sanitize.strip_html(node['description']) + ' | '}
     %endif
     Hosted on the Open Science Framework
 
@@ -30,6 +30,8 @@ ${next.body()}
 
     // Import modules
     $script(['/static/js/nodeControl.js'], 'nodeControl');
+    $script(['/static/js/pointers.js'], 'pointers');
+
 
     ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
@@ -54,6 +56,10 @@ ${next.body()}
             title: ${json.dumps(node['title']) | n}
         }
     };
+
+    $script.ready('pointers', function() {
+        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
+    });
 
     $(function() {
 

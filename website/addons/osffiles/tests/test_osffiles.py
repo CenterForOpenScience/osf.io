@@ -48,17 +48,16 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.body, 'firstcontent')
 
     def test_download_file_by_version_with_bad_version_value(self):
-        url = self.project.api_url_for('download_file_by_version',
+        url = self.project.web_url_for('download_file_by_version',
             fid=self.fid,
             vid='bad'
         )
-
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_in('Invalid version', res.json['message_short'])
+        assert_in('Invalid version', res.body)
 
     def test_download_file_by_version_with_nonexistent_file(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid='notfound',
             vid=0
@@ -67,7 +66,7 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_bad_version_number(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid=self.fid,
             vid=9999
@@ -76,7 +75,7 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_download_file_by_version_with_negative_version_number(self):
-        url = self.project.api_url_for(
+        url = self.project.web_url_for(
             'download_file_by_version',
             fid=self.fid,
             vid=-1

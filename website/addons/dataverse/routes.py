@@ -152,8 +152,8 @@ api_routes = {
         ),
         Rule(
             [
-            '/project/<pid>/dataverse/widget/',
-            '/project/<pid>/node/<nid>/dataverse/widget/',
+                '/project/<pid>/dataverse/widget/',
+                '/project/<pid>/node/<nid>/dataverse/widget/',
             ],
             'get',
             dataverse_widget,
@@ -161,8 +161,8 @@ api_routes = {
         ),
         Rule(
             [
-            '/project/<pid>/dataverse/widget/contents/',
-            '/project/<pid>/node/<nid>/dataverse/widget/contents/',
+                '/project/<pid>/dataverse/widget/contents/',
+                '/project/<pid>/node/<nid>/dataverse/widget/contents/',
             ],
             'get',
             dataverse_get_widget_contents,

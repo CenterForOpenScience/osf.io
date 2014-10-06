@@ -63,7 +63,7 @@ def wiki_widget(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, '{}wiki/home/'.format(node.url)
+    return {}, None, None, u'{}wiki/home/'.format(node.url)
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
@@ -101,7 +101,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
     toc = serialize_wiki_toc(node, auth=auth)
 
     if not wiki_page:
-        wiki_page = NodeWikiPage()
+        raise HTTPError(http.NOT_FOUND)
 
     comparison_page = node.get_wiki_page(wid, compare_id)
     if comparison_page:
@@ -118,14 +118,16 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'is_current': True,
             'is_edit': True,
             'version': wiki_page.version,
-            'pages_current': [
+            'pages_current': sorted([
                 from_mongo(version)
                 for version in node.wiki_pages_current
-            ],
+            ]),
             'toc': toc,
             'url': node.url,
             'api_url': node.api_url,
-            'category': node.category
+            'category': node.category,
+            'wiki_page_api_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
+            'wiki_home_url': node.url + 'wiki/',
         }
         ret.update(_view_project(node, auth, primary=True))
         return ret
@@ -193,10 +195,12 @@ def project_wiki_page(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
+        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
+        wiki_page_api_url = None
 
     toc = serialize_wiki_toc(node, auth=auth)
 
@@ -216,7 +220,9 @@ def project_wiki_page(auth, **kwargs):
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
-        'category': node.category
+        'category': node.category,
+        'wiki_page_api_url': wiki_page_api_url,
+        'wiki_home_url': node.url + 'wiki/',
     }
 
     ret.update(_view_project(node, auth, primary=True))
@@ -241,7 +247,7 @@ def wiki_page_content(wid, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, **kwargs):
-    wid = kwargs['wid']
+    wid = kwargs['wid']  # the page name
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
@@ -249,33 +255,33 @@ def project_wiki_edit(auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
-        wiki_created = False
+        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
-        wiki_page = NodeWikiPage()
         version = 'NA'
         is_current = False
         content = ''
-        wiki_created = True
+        wiki_page_api_url = None
 
+    # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'pageName': wid,
-        'page': wiki_page,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
-        'wiki_created': wiki_created,
-        'wiki_id': wiki_page._primary_key if wiki_page else None,
+        'wiki_id': wiki_page._id if wiki_page else '',
         'is_current': is_current,
         'is_edit': True,
-        'pages_current': [
+        'pages_current': sorted([
             from_mongo(each)
             for each in node.wiki_pages_current
-        ],
+        ]),
         'toc': toc,
         'url': node.url,
         'api_url': node.api_url,
-        'category': node.category
+        'category': node.category,
+        'wiki_page_api_url': wiki_page_api_url,
+        'wiki_home_url': node.url + 'wiki/',
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -295,18 +301,22 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 
     wiki_page = node_to_use.get_wiki_page(wid)
 
-    if wiki_page:
-        content = wiki_page.content
-    else:
-        content = ''
+    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
 
-    if request.form['content'] != content:
-        node_to_use.update_node_wiki(wid, request.form['content'], auth)
-        return {
-            'status': 'success',
-        }, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+    if wiki_page:
+        # Only update node wiki if content has changed
+        content = wiki_page.content
+        if request.form['content'] != content:
+            node_to_use.update_node_wiki(wid, request.form['content'], auth)
+            ret = {'status': 'success'}
+        else:
+            ret = {'status': 'unmodified'}
     else:
-        return {}, None, None, '{}wiki/{}/'.format(node_to_use.url, wid)
+        # update_node_wiki will create a new wiki page because a page
+        # with wid does not exist
+        node_to_use.update_node_wiki(wid, request.form['content'], auth)
+        ret = {'status': 'success'}
+    return ret, http.FOUND, None, redirect_url
 
 
 @must_not_be_registration
@@ -316,6 +326,11 @@ def project_wiki_rename(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = request.json.get('pk', None)
     page = NodeWikiPage.load(wid)
+    if page.page_name.lower() == 'home':
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='The wiki home page cannot be renamed.'
+        ))
     new_name = request.json.get('value', None)
     if new_name != sanitize(new_name):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
@@ -344,7 +359,9 @@ def project_wiki_rename(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    page = NodeWikiPage.load(wid)
+    page = node.get_wiki_page(wid)
+    if not page:
+        raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(node, page, auth)
     node.save()
     return {}

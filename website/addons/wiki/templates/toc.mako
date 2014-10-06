@@ -4,12 +4,14 @@
 
         <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>
-                <a href=${web_url_for('project_wiki_page', wid='home', pid=node['id'])}>${'home'}</a>
+                ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
+                <a href="${node['url']}wiki/home/">${'home'}</a>
             </li>
-            % for k in pages_current:
-                %if k != 'home':
+            % for page_name in pages_current:
+                %if page_name != 'home':
                     <li>
-                        <a href=${web_url_for('project_wiki_page', wid=k, pid=node['id'])}>${k}</a>
+                        ## Again, do not use web_url_for here either
+                        <a href="${node['url']}wiki/${page_name}/">${page_name}</a>
                     </li>
                 % endif
             %endfor

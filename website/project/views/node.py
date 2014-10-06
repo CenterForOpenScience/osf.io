@@ -31,7 +31,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-from .log import _get_logs
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +65,9 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -134,7 +133,10 @@ def folder_new_post(auth, nid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     folder = new_folder(strip_html(title), user)
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {
         'projectUrl': '/dashboard/',
@@ -158,7 +160,10 @@ def add_folder(**kwargs):
         title, user
     )
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
     return {}, 201, None
 
 ##############################################################################
@@ -175,7 +180,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
@@ -300,7 +305,6 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and 'node' not in addon.added_mandatory
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
@@ -614,14 +618,30 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node):
+def _render_addon(node, user):
 
     widgets = {}
     configs = {}
     js = []
     css = []
 
+    addon_list = node.get_addon_names()
+    remove_wiki = False
+
     for addon in node.get_addons():
+
+        if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
+            wiki_page = node.get_wiki_page('home')
+
+            # If the page doesn't exist, skip and remove from addon list
+            if wiki_page is None:
+                remove_wiki = True
+                continue
+
+            # If the page has no content, skip and remove from addon list
+            if not wiki_page.html(node):
+                remove_wiki = True
+                continue
 
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
@@ -630,7 +650,10 @@ def _render_addon(node):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    return widgets, configs, js, css
+    if remove_wiki:
+        addon_list.remove('wiki')
+
+    return widgets, configs, js, css, addon_list
 
 
 def _view_project(node, auth, primary=False):
@@ -642,7 +665,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css = _render_addon(node)
+    widgets, configs, js, css, addon_list = _render_addon(node, user)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -702,6 +725,7 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
+            'has_wiki_content': False,
 
         },
         'parent_node': {
@@ -727,7 +751,7 @@ def _view_project(node, auth, primary=False):
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': node.get_addon_names(),
+        'addons_enabled': addon_list,
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -1073,7 +1097,10 @@ def move_pointers(auth):
             raise HTTPError(http.BAD_REQUEST)
 
         from_node.save()
-        _add_pointers(to_node, [pointer_node], auth)
+        try:
+            _add_pointers(to_node, [pointer_node], auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     return {}, 200, None
 
@@ -1091,8 +1118,10 @@ def add_pointer(auth):
 
     pointer = Node.load(pointer_to_move)
     to_node = Node.load(to_node_id)
-
-    _add_pointers(to_node, [pointer], auth)
+    try:
+        _add_pointers(to_node, [pointer], auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1112,7 +1141,10 @@ def add_pointers(**kwargs):
         for node_id in node_ids
     ]
 
-    _add_pointers(node, nodes, auth)
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {}
 
@@ -1137,13 +1169,13 @@ def remove_pointer(**kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        node.rm_pointer(pointer, auth=auth, save=False)
+        node.rm_pointer(pointer, auth=auth)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointer_from_folder(pointer_id, **kwargs):
@@ -1171,7 +1203,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointers_from_folder(**kwargs):
@@ -1201,7 +1233,6 @@ def remove_pointers_from_folder(**kwargs):
     node.save()
 
 
-
 @must_have_permission('write')
 @must_not_be_registration
 def fork_pointer(**kwargs):
@@ -1215,6 +1246,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
@@ -1224,21 +1256,37 @@ def fork_pointer(**kwargs):
 
 
 def abbrev_authors(node):
-    rv = node.contributors[0].family_name
-    if len(node.visiblecontributors) > 1:
-        rv += ' et al.'
-    return rv
+    lead_author = node.visible_contributors[0]
+    ret = lead_author.family_name or lead_author.given_name or lead_author.fullname
+    if len(node.visible_contributor_ids) > 1:
+        ret += ' et al.'
+    return ret
+
+
+def serialize_pointer(pointer, auth):
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    node = parent_refs[0]
+    if node.can_view(auth):
+        return {
+            'url': node.url,
+            'title': node.title,
+            'authorShort': abbrev_authors(node),
+        }
+    return {
+        'url': None,
+        'title': 'Private Component',
+        'authorShort': 'Private Author(s)',
+    }
 
 
 @must_be_contributor_or_public
-def get_pointed(**kwargs):
-
+def get_pointed(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     return {'pointed': [
-        {
-            'url': each.node__parent[0].url,
-            'title': each.node__parent[0].title,
-            'authorShort': abbrev_authors(node),
-        }
+        serialize_pointer(each, auth)
         for each in node.pointed
     ]}

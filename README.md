@@ -1,4 +1,4 @@
-# OSF 
+# OSF
 
 
 - `master` Build Status: [![Build Status](https://magnum.travis-ci.com/CenterForOpenScience/osf.svg?token=QSc1BQcS2TSL63LmWF7Y&branch=master)](https://magnum.travis-ci.com/CenterForOpenScience/osf)
@@ -145,8 +145,8 @@ $ invoke mailserver -p 1025
 
 ## Using TokUMX
 
-TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments. 
-TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and 
+TokuMX is an open-source fork of MongoDB that provides support for transactions in single-sharded environments.
+TokuMX supports all MongoDB features as of version 2.4 and adds `beginTransaction`, `rollbackTransaction`, and
 `commitTransaction` commands.
 
 If you don't want to install TokuMX, set `USE_TOKU_MX` to `False` in `website/settings/local.py`.
@@ -225,10 +225,10 @@ $ brew install elasticsearch
 ```
 _note: Oracle JDK 7 must be installed for elasticsearch to run_
 
-#### Ubuntu 
+#### Ubuntu
 
 ```bash
-$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb 
+$ wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb
 $ sudo dpkg -i elasticsearch-1.2.1.deb
 ```
 
@@ -295,6 +295,19 @@ The `--save` option automatically adds an entry to the `bower.json` after downlo
 
 This will save the library in `website/static/vendor/bower_components/`, where it can be imported like any other module.
 
+## Setting up addons
+
+To install the python libraries needed to support the enabled addons, run:
+
+```bash
+$ invoke addon_requirements
+```
+
+### Getting application credentials
+
+Many addons require application credentials (typically an app key and secret) to be able to authenticate through the OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
+
+For local development, the COS provides test app credentials for a number of services. A listing of these can be found here: https://osf.io/m2hig/wiki/home/ .
 
 ## Summary
 

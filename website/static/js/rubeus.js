@@ -89,19 +89,24 @@
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
     var buttonDefs = [];
+    var tooltipMarkup = '';
     if(item.permissions){
         if(item.permissions.download !== false){
+            tooltipMarkup = genTooltipMarkup('Download');
             buttonDefs.push({
-                text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+                text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: tooltipMarkup
             });
         }
         if (item.permissions.edit) {
+            tooltipMarkup = genTooltipMarkup('Remove');
             buttonDefs.push({
-                text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+                text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
-                cssClass: 'btn btn-link btn-mini btn-delete'
+                cssClass: 'btn btn-link btn-mini btn-delete',
+                attributes: tooltipMarkup
             });
         }
     }
@@ -110,7 +115,8 @@
             buttonDefs.push({
                 text: button.text,
                 action: button.action,
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: button.attributes
             });
         });
     }
@@ -131,9 +137,10 @@
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
+                text: '<i class="icon-upload" title=""></i>',
                 action: 'upload',
-                cssClass: 'btn btn-default btn-mini'
+                cssClass: 'btn btn-default btn-mini',
+                attributes: tooltipMarkup
             });
         }
         if (row.buttons) {
@@ -141,7 +148,8 @@
                 buttonDefs.push({
                     text: button.text,
                     action: button.action,
-                    cssClass: 'btn btn-primary btn-mini'
+                    cssClass: 'btn btn-primary btn-mini',
+                    attributes: button.attributes
                 });
             });
         }
@@ -169,8 +177,9 @@
      }
 
     HGrid.prototype.showButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch(error) {
             return this;
         }
@@ -180,8 +189,9 @@
     };
 
     HGrid.prototype.hideButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (error) {
             return this;
         }
@@ -194,13 +204,14 @@
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
+        var $rowElem, $status;
         try {
             // Raises TypeError if row's HTML is not rendered.
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (err) {
             return;
         }
-        var $status = $rowElem.find(Rubeus.statusSelector);
+        $status = $rowElem.find(Rubeus.statusSelector);
         this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {

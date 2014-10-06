@@ -60,4 +60,3 @@ def transaction(database=None):
                 return func(*args, **kwargs)
         return wrapped
     return wrapper
-

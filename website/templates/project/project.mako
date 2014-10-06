@@ -9,7 +9,7 @@
 % endif
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako" />
+    <%include file="include/comment_template.mako"/>
 % endif
 
 <div class="row">
@@ -149,20 +149,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
-
     $script(['/static/js/logFeed.js'], 'logFeed');
-    $script(['/static/js/pointers.js'], 'pointers');
 
     $('body').on('nodeLoad', function(event, data) {
-        $script.ready('logFeed', function() {
-            var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-        });
+       $script.ready('logFeed', function() {
+           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+       });
     });
 
+    ##  NOTE: pointers.js is loaded in project_base.mako
     $script.ready('pointers', function() {
-        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
-        var pointerDisplay = new Pointers.PointerDisplay('#showLinks');
+       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
     });
+
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
@@ -174,10 +173,20 @@ ${parent.javascript_bottom()}
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
         $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
+            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
+            var onOpen = function() {
+                var request = $.osf.putJSON(timestampUrl);
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    Raven.captureMessage('Could not update comment timestamp', {
+                        url: timestampUrl,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                });
+            }
+            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
+            Comment.init('#commentPane', userName, canComment, hasChildren);
         });
-
     }
 
 </script>

@@ -26,12 +26,12 @@ from website import settings, filters, security
 
 
 name_formatters = {
-   'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name if user.family_name else user.fullname,
-   'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.family_name,
-       initial=user.given_name_initial
-   ),
+    'long': lambda user: user.fullname,
+    'surname': lambda user: user.family_name if user.family_name else user.fullname,
+    'initials': lambda user: u'{surname}, {initial}.'.format(
+        surname=user.family_name,
+        initial=user.given_name_initial
+    ),
 }
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ def validate_history_item(item):
 validate_url = URLValidator()
 def validate_personal_site(value):
     if value:
-       validate_url(value)
+        validate_url(value)
 
 
 def validate_social(value):
@@ -245,6 +245,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -256,6 +257,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'location': <location>,
     #     'start': <start date>,
     #     'end': <end date>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -274,7 +276,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_confirmed = fields.DateTimeField()
 
-    _meta = {'optimistic' : True}
+    # Format: {
+    #   'node_id': 'timestamp'
+    # }
+    comments_viewed_timestamp = fields.DictionaryField()
+
+    _meta = {'optimistic': True}
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
@@ -485,6 +492,9 @@ class User(GuidStoredObject, AddonModelMixin):
                 self.date_confirmed = dt.datetime.utcnow()
             # Revoke token
             del self.email_verifications[token]
+            # Clear unclaimed records, so user's name shows up correctly on
+            # all projects
+            self.unclaimed_records = {}
             self.save()
             # Note: We must manually update search here because the fullname
             # field has not changed
@@ -679,7 +689,8 @@ class User(GuidStoredObject, AddonModelMixin):
             # This prevents having to load each Log Object and access their
             # date fields
             node_log_ids = [log_id for log_id in config.node.logs._to_primary_keys()
-                                   if bson.ObjectId(log_id).generation_time > since_date]
+                                   if bson.ObjectId(log_id).generation_time > since_date and
+                                   log_id not in log_ids]
             # Log ids in reverse chronological order
             log_ids = _merge_into_reversed(log_ids, node_log_ids)
         return (l_id for l_id in log_ids)
@@ -732,7 +743,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    def get_projects_in_common(self, other_user, primary_keys= True):
+    def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """
