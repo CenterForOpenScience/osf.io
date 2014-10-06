@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission
 )
 
-from .model import NodeWikiPage
+from model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
 
@@ -295,12 +295,19 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
 
-    if wid != sanitize(wid):
-        status.push_status_message("This is an invalid wiki page name")
-        raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
+    value = request.data.replace('"', '')
+    if value is not '':
+        wid = value
+        if wid != sanitize(wid):
+            raise HTTPError(http.UNPROCESSABLE_ENTITY, redirect_url='{}wiki/'.format(node_to_use.url))
+
+        # Check for duplicate page names
+        wiki_pages = node_to_use.wiki_pages_current
+        for wiki in wiki_pages:
+            if wid.lower() == wiki.lower():
+                raise HTTPError(http.CONFLICT, redirect_url='{}wiki/'.format(node_to_use.url))
 
     wiki_page = node_to_use.get_wiki_page(wid)
-
     redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
 
     if wiki_page:
@@ -314,8 +321,12 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
-        node_to_use.update_node_wiki(wid, request.form['content'], auth)
-        ret = {'status': 'success'}
+        node_to_use.update_node_wiki(wid, "", auth)
+        return {
+            'status': 'success',
+            'location': u'{}wiki/{}/{}/'.format(node_to_use.url, wid, 'edit'),
+        }, http.CREATED
+
     return ret, http.FOUND, None, redirect_url
 
 
