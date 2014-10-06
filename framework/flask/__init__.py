@@ -63,6 +63,10 @@ def redirect(location, code=302):
     """Redirect the client to a desired location. Behaves the same
     as Flask's :func:`flask.redirect` function with an awareness of
     OSF view-only links.
+
+    IMPORTANT: This function should always be used instead of
+    flask.redirect to ensure the correct behavior of view-only
+    links.
     """
     view_only = request.args.get('view_only', '')
     if view_only:

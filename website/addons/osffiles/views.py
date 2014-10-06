@@ -8,9 +8,10 @@ from cStringIO import StringIO
 import httplib as http
 import logging
 
-from flask import request, redirect, send_file
+from flask import request, send_file
 from modularodm import Q
 
+from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
 from framework.auth.utils import privacy_info_handle
