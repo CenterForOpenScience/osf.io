@@ -9,7 +9,7 @@ from modularodm.exceptions import ValidationError
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 
-from website.project import new_node
+from website.project import new_node, Node
 from website.addons.app.model import Metadata
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
@@ -59,12 +59,12 @@ def promote_metadata(node_addon, mid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     creator = node_addon.system_user
-    tags = metastore.get('tags', [])
-    contributors = metastore.get('contributors', [])
-    category = request.json.get('category', 'project')
-    title = metastore.get('title') or request.json.get('title')
-    project = metastore.get('parent') or request.json.get('parent')
-    description = metastore.get('description') or request.json.get('description')
+    tags = request.json.get('tags', []) or metastore.get('tags', [])
+    contributors = request.json.get('contributors', []) or metastore.get('contributors', [])
+    category = request.json.get('category') or metastore.get('category', 'project')
+    title = request.json.get('title') or metastore.get('title')
+    project = Node.load(request.json.get('parent') or metastore.get('parent'))
+    description = request.json.get('description') or metastore.get('description')
     node = new_node(category, title, creator, description, project)
 
     for tag in tags:
