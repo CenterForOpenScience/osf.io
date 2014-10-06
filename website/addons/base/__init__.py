@@ -225,6 +225,12 @@ class AddonUserSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    def __repr__(self):
+        if self.owner:
+            return '<{cls} owned by user {uid}>'.format(cls=self.__class__.__name__, uid=self.owner._id)
+        else:
+            return '<{cls} with no owner>'.format(cls=self.__class__.__name__)
+
     @property
     def public_id(self):
         return None

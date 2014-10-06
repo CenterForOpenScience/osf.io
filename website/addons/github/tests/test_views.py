@@ -120,8 +120,9 @@ class TestCRUD(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
+    @unittest.skip('finish this')
     def test_delete_file(self):
-        pass
+        assert 0
 
 
 class TestHGridViews(OsfTestCase):
@@ -747,6 +748,24 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
+
+class TestAuthViews(OsfTestCase):
+
+    def setUp(self):
+        self.user = AuthUserFactory()
+
+    @unittest.skip('finish me')
+    def test_oauth_callback(self):
+        url = web_url_for('github_oauth_callback')
+        assert 0
+
+    @unittest.skip('finish me')
+    def test_create_and_attach_oauth(self):
+        assert 0
+
+    @unittest.skip('finish me')
+    def test_oauth_delete_user(self):
+        assert 0
 
 if __name__ == '__main__':
     unittest.main()
