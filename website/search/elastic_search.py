@@ -43,6 +43,8 @@ def requires_search(func):
 
 @requires_search
 def search(full_query, start=0):
+    """full_query is a dictionary that must include the keys
+    'query' 'type' and 'tags'"""
     query, filtered_query, result_type, tags = _build_query(full_query, start)
 
     # Get document counts by type
@@ -51,14 +53,14 @@ def search(full_query, start=0):
     del count_query['from']
     del count_query['size']
     counts['all'] = 0
-    for type in TYPES:
+    for type_ in TYPES:
         try:
-            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
+            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type_
         except KeyError:
             pass
 
-        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
-        counts['all'] += counts[type + 's']
+        counts[type_ + 's'] = elastic.count(count_query, index='website', doc_type=type_)['count']
+        counts['all'] += counts[type_ + 's']
 
     # Figure out which count we should display as a total
     if result_type:
@@ -106,14 +108,10 @@ def get_cloud_tags(results,search_tags):
     tags = []
 
     for result in results:
-        item_tags = []
-
-        for tag in result['tags'] if result.get('tags') else []:
-            # Check both tags in search and those already used by this result,
-            # in case of multiple tags being seen by the system as the same
-            if not tag in search_tags + item_tags:
-                item_tags.append(tag)
-
+        # Check both tags in search and those already used by this result,
+        # in case of multiple tags being seen by the system as the same
+        item_tags = [tag for tag in set(result.get('tags', []))
+                     if not tag in search_tags]
         tags.extend(item_tags)
 
     return tags
@@ -130,9 +128,9 @@ def _build_query(full_query, start=0):
     type_filter = {}
     type_filter['or'] = [{
         'type': {
-            'value': type
+            'value': type_
         }
-    } for type in TYPES]
+    } for type_ in TYPES]
 
     # But make sure to filter by type if requested
     if result_type:
@@ -143,13 +141,13 @@ def _build_query(full_query, start=0):
         }
     else:
         # Also check for type at beginning of query
-        for type in TYPES:
-            if raw_query[:len(type + ':')] == type + ':':
-                raw_query = raw_query[len(type + ':'):]
-                result_type = type
+        for type_ in TYPES:
+            if raw_query[:len(type_ + ':')] == type_ + ':':
+                raw_query = raw_query[len(type_ + ':'):]
+                result_type = type_
                 type_filter = {
                     'type': {
-                        'value': type
+                        'value': type_
                     }
                 }
                 break
@@ -166,8 +164,7 @@ def _build_query(full_query, start=0):
         tags = tags.strip(',').split(',')
         # Then make sure to remove duplicates while retaining order
         seen = set()
-        seen_add = seen.add
-        tags = [x for x in tags if not (x in seen or seen_add(x))]
+        tags = [x for x in tags if not (x in seen or seen.add(x))]
         tag_filter = {
             'bool': {
                 'must': []
@@ -372,8 +369,8 @@ def create_index():
     }
     try:
         elastic.create_index('website')
-        for type in ['project','component','registration']:
-            elastic.put_mapping('website', type, mapping)
+        for type_ in ['project','component','registration']:
+            elastic.put_mapping('website', type_, mapping)
     except pyelasticsearch.exceptions.IndexAlreadyExistsError:
         pass
 

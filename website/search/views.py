@@ -32,9 +32,9 @@ def search_search():
     except (TypeError, ValueError):
         logger.error(u'Invalid pagination value: {0}'.format(start))
         start = 0
-    query = request.args.get('q') or ''
-    result_type = request.args.get('type') or ''
-    tags = request.args.get('tags') or ''
+    query = request.args.get('q', '')
+    result_type = request.args.get('type', '')
+    tags = request.args.get('tags', '')
     # if there is not a query, don't start the search
     query = bleach.clean(query, tags=[], strip=True)
     if not (query or tags):
