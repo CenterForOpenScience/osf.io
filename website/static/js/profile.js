@@ -465,7 +465,13 @@
         self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December']);
         self.endMonth = ko.observable('');
-        self.endYear = ko.observable('').extend({
+        self.endMonthInt = ko.computed(function(value) {
+                if (self.endMonth() !== undefined) {
+                    return self.endMonths().indexOf(self.endMonth()) + 1;
+                }
+            }
+        );
+        self.endYear = ko.observable().extend({
             required: {
                 onlyIf: function() {
                     return !!self.endMonth();
@@ -480,8 +486,13 @@
 
         self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December']);
-        self.startMonth = ko.observable();
-        self.startYear = ko.observable('').extend({
+        self.startMonth = ko.observable('');
+        self.startMonthInt = ko.computed(function(value) {
+                if (self.startMonth() !== undefined) {
+                    return self.startMonths().indexOf(self.startMonth()) + 1;
+                }
+            });
+        self.startYear = ko.observable().extend({
             required: {
                 onlyIf: function() {
                     if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
@@ -504,7 +515,8 @@
 
         self.end = ko.computed(function() {
             if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
+                self.displayDate(self.endMonthInt() + ' ' + self.endYear());
+                //self.displayDate(self.endMonths()[self.endMonthInt()] + ' ' + self.endYear());
                 return new Date(self.endMonth() + '1,' + self.endYear());
             }
         }, self).extend({

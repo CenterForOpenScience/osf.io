@@ -5,7 +5,6 @@ YYYY-MM-DD formatted dates to "Month Year" format
 import logging
 from website.app import init_app
 from website import models
-import calendar
 from datetime import datetime
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -22,11 +21,9 @@ def main():
 
 
 def replace_date(user_field, key, month, year):
-    parsed_date = user_field[key].split('-')
-    parsed_month = calendar.month_name[int(parsed_date[1])]
-    parsed_year = parsed_date[0]
-    user_field[month] = parsed_month
-    user_field[year] = parsed_year
+    date = datetime.strptime(user_field[key], '%Y-%m-%d')
+    user_field[month] = date.month
+    user_field[year] = date.year
     del user_field[key]
 
 

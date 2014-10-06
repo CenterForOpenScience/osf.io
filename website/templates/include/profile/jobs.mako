@@ -146,8 +146,8 @@
                         <td>{{ institution }}</td>
                         <td>{{ department }}</td>
                         <td>{{ title }}</td>
-                        <td>{{ startMonth }} {{ startYear }}</td>
-                        <td>{{ endView }}</td>
+                        <td>{{ startMonthInt }} {{ startYear }}</td>
+                        <td>{{ endMonthInt }} {{ endYear }} {{ endView }}</td>
 
                     </tr>
 

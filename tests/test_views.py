@@ -793,7 +793,7 @@ class TestUserProfile(OsfTestCase):
         for i, job in enumerate(jobs):
             assert_equal(job, res.json['contents'][i])
 
-    def test_userialize_and_serialize_schools(self):
+    def test_unserialize_and_serialize_schools(self):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
@@ -847,7 +847,7 @@ class TestUserProfile(OsfTestCase):
         # jobs field is updated
         assert_equal(self.user.jobs, jobs)
 
-    def test_unserialize_jobs(self):
+    def test_unserialize_schools(self):
         schools = [
             {
                 'institution': fake.company(),
