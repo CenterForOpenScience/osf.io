@@ -32,7 +32,7 @@ def do_migration(records, dry=True):
                 gh = GitHub(access_token, token_type)
                 try:
                     github_user = gh.user()
-                except github3.models.GithubError:
+                except github3.models.GitHubError:
                     print('AddonGithubUserSettings object {0!r} cannot be migrated '
                            'due to invalidated credentials'.format(raw_user_settings['_id']))
                     continue
