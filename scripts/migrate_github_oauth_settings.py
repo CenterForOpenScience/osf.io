@@ -78,6 +78,12 @@ def main():
 
     else:
         do_migration(get_user_settings())
+        for user_setting in user_settings:
+            print "===AddonGithubUserSettings==="
+            print "user_settings_id:"
+            print (user_setting['_id'])
+        
+        print "Total affected user" + len(user_settings)
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):
