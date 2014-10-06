@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to migrate addongithubusersettings and create and attach addongithuboauthsettings."""
+"""Script to migrate addongithubusersettings and create and attach addongithuboauthsettings.
+"""
 
 import sys
 import mock
 
 from nose.tools import *
+import github3
 
 from framework.mongo import database
 from website.app import init_app
@@ -28,7 +30,13 @@ def do_migration(records, dry=True):
         if access_token and token_type and github_user_name:
             if not dry:
                 gh = GitHub(access_token, token_type)
-                github_user = gh.user()
+                try:
+                    github_user = gh.user()
+                except github3.models.GithubError:
+                    print('AddonGithubUserSettings object {0!r} cannot be migrated '
+                           'due to invalidated credentials'.format(raw_user_settings['_id']))
+                    continue
+
 
                 oauth_settings = AddonGitHubOauthSettings()
                 oauth_settings.github_user_id = str(github_user.id)
