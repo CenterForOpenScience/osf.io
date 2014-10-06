@@ -76,6 +76,21 @@ def do_migration(records, dry=True):
                 )
                 print('Finished migrating AddonGithubUserSettings record: {}'.format(raw_user_settings['_id']))
             count += 1
+        else:
+            if not dry:
+                AddonGitHubUserSettings._storage[0].store.update(
+                    {'_id': raw_user_settings['_id']},
+                    {
+                        '$unset': {
+                            'oauth_access_token': True,
+                            'oauth_token_type': True,
+                            'github_user': True,
+                        },
+                    }
+                )
+                print('Unset oauth_access_token and oauth_token_type: {0}'.format(raw_user_settings['_id']))
+            count += 1
+
     return count, skipped
 
 def get_user_settings():
