@@ -8,7 +8,7 @@
 </div>
     <div class="scripted" id="osffileScope">
         <ol class="breadcrumb">
-            <li><a href={{files_url}}>{{node_title}}</a></li>
+            <li><a href="{{files_page_url}}">{{node_title}}</a></li>
             <li class="active overflow" >{{file_name}}</li>
         </ol>
         <p><a href="{{latest_version_url}}" class="btn btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
