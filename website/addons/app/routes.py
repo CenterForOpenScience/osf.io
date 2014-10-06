@@ -32,6 +32,12 @@ api_routes = {
             json_renderer
         ),
         Rule(
+            '/app/<pid>/projects/<guid>/',
+            'get',
+            views.crud.get_project_metadata,
+            json_renderer
+        ),
+        Rule(
             '/app/<pid>/<path:route>/',
             ['post', 'put', 'get', 'delete'],
             views.crud.act_as_application,
