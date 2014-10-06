@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to migrate nodes with invalid categories."""
+"""Script to migrate addongithubusersettings and create and attach addongithuboauthsettings."""
 
 import sys
 import mock
@@ -72,18 +72,16 @@ def main():
     if 'dry' in sys.argv:
         # print list of affected nodes, totals, etc.
         for user_setting in user_settings:
-            print "===AddonGithubUserSettings==="
-            print "user_settings_id:"
-            print (user_setting['_id'])
+            print("===AddonGithubUserSettings===\n")
+            print("user_settings_id: {} \n".format(user_setting['_id']))
 
     else:
         do_migration(get_user_settings())
         for user_setting in user_settings:
-            print "===AddonGithubUserSettings==="
-            print "user_settings_id:"
-            print (user_setting['_id'])
-        
-        print "Total affected user" + len(user_settings)
+            print("===AddonGithubUserSettings===\n")
+            print("user_settings_id: {} \n".format(user_setting['_id']))
+
+        print("Total affected user: {}".format(len(user_settings)))
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):
