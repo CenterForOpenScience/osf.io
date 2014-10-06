@@ -16,52 +16,54 @@ from website.addons.github.api import GitHub
 from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUserSettings
 
 
-# user_settings_collection = AddonGitHubUserSettings._storage[0].store
+def do_migration(records, dry=True):
+    count = 0
 
-def do_migration(records):
-    # ... perform the migration ...
-    
     for raw_user_settings in records:
 
-        access_token = raw_user_settings['oauth_access_token']
-        token_type = raw_user_settings['oauth_token_type']
-        github_user_name = raw_user_settings['github_user']
+        access_token = raw_user_settings.get('oauth_access_token')
+        token_type = raw_user_settings.get('oauth_token_type')
+        github_user_name = raw_user_settings.get('github_user')
 
         if access_token and token_type and github_user_name:
-            gh = GitHub(access_token, token_type)
-            github_user = gh.user()
+            if not dry:
+                gh = GitHub(access_token, token_type)
+                github_user = gh.user()
 
-            oauth_settings = AddonGitHubOauthSettings()
-            oauth_settings.github_user_id = str(github_user.id)
-            oauth_settings.save()
-            oauth_settings.oauth_access_token = access_token
-            oauth_settings.oauth_token_type = token_type
-            oauth_settings.github_user_name = github_user_name
-            oauth_settings.save()
+                oauth_settings = AddonGitHubOauthSettings()
+                oauth_settings.github_user_id = str(github_user.id)
+                oauth_settings.save()
+                oauth_settings.oauth_access_token = access_token
+                oauth_settings.oauth_token_type = token_type
+                oauth_settings.github_user_name = github_user_name
+                oauth_settings.save()
 
-            AddonGitHubUserSettings._storage[0].store.update(
-                {'_id': raw_user_settings['_id']},
-                {
-                    '$unset': {
-                        'oauth_access_token': True,
-                        'oauth_token_type': True,
-                        'github_user': True,
-                    },
-                    '$set': {
-                        'oauth_settings': oauth_settings.github_user_id,
+                AddonGitHubUserSettings._storage[0].store.update(
+                    {'_id': raw_user_settings['_id']},
+                    {
+                        '$unset': {
+                            'oauth_access_token': True,
+                            'oauth_token_type': True,
+                            'github_user': True,
+                        },
+                        '$set': {
+                            'oauth_settings': oauth_settings.github_user_id,
+                        }
                     }
-                }
-            )
+                )
 
-            AddonGitHubOauthSettings._storage[0].store.update(
-                {'github_user_id': oauth_settings.github_user_id},
-                {
-                    '$push': {
-                        '__backrefs.accessed.addongithubusersettings.oauth_settings': raw_user_settings['_id'],
+                AddonGitHubOauthSettings._storage[0].store.update(
+                    {'github_user_id': oauth_settings.github_user_id},
+                    {
+                        '$push': {
+                            '__backrefs.accessed.addongithubusersettings.oauth_settings': raw_user_settings['_id'],
+                        }
                     }
-                }
-            )
-        
+                )
+                print('Finished migrating AddonGithubUserSettings record: {}'.format(raw_user_settings['_id']))
+            count += 1
+    return count
+
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
     return database.addongithubusersettings.find()
@@ -69,19 +71,8 @@ def get_user_settings():
 def main():
     init_app('website.settings', set_backends=True, routes=True)  # Sets the storage backends on all models
     user_settings = get_user_settings()
-    if 'dry' in sys.argv:
-        # print list of affected nodes, totals, etc.
-        for user_setting in user_settings:
-            print("===AddonGithubUserSettings===\n")
-            print("user_settings_id: {} \n".format(user_setting['_id']))
-
-    else:
-        do_migration(get_user_settings())
-        for user_setting in user_settings:
-            print("===AddonGithubUserSettings===\n")
-            print("user_settings_id: {} \n".format(user_setting['_id']))
-
-        print("Total affected user: {}".format(len(user_settings)))
+    n_migrated = do_migration(user_settings, dry='dry' in sys.argv)
+    print("Total migrated records: {}".format(n_migrated))
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):
