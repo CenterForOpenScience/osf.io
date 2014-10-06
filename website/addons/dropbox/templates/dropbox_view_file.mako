@@ -7,6 +7,12 @@
         Deleting your file…
     </div>
 
+    <ol class="breadcrumb">
+        <li><a data-bind="attr: {href: filesUrl()}">{{nodeTitle}}</a></li>
+        <li>Dropbox</li>
+        <li class="active overflow" >{{path}}</li>
+    </ol>
+
     <p>
         <!-- Download button -->
         <a data-bind="attr: {href: downloadUrl}"

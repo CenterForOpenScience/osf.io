@@ -133,6 +133,10 @@ def dropbox_get_revisions(path, node_addon, auth, **kwargs):
             'view': node.web_url_for('dropbox_view_file', path=path),
             'files': node.web_url_for('collect_file_trees'),
         },
+        'node': {
+            'id': node._id,
+            'title': node.title,
+        },
         'path': path,
         'registered': node.registered_date.isoformat() if node.registered_date else None,
     }, http.OK

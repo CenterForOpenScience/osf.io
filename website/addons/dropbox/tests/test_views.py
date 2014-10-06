@@ -594,6 +594,8 @@ class TestCRUDViews(DropboxAddonTestCase):
         assert_equal(res_data['urls']['files'], files_url)
 
         assert_equal(res_data['path'], 'foo.txt')
+        assert_equal(res_data['node']['title'], self.project.title)
+        assert_equal(res_data['node']['id'], self.project._id)
 
     def test_dropbox_view_file(self):
         url = self.project.web_url_for('dropbox_view_file', path='foo')

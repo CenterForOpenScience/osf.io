@@ -27,6 +27,7 @@
         self.filesUrl = ko.observable('');
         // Get current revision from URL param
         self.currentRevision = $.osf.urlParams().rev;
+        self.nodeTitle = ko.observable('');
         // Date when this project was registered, or null if not a registration
         // Note: Registering Dropbox content is disabled for now; leaving
         // this code here in case we enable registrations later on.
@@ -52,6 +53,7 @@
             self.deleteUrl(deleteUrl);
             self.filesUrl(filesUrl);
             self.path(response.path);
+            self.nodeTitle(response.node.title);
         });
 
         self.deleteFile = function(){
