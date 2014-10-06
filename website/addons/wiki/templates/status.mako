@@ -34,8 +34,8 @@
     if ($pageName.height() >= $('#wikiName').height()) {
         $('#wikiName').addClass('long-wiki-title');
     }
-    // Activate editable title (except for home page)
-    %if wiki_id and pageName != 'home':
+    // Activate editable title unless on home page or in edit mode
+    %if not is_edit and wiki_id and pageName != 'home':
     $(document).ready(function() {
         $pageName.editable({
             type: 'text',
