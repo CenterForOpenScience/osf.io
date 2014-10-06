@@ -6,43 +6,66 @@
 
             <div class="form-group">
                 <label>Personal Site</label>
-                <input class="form-control" data-bind="value: personal" />
+                <div class="input-group">
+                <span class="input-group-addon">http://</span>
+                <input class="form-control" data-bind="value: personal" placeholder="personalsite.com"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>ORCID</label>
-                <input class="form-control" data-bind="value: orcid" />
+                <div class="input-group">
+                <span class="input-group-addon">http://orcid.org/</span>
+                <input class="form-control" data-bind="value: orcid" placeholder="xxxx-xxxx-xxxx-xxxx"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>ResearcherID</label>
-                <input class="form-control" data-bind="value: researcherId" />
+                <div class="input-group">
+                <span class="input-group-addon">http://researcherid.com/rid/</span>
+                <input class="form-control" data-bind="value: researcherId" placeholder="x-xxxx-xxxx" />
+                </div>
             </div>
 
             <div class="form-group">
                 <label>Twitter</label>
-                <input class="form-control" data-bind="value: twitter" />
+                <div class="input-group">
+                <span class="input-group-addon">@</span>
+                <input class="form-control" data-bind="value: twitter" placeholder="twitterhandle"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>Google Scholar</label>
-                <input class="form-control" data-bind="value: scholar" />
+                <div class="input-group">
+                <span class="input-group-addon">http://scholar.google.com/citations?user=</span>
+                <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>LinkedIn</label>
-                <input class="form-control" data-bind="value: linkedIn" />
+                <div class="input-group">
+                <span class="input-group-addon">https://www.linkedin.com/profile/view?id=</span>
+                <input class="form-control" data-bind="value: linkedIn" placeholder="profileID"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>ImpactStory</label>
-                <input class="form-control" data-bind="value: impactStory" />
+                <div class="input-group">
+                <span class="input-group-addon">https://impactstory.org/</span>
+                <input class="form-control" data-bind="value: impactStory" placeholder="profileID"/>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>GitHub</label>
+                <div class="input-group">
+                <span class="input-group-addon">https://github.com/</span>
                 <div data-bind="css: {'input-group': github.hasAddon()}">
-                    <input class="form-control" data-bind="value: github" />
+                    <input class="form-control" data-bind="value: github" placeholder="username"/>
                     <span
                             class="input-group-btn"
                             data-bind="if: github.hasAddon()"
@@ -52,6 +75,7 @@
                                 data-bind="click: github.importAddon"
                             >Import</button>
                     </span>
+                    </div>
                 </div>
             </div>
 
