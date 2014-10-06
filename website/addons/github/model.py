@@ -9,9 +9,10 @@ from modularodm import fields
 from github3 import GitHubError
 
 from framework.auth import Auth
+from framework.mongo import StoredObject
 
 from website import settings
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import settings as github_settings
@@ -34,50 +35,114 @@ class GithubGuidFile(GuidFile):
         return os.path.join('github', 'file', self.path)
 
 
-class AddonGitHubUserSettings(AddonUserSettingsBase):
+class AddonGitHubOauthSettings(StoredObject):
+    """
+    this model address the problem if we have two osf user link
+    to the same github user and their access token conflicts issue
+    """
 
-    github_user = fields.StringField()
+    #github user id, for example, "4974056"
+    # Note that this is a numeric ID, not the user's login.
+    github_user_id = fields.StringField(primary=True, required=True)
 
-    oauth_state = fields.StringField()
+    #github user name this is the user's login
+    github_user_name = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
+
+class AddonGitHubUserSettings(AddonUserSettingsBase):
+
+    oauth_state = fields.StringField()
+    oauth_settings = fields.ForeignField(
+        'addongithuboauthsettings', backref='accessed'
+    )
+
     @property
     def has_auth(self):
-        return self.oauth_access_token is not None
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token is not None
+        return False
+
+    @property
+    def github_user_name(self):
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
+
+    @github_user_name.setter
+    def github_user_name(self, user_name):
+        self.oauth_settings.github_user_name = user_name
+
+    @property
+    def oauth_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token
+        return None
+
+    @oauth_access_token.setter
+    def oauth_access_token(self, oauth_access_token):
+        self.oauth_settings.oauth_access_token = oauth_access_token
+
+    @property
+    def oauth_token_type(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_token_type
+        return None
+
+    @oauth_token_type.setter
+    def oauth_token_type(self, oauth_token_type):
+        self.oauth_settings.oauth_token_type = oauth_token_type
 
     @property
     def public_id(self):
-        return self.github_user
+        return self.oauth_settings.github_user_name
+
+    def save(self,*args,**kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
+
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
-            'authorized_github_user': self.github_user if self.github_user else '',
+            'authorized_github_user': self.github_user_name if self.github_user_name else '',
             'show_submit': False,
         })
         return rv
 
     def revoke_token(self):
-        connection = GitHub.from_settings(self)
-        try:
-            connection.revoke_token()
-        except GitHubError as error:
-            if error.code == http.UNAUTHORIZED:
-                return (
-                    'Your GitHub credentials were removed from the OSF, but we '
-                    'were unable to revoke your access token from GitHub. Your '
-                    'GitHub credentials may no longer be valid.'
-                )
+        """
+        if there is only one osf user linked to this github user oauth, revoke the token,
+        otherwise, disconnect the osf user from the addongithuboauthsettings
+        """
+        if self.oauth_settings:
+            if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
+                self.oauth_settings = None
             else:
-                raise
+                connection = GitHub.from_settings(self)
+                try:
+                    connection.revoke_token()
+                except GitHubError as error:
+                    if error.code == http.UNAUTHORIZED:
+                        return (
+                            'Your GitHub credentials were removed from the OSF, but we '
+                            'were unable to revoke your access token from GitHub. Your '
+                            'GitHub credentials may no longer be valid.'
+                        )
+                    else:
+                        raise
 
-    def clear_auth(self, save=False):
+    def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.deauthorize(save=True)
+            node_settings.deauthorize(auth=auth, save=True)
         self.revoke_token()
-        self.oauth_access_token, self.oauth_token_type = None, None
+        # Clear tokens on oauth_settings
+        self.oauth_settings.oauth_access_token = None
+        self.oauth_settings.oauth_token_type = None
+        self.oauth_settings.save()
         if save:
             self.save()
 
@@ -189,8 +254,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'github_user_name': self.user_settings.github_user,
-                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user),
+                'github_user_name': self.user_settings.github_user_name,
+                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
             })
         return rv

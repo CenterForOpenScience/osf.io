@@ -35,6 +35,7 @@ from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
+from website.addons.github.model import AddonGitHubOauthSettings
 
 from tests.base import OsfTestCase, fake, capture_signals, assert_is_redirect, assert_datetime_equal
 from tests.factories import (
@@ -735,8 +736,13 @@ class TestUserProfile(OsfTestCase):
     def test_serialize_social_addons_editable(self):
         self.user.add_addon('github')
         user_github = self.user.get_addon('github')
-        user_github.github_user = 'howtogithub'
+        oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings.github_user_id = 'testuser'
+        oauth_settings.save()
+        user_github.oauth_settings = oauth_settings
         user_github.save()
+        user_github.github_user_name = 'howtogithub'
+        oauth_settings.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
             url,
@@ -751,8 +757,13 @@ class TestUserProfile(OsfTestCase):
         user2 = AuthUserFactory()
         self.user.add_addon('github')
         user_github = self.user.get_addon('github')
-        user_github.github_user = 'howtogithub'
+        oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings.github_user_id = 'testuser'
+        oauth_settings.save()
+        user_github.oauth_settings = oauth_settings
         user_github.save()
+        user_github.github_user_name = 'howtogithub'
+        oauth_settings.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
             url,

@@ -17,6 +17,7 @@ from website.util import web_url_for
 
 from ..api import GitHub
 from ..auth import oauth_start_url, oauth_get_token
+from ..model import AddonGitHubOauthSettings
 
 
 def get_profile_view(user_settings):
@@ -61,6 +62,39 @@ def github_oauth_start(**kwargs):
     return redirect(authorization_url)
 
 
+def create_and_attach_oauth(user_settings, access_token, token_type):
+    """helper function to set the AddonGitHubOauthsettings and link it with
+    AddonGitHubUserSettings
+
+    :param AddonGitHubUserSettings user_settings: User settings record
+    :param str access_token: OAuth access token
+    :param str token_type: OAuth token type
+
+
+    """
+    gh = GitHub(access_token, token_type)
+    github_user = gh.user()
+
+    oauth_settings = AddonGitHubOauthSettings.load(github_user.id)
+
+    if not oauth_settings:
+        oauth_settings = AddonGitHubOauthSettings()
+        oauth_settings.github_user_id = str(github_user.id)
+        oauth_settings.save()
+
+    user_settings.oauth_settings = oauth_settings
+
+    #in user_settings
+    user_settings.oauth_state = None
+
+    #in oauth_settings
+    user_settings.oauth_access_token = access_token
+    user_settings.oauth_token_type = token_type
+    user_settings.github_user_name = github_user.login
+
+    user_settings.save()
+
+
 def github_oauth_callback(**kwargs):
 
     user = models.User.load(kwargs.get('uid'))
@@ -72,6 +106,7 @@ def github_oauth_callback(**kwargs):
         raise HTTPError(http.NOT_FOUND)
 
     user_settings = user.get_addon('github')
+
     if user_settings is None:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -86,19 +121,11 @@ def github_oauth_callback(**kwargs):
 
     token = oauth_get_token(code)
 
-    user_settings.oauth_state = None
-    user_settings.oauth_access_token = token['access_token']
-    user_settings.oauth_token_type = token['token_type']
-
-    connection = GitHub.from_settings(user_settings)
-    user = connection.user()
-
-    user_settings.github_user = user.login
-
-    user_settings.save()
+    create_and_attach_oauth(user_settings, token['access_token'], token['token_type'])
 
     if node_settings:
         node_settings.user_settings = user_settings
+        # previously connected to Github?
         if node_settings.user and node_settings.repo:
             node_settings.add_hook(save=False)
         node_settings.save()
@@ -107,10 +134,10 @@ def github_oauth_callback(**kwargs):
         return redirect(os.path.join(node.url, 'settings'))
     return redirect(web_url_for('user_addons'))
 
-
+@must_be_logged_in
 @must_have_addon('github', 'user')
-def github_oauth_delete_user(user_addon, **kwargs):
-    user_addon.clear_auth(save=True)
+def github_oauth_delete_user(auth, user_addon, **kwargs):
+    user_addon.clear_auth(auth=auth, save=True)
     return {}
 
 
