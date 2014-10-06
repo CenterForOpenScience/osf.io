@@ -8,10 +8,11 @@ import httplib as http
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
-from flask import request, redirect, make_response
+from flask import request, make_response
 
 from framework.exceptions import HTTPError
 from framework.utils import secure_filename
+from framework.flask import redirect  # VOL-aware redirect
 
 from website import models
 from website.project.decorators import (
