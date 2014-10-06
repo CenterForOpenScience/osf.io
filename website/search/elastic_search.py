@@ -153,28 +153,7 @@ def _build_query(full_query, start=0):
                 break
 
     # If the search has a tag filter, add that to the query
-    tag_filter = {}
-    # Check for tag-based query
-    if raw_query[0:5] == 'tags:':
-        tags += ',' + raw_query[5:]
-        raw_query = ''
-    # Create tag filter
-    if tags:
-        # First, split by comma to create tag list
-        tags = tags.strip(',').split(',')
-        # Then make sure to remove duplicates while retaining order
-        seen = set()
-        tags = [x for x in tags if not (x in seen or seen.add(x))]
-        tag_filter = {
-            'bool': {
-                'must': []
-            }
-        }
-        for tag in tags:
-            tag_filter['bool']['must'].append({'term': {'tags': tag}})
-    # Need to make sure that tags is a list, even if an empty one
-    else:
-        tags = []
+    tag_filter, raw_query, tags = _build_tag_filter(raw_query,tags)
 
     # Cleanup string before using it to query
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
@@ -234,6 +213,33 @@ def _build_query(full_query, start=0):
     }
 
     return query, raw_query, result_type, tags
+
+
+def _build_tag_filter(raw_query='', tags=''):
+    # Check for tag-based query
+    if raw_query[0:5] == 'tags:':
+        tags += ',' + raw_query[5:]
+        raw_query = ''
+    # Create tag filter
+    if tags:
+        # First, split by comma to create tag list
+        tags = tags.strip(',').split(',')
+        # Then make sure to remove duplicates while retaining order
+        seen = set()
+        tags = [x for x in tags if not (x in seen or seen.add(x))]
+        tag_filter = {
+            'bool': {
+                'must': []
+            }
+        }
+        for tag in tags:
+            tag_filter['bool']['must'].append({'term': {'tags': tag}})
+    # Need to make sure that tags is a list, even if an empty one,
+    # and that tag_filter is a dictionary
+    else:
+        tags = []
+        tag_filter = {}
+    return tag_filter, raw_query, tags
 
 
 @requires_search
