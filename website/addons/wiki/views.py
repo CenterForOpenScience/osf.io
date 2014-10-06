@@ -257,8 +257,15 @@ def project_wiki_edit(auth, **kwargs):
         content = ''
         wiki_created = True
 
+    # Find correct sharejs document
     if wiki_page.share_uuid is None:
-        wiki_page.generate_share_uuid()
+        # Use existing doc if one was generated previously
+        if node.wiki_sharejs_uuid.get(wid):
+            wiki_page.share_uuid = node.wiki_sharejs_uuid[wid]
+        # Generate a new sharejs document
+        else:
+            wiki_page.generate_share_uuid(node, wid)
+
 
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {

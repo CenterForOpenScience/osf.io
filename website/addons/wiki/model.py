@@ -96,18 +96,19 @@ class NodeWikiPage(GuidStoredObject):
 
         return sanitize(self.html(node), tags=[], strip=True)
 
-    def generate_share_uuid(self, save=True):
+    def generate_share_uuid(self, node, page_name=None, save=True):
         """Generates uuid for use in sharejs namespacing"""
 
         self.share_uuid = str(uuid.uuid5(uuid.uuid1(), str(self._id)))
 
-        self.node.wiki_sharejs_uuid[self.page_name.lower()] = self.share_uuid
-        self.node.save()
+        page_name = page_name or self.page_name.lower()
+        node.wiki_sharejs_uuid[page_name] = self.share_uuid
+        node.save()
 
         if save:
             self.save()
 
-    def delete_share_document(self, save=True):
+    def delete_share_document(self, node, save=True):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
@@ -117,8 +118,8 @@ class NodeWikiPage(GuidStoredObject):
 
         self.share_uuid = None
 
-        self.node.wiki_sharejs_uuid[self.page_name.lower()] = None
-        self.node.save()
+        node.wiki_sharejs_uuid[self.page_name.lower()] = None
+        node.save()
 
         if save:
             self.save()
@@ -126,22 +127,21 @@ class NodeWikiPage(GuidStoredObject):
     """ TODO: Migrate when page is open, followed by edits to the old doc,
         leads to a sharejs document with no pointer. This is both a security
         risk and a memory leak."""
-    def migrate_uuid(self, save=True):
+    def migrate_uuid(self, node, save=True):
         """Migrates uuid to new namespace."""
 
         db = share_db()
 
         old_uuid = self.share_uuid
-        self.generate_share_uuid(save)
+        self.generate_share_uuid(node, self.page_name, save)
 
         db[ops_uuid(old_uuid)].rename(ops_uuid(self.share_uuid))
 
-        # TODO: Migrating before doc is in docs causes sharejs to crash
-        # docs is only updated every 20 ops
-        new_doc = db['docs'].find_one({'_id': old_uuid}) or {}
-        new_doc['_id'] = self.share_uuid
-        db['docs'].insert(new_doc)
-        db['docs'].remove({'_id': old_uuid})
+        new_doc = db['docs'].find_one({'_id': old_uuid})
+        if new_doc:
+            new_doc['_id'] = self.share_uuid
+            db['docs'].insert(new_doc)
+            db['docs'].remove({'_id': old_uuid})
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
