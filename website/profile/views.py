@@ -313,9 +313,9 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'startMonth': job.get('startMonthInt'),
+        'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
-        'endMonth': job.get('endMonthInt'),
+        'endMonth': job.get('endMonth'),
         'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing', False),
     }
@@ -406,9 +406,9 @@ def unserialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'startMonth': job.get('startMonthInt'),
+        'startMonth': job.get('startMonth'),
         'startYear': job.get('startYear'),
-        'endMonth': job.get('endMonthInt'),
+        'endMonth': job.get('endMonth'),
         'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing'),
     }

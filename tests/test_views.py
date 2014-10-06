@@ -8,7 +8,6 @@ import datetime as dt
 import mock
 import httplib as http
 
-
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 from werkzeug.wrappers import Response
@@ -798,17 +797,17 @@ class TestUserProfile(OsfTestCase):
             'institution': 'an institution',
             'department': 'a department',
             'degree': 'a degree',
-            'startMonth': 'January',
-            'startYear': '2001',
-            'endMonth': 'March',
-            'endYear': '2001',
+            'startMonth': 1,
+            'startYear': 2001,
+            'endMonth': 5,
+            'endYear': 2001,
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
-            'startMonth': 'May',
-            'startYear': '2001',
+            'startMonth': 5,
+            'startYear': 2001,
             'endMonth': None,
             'endYear': None,
             'ongoing': True,
@@ -868,9 +867,8 @@ class TestUserProfile(OsfTestCase):
         # schools field is updated
         assert_equal(self.user.schools, schools)
 
-    def test_unserialize_jobs_with_validation_error(self):
+    def test_unserialize_jobs_valid(self):
         jobs_cached = self.user.jobs
-        # End year < start year
         jobs = [
             {
                 'institution': fake.company(),
@@ -879,18 +877,14 @@ class TestUserProfile(OsfTestCase):
                 'startMonth': 5,
                 'startYear': 2013,
                 'endMonth': 3,
-                'endYear': 2012,
+                'endYear': 2014,
                 'ongoing': False,
             }
         ]
         payload = {'contents': jobs}
         url = api_url_for('unserialize_jobs')
-        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
-        # 400 response because validation failed
-        assert_equal(res.status_code, 400)
-        # jobs field is unchanged
-        self.user.reload()
-        assert_equal(self.user.jobs, jobs_cached)
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestAddingContributorViews(OsfTestCase):
