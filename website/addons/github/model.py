@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonSettingsBase
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import settings as github_settings
@@ -98,11 +98,10 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     def public_id(self):
         return self.oauth_settings.github_user_name
 
-    def save(self,*args,**kwargs):
+    def save(self, *args, **kwargs):
         if self.oauth_settings:
             self.oauth_settings.save()
         return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
-
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
