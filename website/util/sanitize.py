@@ -58,4 +58,3 @@ def assert_clean(data):
             raise ValueError
 
     return escape_html(data)
-

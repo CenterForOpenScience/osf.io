@@ -20,7 +20,6 @@ from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
-from framework.git.exceptions import FileNotModified
 from website import filters, language, settings
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
@@ -28,6 +27,7 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
 )
 from website.addons.osffiles.model import NodeFile
+from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 from website.addons.osffiles.exceptions import (
@@ -1538,6 +1538,45 @@ class TestProject(OsfTestCase):
         assert_not_in(user2, self.project.contributors)
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
+
+    def test_manage_contributors_cannot_remove_last_admin_contributor(self):
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.consolidate_auth)
+        self.project.save()
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                user_dicts=[{'id': user2._id,
+                             'permission': 'write',
+                             'visible': True}],
+                auth=self.consolidate_auth,
+                save=True
+            )
+
+    def test_manage_contributors_logs_when_users_reorder(self):
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.consolidate_auth)
+        self.project.save()
+        self.project.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': 'write',
+                    'visible': True,
+                },
+                {
+                    'id': self.user._id,
+                    'permission': 'admin',
+                    'visible': True,
+                },
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+        latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.CONTRIB_REORDERED)
+        assert_equal(latest_log.user, self.user)
+        assert_in(self.user._id, latest_log.params['contributors'])
+        assert_in(user2._id, latest_log.params['contributors'])
 
     def test_add_private_link(self):
         link = PrivateLinkFactory()

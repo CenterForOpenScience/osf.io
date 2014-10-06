@@ -41,7 +41,7 @@
                 <input
                         id="forwardSecs"
                         class="form-control"
-                        data-bind="value: redirectSecs"
+                        data-bind="value: redirectSecs, enable: redirectBool"
                         type="number"
                     />
             </div>

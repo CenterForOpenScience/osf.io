@@ -41,7 +41,6 @@
             <p class="help-block">Preview</p>
             <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
         </div>
-
     </div><!-- end row -->
 </div><!-- end wiki -->
 
@@ -57,7 +56,7 @@
 
 <script>
 
-    var url = '${node['api_url']}wiki/content/${pageName}/';
+    var url = '${node['api_url']}wiki/${pageName}/content/';
 
     var setDoc = function(docName) {
 

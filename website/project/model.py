@@ -32,7 +32,6 @@ from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
-from framework.git.exceptions import FileNotModified
 from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
@@ -888,7 +887,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
-
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -1464,6 +1462,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.piwik_site_id = None
 
         # Forks default to private status
         forked.is_public = False
@@ -1547,6 +1546,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
+        registered.piwik_site_id = None
 
         registered.save()
 
@@ -1771,6 +1771,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         necessary.
         """
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotModified
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
@@ -2067,7 +2068,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-            self.save() # TODO: here, or outside the conditional? @mambocab
+            self.save()  # TODO: here, or outside the conditional? @mambocab
         return ret
 
     def delete_addon(self, addon_name, auth):
@@ -2160,7 +2161,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         admins = [
             user for user in self.contributors
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if not admins:
             return False
@@ -2226,7 +2227,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param list user_dicts: Ordered list of contributors represented as
             dictionaries of the form:
-            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -2261,18 +2262,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 to_remove.append(user)
 
         # TODO: Move to validator or helper @jmcarp
-        # TODO: Test me @jmcarp
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if users is None or not admins:
             raise ValueError(
                 'Must have at least one registered admin contributor'
             )
 
-        # TODO: Test me @jmcarp
         if to_retain != users:
             self.add_log(
                 action=NodeLog.CONTRIB_REORDERED,
@@ -2441,9 +2440,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
-            # If the node doesn't have a piwik site, make one.
-            if settings.PIWIK_HOST:
-                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
@@ -2459,8 +2455,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=action,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
+                'project': self.parent_id,
+                'node': self._primary_key,
             },
             auth=auth,
             save=False,
@@ -2482,13 +2478,13 @@ class Node(GuidStoredObject, AddonModelMixin):
             except:
                 return None
 
-            if not page in self.wiki_pages_versions:
+            if page not in self.wiki_pages_versions:
                 return None
 
             if version > len(self.wiki_pages_versions[page]):
                 return None
             else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version-1])
+                return NodeWikiPage.load(self.wiki_pages_versions[page][version - 1])
 
         if page in self.wiki_pages_current:
             pw = NodeWikiPage.load(self.wiki_pages_current[page])
