@@ -19,7 +19,7 @@ from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUse
 
 
 def do_migration(records, dry=True):
-    count = 0
+    count, skipped = 0, 0
 
     for raw_user_settings in records:
 
@@ -35,6 +35,7 @@ def do_migration(records, dry=True):
                 except github3.models.GitHubError:
                     print('AddonGithubUserSettings object {0!r} cannot be migrated '
                            'due to invalidated credentials'.format(raw_user_settings['_id']))
+                    skipped += 1
                     continue
 
 
@@ -70,7 +71,7 @@ def do_migration(records, dry=True):
                 )
                 print('Finished migrating AddonGithubUserSettings record: {}'.format(raw_user_settings['_id']))
             count += 1
-    return count
+    return count, skipped
 
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
@@ -79,8 +80,9 @@ def get_user_settings():
 def main():
     init_app('website.settings', set_backends=True, routes=True)  # Sets the storage backends on all models
     user_settings = get_user_settings()
-    n_migrated = do_migration(user_settings, dry='dry' in sys.argv)
+    n_migrated, n_skipped = do_migration(user_settings, dry='dry' in sys.argv)
     print("Total migrated records: {}".format(n_migrated))
+    print("Total skipped records: {}".format(n_skipped))
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):
