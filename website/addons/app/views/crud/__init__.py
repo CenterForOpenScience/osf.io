@@ -126,6 +126,36 @@ def create_application_project(node_addon, **kwargs):
     }, http.CREATED
 
 
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def get_project_metadata(node_addon, guid, **kwargs):
+    node = Node.load(guid)
+    if not node:
+        raise HTTPError(http.NOT_FOUND)
+
+    sort_on = request.args.get('sort')
+
+    query = {
+        'query': {
+            'filtered': {
+                'filter': {
+                    'term': {
+                        'nid': node._id
+                    }
+                }
+            }
+        }
+    }
+
+    rets = search(query, _type=node_addon.namespace, index='metadata')
+    ret = {}
+
+    for blob in sorted(rets['hits']['hits'], key=lambda x: x['_source'].get(sort_on)):
+        ret.update(blob['_source'])
+
+    return ret
+
+
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
 def update_application_project(node_addon, guid, **kwargs):
