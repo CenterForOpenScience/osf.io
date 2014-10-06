@@ -28,9 +28,10 @@ def do_migration(records, dry=True):
 
     for raw_user_settings in records:
 
-        access_token = raw_user_settings.get('oauth_access_token')
-        token_type = raw_user_settings.get('oauth_token_type')
-        github_user_name = raw_user_settings.get('github_user')
+        # False if missing, None if field exists
+        access_token = raw_user_settings.get('oauth_access_token', False)
+        token_type = raw_user_settings.get('oauth_token_type', False)
+        github_user_name = raw_user_settings.get('github_user', False)
 
         if access_token and token_type and github_user_name:
             if not dry:
@@ -76,6 +77,22 @@ def do_migration(records, dry=True):
                 )
                 print('Finished migrating AddonGithubUserSettings record: {}'.format(raw_user_settings['_id']))
             count += 1
+        # Old fields have not yet been unset
+        elif None in set([access_token, token_type, github_user_id]):
+            if not dry:
+                AddonGitHubUserSettings._storage[0].store.update(
+                    {'_id': raw_user_settings['_id']},
+                    {
+                        '$unset': {
+                            'oauth_access_token': True,
+                            'oauth_token_type': True,
+                            'github_user': True,
+                        },
+                    }
+                )
+                print('Unset oauth_access_token and oauth_token_type: {0}'.format(raw_user_settings['_id']))
+            count += 1
+
     return count, skipped
 
 def get_user_settings():
