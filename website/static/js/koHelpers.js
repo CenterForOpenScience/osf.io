@@ -122,9 +122,10 @@
         validator: function (val) {
             // Skip if values empty
             var uwVal = ko.utils.unwrapObservable(val);
-            if (uwVal === null) {
+            if (uwVal === null || uwVal === undefined) {
                 return true;
             }
+
             //Skip if dates invalid
             var dateVal = new Date(uwVal);
             if (dateVal === 'Invalid Date') {

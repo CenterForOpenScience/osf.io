@@ -523,8 +523,10 @@
         self.end = ko.computed(function() {
             if (self.endMonth() && self.endYear()) {
                 self.displayDate(self.endMonth() + ' ' + self.endYear());
-                //self.displayDate(self.endMonths()[self.endMonthInt()] + ' ' + self.endYear());
                 return new Date(self.endMonth() + '1,' + self.endYear());
+            } else if (!self.endMonth() && self.endYear()) {
+                self.displayDate(self.endYear());
+                return self.endYear();
             }
         }, self).extend({
             notInFuture:true,
