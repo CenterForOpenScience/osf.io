@@ -57,8 +57,11 @@
         );
 
         self.deleteFile = function(){
-            bootbox.confirm('Are you sure you want to delete this file? It will not be recoverable.',
-                function(result) {
+            bootbox.confirm({
+                title: 'Delete file from OSF Storage?',
+                message: 'Are you sure you want to delete <strong>' + 
+                      self.file_name() + '</strong>? It will not be recoverable.',
+                callback: function(result) {
                     if (result) {
                         $('#deletingAlert').addClass('in');
                         var request = $.ajax({
@@ -73,7 +76,8 @@
                             bootbox.alert( 'Could not delete: ' + textStatus );
                         });
                     }
-                });
+                }
+            });
         };
     }
     // Public API

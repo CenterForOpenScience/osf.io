@@ -3,6 +3,27 @@
 
 <%def name="file_versions()">
 <div class="scripted" id="revisionScope">
+    <div id="deletingAlert" class="alert alert-warning fade">
+        Deleting your file…
+    </div>
+
+    <ol class="breadcrumb">
+        <li><a data-bind="attr: {href: filesUrl()}">{{nodeTitle}}</a></li>
+        <li>Dropbox</li>
+        <li class="active overflow" >{{path}}</li>
+    </ol>
+
+    <p>
+        <!-- Download button -->
+        <a data-bind="attr: {href: downloadUrl}"
+            class="btn btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
+       <!--Delete button -->
+       <button
+           data-bind="visible: deleteUrl() && !registered(), click: deleteFile"
+           class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i>
+       </button>
+    </p>
+
     <table class="table dropbox-revision-table ">
         <thead>
             <tr>
