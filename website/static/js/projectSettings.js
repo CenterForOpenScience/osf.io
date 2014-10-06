@@ -62,32 +62,52 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         // Redirect to either the parent project or the dashboard
         window.location.href = response.url;
     }
-    bootbox.prompt(
-        'Are you sure you want to delete this ' + nodeType + '?' +
-        '<div class="bootboxBody"><p>It will be <strong>permanently deleted</strong> for every contributor:</p>' +
-         '<ol>' + $('div#contributors ol').html() + '</ol>' +
-        '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-        'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
-        function(result) {
-            if (result != null) {
-                result = result.toLowerCase();
-            }
-            if ($.trim(result) === key.toLowerCase()) {
-                var request = $.ajax({
-                    type: 'DELETE',
-                    dataType: 'json',
-                    url: nodeApiUrl
-                });
-                request.done(successHandler);
-                request.fail($.osf.handleJSONError);
-            } else if (result != null) {
-                bootbox.alert({
-                    title: 'Incorrect confirmation',
-                    message: 'The confirmation string you provided was incorrect. Please try again.'
-                });
-            }
+
+    $.ajax({
+        url: nodeApiUrl + 'get_contributors/?limit=10',
+        type: "get",
+        dataType: "json",
+        success: function(result) {
+            contributorsHTML = result['contributors']
+            more = result['more']
+
+            contriblist = ''
+            $.each(contributorsHTML, function(i, b){
+                contriblist += "<li>" + "<a class='user-profile' rel='' title='" + b.fullname + "' href='/" + b.id + "/'>" + b.fullname + "</a>" + "</li>"
+            });
+
+            console.log(contriblist)
+
+            bootbox.prompt(
+                'Are you sure you want to delete this ' + nodeType + '?' +
+                '<div class="bootboxBody"><p>It will be <strong>permanently deleted</strong> for every contributor:</p>' +
+                '<ol>' + contriblist +'</ol>' +
+                '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
+                ((more > 0) ? 'and <strong>' + more + '</strong> more...</p>' : '') +
+                '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
+                'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
+                function(result) {
+                    if (result != null) {
+                        result = result.toLowerCase();
+                    }
+                    if ($.trim(result) === key.toLowerCase()) {
+                        var request = $.ajax({
+                            type: 'DELETE',
+                            dataType: 'json',
+                            url: nodeApiUrl
+                        });
+                        request.done(successHandler);
+                        request.fail($.osf.handleJSONError);
+                    } else if (result != null) {
+                        bootbox.alert({
+                            title: 'Incorrect confirmation',
+                            message: 'The confirmation string you provided was incorrect. Please try again.'
+                        });
+                    }
+                }
+            );
         }
-    );
+    })
 };
 
 $(document).ready(function() {

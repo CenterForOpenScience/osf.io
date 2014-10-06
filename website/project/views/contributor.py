@@ -78,6 +78,11 @@ def get_node_contributors_abbrev(auth, **kwargs):
 @must_be_valid_project
 def get_contributors(auth, **kwargs):
 
+    limit = request.args.get('limit')
+
+    if limit:
+        limit = int(limit)
+
     node = kwargs['node'] or kwargs['project']
 
     anonymous = has_anonymous_link(node, auth)
@@ -86,11 +91,17 @@ def get_contributors(auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = utils.serialize_contributors(
-        node.visible_contributors,
+        node.visible_contributors[0:limit],
         node=node,
     )
 
-    return {'contributors': contribs}
+    if limit:
+        return {
+            'contributors': contribs,
+            'more': max(0, len(node.visible_contributors) - limit)
+        }
+    else:
+        return {'contributors': contribs}
 
 
 @must_be_logged_in
