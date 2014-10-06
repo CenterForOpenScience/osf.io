@@ -57,6 +57,8 @@
 
 <script>
 
+    var url = '${node['api_url']}wiki/content/${pageName}/';
+
     var setDoc = function(docName) {
 
         sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
@@ -80,7 +82,19 @@
             // If no share data is loaded, fetch most recent wiki from osf
             // TODO: Only works sometimes, likely based on order of execution
             if (newDoc.version === 0) {
-                $("#revert-button").click();
+                $.ajax({
+                    type: 'GET',
+                    url: url,
+                    dataType: 'json',
+                    success: function (response) {
+                        editor.setValue(response.wiki_content);
+                    },
+                    error: function (xhr, textStatus, error) {
+                        console.error(textStatus);
+                        console.error(error);
+                        bootbox.alert('Could not get wiki content.');
+                    }
+                });
             }
         });
     };
@@ -99,12 +113,8 @@
     editor.renderer.setShowGutter(false);       // Hides line number
     editor.setShowPrintMargin(false);           // Hides print margin
 
-</script>
-
-<script>
-
     $script('/static/addons/wiki/WikiEditor.js', function() {
-        WikiEditor('.wiki', '${node['api_url']}wiki/content/${pageName}/')
+        WikiEditor('.wiki', url)
     });
 
 </script>
