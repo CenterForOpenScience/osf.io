@@ -3,11 +3,12 @@
 import os
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from website.project.model import NodeLog
+from framework.flask import redirect  # VOL-aware redirect
 from website.project.utils import serialize_node
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_not_be_registration
