@@ -2027,10 +2027,8 @@ class TestAddonUserViews(OsfTestCase):
         assert_true(self.user.get_addon('github'))
 
     def test_choose_addons_remove(self):
-        """Add, then delete, add-ons; assert that add-ons are not attached to
-        project.
-
-        """
+        # Add, then delete, add-ons; assert that add-ons are not attached to
+        # project.
         url = '/api/v1/settings/addons/'
         self.app.post_json(
             url,
