@@ -10,6 +10,7 @@ from tests.factories import UserFactory, ProjectFactory
 from framework.auth import Auth
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import NotFoundError
+from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings
 
 from .utils import create_mock_github
 mock_github = create_mock_github()
@@ -244,3 +245,16 @@ class TestCallbacks(OsfTestCase):
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
+
+
+class TestAddonGithubUserSettings(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.oauth_settings = AddonGitHubOauthSettings()
+        self.user_settings = AddonGitHubUserSettings()
+
+    def test_public_id_is_none_if_no_oauth_settings_attached(self):
+        # Regression test for:
+        #  https://github.com/CenterForOpenScience/openscienceframework.org/issues/1053
+        assert_is_none(self.user_settings.public_id)
