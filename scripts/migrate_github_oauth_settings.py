@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Script to migrate addongithubusersettings and create and attach addongithuboauthsettings.
+
+Log:
+
+    Executed on production by SL on 2014-10-05 at 23:11 EST. 269 AddonGithubUserSettings records
+    were successfully migrated. 3 records with invalidated credentials were skipped.
 """
 
 import sys
