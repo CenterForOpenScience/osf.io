@@ -19,11 +19,6 @@ import website.search.search as search
 @requires_search
 class SearchTestCase(OsfTestCase):
 
-    def set_up(self):
-        """Common setup operations to all tests"""
-        search.delete_all()
-        search.create_index()
-
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
         search.delete_all()
@@ -44,7 +39,8 @@ class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
-        self.set_up()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -129,7 +125,8 @@ class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
-        self.set_up()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -153,7 +150,8 @@ class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
         super(TestPublicNodes, self).setUp()
-        self.set_up()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -351,7 +349,8 @@ class TestAddContributor(SearchTestCase):
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
-        self.set_up()
+        search.delete_all()
+        search.create_index()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
