@@ -158,7 +158,6 @@ class TestWikiDelete(OsfTestCase):
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
-
         super(TestWikiRename, self).setUp()
 
         self.project = ProjectFactory(is_public=True)
@@ -224,7 +223,6 @@ class TestWikiRename(OsfTestCase):
         home = self.project.get_wiki_page('home')
         res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-
 
     def test_can_rename_to_a_deleted_page(self):
         self.project.delete_node_wiki(self.project, self.page, self.consolidate_auth)
