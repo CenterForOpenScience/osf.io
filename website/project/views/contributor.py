@@ -4,10 +4,11 @@ import time
 import httplib as http
 
 from collections import Counter
-from flask import request, redirect
+from flask import request
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth import User, get_user, get_current_user, authenticate
+from framework.flask import redirect  # VOL-aware redirect
 from framework import status
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.exceptions import HTTPError

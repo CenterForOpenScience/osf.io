@@ -150,6 +150,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
+
                         <li><a href="${node['url']}">Overview</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>

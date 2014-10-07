@@ -24,6 +24,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website.util import api_url_for, web_url_for
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -162,10 +163,10 @@ class TestAUser(OsfTestCase):
         # TODO: (bgeiger) figure out how to make this assertion work with hgrid view
         #assert_in(project.title, res)
 
-    def test_sees_osffiles_in_user_addon_settings(self):
+    def test_does_not_see_osffiles_in_user_addon_settings(self):
         res = self._login(self.user.username, 'science')
         res = self.app.get('/settings/addons/', auth=self.auth, auto_follow=True)
-        assert_in('OSF Storage', res)
+        assert_not_in('OSF Storage', res)
 
     def test_sees_osffiles_in_project_addon_settings(self):
         project = ProjectFactory(creator=self.user)

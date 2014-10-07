@@ -276,6 +276,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_confirmed = fields.DateTimeField()
 
+    # Format: {
+    #   'node_id': 'timestamp'
+    # }
+    comments_viewed_timestamp = fields.DictionaryField()
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

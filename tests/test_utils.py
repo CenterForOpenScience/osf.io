@@ -5,6 +5,7 @@ from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.routing import Rule, json_renderer
+from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
 from website.util import web_url_for, api_url_for, is_json_request
 from website.util.mimetype import get_mimetype
@@ -95,3 +96,32 @@ class TestGetMimeTypes(unittest.TestCase):
             content = the_file.read()
         mimetype = get_mimetype(name, content)
         assert_equal('text/x-python', mimetype)
+
+class TestFrameworkUtils(unittest.TestCase):
+
+    def test_leading_underscores(self):
+        assert_equal(
+            '__init__.py',
+            secure_filename('__init__.py')
+        )
+
+    def test_werkzeug_cases(self):
+        """Test that Werkzeug's tests still pass for our wrapped version"""
+
+        # Copied from Werkzeug
+        # BSD licensed - original at github.com/mitsuhiko/werkzeug,
+        #                /tests/test_utils.py, line 282, commit 811b438
+        assert_equal(
+            'My_cool_movie.mov',
+            secure_filename('My cool movie.mov')
+        )
+
+        assert_equal(
+            'etc_passwd',
+            secure_filename('../../../etc/passwd')
+        )
+
+        assert_equal(
+            'i_contain_cool_umlauts.txt',
+            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+        )

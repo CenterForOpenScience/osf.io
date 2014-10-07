@@ -1,34 +1,41 @@
-<div class="navbar-outer" style="overflow: hidden">
-    <div class="wiki-title-container">
-	    <h3 class="wiki-title" id="wikiName"><span id="pageName">${pageName}</span></h3>
-    </div>
-    <nav class="navbar navbar-default" style="display: inline-block; float: right">
+% if user['can_edit']:
+<nav class="navbar navbar-default" style="display: inline-block; float: right; margin-left: 20px;">
+    <div class="navbar-collapse">
         <ul class="nav navbar-nav">
-            % if user['can_edit']:
-                <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
-                    <%include file="add_wiki_page.mako"/>
-                % if wiki_id:
-                <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
-                    <%include file="delete_wiki_page.mako"/>
-                % endif
-                % else:
-                <li><a class="disabled">New</a></li>
-                <li><a class="disabled">Delete</a></li>
+            <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
+                <%include file="add_wiki_page.mako"/>
+            <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
+            % if wiki_id:
+            <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
+                <%include file="delete_wiki_page.mako"/>
             % endif
         </ul>
-    </nav>
-</div>
+    </div>
+</nav>
+% endif
+
+<h3 class="wiki-title" id="wikiName">
+    % if pageName == 'home':
+        <i class="icon-home"></i>
+    % endif
+    <span id="pageName"
+        % if pageName == 'home':
+            data-toggle="tooltip"
+            title="Note: Home page cannot be renamed."
+        % endif
+    >${pageName}</span>
+</h3>
 
 <script type="text/javascript">
-    if($('#pageName').height() >= $('#wikiName').height()) {
+    var $pageName = $('#pageName');
+    $pageName.tooltip();
+    if ($pageName.height() >= $('#wikiName').height()) {
         $('#wikiName').addClass('long-wiki-title');
     }
-</script>
-
-%if wiki_id:
-<script>
+    // Activate editable title unless on home page or in edit mode
+    %if not is_edit and wiki_id and pageName != 'home':
     $(document).ready(function() {
-        $('#pageName').editable({
+        $pageName.editable({
             type: 'text',
             send: 'always',
             url: '${api_url+ 'wiki/' + wiki_id + '/rename/'}',
@@ -60,5 +67,5 @@
             }
         });
     });
+    %endif
 </script>
-%endif

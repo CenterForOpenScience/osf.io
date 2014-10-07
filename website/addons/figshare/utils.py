@@ -4,7 +4,7 @@ from website.util import rubeus
 
 def options_to_hgrid(node, fs_options):
     permissions = {
-        'view': True       
+        'view': True
     }
     for o in fs_options:
         parts = o['value'].split('_')
@@ -20,7 +20,7 @@ def options_to_hgrid(node, fs_options):
                 foldersOnly=1)
         }
         o['permissions'] = permissions
-        o['addon'] = 'figshare'        
+        o['addon'] = 'figshare'
         o['type'] = ftype
         o['id'] = fid
     return fs_options
@@ -53,7 +53,7 @@ def article_to_hgrid(node, article, expand=False, folders_only=False):
         return {
             'name': '{0}:{1}'.format(article['title'] or 'Unnamed', article['article_id']),  # Is often blank?
             'kind': 'folder' if article['files'] else 'folder',  # TODO Change me
-            'urls':  {
+            'urls': {
                 'upload': '{base}figshare/{aid}/'.format(base=node.api_url, aid=article['article_id']),
                 'delete': '' if article['status'] == 'public' else node.api_url + 'figshare/' + str(article['article_id']) + '/file/{id}/delete/',
                 'download': '',
@@ -95,7 +95,7 @@ def file_to_hgrid(node, article, item):
         'authors': '',
         'status': article['status'],
         'versions': '',
-        'urls':  urls,
+        'urls': urls,
         'permissions': permissions,
         'size': item.get('size'),
         'thumbnail': item.get('thumb') or '',

@@ -5,12 +5,12 @@ import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
-from flask import request, redirect
+from flask import request
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
 
@@ -19,6 +19,7 @@ from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
 from website.util.sanitize import escape_html
+from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ def edit_profile(**kwargs):
 
     response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = sanitize(form['value'])
+        user.fullname = strip_html(form['value'])
         user.save()
         response_data['name'] = user.fullname
     return response_data
@@ -158,8 +159,7 @@ def user_addons(auth, **kwargs):
     out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
-        if ('user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user'])
-        or bool(addon.added_mandatory)
+        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled

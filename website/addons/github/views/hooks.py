@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
+import os  # noqa
 from dateutil.parser import parse as dateparse
 
 from flask import request
@@ -116,4 +116,3 @@ def github_hook_callback(node_addon, **kwargs):
             )
 
     node.save()
-
