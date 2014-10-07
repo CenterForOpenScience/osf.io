@@ -102,16 +102,17 @@ def _get_wiki_pages_current(node):
     ]
 
 
-def _get_wiki_api_urls(node, wid, additional_urls={}):
+def _get_wiki_api_urls(node, wid, additional_urls=None):
     urls = {
         'delete': node.api_url_for('project_wiki_delete', wid=wid),
         'rename': node.api_url_for('project_wiki_rename', wid=wid),
     }
-    urls.update(additional_urls)
+    if additional_urls:
+        urls.update(additional_urls)
     return urls
 
 
-def _get_wiki_web_urls(node, wid, additional_urls={}):
+def _get_wiki_web_urls(node, wid, additional_urls=None):
     urls = {
         'base': node.web_url_for('project_wiki_home'),
         'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
@@ -119,7 +120,8 @@ def _get_wiki_web_urls(node, wid, additional_urls={}):
         'home': node.web_url_for('project_wiki_home'),
         'page': node.web_url_for('project_wiki_page', wid=wid),
     }
-    urls.update(additional_urls)
+    if additional_urls:
+        urls.update(additional_urls)
     return urls
 
 
