@@ -620,7 +620,7 @@
                 },
                 message: 'Please enter a year for the start date.'
             },
-            year: true,
+            year: true, //checks that year input is four digits
             pyDate: true
         });
 

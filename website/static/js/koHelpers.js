@@ -141,8 +141,7 @@
 
 
     ko.validation.rules['year'] = makeRegexValidator(
-        //checks that year input is four digits
-        new RegExp('/^\d{4}$/'),
+        new RegExp('^\\d{4}$'),
         'Please enter a valid year.'
     );
 
