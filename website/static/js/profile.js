@@ -85,14 +85,7 @@
 
     DateMixin.prototype.unserialize = function(data) {
         var self = this;
-
-        $.each(data || {}, function(key, value) {
-            if (ko.isObservable(self[key])) {
-                self[key](value);
-                // Ensure that validation errors are displayed
-                self[key].notifySubscribers();
-            }
-        });
+        SerializeMixin.prototype.unserialize.call(self, data);
 
         var startMonth = self.intToMonth(self.startMonth());
         var endMonth = self.intToMonth(self.endMonth());
