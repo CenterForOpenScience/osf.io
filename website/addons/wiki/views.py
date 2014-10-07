@@ -91,7 +91,10 @@ def _get_wiki_versions(node, wid, anonymous=False):
 
 def _get_wiki_pages_current(node):
     return [
-        (page, node.web_url_for('project_wiki_page', wid=page))
+        {
+            'name': page,
+            'url': node.web_url_for('project_wiki_page', wid=page)
+        }
         for page in sorted([
             from_mongo(version)
             for version in node.wiki_pages_current

@@ -7,11 +7,11 @@
                 ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
                 <a href="${urls['web']['home']}">${'home'}</a>
             </li>
-            % for page_name, page_web_url in pages_current:
-                %if page_name != 'home':
+            % for page in pages_current:
+                %if page['name'] != 'home':
                     <li>
                         ## Again, do not use web_url_for here either
-                        <a href="${page_web_url}">${page_name}</a>
+                        <a href="${page['url']}">${page['name']}</a>
                     </li>
                 % endif
             %endfor
@@ -35,10 +35,10 @@
                     </a>
 
                     <ul style="list-style-type: none;">
-                        % for child_page_name, child_page_web_url in child['pages_current']:
-                            % if k != 'home':
+                        % for child_page in child['pages_current']:
+                            % if child_page['name'] != 'home':
                                 <li class="">
-                                    <a href="${child_page_web_url}">${child_page_name}</a>
+                                    <a href="${child_page['url']}">${child_page['name']}</a>
                                 </li>
                             % endif
                         % endfor
