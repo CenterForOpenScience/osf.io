@@ -73,7 +73,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
 
             contriblist = ''
             $.each(contributorsHTML, function(i, b){
-                contriblist += "<li>" + "<a class='user-profile' rel='' title='" + b.fullname + "' href='/" + b.id + "/'>" + b.fullname + "</a>" + "</li>"
+                contriblist += "<li>" + b.fullname + "</li>"
             });
 
             console.log(contriblist)
