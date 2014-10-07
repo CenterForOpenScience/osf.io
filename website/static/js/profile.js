@@ -51,23 +51,25 @@
         return self;
     };
 
-    var DateMixin = function() {};
+    var DateMixin = function() {
+        var self = this;
+        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December']);
+        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December']);
+    };
 
     DateMixin.prototype.monthToInt = function(value) {
         var self = this;
-        var months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
         if (value !== undefined) {
-            return months.indexOf(value) + 1;
+            return self.startMonths().indexOf(value) + 1;
         }
     };
 
     DateMixin.prototype.intToMonth = function(value) {
         var self = this;
-        var months = ['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'];
         if (value !== undefined) {
-            return months[(value - 1)];
+            return self.startMonths()[(value - 1)];
         }
     };
 
@@ -80,7 +82,6 @@
         content['endMonth'] = endMonthInt;
         return content;
     };
-
 
     DateMixin.prototype.unserialize = function(data) {
         var self = this;
@@ -517,15 +518,13 @@
     var JobViewModel = function() {
 
         var self = this;
+        DateMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
         });
         self.department = ko.observable('');
         self.title = ko.observable('');
-
-        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
         self.endMonth = ko.observable();
         self.endYear = ko.observable().extend({
             required: {
@@ -540,8 +539,6 @@
         self.displayDate = ko.observable(' ');
         self.ongoing = ko.observable(false);
 
-        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
         self.startMonth = ko.observable();
         self.startYear = ko.observable().extend({
             required: {
@@ -599,6 +596,7 @@
     var SchoolViewModel = function() {
 
         var self = this;
+        DateMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
@@ -606,8 +604,6 @@
         self.department = ko.observable('');
         self.degree = ko.observable('');
 
-        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
         self.endMonth = ko.observable('');
         self.endYear = ko.observable('').extend({
             required: {
@@ -621,8 +617,6 @@
         self.displayDate = ko.observable(' ');
         self.ongoing = ko.observable(false);
 
-        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
         self.startMonth = ko.observable('');
         self.startYear = ko.observable('').extend({
             required: {
