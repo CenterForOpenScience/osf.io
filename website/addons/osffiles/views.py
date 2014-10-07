@@ -223,7 +223,7 @@ def file_info(auth, fid, **kwargs):
     file_name = fid
     file_name_clean = urlsafe_filename(file_name)
     files_page_url = node.web_url_for('collect_file_trees')
-    latest_version_url = None
+    latest_download_url = None
     api_url = None
     anonymous = has_anonymous_link(node, auth)
 
@@ -256,19 +256,18 @@ def file_info(auth, fid, **kwargs):
             'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
         if number == latest_version_number:
-            latest_version_url = download_url
+            latest_download_url = download_url
     return {
-        'files_url': node.url + "files/",
         'node_title': node.title,
         'file_name': file_name,
         'versions': versions,
-        'latest_version_url': latest_version_url,
-        'api_url': api_url,
-        'files_page_url': files_page_url,
         'registered': node.is_registration,
         'urls': {
+            'api': api_url,
             'files': files_page_url,
-            'latest': latest_version_url,
+            'latest': {
+                'download': latest_download_url,
+            },
         }
     }
 
