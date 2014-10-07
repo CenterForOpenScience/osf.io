@@ -350,13 +350,10 @@ def project_wiki_rename(**kwargs):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
     if page and new_name:
-        try:
-            exist_check = node.wiki_pages_versions[new_name.lower()]
-        except KeyError:
-            exist_check = None
-        if exist_check:
+        if new_name.lower() in node.wiki_pages_current:
             raise HTTPError(http.CONFLICT)
 
+        # TODO: This should go in a Node method like node.rename_wiki
         node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
         del node.wiki_pages_versions[page.page_name.lower()]
         node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
