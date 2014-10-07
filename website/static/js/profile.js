@@ -526,7 +526,7 @@
                 },
                 message: 'Please enter a year for the end date.'
             },
-            pattern: /^\d{4}$/,
+            year: true,
             pyDate: true
         });
         self.displayDate = ko.observable(' ');
@@ -542,7 +542,7 @@
                 },
                 message: 'Please enter a year for the start date.'
             },
-            pattern: /^\d{4}$/,
+            year: true,
             pyDate: true
         });
 
@@ -604,7 +604,7 @@
                     return !!self.endMonth();
                 }
             },
-            pattern: /^\d{4}$/, //checks that year input is four digits
+            year: true,
             pyDate: true
         });
         self.displayDate = ko.observable(' ');
@@ -620,7 +620,7 @@
                 },
                 message: 'Please enter a year for the start date.'
             },
-            pattern: /^\d{4}$/, //checks that year input is four digits
+            year: true,
             pyDate: true
         });
 
