@@ -6,6 +6,10 @@ Log:
 
     Executed on production by SL on 2014-10-05 at 23:11 EST. 269 AddonGithubUserSettings records
     were successfully migrated. 3 records with invalidated credentials were skipped.
+
+    Script was modified by @chennan47 to handle records with invalidated credentials by unsetting
+    the oauth_access_token, oauth_token_type, and github_user fields. Run on production by @sloria
+    on 2014-10-07 at 12:34 EST. 3 records with invalidated credentials were migrated.
 """
 
 import sys
