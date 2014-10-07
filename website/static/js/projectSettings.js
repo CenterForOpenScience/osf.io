@@ -63,24 +63,23 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
         window.location.href = response.url;
     }
 
-    $.ajax({
+    var request = $.ajax({
         url: nodeApiUrl + 'get_contributors/?limit=5',
         type: "get",
-        dataType: "json",
-        success: function(result) {
-            contributorsHTML = result['contributors']
-            more = result['more']
+        dataType: "json"});
+    request.done(
+        function(result) {
+            contributorsHTML = result.contributors;
+            more = result.more;
 
-            contriblist = ''
+            contriblist = '';
             $.each(contributorsHTML, function(i, b){
                 contriblist += "<li>" + b.fullname + "</li>"
             });
 
-            console.log(contriblist)
-
             bootbox.prompt(
                 'Are you sure you want to delete this ' + nodeType + '?' +
-                '<div class="bootboxBody"><p>It will no longer be available to other contributors on the project including:</p>' +
+                '<div class="bootbox-node-deletion-modal"><p>It will no longer be available to other contributors on the project including:</p>' +
                 '<ol>' + contriblist +'</ol>' +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
                 ((more > 0) ? 'and <strong>' + more + '</strong> others.</p>' : '') +
@@ -107,7 +106,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                 }
             );
         }
-    })
+    )
 };
 
 $(document).ready(function() {

@@ -79,10 +79,15 @@ def get_node_contributors_abbrev(auth, **kwargs):
 def get_contributors(auth, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route
-    limit = request.args.get('limit')
-
-    if limit:
-        limit = int(limit)
+    if request.args.get('limit'):
+        try:
+            limit = int(request.args['limit'])
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_long='Invalid value for "limit": {}'.format(request.args['limit'])
+            ))
+    else:
+        limit = None
 
     node = kwargs['node'] or kwargs['project']
 

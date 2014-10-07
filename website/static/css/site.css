@@ -1741,14 +1741,14 @@ div.pydocx-center{
     font-size:14px;
 }
 
-.bootboxBody {
+.bootbox-node-deletion-modal {
     font-weight: normal;
     font-size: medium;
     line-height: normal;
     padding-top: 10px;
 }
 
-.bootboxBody ol {
+.bootbox-node-deletion-modal ol {
     padding-left: 40px;
     list-style-type: disc;
 }
