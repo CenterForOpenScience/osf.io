@@ -143,12 +143,12 @@
             self.updateFromData(response.result);
             self.loadedSettings(true);
         }).fail(function(xhr, textStatus, error) {
+            self.changeMessage(language.userSettingsError, 'text-warning');
             Raven.captureMessage('Could not GET dataverse settings', {
                 url: url,
                 textStatus: textStatus,
                 error: error
             });
-            self.changeMessage(language.userSettingsError, 'text-warning');
         });
 
         // Flashed messages

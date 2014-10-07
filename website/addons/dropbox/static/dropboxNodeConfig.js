@@ -90,16 +90,16 @@
                     self.loadedSettings(true);
                 },
                 error: function(xhr, textStatus, error) {
-                    Raven.captureMessage('Could not GET Dropbox settings', {
-                        url: url,
-                        textStatus: textStatus,
-                        error: error
-                    });
                     self.changeMessage('Could not retrieve Dropbox settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
                         '<a href="mailto:support@osf.io">support@osf.io</a>.',
                         'text-warning');
+                    Raven.captureMessage('Could not GET Dropbox settings', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
                 }
             });
         };
