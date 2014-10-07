@@ -83,7 +83,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                 '<div class="bootboxBody"><p>It will no longer be available to other contributors on the project including:</p>' +
                 '<ol>' + contriblist +'</ol>' +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-                ((more > 0) ? 'and <strong>' + more + '</strong> others...</p>' : '') +
+                ((more > 0) ? 'and <strong>' + more + '</strong> others.</p>' : '') +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
                 'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
                 function(result) {
