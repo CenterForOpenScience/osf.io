@@ -96,6 +96,7 @@ class NodeWikiPage(GuidStoredObject):
 
         return sanitize(self.html(node), tags=[], strip=True)
 
+    # TODO: Improve handling of page names
     def generate_share_uuid(self, node, page_name=None, save=True):
         """Generates uuid for use in sharejs namespacing"""
 
@@ -108,17 +109,18 @@ class NodeWikiPage(GuidStoredObject):
         if save:
             self.save()
 
-    def delete_share_document(self, node, save=True):
+    def delete_share_document(self, node, page_name=None, save=True):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
 
-        db[ops_uuid(self.share_uuid)].drop()
-        db['docs'].remove({'_id': self.share_uuid})
+        db[ops_uuid(node, self.share_uuid)].drop()
+        db['docs'].remove({'_id': docs_uuid(node, self.share_uuid)})
 
         self.share_uuid = None
 
-        node.wiki_sharejs_uuid[self.page_name.lower()] = None
+        page_name = page_name or self.page_name.lower()
+        node.wiki_sharejs_uuid[page_name] = None
         node.save()
 
         if save:
@@ -135,13 +137,13 @@ class NodeWikiPage(GuidStoredObject):
         old_uuid = self.share_uuid
         self.generate_share_uuid(node, self.page_name, save)
 
-        db[ops_uuid(old_uuid)].rename(ops_uuid(self.share_uuid))
+        db[ops_uuid(node, old_uuid)].rename(ops_uuid(node, self.share_uuid))
 
-        new_doc = db['docs'].find_one({'_id': old_uuid})
+        new_doc = db['docs'].find_one({'_id': docs_uuid(node, old_uuid)})
         if new_doc:
-            new_doc['_id'] = self.share_uuid
+            new_doc['_id'] = docs_uuid(node, self.share_uuid)
             db['docs'].insert(new_doc)
-            db['docs'].remove({'_id': old_uuid})
+            db['docs'].remove({'_id': docs_uuid(node, old_uuid)})
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
@@ -158,7 +160,12 @@ class NodeWikiPage(GuidStoredObject):
         return {}
 
 
-def ops_uuid(share_uuid):
+def docs_uuid(node, share_uuid):
+    return '{0}-{1}'.format(node._id, share_uuid)
+
+
+def ops_uuid(node, share_uuid):
+    share_uuid = docs_uuid(node, share_uuid)
     return 'ops.{0}'.format(share_uuid.replace('-', '%2D'))
 
 

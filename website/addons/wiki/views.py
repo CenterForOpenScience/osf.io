@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission
 )
 
-from .model import NodeWikiPage
+from .model import NodeWikiPage, docs_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +283,7 @@ def project_wiki_edit(auth, **kwargs):
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
         'wiki_id': wiki_page._id if wiki_page else '',
-        'share_uuid': wiki_page.share_uuid,
+        'share_uuid': docs_uuid(node, wiki_page.share_uuid),
         'is_current': is_current,
         'is_edit': True,
         'pages_current': sorted([
