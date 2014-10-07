@@ -1749,3 +1749,7 @@ div.pydocx-center{
     font-size:14px;
 }
 
+.search-term-label,
+.tag {
+    white-space: pre;
+}
