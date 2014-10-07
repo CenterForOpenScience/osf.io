@@ -78,6 +78,7 @@ def get_node_contributors_abbrev(auth, **kwargs):
 @must_be_valid_project
 def get_contributors(auth, **kwargs):
 
+    # Can set limit to only receive a specified number of contributors in a call to this route
     limit = request.args.get('limit')
 
     if limit:
@@ -90,11 +91,15 @@ def get_contributors(auth, **kwargs):
     if anonymous or not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
 
+    # Limit is either an int or None:
+    # if int, contribs list is sliced to specified length
+    # if None, contribs list is not sliced
     contribs = utils.serialize_contributors(
         node.visible_contributors[0:limit],
         node=node,
     )
 
+    # Will either return just contributor list or contributor list + 'more' element
     if limit:
         return {
             'contributors': contribs,
