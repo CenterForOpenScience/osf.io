@@ -51,6 +51,56 @@
         return self;
     };
 
+    var DateMixin = function() {};
+
+    DateMixin.prototype.monthToInt = function(value) {
+        var self = this;
+        var months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        if (value !== undefined) {
+            return months.indexOf(value) + 1;
+        }
+    };
+
+    DateMixin.prototype.intToMonth = function(value) {
+        var self = this;
+        var months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        if (value !== undefined) {
+            return months[(value - 1)];
+        }
+    };
+
+    DateMixin.prototype.serialize = function() {
+        var self = this;
+        var content = ko.toJS(self);
+        var startMonthInt = self.monthToInt(content.startMonth);
+        var endMonthInt = self.monthToInt(content.endMonth);
+        content['startMonth'] = startMonthInt;
+        content['endMonth'] = endMonthInt;
+        return content;
+    };
+
+
+    DateMixin.prototype.unserialize = function(data) {
+        var self = this;
+
+        $.each(data || {}, function(key, value) {
+            if (ko.isObservable(self[key])) {
+                self[key](value);
+                // Ensure that validation errors are displayed
+                self[key].notifySubscribers();
+            }
+        });
+
+        var startMonth = self.intToMonth(self.startMonth());
+        var endMonth = self.intToMonth(self.endMonth());
+        self.startMonth(startMonth);
+        self.endMonth(endMonth);
+        return self;
+    };
+
+
     var BaseViewModel = function(urls, modes) {
 
         var self = this;
@@ -428,38 +478,6 @@
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
-    ListViewModel.prototype.serialize = function() {
-        var self = this;
-        var contents = ko.toJS(self.contents);
-
-        for (var i=0; i < contents.length; i++) {
-            var startMonthInt = contents[i].monthToInt(contents[i].startMonth);
-            var endMonthInt = contents[i].monthToInt(contents[i].endMonth);
-            contents[i]['startMonth'] = startMonthInt;
-            contents[i]['endMonth'] = endMonthInt;
-        }
-        return {contents: contents};
-    };
-
-    ListViewModel.prototype.unserialize = function(data) {
-        var self = this;
-        self.editable(data.editable);
-        self.contents(ko.utils.arrayMap(data.contents || [], function(each) {
-            var content = new self.ContentModel(self).unserialize(each);
-
-            var startMonth = content.intToMonth(content.startMonth());
-            var endMonth = content.intToMonth(content.endMonth());
-            content.startMonth(startMonth);
-            content.endMonth(endMonth);
-            return content;
-        }));
-
-        // Ensure at least one item is visible
-        if (self.contents().length === 0) {
-            self.addContent();
-        }
-    };
-
     ListViewModel.prototype.addContent = function() {
         this.contents.push(new this.ContentModel(this));
     };
@@ -469,6 +487,32 @@
         this.contents.splice(idx, 1);
     };
 
+    ListViewModel.prototype.unserialize = function(data) {
+        var self = this;
+        self.editable(data.editable);
+        self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+            return new self.ContentModel(self).unserialize(each);
+        }));
+
+        // Ensure at least one item is visible
+        if (self.contents().length === 0) {
+            self.addContent();
+        }
+    };
+
+    ListViewModel.prototype.serialize = function() {
+        var contents = [];
+        if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
+            for (var i=0; i < this.contents().length; i++) {
+                contents.push(this.contents()[i].serialize());
+            }
+        }
+        else {
+            contents = ko.toJS(this.contents);
+        }
+
+        return {contents: contents};
+    };
 
     var JobViewModel = function() {
 
@@ -543,25 +587,13 @@
             return (self.ongoing() ? 'ongoing' : self.displayDate());
         }, self);
 
-        self.monthToInt = function(value) {
-            if (value !== undefined) {
-                return self.startMonths().indexOf(value) + 1;
-            }
-        };
-
-        self.intToMonth = function(value) {
-            if (value !== undefined) {
-                return self.startMonths()[(value - 1)];
-            }
-        };
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(JobViewModel.prototype, SerializeMixin.prototype);
+    $.extend(JobViewModel.prototype, DateMixin.prototype);
 
 
     var SchoolViewModel = function() {
@@ -633,25 +665,13 @@
             return (self.ongoing() ? 'ongoing' : self.displayDate());
         }, self);
 
-        self.monthToInt = function(value) {
-            if (value !== undefined) {
-                return self.startMonths().indexOf(value) + 1;
-            }
-        };
-
-        self.intToMonth = function(value) {
-            if (value !== undefined) {
-                return self.startMonths()[(value - 1)];
-            }
-        };
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(SchoolViewModel.prototype, SerializeMixin.prototype);
+    $.extend(SchoolViewModel.prototype, DateMixin.prototype);
 
     var JobsViewModel = function(urls, modes) {
 
@@ -659,6 +679,7 @@
         ListViewModel.call(self, JobViewModel, urls, modes);
 
         self.fetch();
+
 
     };
 
