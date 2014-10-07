@@ -29,7 +29,7 @@ from website.util import rubeus, permissions
 
 from website.addons.osffiles.model import NodeFile, OsfGuidFile
 from website.addons.osffiles.exceptions import FileNotModified
-from website.addons.osffiles.utils import get_latest_version_number
+from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
 from website.addons.osffiles.exceptions import (
     InvalidVersionError,
     VersionNotFoundError,
@@ -218,14 +218,13 @@ def upload_file_public(auth, node_addon, **kwargs):
 @must_be_valid_project  # returns project
 @must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
-def file_info(**kwargs):
+def file_info(auth, fid, **kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
-    file_name = kwargs['fid']
-    auth = kwargs['auth']
-    file_name_clean = file_name.replace('.', '_')
+    file_name = fid
+    file_name_clean = urlsafe_filename(file_name)
     files_page_url = node.web_url_for('collect_file_trees')
-    latest_version_url = None
+    latest_download_url = None
     api_url = None
     anonymous = has_anonymous_link(node, auth)
 
@@ -258,16 +257,19 @@ def file_info(**kwargs):
             'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
         if number == latest_version_number:
-            latest_version_url = download_url
+            latest_download_url = download_url
     return {
-        'files_url': node.url + "files/",
         'node_title': node.title,
         'file_name': file_name,
         'versions': versions,
-        'latest_version_url': latest_version_url,
-        'api_url': api_url,
-        'files_page_url': files_page_url,
         'registered': node.is_registration,
+        'urls': {
+            'api': api_url,
+            'files': files_page_url,
+            'latest': {
+                'download': latest_download_url,
+            },
+        }
     }
 
 @must_be_valid_project  # returns project
