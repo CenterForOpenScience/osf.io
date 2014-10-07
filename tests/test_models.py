@@ -740,7 +740,7 @@ class TestFileActions(OsfTestCase):
         git_path = os.path.join(settings.UPLOADS_PATH, self.node._id, '.git')
         shutil.rmtree(git_path)
         with assert_raises(AssertionError):
-            node.get_file('foo', version=0)
+            self.node.get_file('foo', version=0)
 
     def test_delete_file(self):
         self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
@@ -761,7 +761,7 @@ class TestFileActions(OsfTestCase):
         subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
 
         with assert_raises(FileNotFoundError):
-            self.node.remove_file(Auth(node.creator), 'foo')
+            self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
 
