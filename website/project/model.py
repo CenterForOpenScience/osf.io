@@ -2560,7 +2560,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': page.page_name,
             },
             auth=auth,
-            log_date=page.date
+            log_date=datetime.datetime.utcnow(),
         )
 
     def get_stats(self, detailed=False):
