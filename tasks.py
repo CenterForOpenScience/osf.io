@@ -604,4 +604,3 @@ def bundle_certs(domain, cert_path):
         domain=domain,
     )
     run(cmd)
-
