@@ -33,8 +33,8 @@
                     <div style="margin-bottom:10px;">
                         Anyone with the private link can view, but not edit,
                         the components associated with the link.
-                        Which components would you like to associate with this link?
-                    </div>
+                        <strong>Which components would you like to associate with this link?
+                    </strong>                    </div>
 
 
 
