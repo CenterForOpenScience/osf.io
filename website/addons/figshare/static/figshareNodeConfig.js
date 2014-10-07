@@ -73,7 +73,11 @@
                     self.loadedSettings(true);
                 },
                 error: function(xhr, textStatus, error) {
-                    console.error(textStatus); console.error(error);
+                    Raven.captureMessage('Could not GET Figshare settings', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
                     self.changeMessage('Could not retrieve Figshare settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
@@ -279,9 +283,12 @@
                 ajaxOptions: {
                    error: function(xhr, textStatus, error) {
                         self.loading(false);
-                        console.error(textStatus); console.error(error);
                         self.changeMessage('Could not connect to Figshare at this time. ' +
                                             'Please try again later.', 'text-warning');
+                        Raven.captureMessage('Could not GET Figshare contents', {
+                            textStatus: textStatus,
+                            error: error
+                        });
                     }
                 },
                 init: function() {

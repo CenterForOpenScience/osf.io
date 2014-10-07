@@ -49,7 +49,11 @@
             self.dataverseUsername(data.dataverseUsername);
             self.connected(data.connected)
         }).fail(function(xhr, textStatus, error) {
-            console.error(textStatus); console.error(error);
+            Raven.captureMessage('Could not GET Dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
             self.changeMessage(language.userSettingsError, 'text-warning');
         });
 
