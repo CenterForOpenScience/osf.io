@@ -67,15 +67,14 @@ class TestContributorViews(OsfTestCase):
         # Set limit to three contributors
         url = self.project.api_url_for('get_contributors') + '?limit=3'
         res = self.app.get(url, auth=self.user.auth)
-        # Should be two visible contributors on the project
+        # Should be three visible contributors on the project
         assert_equal(
             len(res.json['contributors']),
-            # Only three contributors should show
             3,
         )
+        # There should be two 'more' contributors not shown
         assert_equal(
             (res.json['more']),
-            # There should be two 'more' contributors not shown
             2,
         )
 
