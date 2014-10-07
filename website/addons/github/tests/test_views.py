@@ -17,10 +17,10 @@ from github3.repos.contents import Contents
 from framework.exceptions import HTTPError
 from framework.auth import Auth
 
-from website.util import web_url_for
+from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile
+from website.addons.github.model import GithubGuidFile, AddonGitHubUserSettings, AddonGitHubOauthSettings
 from website.addons.github.utils import MESSAGES
 from website.addons.github.exceptions import TooBigError
 
@@ -801,20 +801,117 @@ class TestGithubSettings(OsfTestCase):
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
+        super(TestAuthViews, self).setUp()
         self.user = AuthUserFactory()
+        self.user.add_addon('github')
+        self.user.save()
+        self.user_settings = self.user.get_addon('github')
 
-    @unittest.skip('finish me')
-    def test_oauth_callback(self):
-        url = web_url_for('github_oauth_callback')
-        assert 0
+    def test_oauth_callback_with_invalid_user(self):
+        url = api_url_for('github_oauth_callback', uid="")
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-    @unittest.skip('finish me')
-    def test_create_and_attach_oauth(self):
-        assert 0
+    def test_oauth_callback_with_invalid_node(self):
+        url = api_url_for('github_oauth_callback', uid=self.user._id, nid="")
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-    @unittest.skip('finish me')
-    def test_oauth_delete_user(self):
-        assert 0
+    def test_oauth_callback_without_github_enabled(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('github_oauth_callback', uid=user2._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_oauth_callback_with_no_code(self):
+        url = api_url_for('github_oauth_callback', uid=self.user._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.views.auth.oauth_get_token')
+    def test_oauth_callback_without_node(self, mock_get_token, mock_github_user):
+        mock_get_token.return_value = {
+            "access_token": "testing acess token",
+            "token_type": "testing token type",
+            "scope": ["repo"]
+        }
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+
+        url = api_url_for('github_oauth_callback', uid=self.user._id)
+        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
+
+        assert_true(res.status_code, 302)
+        assert_in("/settings/addons/", res.location)
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.views.auth.oauth_get_token')
+    def test_oauth_callback_with_node(self, mock_get_token, mock_github_user):
+        mock_get_token.return_value = {
+            "access_token": "testing acess token",
+            "token_type": "testing token type",
+            "scope": ["repo"]
+        }
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+
+        project = ProjectFactory(creator=self.user)
+        project.add_addon('github', auth=Auth(user=self.user))
+        project.save()
+
+        url = api_url_for('github_oauth_callback', uid=self.user._id, nid=project._id)
+        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
+
+        assert_true(res.status_code, 302)
+        assert_not_in("/settings/addons/", res.location)
+        assert_in("/settings", res.location)
+
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    def test_create_and_attach_oauth(self, mock_github_user):
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+        views.auth.create_and_attach_oauth(self.user_settings, "testing acess token", "testing token type")
+        assert_true(self.user_settings.oauth_settings)
+        assert_false(self.user_settings.oauth_state)
+        assert_equal(
+            self.user_settings.github_user_name,
+            "testing user"
+        )
+        assert_equal(
+            self.user_settings.oauth_access_token,
+            "testing acess token"
+        )
+        assert_equal(
+            self.user_settings.oauth_token_type,
+            "testing token type"
+        )
+        assert_equal(
+            self.user_settings.oauth_settings.github_user_id,
+            "testing user id"
+        )
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    def test_oauth_delete_user(self, mock_github_user):
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+        views.auth.create_and_attach_oauth(self.user_settings, "testing acess token", "testing token type")
+        url = api_url_for("github_oauth_delete_user")
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.oauth_settings.reload()
+        assert_false(self.user_settings.oauth_token_type)
+        assert_false(self.user_settings.oauth_access_token)
+
 
 if __name__ == '__main__':
     unittest.main()
