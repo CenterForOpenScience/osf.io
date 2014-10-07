@@ -891,8 +891,21 @@ class TestDeleteNodeWiki(OsfTestCase):
         assert_equal(len(self.versions['home']), 1)
 
     def test_wiki_delete(self):
-        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki(self.project, page, self.consolidate_auth)
+
+        # page was deleted
         assert_false(self.project.get_wiki_page('home'))
+
+        log = self.project.logs[-1]
+
+        # deletion was logged
+        assert_equal(
+            NodeLog.WIKI_DELETED,
+            log.action,
+        )
+        # log date is not set to the page's creation date
+        assert_true(log.date > page.date)
 
     def test_deleted_versions(self):
         # Update wiki a second time
