@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+"""Migrate WIKI_DELETED logs that have an incorrect date.
+"""
 
 import datetime
 import logging
@@ -7,9 +9,10 @@ import sys
 from modularodm import Q
 
 from website.models import NodeLog
+from website.app import init_app
 
 from bson import ObjectId
-from nose.tools import *
+from nose.tools import *   # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import NodeLogFactory
@@ -41,12 +44,18 @@ def fix_invalid_log(log):
 
 
 if __name__ == '__main__':
+    init_app(set_backends=True, routes=False)
+    count = 0
     if 'dry' in sys.argv:
         for log in find_invalid_logs():
             print(log._id)
+            count += 1
     else:
         for log in find_invalid_logs():
             fix_invalid_log(log)
+            print(log._id)
+            count += 1
+    print('Migrated {} logs'.format(count))
 
 
 class TestEnsureLogDates(OsfTestCase):
