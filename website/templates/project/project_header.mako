@@ -196,15 +196,9 @@
 
             $(".project-nav a").each(function () {
                 var href = $(this).attr('href');
-                var navbar_active = false;
-                if (path === href) {
-                    navbar_active = true;
-                } else if (path.indexOf('files') > -1 && href.indexOf('files') > -1) {
-                    navbar_active = true;
-                } else if (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1) {
-                    navbar_active = true;
-                }
-                if (navbar_active) {
+                if (path === href ||
+                   (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+                   (path.indexOf('files') > -1 && href.indexOf('files') > -1)) {
                     $(this).closest('li').addClass('active');
                 }
             });
