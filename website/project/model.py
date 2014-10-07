@@ -2076,7 +2076,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :return bool: Add-on was deleted
 
         """
-        rv = super(Node, self).delete_addon(addon_name, auth)
+        rv = super(Node, self). delete_addon(addon_name, auth)
         if rv:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
