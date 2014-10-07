@@ -2,9 +2,10 @@
 import httplib as http
 import os
 
-from flask import redirect, send_from_directory
+from flask import send_from_directory
 
 from framework import sentry, status
+from framework.flask import redirect
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
 from framework.routing import (

@@ -6,6 +6,10 @@ Log:
 
     Executed on production by SL on 2014-10-05 at 23:11 EST. 269 AddonGithubUserSettings records
     were successfully migrated. 3 records with invalidated credentials were skipped.
+
+    Script was modified by @chennan47 to handle records with invalidated credentials by unsetting
+    the oauth_access_token, oauth_token_type, and github_user fields. Run on production by @sloria
+    on 2014-10-07 at 12:34 EST. 3 records with invalidated credentials were migrated.
 """
 
 import sys
@@ -24,13 +28,14 @@ from website.addons.github.model import AddonGitHubOauthSettings, AddonGitHubUse
 
 
 def do_migration(records, dry=True):
-    count, skipped = 0, 0
+    count, inval_cred_handled = 0, 0
 
     for raw_user_settings in records:
 
-        access_token = raw_user_settings.get('oauth_access_token')
-        token_type = raw_user_settings.get('oauth_token_type')
-        github_user_name = raw_user_settings.get('github_user')
+        # False if missing, None if field exists
+        access_token = raw_user_settings.get('oauth_access_token', False)
+        token_type = raw_user_settings.get('oauth_token_type', False)
+        github_user_name = raw_user_settings.get('github_user', False)
 
         if access_token and token_type and github_user_name:
             if not dry:
@@ -38,9 +43,18 @@ def do_migration(records, dry=True):
                 try:
                     github_user = gh.user()
                 except github3.models.GitHubError:
-                    print('AddonGithubUserSettings object {0!r} cannot be migrated '
-                           'due to invalidated credentials'.format(raw_user_settings['_id']))
-                    skipped += 1
+                    AddonGitHubUserSettings._storage[0].store.update(
+                        {'_id': raw_user_settings['_id']},
+                        {
+                            '$unset': {
+                                "oauth_access_token" : True,
+                                "oauth_token_type" : True,
+                                "github_user" : True,
+                            },
+                        }
+                    )
+                    inval_cred_handled += 1
+                    print('invalidated credentials handled record: {}'.format(raw_user_settings['_id']))
                     continue
 
 
@@ -76,7 +90,23 @@ def do_migration(records, dry=True):
                 )
                 print('Finished migrating AddonGithubUserSettings record: {}'.format(raw_user_settings['_id']))
             count += 1
-    return count, skipped
+        # Old fields have not yet been unset
+        elif None in set([access_token, token_type, github_user_name]):
+            if not dry:
+                AddonGitHubUserSettings._storage[0].store.update(
+                    {'_id': raw_user_settings['_id']},
+                    {
+                        '$unset': {
+                            'oauth_access_token': True,
+                            'oauth_token_type': True,
+                            'github_user': True,
+                        },
+                    }
+                )
+                print('Unset oauth_access_token and oauth_token_type: {0}'.format(raw_user_settings['_id']))
+            count += 1
+
+    return count, inval_cred_handled
 
 def get_user_settings():
     # ... return the StoredObjects to migrate ...
@@ -85,9 +115,9 @@ def get_user_settings():
 def main():
     init_app('website.settings', set_backends=True, routes=True)  # Sets the storage backends on all models
     user_settings = get_user_settings()
-    n_migrated, n_skipped = do_migration(user_settings, dry='dry' in sys.argv)
+    n_migrated, n_inval_cred_handled = do_migration(user_settings, dry='dry' in sys.argv)
     print("Total migrated records: {}".format(n_migrated))
-    print("Total skipped records: {}".format(n_skipped))
+    print("Total invalidated credentials handled records: {}".format(n_inval_cred_handled))
 
 
 class TestMigrateGitHubOauthSettings(OsfTestCase):

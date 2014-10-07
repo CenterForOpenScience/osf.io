@@ -6,10 +6,11 @@ import httplib as http
 
 from urllib2 import urlopen
 
-from flask import request, redirect, make_response
+from flask import request, make_response
 from modularodm import Q
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect
 from framework.auth.utils import privacy_info_handle
 from framework.utils import secure_filename
 from website.addons.base.views import check_file_guid

@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_permission
 )
 
-from model import NodeWikiPage
+from .model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
 
@@ -346,17 +346,14 @@ def project_wiki_rename(**kwargs):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
     if page and new_name:
-        try:
-            exist_check = node.wiki_pages_versions[new_name]
-        except KeyError:
-            exist_check = None
-        if exist_check:
+        if new_name.lower() in node.wiki_pages_current:
             raise HTTPError(http.CONFLICT)
 
-        node.wiki_pages_versions[new_name] = node.wiki_pages_versions[page.page_name]
-        del node.wiki_pages_versions[page.page_name]
-        node.wiki_pages_current[new_name] = node.wiki_pages_current[page.page_name]
-        del node.wiki_pages_current[page.page_name]
+        # TODO: This should go in a Node method like node.rename_wiki
+        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
+        del node.wiki_pages_versions[page.page_name.lower()]
+        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page.page_name.lower()]
         node.save()
         page.rename(new_name)
         return {'message': new_name}

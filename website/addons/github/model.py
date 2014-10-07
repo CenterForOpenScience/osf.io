@@ -94,9 +94,12 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
     def oauth_token_type(self, oauth_token_type):
         self.oauth_settings.oauth_token_type = oauth_token_type
 
+    # Required for importing username from social profile configuration page
     @property
     def public_id(self):
-        return self.oauth_settings.github_user_name
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
 
     def save(self, *args, **kwargs):
         if self.oauth_settings:

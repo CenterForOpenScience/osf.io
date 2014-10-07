@@ -4,11 +4,12 @@ import httplib as http
 import logging
 from collections import namedtuple
 
-from flask import redirect, request
+from flask import request
 from werkzeug.wrappers import BaseResponse
 from dropbox.client import DropboxOAuth2Flow
 
 from framework.auth import get_current_user
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.sessions import session
 from framework.status import push_status_message as flash

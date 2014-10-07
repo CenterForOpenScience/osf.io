@@ -3,10 +3,11 @@ import logging
 import itertools
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 from modularodm import Q
 
 from framework.auth.core import User
+from framework.flask import redirect  # VOL-aware redirect
 from framework import utils
 from framework.forms import utils as form_utils
 from framework import sentry
