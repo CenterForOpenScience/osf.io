@@ -99,16 +99,16 @@ def _get_wiki_pages_current(node):
     ]
 
 
-def _get_wiki_api_urls(node, wid, **kwargs):
+def _get_wiki_api_urls(node, wid, additional_urls={}):
     urls = {
         'delete': node.api_url_for('project_wiki_delete', wid=wid),
         'rename': node.api_url_for('project_wiki_rename', wid=wid),
     }
-    urls.update(kwargs)
+    urls.update(additional_urls)
     return urls
 
 
-def _get_wiki_web_urls(node, wid, **kwargs):
+def _get_wiki_web_urls(node, wid, additional_urls={}):
     urls = {
         'base': node.web_url_for('project_wiki_home'),
         'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
@@ -116,7 +116,7 @@ def _get_wiki_web_urls(node, wid, **kwargs):
         'home': node.web_url_for('project_wiki_home'),
         'page': node.web_url_for('project_wiki_page', wid=wid),
     }
-    urls.update(kwargs)
+    urls.update(additional_urls)
     return urls
 
 
@@ -152,8 +152,10 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'pages_current': _get_wiki_pages_current(node),
             'toc': toc,
             'category': node.category,
-            'api_urls': _get_wiki_api_urls(node, wid),
-            'web_urls': _get_wiki_web_urls(node, wid),
+            'urls': {
+                'api': _get_wiki_api_urls(node, wid),
+                'web': _get_wiki_web_urls(node, wid),
+            },
         }
         ret.update(_view_project(node, auth, primary=True))
         return ret
@@ -241,8 +243,10 @@ def project_wiki_page(auth, **kwargs):
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
-        'api_urls': _get_wiki_api_urls(node, wid),
-        'web_urls': _get_wiki_web_urls(node, wid),
+        'urls': {
+            'api': _get_wiki_api_urls(node, wid),
+            'web': _get_wiki_web_urls(node, wid),
+        },
     }
 
     ret.update(_view_project(node, auth, primary=True))
@@ -295,11 +299,13 @@ def project_wiki_edit(auth, **kwargs):
         'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
         'category': node.category,
-        'api_urls': _get_wiki_api_urls(node, wid, **{
-            'content': node.api_url_for('wiki_page_content', wid=wid),
-            'page': wiki_page_api_url
-        }),
-        'web_urls': _get_wiki_web_urls(node, wid),
+        'urls': {
+            'api': _get_wiki_api_urls(node, wid, {
+                'content': node.api_url_for('wiki_page_content', wid=wid),
+                'page': wiki_page_api_url
+            }),
+            'web': _get_wiki_web_urls(node, wid),
+        },
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

@@ -5,7 +5,7 @@
         <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>
                 ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
-                <a href="${web_urls['home']}">${'home'}</a>
+                <a href="${urls['web']['home']}">${'home'}</a>
             </li>
             % for page_name, page_web_url in pages_current:
                 %if page_name != 'home':

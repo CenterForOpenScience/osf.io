@@ -4,7 +4,7 @@
         <ul class="nav navbar-nav">
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
-            <li><a href="${web_urls['edit']}">Edit</a></li>
+            <li><a href="${urls['web']['edit']}">Edit</a></li>
             % if wiki_id:
             <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                 <%include file="delete_wiki_page.mako"/>
@@ -38,7 +38,7 @@
         $pageName.editable({
             type: 'text',
             send: 'always',
-            url: '${api_urls['rename']}',
+            url: '${urls['api']['rename']}',
             ajaxOptions: {
                type: 'put',
                contentType: 'application/json',
@@ -56,7 +56,7 @@
                return JSON.stringify(params);
             },
             success: function(response, value){
-                window.location.href = '${web_urls['base']}' + encodeURIComponent(value);
+                window.location.href = '${urls['web']['base']}' + encodeURIComponent(value);
             },
             error: function(response) {
                 if (response.status === 422){
