@@ -207,7 +207,6 @@ class TestWikiDelete(OsfTestCase):
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
-
         super(TestWikiRename, self).setUp()
 
         self.project = ProjectFactory(is_public=True)
@@ -262,7 +261,8 @@ class TestWikiRename(OsfTestCase):
         res = self.app.put_json(
             self.url,
             {'value': new_name, 'pk': self.page._id},
-            auth=self.auth, expect_errors=True
+            auth=self.auth,
+            expect_errors=True
         )
         assert_equal(res.status_code, 409)
 
@@ -270,6 +270,20 @@ class TestWikiRename(OsfTestCase):
         home = self.project.get_wiki_page('home')
         res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_can_rename_to_a_deleted_page(self):
+        self.project.delete_node_wiki(self.project, self.page, self.consolidate_auth)
+        self.project.save()
+
+        # Creates a new page
+        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
+        page3 = self.project.get_wiki_page('page3')
+        self.project.save()
+
+        url = self.project.api_url_for('project_wiki_rename', wid='page3')
+        # Renames the wiki to the deleted page
+        res = self.app.put_json(self.url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestWikiLinks(OsfTestCase):

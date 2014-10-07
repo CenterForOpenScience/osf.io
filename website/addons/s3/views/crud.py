@@ -6,10 +6,11 @@ import httplib as http
 
 from boto.exception import S3ResponseError, BotoClientError
 
-from flask import request, redirect
+from flask import request
 from modularodm import Q
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
 
 from website.models import NodeLog
 
