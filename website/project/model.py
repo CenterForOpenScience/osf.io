@@ -1638,6 +1638,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.read_file_object(file_object)
 
     def get_file_object(self, path, version=None):
+        """Return the :class:`NodeFile` object at the given path.
+
+        :param str path: Path to the file.
+        :param int version: Version number, 0-indexed.
+        """
         # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
         from website.addons.osffiles.exceptions import (
@@ -1649,6 +1654,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
+            # Default to latest version
+            version = version or len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:
