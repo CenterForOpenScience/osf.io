@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 """Migrate WIKI_DELETED logs that have an incorrect date.
+
+Log:
+
+    Executed on production by SL on 2014-10-06 at 23:55 EST.
+    25 NodeLog records were migrated.
 """
 
 import datetime
