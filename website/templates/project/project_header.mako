@@ -198,7 +198,7 @@
                 var href = $(this).attr('href');
                 if (path === href ||
                    (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
-                   (path.indexOf('files') > -1 && href.indexOf('files') > -1)) {
+                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
                     $(this).closest('li').addClass('active');
                 }
             });
