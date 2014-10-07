@@ -38,8 +38,8 @@
 
         // Update above observables with data from the server
         $.ajax({
-            url: url, 
-            type: 'GET', 
+            url: url,
+            type: 'GET',
             dataType: 'json'
         }).done(function(response) {
             var data = response.result;
@@ -47,15 +47,19 @@
             self.urls(data.urls);
             self.loaded(true);
             self.dataverseUsername(data.dataverseUsername);
-            self.connected(data.connected)
+            self.connected(data.connected);
         }).fail(function(xhr, textStatus, error) {
-            console.error(textStatus); console.error(error);
             self.changeMessage(language.userSettingsError, 'text-warning');
+            Raven.captureMessage('Could not GET Dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
 
         // Flashed messages
         self.message = ko.observable('');
-        self.messageClass = ko.observable('text-info')
+        self.messageClass = ko.observable('text-info');
 
         /** Send POST request to authorize Dataverse */
         self.sendAuth = function() {
@@ -73,8 +77,13 @@
             }).fail(function(xhr, textStatus, error) {
                 var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
                 self.changeMessage(errorMessage, 'text-danger');
+                Raven.captureMessage('Could not authenticate with Dataverse', {
+                    url: self.urls().create,
+                    textStatus: textStatus,
+                    error: error
+                });
             });
-        }
+        };
 
        /** Pop up confirm dialog for deleting user's credentials. */
         self.deleteKey = function() {
@@ -96,7 +105,7 @@
                 type: 'DELETE'
             }).done(function() {
                 // Page must be refreshed to remove the list of authorized nodes
-                location.reload()
+                location.reload();
 
                 // KO logic. Uncomment if page ever doesn't need refreshing
                 // self.userHasAuth(false);
@@ -123,7 +132,7 @@
             }
         };
 
-    };
+    }
 
     function DataverseUserConfig(selector, url) {
         // Initialization code
