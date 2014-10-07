@@ -64,7 +64,7 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
     }
 
     $.ajax({
-        url: nodeApiUrl + 'get_contributors/?limit=10',
+        url: nodeApiUrl + 'get_contributors/?limit=5',
         type: "get",
         dataType: "json",
         success: function(result) {
@@ -80,10 +80,10 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
 
             bootbox.prompt(
                 'Are you sure you want to delete this ' + nodeType + '?' +
-                '<div class="bootboxBody"><p>It will be <strong>permanently deleted</strong> for every contributor:</p>' +
+                '<div class="bootboxBody"><p>It will no longer be available to other contributors on the project including:</p>' +
                 '<ol>' + contriblist +'</ol>' +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
-                ((more > 0) ? 'and <strong>' + more + '</strong> more...</p>' : '') +
+                ((more > 0) ? 'and <strong>' + more + '</strong> others...</p>' : '') +
                 '<p style="font-weight: normal; font-size: medium; line-height: normal;">' +
                 'If you want to continue, type <strong>' + key + '</strong> and click OK.</p></div>',
                 function(result) {
