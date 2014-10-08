@@ -59,33 +59,67 @@
      */
     var DateMixin = function() {
         var self = this;
-        self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
-        self.endMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December']);
+        self.months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        self.endMonth = ko.observable();
+        self.endYear = ko.observable().extend({
+            required: {
+                onlyIf: function() {
+                    return !!self.endMonth();
+                },
+                message: 'Please enter a year for the end date.'
+            },
+            year: true,
+            pyDate: true
+        });
+        self.ongoing = ko.observable(false);
+        self.displayDate = ko.observable(' ');
+        self.endView = ko.computed(function() {
+            return (self.ongoing() ? 'ongoing' : self.displayDate());
+        }, self);
+        self.startMonth = ko.observable();
+        self.startYear = ko.observable().extend({
+            required: {
+                onlyIf: function() {
+                    if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
+                        return true;
+                    }
+                },
+                message: 'Please enter a year for the start date.'
+            },
+            year: true,
+            pyDate: true
+        });
+
+        self.clearEnd = function() {
+            self.endMonth('');
+            self.endYear('');
+            return true;
+        };
     };
 
     DateMixin.prototype.monthToInt = function(value) {
         var self = this;
         if (value !== undefined) {
-            return self.startMonths().indexOf(value) + 1;
+            return self.months.indexOf(value) + 1;
         }
     };
 
     DateMixin.prototype.intToMonth = function(value) {
         var self = this;
         if (value !== undefined) {
-            return self.startMonths()[(value - 1)];
+            return self.months[(value - 1)];
         }
     };
 
     DateMixin.prototype.serialize = function() {
         var self = this;
         var content = ko.toJS(self);
-        var startMonthInt = self.monthToInt(content.startMonth);
-        var endMonthInt = self.monthToInt(content.endMonth);
-        content['startMonth'] = startMonthInt;
-        content['endMonth'] = endMonthInt;
+        var startMonthInt = self.monthToInt(self.startMonth());
+        var endMonthInt = self.monthToInt(self.endMonth());
+        content.startMonth = startMonthInt;
+        content.endMonth = endMonthInt;
+
         return content;
     };
 
@@ -97,6 +131,8 @@
         var endMonth = self.intToMonth(self.endMonth());
         self.startMonth(startMonth);
         self.endMonth(endMonth);
+
+
         return self;
     };
 
@@ -524,34 +560,6 @@
         });
         self.department = ko.observable('');
         self.title = ko.observable('');
-        self.endMonth = ko.observable();
-        self.endYear = ko.observable().extend({
-            required: {
-                onlyIf: function() {
-                    return !!self.endMonth();
-                },
-                message: 'Please enter a year for the end date.'
-            },
-            year: true,
-            pyDate: true
-        });
-        self.displayDate = ko.observable(' ');
-        self.ongoing = ko.observable(false);
-
-        self.startMonth = ko.observable();
-        self.startYear = ko.observable().extend({
-            required: {
-                onlyIf: function() {
-                    if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
-                        return true;
-                    }
-                },
-                message: 'Please enter a year for the start date.'
-            },
-            year: true,
-            pyDate: true
-        });
-
         self.start = ko.computed(function () {
             if (self.startMonth() && self.startYear()) {
                 return new Date(self.startMonth() + '1,' + self.startYear());
@@ -559,7 +567,6 @@
         }, self).extend({
             notInFuture: true
         });
-
         self.end = ko.computed(function() {
             if (self.endMonth() && self.endYear()) {
                 self.displayDate(self.endMonth() + ' ' + self.endYear());
@@ -572,16 +579,6 @@
             notInFuture:true,
             minDate: self.start
         });
-
-        self.clearEnd = function() {
-            self.endMonth('');
-            self.endYear('');
-            return true;
-        };
-
-        self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.displayDate());
-        }, self);
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -602,34 +599,6 @@
         });
         self.department = ko.observable('');
         self.degree = ko.observable('');
-
-        self.endMonth = ko.observable('');
-        self.endYear = ko.observable('').extend({
-            required: {
-                onlyIf: function() {
-                    return !!self.endMonth();
-                }
-            },
-            year: true,
-            pyDate: true
-        });
-        self.displayDate = ko.observable(' ');
-        self.ongoing = ko.observable(false);
-
-        self.startMonth = ko.observable('');
-        self.startYear = ko.observable('').extend({
-            required: {
-                onlyIf: function() {
-                    if (!!self.endMonth() && !!self.endYear() || self.ongoing() === true) {
-                        return true;
-                    }
-                },
-                message: 'Please enter a year for the start date.'
-            },
-            year: true, //checks that year input is four digits
-            pyDate: true
-        });
-
         self.start = ko.computed(function () {
             if (self.startMonth() && self.startYear()) {
                 return new Date(self.startMonth() + '1,' + self.startYear());
@@ -637,7 +606,6 @@
         }, self).extend({
             notInFuture: true
         });
-
         self.end = ko.computed(function() {
             if (self.endMonth() && self.endYear()) {
                 self.displayDate(self.endMonth() + ' ' + self.endYear());
@@ -647,16 +615,6 @@
             notInFuture:true,
             minDate: self.start
         });
-
-        self.clearEnd = function() {
-            self.endMonth('');
-            self.endYear('');
-            return true;
-        };
-
-        self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.displayDate());
-        }, self);
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {

@@ -45,7 +45,7 @@
                         <label>Start Date</label>
                         <div class="row">
                             <div class ="col-md-3">
-                                <select class="form-control" data-bind="options: startMonths,
+                                <select class="form-control" data-bind="options: months,
                                          optionsCaption: 'Month',
                                          value: startMonth">
                                 </select>
@@ -60,7 +60,7 @@
                         <label>End Date</label>
                             <div class="row">
                                 <div class ="col-md-3">
-                                    <select class="form-control" data-bind="options: endMonths,
+                                    <select class="form-control" data-bind="options: months,
                                          optionsCaption: 'Month',
                                          value: endMonth">
                                     </select>

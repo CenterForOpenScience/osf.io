@@ -87,7 +87,7 @@
             // Skip if dates invalid
             var dateVal = new Date(uwVal);
             var dateMin = new Date(uwMin);
-            if (dateVal == 'Invalid Date' || dateMin == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date' || dateMin.toString() === 'Invalid Date') {
                 return true;
             }
             // Check if end date is ongoing
@@ -109,7 +109,7 @@
             }
             // Skip if dates invalid
             var dateVal = new Date(uwVal);
-            if (dateVal == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date') {
                 return true;
             }
             // Compare dates
@@ -129,7 +129,7 @@
             //Skip if dates invalid
             var dateVal = new Date(uwVal);
 
-            if (dateVal == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date') {
                 return true;
             }
             // Compare dates
