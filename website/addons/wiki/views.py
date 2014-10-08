@@ -309,8 +309,6 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     wiki_page = node_to_use.get_wiki_page(wid)
     redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
 
-    # logger.info('WIKI PAGE: ' + wiki_page)
-
     if wiki_page:
         # Only update node wiki if content has changed
         content = wiki_page.content
@@ -352,15 +350,15 @@ def project_wiki_rename(**kwargs):
             for wiki in node.wiki_pages_current:
                 if new_name.lower() == wiki.lower():
                     raise HTTPError(http.CONFLICT)
-        else:
-            # TODO: This should go in a Node method like node.rename_wiki
-            node.wiki_pages_versions[new_name] = node.wiki_pages_versions[page.page_name]
-            del node.wiki_pages_versions[page.page_name]
-            node.wiki_pages_current[new_name] = node.wiki_pages_current[page.page_name]
-            del node.wiki_pages_current[page.page_name]
-            node.save()
-            page.rename(new_name)
-            return {'message': new_name}
+
+        # TODO: This should go in a Node method like node.rename_wiki
+        node.wiki_pages_versions[new_name] = node.wiki_pages_versions[page.page_name]
+        del node.wiki_pages_versions[page.page_name]
+        node.wiki_pages_current[new_name] = node.wiki_pages_current[page.page_name]
+        del node.wiki_pages_current[page.page_name]
+        node.save()
+        page.rename(new_name)
+        return {'message': new_name}
 
     raise HTTPError(http.BAD_REQUEST)
 
