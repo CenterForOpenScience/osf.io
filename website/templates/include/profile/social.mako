@@ -7,8 +7,8 @@
             <div class="form-group">
                 <label>Personal Site</label>
                 <div class="input-group">
-                <span class="input-group-addon">http://</span>
-                <input class="form-control" data-bind="value: personal" placeholder="personalsite.com"/>
+                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
+                <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>
                 </div>
             </div>
 
