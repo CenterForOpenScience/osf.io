@@ -13,8 +13,8 @@ from website.addons.github.exceptions import NotFoundError
 from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
 
-from .utils import create_mock_github
-mock_github = create_mock_github()
+# from .utils import create_mock_github
+# mock_github = create_mock_github()
 
 
 class TestCallbacks(OsfTestCase):
@@ -286,8 +286,11 @@ class TestAddonGithubUserSettings(OsfTestCase):
         self.oauth_settings.save()
         assert_equal(self.user_settings.oauth_token_type, "test token type")
 
-    def test_clear_auth(self):
+    @mock.patch('website.addons.github.api.GitHub.revoke_token')
+    def test_clear_auth(self, mock_revoke_token):
+        mock_revoke_token.return_value = True
         self.user_settings.clear_auth(save=True)
         assert_false(self.user_settings.github_user_name)
         assert_false(self.user_settings.oauth_token_type)
         assert_false(self.user_settings.oauth_access_token)
+        assert_false(self.user_settings.oauth_settings)
