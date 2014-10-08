@@ -13,8 +13,8 @@ from website.addons.github.exceptions import NotFoundError
 from website.addons.github.model import AddonGitHubUserSettings, AddonGitHubOauthSettings
 from website.addons.github.tests.factories import GitHubOauthSettingsFactory
 
-# from .utils import create_mock_github
-# mock_github = create_mock_github()
+from .utils import create_mock_github
+mock_github = create_mock_github()
 
 
 class TestCallbacks(OsfTestCase):
