@@ -62,9 +62,15 @@ api_routes = {
             json_renderer
         ),
         Rule(
-            '/app/<pid>.rss',
+            '/app/<pid>/rss/',
             'get',
             views.crud.query_app_rss,
+            xml_renderer
+        ),
+        Rule(
+            '/app/<pid>/resync/resourcelist',
+            'get',
+            views.crud.query_app_resourcelist,
             xml_renderer
         ),
     ],
