@@ -8,7 +8,7 @@
             <%include file="wiki/templates/toc.mako"/>
         </div>
         <div class="col-md-9">
-            <%include file="wiki/templates/status.mako/"/>
+            <%include file="wiki/templates/status.mako"/>
         </div>
         <div class="col-md-6 wiki">
             ${wiki_content}
