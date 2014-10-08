@@ -90,8 +90,10 @@ class TestUserValidation(OsfTestCase):
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
             'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1980, 1, 1),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1980,
         }]
         try:
             self.user.save()
@@ -104,12 +106,29 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_jobs_bad_end_date(self):
+        # end year is < start year
         self.user.jobs = [{
-            'institution': 'School of Lover Boys',
-            'department': 'Fancy Patter',
-            'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1960, 1, 1),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'position': fake.catch_phrase(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_schools_bad_end_date(self):
+        # end year is < start year
+        self.user.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
