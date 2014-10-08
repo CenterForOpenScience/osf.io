@@ -148,6 +148,7 @@ ADDONS_REQUESTED = [
     'forward',
     'github',
     'osffiles',
+    'osfstorage',
     's3',
     'twofactor',
     'wiki',

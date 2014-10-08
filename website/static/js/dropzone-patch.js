@@ -49,7 +49,7 @@
         /**
          * Get the url to use for the upload request.
          *
-         * NOTE: This is a hack to get S3 uploads to work.
+         * NOTE: This is a hack to get uploads via signed URLs to work.
          */
         Dropzone.prototype.getUrl = function(file) {
             var self = this;
@@ -59,12 +59,12 @@
                     url: file.signedUrlFrom,
                     data: JSON.stringify({
                         name: file.destination || file.name,
-                        type: file.type || 'application/octet-stream'
+                        type: file.type || 'application/octet-stream',
+                        size: file.size,
                     }),
                     contentType: 'application/json',
                     dataType: 'json',
                 }).success(function(url) {
-                  //self.options.signedUrlFrom = null;
                     return self.options.url = url;
                 });
             } else {
