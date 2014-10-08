@@ -37,10 +37,21 @@
             </div>
 
             <div class="form-group">
-                <label>Google Scholar</label>
+                <label>GitHub</label>
                 <div class="input-group">
-                <span class="input-group-addon">http://scholar.google.com/citations?user=</span>
-                <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
+                <span class="input-group-addon">https://github.com/</span>
+                <div data-bind="css: {'input-group': github.hasAddon()}">
+                    <input class="form-control" data-bind="value: github" placeholder="username"/>
+                    <span
+                            class="input-group-btn"
+                            data-bind="if: github.hasAddon()"
+                        >
+                        <button
+                                class="btn btn-default"
+                                data-bind="click: github.importAddon"
+                            >Import</button>
+                    </span>
+                    </div>
                 </div>
             </div>
 
@@ -61,21 +72,10 @@
             </div>
 
             <div class="form-group">
-                <label>GitHub</label>
+                <label>Google Scholar</label>
                 <div class="input-group">
-                <span class="input-group-addon">https://github.com/</span>
-                <div data-bind="css: {'input-group': github.hasAddon()}">
-                    <input class="form-control" data-bind="value: github" placeholder="username"/>
-                    <span
-                            class="input-group-btn"
-                            data-bind="if: github.hasAddon()"
-                        >
-                        <button
-                                class="btn btn-default"
-                                data-bind="click: github.importAddon"
-                            >Import</button>
-                    </span>
-                    </div>
+                <span class="input-group-addon">http://scholar.google.com/citations?user=</span>
+                <input class="form-control" data-bind="value: scholar" placeholder="profileID"/>
                 </div>
             </div>
 
