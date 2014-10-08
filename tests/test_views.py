@@ -8,7 +8,6 @@ import datetime as dt
 import mock
 import httplib as http
 
-
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 from werkzeug.wrappers import Response
@@ -776,15 +775,19 @@ class TestUserProfile(OsfTestCase):
             'institution': 'an institution',
             'department': 'a department',
             'title': 'a title',
-            'start': '2001-01-01',
-            'end': '2001-01-02',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'title': None,
-            'start': '2001-05-03',
-            'end': None,
+            'startMonth': 'May',
+            'startYear': '2001',
+            'endMonth': None,
+            'endYear': None,
             'ongoing': True,
         }]
         payload = {'contents': jobs}
@@ -800,20 +803,24 @@ class TestUserProfile(OsfTestCase):
         for i, job in enumerate(jobs):
             assert_equal(job, res.json['contents'][i])
 
-    def test_userialize_and_serialize_schools(self):
+    def test_unserialize_and_serialize_schools(self):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
             'degree': 'a degree',
-            'start': '2001-01-01',
-            'end': '2001-01-02',
+            'startMonth': 1,
+            'startYear': 2001,
+            'endMonth': 5,
+            'endYear': 2001,
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
-            'start': '2001-05-03',
-            'end': None,
+            'startMonth': 5,
+            'startYear': 2001,
+            'endMonth': None,
+            'endYear': None,
             'ongoing': True,
         }]
         payload = {'contents': schools}
@@ -828,6 +835,67 @@ class TestUserProfile(OsfTestCase):
         )
         for i, job in enumerate(schools):
             assert_equal(job, res.json['contents'][i])
+
+    def test_unserialize_jobs(self):
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # jobs field is updated
+        assert_equal(self.user.jobs, jobs)
+
+    def test_unserialize_schools(self):
+        schools = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'degree': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': schools}
+        url = api_url_for('unserialize_schools')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # schools field is updated
+        assert_equal(self.user.schools, schools)
+
+    def test_unserialize_jobs_valid(self):
+        jobs_cached = self.user.jobs
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestAddingContributorViews(OsfTestCase):

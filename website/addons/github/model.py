@@ -116,36 +116,31 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-        """
-        if there is only one osf user linked to this github user oauth, revoke the token,
-        otherwise, disconnect the osf user from the addongithuboauthsettings
-        """
-        if self.oauth_settings:
-            if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
-                self.oauth_settings = None
+        connection = GitHub.from_settings(self)
+        try:
+            connection.revoke_token()
+        except GitHubError as error:
+            if error.code == http.UNAUTHORIZED:
+                return (
+                    'Your GitHub credentials were removed from the OSF, but we '
+                    'were unable to revoke your access token from GitHub. Your '
+                    'GitHub credentials may no longer be valid.'
+                )
             else:
-                connection = GitHub.from_settings(self)
-                try:
-                    connection.revoke_token()
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        return (
-                            'Your GitHub credentials were removed from the OSF, but we '
-                            'were unable to revoke your access token from GitHub. Your '
-                            'GitHub credentials may no longer be valid.'
-                        )
-                    else:
-                        raise
+                raise
 
     def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
             node_settings.deauthorize(auth=auth, save=True)
-        self.revoke_token()
-        # Clear tokens on oauth_settings
+
+        # if there is only one osf user linked to this github user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the addongithuboauthsettings
         if self.oauth_settings:
-            self.oauth_settings.oauth_access_token = None
-            self.oauth_settings.oauth_token_type = None
-            self.oauth_settings.save()
+            if len(self.oauth_settings.addongithubusersettings__accessed) < 2:
+                self.revoke_token()
+
+        # Clear tokens on oauth_settings
+            self.oauth_settings = None
         if save:
             self.save()
 

@@ -423,8 +423,6 @@ class NodeLog(StoredObject):
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
-    count_public = fields.IntegerField(default=0)
-    count_total = fields.IntegerField(default=0)
 
     def __repr__(self):
         return '<Tag() with id {self._id!r}>'.format(self=self)
@@ -1606,9 +1604,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
-            new_tag.count_total += 1
-            if self.is_public:
-                new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
             self.add_log(

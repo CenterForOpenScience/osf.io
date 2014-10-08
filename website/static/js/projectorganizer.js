@@ -284,13 +284,13 @@
                     bootbox.alert('Error: ' + textStatus + '. ' + errorThrown);
                 });
             } else {
-                console.error('Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
+                Raven.captureMessage('Project dashboard: Parent node (' + itemParentNodeID + ') == Folder Node (' + theFolderNodeID + ')');
             }
         } else {
             if (typeof folder === 'undefined') {
-                console.error('onDrop folder is undefined.');
+                Raven.captureMessage('onDrop folder is undefined.');
             }/* else {
-                console.error('onDrop folder is null.');
+                Raven.captureMessage('onDrop folder is null.');
             }*/
         }
         $('.project-organizer-dand').css('cursor', 'default');
