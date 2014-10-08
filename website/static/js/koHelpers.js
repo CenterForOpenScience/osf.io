@@ -128,7 +128,8 @@
 
             //Skip if dates invalid
             var dateVal = new Date(uwVal);
-            if (dateVal === 'Invalid Date') {
+
+            if (dateVal == 'Invalid Date') {
                 return true;
             }
             // Compare dates

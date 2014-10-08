@@ -51,6 +51,12 @@
         return self;
     };
 
+    /**
+     * A mixin to handle custom date serialization on ContentModels with a separate month input.
+     *
+     * Months are converted to their integer equivalents on serialization
+     * for db storage and back to strings on unserialization to display to the user.
+     */
     var DateMixin = function() {
         var self = this;
         self.startMonths = ko.observableArray(['January', 'February', 'March', 'April', 'May', 'June',
