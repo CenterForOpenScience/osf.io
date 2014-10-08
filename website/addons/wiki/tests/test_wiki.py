@@ -98,7 +98,6 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
-
     def test_project_wiki_edit_post_with_new_wid_and_no_content(self):
         page_name = fake.catch_phrase()
 
@@ -191,17 +190,17 @@ class TestWikiDelete(OsfTestCase):
         self.lion_wiki = self.project.get_wiki_page('Lions')
 
     def test_project_wiki_delete(self):
-        assert 'elephants' in self.project.wiki_pages_current
+        assert 'Elephants' in self.project.wiki_pages_current
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wid='elephants'
+            wid='Elephants'
         )
         self.app.delete(
             url,
             auth=self.auth
         )
         self.project.reload()
-        assert 'elephants' not in self.project.wiki_pages_current
+        assert 'Elephants' not in self.project.wiki_pages_current
 
 
 class TestWikiRename(OsfTestCase):
@@ -234,7 +233,7 @@ class TestWikiRename(OsfTestCase):
         self.app.put_json(
             self.url,
             {'value': new_name, 'pk': self.page._id},
-            auth=self.auth,
+            auth=self.auth
         )
         self.project.reload()
 
