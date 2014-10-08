@@ -62,7 +62,7 @@ api_routes = {
             json_renderer
         ),
         Rule(
-            '/app/<pid>.rss',
+            '/app/<pid>/rss/',
             'get',
             views.crud.query_app_rss,
             xml_renderer
@@ -126,7 +126,7 @@ metadata_routes = {
         Rule(
             '/app/<pid>/metadata/',
             'get',
-            views.crud.metadata.get_metadatums,
+            views.crud.metadata.get_metadata_ids,
             json_renderer
         ),
         Rule(

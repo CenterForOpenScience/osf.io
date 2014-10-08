@@ -44,7 +44,7 @@ def query_app(node_addon, **kwargs):
         'total': ret['hits']['total']
     }
 
-# GET
+# POST
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_json(node_addon, **kwargs):
