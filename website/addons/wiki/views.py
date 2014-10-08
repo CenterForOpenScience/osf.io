@@ -9,7 +9,7 @@ from flask import request
 
 from framework import status
 from framework.forms.utils import sanitize
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import from_mongo, to_mongo
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 
@@ -65,15 +65,15 @@ def project_wiki_home(**kwargs):
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
-
+    wid_key = to_mongo(wid).lower()
     # Skip if page doesn't exist; happens on new projects before
     # default "home" page is created
-    if wid not in node.wiki_pages_versions:
+    if wid_key not in node.wiki_pages_versions:
         return []
 
     versions = [
         NodeWikiPage.load(page)
-        for page in node.wiki_pages_versions[wid]
+        for page in node.wiki_pages_versions[wid_key]
     ]
 
     return [
@@ -360,22 +360,24 @@ def project_wiki_rename(**kwargs):
             message_short='Invalid request',
             message_long='The wiki home page cannot be renamed.'
         ))
-    new_name = request.json.get('value', None)
-    if new_name != sanitize(new_name):
+    old_name_key = to_mongo(page.page_name).lower()
+    new_name_key = request.json.get('value', None)
+    new_name_key = to_mongo(new_name_key).lower()
+    if new_name_key != sanitize(new_name_key):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
-    if page and new_name:
-        if new_name.lower() in node.wiki_pages_current:
+    if page and new_name_key:
+        if new_name_key in node.wiki_pages_current:
             raise HTTPError(http.CONFLICT)
 
         # TODO: This should go in a Node method like node.rename_wiki
-        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
-        del node.wiki_pages_versions[page.page_name.lower()]
-        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
-        del node.wiki_pages_current[page.page_name.lower()]
+        node.wiki_pages_versions[new_name_key] = node.wiki_pages_versions[old_name_key]
+        del node.wiki_pages_versions[old_name_key]
+        node.wiki_pages_current[new_name_key] = node.wiki_pages_current[old_name_key]
+        del node.wiki_pages_current[old_name_key]
         node.save()
-        page.rename(new_name)
-        return {'message': new_name}
+        page.rename(new_name_key)
+        return {'message': new_name_key}
 
     raise HTTPError(http.BAD_REQUEST)
 

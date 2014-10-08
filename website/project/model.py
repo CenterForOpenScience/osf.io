@@ -2554,8 +2554,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def delete_node_wiki(self, node, page, auth):
+        page_name_key = to_mongo(page.page_name).lower()
 
-        del node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page_name_key]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
