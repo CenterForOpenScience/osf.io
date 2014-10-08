@@ -54,15 +54,15 @@ def query_app_json(node_addon, **kwargs):
         del request.json['format']
     except KeyError:
         pass
-
-    try:
-        ret = search(request.json, _type=node_addon.namespace, index='metadata')
-    except Exception:
-        # TODO Fix me
-        return {
-            'results': [],
-            'total': 0
-        }
+    request_data = request.json
+    # try:
+    ret = search(request_data, _type=node_addon.namespace, index='metadata')
+    # except Exception:
+    #     # TODO Fix me
+    #     return {
+    #         'results': [],
+    #         'total': 0
+    #     }
 
     return {
         'results': [blob['_source'] for blob in ret['hits']['hits']],
