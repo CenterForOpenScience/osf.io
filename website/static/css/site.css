@@ -1455,10 +1455,6 @@ div#logScope a.moreLogs{
     margin-left: 7px;
 }
 
-.private-link-name{
-    width: 60%
-}
-
 .list-overflow{
     max-height: 200px;
     overflow-y: auto;
