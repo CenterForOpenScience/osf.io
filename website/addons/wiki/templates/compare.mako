@@ -12,7 +12,7 @@
             <%include file="wiki/templates/status.mako"/>
         </div>
         <div class="col-md-6 wiki">
-            ${wiki_content}
+            ${wiki_content | n}
         </div>
         <div class="col-md-3">
             <%include file="wiki/templates/history.mako" />
