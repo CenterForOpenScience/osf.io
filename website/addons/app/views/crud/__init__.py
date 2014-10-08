@@ -12,6 +12,7 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
+from website.search.exceptions import SearchException
 from website.project import new_node, Node
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
@@ -55,14 +56,13 @@ def query_app_json(node_addon, **kwargs):
     except KeyError:
         pass
     request_data = request.json
-    # try:
-    ret = search(request_data, _type=node_addon.namespace, index='metadata')
-    # except Exception:
-    #     # TODO Fix me
-    #     return {
-    #         'results': [],
-    #         'total': 0
-    #     }
+    try:
+        ret = search(request_data, _type=node_addon.namespace, index='metadata')
+    except SearchException:
+        return {
+            'results': [],
+            'total': 0
+        }
 
     return {
         'results': [blob['_source'] for blob in ret['hits']['hits']],
