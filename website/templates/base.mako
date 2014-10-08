@@ -14,6 +14,20 @@
     <script>
         Raven.config('${ sentry_dsn_js }', {}).install();
     </script>
+    % else:
+    <script>
+        window.Raven = {};
+        Raven.captureMessage = function(msg, context) {
+            console.error('=== Mock Raven.captureMessage called with: ===');
+            console.log('Message: ' + msg);
+            console.log(context);
+        };
+        Raven.captureException = function(err, context) {
+            console.error('=== Mock Raven.captureException called with: ===');
+            console.log('Error: ' + err);
+            console.log(context);
+        };
+    </script>
     % endif
 
     <!-- Facebook display -->
