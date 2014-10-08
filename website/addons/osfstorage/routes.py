@@ -60,7 +60,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/',
             ],
             'post',
-            views.osf_storage_request_signed_url,
+            views.osf_storage_request_upload_url,
             json_renderer,
         ),
 

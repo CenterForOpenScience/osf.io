@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -242,6 +243,70 @@ class TestHookViews(OsfTestCase):
 
     def test_finish_hook_status_error_already_complete(self):
         pass
+
+
+class TestUploadFile(OsfTestCase):
+
+    def setUp(self):
+        super(TestUploadFile, self).setUp()
+        self.project = ProjectFactory()
+        self.node_settings = self.project.get_addon('osfstorage')
+
+    def request_upload_url(self, name, size, content_type, path=None):
+        return self.app.post_json(
+            self.project.api_url_for(
+                'osf_storage_request_upload_url',
+                path=path,
+            ),
+            {
+                'name': name,
+                'size': size,
+                'type': content_type,
+            },
+            auth=self.project.creator.auth,
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_request_upload_url_without_path(self, mock_get_url):
+        mock_get_url.return_value = 'http://brian.queen.com/'
+        name = 'red-special.png'
+        size = 1024
+        content_type = 'image/png'
+        res = self.request_upload_url(name, size, content_type)
+        self.project.reload()
+        mock_get_url.assert_called_with(
+            self.project,
+            size,
+            content_type,
+            name,
+        )
+        assert_equal(res.status_code, 200)
+        # Response wraps URL in quotation marks
+        assert_equal(res.body.strip('"'), mock_get_url.return_value)
+
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_request_upload_url_with_path(self, mock_get_url):
+        mock_get_url.return_value = 'http://brian.queen.com/'
+        name = 'red-special.png'
+        size = 1024
+        content_type = 'image/png'
+        res = self.request_upload_url(name, size, content_type, path='instruments')
+        self.project.reload()
+        mock_get_url.assert_called_with(
+            self.project,
+            size,
+            content_type,
+            'instruments/' + name,
+        )
+
+    def test_request_upload_url_missing_args(self):
+        res = self.app.post_json(
+            self.project.api_url_for('osf_storage_request_upload_url'),
+            {'name': 'red-special.png'},
+            auth=self.project.creator.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
 
 class TestViewFile(OsfTestCase):

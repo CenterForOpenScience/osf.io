@@ -1,23 +1,21 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import httplib
 import logging
 import functools
 
-# TODO: Use redirect wrapper
-from flask import request, redirect
+from flask import request
 
 from modularodm import Q
 
+from framework.flask import redirect
 from framework.exceptions import HTTPError
 
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor, must_be_contributor_or_public,
     must_have_permission, must_not_be_registration, must_have_addon,
 )
-from website import settings
 from website.util import rubeus
 from website.models import NodeLog
 from website.project.utils import serialize_node
@@ -36,7 +34,7 @@ logger = logging.getLogger(__name__)
 @must_not_be_registration
 @must_have_permission('write')
 @must_have_addon('osfstorage', 'node')
-def osf_storage_request_signed_url(auth, node_addon, **kwargs):
+def osf_storage_request_upload_url(auth, node_addon, **kwargs):
     node = kwargs['node'] or kwargs['project']
     path = kwargs.get('path', '')
     try:
@@ -46,7 +44,7 @@ def osf_storage_request_signed_url(auth, node_addon, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
     file_path = os.path.join(path, name)
-    return utils.get_upload_url(size, content_type, file_path)
+    return utils.get_upload_url(node, size, content_type, file_path)
 
 
 def make_error(code, reason):
@@ -153,7 +151,7 @@ UPLOAD_PENDING_ERROR = HTTPError(
         'message_short': 'File upload in progress',
         'message_long': (
             'File upload is in progress. Please check back later to retrieve '
-            'this file.',
+            'this file.'
         ),
     }
 )
@@ -202,7 +200,7 @@ def get_version_helper(file_record, version_str):
     """
     if version_str is None:
         return (
-            len(file_record.versions) - 1,
+            len(file_record.versions),
             file_record.versions[-1],
         )
     try:
@@ -321,7 +319,7 @@ def osf_storage_root(node_settings, auth, **kwargs):
         name='',
         permissions=auth,
         urls={
-            'upload': node.api_url_for('osf_storage_request_signed_url'),
+            'upload': node.api_url_for('osf_storage_request_upload_url'),
             'fetch': node.api_url_for('osf_storage_hgrid_contents'),
         },
         nodeUrl=node.url,

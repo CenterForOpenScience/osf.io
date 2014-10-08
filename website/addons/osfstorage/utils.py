@@ -60,7 +60,6 @@ class OsfStorageNodeLogger(object):
             self.node.save()
 
 
-
 url_signer = sign.Signer(
     osf_storage_settings.URLS_HMAC_SECRET,
     osf_storage_settings.URLS_HMAC_DIGEST,
@@ -95,7 +94,7 @@ def build_hgrid_urls(item, node):
     if isinstance(item, model.FileTree):
         return {
             'upload': node.api_url_for(
-                'osf_storage_request_signed_url',
+                'osf_storage_request_upload_url',
                 path=item.path,
             ),
             'fetch': node.api_url_for(
@@ -176,7 +175,7 @@ def build_callback_urls(node, path):
     }
 
 
-def get_upload_url(size, content_type, file_path):
+def get_upload_url(node, size, content_type, file_path):
     payload = {
         'size': size,
         'type': content_type,
@@ -231,7 +230,6 @@ def render_file(file_obj, file_version, version_idx):
     node_settings = file_obj.node.get_addon('osfstorage')
     rendered = get_cache_content(node_settings, cache_filename)
     if rendered is None:
-        # TODO: Add error handling
         download_url = get_download_url(file_version)
         file_response = requests.get(download_url)
         rendered = get_cache_content(
