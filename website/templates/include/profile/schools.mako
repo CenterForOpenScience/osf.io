@@ -137,8 +137,8 @@
                         <th>Institution</th>
                         <th>Department</th>
                         <th>Degree</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
+                        <th>Start&nbsp;Date</th>
+                        <th>End&nbsp;Date</th>
                     </tr>
                 </thead>
 
