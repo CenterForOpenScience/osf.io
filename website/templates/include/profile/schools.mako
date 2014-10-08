@@ -29,6 +29,9 @@
                     <div class="form-group">
                         <label>Institution</label>
                         <input class="form-control" data-bind="value: institution" />
+                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: institution"></p>
+                        </div>
                     </div>
 
                     <div class="form-group">
