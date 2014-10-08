@@ -120,10 +120,8 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         if there is only one osf user linked to this github user oauth, revoke the token,
         otherwise, disconnect the osf user from the addongithuboauthsettings
         """
-        if self.oauth_settings:
-            if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
-                self.oauth_settings = None
-            else:
+        if self.oauth_settings and \
+                        len(self.oauth_settings.addongithubusersettings__accessed) == 1:
                 connection = GitHub.from_settings(self)
                 try:
                     connection.revoke_token()
@@ -143,9 +141,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         self.revoke_token()
         # Clear tokens on oauth_settings
         if self.oauth_settings:
-            self.oauth_settings.oauth_access_token = None
-            self.oauth_settings.oauth_token_type = None
-            self.oauth_settings.save()
+            self.oauth_settings = None
         if save:
             self.save()
 
