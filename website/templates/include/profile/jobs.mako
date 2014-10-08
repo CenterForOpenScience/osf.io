@@ -28,7 +28,8 @@
 
                     <div class="form-group">
                         <label>Institution / Employer</label>
-                        <input class="form-control" data-bind="value: institution" />
+                        <input class="form-control" data-bind="value: institution"
+                            placeholder="Required"/>
                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
@@ -49,7 +50,7 @@
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
-                                         optionsCaption: 'Month',
+                                         optionsCaption: '-- Month --',
                                          value: startMonth">
                                 </select>
                             </div>
@@ -64,7 +65,7 @@
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,
-                                         optionsCaption: 'Month',
+                                         optionsCaption: '-- Month --',
                                          value: endMonth">
                                     </select>
                                 </div>
