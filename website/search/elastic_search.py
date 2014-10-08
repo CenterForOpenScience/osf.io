@@ -51,9 +51,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0, size=10):
+def search(raw_query, start=0, size=10, index='website'):
     orig_query = raw_query
-
     query, filtered_query = _build_query(raw_query, start, size)
 
     # Get document counts by type
@@ -67,7 +66,7 @@ def search(raw_query, start=0, size=10):
         except KeyError:
             pass
 
-        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
+        counts[type + 's'] = elastic.count(count_query, index=index, doc_type=type)['count']
 
     # Figure out which count we should display as a total
     for type in TYPES:
@@ -77,8 +76,7 @@ def search(raw_query, start=0, size=10):
         counts['total'] = sum([x for x in counts.values()])
 
     # Run the real query and get the results
-    raw_results = elastic.search(query, index='website')
-
+    raw_results = elastic.search(query, index=index)
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
     formatted_results, tags = create_result(results, counts)
 
@@ -254,6 +252,7 @@ def update_node(node, index='website'):
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
             elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
+
 @requires_search
 def update_user(user):
     if not user.is_active() or user.is_system_user:
@@ -274,6 +273,7 @@ def update_user(user):
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
+
 @requires_search
 def delete_all():
     indices = [
@@ -290,6 +290,7 @@ def delete_all():
             logger.warn(e)
             logger.warn('The index "{}" was not deleted from elasticsearch'.format(index))
 
+
 @requires_search
 def delete_doc(elastic_document_id, node):
     category = 'registration' if node.is_registration else node.project_or_component
@@ -297,6 +298,7 @@ def delete_doc(elastic_document_id, node):
         elastic.delete('website', category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
+
 
 def _load_parent(parent):
     parent_info = {}
@@ -499,8 +501,12 @@ def update_metadata(metadata):
     data = metadata.to_json()
     elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id)
 
+
 @requires_search
 def search_metadata(query, _type, start, size):
+    if isinstance(query, dict):
+        return search_metadata_dict(query, _type)
+
     query = {
         'query': _metadata_inner_query(query),
         'from': start,
@@ -509,35 +515,51 @@ def search_metadata(query, _type, start, size):
 
     return elastic.search(query, index='metadata', doc_type=_type)
 
+def search_metadata_dict(query, _type):
+    return elastic.search(query, index='metadata', doc_type=_type)
 
 def _metadata_inner_query(query):
+    if query == '*':
+        return {
+            'query_string': {
+                'default_field': '_all',
+                'query': '*',
+                'analyze_wildcard': True,
+            }
+        }
     query = query.split(';')
     filters = []
     for item in query:
         item = item.split(':')
+
         if len(item) == 1:
             item = ['_all', item[0]]
-
-        filters.append({
-            "query": {
-                'match': {
-                    item[0]: {
-                        'query': item[1],
-                        'operator': 'and',
-                        'type': 'phrase',
+        if len(item[1].split(',')) > 1:
+            filters.append({
+                'terms': {
+                    item[0]: item[1].split(',')
+                }
+            })
+        else:
+            filters.append({
+                "query": {
+                    'match': {
+                        item[0]: {
+                            'query': item[1],
+                            'operator': 'and',
+                            'type': 'phrase',
+                        }
                     }
                 }
-            }
-        })
+            })
 
-        inner_query = {
-            'filtered': {
-                'filter': {
-                    'and': filters
-                },
+    inner_query = {
+        'filtered': {
+            'filter': {
+                'and': filters,
             },
-        }
-
+        },
+    }
     return inner_query
 
 

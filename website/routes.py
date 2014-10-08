@@ -481,7 +481,7 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
-
+        Rule('/search/share/', 'get', search_views.share_search, OsfWebRenderer('share_search.mako')),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
         Rule(

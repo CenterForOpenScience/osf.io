@@ -4,62 +4,131 @@ import httplib as http
 
 from flask import request
 
-from framework.guid.model import Metadata
+from modularodm.exceptions import ValidationError
+
+from framework.auth import Auth
 from framework.exceptions import HTTPError
 
-from website.project.decorators import (
-    must_have_addon, must_have_permission,
-    must_not_be_registration, must_be_contributor_or_public
-)
+from website.project import new_node, Node
+from website.addons.app.model import Metadata
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
+from website.project.decorators import must_be_contributor_or_public
 
+
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def get_metadatums(node_addon, **kwargs):
+    return {
+        'ids': [m._id for m in node_addon.metadata__owner]
+    }
 
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
-def get_metadata(node_addon, guid, **kwargs):
+def get_metadata(node_addon, mid, **kwargs):
     try:
-        return node_addon.get_data(guid)
-    except TypeError:
-        pass
-
-    try:
-        return Metadata.load(guid).to_json()
+        return Metadata.load(mid).to_json()
     except TypeError:
         raise HTTPError(http.NOT_FOUND)
 
 
-# POST, PUT
+# PUT
 @must_have_permission('write')
 @must_have_addon('app', 'node')
-def add_metadata(node_addon, guid, **kwargs):
+def create_metadata(node_addon, **kwargs):
     metadata = request.json
 
     if not metadata:
         raise HTTPError(http.BAD_REQUEST)
-    try:
-        node_addon.attach_data(guid, metadata)
-        node_addon.save()
-    except TypeError:
+
+    metastore = Metadata(app=node_addon, data=metadata)
+    metastore.save()
+
+    return {
+        'id': metastore._id
+    }, http.CREATED
+
+
+@must_have_permission('write')
+@must_have_addon('app', 'node')
+def promote_metadata(node_addon, mid, **kwargs):
+    metastore = Metadata.load(mid)
+
+    if not metastore:
         raise HTTPError(http.BAD_REQUEST)
+
+    creator = node_addon.system_user
+    tags = request.json.get('tags', []) or metastore.get('tags', [])
+    contributors = request.json.get('contributors', []) or metastore.get('contributors', [])
+    category = request.json.get('category') or metastore.get('category', 'project')
+    title = request.json.get('title') or metastore.get('title')
+    project = Node.load(request.json.get('parent') or metastore.get('parent'))
+    description = request.json.get('description') or metastore.get('description')
+    node = new_node(category, title, creator, description, project)
+
+    for tag in tags:
+        node.add_tag(tag, Auth(creator))
+
+    for contributor in contributors:
+        try:
+            node.add_unregistered_contributor(contributor['name'],
+                contributor.get('email'), Auth(creator))
+        except ValidationError:
+            pass  # A contributor with the given email has already been added
+    node.save()
+
+    metastore['attached'] = {
+        'nid': node._id,
+        'pid': node.parent_id
+    }
+    metastore.save()
+
+    return {
+        'id': node._id,
+        'url': node.url,
+        'apiUrl': node.api_url
+    }, http.CREATED
+
+
+# PUT
+@must_have_permission('write')
+@must_have_addon('app', 'node')
+def update_metadata(node_addon, mid, **kwargs):
+    metadata = request.json
+
+    if not metadata:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        Metadata.load(mid).update(metadata)
+        return http.OK
+    except TypeError:
+        raise HTTPError(http.NOT_FOUND)
 
 
 # DELETE
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
-def delete_metadata(node_addon, guid, **kwargs):
+def delete_metadata(node_addon, mid, **kwargs):
+    metastore = Metadata.load(mid)
+
+    if not metastore:
+        return HTTPError(http.NOT_FOUND)
+
     key = request.args.get('key', None)
 
     if key:
-        key = key.split(',')
+        for k in key.split(','):
+            try:
+                del metastore[k]
+            except KeyError:
+                pass
 
-    try:
-        node_addon.delete_data(guid, keys=key)
-    except KeyError:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if key:
         return {
             'deleted': key
         }, http.OK
+
+    Metadata.remove_one(metastore, True)
 
     return HTTPError(http.NO_CONTENT)

@@ -1,8 +1,9 @@
 from . import model
-from . import routes
 from . import views
+from . import routes
 
 MODELS = [
+    model.Metadata,
     model.AppNodeSettings,
 ]
 

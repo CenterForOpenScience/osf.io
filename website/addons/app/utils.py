@@ -3,89 +3,45 @@
 """
 from __future__ import unicode_literals
 
-from modularodm.exceptions import ValidationError
+import logging
+from datetime import datetime
+from cStringIO import StringIO
 
-from framework.auth import Auth
-from framework.guid.model import Metadata, Guid
+from dateutil.parser import parse
 
-from website.project import new_node, Node
-from website.search import search
+import PyRSS2Gen as pyrss
 
-def find_or_create_from_report(report, app):
-    # @chrisseto TODO: Find a better way to do this
-    # The parent projects need to be marked, currently
-    # this could be overwritten
-    search_string = 'is_project:true;doi:"{doc[id][doi]}";title:"{doc[title]}"'
-    search_string = search_string.format(doc=report)
-
-    try:
-        ret = search.search(search_string, _type=app.namespace, index='metadata')
-    except Exception:
-        ret = None
-
-    if ret and ret['hits']['total'] > 0:
-        if ret['hits']['hits'][0]['_source']['title'] == report['title']:
-            return Node.load(ret['hits']['hits'][0]['_source']['guid'])
-
-    resource = new_node('project', report['title'], app.system_user, description=report.get('description'))
-    resource.set_privacy('public')
-    resource.save()
-    # TODO Discuss the below
-    app.attach_system_data(resource._id, {'is_project': 'true'})
-    return resource
+from website import settings
 
 
-def find_or_create_report(node, report, node_addon, metadata=None):
-    for child in node.nodes:
-        provider = child.title.split(' :')[0]
-        if provider == report['source']:
-            return child
-
-    report_node = new_node('report', '{}: {}'.format(report['source'], report['title']), node_addon.system_user,
-            description=report.get('description'), project=node)
-
-    report_node.set_privacy('public')
-
-    for contributor in report['contributors']:
-        try:
-            report_node.add_unregistered_contributor(contributor['full_name'],
-                    contributor.get('email'), Auth(node_addon.system_user),
-                    permissions=['read'])
-        except ValidationError:
-            pass  # A contributor with the given email has already been added
-
-    for tag in report['tags']:
-        report_node.add_tag(tag, Auth(node_addon.system_user))
-
-    report_node.save()
-
-    if not metadata:
-        node_addon.attach_data(report_node._id, report)
-    else:
-        metadata.guid = report_node._id
-        metadata.save()
-
-        guid = Guid.load(report_node._id)
-        guid.metastore[node_addon.namespace] = metadata._id
-        guid.save()
-
-    return report_node
+logger = logging.getLogger(__name__)
 
 
-def create_orphaned_metadata(node_addon, report):
-    metastore = Metadata(app=node_addon)
-    metastore.update(report)
-    metastore.system_data['is_orphan'] = True
-    metastore.system_data['guid'] = metastore._id
-    metastore.save()
+def elastic_to_rss(name, data, query):
+    count = len(data)
 
-    search.update_metadata(metastore)
+    items = [
+        pyrss.RSSItem(
+            guid=doc['guid'],
+            link='{}{}/'.format(settings.DOMAIN, doc['guid']),
+            title=doc.get('title', 'No title provided'),
+            description=doc.get('description', 'No description provided'),
+            pubDate=parse(doc.get('timestamp'))
+        )
+        for doc in data
+    ]
 
-    return metastore
+    logger.info("{n} documents added to RSS feed".format(n=len(items)))
 
+    rss = pyrss.RSS2(
+        title='{name}: RSS for query: "{query}"'.format(name=name, query=query),
+        link='{base_url}rss?q={query}'.format(base_url=settings.DOMAIN, query=query),
+        items=items,
+        description='{n} results, {m} most recent displayed in feed'.format(n=count, m=len(items)),
+        lastBuildDate=str(datetime.now()),
+    )
 
-def is_claimed(node):
-    for contributor in node.contributors:
-        if contributor.is_claimed and not contributor.is_system_user:
-            return True
-    return False
+    f = StringIO()
+    rss.write_xml(f)
+
+    return f.getvalue()

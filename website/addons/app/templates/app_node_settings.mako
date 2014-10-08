@@ -1,6 +1,6 @@
 <!-- TODO -->
 <h4 class="addon-title">
-    Application <small>${application_url}</small>
+    Application
 </h4>
 
 
@@ -39,6 +39,6 @@
 
 <script>
     $script('/static/addons/app/appNodeConfig.js', function() {
-        AppNodeConfig('#appScope', '${node['api_url'] + 'app/routes/'}');
+        AppNodeConfig('#appScope', '${'/api/v1/app/' + node['id'] + '/routes/'}');
     });
 </script>

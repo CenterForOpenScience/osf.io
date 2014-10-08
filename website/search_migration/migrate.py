@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from modularodm.query.querydialect import DefaultQueryDialect as Q
 from website.models import Node
 from framework.auth import User
-from framework.guid.model import Metadata, Guid
+from website.addons.app.model import Metadata
 import website.search.search as search
 
 from website.app import init_app
@@ -27,8 +27,7 @@ def migrate_users():
 
 def migrate_metadata():
     for data in Metadata.find():
-        if data.app and Guid.load(data.guid):
-            search.update_metadata(data)
+        search.update_metadata(data)
 
 def main():
 
