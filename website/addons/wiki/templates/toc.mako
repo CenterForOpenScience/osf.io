@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
 <div class="osf-sidenav hidden-print" role="complementary">
 
     <ul class="nav bs-sidenav" style="margin: 0;">

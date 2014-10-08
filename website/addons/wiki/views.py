@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup
 from flask import request
 
 from framework import status
-from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo, to_mongo
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
@@ -49,7 +48,7 @@ def wiki_widget(**kwargs):
 
     rv = {
         'complete': True,
-        'content': wiki_html,
+        'content': str(wiki_html),
         'more': more,
         'include': False,
     }
@@ -321,15 +320,8 @@ def project_wiki_edit(auth, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(wid, auth, **kwargs):
-
     node = kwargs['node'] or kwargs['project']
-
-    if wid != sanitize(wid):
-        status.push_status_message("This is an invalid wiki page name")
-        raise HTTPError(http.BAD_REQUEST, redirect_url=node.web_url_for('project_wiki_home'))
-
     wiki_page = node.get_wiki_page(wid)
-
     redirect_url = node.web_url_for('project_wiki_page', wid=wid)
 
     if wiki_page:
@@ -345,6 +337,7 @@ def project_wiki_edit_post(wid, auth, **kwargs):
         # with wid does not exist
         node.update_node_wiki(wid, request.form['content'], auth)
         ret = {'status': 'success'}
+
     return ret, http.FOUND, None, redirect_url
 
 
@@ -355,16 +348,15 @@ def project_wiki_rename(**kwargs):
     node = kwargs['node'] or kwargs['project']
     wid = request.json.get('pk', None)
     page = NodeWikiPage.load(wid)
+
     if page.page_name.lower() == 'home':
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short='Invalid request',
             message_long='The wiki home page cannot be renamed.'
         ))
+
     old_name_key = to_mongo(page.page_name).lower()
-    new_name_key = request.json.get('value', None)
-    new_name_key = to_mongo(new_name_key).lower()
-    if new_name_key != sanitize(new_name_key):
-        raise HTTPError(http.UNPROCESSABLE_ENTITY)
+    new_name_key = to_mongo(request.json.get('value', None)).lower()
 
     if page and new_name_key:
         if new_name_key in node.wiki_pages_current:

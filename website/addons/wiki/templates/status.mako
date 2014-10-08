@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
 % if user['can_edit']:
 <nav class="navbar navbar-default" style="display: inline-block; float: right; margin-left: 20px;">
     <div class="navbar-collapse">

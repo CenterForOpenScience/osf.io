@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
   <!-- New Component Modal -->
   <div class="modal fade" id="newWiki">
     <div class="modal-dialog">

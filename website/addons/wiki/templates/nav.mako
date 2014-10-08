@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
 <nav class="navbar navbar-default">
     <div class="navbar-collapse">
         <ul class="superlist nav navbar-nav" style="text-align: center; float: none">

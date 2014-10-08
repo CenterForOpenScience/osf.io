@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%page expression_filter="h"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <div class="wiki">
