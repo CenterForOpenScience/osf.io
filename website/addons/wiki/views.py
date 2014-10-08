@@ -309,6 +309,8 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     wiki_page = node_to_use.get_wiki_page(wid)
     redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
 
+    # logger.info('WIKI PAGE: ' + wiki_page)
+
     if wiki_page:
         # Only update node wiki if content has changed
         content = wiki_page.content
@@ -320,7 +322,7 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
-        node_to_use.update_node_wiki(wid, "", auth)
+        node_to_use.update_node_wiki(wid, '', auth)
         return {
             'status': 'success',
             'location': u'{}wiki/{}/{}/'.format(node_to_use.url, wid, 'edit'),
@@ -346,17 +348,19 @@ def project_wiki_rename(**kwargs):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
     if page and new_name:
-        if new_name.lower() in node.wiki_pages_current:
-            raise HTTPError(http.CONFLICT)
-
-        # TODO: This should go in a Node method like node.rename_wiki
-        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
-        del node.wiki_pages_versions[page.page_name.lower()]
-        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
-        del node.wiki_pages_current[page.page_name.lower()]
-        node.save()
-        page.rename(new_name)
-        return {'message': new_name}
+        if new_name.lower() != page.page_name.lower():
+            for wiki in node.wiki_pages_current:
+                if new_name.lower() == wiki.lower():
+                    raise HTTPError(http.CONFLICT)
+        else:
+            # TODO: This should go in a Node method like node.rename_wiki
+            node.wiki_pages_versions[new_name] = node.wiki_pages_versions[page.page_name]
+            del node.wiki_pages_versions[page.page_name]
+            node.wiki_pages_current[new_name] = node.wiki_pages_current[page.page_name]
+            del node.wiki_pages_current[page.page_name]
+            node.save()
+            page.rename(new_name)
+            return {'message': new_name}
 
     raise HTTPError(http.BAD_REQUEST)
 
