@@ -381,6 +381,7 @@ def project_wiki_rename(**kwargs):
 
     raise HTTPError(http.BAD_REQUEST)
 
+
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects user, project
 @must_not_be_registration

@@ -54,9 +54,6 @@
               var url = document.location.href;
               var url_root = url.substr(0, url.indexOf('wiki') + 5);
               var wikiName = $("#data").val();
-              if (wikiName.indexOf("/") !== -1) {
-                  wikiName = wikiName.split("/").join("|");
-              }
               document.location = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
           }
      });

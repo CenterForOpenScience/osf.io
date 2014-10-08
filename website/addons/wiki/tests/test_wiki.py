@@ -13,6 +13,11 @@ from tests.factories import (
 from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
 from framework.auth import Auth
+from framework.mongo.utils import to_mongo
+
+ALLOWED_SPECIAL_CHARACTERS = '`~!@#$%^*()-=_+ []{}\|/?.,;:''"'
+DISALLOWED_SPECIAL_CHARACTERS = '<>&'
+
 
 class TestNodeWikiPageModel(OsfTestCase):
 
@@ -203,6 +208,21 @@ class TestWikiDelete(OsfTestCase):
         self.project.reload()
         assert 'elephants' not in self.project.wiki_pages_current
 
+    def test_project_wiki_delete_w_special_characters(self):
+        self.project.update_node_wiki(ALLOWED_SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)
+        self.special_characters_wiki = self.project.get_wiki_page(ALLOWED_SPECIAL_CHARACTERS)
+        assert to_mongo(ALLOWED_SPECIAL_CHARACTERS) in self.project.wiki_pages_current
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wid=ALLOWED_SPECIAL_CHARACTERS
+        )
+        self.app.delete(
+            url,
+            auth=self.auth
+        )
+        self.project.reload()
+        assert to_mongo(ALLOWED_SPECIAL_CHARACTERS) not in self.project.wiki_pages_current
+
 
 class TestWikiRename(OsfTestCase):
 
@@ -217,7 +237,6 @@ class TestWikiRename(OsfTestCase):
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
 
-
         self.page_name = 'page2'
         self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
         self.project.save()
@@ -229,8 +248,7 @@ class TestWikiRename(OsfTestCase):
             wid=self.wiki._id,
         )
 
-    def test_rename_wiki_page_valid(self):
-        new_name = 'away'
+    def test_rename_wiki_page_valid(self, new_name='away'):
         self.app.put_json(
             self.url,
             {'value': new_name, 'pk': self.page._id},
@@ -247,9 +265,7 @@ class TestWikiRename(OsfTestCase):
         assert_equal(new_wiki.content, self.page.content)
         assert_equal(new_wiki.version, self.page.version)
 
-    def test_rename_wiki_page_invalid(self):
-        new_name = '<html>hello</html>'
-
+    def test_rename_wiki_page_invalid(self, new_name='<html>hello</html>'):
         res = self.app.put_json(self.url, {'value': new_name, 'pk': self.page._id},
                 auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 422)
@@ -284,6 +300,14 @@ class TestWikiRename(OsfTestCase):
         # Renames the wiki to the deleted page
         res = self.app.put_json(self.url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
         assert_equal(res.status_code, 200)
+
+    def test_rename_wiki_page_w_special_characters(self):
+        # cannot use '<', '>' and '&' as bleach is encoding these and will cause an assertion
+        self.test_rename_wiki_page_valid(new_name=ALLOWED_SPECIAL_CHARACTERS)
+
+    def test_rename_wiki_page_w_invalid_special_characters(self):
+        # using '<', '>' and '&' will cause bleach encoding and an assertion
+        self.test_rename_wiki_page_invalid(new_name=DISALLOWED_SPECIAL_CHARACTERS)
 
 
 class TestWikiLinks(OsfTestCase):

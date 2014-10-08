@@ -2473,10 +2473,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        page = to_mongo(page).lower()
 
-        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2511,9 +2509,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
-        page = page.lower()
+        page = to_mongo(page).lower()
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
