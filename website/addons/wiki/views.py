@@ -115,7 +115,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'wiki_id': wiki_page._primary_key if wiki_page else None,
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
-            'is_edit': True,
+            'is_edit': False,
             'version': wiki_page.version,
             'pages_current': sorted([
                 from_mongo(version)
@@ -250,6 +250,13 @@ def project_wiki_edit(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
+    if wid != sanitize(wid):
+        return http.UNPROCESSABLE_ENTITY
+
+    for wiki in node.wiki_pages_current:
+        if wid.lower() == wiki.lower():
+            return http.CONFLICT
+
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
@@ -282,6 +289,7 @@ def project_wiki_edit(auth, **kwargs):
         'wiki_page_api_url': wiki_page_api_url,
         'wiki_home_url': node.url + 'wiki/',
     }
+
     rv.update(_view_project(node, auth, primary=True))
     return rv
 
@@ -293,18 +301,6 @@ def project_wiki_edit(auth, **kwargs):
 def project_wiki_edit_post(wid, auth, **kwargs):
 
     node_to_use = kwargs['node'] or kwargs['project']
-
-    value = request.data.replace('"', '')
-    if value is not '':
-        wid = value
-        if wid != sanitize(wid):
-            raise HTTPError(http.UNPROCESSABLE_ENTITY, redirect_url='{}wiki/'.format(node_to_use.url))
-
-        # Check for duplicate page names
-        wiki_pages = node_to_use.wiki_pages_current
-        for wiki in wiki_pages:
-            if wid.lower() == wiki.lower():
-                raise HTTPError(http.CONFLICT, redirect_url='{}wiki/'.format(node_to_use.url))
 
     wiki_page = node_to_use.get_wiki_page(wid)
     redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
@@ -320,11 +316,8 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
-        node_to_use.update_node_wiki(wid, '', auth)
-        return {
-            'status': 'success',
-            'location': u'{}wiki/{}/{}/'.format(node_to_use.url, wid, 'edit'),
-        }, http.CREATED
+        node_to_use.update_node_wiki(wid, request.form['content'], auth)
+        ret = {'status': 'success'}
 
     return ret, http.FOUND, None, redirect_url
 

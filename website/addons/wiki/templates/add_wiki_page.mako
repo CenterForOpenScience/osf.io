@@ -24,29 +24,61 @@
     </div><!-- end modal -->
 
 
-<script>
-$(document).ready(function() {
-    $('#newWiki form').submit(function(e) {
-        e.preventDefault();
-        $.ajax({
-            type: 'POST',
-            data: JSON.stringify(data.value),
-            contentType: 'application/json',
-            dataType: 'json',
-            url: '${ api_url_for('project_wiki_edit_post', pid=node['id'], wid=pageName) }',
-            success: function(data) {
-                window.location.href = data.location;
-            },
-            error: function(response) {
-                if(response.status === 409) {
-                    alert('A wiki page with this name already exists.');
-                }
-                if(response.status === 422) {
-                    alert('This is an invalid wiki page name.')
-                }
-            }
-        });
-    });
-});
+<script type="text/javascript">
 
+  $(function(){
+
+      $('#newWiki form').on('submit', function(e) {
+
+          e.preventDefault();
+          $("#add-wiki-submit")
+                  .attr("disabled", "disabled")
+                  .text("Creating New Wiki page");
+
+          if ($.trim($("#data").val())==''){
+
+              $("#alert").text("The new wiki page name cannot be empty");
+
+              $("#add-wiki-submit")
+                      .removeAttr("disabled", "disabled")
+                      .text("OK");
+          }
+          else if ($(e.target).find("#data").val().length>100){
+              $("#alert").text("The new wiki page name cannot be more than 100 characters.");
+
+              $("#add-wiki-submit")
+                      .removeAttr("disabled", "disabled")
+                      .text("OK");
+          }
+          else{
+              var url=document.location.href;
+              var url_root = url.substr(0, url.indexOf('wiki')+5);
+              var wikiName = $("#data").val();
+              if (wikiName.indexOf("/") != -1){
+                  wikiName = wikiName.split("/").join("|");
+              }
+              var request = $.ajax({
+                  type: 'GET',
+                  url: url_root + wikiName + '/edit/'
+              });
+              request.done(function(response) {
+                  window.location.href = url_root + wikiName + '/edit/';
+              });
+              request.fail(function(response){
+                  $("#alert").text("");
+                  $('#data').val("");
+                  $("#add-wiki-submit")
+                      .removeAttr("disabled", "disabled")
+                      .text("OK");
+              });
+          }
+     });
+
+      $('#close').on('click', function(){
+          $("#alert").text("");
+          $('#data').val("");
+
+      });
+  });
 </script>
+
