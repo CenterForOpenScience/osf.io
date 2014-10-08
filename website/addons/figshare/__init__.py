@@ -1,4 +1,4 @@
-from . import routes, views, model
+from . import routes, views, model  # noqa
 
 MODELS = [
     model.AddonFigShareUserSettings,

@@ -6,10 +6,11 @@ import httplib as http
 
 from boto.exception import S3ResponseError, BotoClientError
 
-from flask import request, redirect
+from flask import request
 from modularodm import Q
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
 
 from website.models import NodeLog
 
@@ -137,6 +138,8 @@ def s3_view(**kwargs):
         'render_url': urls['render'],
         'versions': versions,
         'current': key.version_id,
+        'info_url': urls['info'],
+        'delete_url': urls['delete'],
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -202,3 +205,17 @@ def create_new_bucket(**kwargs):
         return {'message': e.message}, http.NOT_ACCEPTABLE
     except S3ResponseError as e:
         return {'message': e.message}, http.NOT_ACCEPTABLE
+
+
+@must_be_contributor_or_public  # returns user, project
+@must_have_addon('s3', 'node')
+def file_delete_info(**kwargs):
+    node = kwargs['node'] or kwargs['project']
+    api_url = node.api_url
+    files_page_url = node.web_url_for('collect_file_trees')
+    if files_page_url is None or api_url is None:
+        raise HTTPError(http.NOT_FOUND)
+    return {
+        'api_url': api_url,
+        'files_page_url': files_page_url,
+    }

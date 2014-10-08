@@ -410,6 +410,14 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+    position: relative;
+}
+
+.unread-comments-count {
+    font-size: medium;
+    color: white;
+    position: absolute;
+    margin-left: 40px;
 }
 
 .addon-auth {
@@ -966,7 +974,7 @@ h1.node-title, h1.node-parent-title {
     border-bottom: none;
     margin-top: 0.2em;
     margin-bottom: 0;
-    height: 36px;
+    height: 68px;
 }
 
 .long-wiki-title {
@@ -980,7 +988,7 @@ h1.node-title, h1.node-parent-title {
 
 .wiki-title-container {
     display: inline-block;
-    width:80%;
+    width:60%;
 }
 
 .btn-toolbar.node-control {
@@ -1447,10 +1455,6 @@ div#logScope a.moreLogs{
     margin-left: 7px;
 }
 
-.private-link-name{
-    width: 60%
-}
-
 .list-overflow{
     max-height: 200px;
     overflow-y: auto;
@@ -1741,3 +1745,7 @@ div.pydocx-center{
     font-size:14px;
 }
 
+.search-term-label,
+.tag {
+    white-space: pre;
+}

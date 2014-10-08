@@ -7,10 +7,11 @@ from modularodm.exceptions import ValidationError
 
 from framework.exceptions import HTTPError
 
-from website.project.decorators import (must_have_addon,
-    must_have_permission, must_not_be_registration,
-    must_be_valid_project
-)
+from website.project.decorators import (
+    must_have_addon,
+    must_have_permission,
+    must_not_be_registration,
+    must_be_valid_project)
 
 from website.addons.forward.utils import serialize_settings
 

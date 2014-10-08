@@ -63,7 +63,7 @@ def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
     auth = kwargs.get('auth')
     data = request.args.to_dict()
 
-    parent = data.pop('parent', 'null')
+    parent = data.pop('parent', 'null')  # noqa
     return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
 
 

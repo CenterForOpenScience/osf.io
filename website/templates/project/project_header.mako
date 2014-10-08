@@ -150,6 +150,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
+
                         <li><a href="${node['url']}">Overview</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>
@@ -195,7 +196,9 @@
 
             $(".project-nav a").each(function () {
                 var href = $(this).attr('href');
-                if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                if (path === href ||
+                   (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
                     $(this).closest('li').addClass('active');
                 }
             });

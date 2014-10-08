@@ -544,3 +544,63 @@ def latest_tag_info():
     assert 0 == len(describe_out)
 
     return info
+
+
+# Tasks for generating and bundling SSL certificates
+# See http://cosdev.readthedocs.org/en/latest/osf/ops.html for details
+
+@task
+def generate_key(domain, bits=2048):
+    cmd = 'openssl genrsa -des3 -out {0}.key {1}'.format(domain, bits)
+    run(cmd)
+
+
+@task
+def generate_key_nopass(domain):
+    cmd = 'openssl rsa -in {domain}.key -out {domain}.key.nopass'.format(
+        domain=domain
+    )
+    run(cmd)
+
+
+@task
+def generate_csr(domain):
+    cmd = 'openssl req -new -key {domain}.key.nopass -out {domain}.csr'.format(
+        domain=domain
+    )
+    run(cmd)
+
+
+@task
+def request_ssl_cert(domain):
+    """Generate a key, a key with password removed, and a signing request for
+    the specified domain.
+
+    Usage:
+    > invoke request_ssl_cert pizza.osf.io
+    """
+    generate_key(domain)
+    generate_key_nopass(domain)
+    generate_csr(domain)
+
+
+@task
+def bundle_certs(domain, cert_path):
+    """Concatenate certificates from NameCheap in the correct order. Certificate
+    files must be in the same directory.
+    """
+    cert_files = [
+        '{0}.crt'.format(domain),
+        'COMODORSADomainValidationSecureServerCA.crt',
+        'COMODORSAAddTrustCA.crt',
+        'AddTrustExternalCARoot.crt',
+    ]
+    certs = ' '.join(
+        os.path.join(cert_path, cert_file)
+        for cert_file in cert_files
+    )
+    cmd = 'cat {certs} > {domain}.bundle.crt'.format(
+        certs=' '.join(certs),
+        domain=domain,
+    )
+    run(cmd)

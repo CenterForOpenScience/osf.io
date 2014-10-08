@@ -6,3 +6,4 @@ webtest-plus
 mock
 fake-factory
 flake8
+responses

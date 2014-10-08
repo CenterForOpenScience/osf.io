@@ -2,10 +2,9 @@
 
 # PEP8 asserts
 from nose.tools import *  # noqa
-from webtest.app import AppError
 from modularodm.exceptions import ValidationValueError
 
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, fake
 from tests.factories import (
     UserFactory, NodeFactory, PointerFactory, ProjectFactory, ApiKeyFactory,
     AuthUserFactory, NodeWikiFactory,
@@ -99,6 +98,59 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
+
+    def test_project_wiki_edit_post_with_new_wid_and_no_content(self):
+        page_name = fake.catch_phrase()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+
+
+    def test_project_wiki_edit_post_with_new_wid_and_content(self):
+        page_name, page_content = fake.catch_phrase(), fake.bs()
+
+        old_wiki_page_count = NodeWikiPage.find().count()
+        url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
+        # User submits to edit form with no content
+        res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+
+        new_wiki_page_count = NodeWikiPage.find().count()
+        # A new wiki page was created in the db
+        assert_equal(new_wiki_page_count, old_wiki_page_count + 1)
+
+        # Node now has the new wiki page associated with it
+        self.project.reload()
+        new_page = self.project.get_wiki_page(page_name)
+        assert_is_not_none(new_page)
+        # content was set
+        assert_equal(new_page.content, page_content)
+
+    def test_project_wiki_edit_post_with_non_ascii_title(self):
+        # regression test for https://github.com/CenterForOpenScience/openscienceframework.org/issues/1040
+        # wid doesn't exist in the db, so it will be created
+        new_wid = u'øˆ∆´ƒøßå√ß'
+        url = self.project.web_url_for('project_wiki_edit_post', wid=new_wid)
+        res = self.app.post(url, {'content': 'new content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        wiki = self.project.get_wiki_page(new_wid)
+        assert_equal(wiki.page_name, new_wid)
+
+        # updating content should return correct url as well.
+        res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
     def test_wiki_edit_get_new(self):
         url = self.project.web_url_for('project_wiki_edit', wid='a new page')
         res = self.app.get(url, auth=self.user.auth)
@@ -108,6 +160,19 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_edit', wid='home')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+
+    def test_project_wiki_compare_returns_200(self):
+        self.project.update_node_wiki('home', 'updated content', Auth(self.user))
+        self.project.save()
+        url = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_project_wiki_compare_with_invalid_wid(self):
+        url = self.project.web_url_for('project_wiki_compare', wid='this-doesnt-exist', compare_id=1)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
 
 class TestWikiDelete(OsfTestCase):
 
@@ -124,15 +189,15 @@ class TestWikiDelete(OsfTestCase):
         self.project.update_node_wiki('Lions', 'Hello Lions', self.consolidate_auth)
         self.elephant_wiki = self.project.get_wiki_page('Elephants')
         self.lion_wiki = self.project.get_wiki_page('Lions')
-        self.url = self.project.api_url_for(
-            'project_wiki_delete',
-            wid=self.elephant_wiki._id
-        )
 
     def test_project_wiki_delete(self):
         assert 'elephants' in self.project.wiki_pages_current
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wid='elephants'
+        )
         self.app.delete(
-            self.url,
+            url,
             auth=self.auth
         )
         self.project.reload()
@@ -142,7 +207,6 @@ class TestWikiDelete(OsfTestCase):
 class TestWikiRename(OsfTestCase):
 
     def setUp(self):
-
         super(TestWikiRename, self).setUp()
 
         self.project = ProjectFactory(is_public=True)
@@ -152,6 +216,13 @@ class TestWikiRename(OsfTestCase):
         self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+
+
+        self.page_name = 'page2'
+        self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
+        self.project.save()
+        self.page = self.project.get_wiki_page(self.page_name)
+
         self.wiki = self.project.get_wiki_page('home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
@@ -162,42 +233,57 @@ class TestWikiRename(OsfTestCase):
         new_name = 'away'
         self.app.put_json(
             self.url,
-            {'value': new_name, 'pk': self.wiki._id},
+            {'value': new_name, 'pk': self.page._id},
             auth=self.auth,
         )
         self.project.reload()
 
-        old_wiki = self.project.get_wiki_page('home')
+        old_wiki = self.project.get_wiki_page(self.page_name)
         assert_false(old_wiki)
 
         new_wiki = self.project.get_wiki_page(new_name)
         assert_true(new_wiki)
-        assert_equal(new_wiki._id, self.wiki._id)
-        assert_equal(new_wiki.content, self.wiki.content)
-        assert_equal(new_wiki.version, self.wiki.version)
+        assert_equal(new_wiki._id, self.page._id)
+        assert_equal(new_wiki.content, self.page.content)
+        assert_equal(new_wiki.version, self.page.version)
 
     def test_rename_wiki_page_invalid(self):
         new_name = '<html>hello</html>'
 
-        with assert_raises(AppError) as cm:
-            self.app.put_json(self.url, {'value': new_name, 'pk': self.wiki._id}, auth=self.auth)
-
-            e = cm.exception
-            assert_equal(e, 422)
+        res = self.app.put_json(self.url, {'value': new_name, 'pk': self.page._id},
+                auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 422)
 
     def test_rename_wiki_page_duplicate(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
         new_name = 'away'
 
-        with assert_raises(AppError) as cm:
-            self.app.put_json(
-                self.url,
-                {'value': new_name, 'pk': self.wiki._id},
-                auth=self.auth,
-            )
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': self.page._id},
+            auth=self.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 409)
 
-            e = cm.exception
-            assert_equal(e, 409)
+    def test_cannot_rename_home_page(self):
+        home = self.project.get_wiki_page('home')
+        res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_can_rename_to_a_deleted_page(self):
+        self.project.delete_node_wiki(self.project, self.page, self.consolidate_auth)
+        self.project.save()
+
+        # Creates a new page
+        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
+        page3 = self.project.get_wiki_page('page3')
+        self.project.save()
+
+        url = self.project.api_url_for('project_wiki_rename', wid='page3')
+        # Renames the wiki to the deleted page
+        res = self.app.put_json(self.url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestWikiLinks(OsfTestCase):
