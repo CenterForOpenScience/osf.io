@@ -844,7 +844,7 @@ class TestAuthViews(OsfTestCase):
 
         url = api_url_for('github_oauth_callback', uid=self.user._id)
         res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
-
+        self.user_settings.reload()
         assert_true(res.status_code, 302)
         assert_in("/settings/addons/", res.location)
         assert_true(self.user_settings.oauth_settings)
@@ -872,6 +872,10 @@ class TestAuthViews(OsfTestCase):
 
         url = api_url_for('github_oauth_callback', uid=self.user._id, nid=project._id)
         res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
+        self.user_settings.reload()
+
+        node_settings = project.get_addon('github')
+        node_settings.reload()
 
         assert_true(res.status_code, 302)
         assert_not_in("/settings/addons/", res.location)
@@ -881,6 +885,7 @@ class TestAuthViews(OsfTestCase):
         assert_equal(self.user_settings.oauth_token_type, "testing token type")
         assert_equal(self.user_settings.github_user_name, "testing user")
         assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
+        assert_equal(node_settings.user_settings, self.user_settings)
 
 
 
