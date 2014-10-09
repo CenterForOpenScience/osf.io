@@ -154,6 +154,13 @@ def make_url_map(app):
         ),
 
         Rule(
+            '/api/v1/view/<meeting>/',
+            'get',
+            project_views.email.conference_data,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
             project_views.email.conference_view,
