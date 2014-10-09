@@ -363,7 +363,7 @@
     CommentModel.prototype.submitUnreportAbuse = function() {
         var self = this;
         $.osf.postJSON(
-            nodeapiurl + 'comment/' + self.id() + '/unreport/',
+            nodeApiUrl + 'comment/' + self.id() + '/unreport/',
             {}
         ).done(function() {
             self.isAbuse(false);
@@ -372,7 +372,7 @@
         });
     };
 
-    CommentModel.prototype.cancelUnreportSpam = function() {
+    CommentModel.prototype.cancelUnreportAbuse = function() {
         this.unreporting(false);
     };
 
