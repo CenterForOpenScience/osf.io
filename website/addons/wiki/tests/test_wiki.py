@@ -173,6 +173,17 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_wiki_page_creation_strips_whitespace(self):
+        # Regression test for:
+        # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
+        # wid has a trailing space
+        url = self.project.web_url_for('project_wiki_edit', wid='cupcake ')
+        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        wiki = self.project.get_wiki_page('cupcake')
+        assert_is_not_none(wiki)
 
 class TestWikiDelete(OsfTestCase):
 
