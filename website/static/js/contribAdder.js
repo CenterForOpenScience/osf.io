@@ -98,7 +98,8 @@
                 this.displayProjectsInCommon = '';
             }
         }
-        self.go = function() {
+
+        self.startSearch = function() {
             self.currentPage(0);
             self.search();
         };
@@ -206,7 +207,7 @@
             self.setupEditable(elm, data);
         };
 
-        function postInviteRequest(fullname, email, options) {
+        function postInviteRequest(fullname, email) {
             $.osf.postJSON(
                 nodeApiUrl + 'invite_contributor/',
                 {'fullname': fullname, 'email': email}
