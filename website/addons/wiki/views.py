@@ -180,9 +180,8 @@ def serialize_wiki_toc(project, auth):
 @must_be_valid_project  # injects project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
-def project_wiki_page(auth, **kwargs):
-
-    wid = kwargs['wid']
+def project_wiki_page(wid, auth, **kwargs):
+    wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
     wiki_page = node.get_wiki_page(wid)
@@ -240,8 +239,8 @@ def wiki_page_content(wid, **kwargs):
 @must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_edit(auth, **kwargs):
-    wid = kwargs['wid']
+def project_wiki_edit(wid, auth, **kwargs):
+    wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
@@ -286,7 +285,7 @@ def project_wiki_edit(auth, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(wid, auth, **kwargs):
-
+    wid = wid.strip()
     node_to_use = kwargs['node'] or kwargs['project']
 
     if wid != sanitize(wid):
