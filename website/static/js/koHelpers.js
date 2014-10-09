@@ -113,7 +113,7 @@
                 return true;
             }
             // Compare years
-            return uwVal >= 1900;
+            return parseInt(uwVal) >= 1900;
         },
         message: 'Date must be greater than or equal to 1900.'
     };
