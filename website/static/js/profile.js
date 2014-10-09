@@ -563,6 +563,8 @@
         self.start = ko.computed(function () {
             if (self.startMonth() && self.startYear()) {
                 return new Date(self.startMonth() + '1,' + self.startYear());
+            } else if (self.startYear()) {
+                return new Date(self.startYear(), '0', '1');
             }
         }, self).extend({
             notInFuture: true
@@ -573,7 +575,7 @@
                 return new Date(self.endMonth() + '1,' + self.endYear());
             } else if (!self.endMonth() && self.endYear()) {
                 self.displayDate(self.endYear());
-                return self.endYear();
+                return new Date(self.endYear(), '0', '1');
             }
         }, self).extend({
             notInFuture:true,
@@ -602,6 +604,9 @@
         self.start = ko.computed(function () {
             if (self.startMonth() && self.startYear()) {
                 return new Date(self.startMonth() + '1,' + self.startYear());
+            } else if (self.startYear()) {
+
+                return new Date(self.startYear(), '0', '1');
             }
         }, self).extend({
             notInFuture: true
@@ -610,6 +615,9 @@
             if (self.endMonth() && self.endYear()) {
                 self.displayDate(self.endMonth() + ' ' + self.endYear());
                 return new Date(self.endMonth() + '1,' + self.endYear());
+            } else if (self.endYear()) {
+                self.displayDate(self.endYear());
+                return new Date(self.endYear(), '0', '1');
             }
         }, self).extend({
             notInFuture:true,
