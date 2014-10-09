@@ -34,7 +34,7 @@ def elastic_to_rss(name, data, query):
     # import pdb; pdb.set_trace()
     items = [
         pyrss.RSSItem(
-            guid=doc['id']['serviceID'],
+            guid=doc.get('id',{}).get('serviceID') or doc['_id'],
             link=doc['id']['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
@@ -90,8 +90,8 @@ def elastic_to_changelist(name, data, q):
 
     for result in data:
         url = result['id']['url']
-        date_updated = result['dateUpdated']    
-        last_mod = parse(result['dateUpdated']).replace(tzinfo=None) 
+        date_updated = result['dateUpdated']
+        last_mod = parse(result['dateUpdated']).replace(tzinfo=None)
 
         if last_mod < today and last_mod > yesterday:
             resource = Resource(url, change='created')
