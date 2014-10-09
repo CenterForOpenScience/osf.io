@@ -94,7 +94,7 @@
         self.start = ko.computed(function () {
             if (self.startMonth() && self.startYear()) {
                 return new Date(self.startYear(),
-                                self.monthToInt(self.startMonth()).toString());
+                        (self.monthToInt(self.startMonth()) - 1).toString());
             } else if (self.startYear()) {
                 return new Date(self.startYear(), '0', '1');
             }
@@ -105,7 +105,7 @@
             if (self.endMonth() && self.endYear()) {
                 self.displayDate(self.endMonth() + ' ' + self.endYear());
                 return new Date(self.endYear(),
-                                self.monthToInt(self.endMonth()).toString());
+                        (self.monthToInt(self.endMonth()) - 1).toString());
             } else if (!self.endMonth() && self.endYear()) {
                 self.displayDate(self.endYear());
                 return new Date(self.endYear(), '0', '1');
