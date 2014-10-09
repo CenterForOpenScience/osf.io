@@ -76,9 +76,9 @@ class AppNodeSettings(AddonNodeSettingsBase):
         self.owner.category = 'app'
         self.owner.save()
 
-        system_user = User.create_confirmed(self.owner.title, '12', self.owner.title)
+        system_user = User.create_confirmed(self.owner._id, '12', self.owner.title)
         system_user.is_system_user = True
-        system_user.password = '12'
+        system_user.password = '12' # TODO Add comment
         system_user.save()
 
         self.system_user = system_user

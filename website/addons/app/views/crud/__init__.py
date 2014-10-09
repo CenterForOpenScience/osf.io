@@ -12,6 +12,7 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
+from website.search.exceptions import SearchException
 from website.project import new_node, Node
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
@@ -48,7 +49,7 @@ def query_app(node_addon, **kwargs):
         'total': ret['hits']['total']
     }
 
-# GET
+# POST
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_json(node_addon, **kwargs):
@@ -58,11 +59,10 @@ def query_app_json(node_addon, **kwargs):
         del request.json['format']
     except KeyError:
         pass
-
+    request_data = request.json
     try:
-        ret = search(request.json, _type=node_addon.namespace, index='metadata')
-    except Exception:
-        # TODO Fix me
+        ret = search(request_data, _type=node_addon.namespace, index='metadata')
+    except SearchException:
         return {
             'results': [],
             'total': 0

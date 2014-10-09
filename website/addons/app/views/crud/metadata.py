@@ -18,7 +18,7 @@ from website.project.decorators import must_be_contributor_or_public
 
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
-def get_metadatums(node_addon, **kwargs):
+def get_metadata_ids(node_addon, **kwargs):
     return {
         'ids': [m._id for m in node_addon.metadata__owner]
     }
@@ -33,7 +33,7 @@ def get_metadata(node_addon, mid, **kwargs):
         raise HTTPError(http.NOT_FOUND)
 
 
-# PUT
+# POST
 @must_have_permission('write')
 @must_have_addon('app', 'node')
 def create_metadata(node_addon, **kwargs):
@@ -59,8 +59,8 @@ def promote_metadata(node_addon, mid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     creator = node_addon.system_user
-    tags = request.json.get('tags', []) or metastore.get('tags', [])
-    contributors = request.json.get('contributors', []) or metastore.get('contributors', [])
+    tags = request.json.get('tags') or metastore.get('tags', [])
+    contributors = request.json.get('contributors') or metastore.get('contributors', [])
     category = request.json.get('category') or metastore.get('category', 'project')
     title = request.json.get('title') or metastore.get('title')
     project = Node.load(request.json.get('parent') or metastore.get('parent'))

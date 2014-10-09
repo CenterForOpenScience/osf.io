@@ -144,7 +144,7 @@ metadata_routes = {
         Rule(
             '/app/<pid>/metadata/',
             'get',
-            views.crud.metadata.get_metadatums,
+            views.crud.metadata.get_metadata_ids,
             json_renderer
         ),
         Rule(
