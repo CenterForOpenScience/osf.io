@@ -7,6 +7,8 @@ import requests
 
 from cloudstorm import sign
 
+from framework.analytics import get_basic_counters
+
 from website.util import rubeus
 from website.project.views.file import get_cache_content
 
@@ -118,6 +120,22 @@ def build_hgrid_urls(item, node):
     }
 
 
+def get_download_count(item, node, version_idx=None):
+    """
+    :param item: `FileTree` or `FileRecord` to look up
+    :param Node node: Root node to which the item is attached
+    :param int version_idx: Optional one-based version index
+    """
+    if isinstance(item, model.FileTree):
+        return None
+    parts = ['download', node._id, item.path]
+    if version_idx is not None:
+        parts.append(version_idx)
+    page = ':'.join([format(part) for part in parts])
+    _, count = get_basic_counters(page)
+    return count or 0
+
+
 def serialize_metadata_hgrid(item, node, permissions):
     """Build HGrid JSON for folder or file. Note: include node URLs for client-
     side URL creation for uploaded files.
@@ -136,6 +154,7 @@ def serialize_metadata_hgrid(item, node, permissions):
         'permissions': permissions,
         'nodeUrl': node.url,
         'nodeApiUrl': node.api_url,
+        'downloads': get_download_count(item, node),
     }
 
 

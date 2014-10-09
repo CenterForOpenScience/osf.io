@@ -11,6 +11,7 @@ from modularodm import Q
 
 from framework.flask import redirect
 from framework.exceptions import HTTPError
+from framework.analytics import update_counters
 
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor, must_be_contributor_or_public,
@@ -247,6 +248,8 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
+@update_counters(u'download:{target_id}:{path}:{version}')
+@update_counters(u'download:{target_id}:{path}')
 def osf_storage_download_file(path, node_addon, **kwargs):
     version_idx, version = get_version(
         path,

@@ -13,6 +13,8 @@ import urlparse
 
 from cloudstorm import sign
 
+from framework.analytics import get_basic_counters
+
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings as osf_storage_settings
@@ -412,6 +414,124 @@ class TestViewFile(OsfTestCase):
         res = self.view_file(self.path).follow(auth=self.project.creator.auth)
         assert_equal(res.status_code, 200)
         assert_true(res.html.find('h1', text='magic.mp3'))
+
+
+class TestDownloadFile(OsfTestCase):
+
+    def setUp(self):
+        super(TestDownloadFile, self).setUp()
+        self.project = ProjectFactory()
+        self.node_settings = self.project.get_addon('osfstorage')
+        self.path = 'tie/your/mother/down.mp3'
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.version = factories.FileVersionFactory()
+        self.record.versions.append(self.version)
+        self.record.save()
+
+    def download_file(self, path, version=None, **kwargs):
+        return self.app.get(
+            self.project.web_url_for(
+                'osf_storage_download_file',
+                path=path,
+                version=version,
+            ),
+            auth=self.project.creator.auth,
+            **kwargs
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        res = self.download_file(self.path)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, mock_get_url.return_value)
+        mock_get_url.assert_called_with(self.version)
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_by_version(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        versions = [factories.FileVersionFactory() for _ in range(3)]
+        self.record.versions.extend(versions)
+        self.record.save()
+        count_record = utils.get_download_count(self.record, self.project)
+        count_version = utils.get_download_count(self.record, self.project, 3)
+        res = self.download_file(path=self.path, version=3)
+        assert_equal(res.status_code, 302)
+        assert_equal(res.location, mock_get_url.return_value)
+        mock_get_url.assert_called_with(versions[1])
+        assert_equal(
+            utils.get_download_count(self.record, self.project),
+            count_record + 1,
+        )
+        assert_equal(
+            utils.get_download_count(self.record, self.project, 3),
+            count_version + 1,
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_invalid_version(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        count_record = utils.get_download_count(self.record, self.project)
+        count_version = utils.get_download_count(self.record, self.project, 3)
+        res = self.download_file(
+            path=self.path, version=3,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+        assert_false(mock_get_url.called)
+        assert_equal(
+            utils.get_download_count(self.record, self.project),
+            count_record,
+        )
+        assert_equal(
+            utils.get_download_count(self.record, self.project, 3),
+            count_version,
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_pending_version(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        self.record.create_pending_version('9d989e8')
+        count_record = utils.get_download_count(self.record, self.project)
+        count_version = utils.get_download_count(self.record, self.project, 2)
+        res = self.download_file(
+            path=self.path, version=2,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+        assert_in('File upload in progress', res)
+        assert_false(mock_get_url.called)
+        assert_equal(
+            utils.get_download_count(self.record, self.project),
+            count_record,
+        )
+        assert_equal(
+            utils.get_download_count(self.record, self.project, 2),
+            count_version,
+        )
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_failed_version(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        self.record.create_pending_version('9d989e8')
+        self.record.cancel_pending_version('9d989e8')
+        count_record = utils.get_download_count(self.record, self.project)
+        count_version = utils.get_download_count(self.record, self.project, 2)
+        res = self.download_file(
+            path=self.path, version=2,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
+        assert_in('File upload failed', res)
+        assert_false(mock_get_url.called)
+        assert_equal(
+            utils.get_download_count(self.record, self.project),
+            count_record,
+        )
+        assert_equal(
+            utils.get_download_count(self.record, self.project, 2),
+            count_version,
+        )
 
 
 class TestDeleteFile(OsfTestCase):
