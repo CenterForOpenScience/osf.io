@@ -17,9 +17,13 @@ from website.project import new_node, Node
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
+from website.project.decorators import must_be_valid_project
 
 from website.addons.app.model import Metadata
 from website.addons.app.utils import elastic_to_rss
+from website.addons.app.utils import elastic_to_resourcelist
+from website.addons.app.utils import elastic_to_changelist
+from website.addons.app.utils import generate_capabilitylist
 
 from . import metadata, customroutes
 
@@ -74,12 +78,49 @@ def query_app_json(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
+    required = request.args.get('required', None)
     start = request.args.get('page', 0)
     name = node_addon.system_user.username
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100)
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100, required=required)
 
     return elastic_to_rss(name, [blob['_source'] for blob in ret['hits']['hits']], q)
 
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_resourcelist(node_addon, **kwargs):
+    q = request.args.get('q', '*')
+    size = request.args.get('size', 100)
+    required = request.args.get('required', None)
+    start = request.args.get('page', 0)
+    name = node_addon.system_user.username
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
+
+    return elastic_to_resourcelist(name, [blob['_source'] for blob in ret['hits']['hits']], q)
+
+# GET
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_changelist(node_addon, **kwargs):
+    q = request.args.get('q', '*')
+    size = request.args.get('size', 100)
+    required = request.args.get('required', None)
+    start = request.args.get('page', 0)
+    name = node_addon.system_user.username
+    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
+
+    return elastic_to_changelist(name, [blob['_source'] for blob in ret['hits']['hits']], q)
+
+# GET
+# @must_be_valid_project
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_capabilitylist(node, node_addon, **kwargs):
+    node = node or kwargs['project']
+    resourcelist_url = node.api_url_for('query_app_resourcelist', _xml=True)
+    changelist_url = node.api_url_for('query_app_changelist', _xml=True)
+
+    return generate_capabilitylist(resourcelist_url, changelist_url)
 
 @must_have_permission('admin')
 @must_have_addon('app', 'node')

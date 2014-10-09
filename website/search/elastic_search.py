@@ -503,12 +503,12 @@ def update_metadata(metadata):
 
 
 @requires_search
-def search_metadata(query, _type, start, size):
+def search_metadata(query, _type, start, size, required):
     if isinstance(query, dict):
         return search_metadata_dict(query, _type)
 
     query = {
-        'query': _metadata_inner_query(query),
+        'query': _metadata_inner_query(query, required),
         'from': start,
         'size': size,
     }
@@ -518,15 +518,37 @@ def search_metadata(query, _type, start, size):
 def search_metadata_dict(query, _type):
     return elastic.search(query, index='metadata', doc_type=_type)
 
-def _metadata_inner_query(query):
+def _metadata_inner_query(query, required):
     if query == '*':
-        return {
-            'query_string': {
-                'default_field': '_all',
-                'query': '*',
-                'analyze_wildcard': True,
+        if required is None:
+            return {
+                'query_string': {
+                    'default_field': '_all',
+                    'query': '*',
+                    'analyze_wildcard': True,
+                }
             }
-        }
+        else:
+            return {
+                'filtered': {
+                    'query' : {
+                        'query_string': {
+                            'default_field': '_all',
+                            'query': '*',
+                            'analyze_wildcard': True
+                        }
+                    },
+                    'filter': {
+                        'not': {
+                            'missing': {
+                                'field': required
+                            }
+                        }
+                    }
+
+                }
+            }
+
     query = query.split(';')
     filters = []
     for item in query:
@@ -534,13 +556,14 @@ def _metadata_inner_query(query):
 
         if len(item) == 1:
             item = ['_all', item[0]]
+
         if len(item[1].split(',')) > 1:
             filters.append({
                 'terms': {
                     item[0]: item[1].split(',')
                 }
             })
-        else:
+        else: 
             filters.append({
                 "query": {
                     'match': {
@@ -553,6 +576,14 @@ def _metadata_inner_query(query):
                 }
             })
 
+        if required is not None:
+            filters.append({
+                'not' : {
+                    'missing': {
+                        'field': required
+                    }
+                }
+            })
     inner_query = {
         'filtered': {
             'filter': {

@@ -19,9 +19,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, start=0, size=10, index='website', _type=None):
+def search(query, start=0, size=10, index='website', _type=None, required=None):
     if index == 'metadata':
-        return search_engine.search_metadata(query, _type, start, size)
+        return search_engine.search_metadata(query, _type, start, size, required)
 
     result, tags, counts = search_engine.search(query, start, size, index=index)
     return result, tags, counts
