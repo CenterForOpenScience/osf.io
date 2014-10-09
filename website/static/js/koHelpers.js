@@ -102,7 +102,6 @@
 
     ko.validation.rules['pyDate'] = {
         validator: function (val) {
-            console.log(val);
             // Skip if values empty
             var uwVal = ko.utils.unwrapObservable(val);
             if (uwVal === null) {
