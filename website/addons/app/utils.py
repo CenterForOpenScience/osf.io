@@ -93,7 +93,14 @@ def elastic_to_changelist(name, data, q):
     return cl.as_xml()
 
 
-# def generate_capabilitylist():
+def generate_capabilitylist(changelist_url, resourcelist_url):
+
+    cl = CapabilityList()
+
+    cl.add(Resource(settings.DOMAIN[:-1] + changelist_url + '?required=id'))
+    cl.add(Resource(settings.DOMAIN[:-1] + resourcelist_url + '?required=id'))
+
+    return cl.as_xml()
 
 
 
