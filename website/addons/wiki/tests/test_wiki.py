@@ -181,6 +181,18 @@ class TestWikiViews(OsfTestCase):
         assert_not_in('CaPsLoCk', self.project.wiki_pages_current)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('CaPsLoCk', self.project.wiki_pages_current)
+        
+    def test_wiki_page_creation_strips_whitespace(self):
+        # Regression test for:
+        # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
+        # wid has a trailing space
+        url = self.project.web_url_for('project_wiki_edit', wid='cupcake ')
+        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        wiki = self.project.get_wiki_page('cupcake')
+        assert_is_not_none(wiki)
 
     def test_project_wiki_edit_diplay_mixed_casing_name(self):
         url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')

@@ -603,7 +603,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_dataverse_view_file(self, mock_get_files, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
+    def test_dataverse_view_file(self, mock_fail_if_private, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
 
@@ -616,7 +617,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_dataverse_view_file_with_anonymous_link(self, mock_get_files, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
+    def test_dataverse_view_file_with_anonymous_link(self, mock_fail_if_private, mock_get_files, mock_connection):
         link = PrivateLinkFactory(anonymous=True)
         link.nodes.append(self.project)
         link.save()
@@ -633,7 +635,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_download_file(self, mock_get_files, mock_connection):
+    @mock.patch('website.addons.dataverse.views.crud.fail_if_private')
+    def test_download_file(self, mock_fail_if_private, mock_get_files, mock_connection):
         mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
 
@@ -674,17 +677,21 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
             fail_if_unauthorized(self.node_settings, self.user.auth, None)
             assert_equal(error.code, http.NOT_FOUND)
 
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')
-    def test_fail_if_unauthorized_forbidden(self, mock_get_files):
+    def test_fail_if_unauthorized_forbidden(self, mock_get_files, mock_connection):
+        mock_connection.return_value = create_mock_connection()
         mock_get_files.return_value = [create_mock_draft_file('foo')]
+
         with assert_raises(HTTPError) as error:
             fail_if_unauthorized(self.node_settings, self.user.auth, 'bar')
             assert_equal(error.code, http.FORBIDDEN)
 
+    @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files',
                 side_effect=[[create_mock_draft_file('released')],
                              [create_mock_draft_file('draft')]])
-    def test_fail_if_unauthorized_unauthorized(self, mock_get_files):
+    def test_fail_if_unauthorized_unauthorized(self, mock_get_files, mock_connection):
         with assert_raises(HTTPError) as error:
             user2 = AuthUserFactory()
             fail_if_unauthorized(self.node_settings, Auth(user2), 'draft')
