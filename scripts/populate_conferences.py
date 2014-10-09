@@ -1,4 +1,13 @@
+#!/usr/bin/env python
+# encoding: utf-8
+import sys
+from modularodm.exceptions import ModularOdmException
 from website.project.views.email import Conference
+from website.app import init_app
+
+def main():
+    init_app(set_backends=True, routes=False)
+    populate_conferences()
 
 MEETING_DATA = {
     'spsp2014': {
@@ -64,13 +73,14 @@ MEETING_DATA = {
 
 def populate_conferences():
     for key, val in MEETING_DATA.iteritems():
-        conf = Conference(
-            endpoint=key,
-            name=val['name'],
-            info_url=val['info_url'],
-            logo_url=val['logo_url'],
-            active=val['active'],
-            admins=val['admins'],
-            public_projects=val['public_projects'],
-        )
-        conf.save()
+        try:
+            conf = Conference(
+                endpoint=key, **val
+            )
+            conf.save()
+        except ModularOdmException:
+            print('{0} Conference already exists. Skipping...'.format(key))
+
+
+if __name__ == '__main__':
+    main()
