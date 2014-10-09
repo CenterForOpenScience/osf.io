@@ -15,8 +15,7 @@ from website.addons.wiki.model import NodeWikiPage
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo
 
-ALLOWED_SPECIAL_CHARACTERS = '`~!@#$%^*()-=_+ []{}\|/?.,;:''"'
-DISALLOWED_SPECIAL_CHARACTERS = '<>&'
+SPECIAL_CHARACTERS = '`~!@#$%^*()-=_+ []{}\|/?.,;:''"'
 
 
 class TestNodeWikiPageModel(OsfTestCase):
@@ -156,6 +155,18 @@ class TestWikiViews(OsfTestCase):
         res = self.app.post(url, {'content': 'updated content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
+    def test_project_wiki_edit_post_with_special_characters(self):
+        new_wid = 'title: ' + SPECIAL_CHARACTERS
+        new_wiki_content = 'content: ' + SPECIAL_CHARACTERS
+        url = self.project.web_url_for('project_wiki_edit_post', wid=new_wid)
+        res = self.app.post(url, {'content': new_wiki_content}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        wiki = self.project.get_wiki_page(new_wid)
+        assert_equal(wiki.page_name, new_wid)
+        assert_equal(wiki.content, new_wiki_content)
+        assert_equal(res.status_code, 200)
+
     def test_wiki_edit_get_new(self):
         url = self.project.web_url_for('project_wiki_edit', wid='a new page')
         res = self.app.get(url, auth=self.user.auth)
@@ -209,19 +220,19 @@ class TestWikiDelete(OsfTestCase):
         assert 'elephants' not in self.project.wiki_pages_current
 
     def test_project_wiki_delete_w_special_characters(self):
-        self.project.update_node_wiki(ALLOWED_SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)
-        self.special_characters_wiki = self.project.get_wiki_page(ALLOWED_SPECIAL_CHARACTERS)
-        assert to_mongo(ALLOWED_SPECIAL_CHARACTERS) in self.project.wiki_pages_current
+        self.project.update_node_wiki(SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)
+        self.special_characters_wiki = self.project.get_wiki_page(SPECIAL_CHARACTERS)
+        assert to_mongo(SPECIAL_CHARACTERS) in self.project.wiki_pages_current
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wid=ALLOWED_SPECIAL_CHARACTERS
+            wid=SPECIAL_CHARACTERS
         )
         self.app.delete(
             url,
             auth=self.auth
         )
         self.project.reload()
-        assert to_mongo(ALLOWED_SPECIAL_CHARACTERS) not in self.project.wiki_pages_current
+        assert to_mongo(SPECIAL_CHARACTERS) not in self.project.wiki_pages_current
 
 
 class TestWikiRename(OsfTestCase):
@@ -303,11 +314,7 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_w_special_characters(self):
         # cannot use '<', '>' and '&' as bleach is encoding these and will cause an assertion
-        self.test_rename_wiki_page_valid(new_name=ALLOWED_SPECIAL_CHARACTERS)
-
-    def test_rename_wiki_page_w_invalid_special_characters(self):
-        # using '<', '>' and '&' will cause bleach encoding and an assertion
-        self.test_rename_wiki_page_invalid(new_name=DISALLOWED_SPECIAL_CHARACTERS)
+        self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS)
 
 
 class TestWikiLinks(OsfTestCase):
