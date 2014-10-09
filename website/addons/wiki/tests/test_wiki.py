@@ -29,6 +29,8 @@ class TestWikiViews(OsfTestCase):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
+        api_key = ApiKeyFactory()
+        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
 
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_page', wid='home')
@@ -172,6 +174,30 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_project_wiki_edit_mixed_casing_name(self):
+        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in('CaPsLoCk', self.project.wiki_pages_current)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        assert_in('CaPsLoCk', self.project.wiki_pages_current)
+
+    def test_project_wiki_edit_diplay_mixed_casing_name(self):
+        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('CaPsLoCk', res)
+
+    def test_project_wiki_edit_name_conflict_different_casing(self):
+        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        assert_in('CaPsLoCk', self.project.wiki_pages_current)
+        url = self.project.web_url_for('project_wiki_edit', wid='Capslock')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
 
 class TestWikiDelete(OsfTestCase):
 
@@ -264,6 +290,19 @@ class TestWikiRename(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
+
+    def test_rename_wiki_page_duplicate_different_casing(self):
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        new_name = 'AwAy'
+
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': self.page._id},
+            auth=self.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 409)
+
 
     def test_cannot_rename_home_page(self):
         home = self.project.get_wiki_page('home')
