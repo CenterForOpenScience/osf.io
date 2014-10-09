@@ -65,7 +65,12 @@
                   window.location.href = url_root + wikiName + '/edit/';
               });
               request.fail(function(response){
-                  $("#alert").text("");
+                  if(response.status === 422) {
+                    $("#alert").text("The wiki page name you entered is invalid.");
+                  }
+                  if(response.status === 409 ) {
+                    $("#alert").text("A wiki page with that name already exists.");
+                  }
                   $('#data').val("");
                   $("#add-wiki-submit")
                       .removeAttr("disabled", "disabled")

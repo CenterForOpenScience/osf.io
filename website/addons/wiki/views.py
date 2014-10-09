@@ -251,11 +251,17 @@ def project_wiki_edit(auth, **kwargs):
     wiki_page = node.get_wiki_page(wid)
 
     if wid != sanitize(wid):
-        return http.UNPROCESSABLE_ENTITY
+        raise HTTPError(http.UNPROCESSABLE_ENTITY, data=dict(
+            message_short='Invalid wiki page.',
+            message_long='The wiki page you requested is invalid.'
+        ))
 
     for wiki in node.wiki_pages_current:
         if wid.lower() == wiki.lower():
-            return http.CONFLICT
+            raise HTTPError(http.CONFLICT, data=dict(
+                message_short='Wiki page name conflict.',
+                message_long='A wiki page with that name already exists.'
+            ))
 
     if wiki_page:
         version = wiki_page.version
