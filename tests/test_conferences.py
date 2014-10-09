@@ -52,8 +52,6 @@ class TestConferenceEmailViews(OsfTestCase):
         json = res.json
         assert_equal(len(json), n_conference_nodes)
 
-        assert_equal(json[0], _render_conference_node(conf_nodes[0], 0))
-
     def test_conference_results(self):
         conference = ConferenceFactory()
 
