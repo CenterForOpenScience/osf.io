@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import sys
+
+from modularodm import Q
 from modularodm.exceptions import ModularOdmException
+
+from framework.auth.core import User
 from website.project.views.email import Conference
 from website.app import init_app
 
@@ -15,7 +19,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admins': None,
+        'admins': [],
         'public_projects': True,
     },
     'asb2014': {
@@ -23,7 +27,7 @@ MEETING_DATA = {
         'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
         'logo_url': None,
         'active': False,
-        'admins': None,
+        'admins': [],
         'public_projects': True,
     },
     'aps2014': {
@@ -31,7 +35,7 @@ MEETING_DATA = {
         'info_url': 'http://centerforopenscience.org/aps/',
         'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
         'active': False,
-        'admins': None,
+        'admins': [],
         'public_projects': True,
     },
     'annopeer2014': {
@@ -39,7 +43,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admins': None,
+        'admins': [],
         'public_projects': True,
     },
     'cpa2014': {
@@ -47,7 +51,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admins': None,
+        'admins': [],
         'public_projects': True,
     },
     'filaments2014': {
@@ -72,14 +76,22 @@ MEETING_DATA = {
 }
 
 def populate_conferences():
-    for key, val in MEETING_DATA.iteritems():
+    for meeting, attrs in MEETING_DATA.iteritems():
+        admin_emails = attrs.pop('admins')
+        admin_objs = []
+        for email in admin_emails:
+            try:
+                user = User.find_one(Q('username', 'iexact', email))
+                admin_objs.append(user)
+            except ModularOdmException:
+                raise RuntimeError('Username {0!r} is not registered.'.format(email))
         try:
             conf = Conference(
-                endpoint=key, **val
+                endpoint=meeting, admins=admin_objs, **attrs
             )
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Skipping...'.format(key))
+            print('{0} Conference already exists. Skipping...'.format(meeting))
 
 
 if __name__ == '__main__':
