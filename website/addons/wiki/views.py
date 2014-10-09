@@ -169,11 +169,8 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects auth, project
 @must_have_addon('wiki', 'node')
-def project_wiki_version(auth, **kwargs):
+def project_wiki_version(wid, vid, auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wid = kwargs['wid']
-    vid = kwargs['vid']
-
     wiki_page = node.get_wiki_page(wid, version=vid)
 
     if wiki_page:
@@ -260,7 +257,6 @@ def project_wiki_page(wid, auth, **kwargs):
 @must_have_addon('wiki', 'node')
 def wiki_page_content(wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
     wiki_page = node.get_wiki_page(wid)
 
     return {
