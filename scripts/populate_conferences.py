@@ -6,7 +6,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admin': None,
+        'admins': None,
         'public_projects': True,
     },
     'asb2014': {
@@ -14,7 +14,7 @@ MEETING_DATA = {
         'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
         'logo_url': None,
         'active': False,
-        'admin': None,
+        'admins': None,
         'public_projects': True,
     },
     'aps2014': {
@@ -22,7 +22,7 @@ MEETING_DATA = {
         'info_url': 'http://centerforopenscience.org/aps/',
         'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
         'active': False,
-        'admin': None,
+        'admins': None,
         'public_projects': True,
     },
     'annopeer2014': {
@@ -30,7 +30,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admin': None,
+        'admins': None,
         'public_projects': True,
     },
     'cpa2014': {
@@ -38,7 +38,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': None,
         'active': False,
-        'admin': None,
+        'admins': None,
         'public_projects': True,
     },
     'filaments2014': {
@@ -47,7 +47,10 @@ MEETING_DATA = {
         'logo_url': 'https://science.nrao.edu/science/meetings/2014/'
                     'filamentary-structure/images/filaments2014_660x178.png',
         'active': True,
-        'admin': None,
+        'admins': [
+            'lvonschi@nrao.edu',
+            'Dkim@nrao.edu',
+        ],
         'public_projects': True,
     },
     # TODO: Uncomment on 2015/02/01
@@ -67,7 +70,7 @@ def populate_conferences():
             info_url=val['info_url'],
             logo_url=val['logo_url'],
             active=val['active'],
-            admin=val['admin'],
+            admins=val['admins'],
             public_projects=val['public_projects'],
         )
         conf.save()

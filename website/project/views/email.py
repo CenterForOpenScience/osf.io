@@ -40,12 +40,12 @@ def request_to_data():
     }
 
 class Conference(StoredObject):
-    endpoint = fields.StringField(primary=True, required=True)
+    endpoint = fields.StringField(primary=True, required=True, unique=True)
     name = fields.StringField(required=True)
     info_url = fields.StringField(required=False, default=None)
     logo_url = fields.StringField(required=False, default=None)
     active = fields.BooleanField(required=True)
-    admin = fields.ForeignField('user', required=False, default=None)
+    admins = fields.ForeignField('user', list=True, required=False, default=None)
     public_projects = fields.BooleanField(required=False, default=True)
 
 
@@ -108,13 +108,14 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         created.append(node)
 
     # Add admin to project
-    if conf.admin:
-        node.add_contributor(
-            contributor=conf.admin,
-            visible=False,
-            log=False,
-            save=True
-        )
+    if conf.admins:
+        for admin in conf.admins:
+            node.add_contributor(
+                contributor=admin,
+                visible=False,
+                log=False,
+                save=True
+            )
 
     # Make public if confident that this is not spam and projects made public
     if is_spam:
@@ -371,9 +372,7 @@ def _render_conference_node(node, idx):
         'downloadUrl': download_url,
     }
 
-
-def conference_results(meeting):
-
+def conference_data(meeting):
     conf = Conference.find(Q('endpoint', 'iexact', meeting))
     if conf.count():
         conf = conf[0]
@@ -390,6 +389,12 @@ def conference_results(meeting):
         _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
+    return data
+
+
+def conference_results(meeting):
+
+    data = conference_data(meeting)
 
     return {
         'data': json.dumps(data),
@@ -419,7 +424,7 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         query = (
-            Q('system_tags', 'eq', conf.endpoint) #conf['endpoint']
+            Q('system_tags', 'eq', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )
@@ -436,3 +441,5 @@ def conference_view(**kwargs):
     meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
     return {'meetings': meetings}
+
+
