@@ -20,7 +20,7 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <button type='submit' class="btn btn-default" data-bind="click:search">Search</button>
+                                        <button type='submit' class="btn btn-default" data-bind="click:go">Search</button>
                                     </span>
                                 </div>
                             </div>

@@ -98,7 +98,10 @@
                 this.displayProjectsInCommon = '';
             }
         }
-
+        self.go = function() {
+            self.currentPage(0);
+            self.search();
+        };
 
         self.search = function() {
             self.notification(false);
