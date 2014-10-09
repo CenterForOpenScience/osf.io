@@ -9,7 +9,7 @@ import argparse
 def main():
     init_app(set_backends=True, routes=False)
     args = parse_args()
-    conference(
+    add_conference(
         endpoint=args.endpoint,
         name=args.name,
         active=args.active,
@@ -19,7 +19,7 @@ def main():
         public_projects=args.public_projects
     )
 
-def conference(endpoint, name, active, info_url=None,
+def add_conference(endpoint, name, active, info_url=None,
                logo_url=None, admins=None, public_projects=None):
     try:
         admin_users = [
@@ -27,8 +27,7 @@ def conference(endpoint, name, active, info_url=None,
             for admin in admins
         ]
     except ModularOdmException:
-        print("Admin must be a current registered user on the OSF.")
-        return
+        raise RuntimeError("Admin must be a current registered user on the OSF.")
 
     conf = Conference(
         endpoint=endpoint,
@@ -41,8 +40,7 @@ def conference(endpoint, name, active, info_url=None,
     try:
         conf.save()
     except ModularOdmException:
-        print("Conference already exists.")
-        return
+        raise RuntimeError("Conference already exists.")
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Create new conference.')
@@ -55,5 +53,7 @@ def parse_args():
     parser.add_argument('--public', '--public_projects', dest='public_projects', type=bool, default=None)
     return parser.parse_args()
 
+
 if __name__ == '__main__':
     main()
+
