@@ -91,6 +91,29 @@
             pyDate: true
         });
 
+        self.start = ko.computed(function () {
+            if (self.startMonth() && self.startYear()) {
+                return new Date(self.startYear(),
+                                self.monthToInt(self.startMonth()).toString());
+            } else if (self.startYear()) {
+                return new Date(self.startYear(), '0', '1');
+            }
+        }, self).extend({
+            notInFuture: true
+        });
+        self.end = ko.computed(function() {
+            if (self.endMonth() && self.endYear()) {
+                self.displayDate(self.endMonth() + ' ' + self.endYear());
+                return new Date(self.endYear(),
+                                self.monthToInt(self.endMonth()).toString());
+            } else if (!self.endMonth() && self.endYear()) {
+                self.displayDate(self.endYear());
+                return new Date(self.endYear(), '0', '1');
+            }
+        }, self).extend({
+            notInFuture:true,
+            minDate: self.start
+        });
         self.clearEnd = function() {
             self.endMonth('');
             self.endYear('');
@@ -560,25 +583,6 @@
         });
         self.department = ko.observable('');
         self.title = ko.observable('');
-        self.start = ko.computed(function () {
-            if (self.startMonth() && self.startYear()) {
-                return new Date(self.startMonth() + '1,' + self.startYear());
-            }
-        }, self).extend({
-            notInFuture: true
-        });
-        self.end = ko.computed(function() {
-            if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
-                return new Date(self.endMonth() + '1,' + self.endYear());
-            } else if (!self.endMonth() && self.endYear()) {
-                self.displayDate(self.endYear());
-                return self.endYear();
-            }
-        }, self).extend({
-            notInFuture:true,
-            minDate: self.start
-        });
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
@@ -599,23 +603,6 @@
         });
         self.department = ko.observable('');
         self.degree = ko.observable('');
-        self.start = ko.computed(function () {
-            if (self.startMonth() && self.startYear()) {
-                return new Date(self.startMonth() + '1,' + self.startYear());
-            }
-        }, self).extend({
-            notInFuture: true
-        });
-        self.end = ko.computed(function() {
-            if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
-                return new Date(self.endMonth() + '1,' + self.endYear());
-            }
-        }, self).extend({
-            notInFuture:true,
-            minDate: self.start
-        });
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
