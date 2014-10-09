@@ -84,18 +84,10 @@ class TestHGridViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
 
-class TestSignedUrlViews(OsfTestCase):
+class HookTestCase(OsfTestCase):
 
     def setUp(self):
-        super(TestSignedUrlViews, self).setUp()
-        self.project = ProjectFactory()
-        self.node_settings = self.project.get_addon('osfstorage')
-
-
-class TestHookViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestHookViews, self).setUp()
+        super(HookTestCase, self).setUp()
         self.project = ProjectFactory()
         self.node_settings = self.project.get_addon('osfstorage')
 
@@ -109,6 +101,16 @@ class TestHookViews(OsfTestCase):
             **kwargs
         )
 
+
+class TestStartHook(HookTestCase):
+
+    def setUp(self):
+        super(TestStartHook, self).setUp()
+        self.path = 'soggy/pizza.png'
+        self.uploadSignature = '07235a8'
+        self.payload = {'uploadSignature': self.uploadSignature}
+        _, self.signature = utils.webhook_signer.sign_payload(self.payload)
+
     def send_start_hook(self, payload, signature, path=None, **kwargs):
         return self.send_hook(
             'osf_storage_upload_start_hook',
@@ -116,47 +118,32 @@ class TestHookViews(OsfTestCase):
             **kwargs
         )
 
-    def send_finish_hook(self, payload, signature, path=None, **kwargs):
-        return self.send_hook(
-            'osf_storage_upload_finish_hook',
-            payload, signature, path,
-            **kwargs
-        )
-
     def test_start_hook(self):
-        payload = {'uploadSignature': '07235a8'}
-        message, signature = utils.webhook_signer.sign_payload(payload)
-        path = 'crunchy/pizza.png'
         res = self.send_start_hook(
-            payload=payload, signature=signature, path=path,
+            payload=self.payload, signature=self.signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
         assert_equal(res.json['status'], 'success')
         self.node_settings.reload()
         assert_true(self.node_settings.file_tree)
-        record = model.FileRecord.find_by_path(path, self.node_settings)
+        record = model.FileRecord.find_by_path(self.path, self.node_settings)
         assert_true(record)
         assert_equal(len(record.versions), 1)
         assert_equal(record.versions[0].status, model.status['PENDING'])
 
     def test_start_hook_invalid_signature(self):
-        payload = {'uploadSignature': '07235a8'}
-        path = 'soggy/pizza.png'
         res = self.send_start_hook(
-            payload=payload, signature='invalid', path=path,
+            payload=self.payload, signature='invalid', path=self.path,
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
         assert_equal(res.json['code'], 400)
 
     def test_start_hook_path_locked(self):
-        payload = {'uploadSignature': '07235a8'}
-        path = 'cold/pizza.png'
-        message, signature = utils.webhook_signer.sign_payload(payload)
-        record = model.FileRecord.get_or_create(path, self.node_settings)
+        record = model.FileRecord.get_or_create(self.path, self.node_settings)
         record.create_pending_version('4217713')
         res = self.send_start_hook(
-            payload=payload, signature=signature, path=path,
+            payload=self.payload, signature=self.signature, path=self.path,
             expect_errors=True,
         )
         assert_equal(res.status_code, 409)
@@ -165,18 +152,15 @@ class TestHookViews(OsfTestCase):
         assert_equal(len(record.versions), 1)
 
     def test_start_hook_signature_consumed(self):
-        payload = {'uploadSignature': '07235a8'}
-        message, signature = utils.webhook_signer.sign_payload(payload)
-        path = 'rotten/pizza.png'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
-        record.create_pending_version('07235a8')
+        record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        record.create_pending_version(self.uploadSignature)
         record.resolve_pending_version(
-            '07235a8',
+            self.uploadSignature,
             factories.generic_location,
             {'size': 1024},
         )
         res = self.send_start_hook(
-            payload=payload, signature=signature, path=path,
+            payload=self.payload, signature=self.signature, path=self.path,
             expect_errors=True,
         )
         assert_equal(res.status_code, 400)
@@ -184,65 +168,147 @@ class TestHookViews(OsfTestCase):
         record.reload()
         assert_equal(len(record.versions), 1)
 
-    def test_finish_hook_status_success(self):
-        size = 1024
+
+class TestFinishHook(HookTestCase):
+
+    def setUp(self):
+        super(TestFinishHook, self).setUp()
+        self.path = 'crunchy/pizza.png'
+        self.size = 1024
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.uploadSignature = '07235a8'
+
+    def send_finish_hook(self, payload, signature, path=None, **kwargs):
+        return self.send_hook(
+            'osf_storage_upload_finish_hook',
+            payload, signature, path,
+            **kwargs
+        )
+
+    def make_payload(self, **kwargs):
         payload = {
             'status': 'success',
-            'uploadSignature': '07235a8',
+            'uploadSignature': self.uploadSignature,
             'location': factories.generic_location,
-            'metadata': {'size': size},
+            'metadata': {'size': self.size},
         }
+        payload.update(kwargs)
+        return payload
+
+    def test_finish_hook_status_success(self):
+        payload = self.make_payload()
         message, signature = utils.webhook_signer.sign_payload(payload)
-        path = 'rotten/pizza.png'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
-        record.create_pending_version('07235a8')
-        version = record.versions[0]
+        self.record.create_pending_version(self.uploadSignature)
+        version = self.record.versions[0]
         res = self.send_finish_hook(
-            payload=payload, signature=signature, path=path,
+            payload=payload, signature=signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
         version.reload()
         assert_equal(version.status, model.status['COMPLETE'])
-        assert_equal(version.size, size)
+        assert_equal(version.size, self.size)
 
     def test_finish_hook_status_error(self):
-        size = 1024
-        payload = {
-            'status': 'error',
-            'uploadSignature': '07235a8',
-        }
+        payload = self.make_payload(status='error')
         message, signature = utils.webhook_signer.sign_payload(payload)
-        path = 'rotten/pizza.png'
-        record = model.FileRecord.get_or_create(path, self.node_settings)
-        record.create_pending_version('07235a8')
-        version = record.versions[0]
+        self.record.create_pending_version(self.uploadSignature)
+        version = self.record.versions[0]
         res = self.send_finish_hook(
-            payload=payload, signature=signature, path=path,
+            payload=payload, signature=signature, path=self.path,
         )
         assert_equal(res.status_code, 200)
         version.reload()
         assert_equal(version.status, model.status['FAILED'])
 
     def test_finish_hook_status_unknown(self):
-        pass
+        payload = self.make_payload(status='pizza')
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        self.record.create_pending_version(self.uploadSignature)
+        version = self.record.versions[0]
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'Invalid status')
+        version.reload()
+        assert_equal(version.status, model.status['PENDING'])
 
     def test_finish_hook_invalid_signature(self):
-        pass
+        payload = self.make_payload()
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        self.record.create_pending_version(self.uploadSignature)
+        version = self.record.versions[0]
+        res = self.send_finish_hook(
+            payload=payload, signature=signature[::-1], path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'Invalid signature')
+        version.reload()
+        assert_equal(version.status, model.status['PENDING'])
 
     def test_finish_hook_record_not_found(self):
-        pass
+        payload = self.make_payload()
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path='missing/pizza.png',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 404)
 
     def test_finish_hook_status_success_no_upload_pending(self):
-        pass
+        payload = self.make_payload()
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        version = factories.FileVersionFactory()
+        self.record.versions.append(version)
+        self.record.save()
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'No pending upload')
 
     def test_finish_hook_status_error_no_upload_pending(self):
-        pass
+        payload = self.make_payload(status='error')
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        version = factories.FileVersionFactory()
+        self.record.versions.append(version)
+        self.record.save()
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'No pending upload')
 
     def test_finish_hook_status_success_already_complete(self):
-        pass
+        payload = self.make_payload(uploadSignature=self.uploadSignature[::-1])
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        version = factories.FileVersionFactory()
+        self.record.create_pending_version(self.uploadSignature)
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'Invalid upload signature')
 
     def test_finish_hook_status_error_already_complete(self):
-        pass
+        payload = self.make_payload(
+            status='error',
+            uploadSignature=self.uploadSignature[::-1],
+        )
+        message, signature = utils.webhook_signer.sign_payload(payload)
+        version = factories.FileVersionFactory()
+        self.record.create_pending_version(self.uploadSignature)
+        res = self.send_finish_hook(
+            payload=payload, signature=signature, path=self.path,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['reason'], 'Invalid upload signature')
 
 
 class TestUploadFile(OsfTestCase):

@@ -79,7 +79,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         )
         # Must save clone to attach to `FileTree` and `FileRecord` objects
         clone.save()
-        clone.tree = copy_file_tree_stable(self.file_tree, clone)
+        if self.file_tree:
+            clone.tree = copy_file_tree_stable(self.file_tree, clone)
         return clone, message
 
 

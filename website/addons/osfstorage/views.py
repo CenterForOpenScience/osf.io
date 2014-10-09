@@ -95,7 +95,7 @@ def handle_finish_errors(func):
         except errors.VersionNotPendingError:
             raise make_error(httplib.BAD_REQUEST, 'No pending upload')
         except errors.PendingSignatureMismatchError:
-            raise make_error(httplib.BAD_REQUEST, 'Upload already resolved')
+            raise make_error(httplib.BAD_REQUEST, 'Invalid upload signature')
     return wrapped
 
 
