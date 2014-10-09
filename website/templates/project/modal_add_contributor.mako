@@ -12,7 +12,7 @@
                 <div data-bind="if: page() == 'whom'">
 
                     <!-- Find contributors -->
-                    <form class='form'>
+                    <form class='form' data-bind="submit: startSearch">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -20,7 +20,7 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <button type='submit' class="btn btn-default" data-bind="click: startSearch">Search</button>
+                                        <input type="submit" value="Search" class="btn btn-default"></input>
                                     </span>
                                 </div>
                             </div>
