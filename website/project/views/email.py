@@ -132,7 +132,6 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
     elif conf.public_projects:
         node.set_privacy('public', auth=auth)
 
-
     # Add body
     node.update_node_wiki(
         page='home',
@@ -332,7 +331,7 @@ def meeting_hook():
         if not conf.active:
             raise HTTPError(http.NOT_ACCEPTABLE)
     except KeyError:
-       raise HTTPError(http.NOT_ACCEPTABLE)
+        raise HTTPError(http.NOT_ACCEPTABLE)
 
     name, address = get_mailgun_from()
 
@@ -396,7 +395,7 @@ def conference_data(meeting):
 
 
 def conference_results(meeting):
-    """Return the JSON used to render the grid view for a conference.
+    """Return the data for the grid view for a conference.
 
     :param str meeting: Endpoint name for a conference.
     """
@@ -452,5 +451,3 @@ def conference_view(**kwargs):
     meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
     return {'meetings': meetings}
-
-
