@@ -95,9 +95,12 @@
                     self.wikiText(response.wiki_content);
                 },
                 error: function (xhr, textStatus, error) {
-                    console.error(textStatus);
-                    console.error(error);
-                    bootbox.alert('Could not get wiki content.');
+                    bootbox.alert('Could not get wiki content.');                
+                    Raven.captureMessage('Could not GET wiki contents.', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
                 }
             });
         };

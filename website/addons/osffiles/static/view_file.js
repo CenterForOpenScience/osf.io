@@ -29,7 +29,7 @@
         self.file_name = ko.observable(null);
         self.files_url = ko.observable(null);
         self.node_title = ko.observable(null);
-        self.latest_version_url = ko.observable(null);
+        self.latest_download_url = ko.observable(null);
         self.api_url = ko.observable(null);
         self.files_page_url = ko.observable(null);
 
@@ -48,9 +48,9 @@
             self.node_title(response.node_title);
             self.file_name(response.file_name);
             self.node_title(response.node_title);
-            self.latest_version_url(response.latest_version_url);
-            self.api_url(response.api_url);
-            self.files_page_url(response.files_page_url);
+            self.latest_download_url(response.urls.latest.download);
+            self.api_url(response.urls.api);
+            self.files_page_url(response.urls.files);
             self.registered(response.registered);
         }).fail(
             $.osf.handleJSONError
@@ -59,7 +59,7 @@
         self.deleteFile = function(){
             bootbox.confirm({
                 title: 'Delete file from OSF Storage?',
-                message: 'Are you sure you want to delete <strong>' + 
+                message: 'Are you sure you want to delete <strong>' +
                       self.file_name() + '</strong>? It will not be recoverable.',
                 callback: function(result) {
                     if (result) {
