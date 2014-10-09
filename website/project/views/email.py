@@ -311,7 +311,7 @@ def parse_mailgun_receiver(form):
 def meeting_hook():
 
     # Fail if not from Mailgun
-    # check_mailgun_headers()
+    check_mailgun_headers()
 
     form = escape_html(request.form.to_dict())
     meeting, category = parse_mailgun_receiver(form)
