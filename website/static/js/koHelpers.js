@@ -102,6 +102,7 @@
 
     ko.validation.rules['pyDate'] = {
         validator: function (val) {
+            console.log(val);
             // Skip if values empty
             var uwVal = ko.utils.unwrapObservable(val);
             if (uwVal === null) {
@@ -112,8 +113,8 @@
             if (dateVal.toString() === 'Invalid Date') {
                 return true;
             }
-            // Compare dates
-            return dateVal.getFullYear() >= 1900;
+            // Compare years
+            return uwVal >= 1900;
         },
         message: 'Date must be greater than or equal to 1900.'
     };
