@@ -19,6 +19,7 @@ from resync.capability_list import CapabilityList
 from resync.resource_list import ResourceListDupeError
 
 from website import settings
+# from website.utils import 
 
 
 logger = logging.getLogger(__name__)
@@ -27,12 +28,18 @@ logger = logging.getLogger(__name__)
 def elastic_to_rss(name, data, query):
     count = len(data)
 
+    # pshb_headers = [
+
+    # ]
+    # import pdb; pdb.set_trace()
     items = [
         pyrss.RSSItem(
             guid=doc.get('id',{}).get('serviceID') or doc['_id'],
             link=doc['id']['url'],
             title=doc.get('title', 'No title provided'),
+            author=doc.get('source'),
             description=doc.get('description', 'No description provided'),
+            categories=doc.get('tags', 'No tags provided'),
             pubDate=parse(doc.get('dateCreated'))
         )
         for doc in data

@@ -17,7 +17,6 @@ from website.project import new_node, Node
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
-from website.project.decorators import must_be_valid_project
 
 from website.addons.app.model import Metadata
 from website.addons.app.utils import elastic_to_rss
@@ -78,7 +77,7 @@ def query_app_json(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
-    required = request.args.get('required', None)
+    required = request.args.get('required', 'id')
     start = request.args.get('page', 0)
     name = node_addon.system_user.username
     ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100, required=required)
@@ -91,7 +90,7 @@ def query_app_rss(node_addon, **kwargs):
 def query_app_resourcelist(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size', 100)
-    required = request.args.get('required', None)
+    required = request.args.get('required', 'id')
     start = request.args.get('page', 0)
     name = node_addon.system_user.username
     ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
@@ -104,7 +103,7 @@ def query_app_resourcelist(node_addon, **kwargs):
 def query_app_changelist(node_addon, **kwargs):
     q = request.args.get('q', '*')
     size = request.args.get('size', 100)
-    required = request.args.get('required', None)
+    required = request.args.get('required', 'id')
     start = request.args.get('page', 0)
     name = node_addon.system_user.username
     ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
