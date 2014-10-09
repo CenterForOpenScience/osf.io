@@ -12,18 +12,21 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
-
+from website.addons.wiki.utils import (
+    docs_uuid,
+    generate_share_uuid
+)
 from website.project.views.node import _view_project
 from website.project import show_diff
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, format_wid
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission
 )
+from .model import NodeWikiPage
 
-from .model import NodeWikiPage, docs_uuid
 
 logger = logging.getLogger(__name__)
 
@@ -184,10 +187,10 @@ def serialize_wiki_toc(project, auth):
 @must_have_addon('wiki', 'node')
 def project_wiki_page(auth, **kwargs):
 
-    wid = kwargs['wid']
+    page_name = kwargs['wid']
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
-    wiki_page = node.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(page_name)
 
     # todo breaks on /<script>; why?
 
@@ -206,10 +209,10 @@ def project_wiki_page(auth, **kwargs):
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
-        'pageName': wid,
+        'pageName': page_name,
         'page': wiki_page,
         'version': version,
-        'versions': _get_wiki_versions(node, wid, anonymous=anonymous),
+        'versions': _get_wiki_versions(node, page_name, anonymous=anonymous),
         'wiki_content': content,
         'is_current': is_current,
         'is_edit': False,
@@ -247,43 +250,44 @@ def wiki_page_content(wid, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(auth, **kwargs):
-    wid = kwargs['wid']  # the page name
+    page_name = kwargs['wid']  # the page name
+    wid = format_wid(page_name)  # the formatted page name
     node = kwargs['node'] or kwargs['project']
-    wiki_page = node.get_wiki_page(wid)
+    wiki_page = node.get_wiki_page(page_name)
 
     if wiki_page:
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.content
         wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
+
+        if wiki_page.share_uuid is None:
+            # TODO: Can this case occur?
+            if wid in node.wiki_sharejs_uuid:
+                wiki_page.share_uuid = node.wiki_sharejs_uuid[wid]
+            else:
+                wiki_page.share_uuid = generate_share_uuid(node, wid)
+            wiki_page.save()
+        share_uuid = wiki_page.share_uuid
     else:
-        """ TODO: Is it possible to give nodes a uuid to create predictable 
-        namespace and avoid creating a wiki page / share uuid on view? """
-        wiki_page = NodeWikiPage()
         version = 'NA'
         is_current = False
         content = ''
         wiki_page_api_url = None
-
-    # Find correct sharejs document
-    if wiki_page.share_uuid is None:
-        # Use existing doc if one was generated previously
-        if node.wiki_sharejs_uuid.get(wid):
-            wiki_page.share_uuid = node.wiki_sharejs_uuid[wid]
-        # Generate a new sharejs document
+        if wid in node.wiki_sharejs_uuid:
+            share_uuid = node.wiki_sharejs_uuid[wid]
         else:
-            wiki_page.generate_share_uuid(node, wid)
+            share_uuid = generate_share_uuid(node, wid)
 
     # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
-        'pageName': wid,
-        'page': wiki_page,  # TODO: Assess if needed
+        'pageName': page_name,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
         'wiki_content': content,
         'wiki_id': wiki_page._id if wiki_page else '',
-        'share_uuid': docs_uuid(node, wiki_page.share_uuid),
+        'share_uuid': docs_uuid(node, share_uuid),
         'is_current': is_current,
         'is_edit': True,
         'pages_current': sorted([
@@ -350,14 +354,17 @@ def project_wiki_rename(**kwargs):
         raise HTTPError(http.UNPROCESSABLE_ENTITY)
 
     if page and new_name:
-        if new_name.lower() in node.wiki_pages_current:
+        if format_wid(new_name) in node.wiki_pages_current:
             raise HTTPError(http.CONFLICT)
 
         # TODO: This should go in a Node method like node.rename_wiki
-        node.wiki_pages_versions[new_name.lower()] = node.wiki_pages_versions[page.page_name.lower()]
-        del node.wiki_pages_versions[page.page_name.lower()]
-        node.wiki_pages_current[new_name.lower()] = node.wiki_pages_current[page.page_name.lower()]
-        del node.wiki_pages_current[page.page_name.lower()]
+        node.wiki_pages_versions[format_wid(new_name)] = node.wiki_pages_versions[format_wid(page.page_name)]
+        del node.wiki_pages_versions[format_wid(page.page_name)]
+        node.wiki_pages_current[format_wid(new_name)] = node.wiki_pages_current[format_wid(page.page_name)]
+        del node.wiki_pages_current[format_wid(page.page_name)]
+        if format_wid(page.page_name) in node.wiki_sharejs_uuid:
+            node.wiki_sharejs_uuid[format_wid(new_name)] = node.wiki_sharejs_uuid[format_wid(page.page_name)]
+            del node.wiki_sharejs_uuid[format_wid(page.page_name)]
         node.save()
         page.rename(new_name)
         return {'message': new_name}

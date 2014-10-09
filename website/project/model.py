@@ -36,7 +36,6 @@ from framework.mongo import StoredObject
 from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
-
 from website.exceptions import NodeStateError
 from website.util.permissions import (
     expand_permissions,
@@ -2468,10 +2467,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        page = format_wid(page)
 
-        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2506,9 +2503,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
-        page = page.lower()
+        page = format_wid(page)
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2696,3 +2691,11 @@ class PrivateLink(StoredObject):
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
+
+
+def format_wid(wid):
+    """Format wiki id for reference in node dictionaries"""
+    wid = urllib.unquote_plus(wid)
+    wid = to_mongo(wid)
+    wid = wid.lower()
+    return wid

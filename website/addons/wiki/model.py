@@ -8,20 +8,17 @@ import uuid
 
 from bleach import linkify
 from bleach.callbacks import nofollow
-
 import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
-
 from modularodm import fields
 from modularodm.exceptions import ValidationValueError
 
-from pymongo import MongoClient
-
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
-
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
+from website.addons.wiki.utils import (docs_uuid, ops_uuid, share_db,
+                                       generate_share_uuid)
 
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
@@ -96,18 +93,7 @@ class NodeWikiPage(GuidStoredObject):
 
         return sanitize(self.html(node), tags=[], strip=True)
 
-    # TODO: Improve handling of page names
-    def generate_share_uuid(self, node, page_name=None, save=True):
-        """Generates uuid for use in sharejs namespacing"""
-
-        self.share_uuid = str(uuid.uuid5(uuid.uuid1(), str(self._id)))
-
-        page_name = page_name or self.page_name.lower()
-        node.wiki_sharejs_uuid[page_name] = self.share_uuid
-        node.save()
-
-        if save:
-            self.save()
+    # TODO: Improve handling of page names in migration and deletion
 
     def delete_share_document(self, node, page_name=None, save=True):
         """Deletes share document and removes namespace from model."""
@@ -120,7 +106,7 @@ class NodeWikiPage(GuidStoredObject):
         self.share_uuid = None
 
         page_name = page_name or self.page_name.lower()
-        node.wiki_sharejs_uuid[page_name] = None
+        node.wiki_sharejs_uuid.pop(page_name, None)
         node.save()
 
         if save:
@@ -135,15 +121,17 @@ class NodeWikiPage(GuidStoredObject):
         db = share_db()
 
         old_uuid = self.share_uuid
-        self.generate_share_uuid(node, self.page_name, save)
+        self.share_uuid = generate_share_uuid(node, self.page_name)
 
         db[ops_uuid(node, old_uuid)].rename(ops_uuid(node, self.share_uuid))
-
         new_doc = db['docs'].find_one({'_id': docs_uuid(node, old_uuid)})
         if new_doc:
             new_doc['_id'] = docs_uuid(node, self.share_uuid)
             db['docs'].insert(new_doc)
             db['docs'].remove({'_id': docs_uuid(node, old_uuid)})
+
+        if save:
+            self.save()
 
     def save(self, *args, **kwargs):
         rv = super(NodeWikiPage, self).save(*args, **kwargs)
@@ -158,19 +146,3 @@ class NodeWikiPage(GuidStoredObject):
 
     def to_json(self):
         return {}
-
-
-def docs_uuid(node, share_uuid):
-    return '{0}-{1}'.format(node._id, share_uuid)
-
-
-def ops_uuid(node, share_uuid):
-    share_uuid = docs_uuid(node, share_uuid)
-    return 'ops.{0}'.format(share_uuid.replace('-', '%2D'))
-
-
-def share_db():
-
-    # TODO: Use domain and port
-    client = MongoClient('localhost', settings.DB_PORT)
-    return client.sharejs
