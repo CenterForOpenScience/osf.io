@@ -110,7 +110,9 @@ def update_metadata(node_addon, mid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        Metadata.load(mid).update(metadata)
+        metastore = Metadata.load(mid)
+        metastore.update(metadata)
+        metastore.save()
         return http.OK
     except TypeError:
         raise HTTPError(http.NOT_FOUND)
