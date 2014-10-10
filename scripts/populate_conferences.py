@@ -6,7 +6,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth.core import User
-from website.project.views.email import Conference
+from website.conferences.model import Conference
 from website.app import init_app
 
 def main():
@@ -62,7 +62,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [
             'lvonschi@nrao.edu',
-            'Dkim@nrao.edu',
+            'sara.d.bowman@gmail.com',
+            # 'Dkim@nrao.edu',
         ],
         'public_projects': True,
     },

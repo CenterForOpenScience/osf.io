@@ -1,4 +1,7 @@
-from website.project.views.email import Conference
+#!/usr/bin/env python
+# encoding: utf-8
+
+from website.conferences.model import Conference
 from website.models import User
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
