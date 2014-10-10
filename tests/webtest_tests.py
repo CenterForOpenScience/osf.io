@@ -439,6 +439,27 @@ class TestComponents(OsfTestCase):
             res
         )
 
+    def test_can_configure_comments_if_admin(self):
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=self.user.auth,
+        ).maybe_follow()
+        assert_in('Configure Commenting', res)
+
+    def test_cant_configure_comments_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.component.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            auth=self.consolidate_auth,
+            save=True,
+        )
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=non_admin.auth
+        ).maybe_follow()
+        assert_not_in('Configure commenting', res)
+
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
         assert_not_in('Components', res)

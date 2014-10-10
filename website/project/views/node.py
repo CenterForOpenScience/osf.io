@@ -338,7 +338,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_have_permission('write')
+@must_have_permission('admin')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
