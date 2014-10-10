@@ -11,7 +11,6 @@ from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
 
-
 from resync.resource import Resource
 from resync.resource_list import ResourceList
 from resync.change_list import ChangeList
@@ -29,10 +28,6 @@ logger = logging.getLogger(__name__)
 def elastic_to_rss(name, data, query, url):
     count = len(data)
 
-    # pshb_headers = [
-
-    # ]
-    # import pdb; pdb.set_trace()
     items = [
         pyrss.RSSItem(
             guid=doc.get('id',{}).get('serviceID') or doc['_id'],
@@ -105,8 +100,8 @@ def generate_capabilitylist(changelist_url, resourcelist_url):
 
     cl = CapabilityList()
 
-    cl.add(Resource(settings.DOMAIN[:-1] + changelist_url))
-    cl.add(Resource(settings.DOMAIN[:-1] + resourcelist_url))
+    cl.add(Resource(changelist_url))
+    cl.add(Resource(resourcelist_url))
 
     return cl.as_xml()
 

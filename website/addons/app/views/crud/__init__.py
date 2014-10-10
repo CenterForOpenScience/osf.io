@@ -117,8 +117,8 @@ def query_app_changelist(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def query_app_capabilitylist(node_addon, **kwargs):
     node = node_addon.owner
-    resourcelist_url = node.api_url_for('query_app_resourcelist', _xml=True)
-    changelist_url = node.api_url_for('query_app_changelist', _xml=True)
+    resourcelist_url = node.api_url_for('query_app_resourcelist', _xml=True, _absolute=True)
+    changelist_url = node.api_url_for('query_app_changelist', _xml=True, _absolute=True)
 
     return generate_capabilitylist(resourcelist_url, changelist_url)
 
