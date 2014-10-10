@@ -12,7 +12,8 @@ import httplib as http
 
 from flask import request
 from nameparser import HumanName
-from modularodm import Q
+from modularodm import fields, Q
+from modularodm.exceptions import ModularOdmException
 
 from framework.forms.utils import sanitize
 from framework.exceptions import HTTPError
@@ -25,10 +26,9 @@ from website.project import new_node
 from website.project.views.file import prepare_file
 from website.util.sanitize import escape_html
 from website.mails import send_mail, CONFERENCE_SUBMITTED, CONFERENCE_FAILED
-
+from framework.mongo import StoredObject
 
 logger = logging.getLogger(__name__)
-
 
 def request_to_data():
     return {
@@ -37,54 +37,20 @@ def request_to_data():
         'args': request.args.to_dict(),
     }
 
-
-# TODO: Move me to database
-MEETING_DATA = {
-    'spsp2014': {
-        'name': 'SPSP 2014',
-        'info_url': None,
-        'logo_url': None,
-        'active': False,
-    },
-    'asb2014': {
-        'name': 'ASB 2014',
-        'info_url': 'http://www.sebiologists.org/meetings/talks_posters.html',
-        'logo_url': None,
-        'active': False,
-    },
-    'aps2014': {
-        'name': 'APS 2014',
-        'info_url': 'http://centerforopenscience.org/aps/',
-        'logo_url': '/static/img/2014_Convention_banner-with-APS_700px.jpg',
-        'active': False,
-    },
-    'annopeer2014': {
-        'name': '#annopeer',
-        'info_url': None,
-        'logo_url': None,
-        'active': False,
-    },
-    'cpa2014': {
-        'name': 'CPA 2014',
-        'info_url': None,
-        'logo_url': None,
-        'active': False,
-    },
-    'filaments2014': {
-        'name': 'Filaments 2014',
-        'info_url': None,
-        'logo_url': 'https://science.nrao.edu/science/meetings/2014/'
-                    'filamentary-structure/images/filaments2014_660x178.png',
-        'active': True,
-    },
-    # TODO: Uncomment on 2015/02/01
-    # 'spsp2015': {
-    #     'name': 'SPSP 2015',
-    #     'info_url': None,
-    #     'logo_url': None,
-    #     'active': False,
-    # },
-}
+class Conference(StoredObject):
+    #: Determines the email address for submission and the OSF url
+    # Example: If endpoint is spsp2014, then submission email will be
+    # spsp2014-talk@osf.io or spsp2014-poster@osf.io and the OSF url will
+    # be osf.io/view/spsp2014
+    endpoint = fields.StringField(primary=True, required=True, unique=True)
+    #: Full name, e.g. "SPSP 2014"
+    name = fields.StringField(required=True)
+    info_url = fields.StringField(required=False, default=None)
+    logo_url = fields.StringField(required=False, default=None)
+    active = fields.BooleanField(required=True)
+    admins = fields.ForeignField('user', list=True, required=False, default=None)
+    #: Whether to make submitted projects public
+    public_projects = fields.BooleanField(required=False, default=True)
 
 
 def get_or_create_user(fullname, address, is_spam):
@@ -107,7 +73,7 @@ def get_or_create_user(fullname, address, is_spam):
     return user, user_created
 
 
-def add_poster_by_email(conf_id, recipient, address, fullname, subject,
+def add_poster_by_email(conf, recipient, address, fullname, subject,
                         message, attachments, tags=None, system_tags=None,
                         is_spam=False):
 
@@ -145,16 +111,26 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
         node = new_node('project', subject, user)
         created.append(node)
 
-    # Make public if confident that this is not spam
-    if not is_spam:
-        node.set_privacy('public', auth=auth)
-    else:
+    # Add admin to project
+    if conf.admins:
+        for admin in conf.admins:
+            node.add_contributor(
+                contributor=admin,
+                visible=False,
+                log=False,
+                save=True
+            )
+
+    # Make public if confident that this is not spam and projects made public
+    if is_spam:
         logger.warn(
             'Possible spam detected in email modification of '
             'user {0} / node {1}'.format(
                 user._id, node._id,
             )
         )
+    elif conf.public_projects:
+        node.set_privacy('public', auth=auth)
 
     # Add body
     node.update_node_wiki(
@@ -208,9 +184,9 @@ def add_poster_by_email(conf_id, recipient, address, fullname, subject,
     send_mail(
         address,
         CONFERENCE_SUBMITTED,
-        conf_full_name=MEETING_DATA[conf_id]['name'],
+        conf_full_name=conf.name,
         conf_view_url=urlparse.urljoin(
-            settings.DOMAIN, os.path.join('view', conf_id)
+            settings.DOMAIN, os.path.join('view', conf.endpoint)
         ),
         fullname=fullname,
         user_created=user_created,
@@ -343,10 +319,16 @@ def meeting_hook():
     form = escape_html(request.form.to_dict())
     meeting, category = parse_mailgun_receiver(form)
 
+    conf = Conference.find(Q('endpoint', 'iexact', meeting))
+    if conf.count():
+        conf = conf[0]
+    else:
+        raise HTTPError(http.NOT_FOUND)
+
     # Fail if not found or inactive
     # Note: Throw 406 to disable Mailgun retries
     try:
-        if not MEETING_DATA[meeting]['active']:
+        if not conf.active:
             raise HTTPError(http.NOT_ACCEPTABLE)
     except KeyError:
         raise HTTPError(http.NOT_ACCEPTABLE)
@@ -355,7 +337,7 @@ def meeting_hook():
 
     # Add poster
     add_poster_by_email(
-        conf_id=meeting,
+        conf=conf,
         recipient=form['recipient'],
         address=address,
         fullname=name,
@@ -393,10 +375,10 @@ def _render_conference_node(node, idx):
         'downloadUrl': download_url,
     }
 
-
-def conference_results(meeting):
-
-    if meeting not in MEETING_DATA:
+def conference_data(meeting):
+    try:
+        Conference.find_one(Q('endpoint', 'iexact', meeting))
+    except ModularOdmException:
         raise HTTPError(http.NOT_FOUND)
 
     nodes = Node.find(
@@ -409,11 +391,25 @@ def conference_results(meeting):
         _render_conference_node(each, idx)
         for idx, each in enumerate(nodes)
     ]
+    return data
+
+
+def conference_results(meeting):
+    """Return the data for the grid view for a conference.
+
+    :param str meeting: Endpoint name for a conference.
+    """
+    try:
+        conf = Conference.find_one(Q('endpoint', 'iexact', meeting))
+    except ModularOdmException:
+        raise HTTPError(http.NOT_FOUND)
+
+    data = conference_data(meeting)
 
     return {
         'data': json.dumps(data),
         'label': meeting,
-        'meeting': MEETING_DATA[meeting],
+        'meeting': conf.to_storage(),
     }
 
 
@@ -436,9 +432,9 @@ def get_download_count(nodes):
 def conference_view(**kwargs):
 
     meetings = []
-    for meeting, data in MEETING_DATA.iteritems():
+    for conf in Conference.find():
         query = (
-            Q('system_tags', 'eq', meeting)
+            Q('system_tags', 'eq', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )
@@ -447,9 +443,9 @@ def conference_view(**kwargs):
         if submissions < settings.CONFERNCE_MIN_COUNT:
             continue
         meetings.append({
-            'name': data['name'],
-            'active': data['active'],
-            'url': web_url_for('conference_results', meeting=meeting),
+            'name': conf.name,
+            'active': conf.active,
+            'url': web_url_for('conference_results', meeting=conf.endpoint),
             'submissions': submissions,
         })
     meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
