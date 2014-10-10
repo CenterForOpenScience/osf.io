@@ -110,10 +110,10 @@ def _get_wiki_api_urls(node, wid, additional_urls=None):
     return urls
 
 
-def _get_wiki_web_urls(node, wid, additional_urls=None):
+def _get_wiki_web_urls(node, wid, compare_id=1, additional_urls=None):
     urls = {
         'base': node.web_url_for('project_wiki_home'),
-        'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=1),
+        'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=compare_id),
         'edit': node.web_url_for('project_wiki_edit', wid=wid),
         'home': node.web_url_for('project_wiki_home'),
         'page': node.web_url_for('project_wiki_page', wid=wid),
@@ -157,7 +157,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
             'category': node.category,
             'urls': {
                 'api': _get_wiki_api_urls(node, wid),
-                'web': _get_wiki_web_urls(node, wid),
+                'web': _get_wiki_web_urls(node, wid, compare_id),
             },
         }
         ret.update(_view_project(node, auth, primary=True))

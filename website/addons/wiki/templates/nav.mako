@@ -17,7 +17,7 @@
     $(document).ready(function(){
         $(".navbar-nav li").each(function(){
             var href = $(this).find('a').attr('href');
-            if (href === window.location.pathname.replace(/%20/g, ' ')) {
+            if (href === window.location.pathname) {
                 var $this = $(this);
                 $this.addClass('active');
             }
