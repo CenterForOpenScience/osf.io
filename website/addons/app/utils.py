@@ -11,6 +11,7 @@ from dateutil.parser import parse
 
 import PyRSS2Gen as pyrss
 
+
 from resync.resource import Resource
 from resync.resource_list import ResourceList
 from resync.change_list import ChangeList
@@ -19,13 +20,13 @@ from resync.capability_list import CapabilityList
 from resync.resource_list import ResourceListDupeError
 
 from website import settings
-# from website.utils import 
+from website.util import rss
 
 
 logger = logging.getLogger(__name__)
 
 
-def elastic_to_rss(name, data, query):
+def elastic_to_rss(name, data, query, url):
     count = len(data)
 
     # pshb_headers = [
@@ -47,16 +48,16 @@ def elastic_to_rss(name, data, query):
 
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
 
-    rss = pyrss.RSS2(
+    rss_feed = rss.RSS2_Pshb(
         title='{name}: RSS for query: "{query}"'.format(name=name, query=query),
-        link='{base_url}rss?q={query}'.format(base_url=settings.DOMAIN, query=query),
+        link='{url}'.format(url=url),
         items=items,
         description='{n} results, {m} most recent displayed in feed'.format(n=count, m=len(items)),
-        lastBuildDate=str(datetime.now()),
+        lastBuildDate=str(datetime.now())
     )
 
     f = StringIO()
-    rss.write_xml(f, encoding="UTF-8")
+    rss_feed.write_xml(f, encoding="UTF-8")
 
     return f.getvalue()
 
@@ -104,10 +105,12 @@ def generate_capabilitylist(changelist_url, resourcelist_url):
 
     cl = CapabilityList()
 
-    cl.add(Resource(settings.DOMAIN[:-1] + changelist_url + '?required=id'))
-    cl.add(Resource(settings.DOMAIN[:-1] + resourcelist_url + '?required=id'))
+    cl.add(Resource(settings.DOMAIN[:-1] + changelist_url))
+    cl.add(Resource(settings.DOMAIN[:-1] + resourcelist_url))
 
     return cl.as_xml()
+
+# def update_pubsubhubbub(application, )
 
 
 
