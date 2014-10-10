@@ -60,27 +60,28 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
 
     file_tree = fields.ForeignField('FileTree')
 
+    def copy_contents_to(self, dest):
+        """Copy file tree and contents to destination. Note: destination must be
+        saved before copying so that copied items can refer to it.
+
+        :param OsfStorageNodeSettings dest: Destination settings object
+        """
+        dest.save()
+        if self.file_tree:
+            dest.tree = copy_file_tree_stable(self.file_tree, dest)
+
     def after_fork(self, node, fork, user, save=True):
-        """
-        """
         clone, message = super(OsfStorageNodeSettings, self).after_fork(
             node=node, fork=fork, user=user, save=False
         )
-        # Must save clone to attach to `FileTree` and `FileRecord` objects
-        clone.save()
-        clone.tree = copy_file_tree_stable(self.file_tree, clone)
+        self.copy_contents_to(clone)
         return clone, message
 
     def after_register(self, node, registration, user, save=True):
-        """
-        """
         clone, message = super(OsfStorageNodeSettings, self).after_register(
             node=node, registration=registration, user=user, save=False
         )
-        # Must save clone to attach to `FileTree` and `FileRecord` objects
-        clone.save()
-        if self.file_tree:
-            clone.tree = copy_file_tree_stable(self.file_tree, clone)
+        self.copy_contents_to(clone)
         return clone, message
 
 
