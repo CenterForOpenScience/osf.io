@@ -624,24 +624,20 @@ def _render_addon(node, user):
     configs = {}
     js = []
     css = []
-
-    addon_list = node.get_addon_names()
-    remove_wiki = False
+    show_wiki = True
 
     for addon in node.get_addons():
 
         if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
             wiki_page = node.get_wiki_page('home')
 
-            # If the page doesn't exist, skip and remove from addon list
+            # Check if the page doesn't exist,
             if wiki_page is None:
-                remove_wiki = True
-                continue
+                show_wiki = False
 
-            # If the page has no content, skip and remove from addon list
-            if not wiki_page.html(node):
-                remove_wiki = True
-                continue
+            # Check if the page has no content
+            elif not wiki_page.html(node):
+                show_wiki = False
 
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
@@ -650,10 +646,7 @@ def _render_addon(node, user):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    if remove_wiki:
-        addon_list.remove('wiki')
-
-    return widgets, configs, js, css, addon_list
+    return widgets, configs, js, css, show_wiki
 
 
 def _view_project(node, auth, primary=False):
@@ -665,7 +658,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css, addon_list = _render_addon(node, user)
+    widgets, configs, js, css, show_wiki = _render_addon(node, user)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -725,7 +718,7 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-            'has_wiki_content': False,
+            'show_wiki': show_wiki,
 
         },
         'parent_node': {
@@ -751,7 +744,7 @@ def _view_project(node, auth, primary=False):
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': addon_list,
+        'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,

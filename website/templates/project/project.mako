@@ -21,22 +21,24 @@
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
+                    %if addon is 'wiki':
+                        %if node['show_wiki']:
+                            <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+                            "uri": "${node['api_url']}wiki/widget/"
+                        }'></div>
+                        %endif
+
+                    %else:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
+                    %endif
                 % endif
             % endfor
 
         % else:
-
-            % if 'wiki' in addons and addons['wiki']['has_widget']:
-                <div class="addon-widget-container" mod-meta='{
-                        "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                        "uri": "${node['api_url']}wiki/widget/"
-                    }'></div>
-            % endif
-
             <!-- If no widgets, show components -->
             ${children()}
 
