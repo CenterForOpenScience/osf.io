@@ -3,8 +3,9 @@
 """
 from modularodm import fields
 
-from website.search.search import update_metadata, get_mapping
+from website.project import Node
 from website.addons.base import AddonNodeSettingsBase
+from website.search.search import update_metadata, get_mapping
 
 from framework.auth import User
 from framework.mongo import StoredObject, ObjectId
@@ -34,6 +35,30 @@ class Metadata(StoredObject):
     @property
     def namespace(self):
         return self.app.namespace
+
+    @property
+    def project(self):
+        if self.get('attached'):
+            return Node.load(self['attached'].get('pid'))
+        return None
+
+    @property
+    def node(self):
+        if self.get('attached'):
+            return Node.load(self['attached'].get('nid'))
+        return None
+
+    @property
+    def parent(self):
+        if self.get('attached'):
+            return Metadata.load(self['attached'].get('pmid'))
+        return None
+
+    @property
+    def children(self):
+        if self.get('attached'):
+            return Metadata.load(self['attached'].get('cmids'))
+        return None
 
     def __getitem__(self, key):
         return self.data[key]
@@ -120,4 +145,3 @@ class AppNodeSettings(AddonNodeSettingsBase):
     @property
     def all_data(self):
         return self.metadata__data
-
