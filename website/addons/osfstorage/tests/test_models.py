@@ -14,6 +14,8 @@ from modularodm import exceptions as modm_errors
 
 from framework.auth import Auth
 
+from website.models import NodeLog
+
 from website.addons.osfstorage import model
 from website.addons.osfstorage import errors
 
@@ -168,8 +170,9 @@ class TestFileRecord(OsfTestCase):
     def setUp(self):
         super(TestFileRecord, self).setUp()
         self.path = 'red/special.mp3'
-        self.node_settings = model.OsfStorageNodeSettings()
-        self.node_settings.save()
+        self.project = ProjectFactory()
+        self.auth_obj = Auth(user=self.project.creator)
+        self.node_settings = self.project.get_addon('osfstorage')
         self.record = model.FileRecord(
             path=self.path,
             node_settings=self.node_settings,
@@ -202,7 +205,8 @@ class TestFileRecord(OsfTestCase):
     def test_get_or_create_not_found_top_level(self):
         assert_is(self.node_settings.file_tree, None)
         result = model.FileRecord.get_or_create(
-            'stonecold.mp3', self.node_settings
+            'stonecold.mp3',
+            self.node_settings,
         )
         assert_is_not(self.node_settings.file_tree, None)
         assert_equal(len(self.node_settings.file_tree.children), 1)
@@ -263,22 +267,47 @@ class TestFileRecord(OsfTestCase):
             self.record.create_pending_version('c22b5f9')
 
     def test_delete_record(self):
-        self.record.delete()
+        nlogs = len(self.project.logs)
+        self.record.delete(auth=self.auth_obj)
+        self.project.reload()
         assert_true(self.record.is_deleted)
+        assert_equal(len(self.project.logs), nlogs + 1)
+        assert_equal(
+            self.project.logs[-1].action,
+            'osf_storage_{0}'.format(NodeLog.FILE_REMOVED),
+        )
 
     def test_delete_deleted_record_raises_error(self):
+        nlogs = len(self.project.logs)
         self.record.is_deleted = True
+        self.record.save()
         with assert_raises(errors.DeleteError):
-            self.record.delete()
+            self.record.delete(auth=self.auth_obj)
+        self.project.reload()
+        assert_true(self.record.is_deleted)
+        assert_equal(len(self.project.logs), nlogs)
 
     def test_undelete_record(self):
-        with assert_raises(errors.UndeleteError):
-            self.record.undelete()
-
-    def test_undeleted_undeleted_record_raises_error(self):
+        nlogs = len(self.project.logs)
         self.record.is_deleted = True
-        self.record.undelete()
+        self.record.save()
+        self.record.undelete(auth=self.auth_obj)
+        self.project.reload()
         assert_false(self.record.is_deleted)
+        assert_equal(len(self.project.logs), nlogs + 1)
+        assert_equal(
+            self.project.logs[-1].action,
+            'osf_storage_{0}'.format(NodeLog.FILE_RESTORED),
+        )
+
+    def test_undelete_undeleted_record_raises_error(self):
+        nlogs = len(self.project.logs)
+        with assert_raises(errors.UndeleteError):
+            self.record.undelete(auth=self.auth_obj)
+        assert_false(self.record.is_deleted)
+        self.project.reload()
+        assert_false(self.record.is_deleted)
+        assert_equal(len(self.project.logs), nlogs)
 
 
 class TestFileVersion(OsfTestCase):

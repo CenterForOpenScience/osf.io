@@ -8,8 +8,10 @@ from modularodm import exceptions as modm_errors
 
 from framework.mongo import StoredObject
 
+from website.models import NodeLog
 from website.addons.base import AddonNodeSettingsBase, GuidFile
 
+from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
 
 
@@ -112,6 +114,10 @@ class BaseFileObject(StoredObject):
         _, value = os.path.splitext(self.path)
         return value
 
+    @property
+    def node(self):
+        return self.node_settings.owner
+
     @classmethod
     def find_by_path(cls, path, node_settings):
         try:
@@ -197,15 +203,29 @@ class FileRecord(BaseFileObject):
         latest_version.cancel(signature)
         return latest_version
 
-    def delete(self):
+    def log(self, auth, action):
+        node_logger = logs.OsfStorageNodeLogger(
+            auth=auth,
+            node=self.node,
+            path=self.path,
+        )
+        node_logger.log(action, save=True)
+
+    def delete(self, auth, log=True):
         if self.is_deleted:
             raise errors.DeleteError
         self.is_deleted = True
+        self.save()
+        if log:
+            self.log(auth, NodeLog.FILE_REMOVED)
 
-    def undelete(self):
+    def undelete(self, auth, log=True):
         if not self.is_deleted:
             raise errors.UndeleteError
         self.is_deleted = False
+        self.save()
+        if log:
+            self.log(auth, NodeLog.FILE_RESTORED)
 
 
 status = {
