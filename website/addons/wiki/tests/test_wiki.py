@@ -15,7 +15,7 @@ from website.addons.wiki.model import NodeWikiPage
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo
 
-SPECIAL_CHARACTERS = '`~!@#$%^*()-=_+ []{}\|/?.,;:''"'
+SPECIAL_CHARACTERS = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 
 
 class TestNodeWikiPageModel(OsfTestCase):
@@ -40,6 +40,7 @@ class TestWikiViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_pointer_returns_200(self):
+        # TODO: explain how this tests a pointer
         pointer = PointerFactory(node=self.project)
         url = self.project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
@@ -102,7 +103,6 @@ class TestWikiViews(OsfTestCase):
         new_wiki = self.project.get_wiki_page('home')
         assert_equal(new_wiki.content, 'new content')
 
-
     def test_project_wiki_edit_post_with_new_wid_and_no_content(self):
         page_name = fake.catch_phrase()
 
@@ -110,6 +110,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': ''}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
 
         new_wiki_page_count = NodeWikiPage.find().count()
         # A new wiki page was created in the db
@@ -120,7 +121,6 @@ class TestWikiViews(OsfTestCase):
         new_page = self.project.get_wiki_page(page_name)
         assert_is_not_none(new_page)
 
-
     def test_project_wiki_edit_post_with_new_wid_and_content(self):
         page_name, page_content = fake.catch_phrase(), fake.bs()
 
@@ -128,6 +128,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_edit_post', wid=page_name)
         # User submits to edit form with no content
         res = self.app.post(url, {'content': page_content}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
 
         new_wiki_page_count = NodeWikiPage.find().count()
         # A new wiki page was created in the db
@@ -201,6 +202,7 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
@@ -270,7 +272,7 @@ class TestWikiRename(OsfTestCase):
             wid=self.wiki._id,
         )
 
-    def test_rename_wiki_page_valid(self, new_name='away'):
+    def test_rename_wiki_page_valid(self, new_name=u'away'):
         self.app.put_json(
             self.url,
             {'value': new_name, 'pk': self.page._id},
@@ -286,11 +288,6 @@ class TestWikiRename(OsfTestCase):
         assert_equal(new_wiki._id, self.page._id)
         assert_equal(new_wiki.content, self.page.content)
         assert_equal(new_wiki.version, self.page.version)
-
-    def test_rename_wiki_page_invalid(self, new_name='<html>hello</html>'):
-        res = self.app.put_json(self.url, {'value': new_name, 'pk': self.page._id},
-                auth=self.auth, expect_errors=True)
-        assert_equal(res.status_code, 422)
 
     def test_rename_wiki_page_duplicate(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
@@ -314,17 +311,23 @@ class TestWikiRename(OsfTestCase):
         self.project.save()
 
         # Creates a new page
-        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
+        self.project.update_node_wiki('page3', 'moarcontent', self.consolidate_auth)
         page3 = self.project.get_wiki_page('page3')
         self.project.save()
 
         url = self.project.api_url_for('project_wiki_rename', wid='page3')
         # Renames the wiki to the deleted page
-        res = self.app.put_json(self.url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
+        res = self.app.put_json(url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
         assert_equal(res.status_code, 200)
 
-    def test_rename_wiki_page_w_special_characters(self):
-        # cannot use '<', '>' and '&' as bleach is encoding these and will cause an assertion
+    def test_rename_wiki_page_with_html_title(self):
+        # script is not an issue since data is sanitized via bleach or mako before display.
+        self.test_rename_wiki_page_valid(new_name=u'<html>hello</html')
+
+    def test_rename_wiki_page_with_non_ascii_title(self):
+        self.test_rename_wiki_page_valid(new_name=u'øˆ∆´ƒøßå√ß')
+
+    def test_rename_wiki_page_with_special_character_title(self):
         self.test_rename_wiki_page_valid(new_name=SPECIAL_CHARACTERS)
 
 
