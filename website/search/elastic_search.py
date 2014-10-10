@@ -499,7 +499,7 @@ def update_metadata(metadata):
     index = "metadata"
     app_id = metadata.namespace
     data = metadata.to_json()
-    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id)
+    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
 
 
 @requires_search
@@ -563,7 +563,7 @@ def _metadata_inner_query(query, required):
                     item[0]: item[1].split(',')
                 }
             })
-        else: 
+        else:
             filters.append({
                 "query": {
                     'match': {
