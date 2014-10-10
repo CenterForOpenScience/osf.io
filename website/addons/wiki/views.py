@@ -351,7 +351,7 @@ def project_wiki_rename(**kwargs):
         ))
 
     old_name_key = to_mongo(page.page_name).lower()
-    new_name_key = to_mongo(request.json.get('value', None)).lower()
+    new_name_key = to_mongo(request.json.get('value', None)).strip().lower()
 
     if page and new_name_key:
         if new_name_key in node.wiki_pages_current:
