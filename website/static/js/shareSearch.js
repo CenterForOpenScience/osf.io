@@ -56,6 +56,7 @@
     var ViewModel = function(url) {
         var self = this;
 
+        self.searchStarted = ko.observable(false);
         self.queryUrl = url;
         self.totalResults = ko.observable(0);
         self.resultsPerPage = ko.observable(10);
@@ -126,6 +127,7 @@
         };
 
         self.search = function() {
+            self.searchStarted(true);
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
                 self.totalResults(data.total);

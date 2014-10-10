@@ -56,13 +56,13 @@ def query_app_json(node_addon, **kwargs):
     except KeyError:
         pass
     request_data = request.json
-    try:
-        ret = search(request_data, _type=node_addon.namespace, index='metadata')
-    except SearchException:
-        return {
-            'results': [],
-            'total': 0
-        }
+    # try:
+    ret = search(request_data, _type=node_addon.namespace, index='metadata')
+    # except SearchException:
+    #     return {
+    #         'results': [],
+    #         'total': 0
+    #     }
 
     return {
         'results': [blob['_source'] for blob in ret['hits']['hits']],
