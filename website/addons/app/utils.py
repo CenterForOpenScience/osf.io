@@ -19,12 +19,13 @@ from resync.capability_list import CapabilityList
 from resync.resource_list import ResourceListDupeError
 
 from website import settings
+from website.util import rss
 
 
 logger = logging.getLogger(__name__)
 
 
-def elastic_to_rss(name, data, query):
+def elastic_to_rss(name, data, query, url):
     count = len(data)
 
     items = [
@@ -32,7 +33,9 @@ def elastic_to_rss(name, data, query):
             guid=doc.get('id',{}).get('serviceID') or doc['_id'],
             link=doc['id']['url'],
             title=doc.get('title', 'No title provided'),
+            author=doc.get('source'),
             description=doc.get('description', 'No description provided'),
+            categories=doc.get('tags', 'No tags provided'),
             pubDate=parse(doc.get('dateCreated'))
         )
         for doc in data
@@ -40,16 +43,16 @@ def elastic_to_rss(name, data, query):
 
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
 
-    rss = pyrss.RSS2(
+    rss_feed = rss.RSS2_Pshb(
         title='{name}: RSS for query: "{query}"'.format(name=name, query=query),
-        link='{base_url}rss?q={query}'.format(base_url=settings.DOMAIN, query=query),
+        link='{url}'.format(url=url),
         items=items,
         description='{n} results, {m} most recent displayed in feed'.format(n=count, m=len(items)),
-        lastBuildDate=str(datetime.now()),
+        lastBuildDate=str(datetime.now())
     )
 
     f = StringIO()
-    rss.write_xml(f, encoding="UTF-8")
+    rss_feed.write_xml(f, encoding="UTF-8")
 
     return f.getvalue()
 
@@ -97,10 +100,12 @@ def generate_capabilitylist(changelist_url, resourcelist_url):
 
     cl = CapabilityList()
 
-    cl.add(Resource(settings.DOMAIN[:-1] + changelist_url + '?required=id'))
-    cl.add(Resource(settings.DOMAIN[:-1] + resourcelist_url + '?required=id'))
+    cl.add(Resource(changelist_url))
+    cl.add(Resource(resourcelist_url))
 
     return cl.as_xml()
+
+# def update_pubsubhubbub(application, )
 
 
 
