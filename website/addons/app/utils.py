@@ -41,10 +41,18 @@ def elastic_to_rss(name, data, query, url):
         for doc in data
     ]
 
+    if query == '*':
+        title_query = 'All'
+    else:
+        title_query = query
+
+    if name == 'scrapi':
+        name = 'SHARE Notification Service'
+
     logger.info("{n} documents added to RSS feed".format(n=len(items)))
 
     rss_feed = rss.RSS2_Pshb(
-        title='{name}: RSS for query: "{query}"'.format(name=name, query=query),
+        title='{name}: RSS for query: "{title_query}"'.format(name=name, title_query=title_query),
         link='{url}'.format(url=url),
         items=items,
         description='{n} results, {m} most recent displayed in feed'.format(n=count, m=len(items)),
