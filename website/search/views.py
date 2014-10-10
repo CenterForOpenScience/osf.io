@@ -75,56 +75,9 @@ def search_search():
 
 
 def share_search():
-    tick = time.time()
-    ERROR_RETURN = {
-        'results': [],
-        'tags': [],
-        'query': '',
-    }
-    # search results are automatically paginated. on the pages that are
-    # not the first page, we pass the page number along with the url
-    start = request.args.get('pagination', 0)
-    try:
-        start = int(start)
-    except (TypeError, ValueError):
-        logger.error(u'Invalid pagination value: {0}'.format(start))
-        start = 0
-    query = request.args.get('q')
-    # if there is not a query, tell our users to enter a search
-    query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No search query', 'info')
-        return ERROR_RETURN
 
-    # if the search does not work,
-    # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
-    try:
-        results_search, tags, counts = search.search(query, start, index='application_created')
-    except HTTPError:
-        status.push_status_message('Malformed query. Please try again')
-        return ERROR_RETURN
-    except TypeError:
-        status.push_status_message('There was a problem querying the search database. Please try again later.')
-        return ERROR_RETURN
-
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else counts['total']
     return {
-        'highlight': [],
-        'results': results_search,
-        'total': total,
-        'query': query,
-        'spellcheck': [],
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'tags': tags,
-        'searching_users': searching_users,
-        'counts': counts
+
     }
 
 def conditionally_add_query_item(query, item, condition):
