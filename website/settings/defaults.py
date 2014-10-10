@@ -193,3 +193,6 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # FOR EMERGENCIES ONLY: Setting this to True will disable forks, registrations,
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
+
+#SHARE
+SHARE_APP_ID = None

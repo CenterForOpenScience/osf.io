@@ -73,7 +73,7 @@
 
         <script type='text/javascript'>
             $script(['/static/js/shareSearch.js'], function(){
-                var shareSearch =  new ShareSearch('#searchControls', '/api/v1/app/6qajn/');
+                var shareSearch =  new ShareSearch('#searchControls', '/api/v1/app/${shareAppId}/');
             });
         </script>
 

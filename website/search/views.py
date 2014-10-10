@@ -16,6 +16,7 @@ import website.search.search as search
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 import httplib as http
+from website.settings import SHARE_APP_ID
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,7 @@ def search_search():
 def share_search():
 
     return {
-
+        'shareAppId': SHARE_APP_ID,
     }
 
 def conditionally_add_query_item(query, item, condition):
