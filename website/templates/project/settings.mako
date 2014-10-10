@@ -18,7 +18,9 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                   <li><a href="#configureNode">Configure ${node['node_type'].capitalize()}</a></li>
                 % endif
-                <li><a href="#configureCommenting">Configure Commenting</a></li>
+                % if 'admin' in user['permissions']:
+                    <li><a href="#configureCommenting">Configure Commenting</a></li>
+                % endif
                 % if not node['is_registration']:
                     <li><a href="#selectAddons">Select Add-ons</a></li>
                 % endif
@@ -47,42 +49,42 @@
                     <button id="deleteNode" class="btn btn-danger btn-delete-node">Delete ${node['node_type']}</button>
 
                 </div>
-                <!-- Delete node -->
+
+            </div>
+
+            <div class="panel panel-default">
+                <span id="configureCommenting" class="anchor"></span>
+
+                <div class="panel-heading">
+                    <h3 class="panel-title">Configure Commenting</h3>
+                </div>
+
+                <div class="panel-body">
+
+                    <form class="form" id="commentSettings">
+
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                Only contributors can post comments
+                            </label>
+                        </div>
+                        <div class="radio">
+                            <label>
+                                <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                When the ${node['node_type']} is public, any OSF user can post comments
+                            </label>
+                        </div>
+
+                        <button class="btn btn-success">Submit</button>
+
+                    </form>
+
+                </div>
 
             </div>
 
         % endif
-        <div class="panel panel-default">
-            <span id="configureCommenting" class="anchor"></span>
-
-            <div class="panel-heading">
-                <h3 class="panel-title">Configure Commenting</h3>
-            </div>
-
-            <div class="panel-body">
-
-                <form class="form" id="commentSettings">
-
-                    <div class="radio">
-                        <label>
-                            <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                            Only contributors can post comments
-                        </label>
-                    </div>
-                    <div class="radio">
-                        <label>
-                            <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                            When the ${node['node_type']} is public, any OSF user can post comments
-                        </label>
-                    </div>
-
-                    <button class="btn btn-success">Submit</button>
-
-                </form>
-
-            </div>
-
-        </div>
 
         <div class="panel panel-default">
             <span id="selectAddons" class="anchor"></span>
