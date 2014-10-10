@@ -29,8 +29,7 @@ class TestWikiViews(OsfTestCase):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        api_key = ApiKeyFactory()
-        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
+        self.consolidate_auth = Auth(user=self.project.creator)
 
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_page', wid='home')
