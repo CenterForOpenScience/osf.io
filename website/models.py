@@ -11,7 +11,7 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData,
 )
-from website.project.views.email import Conference
+from website.conferences.model import Conference
 
 # All models
 MODELS = (

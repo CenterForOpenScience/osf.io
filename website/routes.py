@@ -22,6 +22,7 @@ from website.profile import views as profile_views
 from website.project import views as project_views
 from website.assets import env as assets_env
 from website.util import sanitize
+from website.conferences import views as conference_views
 
 
 def get_globals():
@@ -142,14 +143,14 @@ def make_url_map(app):
         Rule(
             '/view/<meeting>/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako'),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting_plain.mako'),
             endpoint_suffix='__plain',
         ),
@@ -157,14 +158,14 @@ def make_url_map(app):
         Rule(
             '/api/v1/view/<meeting>/',
             'get',
-            project_views.email.conference_data,
+            conference_views.conference_data,
             json_renderer,
         ),
 
         Rule(
             '/presentations/',
             'get',
-            project_views.email.conference_view,
+            conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
         ),
 
@@ -651,7 +652,7 @@ def make_url_map(app):
         Rule(
             '/email/meeting/',
             'post',
-            project_views.email.meeting_hook,
+            conference_views.meeting_hook,
             json_renderer,
         ),
 
