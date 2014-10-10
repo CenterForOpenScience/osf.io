@@ -54,25 +54,18 @@ def create_metadata(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def promote_metadata(node_addon, mid, **kwargs):
     metastore = Metadata.load(mid)
-    # TODO Collision dectection logic
+
     if not metastore:
         raise HTTPError(http.BAD_REQUEST)
 
-    # TODO Move logic into metadata class
-    if metastore.get('attached'):
-        if metastore['attached'].get('pid'):
-            node = Node.load(metastore['attached']['pid'])
-        elif metastore['attached'].get('nid'):
-            node = Node.load(metastore['attached']['nid'])
-        else:
-            node = None
+    node = metastore.parent or metastore.node
 
-        if node:
-            return {
-                'id': node._id,
-                'url': node.url,
-                'apiUrl': node.api_url
-            }
+    if node:
+        return {
+            'id': node._id,
+            'url': node.url,
+            'apiUrl': node.api_url
+        }
 
     creator = node_addon.system_user
     tags = request.json.get('tags') or metastore.get('tags', [])
