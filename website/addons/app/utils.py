@@ -31,7 +31,7 @@ def elastic_to_rss(name, data, query, url):
     items = [
         pyrss.RSSItem(
             guid=doc.get('id',{}).get('serviceID') or doc['_id'],
-            link=doc['id']['url'],
+            link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
             description=doc.get('description', 'No description provided'),
