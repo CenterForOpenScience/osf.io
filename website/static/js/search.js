@@ -15,6 +15,12 @@
         return match && decodeURIComponent(match[1].replace(/\+/g, " "));
     }
 
+    var Category = function(categoryName, categroryCount){
+        var self = this;
+        self.name = ko.observable(categoryName.toUpperCase());
+        self.count = ko.observable(categroryCount);
+    };
+
     var ViewModel = function(url) {
         var self = this;
 
@@ -28,6 +34,7 @@
         self.searching = ko.observable(false);
         self.startDate = ko.observable(Date.now());
         self.endDate = ko.observable(Date('1970-01-01'));
+        self.categories = ko.observableArray([]);
 
         self.totalPages = ko.computed(function() {
             var pageCount = 1;
@@ -82,22 +89,39 @@
             };
         });
 
+        self.sortCategories = function(a, b) {
+                return a.count() >  b.count() ? -1 : 1;
+        };
+
         self.submit = function() {
+            self.searchStarted(false);
+            self.totalResults(0);
             self.currentPage(1);
             self.results.removeAll();
             self.search();
         };
 
         self.search = function() {
-            self.searchStarted(true);
+
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
+
                 self.totalResults(data.counts.total);
                 self.results.removeAll();
 
                 data.results.forEach(function(result){
                     self.results.push(result);
                 });
+
+
+                self.categories.removeAll();
+                var categories = data.counts;
+                for (var key in categories) {
+                    self.categories.push(new Category(key, categories[key]));
+                }
+                self.categories(self.categories().sort(self.sortCategories));
+                self.searchStarted(true);
+
             }).fail(function(){
                 console.log("error");
                 self.totalResults(0);
