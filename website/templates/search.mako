@@ -2,7 +2,7 @@
 <%def name="title()">Search</%def>
 <%def name="content()">
     <div id="searchControls">
-        <div class="row">
+        <div class="row hidden">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
@@ -34,12 +34,13 @@
             </div>
         </div>
         <div class="row">
-            <!-- ko if: categories().length -->
+            <!-- ko if: categories().length > 1-->
             <div class="col-md-3" data-bind="css: {hidden: categories().length < 1 }">
                 <ul>
                     <div data-bind="foreach: categories">
                         <li>
-                            <span class="h5" data-bind="text: name()"></span>:
+                            <span class="h5" data-bind="text: name()"></span>
+                            <span data-bind="css: {hidden: $parent.categories().length < 1 }">:</span>
 
                             <span data-bind="text: count()"></span>
                         </li>
