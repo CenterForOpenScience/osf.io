@@ -22,6 +22,9 @@ logger = logging.getLogger(__name__)
 
 
 def search_search():
+    if request.method == 'GET':
+        return {}
+
     tick = time.time()
     ERROR_RETURN = {
         'results': [],
@@ -30,7 +33,8 @@ def search_search():
 
     if request.json:
         results = search.search(request.json)
-        time = round(time.time() - tick, 2)
+        results['time'] = round(time.time() - tick, 2)
+        return results
 
     raise Exception("Why are we here?")
 
