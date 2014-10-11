@@ -1,6 +1,9 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
+    <script>
+        $('input[name=q]').remove();
+    </script>
     <div id="searchControls">
         <div class="row">
             <div class="col-md-12">
