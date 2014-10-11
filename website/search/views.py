@@ -25,9 +25,15 @@ def search_search():
     tick = time.time()
     ERROR_RETURN = {
         'results': [],
-        'tags': [],
         'query': '',
     }
+
+    if request.json:
+        results = search.search(request.json)
+        time = round(time.time() - tick, 2)
+
+    raise Exception("Why are we here?")
+
     # search results are automatically paginated. on the pages that are
     # not the first page, we pass the page number along with the url
     start = request.args.get('pagination', 0)
