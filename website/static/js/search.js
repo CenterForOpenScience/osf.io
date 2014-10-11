@@ -95,7 +95,7 @@
         };
 
         self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote'
+            claimURL = self.appURL + 'metadata/' + mid + '/promote/'
             $.osf.postJSON(claimURL, {}).success(function(data) {
                 window.location = data.url;
             });
@@ -150,7 +150,7 @@
 
     };
 
-    function Search(selector, url, app_url) {
+    function Search(selector, url, appURL) {
         // Initialization code
         var self = this;
         var query = qs('q');
