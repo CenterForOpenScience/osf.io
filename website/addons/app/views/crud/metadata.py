@@ -70,6 +70,12 @@ def promote_metadata(node_addon, mid, **kwargs):
     creator = node_addon.system_user
     tags = request.json.get('tags') or metastore.get('tags', [])
     contributors = request.json.get('contributors') or metastore.get('contributors', [])
+    for contributor in contributors:
+        contributor['full_name'] = ' '.join([
+            contributor['given'],
+            contributor['middle'],
+            contributor['family']
+        ]).strip()
     category = request.json.get('category') or metastore.get('category', 'project')
     title = request.json.get('title') or metastore.get('title')
     project = Node.load(request.json.get('parent') or metastore.get('parent'))
@@ -81,7 +87,7 @@ def promote_metadata(node_addon, mid, **kwargs):
 
     for contributor in contributors:
         try:
-            node.add_unregistered_contributor(contributor['name'],
+            node.add_unregistered_contributor(contributor['full_name'],
                 contributor.get('email'), Auth(creator))
         except ValidationError:
             pass  # A contributor with the given email has already been added

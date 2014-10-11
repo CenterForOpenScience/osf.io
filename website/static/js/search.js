@@ -21,11 +21,12 @@
         self.count = ko.observable(categroryCount);
     };
 
-    var ViewModel = function(url) {
+    var ViewModel = function(url, appURL) {
         var self = this;
 
         self.searchStarted = ko.observable(false);
         self.queryUrl = url;
+        self.appURL = appURL
         self.totalResults = ko.observable(0);
         self.resultsPerPage = ko.observable(10);
         self.currentPage = ko.observable(1);
@@ -93,6 +94,13 @@
                 return a.count() >  b.count() ? -1 : 1;
         };
 
+        self.claim = function(mid) {
+            claimURL = self.appURL + 'metadata/' + mid + '/promote'
+            $.osf.postJSON(claimURL, {}).success(function(data) {
+                window.location = data.url;
+            });
+        };
+
         self.submit = function() {
             self.searchStarted(false);
             self.totalResults(0);
@@ -142,11 +150,11 @@
 
     };
 
-    function Search(selector, url) {
+    function Search(selector, url, app_url) {
         // Initialization code
         var self = this;
         var query = qs('q');
-        self.viewModel = new ViewModel(url);
+        self.viewModel = new ViewModel(url, appURL);
         if (query !== null) {
             self.viewModel.query(query);
             self.viewModel.search();
