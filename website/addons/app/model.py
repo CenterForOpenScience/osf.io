@@ -140,7 +140,7 @@ class AppNodeSettings(AddonNodeSettingsBase):
 
     @property
     def namespace(self):
-        return self._id
+        return self.owner._id
 
     @property
     def all_data(self):
