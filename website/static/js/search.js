@@ -17,7 +17,7 @@
 
     var Category = function(categoryName, categroryCount){
         var self = this;
-        self.name = ko.observable(categoryName.toUpperCase());
+        self.name = ko.observable(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
         self.count = ko.observable(categroryCount);
     };
 
