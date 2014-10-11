@@ -16,9 +16,13 @@ from website.models import User, Node
 
 logger = logging.getLogger(__name__)
 
-
+SHARE_UID = Node.load(settings.SHARE_APP_ID).get_addon('app')._id
 # These are the doc_types that exist in the search database
-TYPES = ['project', 'component', 'user', 'registration']
+TYPES = ['_all', 'projects', 'components', 'registrations', 'users', SHARE_UID]
+ALIASES = {
+        SHARE_UID: 'SHARE',
+        '_all': 'Total'
+}
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
@@ -51,144 +55,78 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0, size=10, index='website'):
-    orig_query = raw_query
-    query, filtered_query = _build_query(raw_query, start, size)
+def search(query, index='_all', search_type='_all'):
 
     # Get document counts by type
     counts = {}
     count_query = copy.deepcopy(query)
     del count_query['from']
     del count_query['size']
-    for type in TYPES:
-        try:
-            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
-        except KeyError:
-            pass
-
-        counts[type + 's'] = elastic.count(count_query, index=index, doc_type=type)['count']
+    del count_query['sort']
+    for _type in TYPES:
+        counts[ALIASES.get(_type, _type)] = elastic.count(count_query, index=index, doc_type=_type)['count']
 
     # Figure out which count we should display as a total
-    for type in TYPES:
-        if type + ':' in orig_query:
-            counts['total'] = counts[type + 's']
-    if not counts.get('total'):
-        counts['total'] = sum([x for x in counts.values()])
+    counts['total'] = counts.get(ALIASES.get(search_type), 'Total')
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index)
+
+
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results, tags = create_result(results, counts)
+    formatted_results = create_result(results, counts)
 
-    return formatted_results, tags, counts
-
-
-def _build_query(raw_query, start, size):
-
-    # Default to searching all types with a big 'or' query
-    type_filter = {}
-    type_filter['or'] = [{
-        'type': {
-            'value': type
-        }
-    } for type in TYPES]
-
-    # But make sure to filter by type if requested
-    for type in TYPES:
-        if type + ':' in raw_query:
-            type_filter = {
-                'type': {
-                    'value': type
-                }
-            }
-
-    # Cleanup string before using it to query
-    for type in TYPES:
-        raw_query = raw_query.replace(type + ':', '')
-
-    raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
-
-    raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
-
-    # If the search contains wildcards, make them mean something
-    if '*' in raw_query:
-        inner_query = {
-            'query_string': {
-                'default_field': '_all',
-                'query': raw_query + '*',
-                'analyze_wildcard': True,
-            }
-        }
-    else:
-        inner_query = {
-            'multi_match': {
-                'query': raw_query,
-                'type': 'phrase_prefix',
-                'fields': '_all',
-            }
-        }
-
-    # If the search has a tag filter, add that to the query
-    if 'tags:' in raw_query:
-        tags = raw_query.replace('AND', ' ').split('tags:')
-        tag_filter = {
-            'query': {
-                'match': {
-                    'tags': {
-                        'query': '',
-                        'operator': 'or'
-                    }
-                }
-            }
-        }
-        for i in range(1, len(tags)):
-            for tag in tags[i].split():
-                tag_filter['query']['match']['tags']['query'] += ' ' + tag
-
-        # If the query is empty, turn it back to a wildcard search
-        if not tags[0].strip():
-            inner_query = {
-                'query_string': {
-                    'default_field': '_all',
-                    'query': '*',
-                    'analyze_wildcard': True,
-                }
-            }
-        elif inner_query.get('query_string'):
-            inner_query['query_string']['query'] = tags[0]
-        elif inner_query.get('multi_match'):
-            inner_query['multi_match']['query'] = tags[0]
-
-        inner_query = {
-            'filtered': {
-                'filter': tag_filter,
-                'query': inner_query
-            }
-        }
-
-    # This is the complete query
-    query = {
-        'query': {
-            'function_score': {
-                'query': {
-                    'filtered': {
-                        'filter': type_filter,
-                        'query': inner_query
-                    }
-                },
-                'functions': [{
-                    'field_value_factor': {
-                        'field': 'boost'
-                    }
-                }],
-                'score_mode': 'multiply'
-            }
-        },
-        'from': start,
-        'size': 10,
+    return {
+        'results': format_results(results),
+        'counts': counts,
     }
 
-    return query, raw_query
+
+def format_results(results):
+    for result in results:
+        if result.get('category') == 'user':
+            result['url'] = '/profile/' + result['id']
+        elif result.get('category') in {'project', 'component', 'registration'}:
+            result = format_result(result, result.get('parent_id'))
+        elif result.get('category') == 'metadata':
+            result['contributors'] = [x['prefix'] + x['middle']+ x['given'] + x['suffix'] for x in result['contributors']]
+
+
+# for formatting projects, components, and registrations
+def format_result(result, parent_id=None):
+    parent_info = load_parent(parent)
+    formatted_result = {
+        'contributors': result['contributors'],
+        'wiki_link': result['url'] + 'wiki/',
+        'title': result['title'],
+        'url': result['url'],
+        'is_component': False if parent is None else True,
+        'parent_title': parent_info.get('title') if parent is not None else None,
+        'parent_url': parent_info.get('url') if parent is not None else None,
+        'tags': result['tags'],
+        'contributors_url': result['contributors_url'],
+        'is_registration': (result['registeredproject'] if parent is None
+                                                        else parent_info.get('is_registration')),
+        'description': result['description'] if parent is None else None,
+    }
+
+    return formatted_result
+
+
+def load_parent(parent_id):
+    parent = Node.load(parent_id)
+    parent_info = {}
+    if parent is not None and parent.is_public:
+        parent_info['title'] = parent.title
+        parent_info['url'] = parent.url
+        parent_info['is_registration'] = parent.is_registration
+        parent_info['id'] = parent._id
+    else:
+        parent_info['title'] = '-- private project --'
+        parent_info['url'] = ''
+        parent_info['is_registration'] = None
+        parent_info['id'] = None
+    return parent_info
 
 
 @requires_search
@@ -292,118 +230,13 @@ def delete_all():
 
 
 @requires_search
-def delete_doc(elastic_document_id, node):
+def delete_doc(elastic_document_id, node, index='website'):
     category = 'registration' if node.is_registration else node.project_or_component
     try:
-        elastic.delete('website', category, elastic_document_id, refresh=True)
+        elastic.delete(index, category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
 
-
-def _load_parent(parent):
-    parent_info = {}
-    if parent is not None and parent.is_public:
-        parent_info['title'] = parent.title
-        parent_info['url'] = parent.url
-        parent_info['is_registration'] = parent.is_registration
-        parent_info['id'] = parent._id
-    else:
-        parent_info['title'] = '-- private project --'
-        parent_info['url'] = ''
-        parent_info['is_registration'] = None
-        parent_info['id'] = None
-    return parent_info
-
-
-def create_result(results, counts):
-    ''' Takes a dict of counts by type, and a list of dicts of the following structure:
-    {
-        'category': {NODE CATEGORY},
-        'description': {NODE DESCRIPTION},
-        'contributors': [{LIST OF CONTRIBUTORS}],
-        'title': {TITLE TEXT},
-        'url': {URL FOR NODE},
-        'tags': {LIST OF TAGS},
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
-        'id': {NODE ID},
-        'parent_id': {PARENT NODE ID},
-        'parent_title': {TITLE TEXT OF PARENT NODE},
-        'wikis': {LIST OF WIKIS AND THEIR TEXT},
-        'public': {TRUE OR FALSE},
-        'registeredproject': {TRUE OR FALSE}
-    }
-
-    Returns list of dicts of the following structure:
-    {
-        'contributors': [{LIST OF CONTRIBUTORS}],
-        'wiki_link': '{LINK TO WIKIS}',
-        'title': '{TITLE TEXT}',
-        'url': '{URL FOR NODE}',
-        'is_component': {TRUE OR FALSE},
-        'parent_title': {TITLE TEXT OF PARENT NODE},
-        'parent_url': {URL FOR PARENT NODE},
-        'tags': [{LIST OF TAGS}],
-        'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
-        'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}],
-        'description': {PROJECT DESCRIPTION},
-    }
-    '''
-    formatted_results = []
-    word_cloud = {}
-    visited_nodes = {}  # For making sure projects are only returned once
-    index = 0  # For keeping track of what index a project is stored
-    for result in results:
-        # User results are handled specially
-        if 'user' in result:
-            formatted_results.append({
-                'id': result['id'],
-                'user': result['user'],
-                'user_url': '/profile/' + result['id'],
-            })
-            index += 1
-        else:
-            # Build up word cloud
-            for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
-                    else word_cloud[tag] + 1
-
-            # Ensures that information from private projects is never returned
-            parent = Node.load(result['parent_id'])
-            parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
-
-            if visited_nodes.get(result['id']):
-                # If node already visited, it should not be returned as a result
-                continue
-            else:
-                visited_nodes[result['id']] = index
-
-            # Format dictionary for output
-            result['url']
-            formatted_results.append(_format_result(result, parent, parent_info))
-            index += 1
-
-    return formatted_results, word_cloud
-
-
-def _format_result(result, parent, parent_info):
-    formatted_result = {
-        'contributors': result['contributors'],
-        'wiki_link': result['url'] + 'wiki/',
-        'title': result['title'],
-        'url': result['url'],
-        'is_component': False if parent is None else True,
-        'parent_title': parent_info['title'] if parent is not None else None,
-        'parent_url': parent_info['url'] if parent is not None else None,
-        'tags': result['tags'],
-        'contributors_url': result['contributors_url'],
-        'is_registration': (result['registeredproject'] if parent is None
-                                                        else parent_info['is_registration']),
-        'highlight': [],
-        'description': result['description'] if parent is None else None,
-    }
-
-    return formatted_result
 
 
 @requires_search
@@ -498,100 +331,14 @@ def search_contributor(query, exclude=None, current_user=None):
 def update_metadata(metadata):
     index = "metadata"
     app_id = metadata.namespace
+    metadata['category'] = 'metadata'
     data = metadata.to_json()
     elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
 
 
 @requires_search
-def search_metadata(query, _type, start, size, required):
-    if isinstance(query, dict):
-        return search_metadata_dict(query, _type)
-
-    query = {
-        'query': _metadata_inner_query(query, required),
-        'from': start,
-        'size': size,
-    }
-
+def search_metadata(query, _type):
     return elastic.search(query, index='metadata', doc_type=_type)
-
-def search_metadata_dict(query, _type):
-    return elastic.search(query, index='metadata', doc_type=_type)
-
-def _metadata_inner_query(query, required):
-    if query == '*':
-        if required is None:
-            return {
-                'query_string': {
-                    'default_field': '_all',
-                    'query': '*',
-                    'analyze_wildcard': True,
-                }
-            }
-        else:
-            return {
-                'filtered': {
-                    'query' : {
-                        'query_string': {
-                            'default_field': '_all',
-                            'query': '*',
-                            'analyze_wildcard': True
-                        }
-                    },
-                    'filter': {
-                        'not': {
-                            'missing': {
-                                'field': required
-                            }
-                        }
-                    }
-
-                }
-            }
-
-    query = query.split(';')
-    filters = []
-    for item in query:
-        item = item.split(':')
-
-        if len(item) == 1:
-            item = ['_all', item[0]]
-
-        if len(item[1].split(',')) > 1:
-            filters.append({
-                'terms': {
-                    item[0]: item[1].split(',')
-                }
-            })
-        else:
-            filters.append({
-                "query": {
-                    'match': {
-                        item[0]: {
-                            'query': item[1],
-                            'operator': 'and',
-                            'type': 'phrase',
-                        }
-                    }
-                }
-            })
-
-        if required is not None:
-            filters.append({
-                'not' : {
-                    'missing': {
-                        'field': required
-                    }
-                }
-            })
-    inner_query = {
-        'filtered': {
-            'filter': {
-                'and': filters,
-            },
-        },
-    }
-    return inner_query
 
 
 @requires_search
@@ -625,6 +372,8 @@ def _strings_to_types(mapping):
             mapping[key] = _strings_to_types(val)
 
     return mapping
+
+
 @requires_search
 def get_recent_documents(raw_query='', start=0, size=10):
 
