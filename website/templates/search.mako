@@ -5,7 +5,7 @@
         $('input[name=q]').remove();
     </script>
     <div id="searchControls">
-        <div class="row hidden">
+        <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
@@ -87,7 +87,7 @@
         <!-- /ko -->
 
         <!-- ko ifnot: $data.links -->
-            <span class="title"><h4><span>{{ title }}</span></h4></span>
+            <span class="title"><h4><a data-bind="attr.href: id.url"><span>{{ title }}</span></a></h4></span>
         <!-- /ko -->
 
         <strong>Description:</strong>&nbsp;<span class="description">{{ description | default:"No Description" }}</span>
