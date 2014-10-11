@@ -82,7 +82,7 @@
         <!-- /ko -->
 
         <!-- ko if: $data.isResource -->
-        <button class="btn btn-primary pull-right" data-bind="onClick: claim">Curate This</button>
+        <button class="btn btn-primary pull-right" data-bind="click: $parents[1].claim.bind($data, _id)">Curate This</button>
         <br>
         <!-- /ko -->
     </script>
@@ -134,7 +134,7 @@
 
         <script type='text/javascript'>
             $script(['/static/js/search.js'], function(){
-            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/vg237/');
+            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/vg237/');
             });
         </script>
 
