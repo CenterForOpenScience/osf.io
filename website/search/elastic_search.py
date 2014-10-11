@@ -16,12 +16,15 @@ from website.models import User, Node
 
 logger = logging.getLogger(__name__)
 
-SHARE_UID = Node.load(settings.SHARE_APP_ID).get_addon('app')._id
 # These are the doc_types that exist in the search database
-TYPES = ['_all', 'projects', 'components', 'registrations', 'users', SHARE_UID]
+TYPES = ['_all', 'website/project', 'website/component', 'website/registration', 'website/user', 'metadata/{}'.format(settings.SHARE_APP_ID)]
 ALIASES = {
-        SHARE_UID: 'SHARE',
-        '_all': 'Total'
+    'metadata/{}'.format(settings.SHARE_APP_ID): 'SHARE',
+    '_all': 'total',
+    'website/project': 'projects',
+    'website/component': 'components',
+    'website/registration': 'registrations',
+    'website/user': 'users'
 }
 
 try:
@@ -48,33 +51,39 @@ def requires_search(func):
             except pyelasticsearch.exceptions.ElasticHttpError as e:
                 raise exceptions.SearchException(e.error)
             except ConnectionError:
-                raise exceptions.SearchException('Can not connect to ElasticSearch' )
+                raise exceptions.SearchException('Can not connect to ElasticSearch')
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 
 
 @requires_search
-def search(query, index='_all', search_type='_all'):
+def search(query, index='website', search_type='_all'):
 
     # Get document counts by type
     counts = {}
     count_query = copy.deepcopy(query)
-    del count_query['from']
-    del count_query['size']
-    del count_query['sort']
+    if count_query.get('from') is not None: del count_query['from']
+    if count_query.get('size')is not None: del count_query['size']
+    if count_query.get('sort'): del count_query['sort']
     for _type in TYPES:
-        counts[ALIASES.get(_type, _type)] = elastic.count(count_query, index=index, doc_type=_type)['count']
-
+        try:
+            if len(_type.split('/')) > 1:
+                count_index, count_type = _type.split('/')
+            else:
+                count_index, count_type = index, _type
+            count = elastic.count(count_query, index=count_index, doc_type=count_type)['count']
+        except Exception:
+            count = 0
+        counts[ALIASES.get(_type, _type)] = count
     # Figure out which count we should display as a total
-    counts['total'] = counts.get(ALIASES.get(search_type), 'Total')
+    counts['total'] = counts.get(ALIASES.get(search_type, 'total'))
 
     # Run the real query and get the results
-    raw_results = elastic.search(query, index=index)
+    raw_results = elastic.search(query, index=index, doc_type=search_type)
 
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results = create_result(results, counts)
 
     return {
         'results': format_results(results),
@@ -83,31 +92,35 @@ def search(query, index='_all', search_type='_all'):
 
 
 def format_results(results):
+    ret = []
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         elif result.get('category') == 'metadata':
-            result['contributors'] = [x['prefix'] + x['middle']+ x['given'] + x['suffix'] for x in result['contributors']]
+            result['contributors'] = [' '.join([x['prefix'], x['given'], x['middle'], x['family'], x['suffix']]).strip() for x in result['contributors']]
+        ret.append(result)
+    return ret
 
 
 # for formatting projects, components, and registrations
 def format_result(result, parent_id=None):
-    parent_info = load_parent(parent)
+    parent_info = load_parent(parent_id)
     formatted_result = {
         'contributors': result['contributors'],
         'wiki_link': result['url'] + 'wiki/',
         'title': result['title'],
         'url': result['url'],
-        'is_component': False if parent is None else True,
-        'parent_title': parent_info.get('title') if parent is not None else None,
-        'parent_url': parent_info.get('url') if parent is not None else None,
+        'is_component': False if parent_info is None else True,
+        'parent_title': parent_info.get('title') if parent_info is not None else None,
+        'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': (result['registeredproject'] if parent is None
+        'is_registration': (result['registeredproject'] if parent_info is None
                                                         else parent_info.get('is_registration')),
-        'description': result['description'] if parent is None else None,
+        'description': result['description'] if parent_info is None else None,
+        'category': result.get('category')
     }
 
     return formatted_result
@@ -115,6 +128,7 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = Node.load(parent_id)
+    if parent is None: return None
     parent_info = {}
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
@@ -169,7 +183,7 @@ def update_node(node, index='website'):
             ],
             'description': node.description,
             'title': node.title,
-            'category': node.category,
+            'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
             'url': node.url,
@@ -203,6 +217,7 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'category': 'user',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
