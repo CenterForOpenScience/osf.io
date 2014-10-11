@@ -31,11 +31,9 @@ from . import metadata, customroutes
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
-    q = request.args.get('q', '')
-    start = request.args.get('page', 0)
-
+    q = request.json
     try:
-        ret = search(q, _type=node_addon.namespace, index='metadata', start=start)
+        ret = search(q, _type=node_addon.namespace, index='metadata')
     except Exception:
         # TODO Fix me
         return {
@@ -44,8 +42,8 @@ def query_app(node_addon, **kwargs):
         }
 
     return {
-        'results': [blob['_source'] for blob in ret['hits']['hits']],
-        'total': ret['hits']['total']
+        'results': ret['results'],
+        'total': ret['counts']['total']
     }
 
 # POST
@@ -68,8 +66,8 @@ def query_app_json(node_addon, **kwargs):
         }
 
     return {
-        'results': [blob['_source'] for blob in ret['hits']['hits']],
-        'total': ret['hits']['total']
+        'results': ret['results'],
+        'total': ret['counts']['total']
     }
 
 # GET
