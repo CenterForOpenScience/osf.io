@@ -75,13 +75,37 @@ def query_app_json(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
-    required = request.args.get('required', 'id')
-    start = request.args.get('page', 0)
+    size = request.args.get('size', 250)
+    start = request.args.get('from', 0)
+    try:
+        size, start = int(size), int(start)
+    except ValueError:
+        size, start = 250, 0
+    if size > 1000:
+        size = 1000
+    query = {
+        'query': {
+            'query_string': {
+                'default_field': '_all',
+                'query': q,
+                'analyze_wildcard': True,
+                'lenient': True,
+            }
+        },
+        'sort': [{
+            'consumeFinished': {
+                'order': 'desc'
+            }
+        }],
+        'from': start,
+        'size': size,
+    }
+
     name = node_addon.system_user.username
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=100, required=required)
+    ret = search(query, _type=node_addon.namespace, index='metadata')
     node = node_addon.owner
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
-    return elastic_to_rss(name, [blob['_source'] for blob in ret['hits']['hits']], q, rss_url)
+    return elastic_to_rss(name, ret['results'], q, rss_url)
 
 # GET
 @must_be_contributor_or_public
