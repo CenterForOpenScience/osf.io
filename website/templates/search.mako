@@ -34,7 +34,6 @@
 
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data }"></div>
-                    <br />
                 </div>
 
                 <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() < 0 }">
@@ -60,74 +59,73 @@
     </script>
     <script type="text/html" id="metadata">
         <!-- ko if: $data.links -->
-            <span class="title"><h4><a data-bind="attr.href: links[0].url"><span>{{ title }}</span></a></h4></span>
+            <h4><a data-bind="attr.href: links[0].url">{{ title }}</a></h4>
         <!-- /ko -->
 
         <!-- ko ifnot: $data.links -->
-            <span class="title"><h4><a data-bind="attr.href: id.url"><span>{{ title }}</span></a></h4></span>
+            <h4><a data-bind="attr.href: id.url">{{ title }}</a></h4>
         <!-- /ko -->
 
-        <strong>Description:</strong>&nbsp;<span class="description">{{ description | default:"No Description" | fit:500}}</span>
-
-        <br />
+        <h5>Description:<small>{{ description | default:"No Description" | fit:500}}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <strong>Contributors:</strong>&nbsp;<span class="search-result-contributors" data-bind="foreach: contributors">
-            <span class="name">{{ $data }}</span>
+        <h5>
+            Contributors: <small data-bind="foreach: contributors">
+                <span>{{ $data }}</span>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-        </span>
-
-        <br />
-
+            </small>
+        </h5>
         <!-- /ko -->
 
         <!-- ko if: $data.source -->
-        <strong>Source:</strong>&nbsp;<span>{{ source }}<br/></span>
+        <h5>Source: <small>{{ source }}</small></h5>
+        <!-- /ko -->
+
+        <!-- ko if: $data.isResource -->
+        <button class="btn btn-primary pull-right" data-bind="onClick: claim">Curate This</button>
+        <br>
         <!-- /ko -->
     </script>
     <script type="text/html" id="user">
-        <span class="title"><h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4></span>
+        <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
     </script>
     <script type="text/html" id="project">
-        <span class="title"><h4><a data-bind="attr.href: url"><span>{{ title }}</span></a></h4></span>
-
-        <strong>Description:</strong>&nbsp;<span class="description">{{ description | default:"No Description" | fit:500 }}</span>
-
-        <br />
+        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
+        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <strong>Contributors:</strong>&nbsp;<span class="search-result-contributors" data-bind="foreach: contributors">
-            <span class="name"><a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a></span>
+        <h5>
+            Contributors: <small data-bind="foreach: contributors">
+                <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-        </span>
+            </small>
+        </h5>
         <!-- /ko -->
     </script>
     <script type="text/html" id="component">
-        <span class="title"><h4><a data-bind="attr.href: url"><span>{{ title }}</span></a></h4></span>
-        <span class="title"><h5><a data-bind="attr.href: parent_url"><span>{{ parent_title }}</span></a></h5></span>
-        <strong>Description:</strong>&nbsp;<span class="description">{{ description | default:"No Description" | fit:500 }}</span>
-
-        <br />
+        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
+        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <strong>Contributors:</strong>&nbsp;<span class="search-result-contributors" data-bind="foreach: contributors">
-            <span class="name"><a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a></span>
+        <h5>
+            Contributors: <small data-bind="foreach: contributors">
+                <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-        </span>
+            </small>
+        </h5>
         <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
-        <span class="title"><h4><a data-bind="attr.href: url"><span>{{ title }}</span></a></h4></span>
-        <span class="title"><h5><a data-bind="attr.href: parent_url"><span>{{ parent_title }}</span></a></h5></span>
-        <strong>Description:</strong>&nbsp;<span class="description">{{ description | default:"No Description" | fit:500 }}</span>
-
-        <br />
+        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
+        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <strong>Contributors:</strong>&nbsp;<span class="search-result-contributors" data-bind="foreach: contributors">
-            <span class="name"><a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a></span>
+        <h5>
+            Contributors: <small data-bind="foreach: contributors">
+                <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
-        </span>
+            </small>
+        </h5>
         <!-- /ko -->
     </script>
 </%def>
@@ -136,7 +134,7 @@
 
         <script type='text/javascript'>
             $script(['/static/js/search.js'], function(){
-            var search =  new Search('#searchControls', '/api/v1/search/');
+            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/vg237/');
             });
         </script>
 
