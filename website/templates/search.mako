@@ -4,10 +4,10 @@
     <div id="searchControls">
         <div class="row">
             <div class="col-md-12">
-                <form class="input-group" data-bind="submit: search">
+                <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
                     <span class="input-group-btn">
-                        <button type=button class="btn btn-default" data-bind="click: search"><i class="icon-search"></i></button>
+                        <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
                     </span>
                 </form>
             </div>
@@ -16,20 +16,41 @@
 
 
         <div class="row">
-            <div class="col-md-8 col-md-offset-1">
-                <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() < 0 }">
-                    <span data-bind="visible: prevPageExists">
-                        <a href="#" data-bind="click: pagePrev">Previous Page</a> -
-                    </span>
-                    <span data-bind="visible: totalPages() > 0">
-                        <span data-bind="text: navLocation"></span>
-                    </span>
-                    <span data-bind="visible: nextPageExists"> -
-                        <a href="#" data-bind="click: pageNext">Next Page </a>
-                    </span>
+            <div class="col-md-4 col-md-offset-3">
+                <p>
+                    <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() < 0 }">
+                        <span data-bind="visible: prevPageExists">
+                            <a href="#" data-bind="click: pagePrev">Previous Page</a> -
+                        </span>
+                        <span data-bind="visible: totalPages() > 0">
+                            <span data-bind="text: navLocation"></span>
+                        </span>
+                        <span data-bind="visible: nextPageExists"> -
+                            <a href="#" data-bind="click: pageNext">Next Page </a>
+                        </span>
 
-                </div>
+                    </div>
+                </p>
+            </div>
+        </div>
+        <div class="row">
+            <!-- ko if: categories().length -->
+            <div class="col-md-3" data-bind="css: {hidden: categories().length < 1 }">
+                <ul>
+                    <div data-bind="foreach: categories">
+                        <li>
+                            <span class="h5" data-bind="text: name()"></span>:
 
+                            <span data-bind="text: count()"></span>
+                        </li>
+                    </div>
+                </ul>
+            </div>
+            <!-- /ko -->
+            <div class="col-md-6">
+                <!-- ko if: searchStarted() && !totalResults() -->
+                <div class="results">No results found.</div>
+                <!-- /ko -->
                 <div data-bind="foreach: results">
                     <div data-bind="template: { name: category, data: $data }"></div>
                     <br />
@@ -52,6 +73,10 @@
             </div><!--col-->
         </div><!--row-->
     </div>
+
+    <script type="text/html" id="category">
+
+    </script>
     <script type="text/html" id="metadata">
         <!-- ko if: $data.links -->
             <span class="title"><h4><a data-bind="attr.href: links[0].url"><span>{{ title }}</span></a></h4></span>
