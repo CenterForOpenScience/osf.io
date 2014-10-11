@@ -50,7 +50,7 @@ def create_metadata(node_addon, **kwargs):
     }, http.CREATED
 
 
-@must_have_permission('write')
+# @must_have_permission('write')
 @must_have_addon('app', 'node')
 def promote_metadata(node_addon, mid, **kwargs):
     metastore = Metadata.load(mid)
@@ -81,6 +81,8 @@ def promote_metadata(node_addon, mid, **kwargs):
     project = Node.load(request.json.get('parent') or metastore.get('parent'))
     description = request.json.get('description') or metastore.get('description')
     node = new_node(category, title, creator, description, project)
+
+    node.set_privacy('public')
 
     for tag in tags:
         node.add_tag(tag, Auth(creator))
