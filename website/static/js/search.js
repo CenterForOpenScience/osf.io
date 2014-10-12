@@ -96,7 +96,7 @@
 
         self.claim = function(mid) {
             claimURL = self.appURL + 'metadata/' + mid + '/promote/'
-            $.osf.postJSON(claimURL, {}).success(function(data) {
+            $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
                 window.location = data.url;
             });
         };

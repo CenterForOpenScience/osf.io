@@ -80,6 +80,7 @@ def promote_metadata(node_addon, mid, **kwargs):
     title = request.json.get('title') or metastore.get('title')
     project = Node.load(request.json.get('parent') or metastore.get('parent'))
     description = request.json.get('description') or metastore.get('description')
+
     node = new_node(category, title, creator, description, project)
 
     node.set_privacy('public')
