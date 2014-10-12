@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def search_search():
     if request.method == 'GET':
-        return {}
+        return {'shareID': SHARE_APP_ID}
 
     tick = time.time()
     ERROR_RETURN = {

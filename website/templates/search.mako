@@ -134,7 +134,7 @@
 
         <script type='text/javascript'>
             $script(['/static/js/search.js'], function(){
-            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/vg237/');
+            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/${shareID}/');
             });
         </script>
 
