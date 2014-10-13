@@ -15,10 +15,11 @@
         return match && decodeURIComponent(match[1].replace(/\+/g, " "));
     }
 
-    var Category = function(categoryName, categroryCount){
+    var Category = function(categoryName, categroryCount, alias){
         var self = this;
         self.name = ko.observable(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
         self.count = ko.observable(categroryCount);
+        self.alias = ko.observable(alias);
     };
 
     var ViewModel = function(url, appURL) {
@@ -27,6 +28,7 @@
         self.searchStarted = ko.observable(false);
         self.queryUrl = url;
         self.appURL = appURL
+        self.alias = ko.observable('');
         self.totalResults = ko.observable(0);
         self.resultsPerPage = ko.observable(10);
         self.currentPage = ko.observable(1);
@@ -64,7 +66,7 @@
             return {
                 'query_string': {
                     'default_field': '_all',
-                    'query': self.query(),
+                    'query': self.query() + self.alias(),
                     'analyze_wildcard': true,
                     'lenient': true
                 }
@@ -101,6 +103,14 @@
             });
         };
 
+        self.filter = function(alias) {
+            if(alias === undefined)
+                self.alias('');
+            else
+                self.alias(' AND category:' + alias);
+            self.search();
+        };
+
         self.submit = function() {
             self.searchStarted(false);
             self.totalResults(0);
@@ -125,7 +135,7 @@
                 self.categories.removeAll();
                 var categories = data.counts;
                 for (var key in categories) {
-                    self.categories.push(new Category(key, categories[key]));
+                    self.categories.push(new Category(key, categories[key], data.typeAliases[key]));
                 }
                 self.categories(self.categories().sort(self.sortCategories));
                 self.searchStarted(true);

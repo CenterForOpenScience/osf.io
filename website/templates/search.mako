@@ -22,7 +22,16 @@
             <!-- ko if: categories().length > 1-->
             <div class="col-md-3" data-bind="css: {hidden: categories().length < 1 }">
                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                    <li><a>{{ name() }}<span class="badge pull-right">{{count()}}</span></a></li>
+                    <!-- ko if: $parent.alias().indexOf(alias()) != -1 -->
+                    <li class="active">
+                        <a data-bind="click: $parent.filter.bind($data, alias())">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                    </li>
+                    <!-- /ko -->
+                    <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
+                    <li>
+                        <a data-bind="click: $parent.filter.bind($data, alias())">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                    </li>
+                    <!-- /ko -->
                 </ul>
             </div>
             <!-- /ko -->
@@ -66,7 +75,7 @@
             <h4><a data-bind="attr.href: id.url">{{ title }}</a></h4>
         <!-- /ko -->
 
-        <h5>Description:<small>{{ description | default:"No Description" | fit:500}}</small></h5>
+        <h5>Description: <small>{{ description | default:"No Description" | fit:500}}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
         <h5>
