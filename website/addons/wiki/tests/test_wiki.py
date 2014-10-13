@@ -2,6 +2,7 @@
 
 # PEP8 asserts
 import httplib as http
+import uuid
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
@@ -16,6 +17,7 @@ from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
 from website.addons.wiki.utils import docs_uuid
 from framework.auth import Auth
+
 
 class TestNodeWikiPageModel(OsfTestCase):
 
@@ -444,7 +446,6 @@ class TestWikiShareJS(OsfTestCase):
         assert_not_in(project_uuid, fork_res)
         assert_not_in(fork_uuid, project_res)
 
-
     def test_uuid_persists_after_delete(self):
         wid = 'foo'
         assert_is_none(self.project.wiki_sharejs_uuids.get(wid))
@@ -470,3 +471,28 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
         assert_in(docs_uuid(self.project, old_id), res.body)
 
+
+class TestWikiUtils(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiUtils, self).setUp()
+        self.project = ProjectFactory()
+
+    def test_docs_uuid(self):
+        share_uuid = str(uuid.uuid1())
+
+        # Provides consistent results
+        assert_equal(docs_uuid(self.project, share_uuid), docs_uuid(self.project, share_uuid))
+
+        # Provides obfuscation
+        assert_not_in(share_uuid, docs_uuid(self.project, share_uuid))
+        assert_not_in(docs_uuid(self.project, share_uuid), share_uuid)
+
+        # Differs based on share uuid provided
+        assert_not_equal(docs_uuid(self.project, share_uuid), self.project, str(uuid.uuid1()))
+
+        # Differs across projects and forks
+        project = ProjectFactory()
+        fork = self.project.fork_node(Auth(self.project.creator))
+        assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(project, share_uuid))
+        assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(fork, share_uuid))
