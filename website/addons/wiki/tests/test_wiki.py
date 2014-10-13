@@ -406,9 +406,12 @@ class TestWikiShareJS(OsfTestCase):
         self.project.reload()
         uuid1 = self.project.wiki_sharejs_uuids.get(wid1)
         uuid2 = self.project.wiki_sharejs_uuids.get(wid2)
-        assert_true(uuid1)
-        assert_true(uuid2)
+
         assert_not_equal(uuid1, uuid2)
+        assert_in(uuid1, res1)
+        assert_in(uuid2, res2)
+        assert_not_in(uuid1, res2)
+        assert_not_in(uuid2, res1)
 
     def test_uuid_persists_after_delete(self):
         wid = 'foo'
