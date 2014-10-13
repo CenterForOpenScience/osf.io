@@ -31,7 +31,7 @@ from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project, abbrev_authors
+from website.project.views.node import _view_project, abbrev_authors, can_view_wiki
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -2124,8 +2124,9 @@ class TestFileViews(OsfTestCase):
 
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
+
         assert_equal(res.status_code, http.OK)
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -2940,6 +2941,35 @@ class TestDashboardViews(OsfTestCase):
             if dashboard_item[u'name'] == title:
                 found_item = True
         assert_true(found_item, "Did not find the folder in the dashboard.")
+
+
+class TestWikiWidgetViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiWidgetViews, self).setUp()
+
+        # project with no home wiki page
+        self.project = ProjectFactory()
+        self.read_only_contrib = AuthUserFactory()
+        self.project.add_contributor(self.read_only_contrib, permissions='read')
+        self.noncontributor = AuthUserFactory()
+
+        # project with no home wiki content
+        self.project2= ProjectFactory(creator=self.project.creator)
+        self.project2.add_contributor(self.read_only_contrib, permissions='read')
+        self.project2.update_node_wiki(page='home', content='', auth=Auth(self.project.creator))
+
+    def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
+        assert_true(can_view_wiki(self.project, self.project.creator))
+        assert_true(can_view_wiki(self.project2, self.project.creator))
+
+    def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
+        assert_false(can_view_wiki(self.project, self.read_only_contrib))
+        assert_false(can_view_wiki(self.project2, self.read_only_contrib))
+
+    def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
+        assert_false(can_view_wiki(self.project, self.noncontributor))
+        assert_false(can_view_wiki(self.project2, self.read_only_contrib))
 
 
 class TestForkViews(OsfTestCase):

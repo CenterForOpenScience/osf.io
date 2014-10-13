@@ -618,27 +618,14 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node, user):
+def _render_addon(node):
 
     widgets = {}
     configs = {}
     js = []
     css = []
-    show_wiki = True
 
     for addon in node.get_addons():
-
-        if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
-            wiki_page = node.get_wiki_page('home')
-
-            # Check if the page doesn't exist,
-            if wiki_page is None:
-                show_wiki = False
-
-            # Check if the page has no content
-            elif not wiki_page.html(node):
-                show_wiki = False
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -646,7 +633,18 @@ def _render_addon(node, user):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    return widgets, configs, js, css, show_wiki
+    return widgets, configs, js, css
+
+
+def can_view_wiki(node, user):
+    if not node.has_permission(user, 'write'):
+        wiki_page = node.get_wiki_page('home', None)
+        if not wiki_page:
+            return False
+        elif not wiki_page.html(node):
+            return False
+    else:
+        return True
 
 
 def _view_project(node, auth, primary=False):
@@ -658,7 +656,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css, show_wiki = _render_addon(node, user)
+    widgets, configs, js, css= _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -718,7 +716,7 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-            'show_wiki': show_wiki,
+            'show_wiki': can_view_wiki(node, user),
 
         },
         'parent_node': {
