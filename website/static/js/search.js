@@ -110,6 +110,10 @@
             });
         };
 
+        self.help = function() {
+            bootbox.alert('Help');
+        };
+
         self.filter = function(alias) {
             self.category(alias);
             self.alias(alias.getAlias());
