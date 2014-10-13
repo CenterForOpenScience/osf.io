@@ -7,7 +7,7 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
-from framework.mongo.utils import from_mongo, to_mongo
+from framework.mongo.utils import from_mongo, to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 
@@ -63,7 +63,7 @@ def project_wiki_home(**kwargs):
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
-    wid_key = to_mongo(wid).lower()
+    wid_key = to_mongo_key(wid)
     # Skip if page doesn't exist; happens on new projects before
     # default "home" page is created
     if wid_key not in node.wiki_pages_versions:
@@ -350,8 +350,8 @@ def project_wiki_rename(**kwargs):
             message_long='The wiki home page cannot be renamed.'
         ))
 
-    old_name_key = to_mongo(page.page_name).lower()
-    new_name_key = to_mongo(request.json.get('value', None)).strip().lower()
+    old_name_key = to_mongo_key(page.page_name)
+    new_name_key = to_mongo_key(request.json.get('value', None))
 
     if page and new_name_key:
         if new_name_key in node.wiki_pages_current:

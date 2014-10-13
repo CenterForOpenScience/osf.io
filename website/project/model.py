@@ -25,7 +25,7 @@ from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
@@ -2468,7 +2468,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = to_mongo(page).lower()
+        page = to_mongo_key(page)
 
         if version:
             try:
@@ -2504,7 +2504,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = to_mongo(page).lower()
+        page = to_mongo_key(page)
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2545,7 +2545,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def delete_node_wiki(self, node, page, auth):
-        page_name_key = to_mongo(page.page_name).lower()
+        page_name_key = to_mongo_key(page.page_name)
 
         del node.wiki_pages_current[page_name_key]
         self.add_log(

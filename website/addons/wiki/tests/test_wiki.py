@@ -13,7 +13,7 @@ from tests.factories import (
 from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
 from framework.auth import Auth
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo_key
 
 SPECIAL_CHARACTERS = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
 
@@ -235,7 +235,7 @@ class TestWikiDelete(OsfTestCase):
     def test_project_wiki_delete_w_special_characters(self):
         self.project.update_node_wiki(SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)
         self.special_characters_wiki = self.project.get_wiki_page(SPECIAL_CHARACTERS)
-        assert_in(to_mongo(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
+        assert_in(to_mongo_key(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
         url = self.project.api_url_for(
             'project_wiki_delete',
             wid=SPECIAL_CHARACTERS
@@ -245,7 +245,7 @@ class TestWikiDelete(OsfTestCase):
             auth=self.auth
         )
         self.project.reload()
-        assert_not_in(to_mongo(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
+        assert_not_in(to_mongo_key(SPECIAL_CHARACTERS), self.project.wiki_pages_current)
 
 
 class TestWikiRename(OsfTestCase):
