@@ -19,7 +19,13 @@
         var self = this;
         self.name = ko.observable(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
         self.count = ko.observable(categroryCount);
+        self.rawName = ko.observable(categoryName);
         self.alias = ko.observable(alias);
+        self.getAlias = ko.computed(function() {
+            if (self.name() === 'Total')
+                return '';
+            return ' AND category:' + self.alias();
+        });
     };
 
     var ViewModel = function(url, appURL) {
@@ -27,7 +33,8 @@
 
         self.searchStarted = ko.observable(false);
         self.queryUrl = url;
-        self.appURL = appURL
+        self.appURL = appURL;
+        self.category = ko.observable({});
         self.alias = ko.observable('');
         self.totalResults = ko.observable(0);
         self.resultsPerPage = ko.observable(10);
@@ -104,10 +111,8 @@
         };
 
         self.filter = function(alias) {
-            if(alias === undefined)
-                self.alias('');
-            else
-                self.alias(' AND category:' + alias);
+            self.category(alias);
+            self.alias(alias.getAlias());
             self.search();
         };
 
@@ -124,7 +129,11 @@
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
-                self.totalResults(data.counts.total);
+                if (self.category().name !== undefined)
+                    self.totalResults(data.counts[self.category().rawName()]);
+                else
+                    self.totalResults(data.counts.total);
+
                 self.results.removeAll();
 
                 data.results.forEach(function(result){
