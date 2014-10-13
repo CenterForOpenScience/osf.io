@@ -65,7 +65,7 @@ def search(query, index='website', search_type='_all'):
     count_query = copy.deepcopy(query)
     try:
         import re
-        count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count['query']['filtered']['query']['query_string']['query'])
+        count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
     except Exception:
         pass
 
