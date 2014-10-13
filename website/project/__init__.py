@@ -16,14 +16,16 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     del_el = '<span style="background:#D16587; font-size:1.5em;">'
     del_el_close = '</span>'
     for opcode, a0, a1, b0, b1 in seqm.get_opcodes():
+        content_a = sanitize(seqm.a[a0:a1])
+        content_b = sanitize(seqm.b[b0:b1])
         if opcode == 'equal':
-            output.append(seqm.a[a0:a1])
+            output.append(content_a)
         elif opcode == 'insert':
-            output.append(insert_el + seqm.b[b0:b1] + ins_el_close)
+            output.append(insert_el + content_b + ins_el_close)
         elif opcode == 'delete':
-            output.append(del_el + seqm.a[a0:a1] + del_el_close)
+            output.append(del_el + content_a + del_el_close)
         elif opcode == 'replace':
-            output.append(del_el + seqm.a[a0:a1] + del_el_close + insert_el + seqm.b[b0:b1] + ins_el_close)
+            output.append(del_el + content_a + del_el_close + insert_el + content_b + ins_el_close)
         else:
             raise RuntimeError("unexpected opcode")
     return ''.join(output)
