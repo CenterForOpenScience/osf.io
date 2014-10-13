@@ -12,6 +12,7 @@ Changelog
 addon.
 - Unread comment counts appear in comment tab.
 - Lots of bug fixes and minor UI improvements to the wiki.
+- Wiki page names can have punctuation and special characters.
 - Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)

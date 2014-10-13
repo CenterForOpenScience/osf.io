@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%page expression_filter="h"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <div class="wiki">
@@ -9,7 +10,7 @@
         </div>
          <div class="col-md-9">
                  <%include file="wiki/templates/status.mako"/>
-            <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
+            <form action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
                     <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
@@ -17,9 +18,9 @@
                 <div class="pull-right">
                     <!-- clicking "Cancel" overrides unsaved changes check -->
                     % if wiki_created:
-                        <a href="${node['url']}wiki/home/" class="btn btn-default">Cancel</a>
+                        <a href="${urls['web']['home']}" class="btn btn-default">Cancel</a>
                     % else:
-                        <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Cancel</a>
+                        <a href="${urls['web']['page']}" class="btn btn-default">Cancel</a>
                     % endif
                     <input type="submit" class="btn btn-primary" value="Save"  onclick=$(window).off('beforeunload')>
                 </div>
@@ -36,6 +37,6 @@
 
 <script>
     $script('/static/addons/wiki/WikiEditor.js', function() {
-        WikiEditor('.wiki', '${node['api_url']}wiki/${pageName}/content/');
+        WikiEditor('.wiki', '${urls['api']['content']}');
     });
 </script>
