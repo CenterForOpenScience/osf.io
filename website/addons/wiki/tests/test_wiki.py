@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 # PEP8 asserts
+import httplib as http
+
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
 
@@ -173,6 +175,17 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_wiki_page_creation_strips_whitespace(self):
+        # Regression test for:
+        # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
+        # wid has a trailing space
+        url = self.project.web_url_for('project_wiki_edit', wid='cupcake ')
+        res = self.app.post(url, {'content': 'blah'}, auth=self.user.auth).follow()
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        wiki = self.project.get_wiki_page('cupcake')
+        assert_is_not_none(wiki)
 
 class TestWikiDelete(OsfTestCase):
 
@@ -300,3 +313,62 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wid='wiki2'),
             wiki.html(project),
         )
+
+
+class TestWikiCompare(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiCompare, self).setUp()
+
+        self.project = ProjectFactory(is_public=True)
+        api_key = ApiKeyFactory()
+        self.project.creator.api_keys.append(api_key)
+        self.project.creator.save()
+        self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
+        self.auth = ('test', api_key._primary_key)
+        self.project.update_node_wiki('home', 'hello world', self.consolidate_auth)
+        self.wiki = self.project.get_wiki_page('home')
+
+    def test_compare_wiki_page_valid(self):
+        self.project.update_node_wiki('home', 'Hello World', self.consolidate_auth)
+
+        url_v1_to_v2 = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=1)
+        res = self.app.get(url_v1_to_v2)
+        comparison_v1_to_v2 = \
+            '<span style="background:#D16587; font-size:1.5em;">h</span>' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">H</span>ello ' \
+            '<span style="background:#D16587; font-size:1.5em;">w</span>' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">W</span>orld'
+        assert_equal(res.status_int, http.OK)
+        assert_true(comparison_v1_to_v2 in res.body)
+
+        url_v2_to_v2 = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=2)
+        res = self.app.get(url_v2_to_v2)
+        comparison_v2_to_v2 = 'Hello World'
+        assert_equal(res.status_int, http.OK)
+        assert_true(comparison_v2_to_v2 in res.body)
+
+    def test_compare_wiki_page_sanitized(self):
+        content_js_script = '<script>alert(''a problem'');</script>'
+        self.project.update_node_wiki('home', content_js_script, self.consolidate_auth)
+
+        url_v1_to_v2 = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=1)
+        res = self.app.get(url_v1_to_v2)
+        comparison_v1_to_v2 = \
+            '<span style="background:#D16587; font-size:1.5em;">h</span>' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">&lt;script&gt;al</span>e' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">rt(''a prob</span>l' \
+            '<span style="background:#D16587; font-size:1.5em;">lo wo</span>' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">em'');</span>r' \
+            '<span style="background:#D16587; font-size:1.5em;">ld</span>' \
+            '<span style="background:#4AA02C; font-size:1.5em; ">ipt&gt;</span>'
+        assert_equal(res.status_int, http.OK)
+        assert_true(content_js_script not in res.body)
+        assert_true(comparison_v1_to_v2 in res.body)
+
+        url_v2_to_v2 = self.project.web_url_for('project_wiki_compare', wid='home', compare_id=2)
+        res = self.app.get(url_v2_to_v2)
+        comparison_v2_to_v2 = '&lt;script&gt;alert(''a problem'');&lt;/script&gt;'
+        assert_equal(res.status_int, http.OK)
+        assert_true(content_js_script not in res.body)
+        assert_true(comparison_v2_to_v2 in res.body)

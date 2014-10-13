@@ -112,8 +112,8 @@
             if (dateVal.toString() === 'Invalid Date') {
                 return true;
             }
-            // Compare dates
-            return dateVal.getFullYear() >= 1900;
+            // Compare years
+            return parseInt(uwVal) >= 1900;
         },
         message: 'Date must be greater than or equal to 1900.'
     };
