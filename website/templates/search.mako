@@ -109,6 +109,19 @@
         </h5>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="app">
+        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
+        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+
+        <!-- ko if: contributors.length > 0 -->
+        <h5>
+            Contributors: <small data-bind="foreach: contributors">
+                <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
+            <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
+            </small>
+        </h5>
+        <!-- /ko -->
+    </script>
     <script type="text/html" id="component">
         <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
