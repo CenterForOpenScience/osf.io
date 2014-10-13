@@ -1432,8 +1432,6 @@ class TestProject(OsfTestCase):
         assert_true(hasattr(node, 'forked_date'))
         assert_true(node.title)
         assert_true(hasattr(node, 'description'))
-        assert_true(hasattr(node, 'registration_list'))
-        assert_true(hasattr(node, 'fork_list'))
         assert_true(hasattr(node, 'registered_meta'))
         assert_true(hasattr(node, 'registered_user'))
         assert_true(hasattr(node, 'registered_schema'))
@@ -2120,7 +2118,6 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.fork_list)
         assert_in(fork._id, original.node__forked)
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
@@ -2503,7 +2500,7 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(self.registration.registered_from, self.project)
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.registration_list)
+        assert_in(self.registration._id, self.project.node__registrations)
 
 
 class TestNodeLog(OsfTestCase):
