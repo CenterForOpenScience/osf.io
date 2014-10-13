@@ -106,7 +106,7 @@ class NodeWikiPage(GuidStoredObject):
         self.share_uuid = None
 
         page_name = page_name or self.page_name.lower()
-        node.wiki_sharejs_uuid.pop(page_name, None)
+        node.wiki_sharejs_uuids.pop(page_name, None)
         node.save()
 
         if save:

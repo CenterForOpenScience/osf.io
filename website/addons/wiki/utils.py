@@ -26,7 +26,7 @@ def generate_share_uuid(node, wid):
     import uuid
 
     share_uuid = str(uuid.uuid5(uuid.uuid1(), str(wid)))
-    node.wiki_sharejs_uuid[wid] = share_uuid
+    node.wiki_sharejs_uuids[wid] = share_uuid
     node.save()
 
     return share_uuid

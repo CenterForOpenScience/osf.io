@@ -262,8 +262,8 @@ def project_wiki_edit(wid, auth, **kwargs):
 
         if wiki_page.share_uuid is None:
             # TODO: Can this case occur?
-            if wid in node.wiki_sharejs_uuid:
-                wiki_page.share_uuid = node.wiki_sharejs_uuid[wid]
+            if wid in node.wiki_sharejs_uuids:
+                wiki_page.share_uuid = node.wiki_sharejs_uuids[wid]
             else:
                 wiki_page.share_uuid = generate_share_uuid(node, wid)
             wiki_page.save()
@@ -273,8 +273,8 @@ def project_wiki_edit(wid, auth, **kwargs):
         is_current = False
         content = ''
         wiki_page_api_url = None
-        if wid in node.wiki_sharejs_uuid:
-            share_uuid = node.wiki_sharejs_uuid[wid]
+        if wid in node.wiki_sharejs_uuids:
+            share_uuid = node.wiki_sharejs_uuids[wid]
         else:
             share_uuid = generate_share_uuid(node, wid)
 
@@ -361,9 +361,9 @@ def project_wiki_rename(**kwargs):
         del node.wiki_pages_versions[format_wid(page.page_name)]
         node.wiki_pages_current[format_wid(new_name)] = node.wiki_pages_current[format_wid(page.page_name)]
         del node.wiki_pages_current[format_wid(page.page_name)]
-        if format_wid(page.page_name) in node.wiki_sharejs_uuid:
-            node.wiki_sharejs_uuid[format_wid(new_name)] = node.wiki_sharejs_uuid[format_wid(page.page_name)]
-            del node.wiki_sharejs_uuid[format_wid(page.page_name)]
+        if format_wid(page.page_name) in node.wiki_sharejs_uuids:
+            node.wiki_sharejs_uuids[format_wid(new_name)] = node.wiki_sharejs_uuids[format_wid(page.page_name)]
+            del node.wiki_sharejs_uuids[format_wid(page.page_name)]
         node.save()
         page.rename(new_name)
         return {'message': new_name}

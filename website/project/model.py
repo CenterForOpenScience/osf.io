@@ -582,7 +582,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     files_versions = fields.DictionaryField()
     wiki_pages_current = fields.DictionaryField()
     wiki_pages_versions = fields.DictionaryField()
-    wiki_sharejs_uuid = fields.DictionaryField()
+    wiki_sharejs_uuids = fields.DictionaryField()
 
     creator = fields.ForeignField('user', backref='created')
     contributors = fields.ForeignField('user', list=True, backref='contributed')
@@ -981,7 +981,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
-        new.wiki_sharejs_uuid = {}
+        new.wiki_sharejs_uuids = {}
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -2499,8 +2499,8 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        if page in self.wiki_sharejs_uuid:
-            new_wiki.share_uuid = self.wiki_sharejs_uuid[page]
+        if page in self.wiki_sharejs_uuids:
+            new_wiki.share_uuid = self.wiki_sharejs_uuids[page]
 
         new_wiki.save()
 
