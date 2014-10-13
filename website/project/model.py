@@ -1330,9 +1330,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def update_search(self):
         import website.search.search as search
-        if 'application_created' in self.system_tags:
-            index = 'application_created'
-        elif self.category == 'app':
+        if self.category == 'app':
             index = 'application'
         else:
             index = 'website'
