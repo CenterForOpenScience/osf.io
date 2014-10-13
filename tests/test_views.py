@@ -437,11 +437,11 @@ class TestProjectViews(OsfTestCase):
         self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
-        assert_equal(len(self.project.registration_list), 1)
+        assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
         assert_equal(self.project.logs[-1].action, "project_registered")
         # Most recent node is a registration
-        reg = Node.load(self.project.registration_list[-1])
+        reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
     def test_register_template_page_with_invalid_template_name(self):
