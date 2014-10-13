@@ -16,7 +16,9 @@ from framework.auth import Auth
 
 from website.models import NodeLog
 
+from website.addons.osfstorage import logs
 from website.addons.osfstorage import model
+from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 
 
@@ -25,6 +27,7 @@ class TestNodeSettingsModel(OsfTestCase):
     def setUp(self):
         super(TestNodeSettingsModel, self).setUp()
         self.node = ProjectFactory()
+        self.user = self.node.creator
         self.node_settings = self.node.get_addon('osfstorage')
 
     def test_fields(self):
@@ -87,9 +90,15 @@ class TestNodeSettingsModel(OsfTestCase):
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.FileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.FileVersion(status=model.status['PENDING'])
+        version_pending = model.FileVersion(
+            creator=self.user,
+            status=model.status['PENDING'],
+        )
         version_pending.save()
-        version_failed = model.FileVersion(status=model.status['FAILED'])
+        version_failed = model.FileVersion(
+            creator=self.user,
+            status=model.status['FAILED'],
+        )
         version_failed.save()
         record.versions.extend([version_pending, version_failed])
         record.save()
@@ -171,7 +180,8 @@ class TestFileRecord(OsfTestCase):
         super(TestFileRecord, self).setUp()
         self.path = 'red/special.mp3'
         self.project = ProjectFactory()
-        self.auth_obj = Auth(user=self.project.creator)
+        self.user = self.project.creator
+        self.auth_obj = Auth(user=self.user)
         self.node_settings = self.project.get_addon('osfstorage')
         self.record = model.FileRecord(
             path=self.path,
@@ -238,25 +248,28 @@ class TestFileRecord(OsfTestCase):
         assert_equal(num_records, model.FileRecord.find().count())
 
     def test_create_pending(self):
-        self.record.create_pending_version('c22b59f')
+        self.record.create_pending_version(self.user, 'c22b59f')
         self.record.resolve_pending_version(
             'c22b59f',
             factories.generic_location,
             {},
         )
-        self.record.create_pending_version('78c9a53')
+        self.record.create_pending_version(self.user, '78c9a53')
 
     def test_create_pending_previous_cancelled(self):
-        self.record.create_pending_version('c22b59f')
+        self.record.create_pending_version(self.user, 'c22b59f')
         self.record.cancel_pending_version('c22b59f')
-        self.record.create_pending_version('78c9a53')
+        self.record.create_pending_version(self.user, '78c9a53')
 
     def test_create_pending_path_locked(self):
-        version = model.FileVersion(status=model.status['PENDING'])
+        version = model.FileVersion(
+            creator=self.user,
+            status=model.status['PENDING'],
+        )
         version.save()
         self.record.versions.append(version)
         with assert_raises(errors.PathLockedError):
-            self.record.create_pending_version('c22b5f9')
+            self.record.create_pending_version(self.user, 'c22b5f9')
 
     def test_create_pending_bad_signature(self):
         version = factories.FileVersionFactory(
@@ -264,7 +277,52 @@ class TestFileRecord(OsfTestCase):
         )
         self.record.versions.append(version)
         with assert_raises(errors.SignatureConsumedError):
-            self.record.create_pending_version('c22b5f9')
+            self.record.create_pending_version(self.user, 'c22b5f9')
+
+    def test_resolve_pending_logs_file_creation(self):
+        nlogs = len(self.project.logs)
+        self.record.create_pending_version(self.user, 'c22b59f')
+        self.record.resolve_pending_version(
+            'c22b59f',
+            factories.generic_location,
+            {'size': 1024},
+        )
+        self.project.reload()
+        assert_equal(len(self.project.logs), nlogs + 1)
+        logged = self.project.logs[-1]
+        assert_equal(
+            logged.action,
+            'osf_storage_{0}'.format(NodeLog.FILE_ADDED),
+        )
+        assert_equal(logged.user, self.user)
+        assert_equal(
+            logged.params['urls'],
+            logs.build_log_urls(self.project, self.path),
+        )
+
+    def test_resolve_pending_logs_file_update(self):
+        nlogs = len(self.project.logs)
+        version = factories.FileVersionFactory()
+        self.record.versions.append(version)
+        self.record.save()
+        self.record.create_pending_version(self.user, 'c22b59f')
+        self.record.resolve_pending_version(
+            'c22b59f',
+            factories.generic_location,
+            {'size': 1024},
+        )
+        self.project.reload()
+        assert_equal(len(self.project.logs), nlogs + 1)
+        logged = self.project.logs[-1]
+        assert_equal(logged.user, self.user)
+        assert_equal(
+            logged.action,
+            'osf_storage_{0}'.format(NodeLog.FILE_UPDATED),
+        )
+        assert_equal(
+            logged.params['urls'],
+            logs.build_log_urls(self.project, self.path),
+        )
 
     def test_delete_record(self):
         nlogs = len(self.project.logs)
@@ -312,6 +370,10 @@ class TestFileRecord(OsfTestCase):
 
 class TestFileVersion(OsfTestCase):
 
+    def setUp(self):
+        super(TestFileVersion, self).setUp()
+        self.user = factories.AuthUserFactory()
+
     def test_fields(self):
         version = factories.FileVersionFactory(
             signature='c22b5f9',
@@ -320,6 +382,7 @@ class TestFileVersion(OsfTestCase):
             date_modified=datetime.datetime.now(),
         )
         retrieved = model.FileVersion.load(version._id)
+        assert_true(retrieved.creator)
         assert_true(retrieved.status)
         assert_true(retrieved.location)
         assert_true(retrieved.signature)
@@ -329,6 +392,7 @@ class TestFileVersion(OsfTestCase):
 
     def test_resolve(self):
         version = model.FileVersion(
+            creator=self.user,
             status=model.status['PENDING'],
             signature='c22b5f9',
         )
@@ -342,6 +406,7 @@ class TestFileVersion(OsfTestCase):
 
     def test_cancel(self):
         version = model.FileVersion(
+            creator=self.user,
             status=model.status['PENDING'],
             signature='c22b5f9',
         )
@@ -357,6 +422,7 @@ class TestFileVersion(OsfTestCase):
 
     def test_finish_bad_signature(self):
         version = model.FileVersion(
+            creator=self.user,
             status=model.status['PENDING'],
             signature='c22b5f9',
         )

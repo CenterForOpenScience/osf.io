@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from tests.factories import ModularOdmFactory
+from factory import SubFactory
+
+from tests.factories import ModularOdmFactory, AuthUserFactory
 
 from website.addons.osfstorage import model
 
@@ -15,6 +17,7 @@ generic_location = {
 class FileVersionFactory(ModularOdmFactory):
     FACTORY_FOR = model.FileVersion
 
+    creator = SubFactory(AuthUserFactory)
     status = model.status['COMPLETE']
     location = generic_location
 

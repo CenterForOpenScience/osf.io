@@ -6,6 +6,7 @@ import bson
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 
+from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website.models import NodeLog
@@ -13,6 +14,9 @@ from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
+
+
+UPLOAD_FAILED_LOG = 'file_upload_failed'
 
 
 oid_primary_key = fields.StringField(
@@ -178,29 +182,39 @@ class FileRecord(BaseFileObject):
                 raise errors.NoVersionsError
             return None
 
-    def create_pending_version(self, signature):
+    def create_pending_version(self, creator, signature):
         latest_version = self.get_latest_version()
         if latest_version and latest_version.pending:
             raise errors.PathLockedError
         if latest_version and latest_version.signature == signature:
             raise errors.SignatureConsumedError
         version = FileVersion(
-            status=status['PENDING'],
+            creator=creator,
             signature=signature,
+            status=status['PENDING'],
         )
         version.save()
         self.versions.append(version)
         self.save()
         return version
 
-    def resolve_pending_version(self, signature, location, metadata):
+    def resolve_pending_version(self, signature, location, metadata, log=True):
         latest_version = self.get_latest_version(required=True)
         latest_version.resolve(signature, location, metadata)
+        if log:
+            action = (
+                NodeLog.FILE_UPDATED
+                if len(self.versions) > 1
+                else NodeLog.FILE_ADDED
+            )
+            self.log(Auth(latest_version.creator), action)
         return latest_version
 
-    def cancel_pending_version(self, signature):
+    def cancel_pending_version(self, signature, log=True):
         latest_version = self.get_latest_version(required=True)
         latest_version.cancel(signature)
+        if log:
+            self.log(Auth(latest_version.creator), UPLOAD_FAILED_LOG)
         return latest_version
 
     def log(self, auth, action):
@@ -241,6 +255,7 @@ def validate_status(value):
 class FileVersion(StoredObject):
 
     _id = oid_primary_key
+    creator = fields.ForeignField('user', required=True)
 
     status = fields.StringField(validate=validate_status)
     location = fields.DictionaryField()

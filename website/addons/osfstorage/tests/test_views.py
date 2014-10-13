@@ -13,6 +13,7 @@ import urlparse
 
 from cloudstorm import sign
 
+from framework.auth import Auth
 from framework.analytics import get_basic_counters
 
 from website.addons.osfstorage import model
@@ -91,7 +92,9 @@ class HookTestCase(OsfTestCase):
     def setUp(self):
         super(HookTestCase, self).setUp()
         self.project = ProjectFactory()
+        self.user = self.project.creator
         self.node_settings = self.project.get_addon('osfstorage')
+        self.auth_obj = Auth(user=self.project.creator)
 
     def send_hook(self, view_name, payload, signature, path=None, **kwargs):
         return self.app.put_json(
@@ -110,7 +113,10 @@ class TestStartHook(HookTestCase):
         super(TestStartHook, self).setUp()
         self.path = 'soggy/pizza.png'
         self.uploadSignature = '07235a8'
-        self.payload = {'uploadSignature': self.uploadSignature}
+        self.payload = {
+            'uploadSignature': self.uploadSignature,
+            'uploadPayload': {'extra': {'user': self.user._id}},
+        }
         _, self.signature = utils.webhook_signer.sign_payload(self.payload)
 
     def send_start_hook(self, payload, signature, path=None, **kwargs):
@@ -143,7 +149,7 @@ class TestStartHook(HookTestCase):
 
     def test_start_hook_path_locked(self):
         record = model.FileRecord.get_or_create(self.path, self.node_settings)
-        record.create_pending_version('4217713')
+        record.create_pending_version(self.user, '4217713')
         res = self.send_start_hook(
             payload=self.payload, signature=self.signature, path=self.path,
             expect_errors=True,
@@ -155,7 +161,7 @@ class TestStartHook(HookTestCase):
 
     def test_start_hook_signature_consumed(self):
         record = model.FileRecord.get_or_create(self.path, self.node_settings)
-        record.create_pending_version(self.uploadSignature)
+        record.create_pending_version(self.user, self.uploadSignature)
         record.resolve_pending_version(
             self.uploadSignature,
             factories.generic_location,
@@ -200,7 +206,7 @@ class TestFinishHook(HookTestCase):
     def test_finish_hook_status_success(self):
         payload = self.make_payload()
         message, signature = utils.webhook_signer.sign_payload(payload)
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         version = self.record.versions[0]
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
@@ -213,7 +219,7 @@ class TestFinishHook(HookTestCase):
     def test_finish_hook_status_error(self):
         payload = self.make_payload(status='error')
         message, signature = utils.webhook_signer.sign_payload(payload)
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         version = self.record.versions[0]
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
@@ -225,7 +231,7 @@ class TestFinishHook(HookTestCase):
     def test_finish_hook_status_unknown(self):
         payload = self.make_payload(status='pizza')
         message, signature = utils.webhook_signer.sign_payload(payload)
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         version = self.record.versions[0]
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
@@ -239,7 +245,7 @@ class TestFinishHook(HookTestCase):
     def test_finish_hook_invalid_signature(self):
         payload = self.make_payload()
         message, signature = utils.webhook_signer.sign_payload(payload)
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         version = self.record.versions[0]
         res = self.send_finish_hook(
             payload=payload, signature=signature[::-1], path=self.path,
@@ -289,7 +295,7 @@ class TestFinishHook(HookTestCase):
         payload = self.make_payload(uploadSignature=self.uploadSignature[::-1])
         message, signature = utils.webhook_signer.sign_payload(payload)
         version = factories.FileVersionFactory()
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
             expect_errors=True,
@@ -304,7 +310,7 @@ class TestFinishHook(HookTestCase):
         )
         message, signature = utils.webhook_signer.sign_payload(payload)
         version = factories.FileVersionFactory()
-        self.record.create_pending_version(self.uploadSignature)
+        self.record.create_pending_version(self.user, self.uploadSignature)
         res = self.send_finish_hook(
             payload=payload, signature=signature, path=self.path,
             expect_errors=True,
@@ -318,7 +324,11 @@ class TestUploadFile(OsfTestCase):
     def setUp(self):
         super(TestUploadFile, self).setUp()
         self.project = ProjectFactory()
+        self.user = self.project.creator
         self.node_settings = self.project.get_addon('osfstorage')
+        # Refresh records from database; necessary for comparing dates
+        self.project.reload()
+        self.user.reload()
 
     def request_upload_url(self, name, size, content_type, path=None):
         return self.app.post_json(
@@ -341,9 +351,9 @@ class TestUploadFile(OsfTestCase):
         size = 1024
         content_type = 'image/png'
         res = self.request_upload_url(name, size, content_type)
-        self.project.reload()
         mock_get_url.assert_called_with(
             self.project,
+            self.user,
             size,
             content_type,
             name,
@@ -362,6 +372,7 @@ class TestUploadFile(OsfTestCase):
         self.project.reload()
         mock_get_url.assert_called_with(
             self.project,
+            self.user,
             size,
             content_type,
             'instruments/' + name,
@@ -410,17 +421,13 @@ class TestViewFile(OsfTestCase):
         res = self.view_file(self.path)
         assert_equal(n_objs, model.StorageFile.find().count())
 
-    def test_view_file_redirects_to_guid_url(self):
-        res = self.view_file(self.path).follow(auth=self.project.creator.auth)
-        assert_equal(res.status_code, 200)
-        assert_true(res.html.find('h1', text='magic.mp3'))
-
 
 class TestDownloadFile(OsfTestCase):
 
     def setUp(self):
         super(TestDownloadFile, self).setUp()
         self.project = ProjectFactory()
+        self.user = self.project.creator
         self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'tie/your/mother/down.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
@@ -491,7 +498,7 @@ class TestDownloadFile(OsfTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_pending_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        self.record.create_pending_version('9d989e8')
+        self.record.create_pending_version(self.user, '9d989e8')
         count_record = utils.get_download_count(self.record, self.project)
         count_version = utils.get_download_count(self.record, self.project, 2)
         res = self.download_file(
@@ -513,7 +520,7 @@ class TestDownloadFile(OsfTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_failed_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        self.record.create_pending_version('9d989e8')
+        self.record.create_pending_version(self.user, '9d989e8')
         self.record.cancel_pending_version('9d989e8')
         count_record = utils.get_download_count(self.record, self.project)
         count_version = utils.get_download_count(self.record, self.project, 2)
@@ -539,6 +546,8 @@ class TestDeleteFile(OsfTestCase):
     def setUp(self):
         super(TestDeleteFile, self).setUp()
         self.project = ProjectFactory()
+        self.user = self.project.creator
+        self.auth_obj = Auth(user=self.user)
         self.node_settings = self.project.get_addon('osfstorage')
 
     def test_delete_file(self):
@@ -567,7 +576,7 @@ class TestDeleteFile(OsfTestCase):
             self.node_settings,
             status=model.status['COMPLETE'],
         )
-        record.delete()
+        record.delete(self.auth_obj)
         record.save()
         assert_true(record.is_deleted)
         res = self.app.delete(

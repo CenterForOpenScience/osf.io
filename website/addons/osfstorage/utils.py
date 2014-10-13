@@ -148,11 +148,12 @@ def build_callback_urls(node, path):
     }
 
 
-def get_upload_url(node, size, content_type, file_path):
+def get_upload_url(node, user, size, content_type, file_path):
     payload = {
         'size': size,
         'type': content_type,
         'path': file_path,
+        'extra': {'user': user._id},
     }
     urls = build_callback_urls(node, file_path)
     payload.update(urls)
