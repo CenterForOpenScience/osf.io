@@ -15,7 +15,7 @@ from tests.factories import (
 
 from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
-from website.addons.wiki.utils import docs_uuid
+from website.addons.wiki.utils import docs_uuid, generate_share_uuid
 from framework.auth import Auth
 
 
@@ -496,3 +496,15 @@ class TestWikiUtils(OsfTestCase):
         fork = self.project.fork_node(Auth(self.project.creator))
         assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(project, share_uuid))
         assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(fork, share_uuid))
+
+    def test_generate_share_uuid(self):
+        wid = 'foo'
+        assert_is_none(self.project.wiki_sharejs_uuids.get(wid))
+        share_uuid = generate_share_uuid(self.project, wid)
+        self.project.reload()
+        assert_equal(self.project.wiki_sharejs_uuids[wid], share_uuid)
+
+        new_uuid = generate_share_uuid(self.project, wid)
+        self.project.reload()
+        assert_not_equal(share_uuid, new_uuid)
+        assert_equal(self.project.wiki_sharejs_uuids[wid], new_uuid)
