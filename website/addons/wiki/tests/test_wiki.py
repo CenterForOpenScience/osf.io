@@ -14,6 +14,7 @@ from tests.factories import (
 
 from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
+from website.addons.wiki.utils import docs_uuid
 from framework.auth import Auth
 
 class TestNodeWikiPageModel(OsfTestCase):
@@ -390,7 +391,8 @@ class TestWikiShareJS(OsfTestCase):
 
         self.project.reload()
         assert_true(self.project.wiki_sharejs_uuids.get(wid))
-        assert_in(self.project.wiki_sharejs_uuids.get(wid), res.body)
+        assert_not_in(self.project.wiki_sharejs_uuids.get(wid), res.body)
+        assert_in(docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wid)), res.body)
 
     def test_uuids_differ_between_pages(self):
         wid1 = 'foo'
@@ -404,14 +406,44 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(res2.status_code, 200)
 
         self.project.reload()
-        uuid1 = self.project.wiki_sharejs_uuids.get(wid1)
-        uuid2 = self.project.wiki_sharejs_uuids.get(wid2)
+        uuid1 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wid1))
+        uuid2 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wid2))
 
         assert_not_equal(uuid1, uuid2)
         assert_in(uuid1, res1)
         assert_in(uuid2, res2)
         assert_not_in(uuid1, res2)
         assert_not_in(uuid2, res1)
+
+    def test_uuids_differ_between_forks(self):
+        wid = 'foo'
+        url = self.project.web_url_for('project_wiki_edit', wid=wid)
+        project_res = self.app.get(url, auth=self.user.auth)
+        assert_equal(project_res.status_code, 200)
+        self.project.reload()
+
+        fork = self.project.fork_node(Auth(self.user))
+        assert_true(fork.is_fork_of(self.project))
+        fork_url = fork.web_url_for('project_wiki_edit', wid=wid)
+        fork_res = self.app.get(fork_url, auth=self.user.auth)
+        assert_equal(fork_res.status_code, 200)
+        fork.reload()
+
+        # uuids are stored the same internally
+        assert_equal(
+            self.project.wiki_sharejs_uuids.get(wid),
+            fork.wiki_sharejs_uuids.get(wid)
+        )
+
+        project_uuid = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wid))
+        fork_uuid = docs_uuid(fork, fork.wiki_sharejs_uuids.get(wid))
+
+        assert_not_equal(project_uuid, fork_uuid)
+        assert_in(project_uuid, project_res)
+        assert_in(fork_uuid, fork_res)
+        assert_not_in(project_uuid, fork_res)
+        assert_not_in(fork_uuid, project_res)
+
 
     def test_uuid_persists_after_delete(self):
         wid = 'foo'
@@ -436,4 +468,5 @@ class TestWikiShareJS(OsfTestCase):
         assert_equal(res.status_code, 200)
         self.project.reload()
         assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
-        assert_in(old_id, res.body)
+        assert_in(docs_uuid(self.project, old_id), res.body)
+

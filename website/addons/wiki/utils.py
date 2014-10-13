@@ -1,11 +1,16 @@
+import uuid
 from pymongo import MongoClient
 
 from website import settings
 
 
 def docs_uuid(node, share_uuid):
-    """Format sharejs uuid into the form used in the docs collection"""
-    return '{0}-{1}'.format(node._id, share_uuid)
+    """
+    Format sharejs uuid into the form used in the docs collection.
+    This is also the form passed to sharejs to open the sharejs doc, which
+    includes node's primary ID to prevent fork namespace collision
+    """
+    return str(uuid.uuid5(uuid.UUID(share_uuid), str(node._id)))
 
 
 def ops_uuid(node, share_uuid):
@@ -23,9 +28,8 @@ def share_db():
 
 def generate_share_uuid(node, wid):
     """Generate uuid for use in sharejs namespacing"""
-    import uuid
 
-    share_uuid = str(uuid.uuid5(uuid.uuid1(), str(wid)))
+    share_uuid = str(uuid.uuid1())
     node.wiki_sharejs_uuids[wid] = share_uuid
     node.save()
 
