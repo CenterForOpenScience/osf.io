@@ -14,8 +14,7 @@ logger = logging.getLogger(__name__)
 def get_mongo_client():
     """Create MongoDB client and authenticate database.
     """
-    mongo_uri = 'mongodb://localhost:{port}'.format(port=settings.DB_PORT)
-    client = MongoClient(mongo_uri)
+    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
 
     db = client[settings.DB_NAME]
 

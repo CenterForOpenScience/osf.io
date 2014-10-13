@@ -21,9 +21,8 @@ def ops_uuid(node, share_uuid):
 
 def share_db():
     """Generate db client for sharejs db"""
-    # TODO: Use domain and port (sync with mongo/handlers.py)
     # TODO: Use local proxy
-    client = MongoClient('localhost', settings.DB_PORT)
+    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
     return client.sharejs
 
 
