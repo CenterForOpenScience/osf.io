@@ -23,6 +23,15 @@ Migrations
 - scripts/migrations/migrate_profile_dates.py
 - scripts/migrate_github_oauth_settings.py
 
+Schema changes
+--------------
+
+- Remove fork_list and registration_list fields from Node model. NOTE: A
+migration was NOT performed.
+- Add AddonGithubOauthSettings model.
+- Remove oauth_access_token and oauth_token_type fields from
+AddonGitHubUserSettings model.
+
 0.17.0 (2014-09-23)
 ===================
 
