@@ -187,6 +187,7 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
@@ -229,7 +230,6 @@ class TestWikiRename(OsfTestCase):
         self.consolidate_auth = Auth(user=self.project.creator, api_key=api_key)
         self.auth = ('test', api_key._primary_key)
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
-
 
         self.page_name = 'page2'
         self.project.update_node_wiki(self.page_name, 'content', self.consolidate_auth)
@@ -372,3 +372,65 @@ class TestWikiCompare(OsfTestCase):
         assert_equal(res.status_int, http.OK)
         assert_true(content_js_script not in res.body)
         assert_true(comparison_v2_to_v2 in res.body)
+
+
+class TestWikiShareJS(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiShareJS, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+
+    def test_uuid_generated(self):
+        wid = 'foo'
+        assert_is_none(self.project.wiki_sharejs_uuids.get(wid))
+        url = self.project.web_url_for('project_wiki_edit', wid=wid)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_true(self.project.wiki_sharejs_uuids.get(wid))
+        assert_in(self.project.wiki_sharejs_uuids.get(wid), res.body)
+
+    def test_uuids_differ_between_pages(self):
+        wid1 = 'foo'
+        url1 = self.project.web_url_for('project_wiki_edit', wid=wid1)
+        res1 = self.app.get(url1, auth=self.user.auth)
+        assert_equal(res1.status_code, 200)
+
+        wid2 = 'bar'
+        url2 = self.project.web_url_for('project_wiki_edit', wid=wid2)
+        res2 = self.app.get(url2, auth=self.user.auth)
+        assert_equal(res2.status_code, 200)
+
+        self.project.reload()
+        uuid1 = self.project.wiki_sharejs_uuids.get(wid1)
+        uuid2 = self.project.wiki_sharejs_uuids.get(wid2)
+        assert_true(uuid1)
+        assert_true(uuid2)
+        assert_not_equal(uuid1, uuid2)
+
+    def test_uuid_persists_after_delete(self):
+        wid = 'foo'
+        assert_is_none(self.project.wiki_sharejs_uuids.get(wid))
+
+        # Visit wiki edit page
+        edit_url = self.project.web_url_for('project_wiki_edit', wid=wid)
+        res = self.app.get(edit_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        old_id = self.project.wiki_sharejs_uuids.get(wid)
+
+        # Delete wiki
+        delete_url = self.project.api_url_for('project_wiki_delete', wid=wid)
+        res = self.app.get(delete_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
+
+        # Revisit wiki edit page
+        res = self.app.get(edit_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
+        assert_in(old_id, res.body)
