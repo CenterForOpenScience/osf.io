@@ -63,6 +63,12 @@ def search(query, index='website', search_type='_all'):
     # Get document counts by type
     counts = {}
     count_query = copy.deepcopy(query)
+    try:
+        import re
+        count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count['query']['filtered']['query']['query_string']['query'])
+    except Exception:
+        pass
+
     if count_query.get('from') is not None: del count_query['from']
     if count_query.get('size')is not None: del count_query['size']
     if count_query.get('sort'): del count_query['sort']
