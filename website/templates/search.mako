@@ -24,12 +24,12 @@
                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
                     <!-- ko if: $parent.alias().indexOf(alias()) != -1 -->
                     <li class="active">
-                        <a data-bind="click: $parent.filter.bind($data, alias())">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                        <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
                     </li>
                     <!-- /ko -->
                     <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
                     <li>
-                        <a data-bind="click: $parent.filter.bind($data, alias())">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                        <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
                     </li>
                     <!-- /ko -->
                 </ul>
@@ -63,9 +63,6 @@
         </div><!--row-->
     </div>
 
-    <script type="text/html" id="category">
-
-    </script>
     <script type="text/html" id="metadata">
         <!-- ko if: $data.links -->
             <h4><a data-bind="attr.href: links[0].url">{{ title }}</a></h4>
