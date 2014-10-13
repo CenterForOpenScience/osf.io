@@ -2499,6 +2499,9 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
 
+    def test_registration_list(self):
+        assert_in(self.registration._id, self.project.node__registrations)
+
 
 class TestNodeLog(OsfTestCase):
 

@@ -1473,8 +1473,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
-        original.save()
-
         return forked
 
     def register_node(self, schema, auth, template, data):
