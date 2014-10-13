@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # PEP8 asserts
+from copy import deepcopy
 import httplib as http
 import uuid
 
@@ -15,7 +16,10 @@ from tests.factories import (
 
 from website.addons.wiki.views import serialize_wiki_toc
 from website.addons.wiki.model import NodeWikiPage
-from website.addons.wiki.utils import docs_uuid, generate_share_uuid
+from website.addons.wiki.utils import (
+    docs_uuid, generate_share_uuid, share_db, ops_uuid
+)
+from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
 
 
@@ -470,6 +474,36 @@ class TestWikiShareJS(OsfTestCase):
         self.project.reload()
         assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
         assert_in(docs_uuid(self.project, old_id), res.body)
+
+
+class TestWikiShareJSMongo(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiShareJSMongo, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.wid = 'foo'
+        self.share_uuid = generate_share_uuid(self.project, self.wid)
+        self.docs_uuid = docs_uuid(self.project, self.share_uuid)
+        self.ops_uuid = ops_uuid(self.project, self.share_uuid)
+
+        # Insert mongo data for current project/wiki
+        self.db = share_db()
+        docs = deepcopy(EXAMPLE_DOCS)
+        docs['_id'] = self.docs_uuid
+        self.db.docs.insert(docs)
+        self.db[self.ops_uuid].insert(EXAMPLE_OPS)
+
+    # TODO
+    def test_pass(self):
+        assert True
+
+    def tearDown(self):
+        super(TestWikiShareJSMongo, self).tearDown()
+        self.db['docs'].remove({'_id': self.docs_uuid})
+        self.db.drop_collection(self.ops_uuid)
+        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
+        assert_is_none(self.db[self.ops_uuid].find_one())
 
 
 class TestWikiUtils(OsfTestCase):
