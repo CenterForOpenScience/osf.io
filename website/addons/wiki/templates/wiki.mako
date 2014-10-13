@@ -1,3 +1,4 @@
+<%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Wiki</%def>
 
@@ -8,7 +9,7 @@
     </div>
     <div class="col-md-9">
         <%include file="wiki/templates/status.mako"/>
-        ${wiki_content}
+        ${wiki_content | n}
     </div>
 </div>
 
