@@ -88,7 +88,13 @@ def search(query, index='website', search_type='_all'):
     return {
         'results': format_results(results),
         'counts': counts,
-        'typeAliases': {value: key for key, value in ALIASES}
+        'typeAliases': {
+            'components': 'component',
+            'projects': 'project',
+            'registrations': 'registration',
+            'SHARE': 'metadata',
+            'users': 'user',
+        }
     }
 
 
