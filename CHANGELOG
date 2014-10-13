@@ -10,8 +10,18 @@ Changelog
 - Add "ongoing" option to Education and Employment sections of user profile.
 - Improved mimetype detection when downloading a file through the Github
 addon.
+- Unread comment counts appear in comment tab.
+- Lots of bug fixes and minor UI improvements to the wiki.
+- Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
+
+Migrations
+----------
+
+- scripts/migrate_piwik_derived_nodes.py
+- scripts/migrations/migrate_profile_dates.py
+- scripts/migrate_github_oauth_settings.py
 
 0.17.0 (2014-09-23)
 ===================
