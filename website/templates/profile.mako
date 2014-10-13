@@ -5,6 +5,7 @@
 
 <script>
     % if user["is_profile"]:
+        $.fn.editable.defaults.mode = 'inline';
         $(function() {
             $('#profile-fullname > span').editable({
                 type:  'text',

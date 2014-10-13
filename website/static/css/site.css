@@ -1480,7 +1480,7 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
-#projectScope .form-control {
+#projectScope .form-control, #wikiName .form-control {
     width: 400px;
 }
 
