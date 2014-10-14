@@ -213,6 +213,18 @@ class TestWikiViews(OsfTestCase):
         assert_in('No wiki content', res)
 
 
+    def test_project_dashboard_wiki_widget_shows_non_ascii_characters(self):
+        # Regression test for:
+        # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
+        text = u'你好'
+        self.project.update_node_wiki('home', text, Auth(self.user))
+
+        # can view wiki preview from project dashboard
+        url = self.project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in(text, res)
+
+
 class TestWikiDelete(OsfTestCase):
 
     def setUp(self):
