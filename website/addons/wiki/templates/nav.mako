@@ -14,11 +14,15 @@
 </nav>
 
 <script type="text/javascript">
-    $(document).ready(function(){
-        $(".navbar-nav li").each(function(){
-            var href = $(this).find('a').attr('href');
-            if (href === window.location.pathname) {
-                var $this = $(this);
+    $(document).ready(function () {
+        $(".navbar-nav li").each(function () {
+            var $this = $(this);
+            var href = $this.find('a').attr('href');
+            // tilde special characters are always encoded from the server,
+            // some browsers (chrome) decode them client side.
+            var pathname = window.location.pathname.replace('~', '%7E');
+
+            if (href === pathname) {
                 $this.addClass('active');
             }
         });
