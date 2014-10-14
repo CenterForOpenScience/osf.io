@@ -89,8 +89,7 @@ class TestFilesViews(OsfTestCase):
 
         res = self._upload_file(
             'newfile',
-            'a' * (node_addon.config.max_file_size),
-            expect_errors=True,
+            'a' * (node_addon.config.max_file_size)
         )
 
         self.project.reload()
@@ -111,8 +110,7 @@ class TestFilesViews(OsfTestCase):
 
         res = self._upload_file(
             '_néwfile',
-            'a' * (node_addon.config.max_file_size),
-            expect_errors=True,
+            'a' * (node_addon.config.max_file_size)
         )
 
         self.project.reload()
