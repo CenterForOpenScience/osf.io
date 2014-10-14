@@ -122,7 +122,7 @@ def _build_query(q, start, size):
             }
         },
         'sort': [{
-            'consumeFinished': {
+            'dateUpdated': {
                 'order': 'desc'
             }
         }],
