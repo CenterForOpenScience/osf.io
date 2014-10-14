@@ -25,7 +25,7 @@ from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
@@ -575,9 +575,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
 
-    registration_list = fields.StringField(list=True)
-    fork_list = fields.StringField(list=True)
-
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
@@ -984,8 +981,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
-        new.fork_list = []
-        new.registration_list = []
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1388,24 +1383,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=True,
             )
 
-        # Remove self from parent registration list
-        if self.is_registration:
-            try:
-                self.registered_from.registration_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.registered_from.save()
-
-        # Remove self from parent fork list
-        if self.is_fork:
-            try:
-                self.forked_from.fork_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.forked_from.save()
-
         self.is_deleted = True
         self.deleted_date = date
         self.save()
@@ -1493,9 +1470,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
-        original.fork_list.append(forked._primary_key)
-        original.save()
-
         return forked
 
     def register_node(self, schema, auth, template, data):
@@ -1576,7 +1550,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=when,
             save=False,
         )
-        original.registration_list.append(registered._id)
         original.save()
 
         registered.save()
@@ -2468,8 +2441,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        page = to_mongo_key(page)
 
         if version:
             try:
@@ -2505,8 +2477,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        page = to_mongo_key(page)
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2547,8 +2518,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def delete_node_wiki(self, node, page, auth):
+        page_name_key = to_mongo_key(page.page_name)
 
-        del node.wiki_pages_current[page.page_name]
+        del node.wiki_pages_current[page_name_key]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={

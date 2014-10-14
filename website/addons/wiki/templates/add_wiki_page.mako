@@ -2,7 +2,7 @@
   <div class="modal fade" id="newWiki">
     <div class="modal-dialog">
         <div class="modal-content">
-        <form class="form" id="newWikiForm">
+        <form class="form">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
               <h3 class="modal-title">Add New Wiki Page</h3>
@@ -24,7 +24,7 @@
     </div><!-- end modal -->
 
 
-<script type="text/javascript">
+  <script type="text/javascript">
 
   $(function(){
 
@@ -51,18 +51,14 @@
                       .text("OK");
           }
           else{
-              var url=document.location.href;
-              var url_root = url.substr(0, url.indexOf('wiki')+5);
               var wikiName = $("#data").val();
-              if (wikiName.indexOf("/") != -1){
-                  wikiName = wikiName.split("/").join("|");
-              }
+              var url = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
               var request = $.ajax({
                   type: 'GET',
-                  url: url_root + wikiName + '/edit/'
+                  url: url
               });
               request.done(function(response) {
-                  window.location.href = url_root + wikiName + '/edit/';
+                  window.location.href = url;
               });
               request.fail(function(response){
                   if(response.status === 422) {
@@ -82,8 +78,6 @@
       $('#close').on('click', function(){
           $("#alert").text("");
           $('#data').val("");
-
       });
   });
-</script>
-
+  </script>
