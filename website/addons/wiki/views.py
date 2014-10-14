@@ -274,12 +274,11 @@ def project_wiki_edit(wid, auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
 
-    for wiki in node.wiki_pages_current:
-        if wid.lower() == wiki.lower():
-            raise HTTPError(http.CONFLICT, data=dict(
-                message_short='Wiki page name conflict.',
-                message_long='A wiki page with that name already exists.'
-            ))
+    if wid.lower() in node.wiki_pages_current:
+        raise HTTPError(http.CONFLICT, data=dict(
+            message_short='Wiki page name conflict.',
+            message_long='A wiki page with that name already exists.'
+        ))
 
     if wiki_page:
         version = wiki_page.version
