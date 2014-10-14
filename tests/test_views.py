@@ -31,7 +31,7 @@ from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project, abbrev_authors, can_view_wiki
+from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -2955,21 +2955,21 @@ class TestWikiWidgetViews(OsfTestCase):
         self.noncontributor = AuthUserFactory()
 
         # project with no home wiki content
-        self.project2= ProjectFactory(creator=self.project.creator)
+        self.project2 = ProjectFactory(creator=self.project.creator)
         self.project2.add_contributor(self.read_only_contrib, permissions='read')
         self.project2.update_node_wiki(page='home', content='', auth=Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
-        assert_true(can_view_wiki(self.project, self.project.creator))
-        assert_true(can_view_wiki(self.project2, self.project.creator))
+        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
+        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
 
     def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
-        assert_false(can_view_wiki(self.project, self.read_only_contrib))
-        assert_false(can_view_wiki(self.project2, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
-        assert_false(can_view_wiki(self.project, self.noncontributor))
-        assert_false(can_view_wiki(self.project2, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
 
 
 class TestForkViews(OsfTestCase):

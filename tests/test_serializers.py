@@ -88,7 +88,7 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
 
-    def test_view_project_returns_show_wiki(self):
+    def test_view_project_returns_whether_to_show_wiki_widget(self):
         user = AuthUserFactory()
         project = ProjectFactory.build(creator=user, is_public=True)
         project.add_contributor(user)
@@ -97,7 +97,7 @@ class TestNodeSerializers(OsfTestCase):
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
         assert_equal(res.status_code, http.OK)
-        assert_in('show_wiki', res.json['node'])
+        assert_in('show_wiki_widget', res.json['user'])
 
 
 class TestNodeLogSerializers(OsfTestCase):

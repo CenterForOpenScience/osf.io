@@ -636,7 +636,7 @@ def _render_addon(node):
     return widgets, configs, js, css
 
 
-def can_view_wiki(node, user):
+def _should_show_wiki_widget(node, user):
     if not node.has_permission(user, 'write'):
         wiki_page = node.get_wiki_page('home', None)
         return wiki_page and wiki_page.html(node)
@@ -714,7 +714,6 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-            'show_wiki': can_view_wiki(node, user),
 
         },
         'parent_node': {
@@ -737,6 +736,7 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts

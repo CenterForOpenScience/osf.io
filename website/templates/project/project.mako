@@ -22,7 +22,7 @@
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
                     %if addon == 'wiki':
-                        %if node['show_wiki']:
+                        %if user['show_wiki_widget']:
                             <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",
                             "uri": "${node['api_url']}wiki/widget/"
