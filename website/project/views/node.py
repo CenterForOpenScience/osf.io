@@ -713,7 +713,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.node__forked),
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
