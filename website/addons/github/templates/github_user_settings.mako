@@ -41,7 +41,7 @@
         $('#githubDelKey').on('click', function() {
             bootbox.confirm({
                 title: 'Remove access key?',
-                message: 'Are you sure you want to delete your GitHub access key? This will ' +
+                message: 'Are you sure you want to remove your GitHub access key? This will ' +
                     'revoke access to GitHub for all projects you have authorized ' +
                     'and delete your access token from GitHub. Your OSF collaborators ' +
                     'will not be able to write to GitHub repos or view private repos ' +

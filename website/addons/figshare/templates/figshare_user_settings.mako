@@ -41,7 +41,7 @@
 
         $('#figshareDelKey').on('click', function() {
             bootbox.confirm({
-                title: 'Remove access key',
+                title: 'Remove access key?',
                 message: 'Are you sure you want to remove your Figshare access key? This will ' +
                         'revoke access to Figshare for all projects you have authorized.',
                 callback: function(result) {

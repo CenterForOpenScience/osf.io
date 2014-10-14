@@ -44,7 +44,7 @@
         $('#s3RemoveAccess').on('click', function() {
             bootbox.confirm({
                 title: 'Remove access key?',
-                message: 'Are you sure you want to delete your Amazon Simple Storage Service access key? ' +
+                message: 'Are you sure you want to remove your Amazon Simple Storage Service access key? ' +
                         'This will revoke access to Amazon S3 for all projects you have authorized and ' +
                         'delete your access token from Amazon S3. Your OSF collaborators will not be able ' +
                         'to write to Amazon S3 buckets or view private buckets that you have authorized.',

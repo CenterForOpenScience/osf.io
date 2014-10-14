@@ -34,7 +34,7 @@
         $('#bitbucketDelKey').on('click', function() {
             bootbox.confirm({
                 title: 'Remove access key?',
-                message: 'Are you sure you want to delete you Bitbucket access key?',
+                message: 'Are you sure you want to remove your Bitbucket access key?',
                 callback: function(result) {
                     if(result) {
                         $.ajax({
