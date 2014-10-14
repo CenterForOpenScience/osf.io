@@ -991,12 +991,12 @@ h1.node-title, h1.node-parent-title {
     width:60%;
 }
 
-.wiki-component-ul {
+.wiki-component {
     list-style-type: none;
     padding-right: 20px;
 }
 
-.wiki-component-li {
+.wiki-component li {
     margin-bottom: 8px;
 }
 
