@@ -21,7 +21,7 @@
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
-                    %if addon is 'wiki':
+                    %if addon == 'wiki':
                         %if node['show_wiki']:
                             <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/wiki/templates/wiki_widget.mako",

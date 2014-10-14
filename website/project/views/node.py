@@ -639,10 +639,8 @@ def _render_addon(node):
 def can_view_wiki(node, user):
     if not node.has_permission(user, 'write'):
         wiki_page = node.get_wiki_page('home', None)
-        if not wiki_page:
-            return False
-        elif not wiki_page.html(node):
-            return False
+        return wiki_page and wiki_page.html(node)
+
     else:
         return True
 
