@@ -112,6 +112,7 @@ def _get_wiki_api_urls(node, wid, additional_urls=None):
 
 def _get_wiki_web_urls(node, wid, compare_id=1, additional_urls=None):
     urls = {
+        # TODO: Change this to GUID url?
         'base': node.web_url_for('project_wiki_home'),
         'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=compare_id),
         'edit': node.web_url_for('project_wiki_edit', wid=wid),
