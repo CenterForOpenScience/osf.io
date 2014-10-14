@@ -52,9 +52,11 @@
     };
 
     NodeActions.forkPointer = function(pointerId) {
-        bootbox.confirm('Are you sure you want to fork this project?',
-            function(result) {
-                if (result) {
+        bootbox.confirm({
+            title: 'Fork this project?',
+            message: 'Are you sure you want to fork this project?',
+            callback: function(result) {
+                if(result) {
                     // Block page
                     $.osf.block();
 
@@ -70,7 +72,7 @@
                     });
                 }
             }
-        );
+        });
     };
 
     NodeActions.beforeTemplate = function(url, done) {
@@ -249,17 +251,18 @@
 
         $('.remove-pointer').on('click', function() {
             var $this = $(this);
-            bootbox.confirm(
-                'Are you sure you want to remove this link? This will not ' +
-                'remove the project this link refers to.',
-                function(result) {
-                    if (result) {
+            bootbox.confirm({
+                title: 'Remove this link?',
+                message: 'Are you sure you want to remove this link? This will not remove the ' +
+                    'project this link refers to.',
+                callback: function(result) {
+                    if(result) {
                         var pointerId = $this.attr('data-id');
                         var pointerElm = $this.closest('.list-group-item');
                         NodeActions.removePointer(pointerId, pointerElm);
                     }
                 }
-            );
+            });
         });
 
         $('body').on('click', '.tagsinput .tag > span', function(e) {

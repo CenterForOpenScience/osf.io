@@ -152,9 +152,12 @@
             var dataToSend = {
                 'private_link_id': data.id
             };
-            bootbox.confirm('Are you sure to remove this view only link?', function(result) {
-                if (result) {
-                    $.ajax({
+            bootbox.confirm({
+                title: 'Remove view only link?',
+                message: 'Are you sure to remove this view only link?',
+                callback: function(result) {
+                    if(result) {
+                        $.ajax({
                         type: 'delete',
                         url: nodeApiUrl + 'private_link/',
                         contentType: 'application/json',
@@ -165,8 +168,9 @@
                     }).fail(function() {
                         bootbox.alert('Failed to delete the private link.')
                     });
+                    }
                 }
-             });
+            });
         };
 
         self.afterRenderLink = function(elm, data) {

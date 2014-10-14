@@ -40,11 +40,12 @@
         });
 
         $('#figshareDelKey').on('click', function() {
-            bootbox.confirm(
-                'Are you sure you want to delete your Figshare access key? This will ' +
-                    'revoke access to Figshare for all projects you have authorized.',
-                function(result) {
-                    if (result) {
+            bootbox.confirm({
+                title: 'Remove access key',
+                message: 'Are you sure you want to remove your Figshare access key? This will ' +
+                        'revoke access to Figshare for all projects you have authorized.',
+                callback: function(result) {
+                    if(result) {
                         $.ajax({
                             url: '/api/v1/settings/figshare/oauth/',
                             type: 'DELETE',
@@ -56,7 +57,7 @@
                         });
                     }
                 }
-            )
+            });
         });
     });
 

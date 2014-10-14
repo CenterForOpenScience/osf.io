@@ -92,10 +92,11 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
     if (args['items'][0]['type'] !== 'fake') {
         var msg = 'Are you sure you want to delete the file "' + args['items'][0]['name'] + '"?';
         var d = $.Deferred();
-        bootbox.confirm(
-            msg,
-            function(result) {
-                if (result) {
+        bootbox.confirm({
+            title: 'Delete file?',
+            message: msg,
+            callback: function(result) {
+                if(result) {
                     var url = args['items'][0]['download'];
                     $.ajax({
                         url: url,
@@ -112,7 +113,7 @@ grid.hGridBeforeDelete.subscribe(function(e, args) {
                     d.resolve(false);
                 }
             }
-        );
+        });
         return d;
     }
 });
