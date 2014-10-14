@@ -204,6 +204,14 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
+    def test_project_dashboard_shows_no_wiki_content_text(self):
+        # Regression test for:
+        # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
+        project = ProjectFactory(creator=self.user)
+        url = project.web_url_for('view_project')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('No wiki content', res)
+
 
 class TestWikiDelete(OsfTestCase):
 
