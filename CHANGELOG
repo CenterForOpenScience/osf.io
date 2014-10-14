@@ -19,6 +19,7 @@ addon.
 - Allow multiple users to authenticate with the same Github credentials for
 the Github addon.
 - Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
+- Update required versions of requests, webassets, and bleach.
 
 Migrations
 ----------
