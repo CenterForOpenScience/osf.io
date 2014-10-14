@@ -784,7 +784,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if user is None:
-            logger.error('User is ``None``.')
+            logger.warn('User is ``None``.')
             return False
         try:
             return permission in self.permissions[user._id]
