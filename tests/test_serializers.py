@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
+import httplib as http
 
-from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory
+from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory, AuthUserFactory
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
@@ -86,6 +87,17 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_fork
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
+
+    def test_view_project_returns_whether_to_show_wiki_widget(self):
+        user = AuthUserFactory()
+        project = ProjectFactory.build(creator=user, is_public=True)
+        project.add_contributor(user)
+        project.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('show_wiki_widget', res.json['user'])
 
 
 class TestNodeLogSerializers(OsfTestCase):
