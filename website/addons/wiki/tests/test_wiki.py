@@ -197,9 +197,10 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_not_in('CaPsLoCk', self.project.wiki_pages_current)
+        assert_not_in('capslock', self.project.wiki_pages_current)
+        assert_in('CaPsLoCk', res)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
-        assert_in('CaPsLoCk', self.project.wiki_pages_current)
+        assert_in('capslock', self.project.wiki_pages_current)
         
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
@@ -224,7 +225,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
-        assert_in('CaPsLoCk', self.project.wiki_pages_current)
+        assert_in('capslock', self.project.wiki_pages_current)
         url = self.project.web_url_for('project_wiki_edit', wid='Capslock')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
@@ -267,17 +268,17 @@ class TestWikiDelete(OsfTestCase):
         self.lion_wiki = self.project.get_wiki_page('Lions')
 
     def test_project_wiki_delete(self):
-        assert_in('Elephants', self.project.wiki_pages_current)
+        assert_in('elephants', self.project.wiki_pages_current)
         url = self.project.api_url_for(
             'project_wiki_delete',
-            wid='Elephants'
+            wid='elephants'
         )
         self.app.delete(
             url,
             auth=self.auth
         )
         self.project.reload()
-        assert_not_in('Elephants', self.project.wiki_pages_current)
+        assert_not_in('elephants', self.project.wiki_pages_current)
 
     def test_project_wiki_delete_w_special_characters(self):
         self.project.update_node_wiki(SPECIAL_CHARACTERS, 'Hello Special Characters', self.consolidate_auth)

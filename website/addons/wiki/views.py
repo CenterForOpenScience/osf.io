@@ -363,16 +363,19 @@ def project_wiki_rename(**kwargs):
 
     if page and new_name_key:
         if new_name_key in node.wiki_pages_current:
+            if old_name_key == new_name_key:
+                page.rename(new_name_key)
+                return {'message': new_name_key}
             raise HTTPError(http.CONFLICT)
-
-        # TODO: This should go in a Node method like node.rename_wiki
-        node.wiki_pages_versions[new_name_key] = node.wiki_pages_versions[old_name_key]
-        del node.wiki_pages_versions[old_name_key]
-        node.wiki_pages_current[new_name_key] = node.wiki_pages_current[old_name_key]
-        del node.wiki_pages_current[old_name_key]
-        node.save()
-        page.rename(new_name_key)
-        return {'message': new_name_key}
+        else:
+            # TODO: This should go in a Node method like node.rename_wiki
+            node.wiki_pages_versions[new_name_key] = node.wiki_pages_versions[old_name_key]
+            del node.wiki_pages_versions[old_name_key]
+            node.wiki_pages_current[new_name_key] = node.wiki_pages_current[old_name_key]
+            del node.wiki_pages_current[old_name_key]
+            node.save()
+            page.rename(new_name_key)
+            return {'message': new_name_key}
 
     raise HTTPError(http.BAD_REQUEST)
 
