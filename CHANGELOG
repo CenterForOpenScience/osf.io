@@ -16,6 +16,10 @@ addon.
 - Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
+- Allow multiple users to authenticate with the same Github credentials for
+the Github addon.
+- Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
+- Update required versions of requests, webassets, and bleach.
 
 Migrations
 ----------
@@ -28,7 +32,7 @@ Schema changes
 --------------
 
 - Remove fork_list and registration_list fields from Node model. NOTE: A
-migration was NOT performed.
+migration was NOT performed to remove these fields.
 - Add AddonGithubOauthSettings model.
 - Remove oauth_access_token and oauth_token_type fields from
 AddonGitHubUserSettings model.
