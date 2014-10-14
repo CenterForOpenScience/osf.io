@@ -36,10 +36,10 @@
                             % endif
                     </a>
 
-                    <ul style="list-style-type: none;">
+                    <ul class="wiki-component-ul">
                         % for child_page in child['pages_current']:
                             % if child_page['name'] != 'home':
-                                <li class="">
+                                <li class="wiki-component-li">
                                     <a href="${child_page['url']}">${child_page['name']}</a>
                                 </li>
                             % endif

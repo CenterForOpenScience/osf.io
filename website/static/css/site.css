@@ -991,6 +991,15 @@ h1.node-title, h1.node-parent-title {
     width:60%;
 }
 
+.wiki-component-ul {
+    list-style-type: none;
+    padding-right: 20px;
+}
+
+.wiki-component-li {
+    margin-bottom: 8px;
+}
+
 .btn-toolbar.node-control {
     margin-top: 0.9em;
 }
