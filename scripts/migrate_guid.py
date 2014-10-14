@@ -207,17 +207,17 @@ def migrate_guid_node(node):
             if record:
                 node.contributor_list[idx]['id'] = record._primary_key
 
-    for idx, fork in enumerate(node.fork_list):
+    for idx, fork in enumerate(node.node__forked):
         if isinstance(fork, basestring):
             record = models.Node.load(fork.lower())
             if record:
-                node.fork_list[idx] = record._primary_key
+                node.node__forked[idx] = record._primary_key
 
-    for idx, registration in enumerate(node.registration_list):
+    for idx, registration in enumerate(node.node__registrations):
         if isinstance(registration, basestring):
             record = models.Node.load(registration.lower())
             if record:
-                node.registration_list[idx] = record._primary_key
+                node.node__registrations[idx] = record._primary_key
 
     for page in node.wiki_pages_current:
         record = models.NodeWikiPage.load(str(node.wiki_pages_current[page]).lower())
