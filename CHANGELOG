@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.18.0 (unreleased)
+0.18.0 (2014-10-14)
 ===================
 
 - Paginate search results in Add Contributor widget.
@@ -25,7 +25,7 @@ Migrations
 ----------
 
 - scripts/migrate_piwik_derived_nodes.py
-- scripts/migrations/migrate_profile_dates.py
+- scripts/migration/migrate_profile_dates.py
 - scripts/migrate_github_oauth_settings.py
 
 Schema changes
