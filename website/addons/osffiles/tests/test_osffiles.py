@@ -90,8 +90,7 @@ class TestFilesViews(OsfTestCase):
 
         res = self._upload_file(
             'newfile',
-            'a' * (node_addon.config.max_file_size),
-            expect_errors=True,
+            'a' * (node_addon.config.max_file_size)
         )
 
         self.project.reload()
@@ -105,6 +104,27 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.json['name'], 'newfile')
 
         assert_in('newfile', self.project.files_current)
+
+    def test_upload_file_unicode_name(self):
+
+        node_addon = self.project.get_addon('osffiles')
+
+        res = self._upload_file(
+            '_néwfile',
+            'a' * (node_addon.config.max_file_size)
+        )
+
+        self.project.reload()
+        assert_equal(
+            self.project.logs[-1].action,
+            'file_added'
+        )
+
+        assert_equal(res.status_code, 201)
+        assert_true(isinstance(res.json, dict), 'return value is a dict')
+        assert_equal(res.json['name'], '_newfile')
+
+        assert_in('_newfile', self.project.files_current)
 
     def test_upload_file_too_large(self):
 

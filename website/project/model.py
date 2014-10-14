@@ -1789,7 +1789,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             f.write(content)
 
         # Deal with git
-        repo.stage([file_name])
+        repo.stage([str(file_name)])
 
         committer = self._get_committer(auth)
 
