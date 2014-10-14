@@ -47,7 +47,7 @@ def wiki_widget(**kwargs):
 
     rv = {
         'complete': True,
-        'content': str(wiki_html),
+        'content': unicode(wiki_html) if wiki_html else None,
         'more': more,
         'include': False,
     }
