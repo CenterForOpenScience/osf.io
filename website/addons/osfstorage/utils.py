@@ -112,6 +112,36 @@ def serialize_metadata_hgrid(item, node, permissions):
     }
 
 
+def serialize_revision(node, record, version, index):
+    """Serialize revision for use in revisions table.
+
+    :param Node node: Root node
+    :param FileRecord record: Root file record
+    :param FileVersion version: The version to serialize
+    :param int index: One-based index of version
+    """
+    return {
+        'index': index,
+        'user': {
+            'name': version.creator.fullname,
+            'url': version.creator.url,
+        },
+        'date': version.date_modified.isoformat(),
+        'urls': {
+            'view': node.web_url_for(
+                'osf_storage_view_file',
+                path=record.path,
+                version=index,
+            ),
+            'download': node.web_url_for(
+                'osf_storage_download_file',
+                path=record.path,
+                version=index,
+            ),
+        },
+    }
+
+
 def get_file_name(path):
     return os.path.basename(path.strip('/'))
 
@@ -215,4 +245,3 @@ def render_file(file_obj, file_version, version_idx):
             download_path=file_obj.get_download_path(version_idx),
         )
     return rendered
-

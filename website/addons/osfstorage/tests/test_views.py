@@ -422,6 +422,66 @@ class TestViewFile(OsfTestCase):
         assert_equal(n_objs, model.StorageFile.find().count())
 
 
+class TestGetRevisions(OsfTestCase):
+
+    def setUp(self):
+        super(TestGetRevisions, self).setUp()
+        self.project = ProjectFactory()
+        self.user = self.project.creator
+        self.node_settings = self.project.get_addon('osfstorage')
+        self.path = 'tie/your/mother/down.mp3'
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.record.versions = [factories.FileVersionFactory() for _ in range(15)]
+        self.record.save()
+
+    def get_revisions(self, path=None, page=None, **kwargs):
+        return self.app.get(
+            self.project.api_url_for(
+                'osf_storage_get_revisions',
+                path=path or self.path,
+                page=page,
+            ),
+            auth=self.user.auth,
+            **kwargs
+        )
+
+    def test_get_revisions_page_specified(self):
+        res = self.get_revisions(path=self.path, page=1)
+        expected = [
+            utils.serialize_revision(
+                self.project,
+                self.record,
+                self.record.versions[idx - 1],
+                idx
+            )
+            for idx in range(5, 0, -1)
+        ]
+        assert_equal(res.json['revisions'], expected)
+        assert_equal(res.json['more'], False)
+
+    def test_get_revisions_page_not_specified(self):
+        res = self.get_revisions(path=self.path)
+        expected = [
+            utils.serialize_revision(
+                self.project,
+                self.record,
+                self.record.versions[idx - 1],
+                idx
+            )
+            for idx in range(15, 5, -1)
+        ]
+        assert_equal(res.json['revisions'], expected)
+        assert_equal(res.json['more'], True)
+
+    def test_get_revisions_invalid_page(self):
+        res = self.get_revisions(path=self.path, page='pizza', expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_get_revisions_path_not_found(self):
+        res = self.get_revisions(path='missing', expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+
 class TestDownloadFile(OsfTestCase):
 
     def setUp(self):

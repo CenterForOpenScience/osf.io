@@ -247,6 +247,27 @@ class TestFileRecord(OsfTestCase):
         assert_equal(num_trees, model.FileTree.find().count())
         assert_equal(num_records, model.FileRecord.find().count())
 
+    def test_get_versions(self):
+        self.record.versions = [
+            factories.FileVersionFactory()
+            for _ in range(15)
+        ]
+        self.record.save()
+        indices, versions, more = self.record.get_versions(0, size=10)
+        assert_equal(indices, range(15, 5, -1))
+        assert_equal(
+            versions,
+            [self.record.versions[idx] for idx in range(14, 4, -1)],
+        )
+        assert_true(more)
+        indices, versions, more = self.record.get_versions(1, size=10)
+        assert_equal(indices, range(5, 0, -1))
+        assert_equal(
+            versions,
+            [self.record.versions[idx] for idx in range(4, -1, -1)],
+        )
+        assert_false(more)
+
     def test_create_pending(self):
         self.record.create_pending_version(self.user, 'c22b59f')
         self.record.resolve_pending_version(

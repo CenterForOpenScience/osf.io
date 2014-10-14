@@ -54,6 +54,16 @@ api_routes = {
 
         Rule(
             [
+                '/project/<pid>/osfstorage/files/<path:path>/revisions/',
+                '/project/<pid>/node/<nid>/osfstorage/files/<path:path>/revisions/',
+            ],
+            'get',
+            views.osf_storage_get_revisions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/osfstorage/files/',
                 '/project/<pid>/node/<nid>/osfstorage/files/',
                 '/project/<pid>/osfstorage/files/<path:path>/',
@@ -109,4 +119,3 @@ api_routes = {
     ],
 
 }
-

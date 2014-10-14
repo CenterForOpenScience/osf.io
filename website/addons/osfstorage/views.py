@@ -252,6 +252,10 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
     ret = {
         'file_name': utils.get_file_name(path),
         'rendered': rendered,
+        'revisions_url': node.api_url_for(
+            'osf_storage_get_revisions',
+            path=path,
+        ),
         'render_url': node.api_url_for(
             'osf_storage_render_file',
             path=path,
@@ -346,3 +350,27 @@ def osf_storage_root(node_settings, auth, **kwargs):
     )
     return [root]
 
+
+@must_be_contributor_or_public
+@must_have_addon('osfstorage', 'node')
+def osf_storage_get_revisions(path, node_addon, **kwargs):
+    node = node_addon.owner
+    page = request.args.get('page', 0)
+    try:
+        page = int(page)
+    except (TypeError, ValueError):
+        raise HTTPError(httplib.BAD_REQUEST)
+    record = model.FileRecord.find_by_path(path, node_addon)
+    if record is None:
+        raise HTTPError(httplib.NOT_FOUND)
+    indices, versions, more = record.get_versions(
+        page,
+        size=osf_storage_settings.REVISIONS_PAGE_SIZE,
+    )
+    return {
+        'revisions': [
+            utils.serialize_revision(node, record, versions[idx], indices[idx])
+            for idx in range(len(versions))
+        ],
+        'more': more,
+    }

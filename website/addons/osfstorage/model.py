@@ -3,6 +3,8 @@
 import os
 import bson
 
+from dateutil.parser import parse as parse_date
+
 from modularodm import fields, Q
 from modularodm import exceptions as modm_errors
 
@@ -14,6 +16,7 @@ from website.addons.base import AddonNodeSettingsBase, GuidFile
 
 from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
+from website.addons.osfstorage import settings
 
 
 UPLOAD_FAILED_LOG = 'file_upload_failed'
@@ -182,6 +185,14 @@ class FileRecord(BaseFileObject):
                 raise errors.NoVersionsError
             return None
 
+    def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
+        start = len(self.versions) - (page * size)
+        stop = max(0, start - size)
+        indices = range(start, stop, -1)
+        versions = [self.versions[idx - 1] for idx in indices]
+        more = stop > 0
+        return indices, versions, more
+
     def create_pending_version(self, creator, signature):
         latest_version = self.get_latest_version()
         if latest_version and latest_version.pending:
@@ -252,6 +263,11 @@ def validate_status(value):
         raise modm_errors.ValidationValueError
 
 
+metadata_parsers = {
+    'date_modified': parse_date,
+}
+
+
 class FileVersion(StoredObject):
 
     _id = oid_primary_key
@@ -286,7 +302,9 @@ class FileVersion(StoredObject):
         self.status = status['COMPLETE']
         self.location = location
         for key, value in metadata.iteritems():
-            setattr(self, key, value)
+            parser = metadata_parsers.get(key)
+            parsed = parser(value) if parser else value
+            setattr(self, key, parsed)
         self.save()
 
     def cancel(self, signature):
@@ -325,4 +343,3 @@ class StorageFile(GuidFile):
             obj = cls(node=node, path=path)
             obj.save()
         return obj
-

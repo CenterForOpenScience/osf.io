@@ -5,6 +5,8 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
+import datetime
+
 from website.addons.osfstorage.tests import factories
 
 from website.addons.osfstorage import model
@@ -118,3 +120,48 @@ class TestHGridUtils(OsfTestCase):
         with assert_raises(TypeError):
             utils.get_item_kind('pizza')
 
+
+class TestSerializeRevision(OsfTestCase):
+
+    def setUp(self):
+        super(TestSerializeRevision, self).setUp()
+        self.project = ProjectFactory()
+        self.user = self.project.creator
+        self.node_settings = self.project.get_addon('osfstorage')
+        self.path = 'kind/of/magic.mp3'
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        self.version = factories.FileVersionFactory(
+            creator=self.user,
+            date_modified=datetime.datetime.utcnow(),
+        )
+        self.record.versions.append(self.version)
+        self.record.save()
+
+    def test_serialize_revision(self):
+        expected = {
+            'index': 1,
+            'user': {
+                'name': self.user.fullname,
+                'url': self.user.url,
+            },
+            'date': self.version.date_modified.isoformat(),
+            'urls': {
+                'view': self.project.web_url_for(
+                    'osf_storage_view_file',
+                    path=self.path,
+                    version=1,
+                ),
+                'download': self.project.web_url_for(
+                    'osf_storage_download_file',
+                    path=self.path,
+                    version=1,
+                ),
+            },
+        }
+        observed = utils.serialize_revision(
+            self.project,
+            self.record,
+            self.version,
+            1,
+        )
+        assert_equal(expected, observed)
