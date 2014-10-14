@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
   <!-- New Component Modal -->
   <div class="modal fade" id="newWiki">
     <div class="modal-dialog">
@@ -51,13 +53,8 @@
                       .text("OK");
           }
           else{
-              var url=document.location.href;
-              var url_root = url.substr(0, url.indexOf('wiki')+5);
-              var wikiName = $("#data").val()
-              if (wikiName.indexOf("/") != -1){
-                  wikiName = wikiName.split("/").join("|");
-              }
-              document.location= url_root + wikiName+ '/edit/';
+              var wikiName = $("#data").val();
+              document.location = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
           }
      });
 

@@ -10,8 +10,28 @@ Changelog
 - Add "ongoing" option to Education and Employment sections of user profile.
 - Improved mimetype detection when downloading a file through the Github
 addon.
+- Unread comment counts appear in comment tab.
+- Lots of bug fixes and minor UI improvements to the wiki.
+- Wiki page names can have punctuation and special characters.
+- Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
+
+Migrations
+----------
+
+- scripts/migrate_piwik_derived_nodes.py
+- scripts/migrations/migrate_profile_dates.py
+- scripts/migrate_github_oauth_settings.py
+
+Schema changes
+--------------
+
+- Remove fork_list and registration_list fields from Node model. NOTE: A
+migration was NOT performed.
+- Add AddonGithubOauthSettings model.
+- Remove oauth_access_token and oauth_token_type fields from
+AddonGitHubUserSettings model.
 
 0.17.0 (2014-09-23)
 ===================

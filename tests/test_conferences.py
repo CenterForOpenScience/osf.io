@@ -3,7 +3,8 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 from modularodm.exceptions import ValidationError
 
-from website.project.views.email import _parse_email_name, Conference, _render_conference_node
+from website.conferences.views import _parse_email_name, _render_conference_node
+from website.conferences.model import Conference
 from website.util import api_url_for, web_url_for
 from framework.auth.core import Auth
 

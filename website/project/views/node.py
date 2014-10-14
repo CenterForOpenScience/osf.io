@@ -338,7 +338,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_have_permission('write')
+@must_have_permission('admin')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -707,13 +707,13 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.registration_list),
+            'registration_count': len(node.node__registrations),
 
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.fork_list),
+            'fork_count': len(node.node__forked),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
