@@ -973,17 +973,15 @@ h1.node-title, h1.node-parent-title {
     line-height: 36px;
     border-bottom: none;
     margin-top: 0.2em;
-    margin-bottom: 0;
-    height: 68px;
+    margin-bottom: 20px;
 }
 
-.long-wiki-title {
-    font-size: 18px;
-    line-height: 20px;
-    border-bottom: none;
-    margin-top: 0;
-    margin-bottom: 0;
-    height: 36px;
+/* Extra small devices */
+@media (max-width: 767px) {
+    .wiki-title-xs {
+        font-size: 20px;
+        line-height: 20px;
+    }
 }
 
 .wiki-title-container {
