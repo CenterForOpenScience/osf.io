@@ -70,6 +70,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
+@must_not_be_registration
 def figshare_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
@@ -114,7 +115,7 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
     }

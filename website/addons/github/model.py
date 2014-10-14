@@ -12,7 +12,7 @@ from framework.auth import Auth
 from framework.mongo import StoredObject
 
 from website import settings
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, AddonSettingsBase
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import GuidFile
 
 from website.addons.github import settings as github_settings
@@ -101,11 +101,10 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             return self.oauth_settings.github_user_name
         return None
 
-    def save(self,*args,**kwargs):
+    def save(self, *args, **kwargs):
         if self.oauth_settings:
             self.oauth_settings.save()
         return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
-
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
@@ -117,36 +116,31 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         return rv
 
     def revoke_token(self):
-        """
-        if there is only one osf user linked to this github user oauth, revoke the token,
-        otherwise, disconnect the osf user from the addongithuboauthsettings
-        """
-        if self.oauth_settings:
-            if len(self.oauth_settings.addongithubusersettings__accessed) > 1:
-                self.oauth_settings = None
+        connection = GitHub.from_settings(self)
+        try:
+            connection.revoke_token()
+        except GitHubError as error:
+            if error.code == http.UNAUTHORIZED:
+                return (
+                    'Your GitHub credentials were removed from the OSF, but we '
+                    'were unable to revoke your access token from GitHub. Your '
+                    'GitHub credentials may no longer be valid.'
+                )
             else:
-                connection = GitHub.from_settings(self)
-                try:
-                    connection.revoke_token()
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        return (
-                            'Your GitHub credentials were removed from the OSF, but we '
-                            'were unable to revoke your access token from GitHub. Your '
-                            'GitHub credentials may no longer be valid.'
-                        )
-                    else:
-                        raise
+                raise
 
     def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
             node_settings.deauthorize(auth=auth, save=True)
-        self.revoke_token()
-        # Clear tokens on oauth_settings
+
+        # if there is only one osf user linked to this github user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the addongithuboauthsettings
         if self.oauth_settings:
-            self.oauth_settings.oauth_access_token = None
-            self.oauth_settings.oauth_token_type = None
-            self.oauth_settings.save()
+            if len(self.oauth_settings.addongithubusersettings__accessed) < 2:
+                self.revoke_token()
+
+        # Clear tokens on oauth_settings
+            self.oauth_settings = None
         if save:
             self.save()
 
@@ -226,7 +220,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
 
-
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -250,7 +243,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 ]
                 rv.update({
                     'repo_names': repo_names,
-                    })
+                })
             rv.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -592,4 +585,3 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                     self.save()
                 return True
         return False
-

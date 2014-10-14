@@ -154,7 +154,7 @@ class Figshare(object):
         return articles
 
     def article_is_public(self, article):
-        res = requests.get(os.path.join(figshare_settings.API_URL,  'articles', str(article)))
+        res = requests.get(os.path.join(figshare_settings.API_URL, 'articles', str(article)))
         if res.status_code == 200:
             data = json.loads(res.content)
             if data['count'] == 0:
@@ -180,7 +180,7 @@ class Figshare(object):
             os.path.join(node_settings.api_url, 'articles'), method='post', data=body))
         if article['files']:
             for f in article['files']:
-                filename, filestream = create_temp_file(f)
+                filename, filestream = self.create_temp_file(f)
                 filedata = {
                     'filedata': (filename, filestream)
                 }
@@ -249,14 +249,6 @@ class Figshare(object):
         f.write(upload.read())
         f.seek(0)
         return filename, f
-
-    # TODO Fix ME
-    def has_crud(figshare_id, figshare_type):
-        res = self._send(
-            "http://api.figshare.com/v1/my_data/{0}s/{1}".format(figshare_type, figshare_id))
-        if not res:
-            return False
-        return True
 
     def categories(self):
         return self._send("http://api.figshare.com/v1/categories")

@@ -68,7 +68,7 @@ class AddonConfig(object):
 
         self.has_hgrid_files = has_hgrid_files
         # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
-        self.get_hgrid_data = get_hgrid_data #if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
+        self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
         self.accept_extensions = accept_extensions
 

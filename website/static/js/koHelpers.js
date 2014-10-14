@@ -53,37 +53,6 @@
         };
     };
 
-    var printDate = function(date, dlm) {
-        dlm = dlm || '/';
-        var formatted = date.getFullYear() + dlm + pad((date.getMonth() + 1), 2);
-        if (date.getDate()) {
-            formatted += dlm + pad(date.getDate(), 2);
-        }
-        return formatted;
-    };
-
-    // Handy pad function from http://stackoverflow.com/a/10073788
-    function pad(n, width, z) {
-      z = z || '0';
-      n = n + '';
-      return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
-    }
-
-    addExtender('asDate', function(value) {
-        var out;
-        if (value) {
-            value.replace(/-/g,'/');
-            var date;
-            if (value.match(/^\d{4}$/)) {
-                date = new Date(value, 0, 1);
-            } else {
-                date = moment(value).toDate();
-            }
-            out = date !== 'Invalid Date' ? printDate(date) : value;
-        }
-        return out;
-    });
-
     addExtender('cleanup', function(value, cleaner) {
         return !!value ? cleaner(value) : '';
     });
@@ -118,13 +87,17 @@
             // Skip if dates invalid
             var dateVal = new Date(uwVal);
             var dateMin = new Date(uwMin);
-            if (dateVal == 'Invalid Date' || dateMin == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date' || dateMin.toString() === 'Invalid Date') {
+                return true;
+            }
+            // Check if end date is ongoing
+            if (uwVal === 'ongoing') {
                 return true;
             }
             // Compare dates
             return dateVal >= dateMin;
         },
-        message: 'Date must be greater than or equal to {0}.'
+        message: 'End date must be greater than or equal to the start date.'
     };
 
     ko.validation.rules['pyDate'] = {
@@ -136,14 +109,43 @@
             }
             // Skip if dates invalid
             var dateVal = new Date(uwVal);
-            if (dateVal == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date') {
                 return true;
             }
-            // Compare dates
-            return dateVal.getFullYear() >= 1900;
+            // Compare years
+            return parseInt(uwVal) >= 1900;
         },
         message: 'Date must be greater than or equal to 1900.'
     };
+
+    ko.validation.rules['notInFuture'] = {
+        validator: function (val) {
+            // Skip if values empty
+            var uwVal = ko.utils.unwrapObservable(val);
+            if (uwVal === null || uwVal === undefined) {
+                return true;
+            }
+
+            //Skip if dates invalid
+            var dateVal = new Date(uwVal);
+
+            if (dateVal.toString() === 'Invalid Date') {
+                return true;
+            }
+            // Compare dates
+            var now = new Date();
+            return dateVal <= now;
+
+        },
+        message: 'Please enter a date prior to the current date.'
+    };
+
+
+    ko.validation.rules['year'] = makeRegexValidator(
+        new RegExp('^\\d{4}$'),
+        'Please enter a valid year.'
+    );
+
 
     ko.validation.rules['url'] = makeRegexValidator(
         new RegExp(

@@ -46,6 +46,14 @@
             var url = row.urls.zip;
             window.location = url;
         }
-    }
+    };
+
+    HGrid.Actions['githubVisitRepo'] = {
+        on: 'click',
+        callback: function (evt, row) {
+            var url = row.urls.repo;
+            window.location = url;
+        }
+    };
 
 }));

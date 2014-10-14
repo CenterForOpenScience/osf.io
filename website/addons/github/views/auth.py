@@ -11,8 +11,9 @@ from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
 from website import models
-from website.project.decorators import must_have_permission
-from website.project.decorators import must_have_addon
+from website.project.decorators import (
+    must_have_permission, must_not_be_registration, must_have_addon
+)
 from website.util import web_url_for
 
 from ..api import GitHub
@@ -143,6 +144,7 @@ def github_oauth_delete_user(auth, user_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('github', 'node')
+@must_not_be_registration
 def github_oauth_deauthorize_node(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}

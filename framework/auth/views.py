@@ -166,9 +166,9 @@ def confirm_email_get(**kwargs):
             return auth.authenticate(user, response=response)
     # Return data for the error template
     return {
-       'code': http.BAD_REQUEST,
-       'message_short': 'Link Expired',
-       'message_long': language.LINK_EXPIRED
+        'code': http.BAD_REQUEST,
+        'message_short': 'Link Expired',
+        'message_long': language.LINK_EXPIRED
     }, http.BAD_REQUEST
 
 

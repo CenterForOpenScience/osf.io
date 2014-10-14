@@ -3,15 +3,17 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
-
+<div id="deletingAlert" class="alert alert-warning fade">
+    Deleting your file…
+</div>
     <div class="scripted" id="osffileScope">
         <ol class="breadcrumb">
-            <li><a href={{files_url}}>{{node_title}}</a></li>
+            <li><a href="{{files_page_url}}">{{node_title}}</a></li>
             <li class="active overflow" >{{file_name}}</li>
         </ol>
-
+        <p><a href="{{latest_download_url}}" class="btn btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
+            <a href="#" data-bind="visible: api_url() && !registered(), click: deleteFile" class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i></a></p>
         <table class="table table-striped" id="file-version-history">
-
             <thead>
             <tr>
                 <th>Version</th>
@@ -22,7 +24,6 @@
                 <th colspan=2>Downloads</th>
             </tr>
             </thead>
-
             <tbody data-bind="foreach: versions">
                 <tr>
                     <td>{{version_number}}</td>
@@ -35,7 +36,7 @@
                     <!-- download url; 'Downloads' column 2 -->
                     <td>
                         <a href="{{download_url}}">
-                            <i class="icon-download-alt"></i>
+                            <i class="icon-download-alt btn btn-primary btn-sm"></i>
                         </a>
                     </td>
                 </tr>

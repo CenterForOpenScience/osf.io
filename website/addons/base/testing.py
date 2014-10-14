@@ -90,4 +90,3 @@ class AddonTestCase(OsfTestCase):
 
         self.create_user_settings()
         self.create_node_settings()
-

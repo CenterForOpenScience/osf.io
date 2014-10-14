@@ -1,6 +1,8 @@
+<%page expression_filter="h"/>
+
 % for version in versions:
 	<p style="text-align: right">
-        <a href="${node['url']}wiki/${pageName}/compare/${version['version']}">
+        <a href="${version['compare_web_url']}">
             Version ${version['version']} edited
             % if not node['anonymous']:
                 by ${version['user_fullname']}

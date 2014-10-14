@@ -12,7 +12,7 @@
                 <div data-bind="if: page() == 'whom'">
 
                     <!-- Find contributors -->
-                    <form class='form'>
+                    <form class='form' data-bind="submit: startSearch">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
@@ -20,7 +20,7 @@
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <button type='submit' class="btn btn-default" data-bind="click:search">Search</button>
+                                        <input type="submit" value="Search" class="btn btn-default"></input>
                                     </span>
                                 </div>
                             </div>
@@ -49,11 +49,6 @@
 
                             <table>
                                 <thead data-bind="visible: foundResults">
-                                    <th></th>
-                                    <th></th>
-                                    <th>
-                                        Name
-                                    </th>
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
                                     <tr data-bind="if:!($root.selected($data))">
@@ -66,7 +61,8 @@
                                                 >+</a>
                                         </td>
                                         <td>
-                                            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                                            <!-- height and width are explicitly specified for faster rendering -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=40 width=40 />
                                         </td>
                                         <td >
                                             <a data-bind = "attr: {href: contributor.profile_url}" target="_blank">
@@ -107,8 +103,12 @@
                             <!-- Link to add non-registered contributor -->
                             <div class='help-block'>
                                 <div data-bind='if: foundResults'>
-                                    If the person you are looking for is not listed above, try a more specific search or <strong><a href="#"
-                                    data-bind="click:gotoInvite">add <em>{{query}}</em> as an unregistered contributor</a>.</strong>
+                                    <a class='btn btn-default' href='#' data-bind='click: previousPage, visible: currentPage() > 0'>Previous</a>
+                                    <a class='btn btn-default' href='#' data-bind='click: nextPage, visible: currentPage() < numberOfPages() - 1'>Next</a>
+
+                                    <p><strong>
+                                        <a href="#"data-bind="click:gotoInvite">Add <em>{{query}}</em> as an unregistered contributor</a>.
+                                    </strong></p>
                                 </div>
                                 <div data-bind="if: noResults">
                                     No results found. Try a more specific search or <strong><a href="#"

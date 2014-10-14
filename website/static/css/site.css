@@ -410,6 +410,14 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+    position: relative;
+}
+
+.unread-comments-count {
+    font-size: medium;
+    color: white;
+    position: absolute;
+    margin-left: 40px;
 }
 
 .addon-auth {
@@ -965,22 +973,20 @@ h1.node-title, h1.node-parent-title {
     line-height: 36px;
     border-bottom: none;
     margin-top: 0.2em;
-    margin-bottom: 0;
-    height: 36px;
+    margin-bottom: 20px;
 }
 
-.long-wiki-title {
-    font-size: 18px;
-    line-height: 20px;
-    border-bottom: none;
-    margin-top: 0;
-    margin-bottom: 0;
-    height: 36px;
+/* Extra small devices */
+@media (max-width: 767px) {
+    .wiki-title-xs {
+        font-size: 20px;
+        line-height: 20px;
+    }
 }
 
 .wiki-title-container {
     display: inline-block;
-    width:80%;
+    width:60%;
 }
 
 .btn-toolbar.node-control {
@@ -1417,6 +1423,12 @@ h1.unavailable {
     max-width: 100%;
 }
 
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
+}
+
 .preview-overflow{
     overflow:hidden;
     width:100%;
@@ -1439,10 +1451,6 @@ div#logScope a.moreLogs{
 
 .text-align{
     margin-left: 7px;
-}
-
-.private-link-name{
-    width: 60%
 }
 
 .list-overflow{
@@ -1470,10 +1478,18 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
+#projectScope .form-control {
+    width: 400px;
+}
+
 /* Contributors list */
 
 #contributors {
     margin-bottom:10px;
+}
+
+#contributors #description {
+    vertical-align: top;
 }
 
 #contributors ol {
@@ -1727,3 +1743,7 @@ div.pydocx-center{
     font-size:14px;
 }
 
+.search-term-label,
+.tag {
+    white-space: pre;
+}

@@ -14,6 +14,7 @@ from website.addons.osffiles.model import OsfGuidFile, NodeFile
 from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
 from website.addons.osffiles.exceptions import FileNotFoundError
 
+# TODO: Replace hardcoded URLs with url_for
 class TestFilesViews(OsfTestCase):
 
     def setUp(self):
@@ -140,7 +141,31 @@ class TestFilesViews(OsfTestCase):
         assert_equal(res.status_code, 400)
         assert_not_in('newfile', self.project.files_current)
 
-    def test_view_file_with_anonymous_link(self):
+    def test_file_info(self):
+        # Upload a new version of firstfile
+        self._upload_file(self.fid, 'secondcontent')
+        url = self.project.api_url_for('file_info', fid=self.project.uploads[0].filename)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        file_obj = self.project.get_file_object(self.fid, version=1)
+
+        data = res.json
+        assert_equal(data['file_name'], self.fid)
+        assert_equal(data['registered'], self.project.is_registration)
+        assert_equal(len(data['versions']), 2)
+        assert_equal(data['urls']['files'], self.project.web_url_for('collect_file_trees'))
+        assert_equal(data['urls']['latest']['download'], file_obj.download_url(self.project))
+        assert_equal(data['urls']['api'], file_obj.api_url(self.project))
+
+        version = res.json['versions'][0]
+        assert_equal(version['file_name'], self.fid)
+        assert_equal(version['version_number'], 2)
+        assert_equal(version['modified_date'], file_obj.date_uploaded.strftime('%Y/%m/%d %I:%M %p'))
+        assert_in('downloads', version)
+        assert_equal(version['committer_name'], file_obj.uploader.fullname)
+        assert_equal(version['committer_url'], file_obj.uploader.url)
+
+    def test_file_info_with_anonymous_link(self):
         link = PrivateLinkFactory(anonymous=True)
         link.nodes.append(self.project)
         link.save()

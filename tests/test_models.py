@@ -20,7 +20,6 @@ from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.bcrypt import check_password_hash
-from framework.git.exceptions import FileNotModified
 from website import filters, language, settings
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
@@ -28,6 +27,7 @@ from website.project.model import (
     ApiKey, Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link
 )
 from website.addons.osffiles.model import NodeFile
+from website.addons.osffiles.exceptions import FileNotModified
 from website.util.permissions import CREATOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 from website.addons.osffiles.exceptions import (
@@ -90,8 +90,10 @@ class TestUserValidation(OsfTestCase):
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
             'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1980, 1, 1),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1980,
         }]
         try:
             self.user.save()
@@ -104,12 +106,29 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_jobs_bad_end_date(self):
+        # end year is < start year
         self.user.jobs = [{
-            'institution': 'School of Lover Boys',
-            'department': 'Fancy Patter',
-            'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1960, 1, 1),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'position': fake.catch_phrase(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_schools_bad_end_date(self):
+        # end year is < start year
+        self.user.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
@@ -706,53 +725,62 @@ class TestAddFile(OsfTestCase):
 
 class TestFileActions(OsfTestCase):
 
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.node = ProjectFactory()
+
+    def test_get_file_obj_no_version(self):
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
+        # Don't pass version number, so get back latest version
+        file_obj = self.node.get_file_object('foo')
+
+        contents, content_type = self.node.read_file_object(file_obj)
+        assert_equal(contents, 'newcontent')
+
     def test_get_file(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
-        valid = node.get_file('foo', version=0)
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
+        valid = self.node.get_file('foo', version=0)
         assert_true(valid)  # sanity check
 
         with assert_raises(VersionNotFoundError):
-            node.get_file('foo', version=1)
+            self.node.get_file('foo', version=1)
 
         with assert_raises(InvalidVersionError):
-            node.get_file('foo', version='dumb')
+            self.node.get_file('foo', version='dumb')
 
         with assert_raises(InvalidVersionError):
-            node.get_file('foo', version=-1)
+            self.node.get_file('foo', version=-1)
 
     def test_get_file_with_no_git_dir(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
-        git_path = os.path.join(settings.UPLOADS_PATH, node._id, '.git')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
+        git_path = os.path.join(settings.UPLOADS_PATH, self.node._id, '.git')
         shutil.rmtree(git_path)
         with assert_raises(AssertionError):
-            node.get_file('foo', version=0)
+            self.node.get_file('foo', version=0)
 
     def test_delete_file(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
 
-        file_path = os.path.join(settings.UPLOADS_PATH, node._id, 'foo')
+        file_path = os.path.join(settings.UPLOADS_PATH, self.node._id, 'foo')
 
         assert_true(os.path.exists(file_path))
-        node.remove_file(Auth(node.creator), 'foo')
+        self.node.remove_file(Auth(self.node.creator), 'foo')
         assert_false(os.path.exists(file_path))
 
     def test_delete_file_that_is_already_deleted(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
 
-        git_dir = os.path.join(settings.UPLOADS_PATH, node._id)
+        git_dir = os.path.join(settings.UPLOADS_PATH, self.node._id)
 
         subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
 
         with assert_raises(FileNotFoundError):
-            node.remove_file(Auth(node.creator), 'foo')
+            self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
 
@@ -1549,6 +1577,45 @@ class TestProject(OsfTestCase):
         assert_not_in(user2, self.project.contributors)
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
+
+    def test_manage_contributors_cannot_remove_last_admin_contributor(self):
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.consolidate_auth)
+        self.project.save()
+        with assert_raises(ValueError):
+            self.project.manage_contributors(
+                user_dicts=[{'id': user2._id,
+                             'permission': 'write',
+                             'visible': True}],
+                auth=self.consolidate_auth,
+                save=True
+            )
+
+    def test_manage_contributors_logs_when_users_reorder(self):
+        user2 = UserFactory()
+        self.project.add_contributor(contributor=user2, permissions=['read', 'write'], auth=self.consolidate_auth)
+        self.project.save()
+        self.project.manage_contributors(
+            user_dicts=[
+                {
+                    'id': user2._id,
+                    'permission': 'write',
+                    'visible': True,
+                },
+                {
+                    'id': self.user._id,
+                    'permission': 'admin',
+                    'visible': True,
+                },
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+        latest_log = self.project.logs[-1]
+        assert_equal(latest_log.action, NodeLog.CONTRIB_REORDERED)
+        assert_equal(latest_log.user, self.user)
+        assert_in(self.user._id, latest_log.params['contributors'])
+        assert_in(user2._id, latest_log.params['contributors'])
 
     def test_add_private_link(self):
         link = PrivateLinkFactory()

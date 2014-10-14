@@ -37,6 +37,8 @@
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
+        self.numberOfPages = ko.observable(0);
+        self.currentPage = ko.observable(0);
 
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
@@ -97,6 +99,10 @@
             }
         }
 
+        self.startSearch = function() {
+            self.currentPage(0);
+            self.search();
+        };
 
         self.search = function() {
             self.notification(false);
@@ -106,17 +112,32 @@
                     {
                         query: self.query(),
                         excludeNode: nodeId,
+                        page: self.currentPage
                     },
                     function(result) {
                         var contributors = result.users.map(function(userData) {
                             return new Contributor(userData);
                         });
                         self.results(contributors);
+                        self.currentPage(result.page);
+                        self.numberOfPages(result.pages);
                     }
                 );
             } else {
                 self.results([]);
+                self.currentPage(0);
+                self.totalPages(0);
             }
+        };
+
+        self.nextPage = function() {
+            self.currentPage(self.currentPage() + 1);
+            self.search();
+        };
+
+        self.previousPage = function() {
+            self.currentPage(self.currentPage() - 1);
+            self.search();
         };
 
         self.importFromParent = function() {
@@ -186,7 +207,7 @@
             self.setupEditable(elm, data);
         };
 
-        function postInviteRequest(fullname, email, options) {
+        function postInviteRequest(fullname, email) {
             $.osf.postJSON(
                 nodeApiUrl + 'invite_contributor/',
                 {'fullname': fullname, 'email': email}

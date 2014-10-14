@@ -65,9 +65,9 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -180,7 +180,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
@@ -305,7 +305,6 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and 'node' not in addon.added_mandatory
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
@@ -627,7 +626,6 @@ def _render_addon(node):
     css = []
 
     for addon in node.get_addons():
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -636,6 +634,15 @@ def _render_addon(node):
         css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
+
+
+def _should_show_wiki_widget(node, user):
+    if not node.has_permission(user, 'write'):
+        wiki_page = node.get_wiki_page('home', None)
+        return wiki_page and wiki_page.html(node)
+
+    else:
+        return True
 
 
 def _view_project(node, auth, primary=False):
@@ -695,7 +702,7 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.node__forked),
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -729,6 +736,7 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -1227,6 +1235,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:

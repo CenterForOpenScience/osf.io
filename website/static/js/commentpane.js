@@ -6,10 +6,13 @@
         animateTime: 100,
         minViewWidth: 150,
         toggleWidth: 1/3,
-        maxWidthProp: 2/3
+        maxWidthProp: 2/3,
+        onClose: function() {},
+        onOpen: function() {}
     };
 
     var CommentPane = CommentPane || function(selector, options) {
+        var self = this;
 
         var $pane = $(selector);
         var $handle = $pane.find('.cp-handle');
@@ -45,9 +48,11 @@
             var width;
             if ($pane.width()) {
                 width = 0;
+                options.onClose.call(self);
             } else {
                 var bodyWidth = $(document.body).width();
                 width = options.toggleWidth * bodyWidth;
+                options.onOpen.call(self);
             }
             $toggleElm.animate(
                 {width: width},
@@ -56,7 +61,6 @@
         };
 
         var init = function(){
-
             // Bind drag & drop handlers
             $bar.on('mousedown', function() {
                 makeAllElementsUnselectable();
@@ -91,9 +95,7 @@
             });
 
         };
-
         init();
-
     };
 
     if ((typeof module !== 'undefined') && module.exports) {

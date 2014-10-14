@@ -9,7 +9,7 @@
 % endif
 
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako" />
+    <%include file="include/comment_template.mako"/>
 % endif
 
 <div class="row">
@@ -21,22 +21,24 @@
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
+                    %if addon == 'wiki':
+                        %if user['show_wiki_widget']:
+                            <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+                            "uri": "${node['api_url']}wiki/widget/"
+                        }'></div>
+                        %endif
+
+                    %else:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
+                    %endif
                 % endif
             % endfor
 
         % else:
-
-            % if 'wiki' in addons and addons['wiki']['has_widget']:
-                <div class="addon-widget-container" mod-meta='{
-                        "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                        "uri": "${node['api_url']}wiki/widget/"
-                    }'></div>
-            % endif
-
             <!-- If no widgets, show components -->
             ${children()}
 
@@ -100,18 +102,18 @@
 </div>
 
 <%def name="children()">
-<div class="page-header">
     % if node['node_type'] == 'project':
-        <div class="pull-right btn-group">
-            % if 'write' in user['permissions'] and not node['is_registration']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % endif
-        </div>
-
-    <h2>Components</h2>
+        <div class="page-header">
+            <div class="pull-right btn-group">
+                % if 'write' in user['permissions'] and not node['is_registration']:
+                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                % endif
+            </div>
+        <h2>Components</h2>
+    </div>
     % endif
-</div>
+
 
 % if node['node_type'] == 'project':
   % if node['children']:
@@ -149,19 +151,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
-
     $script(['/static/js/logFeed.js'], 'logFeed');
 
     $('body').on('nodeLoad', function(event, data) {
-        $script.ready('logFeed', function() {
-            var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
-        });
+       $script.ready('logFeed', function() {
+           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+       });
     });
 
     ##  NOTE: pointers.js is loaded in project_base.mako
     $script.ready('pointers', function() {
-        var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
     });
+
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
@@ -173,10 +175,20 @@ ${parent.javascript_bottom()}
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
         $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
+            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
+            var onOpen = function() {
+                var request = $.osf.putJSON(timestampUrl);
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    Raven.captureMessage('Could not update comment timestamp', {
+                        url: timestampUrl,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                });
+            }
+            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
+            Comment.init('#commentPane', userName, canComment, hasChildren);
         });
-
     }
 
 </script>

@@ -24,6 +24,7 @@ from website.project.views.file import get_cache_content
 from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website.util import rubeus, permissions
+from website.util.mimetype import get_mimetype
 
 from website.addons.github import settings as github_settings
 from website.addons.github.exceptions import (
@@ -58,7 +59,7 @@ def github_download_file(**kwargs):
             data={
                 'message_short': 'File too large',
                 'message_long': 'This file is too large to download through '
-                    'the GitHub API.',
+                'the GitHub API.',
             },
         )
     if data is None:
@@ -66,14 +67,15 @@ def github_download_file(**kwargs):
 
     # Build response
     resp = make_response(data)
-    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
-        name
-    )
-
-    # Add binary MIME type if extension missing
-    _, ext = os.path.splitext(name)
-    if not ext:
+    mimetype = get_mimetype(path, data)
+    # Add binary MIME type if mimetype not found
+    if mimetype is None:
         resp.headers['Content-Type'] = 'application/octet-stream'
+    else:
+        resp.headers['Content-Type'] = mimetype
+
+    resp.headers['Content-Disposition'] = 'attachment; filename={0}'.format(
+        name)
 
     return resp
 
@@ -115,7 +117,7 @@ def github_view_file(auth, **kwargs):
         commits = connection.history(
             node_settings.user, node_settings.repo, path, ref,
         )
-        if commits is None:
+        if not commits:
             raise HTTPError(http.NOT_FOUND)
         guid = GithubGuidFile(
             node=node,

@@ -26,12 +26,12 @@ from website import settings, filters, security
 
 
 name_formatters = {
-   'long': lambda user: user.fullname,
-   'surname': lambda user: user.family_name if user.family_name else user.fullname,
-   'initials': lambda user: u'{surname}, {initial}.'.format(
-       surname=user.family_name,
-       initial=user.given_name_initial
-   ),
+    'long': lambda user: user.fullname,
+    'surname': lambda user: user.family_name if user.family_name else user.fullname,
+    'initials': lambda user: u'{surname}, {initial}.'.format(
+        surname=user.family_name,
+        initial=user.given_name_initial
+    ),
 }
 
 logger = logging.getLogger(__name__)
@@ -52,16 +52,21 @@ def string_required(value):
 
 def validate_history_item(item):
     string_required(item.get('institution'))
-    start = item.get('start')
-    end = item.get('end')
-    if start and end and end < start:
-        raise ValidationValueError('End date must be later than start date.')
-
+    startMonth = item.get('startMonth')
+    startYear = item.get('startYear')
+    endMonth = item.get('endMonth')
+    endYear = item.get('endYear')
+    if startYear and endYear:
+        if endYear < startYear:
+            raise ValidationValueError('End date must be later than start date.')
+        elif endYear == startYear:
+            if endMonth and startMonth and endMonth < startMonth:
+                raise ValidationValueError('End date must be later than start date.')
 
 validate_url = URLValidator()
 def validate_personal_site(value):
     if value:
-       validate_url(value)
+        validate_url(value)
 
 
 def validate_social(value):
@@ -243,8 +248,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
+    #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -254,8 +262,11 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
+    #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)
 
@@ -274,7 +285,12 @@ class User(GuidStoredObject, AddonModelMixin):
 
     date_confirmed = fields.DateTimeField()
 
-    _meta = {'optimistic' : True}
+    # Format: {
+    #   'node_id': 'timestamp'
+    # }
+    comments_viewed_timestamp = fields.DictionaryField()
+
+    _meta = {'optimistic': True}
 
     def __repr__(self):
         return '<User({0!r}) with id {1!r}>'.format(self.username, self._id)
@@ -736,7 +752,7 @@ class User(GuidStoredObject, AddonModelMixin):
             self.save()
         return None
 
-    def get_projects_in_common(self, other_user, primary_keys= True):
+    def get_projects_in_common(self, other_user, primary_keys=True):
         """Returns either a collection of "shared projects" (projects that both users are contributors for)
         or just their primary keys
         """

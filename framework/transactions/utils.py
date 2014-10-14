@@ -33,4 +33,3 @@ def handle_error(code):
     error = HTTPError(code)
     renderer = json_renderer if is_json_request() else web_renderer
     return make_response(renderer.handle_error(error))
-

@@ -46,7 +46,7 @@
                     %endif
                 %endif
                 <h1 class="node-title">
-                    <span id="nodeTitleEditable">${node['title']}</span>
+                    <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h1>
             </div><!-- end col-md-->
 
@@ -101,7 +101,8 @@
         </div><!-- end row -->
 
 
-        <div id="contributors">Contributors:
+        <div id="contributors">
+            Contributors:
             % if node['anonymous'] and not node['is_public']:
                 <ol>Anonymous Contributors</ol>
 
@@ -132,7 +133,7 @@
             % if parent_node['id']:
                 <br />Category: <span class="node-category">${node['category']}</span>
             % elif node['description'] or 'write' in user['permissions']:
-                 <br />Description: <span id="nodeDescriptionEditable" class="node-description">${node['description']}</span>
+                <br /><span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
             % endif
         </div>
 
@@ -149,6 +150,7 @@
             <div class="container-fluid">
                 <div class="row">
                     <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
+
                         <li><a href="${node['url']}">Overview</a></li>
 
                         <li><a href="${node['url']}files/">Files</a></li>
@@ -194,7 +196,9 @@
 
             $(".project-nav a").each(function () {
                 var href = $(this).attr('href');
-                if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                if (path === href ||
+                   (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
                     $(this).closest('li').addClass('active');
                 }
             });
