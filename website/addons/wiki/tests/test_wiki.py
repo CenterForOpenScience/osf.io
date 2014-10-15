@@ -171,11 +171,6 @@ class TestWikiViews(OsfTestCase):
         assert_equal(wiki.content, new_wiki_content)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_new(self):
-        url = self.project.api_url_for('project_wiki_new', wid='a new page')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-
     def test_wiki_edit_get_home(self):
         url = self.project.web_url_for('project_wiki_edit', wid='home')
         res = self.app.get(url, auth=self.user.auth)
@@ -192,15 +187,6 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_compare', wid='this-doesnt-exist', compare_id=1)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-
-    def test_project_wiki_new_mixed_casing_name(self):
-        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_not_in('capslock', self.project.wiki_pages_current)
-        assert_in('CaPsLoCk', res)
-        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
-        assert_in('capslock', self.project.wiki_pages_current)
         
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
@@ -214,19 +200,32 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
-    def test_project_wiki_new_diplay_mixed_casing_name(self):
-        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
+    def test_wiki_validate_name(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='Capslock')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_project_wiki_validate_name_mixed_casing(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in('capslock', self.project.wiki_pages_current)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        assert_in('capslock', self.project.wiki_pages_current)
+
+    def test_project_wiki_validate_name_diplay_correct_capitalization(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('CaPsLoCk', res)
 
-    def test_project_wiki_new_name_conflict_different_casing(self):
-        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
+    def test_project_wiki_validate_name_conflict_different_casing(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CAPSLOCK')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
-        url = self.project.api_url_for('project_wiki_new', wid='Capslock')
+        url = self.project.api_url_for('project_wiki_validate_name', wid='capslock')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
@@ -382,6 +381,19 @@ class TestWikiRename(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
+
+    def test_rename_wiki_page_same_name_different_casing(self):
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        new_name = 'AWAY'
+        page = self.project.get_wiki_page('away')
+
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': page._id},
+            auth=self.auth,
+            expect_errors=False
+        )
+        assert_equal(res.status_code, 200)
 
     def test_cannot_rename_home_page(self):
         home = self.project.get_wiki_page('home')
