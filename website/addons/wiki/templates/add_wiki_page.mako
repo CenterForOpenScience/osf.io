@@ -65,9 +65,16 @@
               request.done(function(response) {
                   window.location.href = '${urls['web']['base']}' + encodeURIComponent($data.val()) + '/edit/';
               });
-              request.fail(function(response) {
+              request.fail(function(response, textStatus, error) {
                   if (response.status === 409) {
                     $alert.text("A wiki page with that name already exists.");
+                  } else {
+                    $alert.text('Could not validate wiki page. Please try again.');
+                    Raven.captureMessage('Error occurred while validating page', {
+                        url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
+                        textStatus: textStatus,
+                        error: error
+                    })
                   }
                   $submitForm
                       .removeAttr("disabled", "disabled")
