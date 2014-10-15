@@ -1137,7 +1137,7 @@ class TestNode(OsfTestCase):
         assert_equal(len(self.node.nodes), 1)
         assert_false(self.node.nodes[0].primary)
         assert_equal(self.node.nodes[0].node, node2)
-        assert_equal(node2.points, 1)
+        assert_equal(len(node2.get_points()), 1)
         assert_equal(
             self.node.logs[-1].action, NodeLog.POINTER_CREATED
         )
@@ -1189,7 +1189,7 @@ class TestNode(OsfTestCase):
         self.node.rm_pointer(pointer, auth=self.consolidate_auth)
         assert_is(Pointer.load(pointer._id), None)
         assert_equal(len(self.node.nodes), 0)
-        assert_equal(node2.points, 0)
+        assert_equal(len(node2.get_points()), 0)
         assert_equal(
             self.node.logs[-1].action, NodeLog.POINTER_REMOVED
         )
