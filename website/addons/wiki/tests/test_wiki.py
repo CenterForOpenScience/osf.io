@@ -89,7 +89,7 @@ class TestWikiViews(OsfTestCase):
         serialized = serialize_wiki_toc(project, auth)
         assert_equal(
             serialized[0]['url'],
-            pointed_node.web_url_for('project_wiki_page', wid='home')
+            pointed_node.web_url_for('project_wiki_page', wid='home', _guid=True)
         )
 
     def test_project_wiki_edit_post(self):
@@ -262,10 +262,10 @@ class TestViewHelpers(OsfTestCase):
     def test_get_wiki_web_urls(self):
         urls = _get_wiki_web_urls(self.project, self.wid)
         assert_equal(urls['compare'], self.project.web_url_for('project_wiki_compare',
-                wid=self.wid, compare_id=1))
-        assert_equal(urls['edit'], self.project.web_url_for('project_wiki_edit', wid=self.wid))
-        assert_equal(urls['home'], self.project.web_url_for('project_wiki_home'))
-        assert_equal(urls['page'], self.project.web_url_for('project_wiki_page', wid=self.wid))
+                wid=self.wid, compare_id=1, _guid=True))
+        assert_equal(urls['edit'], self.project.web_url_for('project_wiki_edit', wid=self.wid, _guid=True))
+        assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
+        assert_equal(urls['page'], self.project.web_url_for('project_wiki_page', wid=self.wid, _guid=True))
 
     def test_get_wiki_api_urls(self):
         urls = _get_wiki_api_urls(self.project, self.wid)

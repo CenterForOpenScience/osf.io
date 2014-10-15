@@ -23,6 +23,8 @@ class TestUrlForHelpers(unittest.TestCase):
     def setUp(self):
         def dummy_view(pid):
             return {}
+        def dummy_guid_view(pid):
+            return {}
         self.app = Flask(__name__)
 
         api_rule = Rule([
@@ -33,8 +35,12 @@ class TestUrlForHelpers(unittest.TestCase):
             '/<pid>/',
             '/<pid>/component/<nid>/'
         ], 'get', dummy_view, OsfWebRenderer)
+        web_guid_rule = Rule([
+            '/project/<pid>/test/',
+            '/project/<pid>/node/<nid>/test/',
+        ], 'get', dummy_guid_view, OsfWebRenderer)
 
-        process_rules(self.app, [api_rule, web_rule])
+        process_rules(self.app, [api_rule, web_rule, web_guid_rule])
 
     def test_api_url_for(self):
         with self.app.test_request_context():
@@ -43,6 +49,12 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_web_url_for(self):
         with self.app.test_request_context():
             assert web_url_for('dummy_view', pid='123') == '/123/'
+
+    def test_web_url_for_guid(self):
+        with self.app.test_request_context():
+            assert web_url_for('dummy_guid_view', pid='123', _guid=True) == '/123/test/'
+            assert web_url_for('dummy_guid_view', pid='123', _guid=False) == '/project/123/test/'
+            assert web_url_for('dummy_guid_view', pid='123') == '/project/123/test/'
 
     def test_api_url_for_with_multiple_urls(self):
         with self.app.test_request_context():

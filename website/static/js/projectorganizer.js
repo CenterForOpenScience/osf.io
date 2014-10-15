@@ -561,19 +561,23 @@
                     });
                 });
                 $('#delete-folder-' + theItem.node_id).click(function () {
-                    var confirmationText = 'Are you sure you want to delete this folder? This will also delete any folders inside this one. You will not delete any projects in this folder.';
-                    bootbox.confirm(confirmationText, function (result) {
-                        if (result !== null && result) {
-                            var url = '/api/v1/folder/'+ theItem.node_id;
-                            var deleteAction = $.ajax({
-                                type: 'DELETE',
-                                url: url,
-                                contentType: 'application/json',
-                                dataType: 'json'
-                            });
-                            deleteAction.done(function () {
-                                reloadFolder(projectOrganizer.grid, theParentNode);
-                            });
+                    bootbox.confirm({
+                        title: 'Delete this folder?',
+                        message: 'Are you sure you want to delete this folder? This will also delete any folders ' +
+                            'inside this one. You will not delete any projects in this folder.',
+                        callback: function(result) {
+                            if (result !== null && result) {
+                                var url = '/api/v1/folder/'+ theItem.node_id;
+                                var deleteAction = $.ajax({
+                                    type: 'DELETE',
+                                    url: url,
+                                    contentType: 'application/json',
+                                    dataType: 'json'
+                                });
+                                deleteAction.done(function () {
+                                    reloadFolder(projectOrganizer.grid, theParentNode);
+                                });
+                            }
                         }
                     });
                 });

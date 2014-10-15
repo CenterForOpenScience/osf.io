@@ -16,7 +16,7 @@
 </nav>
 % endif
 
-<h3 class="wiki-title" id="wikiName">
+<h3 class="wiki-title wiki-title-xs" id="wikiName">
     % if wiki_name == 'home':
         <i class="icon-home"></i>
     % endif
@@ -31,11 +31,9 @@
 <script type="text/javascript">
     var $pageName = $('#pageName');
     $pageName.tooltip();
-    if ($pageName.height() >= $('#wikiName').height()) {
-        $('#wikiName').addClass('long-wiki-title');
-    }
-    // Activate editable title unless on home page or in edit mode
-    %if not is_edit and wiki_id and wiki_name != 'home':
+
+    // Activate editable title unless on home page or in edit mode only for users that can edit
+    %if 'write' in user['permissions'] and not is_edit and wiki_id and pageName != 'home':
     $(document).ready(function() {
         $pageName.editable({
             type: 'text',

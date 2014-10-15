@@ -289,9 +289,8 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
-        # Should not see wiki at all (since non-contributor and no content)
-        assert_not_in('Wiki', res)
-
+        # Should not see wiki widget (since non-contributor and no content)
+        assert_not_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
