@@ -15,13 +15,19 @@
 
     <p>
         <!-- Download button -->
-        <a data-bind="attr: {href: downloadUrl}"
-            class="btn btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
-       <!--Delete button -->
-       <button
-           data-bind="visible: deleteUrl() && !registered(), click: deleteFile"
-           class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i>
-       </button>
+        <a
+                data-bind="attr.href: downloadUrl"
+                class="btn btn-success btn-lg"
+            >Download <i class="icon-download-alt" ></i>
+        </a>
+        % if user['can_edit'] and 'write' in user['permissions']:
+            <!--Delete button -->
+            <button
+                    data-bind="visible: deleteUrl() && !registered(), click: deleteFile"
+                    class="btn btn-danger btn-lg"
+                >Delete <i class="icon-trash"></i>
+            </button>
+        % endif
     </p>
 
     <table class="table dropbox-revision-table ">
