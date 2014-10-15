@@ -1,4 +1,5 @@
-  <!-- New Component Modal -->
+<%page expression_filter="h"/>
+<!-- New Component Modal -->
   <div class="modal fade" id="newWiki">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -27,57 +28,60 @@
   <script type="text/javascript">
 
   $(function(){
+      var $newWikiForm = $('#newWiki form');
 
-      $('#newWiki form').on('submit', function(e) {
-
+      $newWikiForm.on('submit', function (e) {
           e.preventDefault();
-          $("#add-wiki-submit")
-                  .attr("disabled", "disabled")
-                  .text("Creating New Wiki page");
 
-          if ($.trim($("#data").val())==''){
+          var $data = $newWikiForm.find("#data");
+          var $submitForm = $newWikiForm.find("#add-wiki-submit");
+          var $alert = $newWikiForm.find("#alert");
 
-              $("#alert").text("The new wiki page name cannot be empty");
+          $submitForm
+              .attr("disabled", "disabled")
+              .text("Creating New Wiki page");
 
-              $("#add-wiki-submit")
-                      .removeAttr("disabled", "disabled")
-                      .text("OK");
-          }
-          else if ($(e.target).find("#data").val().length>100){
-              $("#alert").text("The new wiki page name cannot be more than 100 characters.");
+          if ($.trim($data.val()) === '') {
+              $alert.text("The new wiki page name cannot be empty");
+              $submitForm
+                  .removeAttr("disabled", "disabled")
+                  .text("OK");
+          } else if ($data.val().length > 100) {
+              $alert.text("The new wiki page name cannot be more than 100 characters.");
 
-              $("#add-wiki-submit")
-                      .removeAttr("disabled", "disabled")
-                      .text("OK");
-          }
-          else{
-              var wikiName = $("#data").val();
-              var url = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
+              $submitForm
+                  .removeAttr("disabled", "disabled")
+                  .text("OK");
+          } else {
               var request = $.ajax({
                   type: 'GET',
-                  url: url
+                  cache: false,
+                  url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/new/',
+                  dataType: 'json',
+                  data: {
+                      wiki_name: $data.val()
+                  }
               });
               request.done(function(response) {
-                  window.location.href = url;
+                  window.location.href = '${urls['web']['base']}' + encodeURIComponent($data.val()) + '/edit/';
               });
-              request.fail(function(response){
-                  if(response.status === 422) {
-                    $("#alert").text("The wiki page name you entered is invalid.");
+              request.fail(function(response) {
+                  if (response.status === 409) {
+                    $alert.text("A wiki page with that name already exists.");
                   }
-                  if(response.status === 409 ) {
-                    $("#alert").text("A wiki page with that name already exists.");
-                  }
-                  $('#data').val("");
-                  $("#add-wiki-submit")
+                  $submitForm
                       .removeAttr("disabled", "disabled")
                       .text("OK");
               });
           }
-     });
+      });
 
-      $('#close').on('click', function(){
-          $("#alert").text("");
-          $('#data').val("");
+      $newWikiForm.find('#close').on('click', function () {
+          var $data = $newWikiForm.find('#data');
+          var $alert = $newWikiForm.find('#alert');
+
+          $alert.text("");
+          $data.val("");
       });
   });
   </script>

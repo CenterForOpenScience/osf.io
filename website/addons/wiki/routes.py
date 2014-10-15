@@ -106,6 +106,12 @@ api_routes = {
 
     'rules': [
 
+        # Home (Base)
+        Rule([
+            '/project/<pid>/wiki/',
+            '/project/<pid>/node/<nid>/wiki/',
+        ], 'get', views.project_wiki_home, json_renderer),
+
         # View
         Rule([
             '/project/<pid>/wiki/<path:wid>/',
@@ -118,6 +124,12 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<path:wid>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
+        # New | GET
+        Rule([
+            '/project/<pid>/wiki/<path:wid>/new/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/new/',
+        ], 'get', views.project_wiki_new, json_renderer),
+
         # Edit | POST
         Rule([
             '/project/<pid>/wiki/<path:wid>/edit/',
@@ -125,15 +137,10 @@ api_routes = {
         ], 'post', views.project_wiki_edit_post, json_renderer),
 
         # Rename
-        Rule(
-            [
-                '/project/<pid>/wiki/<path:wid>/rename/',
-                '/project/<pid>/node/<nid>/wiki/<path:wid>/rename/',
-            ],
-            'put',
-            views.project_wiki_rename,
-            json_renderer,
-        ),
+        Rule([
+            '/project/<pid>/wiki/<path:wid>/rename/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/rename/',
+        ], 'put', views.project_wiki_rename, json_renderer),
 
         # Compare
         Rule([
