@@ -18,15 +18,19 @@ except ImportError:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
 class TestUrlForHelpers(unittest.TestCase):
 
     def setUp(self):
         def dummy_view():
             return {}
+
         def dummy_guid_project_view():
             return {}
+
         def dummy_guid_profile_view():
             return {}
+
         self.app = Flask(__name__)
 
         api_rule = Rule([
@@ -169,6 +173,7 @@ class TestGetMimeTypes(unittest.TestCase):
             content = the_file.read()
         mimetype = get_mimetype(name, content)
         assert_equal('text/x-python', mimetype)
+
 
 class TestFrameworkUtils(unittest.TestCase):
 
