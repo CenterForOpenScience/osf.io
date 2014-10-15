@@ -171,8 +171,8 @@ class TestWikiViews(OsfTestCase):
         assert_equal(wiki.content, new_wiki_content)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_edit_get_new(self):
-        url = self.project.web_url_for('project_wiki_edit', wid='a new page')
+    def test_wiki_new(self):
+        url = self.project.api_url_for('project_wiki_new', wid='a new page')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
@@ -193,8 +193,8 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_project_wiki_edit_mixed_casing_name(self):
-        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+    def test_project_wiki_new_mixed_casing_name(self):
+        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_not_in('capslock', self.project.wiki_pages_current)
@@ -214,19 +214,19 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
-    def test_project_wiki_edit_diplay_mixed_casing_name(self):
-        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+    def test_project_wiki_new_diplay_mixed_casing_name(self):
+        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('CaPsLoCk', res)
 
-    def test_project_wiki_edit_name_conflict_different_casing(self):
-        url = self.project.web_url_for('project_wiki_edit', wid='CaPsLoCk')
+    def test_project_wiki_new_name_conflict_different_casing(self):
+        url = self.project.api_url_for('project_wiki_new', wid='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
         assert_in('capslock', self.project.wiki_pages_current)
-        url = self.project.web_url_for('project_wiki_edit', wid='Capslock')
+        url = self.project.api_url_for('project_wiki_new', wid='Capslock')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
