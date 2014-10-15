@@ -15,7 +15,7 @@
                                 id="privateLinkName"
                                 type="text"
                                 class="form-control private-link-name"
-                                placeholder='Optional link name (e.g., "For Peer Review", "Sharing data", "Share project")' />
+                                placeholder='Optional link name (e.g., For peer review, Sharing data, Share project)' />
                         </div>
                     </div>
 
@@ -33,8 +33,8 @@
                     <hr />
 
                     <div style="margin-bottom:10px;">
-                        Anyone with the private link can view, but not edit,
-                        the components associated with the link.
+                        Anyone with the private link can view&mdash;but not edit&mdash;the
+                        components associated with the link.
                         <strong>Which components would you like to associate with this link?
                     </strong>                    </div>
 
