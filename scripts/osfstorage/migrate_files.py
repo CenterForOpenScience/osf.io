@@ -29,9 +29,11 @@ client = scripts_settings.STORAGE_CLIENT_CLASS(
 container = client.get_container(scripts_settings.STORAGE_CONTAINER_NAME)
 
 
-def migrate_version(node_file, node_settings):
+def migrate_version(idx, node_file, node_settings):
     node = node_settings.owner
     record = model.FileRecord.get_or_create(node_file.path, node_settings)
+    if len(record.versions) > idx:
+        return
     content, _ = node.read_file_object(node_file)
     file_pointer = StringIO(content)
     hash_str = scripts_settings.UPLOAD_PRIMARY_HASH(content).hexdigest()
@@ -51,29 +53,34 @@ def migrate_version(node_file, node_settings):
 def migrate_node(node):
     node_settings = node.get_or_add_addon('osfstorage', auth=None, log=False)
     for path, versions in node.files_versions.iteritems():
-        for version in versions:
+        for idx, version in enumerate(versions):
             try:
                 node_file = NodeFile.load(version)
             except Exception as error:
                 logger.error('Could not migrate object {0}'.format(node_file._id))
                 logger.exception(error)
                 break
-            migrate_version(node_file, node_settings)
+            migrate_version(idx, node_file, node_settings)
 
 
 def get_nodes():
     return Node.find(Q('files_versions', 'ne', None))
 
 
-def main():
+def main(dry_run=True):
     nodes = get_nodes()
+    print('Migrating files on {0} `Node` records'.format(len(nodes)))
+    if dry_run:
+        return
     for node in nodes:
         migrate_node(node)
 
 
 if __name__ == '__main__':
+    import sys
+    dry_run = 'dry' in sys.argv
     init_app()
-    main()
+    main(dry_run=dry_run)
 
 
 from nose.tools import *  # noqa
@@ -103,7 +110,7 @@ class TestMigrateFiles(OsfTestCase):
             )
 
     def test_migrate(self):
-        main()
+        main(dry_run=False)
         node_settings = self.project.get_addon('osfstorage')
         assert_true(node_settings)
         record = model.FileRecord.find_by_path('pizza.md', node_settings)
@@ -114,3 +121,6 @@ class TestMigrateFiles(OsfTestCase):
             download_url = utils.get_download_url(version)
             resp = requests.get(download_url)
             assert_equal(expected, resp.content)
+        # Test idempotence of migration
+        main(dry_run=False)
+        assert_equal(len(record.versions), 5)
