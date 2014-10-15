@@ -276,6 +276,39 @@ class TestS3ViewsCRUD(OsfTestCase):
         self.node_settings.save()
         self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
 
+    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_view_file(self, mock_from_addon, mock_wrapped_key):
+        mock_from_addon.return_value = create_mock_wrapper()
+        mock_wrapped_key.return_value = create_mock_key()
+        url = '/project/{0}/s3/view/pizza.png/'.format(self.project._id)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).maybe_follow(
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_in('Delete <i class="icon-trash"></i>', res)
+
+    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_view_file_non_contributor(self, mock_from_addon, mock_wrapped_key):
+        mock_from_addon.return_value = create_mock_wrapper()
+        mock_wrapped_key.return_value = create_mock_key()
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = '/project/{0}/s3/view/pizza.png/'.format(self.project._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).maybe_follow(
+            auth=user2.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_not_in('Delete <i class="icon-trash"></i>', res)
+
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_view_faux_file(self, mock_from_addon):
         mock_from_addon.return_value = mock.Mock()
