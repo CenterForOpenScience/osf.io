@@ -25,7 +25,7 @@
             dataType: 'json'
         }).done(function(response) {
             self.files_page_url(response.files_page_url);
-            if(self.api_url === ""){
+            if(self.api_url === ''){
                 self.api_url(response.delete_url);
             }
         }).fail(

@@ -129,15 +129,18 @@
         }
 
         function onFetchError() {
-          bootbox.alert('Could not retrieve view-only links. Please refresh the page or ' +
+            bootbox.alert({
+                title: 'Error',
+                message: 'Could not retrieve view-only links. Please refresh the page or ' +
                     'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                    'problem persists.');
+                    'problem persists.'
+            });
         }
 
         function fetch() {
             $.ajax({
-                url: url, 
-                type: 'GET', 
+                url: url,
+                type: 'GET',
                 dataType: 'json',
             }).done(
                 onFetchSuccess

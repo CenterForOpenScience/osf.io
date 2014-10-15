@@ -7,7 +7,7 @@
     } else {
         factory(jQuery, global.LogFeed);
     }
-}(this, function($, LogFeed) {
+}(this, function($, LogFeed) { // Logfeed MUST loaded for logs to render correctly
 
     window.NodeActions = {}; // Namespace for NodeActions
 
@@ -46,6 +46,7 @@
                     bootbox.alert('Sorry, you do not have permission to fork this project');
                 } else {
                     bootbox.alert('Forking failed');
+                    Raven.captureMessage('Error occurred during forking');
                 }
             });
         });
@@ -266,7 +267,7 @@
         });
 
         $('body').on('click', '.tagsinput .tag > span', function(e) {
-            window.location = "/search/?q=" + $(e.target).text().toString().trim();
+            window.location = '/search/?q=' + $(e.target).text().toString().trim();
         });
 
         $('.citation-toggle').on('click', function(evt) {

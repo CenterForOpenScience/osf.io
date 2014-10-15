@@ -15,7 +15,7 @@
                     message: "Sorry, that's not a valid bucket name. Try another name?",
                     callback: function(result) {
                         if(result) {
-                            newBucket()
+                            newBucket();
                         }
                     }
                 });
@@ -29,8 +29,9 @@
                     $select.val(bucketName);
                 }).fail(function(xhr) {
                     var message = JSON.parse(xhr.responseText).message;
-                    if(!message)
+                    if(!message) {
                         message = 'Looks like that name is taken. Try another name?';
+                    }
                     bootbox.confirm({
                         title: 'Duplicate bucket name',
                         message: message,
@@ -51,7 +52,7 @@
             url: nodeApiUrl + 's3/settings/',
             contentType: 'application/json',
             dataType: 'json'
-        }).done(function(response) {
+        }).done(function() {
             window.location.reload();
         }).fail(
             $.osf.handleJSONError
