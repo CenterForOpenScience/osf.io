@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 from nose.tools import *  # noqa
 
@@ -257,14 +258,14 @@ class TestFileRecord(OsfTestCase):
         assert_equal(indices, range(15, 5, -1))
         assert_equal(
             versions,
-            [self.record.versions[idx] for idx in range(14, 4, -1)],
+            list(self.record.versions[14:4:-1]),
         )
         assert_true(more)
         indices, versions, more = self.record.get_versions(1, size=10)
         assert_equal(indices, range(5, 0, -1))
         assert_equal(
             versions,
-            [self.record.versions[idx] for idx in range(4, -1, -1)],
+            list(self.record.versions[4::-1]),
         )
         assert_false(more)
 
