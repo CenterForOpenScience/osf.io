@@ -1251,16 +1251,21 @@ def abbrev_authors(node):
         ret += ' et al.'
     return ret
 
-
-def serialize_pointer(pointer, auth):
+def resolve_pointer(pointer):
+    """Given a `Pointer` object, return the node that it resolves to.
+    """
     # The `parent_node` property of the `Pointer` schema refers to the parents
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
     # back-reference syntax to find the parents of the `Pointer`.
     parent_refs = pointer.node__parent
     assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    node = parent_refs[0]
+    return parent_refs[0]
+
+def serialize_pointer(pointer, auth):
+    node = resolve_pointer(pointer)
     if node.can_view(auth):
         return {
+            'id': node._id,
             'url': node.url,
             'title': node.title,
             'authorShort': abbrev_authors(node),
@@ -1274,8 +1279,11 @@ def serialize_pointer(pointer, auth):
 
 @must_be_contributor_or_public
 def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
+        if not resolve_pointer(each).is_folder
     ]}

@@ -1573,6 +1573,24 @@ class TestPointerViews(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
 
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
+    def test_get_pointed_excludes_folders(self):
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        url = pointed_project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # pointer_project's id is included in response, but folder's id is not
+        pointer_ids = [each['id'] for each in res.json['pointed']]
+        assert_in(pointer_project._id, pointer_ids)
+        assert_not_in(folder._id, pointer_ids)
+
     def test_add_pointers(self):
 
         url = self.project.api_url + 'pointer/'
