@@ -91,6 +91,7 @@ from tests.factories import ProjectFactory
 from framework.auth import Auth
 
 
+# Important: These tests copy real data to the cloud backend
 class TestMigrateFiles(OsfTestCase):
 
     def setUp(self):
@@ -109,18 +110,32 @@ class TestMigrateFiles(OsfTestCase):
                 content_type='text/markdown',
             )
 
+    def check_record(self, record):
+        assert_true(record)
+        assert_equal(len(record.versions), 5)
+        for idx, version in enumerate(record.versions):
+            assert_equal(version.status, model.status['COMPLETE'])
+            expected = 'i want {0} pizzas'.format(idx)
+            download_url = utils.get_download_url(version)
+            resp = requests.get(download_url)
+            assert_equal(expected, resp.content)
+
     def test_migrate(self):
         main(dry_run=False)
         node_settings = self.project.get_addon('osfstorage')
         assert_true(node_settings)
         record = model.FileRecord.find_by_path('pizza.md', node_settings)
-        assert_true(record)
-        assert_equal(len(record.versions), 5)
-        for idx, version in enumerate(record.versions):
-            expected = 'i want {0} pizzas'.format(idx)
-            download_url = utils.get_download_url(version)
-            resp = requests.get(download_url)
-            assert_equal(expected, resp.content)
+        self.check_record(record)
         # Test idempotence of migration
         main(dry_run=False)
         assert_equal(len(record.versions), 5)
+
+    def test_migrate_fork(self):
+        fork = self.project.fork_node(auth=self.auth_obj)
+        main(dry_run=False)
+        node_settings = self.project.get_addon('osfstorage')
+        record = model.FileRecord.find_by_path('pizza.md', node_settings)
+        self.check_record(record)
+        fork_node_settings = fork.get_addon('osfstorage')
+        fork_record = model.FileRecord.find_by_path('pizza.md', fork_node_settings)
+        self.check_record(fork_record)
