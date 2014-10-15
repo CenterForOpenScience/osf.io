@@ -56,7 +56,7 @@
               var request = $.ajax({
                   type: 'GET',
                   cache: false,
-                  url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/new/',
+                  url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
                   dataType: 'json',
                   data: {
                       wiki_name: $data.val()

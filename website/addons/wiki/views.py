@@ -393,7 +393,7 @@ def project_wiki_delete(auth, wid, **kwargs):
 @must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def project_wiki_new(wid, **kwargs):
+def project_wiki_validate_name(wid, **kwargs):
     wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
 
