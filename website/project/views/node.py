@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, resolve_pointer
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -1251,15 +1251,6 @@ def abbrev_authors(node):
         ret += ' et al.'
     return ret
 
-def resolve_pointer(pointer):
-    """Given a `Pointer` object, return the node that it resolves to.
-    """
-    # The `parent_node` property of the `Pointer` schema refers to the parents
-    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
-    # back-reference syntax to find the parents of the `Pointer`.
-    parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    return parent_refs[0]
 
 def serialize_pointer(pointer, auth):
     node = resolve_pointer(pointer)
