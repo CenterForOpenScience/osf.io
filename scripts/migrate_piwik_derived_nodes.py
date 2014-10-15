@@ -38,7 +38,14 @@ class PiwikSiteCache(object):
         if not self._cache:
             self.update_cache()
 
-        return not self._cache[str(node.piwik_site_id)]['name'][6:] == node._id
+        try:
+            piwik_alias = self._cache[str(node.piwik_site_id)].get('name')
+        except KeyError:
+            return False
+
+        if not piwik_alias:
+            return False
+        return not piwik_alias[6:] == node._id
 
 
 piwik_cache = PiwikSiteCache()

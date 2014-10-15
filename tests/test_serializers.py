@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
+import httplib as http
 
-from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory
+from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory, AuthUserFactory
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
@@ -86,6 +87,32 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_fork
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
+
+    def test_view_project_returns_whether_to_show_wiki_widget(self):
+        user = AuthUserFactory()
+        project = ProjectFactory.build(creator=user, is_public=True)
+        project.add_contributor(user)
+        project.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('show_wiki_widget', res.json['user'])
+
+    def test_fork_count_does_not_include_deleted_forks(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        fork = project.fork_node(auth)
+        fork2 = project.fork_node(auth)
+        project.save()
+        fork.remove_node(auth)
+        fork.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_in('fork_count', res.json['node'])
+        assert_equal(1, res.json['node']['fork_count'])
 
 
 class TestNodeLogSerializers(OsfTestCase):

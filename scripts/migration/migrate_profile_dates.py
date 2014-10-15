@@ -1,5 +1,9 @@
 """Changes existing profile education and employment dates from
 YYYY-MM-DD formatted dates to "Month Year" format
+
+Log:
+
+    Run on production by SL on 2014-10-14 at 19:11 EST. 269 users were migrated.
 """
 
 import logging
@@ -21,7 +25,10 @@ def main():
 
 
 def replace_date(user_field, key, month, year):
-    date = datetime.strptime(user_field[key], '%Y-%m-%d')
+    if not isinstance(user_field[key], datetime):
+        date = datetime.strptime(user_field[key], '%Y-%m-%d')
+    else:
+        date = user_field[key]
     user_field[month] = date.month
     user_field[year] = date.year
     del user_field[key]
@@ -52,6 +59,7 @@ def migrate_dates():
             count += 1
 
     logger.info('Process completed. {n} users affected'.format(n=count))
+    return count
 
 
 class TestMigrateDates(OsfTestCase):

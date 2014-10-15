@@ -1,9 +1,12 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 import os
+import datetime
 
 import tabulate
 from modularodm import Q
+from dateutil.relativedelta import relativedelta
 
 from website import settings
 from website.models import User, PrivateLink
@@ -21,11 +24,19 @@ def get_active_users():
     )
 
 
-def get_dropbox_users():
-    return [
-        each.owner for each in DropboxUserSettings.find()
-        if each.nodes_authorized
-    ]
+def get_dropbox_metrics():
+    metrics = {
+        'enabled': [],
+        'authorized': [],
+        'linked': [],
+    }
+    for node_settings in DropboxUserSettings.find():
+        metrics['enabled'].append(node_settings)
+        if node_settings.has_auth:
+            metrics['authorized'].append(node_settings)
+        if node_settings.nodes_authorized:
+            metrics['linked'].append(node_settings)
+    return metrics
 
 
 def get_private_links():
@@ -42,10 +53,16 @@ def count_user_nodes(users=None):
     ]
 
 
-def count_user_logs(users=None):
+def count_user_logs(user, query=None):
+    if query:
+        return len(user.nodelog__created.find(query))
+    return len(user.nodelog__created)
+
+
+def count_users_logs(users=None, query=None):
     users = users or get_active_users()
     return [
-        len(user.nodelog__created)
+        count_user_logs(user, query)
         for user in users
     ]
 
@@ -59,7 +76,7 @@ def count_at_least(counts, at_least):
 
 def main():
     active_users = get_active_users()
-    dropbox_users = get_dropbox_users()
+    dropbox_metrics = get_dropbox_metrics()
     extended_profile_counts = profile.get_profile_counts()
     private_links = get_private_links()
 
@@ -67,20 +84,31 @@ def main():
     nodes_at_least_1 = count_at_least(node_counts, 1)
     nodes_at_least_3 = count_at_least(node_counts, 3)
 
-    log_counts = count_user_logs(active_users)
+    log_counts = count_users_logs(active_users)
     logs_at_least_1 = count_at_least(log_counts, 1)
     logs_at_least_11 = count_at_least(log_counts, 11)
+
+    log_counts_3months = count_users_logs(
+        active_users,
+        Q('date', 'gte', datetime.datetime.now() - relativedelta(months=3)),
+    )
+    logs_at_least_1_3months = count_at_least(log_counts_3months, 1)
+    logs_at_least_11_3months = count_at_least(log_counts_3months, 11)
 
     table = tabulate.tabulate(
         [
             ['active-users', active_users.count()],
-            ['dropbox-users', len(dropbox_users)],
+            ['dropbox-users-enabled', len(dropbox_metrics['enabled'])],
+            ['dropbox-users-authorized', len(dropbox_metrics['authorized'])],
+            ['dropbox-users-linked', len(dropbox_metrics['linked'])],
             ['profile-edits', extended_profile_counts['any']],
             ['view-only-links', private_links.count()],
             ['nodes-gte-1', nodes_at_least_1],
             ['nodes-gte-3', nodes_at_least_3],
             ['logs-gte-1', logs_at_least_1],
             ['logs-gte-11', logs_at_least_11],
+            ['logs-gte-1-last-3m', logs_at_least_1_3months],
+            ['logs-gte-11-last-3m', logs_at_least_11_3months],
         ],
         headers=['label', 'value']
     )
@@ -91,4 +119,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

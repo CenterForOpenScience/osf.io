@@ -15,6 +15,18 @@ from invoke.exceptions import Failure
 from website import settings
 
 
+def get_bin_path():
+    """Get parent path of current python binary.
+    """
+    return os.path.dirname(sys.executable)
+
+
+def bin_prefix(cmd):
+    """Prefix command with current binary path.
+    """
+    return os.path.join(get_bin_path(), cmd)
+
+
 try:
     run('pip freeze | grep rednose', hide='both')
     TEST_CMD = 'nosetests --rednose'
@@ -26,7 +38,7 @@ except Failure:
 def server():
     from website.app import init_app
     app = init_app('website.settings', set_backends=True, routes=True)
-    app.run('0.0.0.0', port=5000, debug=True)
+    app.run('0.0.0.0', port=5000)
 
 
 SHELL_BANNER = """
@@ -226,7 +238,8 @@ def mongorestore(path, drop=False):
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    run("celery worker -A framework.tasks -l {0}".format(level))
+    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    run(bin_prefix(cmd))
 
 
 @task
@@ -256,12 +269,14 @@ def elasticsearch():
 @task
 def migrate_search(python='python'):
     '''Migrate the search-enabled models.'''
-    run("{0} -m website.search_migration.migrate".format(python))
+    cmd = '{0} -m website.search_migration.migrate'.format(python)
+    run(bin_prefix(cmd))
 
 @task
 def mailserver(port=1025):
     """Run a SMTP test server."""
-    run("python -m smtpd -n -c DebuggingServer localhost:{port}".format(port=port), pty=True)
+    cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
+    run(bin_prefix(cmd), pty=True)
 
 
 @task
@@ -275,7 +290,7 @@ def requirements(all=False, download_cache=None):
     cmd = "pip install --upgrade -r dev-requirements.txt"
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
-    run(cmd, echo=True)
+    run(bin_prefix(cmd), echo=True)
     if all:
         addon_requirements(download_cache=download_cache)
         mfr_requirements()
@@ -289,7 +304,7 @@ def test_module(module=None, verbosity=2):
     module_fmt = ' '.join(module) if isinstance(module, list) else module
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
-    run(TEST_CMD + args, pty=True)
+    run(bin_prefix(TEST_CMD) + args, pty=True)
 
 
 @task
@@ -334,7 +349,7 @@ def addon_requirements(download_cache=None):
                 cmd = 'pip install --upgrade -r {0}'.format(requirements_file)
                 if download_cache:
                     cmd += ' --download-cache {0}'.format(download_cache)
-                run(cmd)
+                run(bin_prefix(cmd))
             except IOError:
                 pass
     print('Finished')
@@ -347,7 +362,7 @@ def mfr_requirements(download_cache=None):
     cmd = 'pip install --upgrade -r mfr/requirements.txt'
     if download_cache:
         cmd += ' --download-cache {0}'.format(download_cache)
-    run(cmd, echo=True)
+    run(bin_prefix(cmd), echo=True)
 
 
 @task
