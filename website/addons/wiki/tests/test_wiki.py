@@ -12,7 +12,7 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
-from website.addons.wiki.views import serialize_wiki_toc
+from website.addons.wiki.views import serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
 from website.addons.wiki.model import NodeWikiPage
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
@@ -88,7 +88,7 @@ class TestWikiViews(OsfTestCase):
         serialized = serialize_wiki_toc(project, auth)
         assert_equal(
             serialized[0]['url'],
-            pointed_node.web_url_for('project_wiki_page', wid='home')
+            pointed_node.web_url_for('project_wiki_page', wid='home', _guid=True)
         )
 
     def test_project_wiki_edit_post(self):
@@ -223,6 +223,28 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
         assert_in(text, res)
+
+
+class TestViewHelpers(OsfTestCase):
+
+    def setUp(self):
+        super(TestViewHelpers, self).setUp()
+        self.project = ProjectFactory()
+        self.wid = 'New page'
+        self.project.update_node_wiki(self.wid, 'some content', Auth(self.project.creator))
+
+    def test_get_wiki_web_urls(self):
+        urls = _get_wiki_web_urls(self.project, self.wid)
+        assert_equal(urls['compare'], self.project.web_url_for('project_wiki_compare',
+                wid=self.wid, compare_id=1, _guid=True))
+        assert_equal(urls['edit'], self.project.web_url_for('project_wiki_edit', wid=self.wid, _guid=True))
+        assert_equal(urls['home'], self.project.web_url_for('project_wiki_home', _guid=True))
+        assert_equal(urls['page'], self.project.web_url_for('project_wiki_page', wid=self.wid, _guid=True))
+
+    def test_get_wiki_api_urls(self):
+        urls = _get_wiki_api_urls(self.project, self.wid)
+        assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wid=self.wid))
+        assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wid=self.wid))
 
 
 class TestWikiDelete(OsfTestCase):

@@ -26,6 +26,7 @@
             type: 'GET',
             url: url,
             dataType: 'json',
+            cache: false,
             success: function(response) {
                 self.initText = response.wiki_content;
                 self.wikiText(response.wiki_content);

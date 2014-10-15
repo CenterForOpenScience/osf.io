@@ -784,7 +784,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if user is None:
-            logger.error('User is ``None``.')
+            logger.warn('User is ``None``.')
             return False
         try:
             return permission in self.permissions[user._id]
@@ -1789,7 +1789,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             f.write(content)
 
         # Deal with git
-        repo.stage([file_name])
+        repo.stage([str(file_name)])
 
         committer = self._get_committer(auth)
 
@@ -1872,15 +1872,15 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
+                _guid=_guid, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database

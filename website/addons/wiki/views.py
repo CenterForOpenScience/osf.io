@@ -81,7 +81,7 @@ def _get_wiki_versions(node, wid, anonymous=False):
                 version.user.fullname, anonymous, name=True
             ),
             'date': version.date.replace(microsecond=0),
-            'compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=version.version),
+            'compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=version.version, _guid=True),
         }
         for version in reversed(versions)
     ]
@@ -91,7 +91,7 @@ def _get_wiki_pages_current(node):
     return [
         {
             'name': page,
-            'url': node.web_url_for('project_wiki_page', wid=page)
+            'url': node.web_url_for('project_wiki_page', wid=page, _guid=True)
         }
         for page in sorted([
             from_mongo(version)
@@ -112,11 +112,12 @@ def _get_wiki_api_urls(node, wid, additional_urls=None):
 
 def _get_wiki_web_urls(node, wid, compare_id=1, additional_urls=None):
     urls = {
-        'base': node.web_url_for('project_wiki_home'),
-        'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=compare_id),
-        'edit': node.web_url_for('project_wiki_edit', wid=wid),
-        'home': node.web_url_for('project_wiki_home'),
-        'page': node.web_url_for('project_wiki_page', wid=wid),
+        # TODO: Change this to GUID url?
+        'base': node.web_url_for('project_wiki_home', _guid=True),
+        'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=compare_id, _guid=True),
+        'edit': node.web_url_for('project_wiki_edit', wid=wid, _guid=True),
+        'home': node.web_url_for('project_wiki_home', _guid=True),
+        'page': node.web_url_for('project_wiki_page', wid=wid, _guid=True),
     }
     if additional_urls:
         urls.update(additional_urls)
@@ -181,7 +182,7 @@ def project_wiki_version(wid, vid, auth, **kwargs):
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
             'is_edit': False,
-            'wiki_version_web_url': node.web_url_for('project_wiki_version', wid=wid, compare_id=vid),
+            'wiki_version_web_url': node.web_url_for('project_wiki_version', wid=wid, compare_id=vid, _guid=True),
         }
         rv.update(_view_project(node, auth, primary=True))
         return rv
@@ -196,7 +197,7 @@ def serialize_wiki_toc(project, auth):
             'title': child.title,
             'category': child.category,
             'pages_current': _get_wiki_pages_current(child),
-            'url': child.web_url_for('project_wiki_page', wid='home'),
+            'url': child.web_url_for('project_wiki_page', wid='home', _guid=True),
             'is_pointer': not child.primary,
             'link': auth.private_key
         }
@@ -317,7 +318,7 @@ def project_wiki_edit_post(wid, auth, **kwargs):
     wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(wid)
-    redirect_url = node.web_url_for('project_wiki_page', wid=wid)
+    redirect_url = node.web_url_for('project_wiki_page', wid=wid, _guid=True)
 
     if wiki_page:
         # Only update node wiki if content has changed
