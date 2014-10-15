@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 import mock
 from nose.tools import *  # noqa
@@ -11,6 +12,7 @@ from website.addons.osfstorage.tests import factories
 import hashlib
 import urlparse
 
+import furl
 from cloudstorm import sign
 
 from framework.auth import Auth
@@ -663,4 +665,56 @@ class TestDeleteFile(OsfTestCase):
         )
         assert_equal(res.status_code, 404)
         assert_equal(res.json['code'], 404)
+
+
+def assert_urls_equal(url1, url2):
+    furl1 = furl.furl(url1)
+    furl2 = furl.furl(url2)
+    for attr in ['scheme', 'host', 'port']:
+        setattr(furl1, attr, None)
+        setattr(furl2, attr, None)
+    assert_equal(furl1, furl2)
+
+
+class TestLegacyViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestLegacyViews, self).setUp()
+        self.project = ProjectFactory()
+        self.user = self.project.creator
+        self.path = 'mercury.png'
+
+    def test_view_file_redirect(self):
+        url = '/{0}/osffiles/{1}/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'osf_storage_view_file',
+            path=self.path,
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_download_file_redirect(self):
+        url = '/{0}/osffiles/{1}/download/'.format(self.project._id, self.path)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'osf_storage_download_file',
+            path=self.path,
+        )
+        assert_urls_equal(res.location, expected_url)
+
+    def test_download_file_version_redirect(self):
+        url = '/{0}/osffiles/{1}/version/3/download/'.format(
+            self.project._id,
+            self.path,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 301)
+        expected_url = self.project.web_url_for(
+            'osf_storage_download_file',
+            path=self.path,
+            version=3,
+        )
+        assert_urls_equal(res.location, expected_url)
 

@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 import os
 import httplib
@@ -374,3 +375,31 @@ def osf_storage_get_revisions(path, node_addon, **kwargs):
         ],
         'more': more,
     }
+
+
+@must_be_contributor_or_public
+@must_have_addon('osfstorage', 'node')
+def osf_storage_view_file_legacy(fid, node_addon, **kwargs):
+    node = node_addon.owner
+    return redirect(
+        node.web_url_for(
+            'osf_storage_view_file',
+            path=fid,
+        ),
+        code=httplib.MOVED_PERMANENTLY,
+    )
+
+
+@must_be_contributor_or_public
+@must_have_addon('osfstorage', 'node')
+def osf_storage_download_file_legacy(fid, node_addon, **kwargs):
+    node = node_addon.owner
+    version = kwargs.get('vid', None)
+    return redirect(
+        node.web_url_for(
+            'osf_storage_download_file',
+            path=fid,
+            version=version,
+        ),
+        code=httplib.MOVED_PERMANENTLY,
+    )
