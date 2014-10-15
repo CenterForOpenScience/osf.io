@@ -1197,9 +1197,19 @@ class Node(GuidStoredObject, AddonModelMixin):
                 return pointer._id
         return None
 
-    @property
-    def points(self):
-        return len(self.pointed)
+    def get_points(self, folders=False, deleted=False, resolve=True):
+        ret = []
+        for each in self.pointed:
+            pointer_node = resolve_pointer(each)
+            if not folders and pointer_node.is_folder:
+                continue
+            if not deleted and pointer_node.is_deleted:
+                continue
+            if resolve:
+                ret.append(pointer_node)
+            else:
+                ret.append(each)
+        return ret
 
     def resolve(self):
         return self
