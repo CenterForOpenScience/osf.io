@@ -91,9 +91,11 @@
             title: response.responseJSON.message_short || errorDefaultShort,
             message: response.responseJSON.message_long || errorDefaultLong
         });
+        Raven.captureMessage('Unexpected error occurred in JSON request');
     };
 
     $.osf.handleEditableError = function(response, newValue) {
+        Raven.captureMessage('Unexpected error occurred in an editable input');
         return 'Unexpected error: ' + response.statusText;
     };
 
