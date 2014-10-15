@@ -237,7 +237,6 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('No wiki content', res)
 
-
     def test_project_dashboard_wiki_widget_shows_non_ascii_characters(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -248,6 +247,16 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
         assert_in(text, res)
+
+    def test_project_wiki_home_api_route(self):
+        url = self.project.api_url_for('project_wiki_home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equals(res.status_code, 200)
+
+    def test_project_wiki_home_web_route(self):
+        url = self.project.web_url_for('project_wiki_home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('home', res)
 
 
 class TestViewHelpers(OsfTestCase):
