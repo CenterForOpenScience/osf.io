@@ -7,7 +7,7 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
-from framework.mongo.utils import from_mongo, to_mongo_key
+from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 
