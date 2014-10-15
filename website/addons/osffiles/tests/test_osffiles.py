@@ -271,6 +271,31 @@ class TestFilesViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_sees_delete_button_if_can_write(self):
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).maybe_follow(
+            auth=self.user.auth,
+        )
+        assert_in('Download', res)
+        assert_in('Delete', res)
+
+    def test_does_not_see_delete_button_if_cannot_write(self):
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).maybe_follow(
+            auth=user2.auth,
+        )
+        assert_in('Download', res)
+        assert_not_in('Delete', res)
+
 def make_file_like(name='file', content='data'):
     sio = StringIO(content)
     sio.filename = name
