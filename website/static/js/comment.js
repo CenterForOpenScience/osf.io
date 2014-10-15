@@ -27,7 +27,7 @@
      */
     var relativeDate = function(datetime) {
         var now = moment.utc();
-        var then = moment.utc(datetime, 'MM/DD/YY HH:mm:ss');
+        var then = moment.utc(datetime);
         then = then > now ? now : then;
         return then.fromNow();
     };
@@ -78,6 +78,20 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
+        self.unreadComments = ko.observable(0);
+
+        self.displayCount = ko.computed(function() {
+            if (self.unreadComments() !== 0) {
+                return self.unreadComments().toString();
+            } else {
+                return ' ';
+            }
+        });
+
+        /* Removes number of unread comments from tab when comments pane is opened  */
+        self.removeCount = function() {
+            self.unreadComments(0);
+        };
 
         self.replyNotEmpty = ko.computed(function() {
             return notEmpty(self.replyContent());
@@ -129,6 +143,7 @@
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
+                self.unreadComments(response.nUnread);
                 deferred.resolve(self.comments());
                 self._loaded = true;
             }
@@ -363,7 +378,7 @@
     CommentModel.prototype.submitUnreportAbuse = function() {
         var self = this;
         $.osf.postJSON(
-            nodeapiurl + 'comment/' + self.id() + '/unreport/',
+            nodeApiUrl + 'comment/' + self.id() + '/unreport/',
             {}
         ).done(function() {
             self.isAbuse(false);
@@ -372,7 +387,7 @@
         });
     };
 
-    CommentModel.prototype.cancelUnreportSpam = function() {
+    CommentModel.prototype.cancelUnreportAbuse = function() {
         this.unreporting(false);
     };
 
@@ -449,6 +464,8 @@
         }
         ko.applyBindings(viewModel, $elm[0]);
         viewModel.initListeners();
+
+        return viewModel;
     };
 
     return {

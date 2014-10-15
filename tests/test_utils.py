@@ -5,6 +5,7 @@ from flask import Flask
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.routing import Rule, json_renderer
+from framework.utils import secure_filename
 from website.routes import process_rules, OsfWebRenderer
 from website.util import web_url_for, api_url_for, is_json_request
 from website.util.mimetype import get_mimetype
@@ -22,6 +23,8 @@ class TestUrlForHelpers(unittest.TestCase):
     def setUp(self):
         def dummy_view(pid):
             return {}
+        def dummy_guid_view(pid):
+            return {}
         self.app = Flask(__name__)
 
         api_rule = Rule([
@@ -32,8 +35,12 @@ class TestUrlForHelpers(unittest.TestCase):
             '/<pid>/',
             '/<pid>/component/<nid>/'
         ], 'get', dummy_view, OsfWebRenderer)
+        web_guid_rule = Rule([
+            '/project/<pid>/test/',
+            '/project/<pid>/node/<nid>/test/',
+        ], 'get', dummy_guid_view, OsfWebRenderer)
 
-        process_rules(self.app, [api_rule, web_rule])
+        process_rules(self.app, [api_rule, web_rule, web_guid_rule])
 
     def test_api_url_for(self):
         with self.app.test_request_context():
@@ -42,6 +49,12 @@ class TestUrlForHelpers(unittest.TestCase):
     def test_web_url_for(self):
         with self.app.test_request_context():
             assert web_url_for('dummy_view', pid='123') == '/123/'
+
+    def test_web_url_for_guid(self):
+        with self.app.test_request_context():
+            assert web_url_for('dummy_guid_view', pid='123', _guid=True) == '/123/test/'
+            assert web_url_for('dummy_guid_view', pid='123', _guid=False) == '/project/123/test/'
+            assert web_url_for('dummy_guid_view', pid='123') == '/project/123/test/'
 
     def test_api_url_for_with_multiple_urls(self):
         with self.app.test_request_context():
@@ -95,3 +108,32 @@ class TestGetMimeTypes(unittest.TestCase):
             content = the_file.read()
         mimetype = get_mimetype(name, content)
         assert_equal('text/x-python', mimetype)
+
+class TestFrameworkUtils(unittest.TestCase):
+
+    def test_leading_underscores(self):
+        assert_equal(
+            '__init__.py',
+            secure_filename('__init__.py')
+        )
+
+    def test_werkzeug_cases(self):
+        """Test that Werkzeug's tests still pass for our wrapped version"""
+
+        # Copied from Werkzeug
+        # BSD licensed - original at github.com/mitsuhiko/werkzeug,
+        #                /tests/test_utils.py, line 282, commit 811b438
+        assert_equal(
+            'My_cool_movie.mov',
+            secure_filename('My cool movie.mov')
+        )
+
+        assert_equal(
+            'etc_passwd',
+            secure_filename('../../../etc/passwd')
+        )
+
+        assert_equal(
+            'i_contain_cool_umlauts.txt',
+            secure_filename(u'i contain cool \xfcml\xe4uts.txt')
+        )

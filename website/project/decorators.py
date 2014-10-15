@@ -4,9 +4,10 @@ import httplib as http
 import functools
 
 from furl import furl
-from flask import request, redirect
+from flask import request
 
 from framework import status
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from website.models import Node

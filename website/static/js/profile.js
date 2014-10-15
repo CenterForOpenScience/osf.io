@@ -19,7 +19,7 @@
         twitter: /twitter\.com\/(\w+)/i,
         linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
         impactStory: /impactstory\.org\/([\w\.-]+)/i,
-        github: /github\.com\/(\w+)/i,
+        github: /github\.com\/(\w+)/i
     };
 
     var cleanByRule = function(rule) {
@@ -51,6 +51,115 @@
         return self;
     };
 
+    /**
+     * A mixin to handle custom date serialization on ContentModels with a separate month input.
+     *
+     * Months are converted to their integer equivalents on serialization
+     * for db storage and back to strings on unserialization to display to the user.
+     */
+    var DateMixin = function() {
+        var self = this;
+        self.months = ['January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'];
+        self.endMonth = ko.observable();
+        self.endYear = ko.observable().extend({
+            required: {
+                onlyIf: function() {
+                    return !!self.endMonth();
+                },
+                message: 'Please enter a year for the end date.'
+            },
+            year: true,
+            pyDate: true
+        });
+        self.ongoing = ko.observable(false);
+        self.displayDate = ko.observable(' ');
+        self.endView = ko.computed(function() {
+            return (self.ongoing() ? 'ongoing' : self.displayDate());
+        }, self);
+        self.startMonth = ko.observable();
+        self.startYear = ko.observable().extend({
+            required: {
+                onlyIf: function() {
+                    if (!!self.endMonth() || !!self.endYear() || self.ongoing() === true) {
+                        return true;
+                    }
+                },
+                message: 'Please enter a year for the start date.'
+            },
+            year: true,
+            pyDate: true
+        });
+
+        self.start = ko.computed(function () {
+            if (self.startMonth() && self.startYear()) {
+                return new Date(self.startYear(),
+                        (self.monthToInt(self.startMonth()) - 1).toString());
+            } else if (self.startYear()) {
+                return new Date(self.startYear(), '0', '1');
+            }
+        }, self).extend({
+            notInFuture: true
+        });
+        self.end = ko.computed(function() {
+            if (self.endMonth() && self.endYear()) {
+                self.displayDate(self.endMonth() + ' ' + self.endYear());
+                return new Date(self.endYear(),
+                        (self.monthToInt(self.endMonth()) - 1).toString());
+            } else if (!self.endMonth() && self.endYear()) {
+                self.displayDate(self.endYear());
+                return new Date(self.endYear(), '0', '1');
+            }
+        }, self).extend({
+            notInFuture:true,
+            minDate: self.start
+        });
+        self.clearEnd = function() {
+            self.endMonth('');
+            self.endYear('');
+            return true;
+        };
+    };
+
+    DateMixin.prototype.monthToInt = function(value) {
+        var self = this;
+        if (value !== undefined) {
+            return self.months.indexOf(value) + 1;
+        }
+    };
+
+    DateMixin.prototype.intToMonth = function(value) {
+        var self = this;
+        if (value !== undefined) {
+            return self.months[(value - 1)];
+        }
+    };
+
+    DateMixin.prototype.serialize = function() {
+        var self = this;
+        var content = ko.toJS(self);
+        var startMonthInt = self.monthToInt(self.startMonth());
+        var endMonthInt = self.monthToInt(self.endMonth());
+        content.startMonth = startMonthInt;
+        content.endMonth = endMonthInt;
+
+        return content;
+    };
+
+    DateMixin.prototype.unserialize = function(data) {
+        var self = this;
+        SerializeMixin.prototype.unserialize.call(self, data);
+
+        var startMonth = self.intToMonth(self.startMonth());
+        var endMonth = self.intToMonth(self.endMonth());
+        self.startMonth(startMonth);
+        self.endMonth(endMonth);
+
+
+        return self;
+    };
+
+
     var BaseViewModel = function(urls, modes) {
 
         var self = this;
@@ -73,12 +182,7 @@
         });
 
         // Must be set after isValid is defined in inherited view models
-        // Necessary for enableSubmit to subscribe to isValid
         self.hasValidProperty = ko.observable(false);
-
-        self.enableSubmit = ko.computed(function() {
-            return self.hasValidProperty() && self.isValid() && self.dirty();
-        });
 
         // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
@@ -100,6 +204,8 @@
 
         this.message = ko.observable();
         this.messageClass = ko.observable();
+        this.showMessages = ko.observable(false);
+
 
     };
 
@@ -162,20 +268,22 @@
     };
 
     BaseViewModel.prototype.submit = function() {
-        if (this.enableSubmit() === false) {
-            return;
+        if (this.hasValidProperty() && this.isValid()) {
+            $.osf.putJSON(
+                this.urls.crud,
+                this.serialize()
+            ).done(
+                this.handleSuccess.bind(this)
+            ).done(
+                this.setOriginal
+            ).fail(
+                this.handleError.bind(this)
+            );
+        } else {
+            this.showMessages(true);
         }
-        $.osf.putJSON(
-            this.urls.crud,
-            this.serialize()
-        ).done(
-            this.handleSuccess.bind(this)
-        ).done(
-            this.setOriginal
-        ).fail(
-            this.handleError.bind(this)
-        );
     };
+
 
     var NameViewModel = function(urls, modes) {
 
@@ -361,7 +469,7 @@
             self.scholar,
             self.linkedIn,
             self.impactStory,
-            self.github,
+            self.github
         ];
 
         var validated = ko.validatedObservable(self);
@@ -429,22 +537,6 @@
     };
     ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
-    ListViewModel.prototype.unserialize = function(data) {
-        var self = this;
-        self.editable(data.editable);
-        self.contents(ko.utils.arrayMap(data.contents || [], function(each) {
-            return new self.ContentModel(self).unserialize(each);
-        }));
-        // Ensure at least one item is visible
-        if (self.contents().length === 0) {
-            self.addContent();
-        }
-    };
-
-    ListViewModel.prototype.serialize = function() {
-        return {contents: ko.toJS(this.contents)};
-    };
-
     ListViewModel.prototype.addContent = function() {
         this.contents.push(new this.ContentModel(this));
     };
@@ -454,9 +546,37 @@
         this.contents.splice(idx, 1);
     };
 
+    ListViewModel.prototype.unserialize = function(data) {
+        var self = this;
+        self.editable(data.editable);
+        self.contents(ko.utils.arrayMap(data.contents || [], function (each) {
+            return new self.ContentModel(self).unserialize(each);
+        }));
+
+        // Ensure at least one item is visible
+        if (self.contents().length === 0) {
+            self.addContent();
+        }
+    };
+
+    ListViewModel.prototype.serialize = function() {
+        var contents = [];
+        if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
+            for (var i=0; i < this.contents().length; i++) {
+                contents.push(this.contents()[i].serialize());
+            }
+        }
+        else {
+            contents = ko.toJS(this.contents);
+        }
+
+        return {contents: contents};
+    };
+
     var JobViewModel = function() {
 
         var self = this;
+        DateMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
@@ -464,75 +584,32 @@
         self.department = ko.observable('');
         self.title = ko.observable('');
 
-        self.start = ko.observable().extend({
-            date: true,
-            asDate: true,
-            pyDate: true
-        });
-        self.end = ko.observable().extend({
-            date: true,
-            asDate: true,
-            pyDate: true,
-            minDate: self.start
-        });
-        self.ongoing = ko.observable(false);
-
-        self.clearEnd = function() {
-            self.end('');
-            return true;
-        };
-
-        self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.end());
-        }, self);
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(JobViewModel.prototype, SerializeMixin.prototype);
+    $.extend(JobViewModel.prototype, DateMixin.prototype);
+
 
     var SchoolViewModel = function() {
 
         var self = this;
+        DateMixin.call(self);
 
         self.institution = ko.observable('').extend({
             required: true
         });
         self.department = ko.observable('');
         self.degree = ko.observable('');
-
-        self.start = ko.observable().extend({
-            date: true,
-            asDate: true,
-            pyDate: true
-        });
-        self.end = ko.observable().extend({
-            date: true,
-            asDate: true,
-            pyDate: true,
-            minDate: self.start
-        });
-        self.ongoing = ko.observable(false);
-
-        self.clearEnd = function() {
-            self.end('');
-            return true;
-        };
-
-        self.endView = ko.computed(function() {
-            return (self.ongoing() ? 'ongoing' : self.end());
-        }, self);
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
         });
 
     };
-    $.extend(SchoolViewModel.prototype, SerializeMixin.prototype);
+    $.extend(SchoolViewModel.prototype, DateMixin.prototype);
 
     var JobsViewModel = function(urls, modes) {
 
@@ -541,8 +618,11 @@
 
         self.fetch();
 
+
     };
+
     JobsViewModel.prototype = Object.create(ListViewModel.prototype);
+
 
     var SchoolsViewModel = function(urls, modes) {
 

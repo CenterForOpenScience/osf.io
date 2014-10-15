@@ -90,8 +90,10 @@ class TestUserValidation(OsfTestCase):
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
             'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1980, 1, 1),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1980,
         }]
         try:
             self.user.save()
@@ -104,12 +106,29 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_jobs_bad_end_date(self):
+        # end year is < start year
         self.user.jobs = [{
-            'institution': 'School of Lover Boys',
-            'department': 'Fancy Patter',
-            'position': 'Lover Boy',
-            'start': datetime.datetime(1970, 1, 1),
-            'end': datetime.datetime(1960, 1, 1),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'position': fake.catch_phrase(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
+        }]
+        with assert_raises(ValidationValueError):
+            self.user.save()
+
+    def test_validate_schools_bad_end_date(self):
+        # end year is < start year
+        self.user.schools = [{
+            'degree': fake.catch_phrase(),
+            'institution': fake.company(),
+            'department': fake.bs(),
+            'startMonth': 1,
+            'startYear': 1970,
+            'endMonth': 1,
+            'endYear': 1960,
         }]
         with assert_raises(ValidationValueError):
             self.user.save()
@@ -706,53 +725,62 @@ class TestAddFile(OsfTestCase):
 
 class TestFileActions(OsfTestCase):
 
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.node = ProjectFactory()
+
+    def test_get_file_obj_no_version(self):
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
+        # Don't pass version number, so get back latest version
+        file_obj = self.node.get_file_object('foo')
+
+        contents, content_type = self.node.read_file_object(file_obj)
+        assert_equal(contents, 'newcontent')
+
     def test_get_file(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
-        valid = node.get_file('foo', version=0)
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
+        valid = self.node.get_file('foo', version=0)
         assert_true(valid)  # sanity check
 
         with assert_raises(VersionNotFoundError):
-            node.get_file('foo', version=1)
+            self.node.get_file('foo', version=1)
 
         with assert_raises(InvalidVersionError):
-            node.get_file('foo', version='dumb')
+            self.node.get_file('foo', version='dumb')
 
         with assert_raises(InvalidVersionError):
-            node.get_file('foo', version=-1)
+            self.node.get_file('foo', version=-1)
 
     def test_get_file_with_no_git_dir(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
-        git_path = os.path.join(settings.UPLOADS_PATH, node._id, '.git')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
+        git_path = os.path.join(settings.UPLOADS_PATH, self.node._id, '.git')
         shutil.rmtree(git_path)
         with assert_raises(AssertionError):
-            node.get_file('foo', version=0)
+            self.node.get_file('foo', version=0)
 
     def test_delete_file(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
 
-        file_path = os.path.join(settings.UPLOADS_PATH, node._id, 'foo')
+        file_path = os.path.join(settings.UPLOADS_PATH, self.node._id, 'foo')
 
         assert_true(os.path.exists(file_path))
-        node.remove_file(Auth(node.creator), 'foo')
+        self.node.remove_file(Auth(self.node.creator), 'foo')
         assert_false(os.path.exists(file_path))
 
     def test_delete_file_that_is_already_deleted(self):
-        node = ProjectFactory()
-        node.add_file(Auth(node.creator), 'foo', 'somecontent', 128, 'rst')
-        node.save()
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.save()
 
-        git_dir = os.path.join(settings.UPLOADS_PATH, node._id)
+        git_dir = os.path.join(settings.UPLOADS_PATH, self.node._id)
 
         subprocess.check_output(['git', 'rm', 'foo'], cwd=git_dir)
 
         with assert_raises(FileNotFoundError):
-            node.remove_file(Auth(node.creator), 'foo')
+            self.node.remove_file(Auth(self.node.creator), 'foo')
 
 
 
@@ -891,8 +919,21 @@ class TestDeleteNodeWiki(OsfTestCase):
         assert_equal(len(self.versions['home']), 1)
 
     def test_wiki_delete(self):
-        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki(self.project, page, self.consolidate_auth)
+
+        # page was deleted
         assert_false(self.project.get_wiki_page('home'))
+
+        log = self.project.logs[-1]
+
+        # deletion was logged
+        assert_equal(
+            NodeLog.WIKI_DELETED,
+            log.action,
+        )
+        # log date is not set to the page's creation date
+        assert_true(log.date > page.date)
 
     def test_deleted_versions(self):
         # Update wiki a second time
@@ -1419,8 +1460,6 @@ class TestProject(OsfTestCase):
         assert_true(hasattr(node, 'forked_date'))
         assert_true(node.title)
         assert_true(hasattr(node, 'description'))
-        assert_true(hasattr(node, 'registration_list'))
-        assert_true(hasattr(node, 'fork_list'))
         assert_true(hasattr(node, 'registered_meta'))
         assert_true(hasattr(node, 'registered_user'))
         assert_true(hasattr(node, 'registered_schema'))
@@ -2146,7 +2185,6 @@ class TestForkNode(OsfTestCase):
         assert_true(fork.is_fork)
         assert_equal(len(fork.private_links), 0)
         assert_equal(fork.forked_from, original)
-        assert_in(fork._id, original.fork_list)
         assert_in(fork._id, original.node__forked)
         # Note: Must cast ForeignList to list for comparison
         assert_equal(list(fork.contributors), [fork_user])
@@ -2529,7 +2567,7 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(self.registration.registered_from, self.project)
 
     def test_registration_list(self):
-        assert_in(self.registration._id, self.project.registration_list)
+        assert_in(self.registration._id, self.project.node__registrations)
 
 
 class TestNodeLog(OsfTestCase):

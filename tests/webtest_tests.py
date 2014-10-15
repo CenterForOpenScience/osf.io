@@ -24,6 +24,7 @@ from website.project.model import ensure_schemas
 from website.project.views.file import get_cache_path
 from website.addons.osffiles.views import get_cache_file
 from framework.render.tasks import ensure_path
+from website.util import api_url_for, web_url_for
 
 
 class TestAnUnregisteredUser(OsfTestCase):
@@ -288,9 +289,8 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
-        # Should not see wiki at all (since non-contributor and no content)
-        assert_not_in('Wiki', res)
-
+        # Should not see wiki widget (since non-contributor and no content)
+        assert_not_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -437,6 +437,27 @@ class TestComponents(OsfTestCase):
             'Delete {0}'.format(self.component.project_or_component),
             res
         )
+
+    def test_can_configure_comments_if_admin(self):
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=self.user.auth,
+        ).maybe_follow()
+        assert_in('Configure Commenting', res)
+
+    def test_cant_configure_comments_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.component.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            auth=self.consolidate_auth,
+            save=True,
+        )
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=non_admin.auth
+        ).maybe_follow()
+        assert_not_in('Configure commenting', res)
 
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)

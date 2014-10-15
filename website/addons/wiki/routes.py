@@ -26,6 +26,7 @@ widget_routes = {
     'prefix': '/api/v1',
 }
 
+# NOTE: <wid> refers to a wiki page's name, e.g. 'home'
 page_routes = {
 
     'rules': [
@@ -43,8 +44,8 @@ page_routes = {
         # View
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/',
+                '/project/<pid>/wiki/<path:wid>/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/',
             ],
             'get',
             views.project_wiki_page,
@@ -54,8 +55,8 @@ page_routes = {
         # Edit | GET
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/edit/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
+                '/project/<pid>/wiki/<path:wid>/edit/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/edit/',
             ],
             'get',
             views.project_wiki_edit,
@@ -65,8 +66,8 @@ page_routes = {
         # Edit | POST
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/edit/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
+                '/project/<pid>/wiki/<path:wid>/edit/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/edit/',
             ],
             'post',
             views.project_wiki_edit_post,
@@ -75,10 +76,11 @@ page_routes = {
 
 
         # Compare
+        # <compare_id> refers to a version number
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
+                '/project/<pid>/wiki/<path:wid>/compare/<compare_id>/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/compare/<compare_id>/',
             ],
             'get',
             views.project_wiki_compare,
@@ -88,8 +90,8 @@ page_routes = {
         # Versions
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/version/<vid>/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
+                '/project/<pid>/wiki/<path:wid>/version/<vid>/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/version/<vid>/',
             ],
             'get',
             views.project_wiki_version,
@@ -106,27 +108,27 @@ api_routes = {
 
         # View
         Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
+            '/project/<pid>/wiki/<path:wid>/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/',
         ], 'get', views.project_wiki_page, json_renderer),
 
         #justcontent
         Rule([
-            '/project/<pid>/wiki/content/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/content/<wid>/',
+            '/project/<pid>/wiki/<path:wid>/content/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
         # Edit | POST
         Rule([
-            '/project/<pid>/wiki/<wid>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/edit/',
+            '/project/<pid>/wiki/<path:wid>/edit/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/edit/',
         ], 'post', views.project_wiki_edit_post, json_renderer),
 
         # Rename
         Rule(
             [
-                '/project/<pid>/wiki/<wid>/rename/',
-                '/project/<pid>/node/<nid>/wiki/<wid>/rename/',
+                '/project/<pid>/wiki/<path:wid>/rename/',
+                '/project/<pid>/node/<nid>/wiki/<path:wid>/rename/',
             ],
             'put',
             views.project_wiki_rename,
@@ -135,20 +137,20 @@ api_routes = {
 
         # Compare
         Rule([
-            '/project/<pid>/wiki/<wid>/compare/<compare_id>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/compare/<compare_id>/',
+            '/project/<pid>/wiki/<path:wid>/compare/<compare_id>/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/compare/<compare_id>/',
         ], 'get', views.project_wiki_compare, json_renderer),
 
         # Versions
         Rule([
-            '/project/<pid>/wiki/<wid>/version/<vid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/version/<vid>/',
+            '/project/<pid>/wiki/<path:wid>/version/<vid>/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/version/<vid>/',
         ], 'get', views.project_wiki_version, json_renderer),
 
         # Delete
         Rule([
-            '/project/<pid>/wiki/<wid>/',
-            '/project/<pid>/node/<nid>/wiki/<wid>/',
+            '/project/<pid>/wiki/<path:wid>/',
+            '/project/<pid>/node/<nid>/wiki/<path:wid>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
 
     ],

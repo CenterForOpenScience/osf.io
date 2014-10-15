@@ -2,9 +2,10 @@
 import httplib as http
 import os
 
-from flask import redirect, send_from_directory
+from flask import send_from_directory
 
-from framework import status
+from framework import sentry, status
+from framework.flask import redirect
 from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
 from framework.routing import (
@@ -21,6 +22,7 @@ from website.profile import views as profile_views
 from website.project import views as project_views
 from website.assets import env as assets_env
 from website.util import sanitize
+from website.conferences import views as conference_views
 
 
 def get_globals():
@@ -38,7 +40,7 @@ def get_globals():
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
-        'sentry_dsn_js': settings.SENTRY_DSN_JS,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
         'status': status.pop_status_messages(),
@@ -141,22 +143,29 @@ def make_url_map(app):
         Rule(
             '/view/<meeting>/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako'),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting_plain.mako'),
             endpoint_suffix='__plain',
         ),
 
         Rule(
+            '/api/v1/view/<meeting>/',
+            'get',
+            conference_views.conference_data,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
-            project_views.email.conference_view,
+            conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
         ),
 
@@ -254,6 +263,16 @@ def make_url_map(app):
             ],
             'put',
             project_views.comment.undelete_comment,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/comments/timestamps/',
+                '/project/<pid>/node/<nid>/comments/timestamps/',
+            ],
+            'put',
+            project_views.comment.update_comments_timestamp,
             json_renderer,
         ),
 
@@ -620,7 +639,7 @@ def make_url_map(app):
             'get',
             project_views.file.collect_file_trees,
             OsfWebRenderer('project/files.mako'),
-            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
+            view_kwargs={'mode': 'page'},
         ),
 
 
@@ -633,7 +652,7 @@ def make_url_map(app):
         Rule(
             '/email/meeting/',
             'post',
-            project_views.email.meeting_hook,
+            conference_views.meeting_hook,
             json_renderer,
         ),
 

@@ -6,7 +6,7 @@ from flask import request
 from framework.exceptions import HTTPError
 
 from website.util.sanitize import escape_html
-from website.project.decorators import (
+from website.project.decorators import (  # noqa
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
@@ -39,10 +39,10 @@ def create_badge(*args, **kwargs):
     badge_data = request.json
     awarder = kwargs['user_addon']
 
-    if not badge_data or not badge_data.get('badgeName') or \
-        not badge_data.get('description') or \
-        not badge_data.get('imageurl') or \
-        not badge_data.get('criteria'):
+    if (not badge_data or not badge_data.get('badgeName') or
+            not badge_data.get('description') or
+            not badge_data.get('imageurl') or
+            not badge_data.get('criteria')):
 
         raise HTTPError(http.BAD_REQUEST)
     try:

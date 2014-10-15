@@ -9,9 +9,13 @@
 
                 <div>
                     <div>
-                        Name this link (e.g., "For Peer Review", "Sharing data", "Share project")
                         <div class="form-group">
-                            <input type="text" class="form-control private-link-name" placeholder="Add a link name" data-bind="value:name"/>
+                            <label for="privateLinkName">Link name</label>
+                            <input data-bind="value:name"
+                                id="privateLinkName"
+                                type="text"
+                                class="form-control private-link-name"
+                                placeholder='Optional link name (e.g., "For Peer Review", "Sharing data", "Share project")' />
                         </div>
                     </div>
 
@@ -20,7 +24,7 @@
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" data-bind="checked: anonymous"/>
-                            Anonymize contributor list for this link (e.g., for blind peer review)
+                            <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review)
                         </label>
                     </div>
 
@@ -29,8 +33,8 @@
                     <div style="margin-bottom:10px;">
                         Anyone with the private link can view, but not edit,
                         the components associated with the link.
-                        Which components would you like to associate with this link?
-                    </div>
+                        <strong>Which components would you like to associate with this link?
+                    </strong>                    </div>
 
 
 
@@ -41,7 +45,7 @@
                             <input type="checkbox" checked disabled />
                             <span data-bind="text:title"></span> (current component)
                             <div data-bind="foreach:nodes">
-                                <div data-bind="style:{'marginLeft':margin}">
+                                <div data-bind="style:{'marginLeft': margin}">
                                     <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
                                     <span data-bind="text:title"></span>
                                 </div>

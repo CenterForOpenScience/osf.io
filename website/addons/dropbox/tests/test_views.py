@@ -92,7 +92,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['deauthorize'], self.project.api_url_for('dropbox_deauthorize'))
         assert_equal(urls['auth'], self.project.api_url_for('dropbox_oauth_start'))
         assert_equal(urls['importAuth'], self.project.api_url_for('dropbox_import_user_auth'))
-        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees__page'))
+        assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
         assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
@@ -570,6 +570,32 @@ class TestCRUDViews(DropboxAddonTestCase):
             res.json['registered'][:19],
             self.project.registered_date.isoformat()[:19]
         )
+
+    @mock.patch('website.addons.dropbox.client.DropboxClient.revisions')
+    def test_get_revisions_returns_path_and_links(self, mock_revisions):
+        mock_revisions.return_value = [
+            {'path': 'foo.txt', 'rev': '123'},
+            {'path': 'foo.txt', 'rev': '456', 'is_deleted': True}
+        ]
+        url = self.project.api_url_for('dropbox_get_revisions', path='foo.txt')
+        res = self.app.get(url, auth=self.user.auth)
+        res_data = res.json
+
+        download_url = self.project.web_url_for('dropbox_download', path='foo.txt')
+        assert_equal(res_data['urls']['download'], download_url)
+
+        delete_url = self.project.api_url_for('dropbox_delete_file', path='foo.txt')
+        assert_equal(res_data['urls']['delete'], delete_url)
+
+        view_url = self.project.web_url_for('dropbox_view_file', path='foo.txt')
+        assert_equal(res_data['urls']['view'], view_url)
+
+        files_url = self.project.web_url_for('collect_file_trees')
+        assert_equal(res_data['urls']['files'], files_url)
+
+        assert_equal(res_data['path'], 'foo.txt')
+        assert_equal(res_data['node']['title'], self.project.title)
+        assert_equal(res_data['node']['id'], self.project._id)
 
     def test_dropbox_view_file(self):
         url = self.project.web_url_for('dropbox_view_file', path='foo')

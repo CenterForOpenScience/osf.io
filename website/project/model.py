@@ -25,7 +25,7 @@ from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
@@ -423,8 +423,6 @@ class NodeLog(StoredObject):
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
-    count_public = fields.IntegerField(default=0)
-    count_total = fields.IntegerField(default=0)
 
     def __repr__(self):
         return '<Tag() with id {self._id!r}>'.format(self=self)
@@ -576,9 +574,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator for this field (must be one of the keys in
     # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
-
-    registration_list = fields.StringField(list=True)
-    fork_list = fields.StringField(list=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -789,7 +784,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if user is None:
-            logger.error('User is ``None``.')
+            logger.warn('User is ``None``.')
             return False
         try:
             return permission in self.permissions[user._id]
@@ -986,8 +981,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
-        new.fork_list = []
-        new.registration_list = []
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -1390,24 +1383,6 @@ class Node(GuidStoredObject, AddonModelMixin):
                 save=True,
             )
 
-        # Remove self from parent registration list
-        if self.is_registration:
-            try:
-                self.registered_from.registration_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.registered_from.save()
-
-        # Remove self from parent fork list
-        if self.is_fork:
-            try:
-                self.forked_from.fork_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.forked_from.save()
-
         self.is_deleted = True
         self.deleted_date = date
         self.save()
@@ -1460,6 +1435,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.piwik_site_id = None
 
         # Forks default to private status
         forked.is_public = False
@@ -1493,9 +1469,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         if os.path.exists(folder_old):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
-
-        original.fork_list.append(forked._primary_key)
-        original.save()
 
         return forked
 
@@ -1543,6 +1516,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
+        registered.piwik_site_id = None
 
         registered.save()
 
@@ -1576,7 +1550,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=when,
             save=False,
         )
-        original.registration_list.append(registered._id)
         original.save()
 
         registered.save()
@@ -1604,9 +1577,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
-            new_tag.count_total += 1
-            if self.is_public:
-                new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
             self.add_log(
@@ -1636,6 +1606,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         return self.read_file_object(file_object)
 
     def get_file_object(self, path, version=None):
+        """Return the :class:`NodeFile` object at the given path.
+
+        :param str path: Path to the file.
+        :param int version: Version number, 0-indexed.
+        """
         # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
         from website.addons.osffiles.exceptions import (
@@ -1647,6 +1622,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
+            # Default to latest version
+            version = version or len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:
@@ -1812,7 +1789,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             f.write(content)
 
         # Deal with git
-        repo.stage([file_name])
+        repo.stage([str(file_name)])
 
         committer = self._get_committer(auth)
 
@@ -1895,15 +1872,15 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
+                _guid=_guid, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
@@ -2436,9 +2413,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
-            # If the node doesn't have a piwik site, make one.
-            if settings.PIWIK_HOST:
-                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
@@ -2467,10 +2441,8 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        page = to_mongo_key(page)
 
-        page = page.lower()
         if version:
             try:
                 version = int(version)
@@ -2505,9 +2477,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
-        page = page.lower()
+        page = to_mongo_key(page)
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2548,8 +2518,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def delete_node_wiki(self, node, page, auth):
+        page_name_key = to_mongo_key(page.page_name)
 
-        del node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page_name_key]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2558,7 +2529,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': page.page_name,
             },
             auth=auth,
-            log_date=page.date
+            log_date=datetime.datetime.utcnow(),
         )
 
     def get_stats(self, detailed=False):

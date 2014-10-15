@@ -5,12 +5,12 @@ import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
-from flask import request, redirect
+from flask import request
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
 
@@ -19,6 +19,7 @@ from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
 from website.util.sanitize import escape_html
+from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +115,7 @@ def edit_profile(**kwargs):
 
     response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = sanitize(form['value'])
+        user.fullname = strip_html(form['value'])
         user.save()
         response_data['name'] = user.fullname
     return response_data
@@ -313,8 +314,10 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': fmt_date_or_none(job.get('start')),
-        'end': fmt_date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing', False),
     }
 
@@ -324,8 +327,10 @@ def serialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': fmt_date_or_none(school.get('start')),
-        'end': fmt_date_or_none(school.get('end')),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
         'ongoing': school.get('ongoing', False),
     }
 
@@ -402,8 +407,10 @@ def unserialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': date_or_none(job.get('start')),
-        'end': date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
         'ongoing': job.get('ongoing'),
     }
 
@@ -413,8 +420,10 @@ def unserialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': date_or_none(school.get('start')),
-        'end': date_or_none(school.get('end')),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
         'ongoing': school.get('ongoing'),
     }
 

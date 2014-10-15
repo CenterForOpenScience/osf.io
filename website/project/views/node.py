@@ -65,9 +65,9 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -180,7 +180,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
@@ -338,7 +338,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_have_permission('write')
+@must_have_permission('admin')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -618,31 +618,14 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node, user):
+def _render_addon(node):
 
     widgets = {}
     configs = {}
     js = []
     css = []
 
-    addon_list = node.get_addon_names()
-    remove_wiki = False
-
     for addon in node.get_addons():
-
-        if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
-            wiki_page = node.get_wiki_page('home')
-
-            # If the page doesn't exist, skip and remove from addon list
-            if wiki_page is None:
-                remove_wiki = True
-                continue
-
-            # If the page has no content, skip and remove from addon list
-            if not wiki_page.html(node):
-                remove_wiki = True
-                continue
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -650,10 +633,16 @@ def _render_addon(node, user):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    if remove_wiki:
-        addon_list.remove('wiki')
+    return widgets, configs, js, css
 
-    return widgets, configs, js, css, addon_list
+
+def _should_show_wiki_widget(node, user):
+    if not node.has_permission(user, 'write'):
+        wiki_page = node.get_wiki_page('home', None)
+        return wiki_page and wiki_page.html(node)
+
+    else:
+        return True
 
 
 def _view_project(node, auth, primary=False):
@@ -665,7 +654,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css, addon_list = _render_addon(node, user)
+    widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -707,13 +696,13 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.registration_list),
+            'registration_count': len(node.node__registrations),
 
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.fork_list),
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
@@ -725,7 +714,6 @@ def _view_project(node, auth, primary=False):
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-            'has_wiki_content': False,
 
         },
         'parent_node': {
@@ -748,10 +736,11 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': addon_list,
+        'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -1246,6 +1235,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
