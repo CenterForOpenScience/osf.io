@@ -3,14 +3,16 @@
 <%def name="content()">
 <h2 class="page-title text-center">Create New Project</h2>
 
-<form id="creationForm" data-bind="submit: createProject">
+<form id="creationForm" data-bind="submit: validateForm">
+
     ## Uncomment for debugging
     ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
     <div class="row">
         <div class="col-md-6 col-md-offset-3">
             <label for="title">Title</label>
             <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'">
-            <br />
+            <span class="validationMessage" data-bind="text: errorMessage"></span>
+            </br>
             <label>Description</label>
             <textarea class="form-control" name="description" data-bind="value: description"></textarea>
             <br />
