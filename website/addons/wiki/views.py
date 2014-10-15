@@ -59,7 +59,7 @@ def wiki_widget(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, node.web_url_for('project_wiki_page', wid='home')
+    return {}, None, None, node.web_url_for('project_wiki_page', wid='home', _guid=True)
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
