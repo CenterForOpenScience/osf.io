@@ -700,7 +700,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(1, res.json['node']['fork_count'])
 
 
-
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
