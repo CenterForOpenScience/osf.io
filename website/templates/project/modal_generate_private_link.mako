@@ -24,7 +24,9 @@
                     <div class="checkbox">
                         <label>
                             <input type="checkbox" data-bind="checked: anonymous"/>
-                            <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review)
+                            <strong>Anonymize</strong> contributor list for this link (e.g., for blind peer review).
+                            <br>
+                            <i>Ensure the files and registration supplements you have created and uploaded do not contain identifying information.</i>
                         </label>
                     </div>
 
