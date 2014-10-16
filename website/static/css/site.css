@@ -102,7 +102,7 @@
 
 /* Knockout Validation Styles */
 
-.validationMessage { color: #a94442; }
+.validationMessage { color: #A94442; }
 .customMessage { color: #ed9c28; }
 
 .hideValidation .validationMessage { display: none; }
