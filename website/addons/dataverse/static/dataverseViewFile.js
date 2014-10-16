@@ -23,6 +23,8 @@
         self.study = ko.observable();
         self.study_url = ko.observable();
         self.download_url = ko.observable();
+        self.render_url = ko.observable();
+        self.delete_url = ko.observable();
 
         self.loaded = ko.observable(false);
 
@@ -38,9 +40,36 @@
                 self.study(data.study);
                 self.study_url(data.study_url);
                 self.download_url(data.download_url);
+                self.render_url(data.render_url);
+                self.delete_url(data.delete_url);
                 self.loaded(true);
             }
         });
+
+        self.deleteFile = function(){
+            bootbox.confirm(
+                {
+                    title: 'Delete Dataverse file?',
+                    message:'Are you sure you want to delete <strong>' +
+                              self.path() + '</strong> from your Dataverse?',
+                    callback: function(confirmed) {
+                        if (confirmed) {
+                            $('#deletingAlert').addClass('in');
+                            var request = $.ajax({
+                                type: 'DELETE',
+                                url: self.delete_url()
+                            });
+                            request.done(function() {
+                                window.location = self.render_url();
+                            });
+                            request.fail(function( jqXHR, textStatus ) {
+                                $('#deletingAlert').removeClass('in');
+                                bootbox.alert( 'Could not delete: ' + textStatus );
+                            });
+                        }
+                    }
+            });
+        };
     }
 
     // Public API

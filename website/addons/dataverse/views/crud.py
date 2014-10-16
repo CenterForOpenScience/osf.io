@@ -183,6 +183,8 @@ def dataverse_view_file(node_addon, auth, **kwargs):
                                          path=file_id),
         'info_url': node.api_url_for('dataverse_get_file_info',
                                      path=file_id),
+        'delete_url': node.api_url_for('dataverse_delete_file',
+                                          path=file_id)
     }
     rv.update(_view_project(node, auth))
     return rv

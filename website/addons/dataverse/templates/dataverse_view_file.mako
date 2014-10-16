@@ -4,6 +4,21 @@
 
 <%def name="file_versions()">
 
+    <ol class="breadcrumb">
+         <li><a href="{{files_page_url}}">${node_title}</a></li>
+         <li>Dataverse</li>
+         <li class="active overflow" >${file_name}</li>
+    </ol>
+
+         <p>
+             <a href="{{download_url}}" class="btn btn-success btn-lg">Download <i class="icon-download-alt"></i></a>
+
+            % if user['can_edit'] and 'write' in user['permissions']:
+                <button data-bind= "click: deleteFile" class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i></button>
+            % endif
+         </p>
+
+
     % if not node['anonymous']:
         <div class="scripted" id="dataverseScope">
             <table class="table table-striped" id="file-version-history">
