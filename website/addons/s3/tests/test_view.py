@@ -206,7 +206,7 @@ class TestS3ViewsConfig(OsfTestCase):
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
 
         # GUID count has not been incremented
         assert_equal(
@@ -335,8 +335,14 @@ class TestS3ViewsCRUD(OsfTestCase):
     def test_get_info_for_deleting_file(self, mock_from_addon):
         mock_from_addon.return_value = mock.Mock()
         mock_from_addon.return_value.does_key_exist.return_value = False
-        rv = self.app.get(self.project.api_url_for('file_delete_info', fid='faux.sho')).follow()
-        assert_equals(rv.status_int, http.OK)
+        res = self.app.get(
+            self.project.api_url_for(
+                'file_delete_info',
+                fid='faux.sho',
+            ),
+            auth=self.user.auth,
+        )
+        assert_equals(res.status_int, http.OK)
 
 
 class TestS3ViewsHgrid(OsfTestCase):
