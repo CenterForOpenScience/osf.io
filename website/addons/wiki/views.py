@@ -342,19 +342,39 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 @must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def project_wiki_rename(**kwargs):
-    node = kwargs['node'] or kwargs['project']
-    wid = request.json.get('pk', None)
-    page = NodeWikiPage.load(wid)
+    """View that handles user the X-editable input for wiki page renaming.
 
+    :param-json pk: The ID of the wiki page to rename.
+    :param-json value: The new wiki page name.
+    """
+    node = kwargs['node'] or kwargs['project']
+    wiki_pk = request.get_json().get('pk', None)
+    if not wiki_pk:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Must provide "pk" in the request body'
+        ))
+    page = NodeWikiPage.load(wiki_pk)
+    if not page:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_short='Not found',
+            message_long='Wiki page with the given primary key was not found'
+        ))
     if page.page_name.lower() == 'home':
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short='Invalid request',
             message_long='The wiki home page cannot be renamed.'
         ))
+    new_name_raw = request.get_json().get('value', None)
+    if not new_name_raw:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Must provide "value" in the request body'
+        ))
 
     old_name_key = to_mongo_key(page.page_name)
-    new_name_value = request.json.get('value', None).strip()
-    new_name_key = to_mongo_key(request.json.get('value', None))
+    new_name_value = new_name_raw.strip()
+    new_name_key = to_mongo_key(new_name_value)
 
     if page and new_name_key:
         if new_name_key in node.wiki_pages_current:

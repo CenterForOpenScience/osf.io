@@ -187,7 +187,7 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('project_wiki_compare', wid='this-doesnt-exist', compare_id=1)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        
+
     def test_wiki_page_creation_strips_whitespace(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1080
@@ -378,6 +378,22 @@ class TestWikiRename(OsfTestCase):
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
+
+    def test_rename_wiki_invalid_pk(self):
+        # pk is invalid
+        res = self.app.put_json(self.url, {'value': 'newname', 'pk': 'notavalidpk'},
+            auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_rename_wiki_pk_with_pk_missing(self):
+        # pk is missing
+        res = self.app.put_json(self.url, {'value': 'newname'}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_rename_wiki_pk_with_value_missing(self):
+        # value is missing
+        res = self.app.put_json(self.url, {'pk': self.page._id}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_rename_wiki_page_duplicate_different_casing(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
