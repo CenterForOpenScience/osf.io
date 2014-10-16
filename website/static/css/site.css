@@ -70,16 +70,20 @@
     display: inline-block;
 }
 
- .gs-video {
-        margin-top: 25px;
-        margin-bottom: 25px;
-        margin-left: auto;
-        margin-right: auto;
-     border: solid 1px #ddd;
-     width: 560px;
-     height: 315px;
- ;
-    }
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+    width: 560px;
+    height: 315px;
+}
+
+.gs-video iframe {
+    border: 0;
+}
+
  .gs-count {
      margin-bottom: 20px;
      margin-top: 50px;
