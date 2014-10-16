@@ -19,13 +19,13 @@ from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
 from website.addons.app.model import Metadata
+from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
 from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import elastic_to_changelist
 from website.addons.app.utils import generate_capabilitylist
 
 from . import metadata, customroutes
-
 
 # GET
 @must_be_contributor_or_public
@@ -75,35 +75,15 @@ def query_app_json(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def query_app_rss(node_addon, **kwargs):
     q = request.args.get('q', '*')
-    size = request.args.get('size', 250)
-    start = request.args.get('from', 0)
-    try:
-        size, start = int(size), int(start)
-    except ValueError:
-        size, start = 250, 0
-    if size > 1000:
-        size = 1000
-    query = {
-        'query': {
-            'query_string': {
-                'default_field': '_all',
-                'query': q,
-                'analyze_wildcard': True,
-                'lenient': True,
-            }
-        },
-        'sort': [{
-            'consumeFinished': {
-                'order': 'desc'
-            }
-        }],
-        'from': start,
-        'size': size,
-    }
+    size = request.args.get('size')
+    start = request.args.get('from')
+    query = args_to_query(q, size, start)
 
-    name = node_addon.system_user.username
     ret = search(query, _type=node_addon.namespace, index='metadata')
+
     node = node_addon.owner
+    name = node_addon.system_user.username
+
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
     return elastic_to_rss(name, ret['results'], q, rss_url)
 

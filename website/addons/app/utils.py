@@ -25,6 +25,34 @@ from website.util import rss
 logger = logging.getLogger(__name__)
 
 
+def args_to_query(query, start=0, size=250):
+    try:
+        size, start = int(size), int(start)
+    except (ValueError, TypeError):
+        size, start = 250, 0
+
+    if size > 1000:
+        size = 1000
+
+    return {
+        'query': {
+            'query_string': {
+                'default_field': '_all',
+                'query': query,
+                'analyze_wildcard': True,
+                'lenient': True,
+            }
+        },
+        'sort': [{
+            'consumeFinished': {
+                'order': 'desc'
+            }
+        }],
+        'from': start,
+        'size': size,
+    }
+
+
 def elastic_to_rss(name, data, query, url):
     count = len(data)
 
