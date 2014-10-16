@@ -454,26 +454,65 @@ class TestWikiShareJS(OsfTestCase):
         wid = 'foo'
         assert_is_none(self.project.wiki_sharejs_uuids.get(wid))
 
+        # Create wiki page
+        self.project.update_node_wiki(wid, 'Hello world', Auth(self.user))
+
         # Visit wiki edit page
         edit_url = self.project.web_url_for('project_wiki_edit', wid=wid)
         res = self.app.get(edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        old_id = self.project.wiki_sharejs_uuids.get(wid)
+        original_uuid = self.project.wiki_sharejs_uuids.get(wid)
 
         # Delete wiki
         delete_url = self.project.api_url_for('project_wiki_delete', wid=wid)
-        res = self.app.get(delete_url, auth=self.user.auth)
+        res = self.app.delete(delete_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(wid))
 
         # Revisit wiki edit page
         res = self.app.get(edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_equal(old_id, self.project.wiki_sharejs_uuids.get(wid))
-        assert_in(docs_uuid(self.project, old_id), res.body)
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(wid))
+        assert_in(docs_uuid(self.project, original_uuid), res.body)
+
+    def test_uuid_persists_after_rename(self):
+        original_wid = 'foo'
+        new_wid = 'bar'
+        assert_is_none(self.project.wiki_sharejs_uuids.get(original_wid))
+        assert_is_none(self.project.wiki_sharejs_uuids.get(new_wid))
+
+        # Create wiki page
+        self.project.update_node_wiki(original_wid, 'Hello world', Auth(self.user))
+        wiki_page = self.project.get_wiki_page(original_wid)
+
+        # Visit wiki edit page
+        original_edit_url = self.project.web_url_for('project_wiki_edit', wid=original_wid)
+        res = self.app.get(original_edit_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        original_uuid = self.project.wiki_sharejs_uuids.get(original_wid)
+
+        # Rename wiki
+        rename_url = self.project.api_url_for('project_wiki_rename', wid=original_wid)
+        res = self.app.put_json(
+            rename_url,
+            {'value': new_wid, 'pk': wiki_page._id},
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_is_none(self.project.wiki_sharejs_uuids.get(original_wid))
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(new_wid))
+
+        # Revisit original wiki edit page
+        res = self.app.get(original_edit_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_not_equal(original_uuid, self.project.wiki_sharejs_uuids.get(original_wid))
+        assert_not_in(docs_uuid(self.project, original_uuid), res.body)
 
 
 class TestWikiShareJSMongo(OsfTestCase):
