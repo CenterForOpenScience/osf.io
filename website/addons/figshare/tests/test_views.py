@@ -1,4 +1,8 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import mock
+import unittest
 from nose.tools import *
 
 import httplib as http
