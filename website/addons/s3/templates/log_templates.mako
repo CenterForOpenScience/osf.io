@@ -9,7 +9,7 @@ bucket
 
 <script type="text/html" id="s3_file_updated">
 updated file
-<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path}"></a> in
+<a class="overflow log-file-link" data-bind="click: NodeActions.addonFileRedirect, text: params.path"></a> in
 bucket
 <span data-bind="text: params.bucket"></span> in
 <span data-bind="text: nodeType"></span>
