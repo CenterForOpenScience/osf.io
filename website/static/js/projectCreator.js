@@ -14,11 +14,19 @@
         self.url = url;
 
         self.title = ko.observable('').extend({
-            required: true,
             maxLength: 200
         });
         self.description = ko.observable();
         self.templates = [];
+        self.errorMessage = ko.observable('');
+
+        self.submitForm = function () {
+            if (self.title().trim() === ''){
+                self.errorMessage('This field is required.')
+            } else {
+                self.createProject();
+            }
+        };
 
         self.createProject = function() {
             $.osf.postJSON(

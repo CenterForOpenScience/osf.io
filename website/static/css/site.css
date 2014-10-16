@@ -102,7 +102,7 @@
 
 /* Knockout Validation Styles */
 
-.validationMessage { color: #a94442; }
+.validationMessage { color: #A94442; }
 .customMessage { color: #ed9c28; }
 
 .hideValidation .validationMessage { display: none; }
@@ -324,7 +324,6 @@ font-weight: bold;
 
 /* Knockout Validation Styles */
 
-.validationMessage { color: #d9534f; }
 .customMessage { color: #ed9c28; }
 
 .spaced-buttons { margin-top: 10px; }
@@ -987,6 +986,15 @@ h1.node-title, h1.node-parent-title {
 .wiki-title-container {
     display: inline-block;
     width:60%;
+}
+
+.wiki-component {
+    list-style-type: none;
+    padding-right: 20px;
+}
+
+.wiki-component li {
+    margin-bottom: 8px;
 }
 
 .btn-toolbar.node-control {

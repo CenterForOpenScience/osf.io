@@ -597,7 +597,33 @@ class TestCRUDViews(DropboxAddonTestCase):
         assert_equal(res_data['node']['title'], self.project.title)
         assert_equal(res_data['node']['id'], self.project._id)
 
-    def test_dropbox_view_file(self):
+    @mock.patch('website.addons.dropbox.views.crud.render_dropbox_file')
+    def test_dropbox_view_file(self, mock_render_file):
+        mock_render_file.return_value = 'rendered'
         url = self.project.web_url_for('dropbox_view_file', path='foo')
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
         assert_equal(res.status_code, 200)
+        assert_in('Download', res)
+        assert_in('Delete', res)
+
+    @mock.patch('website.addons.dropbox.views.crud.render_dropbox_file')
+    def test_dropbox_view_file_non_contributor(self, mock_render_file):
+        mock_render_file.return_value = 'rendered'
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = self.project.web_url_for('dropbox_view_file', path='foo')
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).follow(
+            auth=user2.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_in('Download', res)
+        assert_not_in('Delete', res)

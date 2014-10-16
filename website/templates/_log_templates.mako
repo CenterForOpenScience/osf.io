@@ -39,7 +39,8 @@ of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {h
 <script type="text/html" id="contributor_added">
 added
 <span data-bind="html: displayContributors"></span>
-to <span data-bind="text: nodeType"></span>
+as contributor(s) to
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
