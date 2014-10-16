@@ -43,21 +43,22 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
-        pointer = PointerFactory(node=self.project)
-        url = self.project.web_url_for('project_wiki_page', wid='home')
+        project = ProjectFactory(is_public=True)
+        pointer = PointerFactory(node=project)
+        url = project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_wiki_content_returns_200(self):
-        node = ProjectFactory()
+        node = ProjectFactory(is_public=True)
         url = node.api_url_for('wiki_page_content', wid='somerandomid')
-        res = self.app.get(url).follow()
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
-        component = NodeFactory(project=self.project)
+        component = NodeFactory(project=self.project, is_public=True)
         url = component.web_url_for('project_wiki_page', wid='home')
-        res = self.app.get(url).follow()
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_serialize_wiki_toc(self):
