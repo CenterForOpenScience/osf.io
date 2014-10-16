@@ -673,6 +673,33 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+    def test_view_project_returns_whether_to_show_wiki_widget(self):
+        user = AuthUserFactory()
+        project = ProjectFactory.build(creator=user, is_public=True)
+        project.add_contributor(user)
+        project.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('show_wiki_widget', res.json['user'])
+
+    def test_fork_count_does_not_include_deleted_forks(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        fork = project.fork_node(auth)
+        fork2 = project.fork_node(auth)
+        project.save()
+        fork.remove_node(auth)
+        fork.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_in('fork_count', res.json['node'])
+        assert_equal(1, res.json['node']['fork_count'])
+
+
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -1572,6 +1599,24 @@ class TestPointerViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
+    def test_get_pointed_excludes_folders(self):
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        url = pointed_project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # pointer_project's id is included in response, but folder's id is not
+        pointer_ids = [each['id'] for each in res.json['pointed']]
+        assert_in(pointer_project._id, pointer_ids)
+        assert_not_in(folder._id, pointer_ids)
 
     def test_add_pointers(self):
 
