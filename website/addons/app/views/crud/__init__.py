@@ -87,31 +87,41 @@ def query_app_rss(node_addon, **kwargs):
     rss_url = node.api_url_for('query_app_rss', _xml=True, _absolute=True)
     return elastic_to_rss(name, ret['results'], q, rss_url)
 
+
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_resourcelist(node_addon, **kwargs):
     q = request.args.get('q', '*')
-    size = request.args.get('size', 100)
-    required = request.args.get('required', 'id')
-    start = request.args.get('page', 0)
+    size = request.args.get('size')
+    start = request.args.get('from')
     name = node_addon.system_user.username
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
 
-    return elastic_to_resourcelist(name, [blob['_source'] for blob in ret['hits']['hits']], q)
+    q += ' NOT isResource:True'
+
+    query = args_to_query(q, start, size)
+
+    ret = search(query, _type=node_addon.namespace, index='metadata')
+
+    return elastic_to_resourcelist(name, ret['results'], q)
+
 
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_changelist(node_addon, **kwargs):
     q = request.args.get('q', '*')
-    size = request.args.get('size', 100)
-    required = request.args.get('required', 'id')
-    start = request.args.get('page', 0)
+    size = request.args.get('size')
+    start = request.args.get('from')
     name = node_addon.system_user.username
-    ret = search(q, _type=node_addon.namespace, index='metadata', start=start, size=size, required=required)
 
-    return elastic_to_changelist(name, [blob['_source'] for blob in ret['hits']['hits']], q)
+    q += ' NOT isResource:True'
+
+    query = args_to_query(q, start, size)
+
+    ret = search(query, _type=node_addon.namespace, index='metadata')
+
+    return elastic_to_changelist(name, ret['results'], q)
 
 # GET
 # @must_be_valid_project
@@ -200,7 +210,7 @@ def get_project_metadata(node_addon, guid, **kwargs):
     rets = search(query, _type=node_addon.namespace, index='metadata')
     ret = {}
 
-    for blob in sorted(rets['hits']['hits'], key=lambda x: x['_source'].get(sort_on)):
+    for blob in sorted(rets['results'], key=lambda x: x['_source'].get(sort_on)):
         ret.update(blob['_source'])
 
     return ret

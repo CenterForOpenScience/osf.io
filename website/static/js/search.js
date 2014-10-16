@@ -111,7 +111,19 @@
         };
 
         self.help = function() {
-            bootbox.alert('Help');
+            bootbox.dialog({
+                title: 'Search help',
+                message: '<h4>Queries</h4>'+
+                    '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax#HAND">Lucene search syntax</a>. ' +
+                    'This gives you many options, but can be very simple as well. ' +
+                    'Examples of valid searches include:' +
+                    '<ul><li><a href="/search/?q=bird*">bird*</a></li>' +
+                    '<li><a href="/search/?q=bird*+AND+source%3Ascitech">bird* AND source:scitech</a></li>' +
+                    '<li><a href="/search/?q=title%3Aquantum">title:quantum</a></li></ul>' +
+                    'If you want to see information from combined metadata resources rather than individual reports, try:' +
+                    '<ul><li><a href="/search/?q=birds+AND+isResource%3Atrue">birds AND isResource:true</a></li></ul>' +
+                    '</p>'
+            });
         };
 
         self.filter = function(alias) {
