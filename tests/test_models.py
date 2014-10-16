@@ -1137,7 +1137,7 @@ class TestNode(OsfTestCase):
         assert_equal(len(self.node.nodes), 1)
         assert_false(self.node.nodes[0].primary)
         assert_equal(self.node.nodes[0].node, node2)
-        assert_equal(node2.points, 1)
+        assert_equal(len(node2.get_points()), 1)
         assert_equal(
             self.node.logs[-1].action, NodeLog.POINTER_CREATED
         )
@@ -1154,6 +1154,29 @@ class TestNode(OsfTestCase):
             }
         )
 
+    def test_get_points_exclude_folders(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        assert_in(pointer_project, pointed_project.get_points(folders=False))
+        assert_not_in(folder, pointed_project.get_points(folders=False))
+        assert_in(folder, pointed_project.get_points(folders=True))
+
+    def test_get_points_exclude_deleted(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True, is_deleted=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        assert_not_in(pointer_project, pointed_project.get_points(deleted=False))
+        assert_in(pointer_project, pointed_project.get_points(deleted=True))
+
     def test_add_pointer_already_present(self):
         node2 = NodeFactory(creator=self.user)
         self.node.add_pointer(node2, auth=self.consolidate_auth)
@@ -1166,7 +1189,7 @@ class TestNode(OsfTestCase):
         self.node.rm_pointer(pointer, auth=self.consolidate_auth)
         assert_is(Pointer.load(pointer._id), None)
         assert_equal(len(self.node.nodes), 0)
-        assert_equal(node2.points, 0)
+        assert_equal(len(node2.get_points()), 0)
         assert_equal(
             self.node.logs[-1].action, NodeLog.POINTER_REMOVED
         )

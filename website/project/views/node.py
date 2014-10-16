@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, resolve_pointer
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -708,7 +708,7 @@ def _view_project(node, auth, primary=False):
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': node.points,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
@@ -1253,14 +1253,10 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    # The `parent_node` property of the `Pointer` schema refers to the parents
-    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
-    # back-reference syntax to find the parents of the `Pointer`.
-    parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    node = parent_refs[0]
+    node = resolve_pointer(pointer)
     if node.can_view(auth):
         return {
+            'id': node._id,
             'url': node.url,
             'title': node.title,
             'authorShort': abbrev_authors(node),
@@ -1274,8 +1270,11 @@ def serialize_pointer(pointer, auth):
 
 @must_be_contributor_or_public
 def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
+        if not resolve_pointer(each).is_folder
     ]}
