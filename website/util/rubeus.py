@@ -125,11 +125,14 @@ def build_addon_button(text, action, title=""):
     :return dict: Hgrid formatted dictionary for custom buttons
 
     """
-    return {
+    button = {
         'text': text,
         'action': action,
-        'attributes': 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title),
     }
+    if title != '':
+        button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
+    return button
+
 def sort_by_name(hgrid_data):
     return_value = hgrid_data
     if hgrid_data is not None:
