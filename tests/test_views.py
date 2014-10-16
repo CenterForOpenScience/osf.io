@@ -74,7 +74,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_not_logged_in_no_key(self):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
-        res = res.follow()
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
         assert_equal(
             res.request.path,
             web_url_for('auth_login')
@@ -3120,9 +3121,10 @@ class TestProjectCreation(OsfTestCase):
     def test_project_new_from_template_non_user(self):
         project = ProjectFactory()
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = None)
+        res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
-        res2 = res.maybe_follow()
+        res2 = res.follow(expect_errors=True)
+        assert_equal(res2.status_code, 401)
         assert_in("Sign up or Log in", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):

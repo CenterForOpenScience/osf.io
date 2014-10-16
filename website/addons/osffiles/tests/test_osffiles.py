@@ -249,7 +249,7 @@ class TestFilesViews(OsfTestCase):
         res = self.app.get(
             url,
             auth=self.user.auth,
-        ).maybe_follow(
+        ).follow(
             auth=self.user.auth,
         )
 
@@ -271,7 +271,12 @@ class TestFilesViews(OsfTestCase):
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
 
         # GUID count has not been incremented
         assert_equal(
