@@ -8,8 +8,6 @@ import functools
 
 from flask import request
 
-from modularodm import Q
-
 from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.analytics import update_counters
@@ -232,24 +230,28 @@ def get_version_helper(file_record, version_str):
 
 
 def get_version(path, node_settings, version_str):
+    """
+    :return: Tuple of (<one-based version index>, <file version>, <file record>)
+    """
     record = model.FileRecord.find_by_path(path, node_settings)
     if record is None:
         raise HTTPError(httplib.NOT_FOUND)
     version_idx, file_version = get_version_helper(record, version_str)
     handle_incomplete_version(file_version)
-    return version_idx, file_version
+    return version_idx, file_version, record
 
 
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
 def osf_storage_view_file(auth, path, node_addon, **kwargs):
     node = node_addon.owner
-    version_idx, version = get_version(path, node_addon, request.args.get('version'))
+    version = request.args.get('version')
+    idx, version, record = get_version(path, node_addon, version)
     file_obj = model.StorageFile.get_or_create(node=node, path=path)
     redirect_url = check_file_guid(file_obj)
     if redirect_url:
         return redirect(redirect_url)
-    rendered = utils.render_file(file_obj, version, version_idx)
+    rendered = utils.render_file(idx, version, record)
     ret = {
         'file_name': utils.get_file_name(path),
         'rendered': rendered,
@@ -260,7 +262,7 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
         'render_url': node.api_url_for(
             'osf_storage_render_file',
             path=path,
-            version=version_idx,
+            version=idx,
         ),
     }
     ret.update(serialize_node(node, auth, primary=True))
@@ -272,29 +274,18 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
 @update_counters(u'download:{target_id}:{path}:{version}')
 @update_counters(u'download:{target_id}:{path}')
 def osf_storage_download_file(path, node_addon, **kwargs):
-    version_idx, version = get_version(
-        path,
-        node_addon,
-        request.args.get('version'),
-    )
-    url = utils.get_download_url(version)
+    version = request.args.get('version')
+    version_idx, version, record = get_version(path, node_addon, version)
+    url = utils.get_download_url(version_idx, version, record)
     return redirect(url)
 
 
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
 def osf_storage_render_file(path, node_addon, **kwargs):
-    node = node_addon.owner
-    version_idx, version = get_version(
-        path,
-        node_addon,
-        request.args.get('version'),
-    )
-    file_obj = model.StorageFile.find_one(
-        Q('node', 'eq', node) &
-        Q('path', 'eq', path)
-    )
-    return utils.render_file(file_obj, version, version_idx)
+    version = request.args.get('version')
+    idx, version, record = get_version(path, node_addon, version)
+    return utils.render_file(idx, version, record)
 
 
 @must_be_contributor

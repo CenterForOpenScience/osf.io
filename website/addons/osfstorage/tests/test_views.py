@@ -514,10 +514,14 @@ class TestDownloadFile(OsfTestCase):
         res = self.download_file(self.path)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
-        mock_get_url.assert_called_with(self.version)
+        mock_get_url.assert_called_with(
+            len(self.record.versions),
+            self.version,
+            self.record,
+        )
 
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
-    def test_download_by_version(self, mock_get_url):
+    def test_download_by_version_latest(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions.extend(versions)
@@ -527,7 +531,7 @@ class TestDownloadFile(OsfTestCase):
         res = self.download_file(path=self.path, version=3)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
-        mock_get_url.assert_called_with(versions[1])
+        mock_get_url.assert_called_with(3, versions[1], self.record)
         assert_equal(
             utils.get_download_count(self.record, self.project),
             count_record + 1,

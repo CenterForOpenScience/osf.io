@@ -1,10 +1,12 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 import os
 import urlparse
 
 import requests
 
+from modularodm import Q
 from cloudstorm import sign
 
 from framework.analytics import get_basic_counters
@@ -179,6 +181,14 @@ def build_callback_urls(node, path):
 
 
 def get_upload_url(node, user, size, content_type, file_path):
+    """Request signed upload URL from upload service.
+
+    :param Node node: Root node
+    :param User user: User uploading file
+    :param int size: Expected file size
+    :param str content_type: Expected file content type
+    :param str file_path: Expected file path
+    """
     payload = {
         'size': size,
         'type': content_type,
@@ -199,12 +209,33 @@ def get_upload_url(node, user, size, content_type, file_path):
     return data['url']
 
 
-def get_download_url(file_version):
+def get_filename(version_idx, file_version, file_record):
+    """Build name for downloaded file, appending version date if not latest.
+
+    :param int version_idx: One-based version index
+    :param FileVersion file_version: Version to name
+    :param FileRecord file_record: Root file object
     """
+    if version_idx == len(file_record.versions):
+        return file_record.name
+    name, ext = os.path.splitext(file_record.name)
+    return u'{name}-{date}{ext}'.format(
+        name=name,
+        date=file_version.date_modified.isoformat(),
+        ext=ext,
+    )
+
+
+def get_download_url(version_idx, file_version, file_record):
+    """Request signed download URL from upload service.
+
     :param FileVersion file_version: Version to fetch
+    :param FileRecord file_record: Root file object
     """
-    payload = {'location': file_version.location}
-    signature, body = sign.build_hook_body(url_signer, payload)
+    payload = {
+        'location': file_version.location,
+        'filename': get_filename(version_idx, file_version, file_record),
+    }
     data = make_signed_request(
         'POST',
         urlparse.urljoin(
@@ -218,23 +249,28 @@ def get_download_url(file_version):
 
 
 def get_cache_filename(file_version):
-    """
+    """Get path to cached rendered file on disk.
+
     :param FileVersion file_version: Version to locate
     """
     return '{0}.html'.format(file_version.location_hash)
 
 
-def render_file(file_obj, file_version, version_idx):
+def render_file(version_idx, file_version, file_record):
     """
-    :param StorageFile file_obj: Base file object to render
-    :param FileVersion file_version: File version to render
     :param int version_idx: One-based version index
+    :param FileVersion file_version: File version to render
+    :param FileRecord file_record: Base file object
     """
+    file_obj = model.StorageFile.find_one(
+        Q('node', 'eq', file_record.node) &
+        Q('path', 'eq', file_record.path)
+    )
     cache_filename = get_cache_filename(file_version)
     node_settings = file_obj.node.get_addon('osfstorage')
     rendered = get_cache_content(node_settings, cache_filename)
     if rendered is None:
-        download_url = get_download_url(file_version)
+        download_url = get_download_url(version_idx, file_version, file_record)
         file_response = requests.get(download_url)
         rendered = get_cache_content(
             node_settings=node_settings,

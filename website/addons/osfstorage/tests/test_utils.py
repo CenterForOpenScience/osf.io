@@ -1,16 +1,20 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
+import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 import datetime
+import urlparse
 
 from website.addons.osfstorage.tests import factories
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
+from website.addons.osfstorage import settings
 
 
 class TestHGridUtils(OsfTestCase):
@@ -119,6 +123,54 @@ class TestHGridUtils(OsfTestCase):
     def test_get_item_kind_invalid(self):
         with assert_raises(TypeError):
             utils.get_item_kind('pizza')
+
+
+class GetDownloadUrl(OsfTestCase):
+
+    def setUp(self):
+        super(GetDownloadUrl, self).setUp()
+        self.project = ProjectFactory()
+        self.node_settings = self.project.get_addon('osfstorage')
+        self.path = 'frozen/pizza/reviews.gif'
+        self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
+        for _ in range(3):
+            version = factories.FileVersionFactory()
+            self.record.versions.append(version)
+        self.record.save()
+
+    def test_get_filename_latest_version(self):
+        filename = utils.get_filename(3, self.record.versions[-1], self.record)
+        assert_equal(filename, self.record.name)
+
+    def test_get_filename_not_latest_version(self):
+        filename = utils.get_filename(2, self.record.versions[-2], self.record)
+        expected = ''.join([
+            'reviews-',
+            self.record.versions[-2].date_modified.isoformat(),
+            '.gif',
+        ])
+        assert_equal(filename, expected)
+
+    @mock.patch('website.addons.osfstorage.utils.make_signed_request')
+    def test_get_download_url(self, mock_request):
+        url = 'http://deacon.queen.com/'
+        mock_request.return_value = {'url': url}
+        ret = utils.get_download_url(3, self.record.versions[-1], self.record)
+        request_url = urlparse.urljoin(
+            settings.UPLOAD_SERVICE_URL,
+            'urls/download/',
+        )
+        payload = {
+            'location': self.record.versions[-1].location,
+            'filename': utils.get_filename(3, self.record.versions[-1], self.record),
+        }
+        mock_request.assert_called_with(
+            'POST',
+            request_url,
+            signer=utils.url_signer,
+            payload=payload,
+        )
+        assert_equal(ret, url)
 
 
 class TestSerializeRevision(OsfTestCase):
