@@ -3,6 +3,15 @@
 """Find all nodes with different sets of keys for `files_current` and
 `files_versions`, and ensure that all keys present in the former are also
 present in the latter.
+
+
+NOTE: This is a one-time migration.
+
+Log:
+
+    Run by sloria on production on 2014-10-16 at 16:00 EST. 15 nodes were migrated
+    which include only the RPP and forks of the RPP, as expected. Verified that the
+    affected files are now accessible.
 """
 
 from website.models import Node
