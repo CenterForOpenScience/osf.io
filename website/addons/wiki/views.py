@@ -147,7 +147,7 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
         content = content.replace('\n', '<br />')
         ret = {
             'wiki_id': wiki_page._primary_key if wiki_page else None,
-            'wiki_name': wid,
+            'wiki_name': wiki_page.page_name if wiki_page else wid,
             'wiki_content': content,
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
@@ -178,7 +178,7 @@ def project_wiki_version(wid, vid, auth, **kwargs):
     if wiki_page:
         rv = {
             'wiki_id': wiki_page._id if wiki_page else None,
-            'wiki_name': wid,
+            'wiki_name': wiki_page.page_name if wiki_page else wid,
             'wiki_content': wiki_page.html(node),
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
@@ -290,7 +290,7 @@ def project_wiki_edit(wid, auth, **kwargs):
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
         'wiki_id': wiki_page._id if wiki_page else '',
-        'wiki_name': wid,
+        'wiki_name': wiki_page.page_name if wiki_page else wid,
         'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
