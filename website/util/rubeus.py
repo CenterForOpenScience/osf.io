@@ -128,7 +128,7 @@ def build_addon_button(text, action, title=""):
     return {
         'text': text,
         'action': action,
-        'attributes': "title='" + title + "' data-toggle='tooltip' data-placement='right' ",
+        'attributes': 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title),
     }
 def sort_by_name(hgrid_data):
     return_value = hgrid_data
