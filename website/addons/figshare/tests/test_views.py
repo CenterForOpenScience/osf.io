@@ -377,11 +377,11 @@ class TestViewsAuth(OsfTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
 
-    #TODO Finish me, would require a lot of mocking it seems.
+    @unittest.skip('finish this')
     def test_oauth_fail(self):
         url = '/api/v1/project/{0}/figshare/oauth/'.format(self.project._id)
         rv = self.app.get(url, auth=self.user.auth)
 
-    #TODO Finish me
+    @unittest.skip('finish this')
     def test_oauth_bad_token(self):
         pass
