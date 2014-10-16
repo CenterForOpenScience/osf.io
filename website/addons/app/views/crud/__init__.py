@@ -50,8 +50,6 @@ def query_app(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_json(node_addon, **kwargs):
-    _format = request.json.get('format', 'json')
-
     try:
         del request.json['format']
     except KeyError:

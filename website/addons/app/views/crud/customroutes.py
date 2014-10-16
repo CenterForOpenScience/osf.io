@@ -7,13 +7,14 @@ from flask import request
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-from website.project.decorators import (
-    must_be_valid_project,
-    must_have_addon, must_have_permission,
-    must_not_be_registration, must_be_contributor_or_public
-)
 
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_have_permission
+from website.project.decorators import must_be_contributor_or_public
+
+from website.addons.app.utils import args_to_query
 from website.addons.app.utils import elastic_to_rss
+
 
 # GET
 @must_be_contributor_or_public
@@ -32,37 +33,39 @@ def list_custom_routes(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def resolve_route(node_addon, route, **kwargs):
-    start = request.args.get('page', 0)
+    size = request.args.get('size')
+    start = request.args.get('from')
 
     try:
         route = node_addon.routes[route]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
-    ret = search(route, _type=node_addon.namespace, index='metadata', start=start)
-    results = [blob['_source'] for blob in ret['hits']['hits']]
+    q = args_to_query(route, size, start)
 
-    return {
-        'results': results,
-        'total': ret['hits']['total']
-    }
+    return search(q, _type=node_addon.namespace, index='metadata')
 
 
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def resolve_route_rss(node_addon, route, **kwargs):
-    start = request.args.get('page', 0)
+    size = request.args.get('size')
+    start = request.args.get('from')
+    name = node_addon.system_user.username
 
     try:
-        route = node_addon[route]
+        query = node_addon.routes[route]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
 
-    ret = search(route, _type=node_addon.namespace, index='metadata', start=start)
-    results = [blob['_source'] for blob in ret['hits']['hits']]
+    q = args_to_query(query, size, start)
 
-    return elastic_to_rss(node_addon.system_user.username, results, route)
+    ret = search(q, _type=node_addon.namespace, index='metadata')
+
+    rss_url = node_addon.owner.api_url_for('resolve_route_rss', _xml=True, _absolute=True, route=route)
+
+    return elastic_to_rss(name, ret['results'], query, rss_url)
 
 
 # POST

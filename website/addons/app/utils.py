@@ -18,7 +18,6 @@ from resync.capability_list import CapabilityList
 
 from resync.resource_list import ResourceListDupeError
 
-from website import settings
 from website.util import rss
 
 

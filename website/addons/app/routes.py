@@ -111,7 +111,7 @@ custom_routing_routes = {
             json_renderer
         ),
         Rule(
-            '/app/<pid>/routes/<path:route>.rss',
+            '/app/<pid>/routes/<path:route>/rss/',
             'get',
             views.crud.customroutes.resolve_route_rss,
             xml_renderer
