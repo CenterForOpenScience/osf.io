@@ -347,12 +347,14 @@ def _render_conference_node(node, idx):
         download_url = ''
         download_count = 0
 
+    author = node.visible_contributors[0]
+
     return {
         'id': idx,
         'title': node.title,
         'nodeUrl': node.url,
-        'author': node.creator.family_name if node.creator else '',
-        'authorUrl': node.creator.url if node.creator else '',
+        'author': author.family_name,
+        'authorUrl': node.creator.url,
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
