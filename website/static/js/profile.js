@@ -671,26 +671,6 @@
             self.endYear,
         ];
 
-        self.start = ko.computed(function () {
-            if (self.startMonth() && self.startYear()) {
-                return new Date(self.startMonth() + '1,' + self.startYear());
-            }
-        }, self).extend({
-            notInFuture: true
-        });
-        self.end = ko.computed(function() {
-            if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
-                return new Date(self.endMonth() + '1,' + self.endYear());
-            } else if (!self.endMonth() && self.endYear()) {
-                self.displayDate(self.endYear());
-                return self.endYear();
-            }
-        }, self).extend({
-            notInFuture:true,
-            minDate: self.start
-        });
-
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
             return validated.isValid();
@@ -721,23 +701,6 @@
             self.endMonth,
             self.endYear,
         ];
-
-        self.start = ko.computed(function () {
-            if (self.startMonth() && self.startYear()) {
-                return new Date(self.startMonth() + '1,' + self.startYear());
-            }
-        }, self).extend({
-            notInFuture: true
-        });
-        self.end = ko.computed(function() {
-            if (self.endMonth() && self.endYear()) {
-                self.displayDate(self.endMonth() + ' ' + self.endYear());
-                return new Date(self.endMonth() + '1,' + self.endYear());
-            }
-        }, self).extend({
-            notInFuture:true,
-            minDate: self.start
-        });
 
         var validated = ko.validatedObservable(self);
         self.isValid = ko.computed(function() {
