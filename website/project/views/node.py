@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, resolve_pointer
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -618,31 +618,14 @@ def remove_private_link(*args, **kwargs):
 
 
 # TODO: Split into separate functions
-def _render_addon(node, user):
+def _render_addon(node):
 
     widgets = {}
     configs = {}
     js = []
     css = []
 
-    addon_list = node.get_addon_names()
-    remove_wiki = False
-
     for addon in node.get_addons():
-
-        if addon.config.short_name == 'wiki' and not node.has_permission(user, 'write'):
-            wiki_page = node.get_wiki_page('home')
-
-            # If the page doesn't exist, skip and remove from addon list
-            if wiki_page is None:
-                remove_wiki = True
-                continue
-
-            # If the page has no content, skip and remove from addon list
-            if not wiki_page.html(node):
-                remove_wiki = True
-                continue
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -650,10 +633,16 @@ def _render_addon(node, user):
         js.extend(addon.config.include_js.get('files', []))
         css.extend(addon.config.include_css.get('files', []))
 
-    if remove_wiki:
-        addon_list.remove('wiki')
+    return widgets, configs, js, css
 
-    return widgets, configs, js, css, addon_list
+
+def _should_show_wiki_widget(node, user):
+    if not node.has_permission(user, 'write'):
+        wiki_page = node.get_wiki_page('home', None)
+        return wiki_page and wiki_page.html(node)
+
+    else:
+        return True
 
 
 def _view_project(node, auth, primary=False):
@@ -665,7 +654,7 @@ def _view_project(node, auth, primary=False):
     parent = node.parent_node
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    widgets, configs, js, css, addon_list = _render_addon(node, user)
+    widgets, configs, js, css = _render_addon(node)
     redirect_url = node.url + '?view_only=None'
 
     # Before page load callback; skip if not primary call
@@ -713,19 +702,18 @@ def _view_project(node, auth, primary=False):
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.node__forked),
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': node.points,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
             'has_comments': bool(getattr(node, 'commented', [])),
             'has_children': bool(getattr(node, 'commented', False)),
-            'has_wiki_content': False,
 
         },
         'parent_node': {
@@ -748,10 +736,11 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
-        'addons_enabled': addon_list,
+        'addons_enabled': node.get_addon_names(),
         'addons': configs,
         'addon_widgets': widgets,
         'addon_widget_js': js,
@@ -1264,14 +1253,10 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    # The `parent_node` property of the `Pointer` schema refers to the parents
-    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
-    # back-reference syntax to find the parents of the `Pointer`.
-    parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    node = parent_refs[0]
+    node = resolve_pointer(pointer)
     if node.can_view(auth):
         return {
+            'id': node._id,
             'url': node.url,
             'title': node.title,
             'authorShort': abbrev_authors(node),
@@ -1285,8 +1270,11 @@ def serialize_pointer(pointer, auth):
 
 @must_be_contributor_or_public
 def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
+        if not resolve_pointer(each).is_folder
     ]}

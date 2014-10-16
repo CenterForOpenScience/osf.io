@@ -1,4 +1,5 @@
 <%inherit file="project/project_base.mako"/>
+<%page expression_filter="h"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <style type="text/css" media="screen">
@@ -27,15 +28,15 @@
             <div class="pull-right">
                 <!-- clicking "Cancel" overrides unsaved changes check -->
                 % if wiki_created:
-                    <a href="${node['url']}wiki/home/" class="btn btn-default">Return</a>
+                    <a href="${urls['web']['home']}" class="btn btn-default">Return</a>
                 % else:
-                    <a href="${node['url']}wiki/${pageName}/" class="btn btn-default">Return</a>
+                    <a href="${urls['web']['page']}" class="btn btn-default">Return</a>
                 % endif
                 <button id="revert-button" class="btn btn-primary"
                         data-bind="click: revertChanges, enable: changed">Revert to Last Save</button>
                 <input type="submit" class="btn btn-success" value="Save Version"
                        data-bind="enable: changed,
-                                  click: function() {updateChanged('${node['url']}wiki/${pageName}/edit/')}"
+                                  click: function() {updateChanged('${urls['web']['edit']}')}"
                        onclick=$(window).off('beforeunload')>
             </div>
             <p class="help-block">Preview</p>
@@ -56,7 +57,7 @@
 
 <script>
 
-    var url = '${node['api_url']}wiki/${pageName}/content/';
+    var url = '${urls['api']['content']}';
 
     var setDoc = function(docName) {
 

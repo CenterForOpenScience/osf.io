@@ -7,9 +7,7 @@ import logging
 from bs4 import BeautifulSoup
 from flask import request
 
-from framework import status
-from framework.forms.utils import sanitize
-from framework.mongo.utils import from_mongo
+from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
 from website.addons.wiki.utils import (
@@ -18,7 +16,7 @@ from website.addons.wiki.utils import (
 )
 from website.project.views.node import _view_project
 from website.project import show_diff
-from website.project.model import has_anonymous_link, format_wid
+from website.project.model import has_anonymous_link
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,
@@ -29,8 +27,6 @@ from website.project.decorators import (
 from .model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
-
-HOME = 'home'
 
 
 @must_be_contributor_or_public
@@ -54,7 +50,7 @@ def wiki_widget(**kwargs):
 
     rv = {
         'complete': True,
-        'content': wiki_html,
+        'content': unicode(wiki_html) if wiki_html else None,
         'more': more,
         'include': False,
     }
@@ -66,19 +62,19 @@ def wiki_widget(**kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, u'{}wiki/home/'.format(node.url)
+    return {}, None, None, node.web_url_for('project_wiki_page', wid='home', _guid=True)
 
 
 def _get_wiki_versions(node, wid, anonymous=False):
-
+    wid_key = to_mongo_key(wid)
     # Skip if page doesn't exist; happens on new projects before
     # default "home" page is created
-    if wid not in node.wiki_pages_versions:
+    if wid_key not in node.wiki_pages_versions:
         return []
 
     versions = [
         NodeWikiPage.load(page)
-        for page in node.wiki_pages_versions[wid]
+        for page in node.wiki_pages_versions[wid_key]
     ]
 
     return [
@@ -88,9 +84,48 @@ def _get_wiki_versions(node, wid, anonymous=False):
                 version.user.fullname, anonymous, name=True
             ),
             'date': version.date.replace(microsecond=0),
+            'compare_web_url': node.web_url_for('project_wiki_compare', wid=wid, compare_id=version.version, _guid=True),
         }
         for version in reversed(versions)
     ]
+
+
+def _get_wiki_pages_current(node):
+    return [
+        {
+            'name': page.page_name,
+            'url': node.web_url_for('project_wiki_page', wid=to_mongo_key(page.page_name), _guid=True)
+        }
+        for page in [
+            node.get_wiki_page(sorted_current_key)
+            for sorted_current_key in sorted(node.wiki_pages_current)
+        ]
+    ]
+
+
+def _get_wiki_api_urls(node, wid, additional_urls=None):
+    urls = {
+        'base': node.api_url_for('project_wiki_home'),
+        'delete': node.api_url_for('project_wiki_delete', wid=wid),
+        'rename': node.api_url_for('project_wiki_rename', wid=wid),
+    }
+    if additional_urls:
+        urls.update(additional_urls)
+    return urls
+
+
+def _get_wiki_web_urls(node, wid, compare_id=1, additional_urls=None):
+    urls = {
+        # TODO: Change this to GUID url?
+        'base': node.web_url_for('project_wiki_home', _guid=True),
+        'compare': node.web_url_for('project_wiki_compare', wid=wid, compare_id=compare_id, _guid=True),
+        'edit': node.web_url_for('project_wiki_edit', wid=wid, _guid=True),
+        'home': node.web_url_for('project_wiki_home', _guid=True),
+        'page': node.web_url_for('project_wiki_page', wid=wid, _guid=True),
+    }
+    if additional_urls:
+        urls.update(additional_urls)
+    return urls
 
 
 @must_be_valid_project  # injects project
@@ -114,23 +149,21 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
         content = show_diff(sm)
         content = content.replace('\n', '<br />')
         ret = {
-            'pageName': wid,
-            'wiki_content': content,
             'wiki_id': wiki_page._primary_key if wiki_page else None,
+            'wiki_name': wid,
+            'wiki_content': content,
             'versions': _get_wiki_versions(node, wid, anonymous),
             'is_current': True,
             'is_edit': False,
             'version': wiki_page.version,
-            'pages_current': sorted([
-                from_mongo(version)
-                for version in node.wiki_pages_current
-            ]),
+            'compare_id': compare_id,
+            'pages_current': _get_wiki_pages_current(node),
             'toc': toc,
-            'url': node.url,
-            'api_url': node.api_url,
             'category': node.category,
-            'wiki_page_api_url': node.api_url_for('project_wiki_page', wid=wiki_page.page_name),
-            'wiki_home_url': node.url + 'wiki/',
+            'urls': {
+                'api': _get_wiki_api_urls(node, wid),
+                'web': _get_wiki_web_urls(node, wid, compare_id),
+            },
         }
         ret.update(_view_project(node, auth, primary=True))
         return ret
@@ -141,21 +174,19 @@ def project_wiki_compare(auth, wid, compare_id, **kwargs):
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects auth, project
 @must_have_addon('wiki', 'node')
-def project_wiki_version(auth, **kwargs):
+def project_wiki_version(wid, vid, auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    wid = kwargs['wid']
-    vid = kwargs['vid']
-
     wiki_page = node.get_wiki_page(wid, version=vid)
 
     if wiki_page:
         rv = {
             'wiki_id': wiki_page._id if wiki_page else None,
-            'pageName': wid,
+            'wiki_name': wid,
             'wiki_content': wiki_page.html(node),
             'version': wiki_page.version,
             'is_current': wiki_page.is_current,
             'is_edit': False,
+            'wiki_version_web_url': node.web_url_for('project_wiki_version', wid=wid, compare_id=vid, _guid=True),
         }
         rv.update(_view_project(node, auth, primary=True))
         return rv
@@ -169,8 +200,8 @@ def serialize_wiki_toc(project, auth):
             'id': child._primary_key,
             'title': child.title,
             'category': child.category,
-            'pages': sorted(child.wiki_pages_current.keys()) if child.wiki_pages_current else [],
-            'url': child.web_url_for('project_wiki_page', wid=HOME),
+            'pages_current': _get_wiki_pages_current(child),
+            'url': child.web_url_for('project_wiki_page', wid='home', _guid=True),
             'is_pointer': not child.primary,
             'link': auth.private_key
         }
@@ -186,10 +217,10 @@ def serialize_wiki_toc(project, auth):
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
 def project_wiki_page(wid, auth, **kwargs):
-    page_name = wid.strip()
+    wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
-    wiki_page = node.get_wiki_page(page_name)
+    wiki_page = node.get_wiki_page(wid)
 
     # todo breaks on /<script>; why?
 
@@ -197,34 +228,29 @@ def project_wiki_page(wid, auth, **kwargs):
         version = wiki_page.version
         is_current = wiki_page.is_current
         content = wiki_page.html(node)
-        wiki_page_api_url = node.api_url_for('project_wiki_page', wid=wiki_page.page_name)
     else:
         version = 'NA'
         is_current = False
         content = '<p><em>No wiki content</em></p>'
-        wiki_page_api_url = None
 
     toc = serialize_wiki_toc(node, auth=auth)
 
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
-        'pageName': page_name,
+        'wiki_name': wiki_page.page_name if wiki_page else wid,
+        'wiki_content': content,
         'page': wiki_page,
         'version': version,
-        'versions': _get_wiki_versions(node, page_name, anonymous=anonymous),
-        'wiki_content': content,
+        'versions': _get_wiki_versions(node, wid, anonymous=anonymous),
         'is_current': is_current,
         'is_edit': False,
-        'pages_current': sorted([
-            from_mongo(each)
-            for each in node.wiki_pages_current
-        ]),
+        'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
-        'url': node.url,
-        'api_url': node.api_url,
         'category': node.category,
-        'wiki_page_api_url': wiki_page_api_url,
-        'wiki_home_url': node.url + 'wiki/',
+        'urls': {
+            'api': _get_wiki_api_urls(node, wid),
+            'web': _get_wiki_web_urls(node, wid),
+        },
     }
 
     ret.update(_view_project(node, auth, primary=True))
@@ -236,7 +262,6 @@ def project_wiki_page(wid, auth, **kwargs):
 @must_have_addon('wiki', 'node')
 def wiki_page_content(wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
     wiki_page = node.get_wiki_page(wid)
 
     return {
@@ -249,10 +274,9 @@ def wiki_page_content(wid, **kwargs):
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wid, auth, **kwargs):
-    page_name = wid.strip()
-    wid = format_wid(page_name)
+    wid = wid.strip()
     node = kwargs['node'] or kwargs['project']
-    wiki_page = node.get_wiki_page(page_name)
+    wiki_page = node.get_wiki_page(wid)
 
     if wiki_page:
         version = wiki_page.version
@@ -281,24 +305,24 @@ def project_wiki_edit(wid, auth, **kwargs):
     # TODO: Remove duplication with project_wiki_page
     toc = serialize_wiki_toc(node, auth=auth)
     rv = {
-        'pageName': page_name,
+        'wiki_id': wiki_page._id if wiki_page else '',
+        'wiki_name': wid,
+        'wiki_content': content,
         'version': version,
         'versions': _get_wiki_versions(node, wid),
-        'wiki_content': content,
-        'wiki_id': wiki_page._id if wiki_page else '',
         'share_uuid': docs_uuid(node, share_uuid),
         'is_current': is_current,
         'is_edit': True,
-        'pages_current': sorted([
-            from_mongo(each)
-            for each in node.wiki_pages_current
-        ]),
+        'pages_current': _get_wiki_pages_current(node),
         'toc': toc,
-        'url': node.url,
-        'api_url': node.api_url,
         'category': node.category,
-        'wiki_page_api_url': wiki_page_api_url,
-        'wiki_home_url': node.url + 'wiki/',
+        'urls': {
+            'api': _get_wiki_api_urls(node, wid, {
+                'content': node.api_url_for('wiki_page_content', wid=wid),
+                'page': wiki_page_api_url
+            }),
+            'web': _get_wiki_web_urls(node, wid),
+        },
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv
@@ -310,29 +334,24 @@ def project_wiki_edit(wid, auth, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(wid, auth, **kwargs):
     wid = wid.strip()
-    node_to_use = kwargs['node'] or kwargs['project']
-
-    if wid != sanitize(wid):
-        status.push_status_message("This is an invalid wiki page name")
-        raise HTTPError(http.BAD_REQUEST, redirect_url='{}wiki/'.format(node_to_use.url))
-
-    wiki_page = node_to_use.get_wiki_page(wid)
-
-    redirect_url = u'{}wiki/{}/'.format(node_to_use.url, wid)
+    node = kwargs['node'] or kwargs['project']
+    wiki_page = node.get_wiki_page(wid)
+    redirect_url = node.web_url_for('project_wiki_page', wid=wid, _guid=True)
 
     if wiki_page:
         # Only update node wiki if content has changed
         content = wiki_page.content
         if request.form['content'] != content:
-            node_to_use.update_node_wiki(wid, request.form['content'], auth)
+            node.update_node_wiki(wid, request.form['content'], auth)
             ret = {'status': 'success'}
         else:
             ret = {'status': 'unmodified'}
     else:
         # update_node_wiki will create a new wiki page because a page
         # with wid does not exist
-        node_to_use.update_node_wiki(wid, request.form['content'], auth)
+        node.update_node_wiki(wid, request.form['content'], auth)
         ret = {'status': 'success'}
+
     return ret, http.FOUND, None, redirect_url
 
 
@@ -340,35 +359,61 @@ def project_wiki_edit_post(wid, auth, **kwargs):
 @must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def project_wiki_rename(**kwargs):
+    """View that handles user the X-editable input for wiki page renaming.
+
+    :param-json pk: The ID of the wiki page to rename.
+    :param-json value: The new wiki page name.
+    """
     node = kwargs['node'] or kwargs['project']
-    wid = request.json.get('pk', None)
-    page = NodeWikiPage.load(wid)
+    wiki_pk = request.get_json().get('pk', None)
+    if not wiki_pk:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Must provide "pk" in the request body'
+        ))
+    page = NodeWikiPage.load(wiki_pk)
+    if not page:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_short='Not found',
+            message_long='Wiki page with the given primary key was not found'
+        ))
     if page.page_name.lower() == 'home':
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short='Invalid request',
             message_long='The wiki home page cannot be renamed.'
         ))
-    new_name = request.json.get('value', None)
-    if new_name != sanitize(new_name):
-        raise HTTPError(http.UNPROCESSABLE_ENTITY)
+    new_name_raw = request.get_json().get('value', None)
+    if not new_name_raw:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Must provide "value" in the request body'
+        ))
 
-    if page and new_name:
-        if format_wid(new_name) in node.wiki_pages_current:
+    old_name_key = to_mongo_key(page.page_name)
+    new_name_value = new_name_raw.strip()
+    new_name_key = to_mongo_key(new_name_value)
+
+    if page and new_name_key:
+        if new_name_key in node.wiki_pages_current:
+            if old_name_key == new_name_key:
+                page.rename(new_name_value)
+                return {'message': new_name_value}
             raise HTTPError(http.CONFLICT)
-
-        # TODO: This should go in a Node method like node.rename_wiki
-        node.wiki_pages_versions[format_wid(new_name)] = node.wiki_pages_versions[format_wid(page.page_name)]
-        del node.wiki_pages_versions[format_wid(page.page_name)]
-        node.wiki_pages_current[format_wid(new_name)] = node.wiki_pages_current[format_wid(page.page_name)]
-        del node.wiki_pages_current[format_wid(page.page_name)]
-        if format_wid(page.page_name) in node.wiki_sharejs_uuids:
-            node.wiki_sharejs_uuids[format_wid(new_name)] = node.wiki_sharejs_uuids[format_wid(page.page_name)]
-            del node.wiki_sharejs_uuids[format_wid(page.page_name)]
-        node.save()
-        page.rename(new_name)
-        return {'message': new_name}
+        else:
+            # TODO: This should go in a Node method like node.rename_wiki
+            node.wiki_pages_versions[new_name_key] = node.wiki_pages_versions[old_name_key]
+            del node.wiki_pages_versions[old_name_key]
+            node.wiki_pages_current[new_name_key] = node.wiki_pages_current[old_name_key]
+            del node.wiki_pages_current[old_name_key]
+            if old_name_key in node.wiki_sharejs_uuids:
+                node.wiki_sharejs_uuids[new_name_key] = node.wiki_sharejs_uuids[old_name_key]
+                del node.wiki_sharejs_uuids[old_name_key]
+            node.save()
+            page.rename(new_name_value)
+            return {'message': new_name_value}
 
     raise HTTPError(http.BAD_REQUEST)
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects user, project
@@ -382,3 +427,20 @@ def project_wiki_delete(auth, wid, **kwargs):
     node.delete_node_wiki(node, page, auth)
     node.save()
     return {}
+
+
+@must_be_valid_project  # returns project
+@must_have_permission('write')  # returns user, project
+@must_not_be_registration
+@must_have_addon('wiki', 'node')
+def project_wiki_validate_name(wid, **kwargs):
+    wid = wid.strip()
+    node = kwargs['node'] or kwargs['project']
+
+    if to_mongo_key(wid) in node.wiki_pages_current:
+        raise HTTPError(http.CONFLICT, data=dict(
+            message_short='Wiki page name conflict.',
+            message_long='A wiki page with that name already exists.'
+        ))
+
+    return {'message': wid}

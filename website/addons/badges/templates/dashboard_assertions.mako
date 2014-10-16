@@ -56,7 +56,7 @@ $script.ready('hgrid', function() {
             var $self = $(this);
             bootbox.confirm('Revoke this badge?', function(result) {
                 var bid = $self.attr('aid');
-                var url = $self.attr('url')
+                var url = $self.attr('url');
                 if(result && bid) {
                     $.ajax({
                         url: url + 'badges/revoke/',

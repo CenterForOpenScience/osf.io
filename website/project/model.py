@@ -25,7 +25,7 @@ from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
@@ -480,6 +480,15 @@ class Pointer(StoredObject):
             )
         )
 
+def resolve_pointer(pointer):
+    """Given a `Pointer` object, return the node that it resolves to.
+    """
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    return parent_refs[0]
 
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
@@ -784,7 +793,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if user is None:
-            logger.error('User is ``None``.')
+            logger.warn('User is ``None``.')
             return False
         try:
             return permission in self.permissions[user._id]
@@ -1189,9 +1198,19 @@ class Node(GuidStoredObject, AddonModelMixin):
                 return pointer._id
         return None
 
-    @property
-    def points(self):
-        return len(self.pointed)
+    def get_points(self, folders=False, deleted=False, resolve=True):
+        ret = []
+        for each in self.pointed:
+            pointer_node = resolve_pointer(each)
+            if not folders and pointer_node.is_folder:
+                continue
+            if not deleted and pointer_node.is_deleted:
+                continue
+            if resolve:
+                ret.append(pointer_node)
+            else:
+                ret.append(each)
+        return ret
 
     def resolve(self):
         return self
@@ -1790,7 +1809,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             f.write(content)
 
         # Deal with git
-        repo.stage([file_name])
+        repo.stage([str(file_name)])
 
         committer = self._get_committer(auth)
 
@@ -1873,15 +1892,15 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
+                _guid=_guid, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
@@ -2442,7 +2461,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, page, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = format_wid(page)
+        page = to_mongo_key(page)
 
         if version:
             try:
@@ -2478,7 +2497,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         temp_page = page
 
-        page = format_wid(page)
+        page = to_mongo_key(page)
 
         if page not in self.wiki_pages_current:
             if page in self.wiki_pages_versions:
@@ -2522,8 +2541,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def delete_node_wiki(self, node, page, auth):
+        page_name_key = to_mongo_key(page.page_name)
 
-        del node.wiki_pages_current[page.page_name.lower()]
+        del node.wiki_pages_current[page_name_key]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2665,11 +2685,3 @@ class PrivateLink(StoredObject):
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
-
-
-def format_wid(wid):
-    """Format wiki id for reference in node dictionaries"""
-    wid = urllib.unquote_plus(wid)
-    wid = to_mongo(wid)
-    wid = wid.lower()
-    return wid
