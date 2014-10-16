@@ -130,16 +130,17 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
+    code = http.OK
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
-    return {
-        'next': next_url,
-    }
+        # Don't raise error if user is being logged out
+        if not request.args.get('logout'):
+            code = http.UNAUTHORIZED
+    return {'next': next_url}, code
 
 
 def auth_logout():
     """Log out and delete cookie.
-
     """
     logout()
     rv = redirect('/goodbye/')
