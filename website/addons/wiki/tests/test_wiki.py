@@ -44,8 +44,8 @@ class TestWikiViews(OsfTestCase):
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
         project = ProjectFactory(is_public=True)
-        pointer = PointerFactory(node=project)
-        url = project.web_url_for('project_wiki_page', wid='home')
+        self.project.add_pointer(project, Auth(self.project.creator), save=True)
+        url = self.project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
