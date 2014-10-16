@@ -36,3 +36,14 @@ EXAMPLE_OPS = [
     # Ops after this point are not contained in the snapshot
     { "opData" : { "op" : [  {  "p" : 20,  "i" : "x" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229516927.0 } }, "_id" : 20 }
 ]
+
+# sharejs data short enough to not have an entry in the "docs" collection
+EXAMPLE_OPS_SHORT = [
+    { "opData" : { "op" : [  {  "p" : 0,  "i" : "o" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229501733.0 } }, "_id" : 0 },
+    { "opData" : { "op" : [  {  "p" : 1,  "i" : "n" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229501981.0 } }, "_id" : 1 },
+    { "opData" : { "op" : [  {  "p" : 2,  "i" : "e" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229502296.0 } }, "_id" : 2 },
+    { "opData" : { "op" : [  {  "p" : 3,  "i" : " " } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229502878.0 } }, "_id" : 3 },
+    { "opData" : { "op" : [  {  "p" : 4,  "i" : "t" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229503430.0 } }, "_id" : 4 },
+    { "opData" : { "op" : [  {  "p" : 5,  "i" : "w" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229503878.0 } }, "_id" : 5 },
+    { "opData" : { "op" : [  {  "p" : 6,  "i" : "o" } ], "meta" : { "source" : "8980f013f3aff79a7e413634c1c31337", "ts" : 1413229504329.0 } }, "_id" : 6 },
+]

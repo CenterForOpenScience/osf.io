@@ -4,6 +4,7 @@
 from copy import deepcopy
 import httplib as http
 import uuid
+import unittest
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
@@ -19,7 +20,7 @@ from website.addons.wiki.model import NodeWikiPage
 from website.addons.wiki.utils import (
     docs_uuid, generate_share_uuid, share_db, ops_uuid
 )
-from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
+from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS, EXAMPLE_OPS_SHORT
 from framework.auth import Auth
 
 
@@ -526,6 +527,10 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.docs_uuid = docs_uuid(self.project, self.share_uuid)
         self.ops_uuid = ops_uuid(self.project, self.share_uuid)
 
+        # Create wiki page
+        self.project.update_node_wiki(self.wid, 'Hello world', Auth(self.user))
+        self.wiki_page = self.project.get_wiki_page(self.wid)
+
         # Insert mongo data for current project/wiki
         self.db = share_db()
         docs = deepcopy(EXAMPLE_DOCS)
@@ -533,9 +538,55 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.db.docs.insert(docs)
         self.db[self.ops_uuid].insert(EXAMPLE_OPS)
 
-    # TODO
-    def test_pass(self):
-        assert True
+    def test_migrate_uuid(self):
+        self.wiki_page.migrate_uuid(self.project)
+        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
+        assert_is_none(self.db[self.ops_uuid].find_one())
+
+        new_share_uuid = self.project.wiki_sharejs_uuids.get(self.wid)
+        new_docs_uuid = docs_uuid(self.project, new_share_uuid)
+        new_ops_uuid = ops_uuid(self.project, new_share_uuid)
+        assert_equal(
+            EXAMPLE_DOCS['data'],
+            self.db['docs'].find_one({'_id': new_docs_uuid}).get('data')
+        )
+        assert_equal(
+            EXAMPLE_OPS,
+            [item for item in self.db[new_ops_uuid].find()]
+        )
+
+    def test_migrate_uuid_no_docs(self):
+        wid = 'bar'
+        share_uuid = generate_share_uuid(self.project, wid)
+        original_ops_uuid = ops_uuid(self.project, share_uuid)
+
+        self.project.update_node_wiki(wid, 'Hello world', Auth(self.user))
+        wiki_page = self.project.get_wiki_page(wid)
+        self.db[original_ops_uuid].insert(EXAMPLE_OPS_SHORT)
+
+        wiki_page.migrate_uuid(self.project)
+        new_share_uuid = self.project.wiki_sharejs_uuids.get(wid)
+        # There is no item in docs because there were less than 20 ops
+        new_ops_uuid = ops_uuid(self.project, new_share_uuid)
+
+        assert_is_none(self.db[original_ops_uuid].find_one())
+        assert_equal(
+            EXAMPLE_OPS_SHORT,
+            [item for item in self.db[new_ops_uuid].find()]
+        )
+
+        # tear down
+        self.db.drop_collection(new_ops_uuid)
+        assert_is_none(self.db[new_ops_uuid].find_one())
+
+    @unittest.skip('Finish me!')
+    def test_migrate_uuid_no_mongo(self):
+        assert_true(False)
+
+    def test_delete_share_document(self):
+        self.wiki_page.delete_share_document(self.project)
+        assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
+        assert_is_none(self.db[self.ops_uuid].find_one())
 
     def tearDown(self):
         super(TestWikiShareJSMongo, self).tearDown()
