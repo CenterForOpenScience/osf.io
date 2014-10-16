@@ -20,8 +20,8 @@
         self.templates = [];
         self.errorMessage = ko.observable('');
 
-        self.validateForm = function () {
-            if (self.title() === ''){
+        self.submitForm = function () {
+            if (self.title().trim() === ''){
                 self.errorMessage('This field is required.')
             } else {
                 self.createProject();
