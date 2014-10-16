@@ -35,6 +35,7 @@ class TestWikiViews(OsfTestCase):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.consolidate_auth = Auth(user=self.project.creator)
 
     def test_wiki_url_get_returns_200(self):
         url = self.project.web_url_for('project_wiki_page', wid='home')
@@ -43,21 +44,22 @@ class TestWikiViews(OsfTestCase):
 
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
-        pointer = PointerFactory(node=self.project)
-        url = self.project.web_url_for('project_wiki_page', wid='home')
+        project = ProjectFactory(is_public=True)
+        pointer = PointerFactory(node=project)
+        url = project.web_url_for('project_wiki_page', wid='home')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_wiki_content_returns_200(self):
-        node = ProjectFactory()
+        node = ProjectFactory(is_public=True)
         url = node.api_url_for('wiki_page_content', wid='somerandomid')
-        res = self.app.get(url).follow()
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_wiki_url_for_component_returns_200(self):
-        component = NodeFactory(project=self.project)
+        component = NodeFactory(project=self.project, is_public=True)
         url = component.web_url_for('project_wiki_page', wid='home')
-        res = self.app.get(url).follow()
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
     def test_serialize_wiki_toc(self):
@@ -170,11 +172,6 @@ class TestWikiViews(OsfTestCase):
         assert_equal(wiki.content, new_wiki_content)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_edit_get_new(self):
-        url = self.project.web_url_for('project_wiki_edit', wid='a new page')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-
     def test_wiki_edit_get_home(self):
         url = self.project.web_url_for('project_wiki_edit', wid='home')
         res = self.app.get(url, auth=self.user.auth)
@@ -204,6 +201,35 @@ class TestWikiViews(OsfTestCase):
         wiki = self.project.get_wiki_page('cupcake')
         assert_is_not_none(wiki)
 
+    def test_wiki_validate_name(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='Capslock')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_project_wiki_validate_name_mixed_casing(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_not_in('capslock', self.project.wiki_pages_current)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        assert_in('capslock', self.project.wiki_pages_current)
+
+    def test_project_wiki_validate_name_diplay_correct_capitalization(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CaPsLoCk')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in('CaPsLoCk', res)
+
+    def test_project_wiki_validate_name_conflict_different_casing(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wid='CAPSLOCK')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.project.update_node_wiki('CaPsLoCk', 'hello', self.consolidate_auth)
+        assert_in('capslock', self.project.wiki_pages_current)
+        url = self.project.api_url_for('project_wiki_validate_name', wid='capslock')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
     def test_project_dashboard_shows_no_wiki_content_text(self):
         # Regression test for:
         # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1104
@@ -211,7 +237,6 @@ class TestWikiViews(OsfTestCase):
         url = project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
         assert_in('No wiki content', res)
-
 
     def test_project_dashboard_wiki_widget_shows_non_ascii_characters(self):
         # Regression test for:
@@ -223,6 +248,16 @@ class TestWikiViews(OsfTestCase):
         url = self.project.web_url_for('view_project')
         res = self.app.get(url, auth=self.user.auth)
         assert_in(text, res)
+
+    def test_project_wiki_home_api_route(self):
+        url = self.project.api_url_for('project_wiki_home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equals(res.status_code, 200)
+
+    def test_project_wiki_home_web_route(self):
+        url = self.project.web_url_for('project_wiki_home')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_in('home', res)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -320,7 +355,7 @@ class TestWikiRename(OsfTestCase):
         self.app.put_json(
             self.url,
             {'value': new_name, 'pk': self.page._id},
-            auth=self.auth,
+            auth=self.auth
         )
         self.project.reload()
 
@@ -345,6 +380,47 @@ class TestWikiRename(OsfTestCase):
         )
         assert_equal(res.status_code, 409)
 
+    def test_rename_wiki_invalid_pk(self):
+        # pk is invalid
+        res = self.app.put_json(self.url, {'value': 'newname', 'pk': 'notavalidpk'},
+            auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_rename_wiki_pk_with_pk_missing(self):
+        # pk is missing
+        res = self.app.put_json(self.url, {'value': 'newname'}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_rename_wiki_pk_with_value_missing(self):
+        # value is missing
+        res = self.app.put_json(self.url, {'pk': self.page._id}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_rename_wiki_page_duplicate_different_casing(self):
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        new_name = 'AwAy'
+
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': self.page._id},
+            auth=self.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 409)
+
+    def test_rename_wiki_page_same_name_different_casing(self):
+        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
+        new_name = 'AWAY'
+        page = self.project.get_wiki_page('away')
+
+        res = self.app.put_json(
+            self.url,
+            {'value': new_name, 'pk': page._id},
+            auth=self.auth,
+            expect_errors=False
+        )
+        assert_equal(res.status_code, 200)
+
     def test_cannot_rename_home_page(self):
         home = self.project.get_wiki_page('home')
         res = self.app.put_json(self.url, {'value': 'homelol', 'pk': home._id}, auth=self.auth, expect_errors=True)
@@ -355,13 +431,13 @@ class TestWikiRename(OsfTestCase):
         self.project.save()
 
         # Creates a new page
-        self.project.update_node_wiki('page3', 'moarcontent', self.consolidate_auth)
+        self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
         page3 = self.project.get_wiki_page('page3')
         self.project.save()
 
         url = self.project.api_url_for('project_wiki_rename', wid='page3')
         # Renames the wiki to the deleted page
-        res = self.app.put_json(url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
+        res = self.app.put_json(self.url, {'value': self.page_name, 'pk': page3._id}, auth=self.auth)
         assert_equal(res.status_code, 200)
 
     def test_rename_wiki_page_with_html_title(self):

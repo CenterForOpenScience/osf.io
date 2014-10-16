@@ -13,6 +13,7 @@ from tests.test_features import requires_search
 from werkzeug.wrappers import Response
 
 from modularodm import Q
+from dateutil.parser import parse as parse_date
 
 from framework import auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -74,7 +75,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_not_logged_in_no_key(self):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
-        res = res.follow()
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
         assert_equal(
             res.request.path,
             web_url_for('auth_login')
@@ -2203,13 +2205,15 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        # Note: Use `parse_date` rather than `strptime` to avoid very rare
+        # missing floating point values
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(res_comment.pop('dateCreated'))
+        date_modified = parse_date(res_comment.pop('dateModified'))
 
         serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -3120,9 +3124,10 @@ class TestProjectCreation(OsfTestCase):
     def test_project_new_from_template_non_user(self):
         project = ProjectFactory()
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = None)
+        res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
-        res2 = res.maybe_follow()
+        res2 = res.follow(expect_errors=True)
+        assert_equal(res2.status_code, 401)
         assert_in("Sign up or Log in", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):
