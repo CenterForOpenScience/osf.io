@@ -49,6 +49,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         for version in reversed(versions)
     ]
 
+
 def _get_wiki_pages_current(node):
     return [
         {
@@ -61,6 +62,7 @@ def _get_wiki_pages_current(node):
         ]
     ]
 
+
 def _get_wiki_api_urls(node, name, additional_urls=None):
     urls = {
         'base': node.api_url_for('project_wiki_home'),
@@ -70,6 +72,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
     if additional_urls:
         urls.update(additional_urls)
     return urls
+
 
 def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     urls = {
@@ -82,6 +85,7 @@ def _get_wiki_web_urls(node, key, version=1, additional_urls=None):
     if additional_urls:
         urls.update(additional_urls)
     return urls
+
 
 def _serialize_wiki_toc(project, auth):
     toc = [
@@ -100,6 +104,7 @@ def _serialize_wiki_toc(project, auth):
         if child.has_addon('wiki')
     ]
     return toc
+
 
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
@@ -128,6 +133,7 @@ def wiki_widget(**kwargs):
     }
     ret.update(wiki.config.to_json())
     return ret
+
 
 @must_be_valid_project  # injects project
 @must_be_contributor_or_public  # injects user, project
@@ -170,6 +176,7 @@ def project_wiki_compare(auth, wname, wver, **kwargs):
         return ret
     raise HTTPError(http.NOT_FOUND)
 
+
 @must_be_valid_project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
@@ -181,6 +188,7 @@ def wiki_page_content(wname, **kwargs):
     return {
         'wiki_content': wiki_page.content if wiki_page else ''
     }
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects user, project
@@ -196,6 +204,7 @@ def project_wiki_delete(auth, wname, **kwargs):
     node.delete_node_wiki(wiki_name, auth)
     node.save()
     return {}
+
 
 @must_be_valid_project  # returns project
 @must_have_permission('write')  # returns user, project
@@ -245,6 +254,7 @@ def project_wiki_edit(auth, wname, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+
 @must_be_valid_project  # injects node or project
 @must_have_permission('write')  # injects user
 @must_not_be_registration
@@ -273,11 +283,13 @@ def project_wiki_edit_post(auth, wname, **kwargs):
         ret = {'status': 'success'}
     return ret, http.FOUND, None, redirect_url
 
+
 @must_be_valid_project
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
     return {}, None, None, node.web_url_for('project_wiki_page', wname='home', _guid=True)
+
 
 @must_be_valid_project  # injects project
 @must_be_contributor_or_public
@@ -317,6 +329,7 @@ def project_wiki_page(auth, wname, **kwargs):
     }
     ret.update(_view_project(node, auth, primary=True))
     return ret
+
 
 @must_not_be_registration
 @must_have_permission('write')
@@ -369,6 +382,7 @@ def project_wiki_rename(wname, **kwargs):
             return {'message': new_wiki_name}
     raise HTTPError(http.BAD_REQUEST)
 
+
 @must_be_valid_project  # returns project
 @must_have_permission('write')  # returns user, project
 @must_not_be_registration
@@ -384,6 +398,7 @@ def project_wiki_validate_name(wname, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     return {'message': wiki_name}
+
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects auth, project
