@@ -3,26 +3,24 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
+<div class="scripted" id="dataverseScope">
 
     <ol class="breadcrumb">
-         <li><a href="{{files_page_url}}">${node_title}</a></li>
+         <li><a data-bind="attr: {href: files_url}">{{nodeTitle}}</a></li>
          <li>Dataverse</li>
-         <li class="active overflow" >${file_name}</li>
+         <li class="active overflow">{{filename}}</li>
     </ol>
 
-         <p>
-             <a href="{{download_url}}" class="btn btn-success btn-lg">Download <i class="icon-download-alt"></i></a>
-
-            % if user['can_edit'] and 'write' in user['permissions']:
-                <button data-bind= "click: deleteFile" class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i></button>
-            % endif
-         </p>
+     <p>
+         <a data-bind="attr: {href: download_url}" class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
+        % if user['can_edit'] and 'write' in user['permissions']:
+            <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i></button>
+        % endif
+     </p>
 
 
     % if not node['anonymous']:
-        <div class="scripted" id="dataverseScope">
             <table class="table table-striped" id="file-version-history">
-
                 <thead>
                 <tr>
                     <th>Dataverse</th>
@@ -42,8 +40,8 @@
                                 {{study}}</a>
                         </td>
                         <td>
-                            <a href="{{download_url}}" class="btn btn-primary btn-sm">
-                               Download <i class="icon-download-alt"></i>
+                            <a data-bind="attr: {href: download_url}" class="btn btn-primary btn-sm">
+                                <i class="icon-download-alt"></i>
                             </a>
                         </td>
                     </tr>
@@ -51,9 +49,8 @@
 
             </table>
 
-        </div>
     % endif
-
+</div>
     <script>
         $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
             var url = '${info_url}';
