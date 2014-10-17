@@ -23,7 +23,7 @@ def list_custom_routes(node_addon, **kwargs):
     node = kwargs.get('node') or kwargs['project']
 
     return {
-        node.api_url_for('resolve_route', route=url): query
+        query: node.api_url_for('resolve_route', route=url)
         for url, query
         in node_addon.routes.items()
     }

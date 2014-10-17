@@ -49,8 +49,8 @@
             // Update view model
             self.customRoutes(ko.utils.arrayMap(Object.keys(response), function(key) {
                 return {
-                    url: key,
-                    query: response[key]
+                    url: response[key],
+                    query: key
                 };
             }));
 

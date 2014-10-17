@@ -12,16 +12,16 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Route</th>
                 <th>Query</th>
+                <th>Route</th>
             </tr>
         </thead>
         <tbody data-bind="foreach: customRoutes">
             <tr>
+                <td>{{query}}</td>
                 <td>
                     <a data-bind="attr: { href: url}">{{url}}</a>
                 </td>
-                <td>{{query}}</td>
             </tr>
         </tbody>
     </table>
