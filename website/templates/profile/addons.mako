@@ -42,7 +42,7 @@
                                         <input
                                             type="checkbox"
                                             name="${addon.short_name}"
-                                            ${'checked' if addon.short_name in addons_enabled else ''}
+                                            ${'checked' if (addon.short_name in addons_enabled) else ''}
                                         />
                                         ${addon.full_name}
                                     </label>

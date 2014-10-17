@@ -73,12 +73,16 @@
                     self.loadedSettings(true);
                 },
                 error: function(xhr, textStatus, error) {
-                    console.error(textStatus); console.error(error);
                     self.changeMessage('Could not retrieve Figshare settings at ' +
                         'this time. Please refresh ' +
                         'the page. If the problem persists, email ' +
                         '<a href="mailto:support@osf.io">support@osf.io</a>.',
                         'text-warning');
+                    Raven.captureMessage('Could not GET Figshare settings', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
                 }
             });
         };
@@ -151,8 +155,9 @@
          * Send a PUT request to change the linked Figshare folder.
          */
         self.submitSettings = function() {
-            $.osf.putJSON(self.urls().config, ko.toJS(self),
-                onSubmitSuccess, onSubmitError);
+            $.osf.putJSON(self.urls().config, ko.toJS(self))
+                .done(onSubmitSuccess)
+                .fail(onSubmitError);
         };
 
         /**
@@ -236,8 +241,9 @@
                 message: 'Are you sure you want to authorize this project with your Figshare access token?',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        return $.osf.putJSON(self.urls().importAuth, {},
-                            onImportSuccess, onImportError);
+                        return $.osf.putJSON(self.urls().importAuth, {})
+                            .done(onImportSuccess)
+                            .fail(onImportError);
                     }
                 }
             });
@@ -277,9 +283,12 @@
                 ajaxOptions: {
                    error: function(xhr, textStatus, error) {
                         self.loading(false);
-                        console.error(textStatus); console.error(error);
                         self.changeMessage('Could not connect to Figshare at this time. ' +
                                             'Please try again later.', 'text-warning');
+                        Raven.captureMessage('Could not GET Figshare contents', {
+                            textStatus: textStatus,
+                            error: error
+                        });
                     }
                 },
                 init: function() {

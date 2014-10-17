@@ -209,4 +209,7 @@ def search_contributor():
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else list()
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
-    return search.search_contributor(query, exclude, get_current_user())
+    page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
+    size = int(bleach.clean(request.args.get('size', '10'), tags=[], strip=True))
+    return search.search_contributor(query=query, page=page, size=size,
+                                     exclude=exclude, current_user=get_current_user())

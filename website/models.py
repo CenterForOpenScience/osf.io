@@ -11,12 +11,13 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink
 )
+from website.conferences.model import Conference
 
 # All models
 MODELS = (
     User, ApiKey, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
-    MailRecord, Comment, PrivateLink,
+    MailRecord, Comment, PrivateLink, Conference,
 )
 
 GUID_MODELS = (User, Node, Comment,)

@@ -19,24 +19,43 @@
     /**
      * Posts JSON data.
      *
+     * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+     * interface (using the `done` and `fail` methods of a jqXHR).
+     *
      * Example:
-     *     $.osf.postJSON('/foo', {'email': 'bar@baz.com'}, function(data) {...})
+     *     var request = $.osf.postJSON('/foo', {'email': 'bar@baz.com'});
+     *     request.done(function(response) {
+     *         // ...
+     *     })
+     *     request.fail(function(xhr, textStatus, err) {
+     *         // ...
+     *     }
      *
      * @param  {String} url  The url to post to
      * @param  {Object} data JSON data to send to the endpoint
      * @return {jQuery xhr}
      */
-    $.osf.postJSON = function(url, data) {
+    $.osf.postJSON = function(url, data, success, error) {
         var ajaxOpts = {
             url: url, type: 'post',
             data: JSON.stringify(data),
             contentType: 'application/json', dataType: 'json'
         };
+        // For backwards compatibility. Prefer the Promise interface to these callbacks.
+        if (typeof success === 'function') {
+            ajaxOpts.success = success;
+        }
+        if (typeof error === 'function') {
+            ajaxOpts.error = error;
+        }
         return $.ajax(ajaxOpts);
     };
 
     /**
      * Puts JSON data.
+     *
+     * NOTE: The `success` and `error` callbacks are deprecated. Prefer the Promise
+     * interface (using the `done` and `fail` methods of a jqXHR).
      *
      * Example:
      *     $.osf.putJSON('/foo', {'email': 'bar@baz.com'})
@@ -45,12 +64,19 @@
      * @param  {Object} data JSON data to send to the endpoint
      * @return {jQuery xhr}
      */
-    $.osf.putJSON = function(url, data) {
+    $.osf.putJSON = function(url, data, success, error) {
         var ajaxOpts = {
             url: url, type: 'put',
             data: JSON.stringify(data),
             contentType: 'application/json', dataType: 'json'
         };
+        // For backwards compatibility. Prefer the Promise interface to these callbacks.
+        if (typeof success === 'function') {
+            ajaxOpts.success = success;
+        }
+        if (typeof error === 'function') {
+            ajaxOpts.error = error;
+        }
         return $.ajax(ajaxOpts);
     };
 
@@ -65,9 +91,11 @@
             title: response.responseJSON.message_short || errorDefaultShort,
             message: response.responseJSON.message_long || errorDefaultLong
         });
+        Raven.captureMessage('Unexpected error occurred in JSON request');
     };
 
     $.osf.handleEditableError = function(response, newValue) {
+        Raven.captureMessage('Unexpected error occurred in an editable input');
         return 'Unexpected error: ' + response.statusText;
     };
 

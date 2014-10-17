@@ -87,13 +87,16 @@
             }).done(function(response) {
                 self.updateFromData(response);
             }).fail(function(xhr, textStatus, error) {
-                console.error(textStatus);
-                console.error(error);
                 self.changeMessage('Could not retrieve Forward settings at ' +
                     'this time. Please refresh ' +
                     'the page. If the problem persists, email ' +
                     '<a href="mailto:support@osf.io">support@osf.io</a>.',
                     'text-warning');
+                Raven.captureMessage('Could not GET get Forward addon settings.', {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                });
             });
         };
 

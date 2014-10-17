@@ -39,7 +39,8 @@ of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {h
 <script type="text/html" id="contributor_added">
 added
 <span data-bind="html: displayContributors"></span>
-to <span data-bind="text: nodeType"></span>
+as contributor(s) to
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
@@ -76,11 +77,11 @@ made <span data-bind="text: nodeType"></span>
 <script type="text/html" id="tag_added">
 tagged
 <span data-bind="text: nodeType"></span>
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a data-bind="attr: {href: '/tags/' + params.tag + '/'}, text: params.tag"></a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 </script>
 
 <script type="text/html" id="tag_removed">
-removed tag <a data-bind="attr: {href: '/tags/' + params.tag + '/'}, text: params.tag"></a>
+removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

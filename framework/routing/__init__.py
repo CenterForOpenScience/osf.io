@@ -11,10 +11,10 @@ import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
-from flask import request, redirect, make_response
+from flask import request, make_response
 
 from framework import sentry
-from framework.flask import app
+from framework.flask import app, redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 

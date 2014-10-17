@@ -2,13 +2,9 @@
 """Tests for website.addons.dropbox.utils."""
 import io
 import os
-import mock
 
-from nose.tools import *  # PEP8 asserts
+from nose.tools import *  # noqa (PEP8 asserts)
 from werkzeug.wrappers import Response
-from dropbox.rest import ErrorResponse
-from dropbox.rest import RESTResponse as DropboxResponse
-from dropbox.client import DropboxClient
 
 from framework.auth import Auth
 from website.project.model import NodeLog
@@ -20,7 +16,6 @@ from website.addons.dropbox.tests.factories import DropboxFileFactory
 from website.addons.dropbox.tests.utils import DropboxAddonTestCase, mock_responses
 from website.app import init_app
 from website.addons.dropbox import utils
-from website.addons.dropbox.tests.utils import patch_client
 from website.addons.dropbox.views.config import serialize_folder
 
 app = init_app(set_backends=False, routes=True)
@@ -66,8 +61,6 @@ def test_is_subdir():
 
     assert_true(utils.is_subdir('foo/bar', 'Foo/bar'))
     assert_true(utils.is_subdir('Foo/bar', 'foo/bar'))
-
-
 
 
 # FIXME(sloria): This test is incorrect. The mocking needs work.

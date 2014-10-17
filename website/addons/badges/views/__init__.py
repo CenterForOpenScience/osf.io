@@ -1,1 +1,1 @@
-from . import crud, openbadge, render
+from . import crud, openbadge, render  # noqa

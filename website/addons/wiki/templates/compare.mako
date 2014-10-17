@@ -1,3 +1,4 @@
+<%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Wiki (History)</%def>
 
@@ -8,10 +9,10 @@
             <%include file="wiki/templates/toc.mako"/>
         </div>
         <div class="col-md-9">
-            <%include file="wiki/templates/status.mako/"/>
+            <%include file="wiki/templates/status.mako"/>
         </div>
         <div class="col-md-6 wiki">
-            ${wiki_content}
+            ${wiki_content | n}
         </div>
         <div class="col-md-3">
             <%include file="wiki/templates/history.mako" />
@@ -21,9 +22,6 @@
 
 <script type="text/javascript">
     window.onload = function() {
-        var version = window.location.pathname.split('/').pop();
-        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>' + version + '</h5>');
+        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>${compare_id}</h5>');
     }
 </script>
-
-</div>

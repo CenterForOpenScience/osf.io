@@ -182,7 +182,6 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
 
         :param DropboxUserSettings user_settings: The user settings to link.
         """
-        node = self.owner
         self.user_settings = user_settings
         nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)

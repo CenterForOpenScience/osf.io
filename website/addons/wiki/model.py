@@ -12,6 +12,7 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from modularodm import fields
+from modularodm.exceptions import ValidationValueError
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
@@ -29,6 +30,10 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 def build_wiki_url(node, label, base, end):
     return node.web_url_for('project_wiki_page', wid=label)
 
+def validate_page_name(value):
+    if value and len(value) > 100:
+        raise ValidationValueError('Page name cannot be greater than 100 characters.')
+    return True
 
 class NodeWikiPage(GuidStoredObject):
 
@@ -36,7 +41,7 @@ class NodeWikiPage(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
 
-    page_name = fields.StringField()
+    page_name = fields.StringField(validate=validate_page_name)
     version = fields.IntegerField()
     date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     is_current = fields.BooleanField()

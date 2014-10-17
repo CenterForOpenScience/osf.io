@@ -56,7 +56,7 @@
               <span class="visible-xs">Settings</span>
           </a></li>
           <li><a href="${ web_url_for('auth_logout') }">
-              <span rel="tooltip" title="Log out" class="icon-signout hidden-xs"></span>
+              <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs"></span>
               <span class="visible-xs">Log out</span>
           </a></li>
           %else:

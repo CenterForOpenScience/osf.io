@@ -85,10 +85,9 @@ def get_logs(auth, **kwargs):
         count = request.json['count']
     else:
         count = 10
-    offset = page_num*count
+    offset = page_num * count
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
     logs, has_more_logs = _get_logs(node, count, auth, link, offset)
     return {'logs': logs, 'has_more_logs': has_more_logs}
-

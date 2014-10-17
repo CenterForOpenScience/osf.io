@@ -3,10 +3,11 @@ import logging
 import itertools
 import httplib as http
 
-from flask import request, redirect
+from flask import request
 from modularodm import Q
 
 from framework.auth.core import User
+from framework.flask import redirect  # VOL-aware redirect
 from framework import utils
 from framework.forms import utils as form_utils
 from framework import sentry
@@ -91,7 +92,7 @@ def _get_user_activity(node, user, rescale_ratio):
     # using deep caching might be even faster down the road.
 
     ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count # base length of blue bar
+    non_ua_count = total_count - ua_count  # base length of blue bar
 
     # Normalize over all nodes
     ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
@@ -298,7 +299,7 @@ def watched_logs_get(**kwargs):
         if len(watch_logs) < page_size:
             watch_logs.append(serialize_log(log))
         else:
-            has_more_logs =True
+            has_more_logs = True
             break
 
     return {"logs": watch_logs, "has_more_logs": has_more_logs}
@@ -309,8 +310,8 @@ def serialize_log(node_log, anonymous=False):
     return {
         'id': str(node_log._primary_key),
         'user': node_log.user.serialize()
-                if isinstance(node_log.user, User)
-                else {'fullname': node_log.foreign_user},
+        if isinstance(node_log.user, User)
+        else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'api_key': node_log.api_key.label if node_log.api_key else '',
         'action': node_log.action,

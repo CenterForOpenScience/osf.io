@@ -143,8 +143,12 @@
             self.updateFromData(response.result);
             self.loadedSettings(true);
         }).fail(function(xhr, textStatus, error) {
-            console.error(textStatus); console.error(error);
             self.changeMessage(language.userSettingsError, 'text-warning');
+            Raven.captureMessage('Could not GET dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
         });
 
         // Flashed messages
@@ -251,7 +255,7 @@
         };
 
         function authorizeNode() {
-            return $.osf.postJSON(
+            return $.osf.putJSON(
                 self.urls().importAuth,
                 {}
             ).done(function(response) {

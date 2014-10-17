@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
-from flask import request, redirect
+from flask import request
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
@@ -10,6 +10,7 @@ from framework.sessions import set_previous_url
 from framework import status, exceptions
 from framework import forms
 from framework import auth
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
 from framework.auth.forms import (RegistrationForm, SignInForm,
@@ -129,16 +130,17 @@ def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
+    code = http.OK
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
-    return {
-        'next': next_url,
-    }
+        # Don't raise error if user is being logged out
+        if not request.args.get('logout'):
+            code = http.UNAUTHORIZED
+    return {'next': next_url}, code
 
 
 def auth_logout():
     """Log out and delete cookie.
-
     """
     logout()
     rv = redirect('/goodbye/')
@@ -165,9 +167,9 @@ def confirm_email_get(**kwargs):
             return auth.authenticate(user, response=response)
     # Return data for the error template
     return {
-       'code': http.BAD_REQUEST,
-       'message_short': 'Link Expired',
-       'message_long': language.LINK_EXPIRED
+        'code': http.BAD_REQUEST,
+        'message_short': 'Link Expired',
+        'message_long': language.LINK_EXPIRED
     }, http.BAD_REQUEST
 
 

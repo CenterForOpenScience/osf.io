@@ -6,8 +6,8 @@ import urlparse
 import bson.objectid
 import itsdangerous
 from werkzeug.local import LocalProxy
-from flask import request, redirect
-from framework.flask import app
+from flask import request
+from framework.flask import app, redirect
 
 from website import settings
 

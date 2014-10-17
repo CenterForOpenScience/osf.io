@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, resolve_pointer
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -31,7 +31,6 @@ from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
-from .log import _get_logs
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +65,9 @@ def project_new(**kwargs):
 def project_new_post(auth, **kwargs):
     user = auth.user
 
-    title = request.json.get('title')
+    title = strip_html(request.json.get('title'))
     template = request.json.get('template')
-    description = request.json.get('description')
+    description = strip_html(request.json.get('description'))
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -134,7 +133,10 @@ def folder_new_post(auth, nid, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     folder = new_folder(strip_html(title), user)
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {
         'projectUrl': '/dashboard/',
@@ -158,7 +160,10 @@ def add_folder(**kwargs):
         title, user
     )
     folders = [folder]
-    _add_pointers(node, folders, auth)
+    try:
+        _add_pointers(node, folders, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
     return {}, 201, None
 
 ##############################################################################
@@ -175,7 +180,7 @@ def project_new_node(**kwargs):
     user = kwargs['auth'].user
     if form.validate():
         node = new_node(
-            title=form.title.data,
+            title=strip_html(form.title.data),
             user=user,
             category=form.category.data,
             project=project,
@@ -300,7 +305,6 @@ def node_setting(**kwargs):
         addon
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
-        and 'node' not in addon.added_mandatory
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
     ]
     rv['addons_enabled'] = addons_enabled
@@ -334,7 +338,7 @@ def node_contributors(**kwargs):
     return rv
 
 
-@must_have_permission('write')
+@must_have_permission('admin')
 def configure_comments(**kwargs):
     node = kwargs['node'] or kwargs['project']
     comment_level = request.json.get('commentLevel')
@@ -622,7 +626,6 @@ def _render_addon(node):
     css = []
 
     for addon in node.get_addons():
-
         configs[addon.config.short_name] = addon.config.to_json()
         js.extend(addon.config.include_js.get('widget', []))
         css.extend(addon.config.include_css.get('widget', []))
@@ -631,6 +634,15 @@ def _render_addon(node):
         css.extend(addon.config.include_css.get('files', []))
 
     return widgets, configs, js, css
+
+
+def _should_show_wiki_widget(node, user):
+    if not node.has_permission(user, 'write'):
+        wiki_page = node.get_wiki_page('home', None)
+        return wiki_page and wiki_page.html(node)
+
+    else:
+        return True
 
 
 def _view_project(node, auth, primary=False):
@@ -684,19 +696,19 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'registration_count': len(node.registration_list),
+            'registration_count': len(node.node__registrations),
 
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
             'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
-            'fork_count': len(node.fork_list),
+            'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': node.points,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
@@ -724,6 +736,7 @@ def _view_project(node, auth, primary=False):
             'id': user._id if user else None,
             'username': user.username if user else None,
             'can_comment': node.can_comment(auth),
+            'show_wiki_widget': _should_show_wiki_widget(node, user),
         },
         'badges': _get_badge(user),
         # TODO: Namespace with nested dicts
@@ -1073,7 +1086,10 @@ def move_pointers(auth):
             raise HTTPError(http.BAD_REQUEST)
 
         from_node.save()
-        _add_pointers(to_node, [pointer_node], auth)
+        try:
+            _add_pointers(to_node, [pointer_node], auth)
+        except ValueError:
+            raise HTTPError(http.BAD_REQUEST)
 
     return {}, 200, None
 
@@ -1091,8 +1107,10 @@ def add_pointer(auth):
 
     pointer = Node.load(pointer_to_move)
     to_node = Node.load(to_node_id)
-
-    _add_pointers(to_node, [pointer], auth)
+    try:
+        _add_pointers(to_node, [pointer], auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -1112,7 +1130,10 @@ def add_pointers(**kwargs):
         for node_id in node_ids
     ]
 
-    _add_pointers(node, nodes, auth)
+    try:
+        _add_pointers(node, nodes, auth)
+    except ValueError:
+        raise HTTPError(http.BAD_REQUEST)
 
     return {}
 
@@ -1143,7 +1164,7 @@ def remove_pointer(**kwargs):
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointer_from_folder(pointer_id, **kwargs):
@@ -1171,7 +1192,7 @@ def remove_pointer_from_folder(pointer_id, **kwargs):
 
     node.save()
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def remove_pointers_from_folder(**kwargs):
@@ -1201,7 +1222,6 @@ def remove_pointers_from_folder(**kwargs):
     node.save()
 
 
-
 @must_have_permission('write')
 @must_not_be_registration
 def fork_pointer(**kwargs):
@@ -1215,6 +1235,7 @@ def fork_pointer(**kwargs):
     pointer = Pointer.load(pointer_id)
 
     if pointer is None:
+        # TODO: Change this to 404?
         raise HTTPError(http.BAD_REQUEST)
 
     try:
@@ -1232,14 +1253,10 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    # The `parent_node` property of the `Pointer` schema refers to the parents
-    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
-    # back-reference syntax to find the parents of the `Pointer`.
-    parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    node = parent_refs[0]
+    node = resolve_pointer(pointer)
     if node.can_view(auth):
         return {
+            'id': node._id,
             'url': node.url,
             'title': node.title,
             'authorShort': abbrev_authors(node),
@@ -1253,9 +1270,11 @@ def serialize_pointer(pointer, auth):
 
 @must_be_contributor_or_public
 def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
+        if not resolve_pointer(each).is_folder
     ]}
-

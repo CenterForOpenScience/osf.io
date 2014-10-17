@@ -1,13 +1,22 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
+import httplib as http
 
-from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory
+from tests.factories import (
+    ProjectFactory,
+    UserFactory,
+    RegistrationFactory,
+    NodeFactory,
+    NodeLogFactory,
+    AuthUserFactory,
+    FolderFactory,
+)
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary
+from website.project.views.node import _get_summary, _view_project
 from website.profile import utils
 from website.views import serialize_log
 
@@ -86,6 +95,24 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_fork
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
+
+
+class TestViewProject(OsfTestCase):
+
+    # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
+    def test_view_project_pointer_count_excludes_folders(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        result = _view_project(pointed_project, Auth(pointed_project.creator))
+        # pointer_project is included in count, but not folder
+        assert_equal(result['node']['points'], 1)
 
 
 class TestNodeLogSerializers(OsfTestCase):

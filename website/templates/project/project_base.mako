@@ -3,7 +3,7 @@
 <%def name="og_description()">
 
     %if node['description']:
-        ${node['description'] + ' | '}
+        ${sanitize.strip_html(node['description']) + ' | '}
     %endif
     Hosted on the Open Science Framework
 
