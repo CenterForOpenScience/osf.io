@@ -347,7 +347,7 @@ def project_wiki_rename(wname, **kwargs):
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND, data=dict(
             message_short='Not found',
-            message_long='Wiki page with the name given was not found'
+            message_long='Wiki page with the given name was not found'
         ))
     if wiki_page.page_name.lower() == 'home':
         raise HTTPError(http.BAD_REQUEST, data=dict(
