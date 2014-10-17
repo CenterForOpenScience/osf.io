@@ -35,6 +35,13 @@ from website.addons.osffiles.exceptions import (
     VersionNotFoundError,
     FileNotFoundError,
 )
+from website.addons.wiki.exceptions import (
+    NameEmptyError,
+    NameMaximumLengthError,
+    PageCannotRenameError,
+    PageConflictError,
+    PageNotFoundError
+)
 
 from tests.base import OsfTestCase, Guid, fake
 from tests.factories import (
@@ -889,6 +896,71 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Each wiki has the expected content
         assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
+
+
+class TestRenameNodeWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestRenameNodeWiki, self).setUp()
+        # Create project with component
+        self.user = UserFactory()
+        self.consolidate_auth = Auth(user=self.user)
+        self.project = ProjectFactory()
+        self.node = NodeFactory(creator=self.user, project=self.project)
+        # user updates the wiki
+        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.versions = self.project.wiki_pages_versions
+
+    def test_rename_cannot_rename(self):
+        with assert_raises(PageCannotRenameError):
+            self.project.rename_node_wiki('home', 'New Home', self.consolidate_auth)
+            self.project.rename_node_wiki('HOME', 'New Home', self.consolidate_auth)
+
+    def test_rename_page_not_found(self):
+        with assert_raises(PageNotFoundError):
+            self.project.rename_node_wiki('abc123', 'New Home', self.consolidate_auth)
+            self.project.rename_node_wiki('ˆ•¶£˙˙®¬™∆˙', 'New Home', self.consolidate_auth)
+
+    def test_rename_page(self):
+        old_name = 'new page'
+        new_name = 'New pAGE'
+        self.project.update_node_wiki(old_name, 'new content', self.consolidate_auth)
+        self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+        page = self.project.get_wiki_page(new_name)
+        assert_not_equal(old_name, page.page_name)
+        assert_equal(new_name, page.page_name)
+
+    def test_rename_page_case_sensitive(self):
+        old_name = 'new page'
+        self.project.update_node_wiki(old_name, 'new content', self.consolidate_auth)
+        new_name = 'New pAGE'
+        self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+        new_page = self.project.get_wiki_page(new_name)
+        assert_equal(new_name, new_page.page_name)
+
+    def test_rename_existing_deleted_page(self):
+        name = 'new page'
+        old_content = 'deleted content'
+        new_content = 'new content'
+        self.project.update_node_wiki(name, old_content, self.consolidate_auth)
+        assert_in(name, self.project.wiki_pages_current)
+        self.project.delete_node_wiki(name, self.consolidate_auth)
+        assert_not_in(name, self.project.wiki_pages_current)
+        self.project.update_node_wiki(name, new_content, self.consolidate_auth)
+        new_page = self.project.get_wiki_page(name)
+        old_page = self.project.get_wiki_page(name, version=1)
+        assert_equal(old_content, old_page.content)
+        assert_equal(new_content, new_page.content)
+
+    def test_rename_page_conflict(self):
+        existing_name = 'existing page'
+        new_name = 'new page'
+        self.project.update_node_wiki(existing_name, 'old content', self.consolidate_auth)
+        assert_in(existing_name, self.project.wiki_pages_current)
+        self.project.update_node_wiki(new_name, 'new content', self.consolidate_auth)
+        assert_in(new_name, self.project.wiki_pages_current)
+        with assert_raises(PageConflictError):
+            self.project.rename_node_wiki(new_name, existing_name, self.consolidate_auth)
 
 
 class TestDeleteNodeWiki(OsfTestCase):
