@@ -906,7 +906,7 @@ class TestDeleteNodeWiki(OsfTestCase):
 
     def test_delete_log(self):
         # Delete wiki
-        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.consolidate_auth)
         # Deletion is logged
         assert_equal(self.project.logs[-1].action, 'wiki_deleted')
 
@@ -914,13 +914,13 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Delete wiki
-        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.consolidate_auth)
         # Number of versions is still correct
         assert_equal(len(self.versions['home']), 1)
 
     def test_wiki_delete(self):
         page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki(self.project, page, self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.consolidate_auth)
 
         # page was deleted
         assert_false(self.project.get_wiki_page('home'))
@@ -940,7 +940,7 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
         assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
         # Delete wiki
-        self.project.delete_node_wiki(self.project, self.project.get_wiki_page('home'), self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.consolidate_auth)
         # Check versions
         assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')

@@ -3006,7 +3006,7 @@ class TestWikiWidgetViews(OsfTestCase):
         # project with no home wiki content
         self.project2 = ProjectFactory(creator=self.project.creator)
         self.project2.add_contributor(self.read_only_contrib, permissions='read')
-        self.project2.update_node_wiki(page='home', content='', auth=Auth(self.project.creator))
+        self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
         assert_true(_should_show_wiki_widget(self.project, self.project.creator))
