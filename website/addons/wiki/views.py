@@ -21,9 +21,41 @@ from website.project.decorators import (
     must_have_permission
 )
 
+from .exceptions import (
+    NameEmptyError,
+    NameMaximumLengthError,
+    PageCannotRenameError,
+    PageConflictError,
+    PageNotFoundError,
+)
 from .model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
+
+WIKI_BODY_MUST_CONTAIN_VALUE_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='Must provide "value" in the request body.'
+))
+WIKI_NAME_EMPTY_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The wiki page name cannot be empty.'
+))
+WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The wiki page name cannot be more than 100 characters.'
+))
+WIKI_PAGE_CANNOT_RENAME_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The wiki page cannot be renamed.'
+))
+WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
+    message_short='Page conflict',
+    message_long='A wiki page already exists with the given name.'
+))
+WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
+    message_short='Not found',
+    message_long='A wiki page with the given name could not be found.'
+))
 
 
 def _get_wiki_versions(node, name, anonymous=False):
@@ -334,7 +366,7 @@ def project_wiki_page(auth, wname, **kwargs):
 @must_not_be_registration
 @must_have_permission('write')
 @must_have_addon('wiki', 'node')
-def project_wiki_rename(wname, **kwargs):
+def project_wiki_rename(auth, wname, **kwargs):
     """View that handles user the X-editable input for wiki page renaming.
 
     :param wname: The target wiki page name.
@@ -342,45 +374,23 @@ def project_wiki_rename(wname, **kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
-
-    if not wiki_page:
-        raise HTTPError(http.NOT_FOUND, data=dict(
-            message_short='Not found',
-            message_long='Wiki page with the given name was not found'
-        ))
-    if wiki_page.page_name.lower() == 'home':
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long='The wiki home page cannot be renamed.'
-        ))
     new_wiki_name = request.get_json().get('value', None)
-    if not new_wiki_name:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long='Must provide "value" in the request body'
-        ))
 
-    # TODO: This should go in a Node method like node.rename_wiki
-    wiki_key = to_mongo_key(wiki_name)
-    new_wiki_name = new_wiki_name.strip()
-    new_wiki_key = to_mongo_key(new_wiki_name)
+    if new_wiki_name is None:
+        raise WIKI_BODY_MUST_CONTAIN_VALUE_ERROR
 
-    if wiki_page and new_wiki_key:
-        if new_wiki_key in node.wiki_pages_current:
-            if wiki_key == new_wiki_key:
-                wiki_page.rename(new_wiki_name)
-                return {'message': new_wiki_name}
-            raise HTTPError(http.CONFLICT)
-        else:
-            node.wiki_pages_versions[new_wiki_key] = node.wiki_pages_versions[wiki_key]
-            del node.wiki_pages_versions[wiki_key]
-            node.wiki_pages_current[new_wiki_key] = node.wiki_pages_current[wiki_key]
-            del node.wiki_pages_current[wiki_key]
-            node.save()
-            wiki_page.rename(new_wiki_name)
-            return {'message': new_wiki_name}
-    raise HTTPError(http.BAD_REQUEST)
+    try:
+        node.rename_node_wiki(wiki_name, new_wiki_name, auth)
+    except NameEmptyError:
+        raise WIKI_NAME_EMPTY_ERROR
+    except NameMaximumLengthError:
+        raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
+    except PageCannotRenameError:
+        raise WIKI_PAGE_CANNOT_RENAME_ERROR
+    except PageConflictError:
+        raise WIKI_PAGE_CONFLICT_ERROR
+    except PageNotFoundError:
+        raise WIKI_PAGE_NOT_FOUND_ERROR
 
 
 @must_be_valid_project  # returns project

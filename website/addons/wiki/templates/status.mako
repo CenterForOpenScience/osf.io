@@ -54,13 +54,11 @@
             params: function(params) {
                return JSON.stringify(params);
             },
-            success: function(response, value){
+            success: function(response, value) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
             },
             error: function(response) {
-                if (response.status === 409) {
-                    return 'A wiki page with this name already exists.';
-                }
+                return response.responseJSON.message_long;
             }
         });
     });

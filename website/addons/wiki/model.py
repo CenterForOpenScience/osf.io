@@ -20,6 +20,11 @@ from framework.guid.model import GuidStoredObject
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
 
+from .exceptions import (
+    NameEmptyError,
+    NameMaximumLengthError,
+)
+
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
@@ -31,8 +36,13 @@ def build_wiki_url(node, label, base, end):
     return node.web_url_for('project_wiki_page', wname=label)
 
 def validate_page_name(value):
-    if value and len(value) > 100:
-        raise ValidationValueError('Page name cannot be greater than 100 characters.')
+    value = value or ''
+    value = value.strip()
+
+    if not value:
+        raise NameEmptyError('Page name cannot be blank.')
+    if len(value) > 100:
+        raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
 
 class NodeWikiPage(GuidStoredObject):

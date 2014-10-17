@@ -322,6 +322,7 @@ class NodeLog(StoredObject):
 
     WIKI_UPDATED = 'wiki_updated'
     WIKI_DELETED = 'wiki_deleted'
+    WIKI_RENAMED = 'wiki_renamed'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -2460,6 +2461,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, name, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
+        name = name.strip()
         key = to_mongo_key(name)
 
         if version:
@@ -2494,6 +2496,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         from website.addons.wiki.model import NodeWikiPage
 
+        name = name.strip()
         key = to_mongo_key(name)
 
         if key not in self.wiki_pages_current:
@@ -2534,7 +2537,65 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=new_wiki.date
         )
 
+    # TODO: Move to wiki add-on
+    def rename_node_wiki(self, name, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information including user, API key.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.exceptions import (
+            PageCannotRenameError,
+            PageConflictError,
+            PageNotFoundError,
+        )
+
+        name = name.strip()
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(name)
+        new_name = new_name.strip()
+        new_key = to_mongo_key(new_name)
+
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page.')
+        if not page:
+            raise PageNotFoundError('Wiki page not found.')
+        if new_key in self.wiki_pages_current and key != new_key:
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        page.rename(new_name)
+
+        # transfer the old key versions/current keys to the new name.
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
+            del self.wiki_pages_versions[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
+            del self.wiki_pages_current[key]
+            self.save()
+
+        self.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'id': page._primary_key,
+                'page': page.page_name,
+                'version': page.version,
+            },
+            auth=auth,
+            log_date=page.date
+        )
+
     def delete_node_wiki(self, name, auth):
+        name = name.strip()
         key = to_mongo_key(name)
         page = self.get_wiki_page(key)
 
