@@ -206,6 +206,11 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
+    def test_wiki_validate_name_cannot_create_home(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname='home')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
     def test_project_wiki_validate_name_mixed_casing(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='CaPsLoCk')
         res = self.app.get(url, auth=self.user.auth)
@@ -386,6 +391,12 @@ class TestWikiRename(OsfTestCase):
         res = self.app.put_json(url, {'value': 'newname'},
             auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_cannot_rename_wiki_page_to_home(self):
+        self.project.update_node_wiki('Hello', 'hello world', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('Hello'))
+        res = self.app.put_json(url, {'value': 'home'}, auth=self.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     def test_rename_wiki_name_with_value_missing(self):
         # value is missing
