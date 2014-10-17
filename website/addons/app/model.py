@@ -101,9 +101,13 @@ class AppNodeSettings(AddonNodeSettingsBase):
         self.owner.category = 'app'
         self.owner.save()
 
+        # Use owner ID as email as it needs to be a unique ID
         system_user = User.create_confirmed(self.owner._id, '12', self.owner.title)
         system_user.is_system_user = True
-        system_user.password = '12' # TODO Add comment
+
+        # Note: Password is a bcrypt hash
+        # Nothing has a hash of 12
+        system_user.password = '12'
         system_user.save()
 
         self.system_user = system_user

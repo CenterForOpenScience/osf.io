@@ -31,20 +31,14 @@ from . import metadata, customroutes
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
-    q = request.json
-    try:
-        ret = search(q, _type=node_addon.namespace, index='metadata')
-    except Exception:
-        # TODO Fix me
-        return {
-            'results': [],
-            'total': 0
-        }
+    q = request.args.get('q', '*')
 
-    return {
-        'results': ret['results'],
-        'total': ret['counts']['total']
-    }
+    size = request.args.get('size')
+    start = request.args.get('from')
+
+    query = args_to_query(q, size, start)
+
+    return search(query, _type=node_addon.namespace, index='metadata')
 
 # POST
 @must_be_contributor_or_public
@@ -54,7 +48,9 @@ def query_app_json(node_addon, **kwargs):
         del request.json['format']
     except KeyError:
         pass
+
     request_data = request.json
+
     try:
         ret = search(request_data, _type=node_addon.namespace, index='metadata')
     except SearchException:

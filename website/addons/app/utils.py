@@ -57,7 +57,7 @@ def elastic_to_rss(name, data, query, url):
 
     items = [
         pyrss.RSSItem(
-            guid=doc.get('id',{}).get('serviceID') or doc['_id'],
+            guid=doc.get('id', {}).get('serviceID') or doc['_id'],
             link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
@@ -121,7 +121,6 @@ def elastic_to_changelist(name, data, q):
 
     for result in data:
         url = result['id']['url']
-        date_updated = result['dateUpdated']
         last_mod = parse(result['dateUpdated']).replace(tzinfo=None)
 
         if last_mod < today and last_mod > yesterday:
