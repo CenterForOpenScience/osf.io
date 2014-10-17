@@ -129,7 +129,7 @@ def build_addon_button(text, action, title=""):
         'text': text,
         'action': action,
     }
-    if not title:
+    if title:
         button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
     return button
 
