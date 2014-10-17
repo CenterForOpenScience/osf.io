@@ -393,9 +393,12 @@ class TestWikiRename(OsfTestCase):
         assert_equal(res.status_code, 404)
 
     def test_cannot_rename_wiki_page_to_home(self):
-        self.project.update_node_wiki('Hello', 'hello world', self.consolidate_auth)
-        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('Hello'))
-        res = self.app.put_json(url, {'value': 'home'}, auth=self.auth, expect_errors=True)
+        user = AuthUserFactory()
+        # A fresh project where the 'home' wiki page has no content
+        project = ProjectFactory(creator=user)
+        project.update_node_wiki('Hello', 'hello world', Auth(user=user))
+        url = project.api_url_for('project_wiki_rename', wname=to_mongo_key('Hello'))
+        res = self.app.put_json(url, {'value': 'home'}, auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_rename_wiki_name_with_value_missing(self):
