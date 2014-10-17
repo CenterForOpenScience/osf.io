@@ -2,6 +2,13 @@
 Changelog
 *********
 
+0.18.x (unreleased)
+===================
+
+- Allow mixed casing in wiki page names.
+- Minor UI and language fixes.
+- Improved load speed on Getting Started page.
+
 0.18.0 (2014-10-14)
 ===================
 
