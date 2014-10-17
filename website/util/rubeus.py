@@ -180,6 +180,7 @@ class NodeProjectCollector(object):
         comps = contributed.find(
             # components only
             Q('category', 'ne', 'project') &
+            Q('category', 'ne', 'app') &
             # parent is not in the nodes list
             Q('__backrefs.parent.node.nodes', 'nin', all_my_projects.get_keys()) &
             # exclude deleted nodes
