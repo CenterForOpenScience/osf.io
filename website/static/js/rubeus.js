@@ -160,6 +160,28 @@
         return '';
     };
 
+    Rubeus.Utils = {};
+
+    /**
+     * Check whether newly uploaded item was added or updated. This is
+     * a hack that's necessary for services with indirect uploads (S3,
+     * OSF Storage) that don't tell us whether the file was added or
+     * updated.
+     */
+    Rubeus.Utils.itemUpdated = function(item, parent) {
+        var siblings = parent._node.children;
+        var matchCount = 0;
+        for (var i=0; i<siblings.length; i++) {
+            if (item.name === siblings[i].data.name) {
+                matchCount += 1;
+                if (matchCount > 1) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
     /**
      * Get the status message from the addon if defined, otherwise use the default message.
      */
@@ -198,6 +220,19 @@
         var $buttons = $rowElem.find('.rubeus-buttons');
         $buttons.hide();
         return this;
+    };
+
+    HGrid.prototype.delayRemoveRow = function(row) {
+        var self = this;
+        setTimeout(function() {
+            try {
+                $(self.getRowElement(row)).fadeOut(500, function() {
+                    self.removeItem(row.id);
+                });
+            } catch (error) {
+                self.removeItem(row.id);
+            }
+        }, 2000);
     };
 
     /**
@@ -429,26 +464,10 @@
             var self = this;
             if (data.actionTaken === null) {
                 self.changeStatus(row, statusType.NO_CHANGES);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                          self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else if (data.actionTaken === 'file_updated') {
                 self.changeStatus(row, statusType.UPDATED);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                            self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else{
                 // Update the row with the returned server data
                 // This is necessary for the download and delete button to work.

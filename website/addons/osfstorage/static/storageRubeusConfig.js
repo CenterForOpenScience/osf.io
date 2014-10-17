@@ -32,18 +32,28 @@
             );
         },
 
-        uploadSuccess: function(file, item) {
-            // Update the added item's urls and permissions
-            var parent = this.getByID(item.parentID);
-            item.urls = {
+        uploadSuccess: function(file, row) {
+            var self = this;
+            var parent = self.getByID(row.parentID);
+            row.urls = {
                 'view': buildUrl(parent, file, 'web'),
                 'download': buildUrl(parent, file, 'web', '/download/'),
                 'delete': buildUrl(parent, file, 'api'),
             };
-            item.permissions = parent.permissions;
-            this.updateItem(item);
-            this.changeStatus(item, Rubeus.Status.UPLOAD_SUCCESS, 2000);
+            row.permissions = parent.permissions;
+            self.updateItem(row);
+            var updated = Rubeus.Utils.itemUpdated(row, parent);
+            if (updated) {
+                self.changeStatus(row, Rubeus.Status.UPDATED);
+                self.delayRemoveRow(row);
+            } else {
+                self.changeStatus(row, Rubeus.Status.UPLOAD_SUCCESS, null, 2000,
+                    function(row) {
+                        self.showButtons(row);
+                    });
+            }
         }
+
     };
 
 }));
