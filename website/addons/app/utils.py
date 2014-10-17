@@ -43,7 +43,7 @@ def args_to_query(query, start=0, size=250):
             }
         },
         'sort': [{
-            'consumeFinished': {
+            'dateUpdated': {
                 'order': 'desc'
             }
         }],
@@ -63,7 +63,7 @@ def elastic_to_rss(name, data, query, url):
             author=doc.get('source'),
             description=doc.get('description', 'No description provided'),
             categories=doc.get('tags', 'No tags provided'),
-            pubDate=parse(doc.get('dateCreated'))
+            pubDate=parse(doc.get('dateUpdated'))
         )
         for doc in data
     ]
