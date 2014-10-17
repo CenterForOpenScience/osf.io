@@ -28,7 +28,7 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
 
 def build_wiki_url(node, label, base, end):
-    return node.web_url_for('project_wiki_page', wid=label)
+    return node.web_url_for('project_wiki_page', wname=label)
 
 def validate_page_name(value):
     if value and len(value) > 100:

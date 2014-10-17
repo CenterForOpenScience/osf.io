@@ -2457,10 +2457,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         return True
 
     # TODO: Move to wiki add-on
-    def get_wiki_page(self, page, version=None):
+    def get_wiki_page(self, name, version=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = to_mongo_key(page)
+        key = to_mongo_key(name)
 
         if version:
             try:
@@ -2468,23 +2468,23 @@ class Node(GuidStoredObject, AddonModelMixin):
             except:
                 return None
 
-            if page not in self.wiki_pages_versions:
+            if key not in self.wiki_pages_versions:
                 return None
 
-            if version > len(self.wiki_pages_versions[page]):
+            if version > len(self.wiki_pages_versions[key]):
                 return None
             else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version - 1])
+                return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
 
-        if page in self.wiki_pages_current:
-            pw = NodeWikiPage.load(self.wiki_pages_current[page])
+        if key in self.wiki_pages_current:
+            pw = NodeWikiPage.load(self.wiki_pages_current[key])
         else:
             pw = None
 
         return pw
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, auth):
+    def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
@@ -2494,23 +2494,21 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         from website.addons.wiki.model import NodeWikiPage
 
-        temp_page = page
+        key = to_mongo_key(name)
 
-        page = to_mongo_key(page)
-
-        if page not in self.wiki_pages_current:
-            if page in self.wiki_pages_versions:
-                version = len(self.wiki_pages_versions[page]) + 1
+        if key not in self.wiki_pages_current:
+            if key in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[key]) + 1
             else:
                 version = 1
         else:
-            current = NodeWikiPage.load(self.wiki_pages_current[page])
+            current = NodeWikiPage.load(self.wiki_pages_current[key])
             current.is_current = False
             version = current.version + 1
             current.save()
 
         new_wiki = NodeWikiPage(
-            page_name=temp_page,
+            page_name=name,
             version=version,
             user=auth.user,
             is_current=True,
@@ -2519,10 +2517,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         new_wiki.save()
 
-        if page not in self.wiki_pages_versions:
-            self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(new_wiki._primary_key)
-        self.wiki_pages_current[page] = new_wiki._primary_key
+        if key not in self.wiki_pages_versions:
+            self.wiki_pages_versions[key] = []
+        self.wiki_pages_versions[key].append(new_wiki._primary_key)
+        self.wiki_pages_current[key] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
@@ -2536,10 +2534,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             log_date=new_wiki.date
         )
 
-    def delete_node_wiki(self, node, page, auth):
-        page_name_key = to_mongo_key(page.page_name)
+    def delete_node_wiki(self, name, auth):
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(key)
 
-        del node.wiki_pages_current[page_name_key]
+        del self.wiki_pages_current[key]
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
