@@ -295,6 +295,10 @@ input.typeahead{
 
 }
 
+.bootbox-confirm.in {
+    z-index: 10000000;
+}
+
 /* Typeahead scaffolding */
 /* ----------- */
 
