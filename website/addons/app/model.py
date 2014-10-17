@@ -57,7 +57,11 @@ class Metadata(StoredObject):
     @property
     def children(self):
         if self.get('attached'):
-            return Metadata.load(self['attached'].get('cmids'))
+            return [
+                Metadata.load(cmid)
+                for cmid in
+                self['attached'].get('cmids', [])
+            ]
         return None
 
     def __getitem__(self, key):
