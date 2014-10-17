@@ -417,7 +417,7 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         query = (
-            Q('system_tags', 'eq', conf.endpoint)
+            Q('tags', 'eq', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )
