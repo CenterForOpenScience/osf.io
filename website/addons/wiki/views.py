@@ -383,7 +383,7 @@ def project_wiki_validate_name(wname, **kwargs):
             message_short='Wiki page name conflict.',
             message_long='A wiki page with that name already exists.'
         ))
-    return {'message': wiki_key}
+    return {'message': wiki_name}
 
 @must_be_valid_project  # injects project
 @must_have_permission('write')  # injects auth, project
