@@ -64,7 +64,7 @@
 
             <button
                     class="btn btn-default"
-                    data-bind="visible: viewable, click: cancel"
+                    data-bind="visible: viewable || !('view' in modes), click: cancel"
                 >Cancel</button>
 
             <button
