@@ -46,7 +46,6 @@
                     .text('OK');
             } else if ($data.val().length > 100) {
                 $alert.text('The new wiki page name cannot be more than 100 characters.');
-
                 $submitForm
                     .removeAttr('disabled', 'disabled')
                     .text('OK');
