@@ -911,52 +911,34 @@ class TestRenameNodeWiki(OsfTestCase):
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
 
-    def test_rename_name_empty(self):
-        # target page lookup will fail
-        with assert_raises(PageNotFoundError):
-            self.project.rename_node_wiki(None, None, self.consolidate_auth)
-            self.project.rename_node_wiki('', '', self.consolidate_auth)
-            self.project.rename_node_wiki('   ', '   ', self.consolidate_auth)
-            self.project.rename_node_wiki('', None, self.consolidate_auth)
-            self.project.rename_node_wiki('   ', None, self.consolidate_auth)
-            self.project.rename_node_wiki(None, '', self.consolidate_auth)
-            self.project.rename_node_wiki(None, '   ', self.consolidate_auth)
+    def test_rename_name_invalid(self):
+        for args in [(None, None), ('', None), ('   ', None), ('Unknown Name', None)]:
+            with assert_raises(PageNotFoundError):
+                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
 
-            self.project.rename_node_wiki('Old Name', None, self.consolidate_auth)
-            self.project.rename_node_wiki('Old Name', '', self.consolidate_auth)
-            self.project.rename_node_wiki('Old Name', '   ', self.consolidate_auth)
-
-            self.project.rename_node_wiki(None, 'New Name', self.consolidate_auth)
-            self.project.rename_node_wiki('', 'New Name', self.consolidate_auth)
-            self.project.rename_node_wiki('   ', 'New Name', self.consolidate_auth)
-
-    def test_rename_name_new_empty(self):
+    def test_rename_name_new_invalid(self):
         name = 'New Page'
         self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
-        with assert_raises(NameEmptyError):
-            self.project.rename_node_wiki(name, None, self.consolidate_auth)
-            self.project.rename_node_wiki(name, '', self.consolidate_auth)
-            self.project.rename_node_wiki(name, '   ', self.consolidate_auth)
+        for args in [(name, None), (name, ''), (name, '   ')]:
+            with assert_raises(NameEmptyError):
+                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
 
     def test_rename_name_maximum_length(self):
         name_old = 'short name'
-        name_new = (
-            'long name, long name, long name, long name, long name, '
-            'long name, long name, long name, long name, long name'
-        )
+        name_new = 'a' * 101
         self.project.update_node_wiki(name_old, 'some content', self.consolidate_auth)
         with assert_raises(NameMaximumLengthError):
             self.project.rename_node_wiki(name_old, name_new, self.consolidate_auth)
 
     def test_rename_cannot_rename(self):
-        with assert_raises(PageCannotRenameError):
-            self.project.rename_node_wiki('home', 'New Home', self.consolidate_auth)
-            self.project.rename_node_wiki('HOME', 'New Home', self.consolidate_auth)
+        for args in [('home', 'New Home'), ('HOME', 'New Home')]:
+            with assert_raises(PageCannotRenameError):
+                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
 
     def test_rename_page_not_found(self):
-        with assert_raises(PageNotFoundError):
-            self.project.rename_node_wiki('abc123', 'New Home', self.consolidate_auth)
-            self.project.rename_node_wiki('ˆ•¶£˙˙®¬™∆˙', 'New Home', self.consolidate_auth)
+        for args in [('abc123', 'New Home'), (u'ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
+            with assert_raises(PageNotFoundError):
+                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
 
     def test_rename_page(self):
         name_old = 'new page'
@@ -969,8 +951,8 @@ class TestRenameNodeWiki(OsfTestCase):
 
     def test_rename_page_case_sensitive(self):
         name_old = 'new page'
-        self.project.update_node_wiki(name_old, 'new content', self.consolidate_auth)
         name_new = 'New pAGE'
+        self.project.update_node_wiki(name_old, 'new content', self.consolidate_auth)
         self.project.rename_node_wiki(name_old, name_new, self.consolidate_auth)
         new_page = self.project.get_wiki_page(name_new)
         assert_equal(name_new, new_page.page_name)
