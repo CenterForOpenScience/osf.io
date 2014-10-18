@@ -4,6 +4,7 @@
 import os
 import urlparse
 
+import furl
 import requests
 
 from modularodm import Q
@@ -15,16 +16,16 @@ from website.util import rubeus
 from website.project.views.file import get_cache_content
 
 from website.addons.osfstorage import model
-from website.addons.osfstorage import settings as osf_storage_settings
+from website.addons.osfstorage import settings
 
 
 url_signer = sign.Signer(
-    osf_storage_settings.URLS_HMAC_SECRET,
-    osf_storage_settings.URLS_HMAC_DIGEST,
+    settings.URLS_HMAC_SECRET,
+    settings.URLS_HMAC_DIGEST,
 )
 webhook_signer = sign.Signer(
-    osf_storage_settings.WEBHOOK_HMAC_SECRET,
-    osf_storage_settings.WEBHOOK_HMAC_DIGEST,
+    settings.WEBHOOK_HMAC_SECRET,
+    settings.WEBHOOK_HMAC_DIGEST,
 )
 
 
@@ -159,24 +160,29 @@ def make_signed_request(method, url, signer, payload):
         headers={
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            osf_storage_settings.SIGNATURE_HEADER_KEY: signature,
+            settings.SIGNATURE_HEADER_KEY: signature,
         },
     )
     return resp.json()
 
 
+def patch_url(url, **kwargs):
+    parsed = furl.furl(url)
+    for key, value in kwargs.iteritems():
+        setattr(parsed, key, value)
+    return parsed.url
+
+
+def ensure_domain(url):
+    return patch_url(url, host=settings.DOMAIN)
+
+
 def build_callback_urls(node, path):
+    start_url = node.api_url_for('osf_storage_upload_start_hook', path=path)
+    finish_url = node.api_url_for('osf_storage_upload_finish_hook', path=path)
     return {
-        'startUrl': node.api_url_for(
-            'osf_storage_upload_start_hook',
-            path=path,
-            _external=True,
-        ),
-        'finishUrl': node.api_url_for(
-            'osf_storage_upload_finish_hook',
-            path=path,
-            _external=True,
-        ),
+        'startUrl': ensure_domain(start_url),
+        'finishUrl': ensure_domain(finish_url),
     }
 
 
@@ -200,7 +206,7 @@ def get_upload_url(node, user, size, content_type, file_path):
     data = make_signed_request(
         'post',
         urlparse.urljoin(
-            osf_storage_settings.UPLOAD_SERVICE_URL,
+            settings.UPLOAD_SERVICE_URL,
             'urls/upload/',
         ),
         signer=url_signer,
@@ -239,7 +245,7 @@ def get_download_url(version_idx, file_version, file_record):
     data = make_signed_request(
         'POST',
         urlparse.urljoin(
-            osf_storage_settings.UPLOAD_SERVICE_URL,
+            settings.UPLOAD_SERVICE_URL,
             'urls/download/',
         ),
         signer=url_signer,

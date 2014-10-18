@@ -1,8 +1,12 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 import hashlib
 
+from website import settings
 
+
+DOMAIN = settings.DOMAIN
 UPLOAD_SERVICE_URL = 'changeme'
 
 # HMAC options
