@@ -348,7 +348,7 @@ class TestWikiRename(OsfTestCase):
         self.wiki = self.project.get_wiki_page('home')
         self.url = self.project.api_url_for(
             'project_wiki_rename',
-            wname=to_mongo_key(self.page_name),
+            wname=self.page_name,
         )
 
     def test_rename_wiki_page_valid(self, new_name=u'away'):
@@ -359,31 +359,30 @@ class TestWikiRename(OsfTestCase):
         )
         self.project.reload()
 
-        old_wiki = self.project.get_wiki_page(self.page_name)
-        assert_false(old_wiki)
+        wiki_old = self.project.get_wiki_page(self.page_name)
+        assert_false(wiki_old)
 
-        new_wiki = self.project.get_wiki_page(new_name)
-        assert_true(new_wiki)
-        assert_equal(new_wiki._primary_key, self.page._primary_key)
-        assert_equal(new_wiki.content, self.page.content)
-        assert_equal(new_wiki.version, self.page.version)
+        wiki_new = self.project.get_wiki_page(new_name)
+        assert_true(wiki_new)
+        assert_equal(wiki_new._primary_key, self.page._primary_key)
+        assert_equal(wiki_new.content, self.page.content)
+        assert_equal(wiki_new.version, self.page.version)
 
     def test_rename_wiki_page_duplicate(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
-        new_name = 'away'
+        name_new = 'away'
 
         res = self.app.put_json(
             self.url,
-            {'value': new_name},
+            {'value': name_new},
             auth=self.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
 
-    def test_rename_wiki_invalid_name(self):
-        # url is invalid
-        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('invalid_page_name'))
-        res = self.app.put_json(url, {'value': 'newname'},
+    def test_rename_wiki_name_not_found(self):
+        url = self.project.api_url_for('project_wiki_rename', wname='not_found_page_name')
+        res = self.app.put_json(url, {'value': 'new name'},
             auth=self.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -393,25 +392,26 @@ class TestWikiRename(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_rename_wiki_page_duplicate_different_casing(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
-        new_name = 'AwAy'
-
+        # attempt to rename 'page2' from setup to different case of 'away'.
+        name_old = 'away'
+        name_new = 'AwAy'
+        self.project.update_node_wiki(name_old, 'Hello world', self.consolidate_auth)
         res = self.app.put_json(
             self.url,
-            {'value': new_name},
+            {'value': name_new},
             auth=self.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
 
     def test_rename_wiki_page_same_name_different_casing(self):
-        self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
-        new_name = 'AWAY'
-        page = self.project.get_wiki_page('away')
-        url = self.project.api_url_for('project_wiki_rename', wname=to_mongo_key('away'))
+        name_old = 'away'
+        name_new = 'AWAY'
+        self.project.update_node_wiki(name_old, 'Hello world', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_rename', wname=name_old)
         res = self.app.put_json(
             url,
-            {'value': new_name},
+            {'value': name_new},
             auth=self.auth,
             expect_errors=False
         )
@@ -428,7 +428,6 @@ class TestWikiRename(OsfTestCase):
 
         # Creates a new page
         self.project.update_node_wiki('page3' ,'moarcontent', self.consolidate_auth)
-        page3 = self.project.get_wiki_page('page3')
         self.project.save()
 
         # Renames the wiki to the deleted page

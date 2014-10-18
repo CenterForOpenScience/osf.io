@@ -32,6 +32,7 @@ from .model import NodeWikiPage
 
 logger = logging.getLogger(__name__)
 
+
 WIKI_BODY_MUST_CONTAIN_VALUE_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='Must provide "value" in the request body.'
@@ -54,7 +55,7 @@ WIKI_PAGE_CONFLICT_ERROR = HTTPError(http.CONFLICT, data=dict(
 ))
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
     message_short='Not found',
-    message_long='A wiki page with the given name could not be found.'
+    message_long='A wiki page could not be found.'
 ))
 
 
@@ -326,11 +327,22 @@ def project_wiki_home(**kwargs):
 @must_be_valid_project  # injects project
 @must_be_contributor_or_public
 @must_have_addon('wiki', 'node')
+def project_wiki_id_page(auth, wid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    wiki_page = node.get_wiki_page(id=wid)
+    if wiki_page:
+        return {}, None, None, node.web_url_for('project_wiki_page', wname=wiki_page.page_name, _guid=True)
+    else:
+        raise WIKI_PAGE_NOT_FOUND_ERROR
+
+@must_be_valid_project  # injects project
+@must_be_contributor_or_public
+@must_have_addon('wiki', 'node')
 def project_wiki_page(auth, wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
     anonymous = has_anonymous_link(node, auth)
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name)
+    wiki_name = (wname or '').strip()
+    wiki_page = node.get_wiki_page(name=wiki_name)
 
     if wiki_page:
         version = wiki_page.version
@@ -341,7 +353,6 @@ def project_wiki_page(auth, wname, **kwargs):
         is_current = False
         content = '<p><em>No wiki content</em></p>'
 
-    toc = _serialize_wiki_toc(node, auth=auth)
     ret = {
         'wiki_id': wiki_page._primary_key if wiki_page else None,
         'wiki_name': wiki_page.page_name if wiki_page else wiki_name,
@@ -352,7 +363,7 @@ def project_wiki_page(auth, wname, **kwargs):
         'is_current': is_current,
         'is_edit': False,
         'pages_current': _get_wiki_pages_current(node),
-        'toc': toc,
+        'toc': _serialize_wiki_toc(node, auth=auth),
         'category': node.category,
         'urls': {
             'api': _get_wiki_api_urls(node, wiki_name),
@@ -374,13 +385,13 @@ def project_wiki_rename(auth, wname, **kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    new_wiki_name = request.get_json().get('value', None)
+    wiki_name_new = request.get_json().get('value', None)
 
-    if new_wiki_name is None:
+    if wiki_name_new is None:
         raise WIKI_BODY_MUST_CONTAIN_VALUE_ERROR
 
     try:
-        node.rename_node_wiki(wiki_name, new_wiki_name, auth)
+        node.rename_node_wiki(wiki_name, wiki_name_new, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
     except NameMaximumLengthError:
@@ -408,26 +419,3 @@ def project_wiki_validate_name(wname, **kwargs):
             message_long='A wiki page with that name already exists.'
         ))
     return {'message': wiki_name}
-
-
-@must_be_valid_project  # injects project
-@must_have_permission('write')  # injects auth, project
-@must_have_addon('wiki', 'node')
-def project_wiki_version(auth, wname, wver, **kwargs):
-    node = kwargs['node'] or kwargs['project']
-    wiki_name = wname.strip()
-    wiki_page = node.get_wiki_page(wiki_name, version=wver)
-
-    if wiki_page:
-        ret = {
-            'wiki_id': wiki_page._primary_key,
-            'wiki_name': wiki_page.page_name,
-            'wiki_content': wiki_page.html(node),
-            'version': wiki_page.version,
-            'is_current': wiki_page.is_current,
-            'is_edit': False,
-            'wiki_version_web_url': node.web_url_for('project_wiki_version', wname=wiki_name, wver=wver, _guid=True),
-        }
-        ret.update(_view_project(node, auth, primary=True))
-        return ret
-    raise HTTPError(http.NOT_FOUND)

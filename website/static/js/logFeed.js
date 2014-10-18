@@ -27,6 +27,9 @@
         self.wikiUrl = ko.computed(function() {
             return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
         });
+        self.wikiIdUrl = ko.computed(function() {
+            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page);
+        });
 
         /**
          * Given an item in self.contributors, return its anchor element representation.
