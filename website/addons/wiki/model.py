@@ -12,7 +12,6 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from modularodm import fields
-from modularodm.exceptions import ValidationValueError
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
