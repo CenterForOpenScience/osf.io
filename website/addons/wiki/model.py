@@ -36,8 +36,7 @@ def build_wiki_url(node, label, base, end):
     return node.web_url_for('project_wiki_page', wname=label)
 
 def validate_page_name(value):
-    value = value or ''
-    value = value.strip()
+    value = (value or '').strip()
 
     if not value:
         raise NameEmptyError('Page name cannot be blank.')
