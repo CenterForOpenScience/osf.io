@@ -116,7 +116,7 @@ def build_addon_root(node_settings, name, permissions=None,
     return rv
 
 
-def build_addon_button(text, action):
+def build_addon_button(text, action, title=""):
     """Builds am action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
@@ -125,10 +125,14 @@ def build_addon_button(text, action):
     :return dict: Hgrid formatted dictionary for custom buttons
 
     """
-    return {
+    button = {
         'text': text,
         'action': action,
     }
+    if title:
+        button['attributes'] = 'title="{title}" data-toggle="tooltip" data-placement="right" '.format(title=title)
+    return button
+
 def sort_by_name(hgrid_data):
     return_value = hgrid_data
     if hgrid_data is not None:
