@@ -17,10 +17,10 @@ class PageCannotRenameError(WikiError):
     """Raised if user tried to rename special wiki pages, e.g. home."""
     pass
 
-class PageNotFoundError(WikiError):
-    """Raised if user tries to access a wiki page that does not exist."""
-    pass
-
 class PageConflictError(WikiError):
     """Raised if user tries to use an existing wiki page name."""
+    pass
+
+class PageNotFoundError(WikiError):
+    """Raised if user tries to access a wiki page that does not exist."""
     pass

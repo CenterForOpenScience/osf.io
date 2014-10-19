@@ -2561,10 +2561,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = self.get_wiki_page(name)
 
         if key == 'home':
-            raise PageCannotRenameError('Cannot rename wiki home page.')
+            raise PageCannotRenameError('Cannot rename wiki home page')
         if not page:
-            raise PageNotFoundError('Wiki page not found.')
-        if key_new in self.wiki_pages_current and key != key_new:
+            raise PageNotFoundError('Wiki page not found')
+        if (key_new in self.wiki_pages_current and key != key_new) or key_new == 'home':
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
                     name_new,
