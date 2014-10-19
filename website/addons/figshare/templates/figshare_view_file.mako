@@ -25,15 +25,15 @@ $('#figsharePublishArticle').on('click', function(){
 % endif
 
     <ol class="breadcrumb">
-        <li><a href=${files_page_url}>${node['title']}</a></li>
+        <li><a href=${urls['files']}>${node['title']}</a></li>
         <li>Figshare</li>
         <li class="active overflow">${file_name}</li>
     </ol>
 
     <p>
             <!-- Download button -->
-            %if download_url:
-                <a href="${download_url}"
+            %if urls['download']:
+                <a href="${urls['download']}"
                     class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
             %endif
 
@@ -46,10 +46,10 @@ $('#figsharePublishArticle').on('click', function(){
 
 %if file_versions:
     <p>Versions: ${file_version}
-    <a href="${version_url}">Version History</a></p>
+    <a href="${urls['version']}">Version History</a></p>
 %endif
 %if figshare_url and not node['anonymous']:
-    <p><a href="${figshare_url}">View on FigShare</a></p>
+    <p><a href="${urls['figshare']}">View on FigShare</a></p>
 %endif
 
 %if file_status == 'Public':
@@ -59,9 +59,8 @@ $('#figsharePublishArticle').on('click', function(){
     <script>
         $script(['/static/js/deleteFile.js'], function() {
             var urls = {
-                'delete_url': '${delete_url}',
-                'files_page_url': '${files_page_url}'
-
+                'delete_url': '${urls['delete']}',
+                'files_page_url': '${urls['files']}'
             };
             var deleteFile = new DeleteFile('#figshareScope', urls);
         });
