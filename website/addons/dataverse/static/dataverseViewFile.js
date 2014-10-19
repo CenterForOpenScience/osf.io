@@ -25,7 +25,6 @@
         self.study = ko.observable();
         self.study_url = ko.observable();
         self.download_url = ko.observable();
-        self.render_url = ko.observable();
         self.delete_url = ko.observable();
         self.files_url = ko.observable();
         self.loaded = ko.observable(false);
@@ -40,13 +39,12 @@
                 self.nodeTitle(data.node.title);
                 self.filename(data.filename);
                 self.dataverse(data.dataverse);
-                self.dataverse_url(data.dataverse_url);
+                self.dataverse_url(data.urls.dataverse);
                 self.study(data.study);
-                self.study_url(data.study_url);
-                self.download_url(data.download_url);
-                self.render_url(data.render_url);
-                self.delete_url(data.delete_url);
-                self.files_url(data.files_url);
+                self.study_url(data.urls.study);
+                self.download_url(data.urls.download);
+                self.delete_url(data.urls.delete);
+                self.files_url(data.urls.files);
                 self.loaded(true);
             }
         });

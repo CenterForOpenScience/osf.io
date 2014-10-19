@@ -657,8 +657,8 @@ class TestDataverseViewsCrud(DataverseAddonTestCase):
         assert_in(self.project._id, res.json['data']['node']['id'])
         assert_in(self.project.title, res.json['data']['node']['title'])
         assert_in(mock_scrape()[0], res.json['data']['filename'])
-        assert_in(delete_url, res.json['data']['delete_url'])
-        assert_in(files_url, res.json['data']['files_url'])
+        assert_in(delete_url, res.json['data']['urls']['delete'])
+        assert_in(files_url, res.json['data']['urls']['files'])
 
     @mock.patch('website.addons.dataverse.views.crud.connect_from_settings_or_403')
     @mock.patch('website.addons.dataverse.views.crud.get_files')

@@ -133,12 +133,14 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
         },
         'filename': scrape_dataverse(file_id, name_only=True)[0],
         'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
-        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
         'study': privacy_info_handle(node_addon.study, anonymous),
-        'study_url': privacy_info_handle(study_url, anonymous),
-        'download_url': privacy_info_handle(download_url, anonymous),
-        'delete_url': privacy_info_handle(delete_url, anonymous),
-        'files_url': node.web_url_for('collect_file_trees')
+        'urls': {
+            'dataverse': privacy_info_handle(dataverse_url, anonymous),
+            'study': privacy_info_handle(study_url, anonymous),
+            'download': privacy_info_handle(download_url, anonymous),
+            'delete': privacy_info_handle(delete_url, anonymous),
+            'files': node.web_url_for('collect_file_trees'),
+        }
     }
 
     return {
@@ -184,12 +186,15 @@ def dataverse_view_file(node_addon, auth, **kwargs):
     rv = {
         'file_name': filename,
         'rendered': rendered,
-        'render_url': node.api_url_for('dataverse_get_rendered_file',
+        'urls': {
+            'render': node.api_url_for('dataverse_get_rendered_file',
                                        path=file_id),
-        'download_url': node.web_url_for('dataverse_download_file',
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file_id),
-        'info_url': node.api_url_for('dataverse_get_file_info',
+            'info': node.api_url_for('dataverse_get_file_info',
                                      path=file_id),
+        }
+
     }
     rv.update(_view_project(node, auth))
     return rv

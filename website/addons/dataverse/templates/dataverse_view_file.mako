@@ -57,7 +57,7 @@
 </div>
     <script>
         $script(["/static/addons/dataverse/dataverseViewFile.js"], function() {
-            var url = '${info_url}';
+            var url = '${urls['info']}';
             var dataverseFileTable = new DataverseFileTable('#dataverseScope', url);
         });
     </script>
