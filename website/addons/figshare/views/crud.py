@@ -337,6 +337,8 @@ def figshare_view_file(*args, **kwargs):
     render_url = node.api_url + \
         'figshare/render/article/{aid}/file/{fid}'.format(aid=article_id, fid=file_id)
 
+    delete_url = node.api_url + 'figshare/article/{aid}/file/{fid}/'.format(aid=article_id, fid=file_id)
+
     filename = found['name']
     cache_file = get_cache_file(
         article_id, file_id
@@ -359,7 +361,12 @@ def figshare_view_file(*args, **kwargs):
     categories = connect.categories()['items']  # TODO Cache this
     categories = ''.join(
         ["<option value='{val}'>{label}</option>".format(val=i['id'], label=i['name']) for i in categories])
+
     rv = {
+        'node': {
+            'id': node._id,
+            'title': node.title
+        },
         'file_name': filename,
         'render_url': render_url,
         'rendered': rendered,
@@ -374,6 +381,8 @@ def figshare_view_file(*args, **kwargs):
         'figshare_categories': categories,
         'figshare_title': article['items'][0]['title'],
         'figshare_desc': article['items'][0]['description'],
+        'delete_url': delete_url,
+        'files_page_url': node.web_url_for('collect_file_trees')
     }
     rv.update(_view_project(node, auth, primary=True))
     return rv

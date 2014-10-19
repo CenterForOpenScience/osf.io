@@ -2,6 +2,7 @@
 <%def name="title()">${file_name}</%def>
 
 <%def name="file_versions()">
+<div id="figshareScope">
 <h3>Status: <span class="label label-${'success' if file_status == 'Public' else 'warning'}"> ${file_status}</span></h3>
 % if file_status != 'Public' and parent_type == 'singlefile':
 <!--<a id="figsharePublishArticle" class="btn btn-danger">Publish</a><h3>
@@ -22,11 +23,27 @@ $('#figsharePublishArticle').on('click', function(){
 </script>
 -->
 % endif
-%if download_url:
-    <p><a href="${download_url}" class="btn btn-primary btn-sm">
-    Download <i class="icon-download-alt"></i>
-    </a></p>
-%endif
+
+    <ol class="breadcrumb">
+        <li><a href=${files_page_url}>${node['title']}</a></li>
+        <li>Figshare</li>
+        <li class="active overflow">${file_name}</li>
+    </ol>
+
+    <p>
+            <!-- Download button -->
+            %if download_url:
+                <a href="${download_url}"
+                    class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
+            %endif
+
+           %if file_status != 'Public' and user['can_edit'] and 'write' in user['permissions']:
+                <!--Delete button -->
+                <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i>
+               </button>
+           %endif
+    </p>
+
 %if file_versions:
     <p>Versions: ${file_version}
     <a href="${version_url}">Version History</a></p>
@@ -38,5 +55,18 @@ $('#figsharePublishArticle').on('click', function(){
 %if file_status == 'Public':
     <p>FigShare DOI: <a href="${doi}">${doi}</a></p>
 %endif
+</div>
+    <script>
+        $script(['/static/js/deleteFile.js'], function() {
+            var urls = {
+                'delete_url': '${delete_url}',
+                'files_page_url': '${files_page_url}'
+
+            };
+            var deleteFile = new DeleteFile('#figshareScope', urls);
+        });
+    </script>
+
+
 </%def>
 
