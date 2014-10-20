@@ -6,6 +6,8 @@ from tests.base import OsfTestCase
 from tests.factories import AuthFactory
 from tests.factories import ProjectFactory
 
+from framework.auth import User
+
 from website.addons.app.model import Metadata, AppNodeSettings
 
 
@@ -103,3 +105,65 @@ class TestMetadata(OsfTestCase):
 
         assert_in(meta2, meta1.children)
         assert_in(meta3, meta1.children)
+
+    def test_duck_dictionary(self):
+        meta = Metadata(app=self.app)
+
+        meta['ducks'] = 'cool'
+        assert_equals(meta['ducks'], 'cool')
+
+        del meta['ducks']
+        assert_equals(meta.get('ducks'), None)
+
+
+class TestAppSettings(OsfTestCase):
+
+    def setUp(self):
+        super(TestAppSettings, self).setUp()
+        self.auth = AuthFactory()
+        self.project = ProjectFactory()
+
+    def test_can_add_addon(self):
+        self.project.add_addon('app', self.auth)
+        assert_not_equal(self.project.get_addon('app'), None)
+
+    def test_user_created(self):
+        num = User.find().count()
+        self.project.add_addon('app', self.auth)
+        assert_equals(num + 1, User.find().count())
+
+        app = self.project.get_addon('app')
+        assert_not_equal(app.system_user, None)
+
+    def test_user_password(self):
+        self.project.add_addon('app', self.auth)
+        app = self.project.get_addon('app')
+        assert_equals(app.system_user.password, '12')
+
+    def test_namespace_is_id(self):
+        self.project.add_addon('app', self.auth)
+        app = self.project.get_addon('app')
+        assert_equals(app.namespace, self.project._id)
+
+    def test_name_is_title(self):
+        self.project.add_addon('app', self.auth)
+        app = self.project.get_addon('app')
+        assert_equals(app.name, self.project.title)
+
+    def test_all_data(self):
+        self.project.add_addon('app', self.auth)
+        app = self.project.get_addon('app')
+        metadatas = [
+            Metadata(app=app),
+            Metadata(app=app),
+            Metadata(app=app)
+        ]
+        [x.save() for x in metadatas]
+        app.reload()
+
+        metadatums = app.all_data
+
+        assert_equals(len(metadatums), 3)
+
+        for m in metadatas:
+            assert_in(m, metadatums)
