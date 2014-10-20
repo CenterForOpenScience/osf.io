@@ -912,16 +912,16 @@ class TestRenameNodeWiki(OsfTestCase):
         self.versions = self.project.wiki_pages_versions
 
     def test_rename_name_invalid(self):
-        for args in [(None, None), ('', None), ('   ', None), ('Unknown Name', None)]:
+        for invalid_name in [None, '', '   ', 'Unknown Name']:
             with assert_raises(PageNotFoundError):
-                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(invalid_name, None, auth=self.consolidate_auth)
 
     def test_rename_new_name_invalid(self):
         name = 'New Page'
         self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
-        for args in [(name, None), (name, ''), (name, '   ')]:
+        for invalid_name in [None, '', '   ']:
             with assert_raises(NameEmptyError):
-                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(name, invalid_name, auth=self.consolidate_auth)
 
     def test_rename_name_maximum_length(self):
         old_name = 'short name'
