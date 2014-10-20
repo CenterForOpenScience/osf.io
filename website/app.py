@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import importlib
+import shutil
 
 from modularodm import storage
 
@@ -16,12 +17,10 @@ from framework.transactions import handlers as transaction_handlers
 import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
+from website.project.model import ensure_schemas
 
 
 def init_addons(settings, routes=True):
-    """
-
-    """
     ADDONS_AVAILABLE = []
     for addon_name in settings.ADDONS_REQUESTED:
         addon = init_addon(app, addon_name, routes)
@@ -72,6 +71,12 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     except AssertionError as error:  # Addon Route map has already been created
         logger.error(error)
 
+    # Ensure that the built templates file exists
+    try:
+        shutil.copyfile(settings.CORE_TEMPLATES, settings.BUILT_TEMPLATES)
+    except OSError:
+        pass
+
     app.debug = settings.DEBUG_MODE
     if set_backends:
         logger.debug('Setting storage backends')
@@ -94,4 +99,5 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
         sentry.init_app(app)
         logger.info("Sentry enabled; Flask's debug mode disabled")
 
+    ensure_schemas()
     return app
