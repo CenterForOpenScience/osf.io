@@ -10,7 +10,10 @@
 
         % if user['can_edit'] and 'write' in user['permissions']:
             <p>
-                <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn-danger btn-lg">
+                <a href="${versions[0]['download']}" class ="btn btn-success btn-md" download="${file_name}">
+                                 Download <i class="icon-download-alt"></i>
+                </a>
+                <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md">
                     Delete <i class="icon-trash"></i>
                 </a>
             </p>
@@ -38,7 +41,7 @@
                         </td>
                         <td>
                             <a href="${version['download']}" class ="btn btn-primary btn-sm" download="${file_name}">
-                                 Download <i class="icon-download-alt"></i>
+                                 <i class="icon-download-alt"></i>
                             </a>
                         </td>
                     </tr>
