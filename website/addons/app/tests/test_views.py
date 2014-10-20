@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from tests.base import OsfTestCase
@@ -325,3 +325,40 @@ class TestCustomRouteViews(OsfTestCase):
         assert_equals(ret.status_code, 200)
         assert_equals(['back'], ret.json.keys())
         assert_in('nickel', ret.json['back'])
+
+    @mock.patch('website.addons.app.views.crud.customroutes.search')
+    @mock.patch('website.addons.app.views.crud.customroutes.args_to_query')
+    def test_resolve_route(self, mock_query, mock_elastic):
+        mock_elastic.return_value = {
+            'results': []
+        }
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('resolve_route', route='nickel')
+        ret = self.app.get(url)
+
+        assert_true(mock_elastic.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('back', None, None)
+
+    @mock.patch('website.addons.app.views.crud.customroutes.search')
+    @mock.patch('website.addons.app.views.crud.customroutes.args_to_query')
+    @mock.patch('website.addons.app.views.crud.customroutes.elastic_to_rss')
+    def test_resolve_route(self, mock_rss, mock_query, mock_elastic):
+        mock_rss.return_value = ''
+        mock_elastic.return_value = {
+            'results': []
+        }
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('resolve_route_rss', route='nickel', _xml=True)
+        ret = self.app.get(url)
+
+        assert_true(mock_rss.called)
+        assert_true(mock_elastic.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('back', None, None)
