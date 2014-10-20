@@ -220,8 +220,108 @@ class TestCustomRouteViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('app', self.auth)
-        self.appAddon = self.project.get_addon('app')
+        self.app_addon = self.project.get_addon('app')
 
         # Log user in
         self.app.authenticate(*self.user.auth)
 
+    def test_create_route(self):
+        url = self.project.api_url_for('create_route')
+        ret = self.app.post_json(url, {'route': 'nickel', 'query': 'back'})
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 201)
+        assert_true(self.app_addon.routes.get('nickel'))
+
+    def test_create_route_already_made(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('create_route')
+        ret = self.app.post_json(url, {'route': 'nickel', 'query': 'back'}, expect_errors=True)
+
+
+        assert_equals(ret.status_code, 400)
+
+    def test_create_route_no_data(self):
+        url = self.project.api_url_for('create_route')
+        ret = self.app.post_json(url, {}, expect_errors=True)
+
+
+        assert_equals(ret.status_code, 400)
+
+    def test_update_route(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.put_json(url, {'query': 'front'})
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(self.app_addon.routes['nickel'], 'front')
+
+    def test_update_route_no_query(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.put_json(url, {'query': None}, expect_errors=True)
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 400)
+
+    def test_update_route_no_data(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.put_json(url, {}, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+    def test_update_route_no_route(self):
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.put_json(url, {'query': 'front'}, expect_errors=True)
+
+        assert_equals(ret.status_code, 404)
+
+    def test_delete_route(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.delete(url)
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 204)
+        assert_equals(self.app_addon.routes.get('nickel'), None)
+
+    def test_delete_route_no_route(self):
+        url = self.project.api_url_for('update_route', route='nickel')
+        ret = self.app.delete(url, expect_errors=True)
+
+        self.app_addon.reload()
+
+        assert_equals(ret.status_code, 400)
+
+    def test_list_routes(self):
+        self.app_addon.routes['nickel'] = 'back'
+        self.app_addon.save()
+        self.app_addon.reload()
+
+        url = self.project.api_url_for('list_custom_routes')
+        ret = self.app.get(url)
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(['back'], ret.json.keys())
+        assert_in('nickel', ret.json['back'])
