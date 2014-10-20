@@ -152,4 +152,4 @@ class AppNodeSettings(AddonNodeSettingsBase):
 
     @property
     def all_data(self):
-        return self.metadata__data
+        return self.metadata__owner
