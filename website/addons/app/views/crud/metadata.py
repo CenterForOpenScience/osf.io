@@ -28,10 +28,15 @@ def get_metadata_ids(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_metadata(node_addon, mid, **kwargs):
-    try:
-        return Metadata.load(mid).to_json()
-    except AttributeError:
+    meta = Metadata.load(mid)
+
+    if not meta:
         raise HTTPError(http.NOT_FOUND)
+
+    if meta.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
+
+    return meta.to_json()
 
 
 # POST
@@ -59,6 +64,9 @@ def promote_metadata(node_addon, mid, **kwargs):
 
     if not metastore:
         raise HTTPError(http.NOT_FOUND)
+
+    if metastore.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
 
     node = metastore.parent or metastore.node
 
@@ -120,12 +128,16 @@ def update_metadata(node_addon, mid, **kwargs):
     if not metadata:
         raise HTTPError(http.BAD_REQUEST)
 
-    try:
-        metastore = Metadata.load(mid)
-        metastore.update(metadata)
-        metastore.save()
-    except AttributeError:
+    metastore = Metadata.load(mid)
+
+    if not metastore:
         raise HTTPError(http.NOT_FOUND)
+
+    if metastore.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
+
+    metastore.update(metadata)
+    metastore.save()
 
 
 # DELETE
@@ -136,6 +148,9 @@ def delete_metadata(node_addon, mid, **kwargs):
 
     if not metastore:
         return HTTPError(http.NOT_FOUND)
+
+    if metastore.namespace != node_addon.namespace:
+        raise HTTPError(http.FORBIDDEN)
 
     key = request.args.get('key', None)
 
