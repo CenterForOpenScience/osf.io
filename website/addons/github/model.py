@@ -197,6 +197,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             self.save()
 
     @property
+    def has_auth(self):
+        """Whether an access token is associated with this node."""
+        return bool(self.user_settings and self.user_settings.has_auth)
+
+    @property
     def repo_url(self):
         if self.user and self.repo:
             return 'https://github.com/{0}/{1}/'.format(

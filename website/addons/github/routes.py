@@ -136,6 +136,38 @@ settings_routes = {
 api_routes = {
     'rules': [
 
+       Rule(
+            ['/project/<pid>/github/config/',
+            '/project/<pid>/node/<nid>/github/config/'],
+            'get',
+            views.config.github_config_get,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/github/config/',
+            '/project/<pid>/node/<nid>/github/config/'],
+            'put',
+            views.config.github_config_put,
+            json_renderer
+        ),
+        Rule(
+            ['/project/<pid>/github/config/',
+            '/project/<pid>/node/<nid>/github/config/'],
+            'delete',
+            views.config.github_deauthorize,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/github/config/import-auth/',
+            '/project/<pid>/node/<nid>/github/config/import-auth/'],
+            'put',
+            views.config.github_import_user_auth,
+            json_renderer
+        ),
+        # TODO: delete not required routes below this
+
         Rule(
             '/github/repo/create/',
             'post',

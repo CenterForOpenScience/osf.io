@@ -145,5 +145,6 @@
         // TODO(sloria): Remove this dependency on mako variable
         var url = '${node["api_url"] + "dropbox/config/"}';
         var dropbox = new DropboxNodeConfig('#dropboxScope', url, '#myDropboxGrid');
+        console.log(dropbox);
     });
 </script>

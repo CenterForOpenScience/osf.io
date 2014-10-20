@@ -135,3 +135,18 @@ def check_permissions(node_settings, auth, connection, branch, sha=None, repo=No
     )
 
     return can_edit
+#
+# def clean_path(path):
+#      """Ensure a path is formatted correctly for url_for."""
+#      if path is None:
+#          return ''
+#      return path.strip('/')
+#
+#  def get_share_folder_uri(path):
+#      """Return the URI for sharing a folder through the dropbox interface.
+#      This is not exposed through Dropbox's REST API, so need to build the URI
+#      "manually".
+#      """
+#      cleaned = clean_path(path)
+#      return ('https://dropbox.com/home/{cleaned}'
+#              '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)
