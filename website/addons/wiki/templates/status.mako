@@ -7,7 +7,7 @@
             <li><a href="#" data-toggle="modal" data-target="#newWiki">New</a></li>
                 <%include file="add_wiki_page.mako"/>
             <li><a href="${urls['web']['edit']}">Edit</a></li>
-            % if wiki_id:
+            % if wiki_id and wiki_name != 'home':
             <li><a href="#" data-toggle="modal" data-target="#deleteWiki">Delete</a></li>
                 <%include file="delete_wiki_page.mako"/>
             % endif
