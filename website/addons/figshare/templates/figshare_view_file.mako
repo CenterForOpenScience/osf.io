@@ -31,17 +31,27 @@ $('#figsharePublishArticle').on('click', function(){
     </ol>
 
     <p>
-            <!-- Download button -->
-            %if urls['download']:
+            %if file_status == 'Public':
+                %if urls['download']:
                 <a href="${urls['download']}"
                     class="btn btn-success btn-md">Download <i class="icon-download-alt"></i></a>
+                %endif
+
+                <button class="btn btn-danger btn-md disabled" data-toggle="popover" data-trigger="hover" title="Cannot Delete File"
+                        data-content="Files published on Figshare cannot be deleted.">
+                        Delete <i class="icon-trash"></i></button>
             %endif
 
-           %if file_status != 'Public' and user['can_edit'] and 'write' in user['permissions']:
-                <!--Delete button -->
-                <button data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i>
-               </button>
-           %endif
+            %if file_status != 'Public' and user['can_edit'] and 'write' in user['permissions']:
+
+                <button class="btn btn-success btn-md disabled" data-toggle="popover" data-trigger="hover" title="Cannot Download File"
+                        data-content="In order to download private Figshare files and drafts, you will need to log into Figshare.">
+                        Download <i class="icon-download-alt"></i></button>
+
+                <a data-bind="click: deleteFile" class="btn btn-danger btn-md">Delete <i class="icon-trash"></i>
+               </a>
+
+            %endif
     </p>
 
 %if file_versions:
@@ -56,6 +66,7 @@ $('#figsharePublishArticle').on('click', function(){
     <p>FigShare DOI: <a href="${doi}">${doi}</a></p>
 %endif
 </div>
+
     <script>
         $script(['/static/js/deleteFile.js'], function() {
             var urls = {
@@ -64,8 +75,12 @@ $('#figsharePublishArticle').on('click', function(){
             };
             var deleteFile = new DeleteFile('#figshareScope', urls);
         });
-    </script>
 
+         $(function () {
+            $("[data-toggle='popover']").popover(({html:true}));
+            $("[data-toggle='popover'].disabled").css("pointer-events", "auto")
+         });
+    </script>
 
 </%def>
 
