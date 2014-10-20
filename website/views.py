@@ -316,7 +316,7 @@ def serialize_log(node_log, anonymous=False):
         'api_key': node_log.api_key.label if node_log.api_key else '',
         'action': node_log.action,
         'params': node_log.params,
-        'date': utils.rfcformat(node_log.date),
+        'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize() if node_log.node else None,
         'anonymous': anonymous
     }

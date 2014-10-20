@@ -151,12 +151,9 @@
 </%def>
 
 <%def name="javascript_bottom()">
-
-        <script type='text/javascript'>
-            $script(['/static/js/search.js'], function(){
-            var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/${shareID}/');
-            });
-        </script>
-
-
+    <script type='text/javascript'>
+        $script(['/static/js/search.js'], function(){
+        var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/${shareID}/');
+        });
+    </script>
 </%def>
