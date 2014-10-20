@@ -388,7 +388,7 @@ def project_wiki_rename(auth, wname, **kwargs):
     wiki_name = wname.strip()
     wiki_name_new = request.get_json().get('value', None)
 
-    if wiki_name_new is None:
+    if not wiki_name_new:
         raise WIKI_BODY_MUST_CONTAIN_VALUE_ERROR
 
     try:
