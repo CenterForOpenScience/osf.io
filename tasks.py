@@ -8,12 +8,15 @@ import sys
 import code
 import platform
 import subprocess
+import logging
 
 from invoke import task, run
 from invoke.exceptions import Failure
 
 from website import settings
+from website.app import init_app
 
+logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
 def get_bin_path():
     """Get parent path of current python binary.
@@ -35,8 +38,10 @@ except Failure:
 
 
 @task
-def server():
-    run(bin_prefix('python main.py'))
+def server(host=None, port=5000, debug=True):
+    """Run the app server."""
+    app = init_app(set_backends=True, routes=True)
+    app.run(host=host, port=port, debug=debug)
 
 
 SHELL_BANNER = """
