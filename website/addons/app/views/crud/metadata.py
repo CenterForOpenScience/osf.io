@@ -169,4 +169,4 @@ def delete_metadata(node_addon, mid, **kwargs):
 
     Metadata.remove_one(metastore, True)
 
-    return HTTPError(http.NO_CONTENT)
+    raise HTTPError(http.NO_CONTENT)
