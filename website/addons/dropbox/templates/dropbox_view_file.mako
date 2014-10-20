@@ -56,7 +56,7 @@
                 <td>{{ revision.modified.local }}</td>
                 <td>
                     <a data-bind="attr: {href: revision.download}" class="btn btn-primary btn-sm">
-                        Download <i class="icon-download-alt"></i>
+                        <i class="icon-download-alt"></i>
                     </a>
                 </td>
             </tr>
