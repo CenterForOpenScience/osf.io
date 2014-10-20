@@ -24,7 +24,7 @@ class SearchTestCase(OsfTestCase):
 
 def query(term):
     results = search.search(build_query(term))
-    return results
+    return results['results']
 
 
 def query_user(name):
