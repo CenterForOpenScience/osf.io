@@ -58,7 +58,18 @@
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
             },
             error: function(response) {
-                return response.responseJSON.message_long;
+                var msg = response.responseJSON.message_long;
+                if (msg) {
+                    return msg;
+                } else {
+                    // Log unexpected error with Raven
+                    Raven.captureMessage('Error in renaming wiki', {
+                        url: '${urls['api']['rename']}',
+                        responseText: response.responseText,
+                        statusText: response.statusText
+                    });
+                    return 'An unexpected error occurred. Please try again.';
+                }
             }
         });
     });
