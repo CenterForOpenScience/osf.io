@@ -3123,6 +3123,14 @@ class TestProjectCreation(OsfTestCase):
             self.url, payload, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_fails_to_create_project_with_whitespace_title(self):
+        payload = {
+            'title': '   '
+        }
+        res = self.app.post_json(
+            self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_creates_a_project(self):
         payload = {
             'title': 'Im a real title'
