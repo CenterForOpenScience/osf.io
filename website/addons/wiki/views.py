@@ -34,10 +34,6 @@ from .model import NodeWikiPage
 logger = logging.getLogger(__name__)
 
 
-WIKI_BODY_MUST_CONTAIN_VALUE_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='Must provide "value" in the request body.'
-))
 WIKI_NAME_EMPTY_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='The wiki page name cannot be empty.'
@@ -386,13 +382,10 @@ def project_wiki_rename(auth, wname, **kwargs):
     """
     node = kwargs['node'] or kwargs['project']
     wiki_name = wname.strip()
-    wiki_name_new = request.get_json().get('value', None)
-
-    if not wiki_name_new:
-        raise WIKI_BODY_MUST_CONTAIN_VALUE_ERROR
+    new_wiki_name = request.get_json().get('value', None)
 
     try:
-        node.rename_node_wiki(wiki_name, wiki_name_new, auth)
+        node.rename_node_wiki(wiki_name, new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
     except NameMaximumLengthError:
