@@ -54,12 +54,21 @@
             params: function(params) {
                return JSON.stringify(params);
             },
-            success: function(response, value){
+            success: function(response, value) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
             },
             error: function(response) {
-                if (response.status === 409) {
-                    return 'A wiki page with this name already exists.';
+                var msg = response.responseJSON.message_long;
+                if (msg) {
+                    return msg;
+                } else {
+                    // Log unexpected error with Raven
+                    Raven.captureMessage('Error in renaming wiki', {
+                        url: '${urls['api']['rename']}',
+                        responseText: response.responseText,
+                        statusText: response.statusText
+                    });
+                    return 'An unexpected error occurred. Please try again.';
                 }
             }
         });
