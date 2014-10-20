@@ -35,9 +35,8 @@ class TestMetadata(OsfTestCase):
 
         data = {'test':'foo', 'bar':{'baz':'zyzz'}}
         data['_id'] = meta._id
-        data['category'] = 'metadata'
 
-        assert_equals(meta.data, data)
+        assert_equals(meta.to_json(), data)
 
     def test_implicit_keys(self):
         meta = Metadata(app=self.app)
@@ -45,8 +44,7 @@ class TestMetadata(OsfTestCase):
         meta.save()
         meta.reload()
 
-        assert_equals(meta['_id'], meta._id)
-        assert_equals(meta['category'], 'metadata')
+        assert_equals(meta.to_json()['_id'], meta._id)
 
     def test_attached_node(self):
         meta = Metadata(app=self.app)
