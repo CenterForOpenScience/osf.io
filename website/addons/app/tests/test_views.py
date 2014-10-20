@@ -168,10 +168,28 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num)
         assert_equals(Node.find().count(), nodes + 1)
 
-class TestMetadataViews(OsfTestCase):
+    def test_list_metadatums(self):
+        datums = [
+            Metadata(app=self.appAddon),
+            Metadata(app=self.appAddon),
+            Metadata(app=self.appAddon),
+            Metadata(app=self.appAddon),
+        ]
+
+        [x.save() for x in datums]
+
+        url = self.project.api_url_for('get_metadata_ids')
+        ret = self.app.get(url)
+
+        assert_equals(ret.status_code, 200)
+        for x in datums:
+            assert_in(x._id, ret.json['ids'])
+
+
+class TestCustomRouteViews(OsfTestCase):
 
     def setUp(self):
-        super(TestMetadataViews, self).setUp()
+        super(TestCustomRouteViews, self).setUp()
         self.user = AuthUserFactory()
         self.auth = Auth(self.user)
         self.project = ProjectFactory(creator=self.user)
@@ -181,3 +199,4 @@ class TestMetadataViews(OsfTestCase):
 
         # Log user in
         self.app.authenticate(*self.user.auth)
+
