@@ -382,22 +382,21 @@ class TestWikiRename(OsfTestCase):
         )
         self.project.reload()
 
-        wiki_old = self.project.get_wiki_page(self.page_name)
-        assert_false(wiki_old)
+        old_wiki = self.project.get_wiki_page(self.page_name)
+        assert_false(old_wiki)
 
-        wiki_new = self.project.get_wiki_page(new_name)
-        assert_true(wiki_new)
-        assert_equal(wiki_new._primary_key, self.page._primary_key)
-        assert_equal(wiki_new.content, self.page.content)
-        assert_equal(wiki_new.version, self.page.version)
+        new_wiki = self.project.get_wiki_page(new_name)
+        assert_true(new_wiki)
+        assert_equal(new_wiki._primary_key, self.page._primary_key)
+        assert_equal(new_wiki.content, self.page.content)
+        assert_equal(new_wiki.version, self.page.version)
 
     def test_rename_wiki_page_duplicate(self):
         self.project.update_node_wiki('away', 'Hello world', self.consolidate_auth)
-        name_new = 'away'
-
+        new_name = 'away'
         res = self.app.put_json(
             self.url,
-            {'value': name_new},
+            {'value': new_name},
             auth=self.auth,
             expect_errors=True
         )
@@ -416,25 +415,25 @@ class TestWikiRename(OsfTestCase):
 
     def test_rename_wiki_page_duplicate_different_casing(self):
         # attempt to rename 'page2' from setup to different case of 'away'.
-        name_old = 'away'
-        name_new = 'AwAy'
-        self.project.update_node_wiki(name_old, 'Hello world', self.consolidate_auth)
+        old_name = 'away'
+        new_name = 'AwAy'
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
         res = self.app.put_json(
             self.url,
-            {'value': name_new},
+            {'value': new_name},
             auth=self.auth,
             expect_errors=True
         )
         assert_equal(res.status_code, 409)
 
     def test_rename_wiki_page_same_name_different_casing(self):
-        name_old = 'away'
-        name_new = 'AWAY'
-        self.project.update_node_wiki(name_old, 'Hello world', self.consolidate_auth)
-        url = self.project.api_url_for('project_wiki_rename', wname=name_old)
+        old_name = 'away'
+        new_name = 'AWAY'
+        self.project.update_node_wiki(old_name, 'Hello world', self.consolidate_auth)
+        url = self.project.api_url_for('project_wiki_rename', wname=old_name)
         res = self.app.put_json(
             url,
-            {'value': name_new},
+            {'value': new_name},
             auth=self.auth,
             expect_errors=False
         )

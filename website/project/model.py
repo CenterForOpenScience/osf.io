@@ -2539,11 +2539,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     # TODO: Move to wiki add-on
-    def rename_node_wiki(self, name, name_new, auth):
+    def rename_node_wiki(self, name, new_name, auth):
         """Rename the node's wiki page with new name.
 
         :param name: A string, the page's name, e.g. ``"My Page"``.
-        :param name_new: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
         :param auth: All the auth information including user, API key.
 
         """
@@ -2555,9 +2555,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         name = (name or '').strip()
-        name_new = (name_new or '').strip()
+        new_name = (new_name or '').strip()
         key = to_mongo_key(name)
-        key_new = to_mongo_key(name_new)
+        key_new = to_mongo_key(new_name)
         page = self.get_wiki_page(name)
 
         if key == 'home':
@@ -2567,12 +2567,12 @@ class Node(GuidStoredObject, AddonModelMixin):
         if (key_new in self.wiki_pages_current and key != key_new) or key_new == 'home':
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
-                    name_new,
+                    new_name,
                 )
             )
 
         # rename the page first in case we hit a validation exception.
-        page.rename(name_new)
+        page.rename(new_name)
 
         # transfer the old page versions/current keys to the new name.
         if key != key_new:
@@ -2588,7 +2588,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': page._primary_key,
-                'name_new': name_new,
+                'name_new': new_name,
                 'name_old': name,
                 'version': page.version,
             },
