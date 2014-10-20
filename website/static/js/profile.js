@@ -296,7 +296,7 @@
         if (this.dirty()) {
             this.restoreOriginal();
         }
-        if ($.inArray('view', this.modes)) {
+        if ($.inArray('view', this.modes) !== -1) {
             this.mode('view');
         }
     };
