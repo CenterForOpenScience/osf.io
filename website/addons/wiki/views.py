@@ -10,6 +10,7 @@ from flask import request
 from framework.mongo.utils import to_mongo_key
 from framework.exceptions import HTTPError
 from framework.auth.utils import privacy_info_handle
+from framework.flask import redirect
 
 from website.project.views.node import _view_project
 from website.project import show_diff
@@ -321,7 +322,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_addon('wiki', 'node')
 def project_wiki_home(**kwargs):
     node = kwargs['node'] or kwargs['project']
-    return {}, None, None, node.web_url_for('project_wiki_page', wname='home', _guid=True)
+    return redirect(node.web_url_for('project_wiki_page', wname='home', _guid=True))
 
 
 @must_be_valid_project  # injects project
@@ -331,7 +332,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
     node = kwargs['node'] or kwargs['project']
     wiki_page = node.get_wiki_page(id=wid)
     if wiki_page:
-        return {}, None, None, node.web_url_for('project_wiki_page', wname=wiki_page.page_name, _guid=True)
+        return redirect(node.web_url_for('project_wiki_page', wname=wiki_page.page_name, _guid=True))
     else:
         raise WIKI_PAGE_NOT_FOUND_ERROR
 
