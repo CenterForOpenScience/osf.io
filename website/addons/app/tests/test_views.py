@@ -22,7 +22,7 @@ class TestMetadataViews(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
 
         self.project.add_addon('app', self.auth)
-        self.appAddon = self.project.get_addon('app')
+        self.app_addon = self.project.get_addon('app')
 
         # Log user in
         self.app.authenticate(*self.user.auth)
@@ -36,7 +36,7 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num + 1)
 
     def test_get_metadata(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta.save()
 
         url = self.project.api_url_for('get_metadata', mid=meta._id)
@@ -58,7 +58,7 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num)
 
     def test_update_metadata(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta['best'] = 'savinme'
         meta.save()
 
@@ -79,7 +79,7 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num)
 
     def test_update_metadata_no_json(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta['best'] = 'savinme'
         meta.save()
 
@@ -101,7 +101,7 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num)
 
     def test_delete_metadata(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta['best'] = 'savinme'
         meta.save()
 
@@ -115,7 +115,7 @@ class TestMetadataViews(OsfTestCase):
         assert_equals(Metadata.find().count(), num - 1)
 
     def test_delete_metadata(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta['best'] = 'creed'
         meta.save()
 
@@ -154,7 +154,7 @@ class TestMetadataViews(OsfTestCase):
 
     # TODO Write more tests
     def test_promote_metadata_no_data(self):
-        meta = Metadata(app=self.app)
+        meta = Metadata(app=self.app_addon)
         meta.save()
 
         num = Metadata.find().count()
@@ -170,10 +170,10 @@ class TestMetadataViews(OsfTestCase):
 
     def test_list_metadatums(self):
         datums = [
-            Metadata(app=self.appAddon),
-            Metadata(app=self.appAddon),
-            Metadata(app=self.appAddon),
-            Metadata(app=self.appAddon),
+            Metadata(app=self.app_addon),
+            Metadata(app=self.app_addon),
+            Metadata(app=self.app_addon),
+            Metadata(app=self.app_addon),
         ]
 
         [x.save() for x in datums]
@@ -185,6 +185,31 @@ class TestMetadataViews(OsfTestCase):
         for x in datums:
             assert_in(x._id, ret.json['ids'])
 
+    def test_cant_get_others_data(self):
+        other = ProjectFactory()
+        other.add_addon('app', self.auth)
+        other_app = other.get_addon('app')
+
+        meta = Metadata(app=other_app)
+        meta.save()
+
+        url = self.project.api_url_for('get_metadata', mid=meta._id)
+        ret = self.app.get(url, expect_errors=True)
+
+        assert_equals(ret.status_code, 403)
+
+    def test_cant_update_others_data(self):
+        other = ProjectFactory()
+        other.add_addon('app', self.auth)
+        other_app = other.get_addon('app')
+
+        meta = Metadata(app=other_app)
+        meta.save()
+
+        url = self.project.api_url_for('update_metadata', mid=meta._id)
+        ret = self.app.put_json(url, {'isCool': 'nickelback'}, expect_errors=True)
+
+        assert_equals(ret.status_code, 403)
 
 class TestCustomRouteViews(OsfTestCase):
 
