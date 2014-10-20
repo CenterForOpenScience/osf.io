@@ -165,12 +165,7 @@
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
-                if (self.category().name !== undefined) {
-                    self.totalResults(data.counts[self.category().rawName()]);
-                }
-                else {
-                    self.totalResults(data.counts.total);
-                }
+
 
                 self.results.removeAll();
 
@@ -188,8 +183,17 @@
                     self.categories.push(new Category(key, value, data.typeAliases[key]));
                 });
                 self.categories(self.categories().sort(self.sortCategories));
+
+                 if (self.category().name !== undefined) {
+                    self.totalResults(data.counts[self.category().rawName()]);
+                }
+                else {
+                    self.totalResults(self.totalCount());
+                }
+
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
+                console.log(self.category().name);
 
             }).fail(function(){
                 console.log("error");

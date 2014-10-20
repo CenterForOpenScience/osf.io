@@ -47,7 +47,6 @@
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data }"></div>
                 </div>
-                <span data-bind="text: totalPages"></span>
                 <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() <= 1 }">
                     <span data-bind="visible: prevPageExists">
                         <a href="#" data-bind="click: pagePrev">Previous Page</a> -
