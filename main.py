@@ -9,11 +9,11 @@ from website.app import init_app
 from website.project.model import ensure_schemas
 
 
-_LOG_TEMPLATES = 'website/templates/_log_templates.mako'
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
+CORE_TEMPLATES = 'website/templates/log_templates.mako'
+BUILT_TEMPLATES = 'website/templates/_log_templates.mako'
 
 try:
-    shutil.copyfile(_LOG_TEMPLATES, LOG_TEMPLATES)
+    shutil.copyfile(CORE_TEMPLATES, BUILT_TEMPLATES)
 except OSError:
     pass
 

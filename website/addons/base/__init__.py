@@ -433,7 +433,7 @@ class AddonNodeSettingsBase(AddonSettingsBase):
 
 
 # TODO: Move this
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
+BUILT_TEMPLATES = 'website/templates/_log_templates.mako'
 
 # TODO: No more magicks
 def init_addon(app, addon_name, routes=True):
@@ -459,7 +459,7 @@ def init_addon(app, addon_name, routes=True):
         addon_path, 'templates', 'log_templates.mako'
     )
     if os.path.exists(log_templates):
-        with open(LOG_TEMPLATES, 'a') as fp:
+        with open(BUILT_TEMPLATES, 'a') as fp:
             fp.write(open(log_templates, 'r').read())
 
     # Add routes

@@ -1,3 +1,9 @@
+## Knockout templates for OSF-core (non-addon) logs. Used by logFeed.js to render the log feed
+## the id attribute of each script tag corresponds to NodeLog action.
+## When the application is initialized, this mako template is concatenated with the addons'
+## log templates. An addon's log templates are located in
+## website/addons/<addon_name>/templates/_log_templates.mako.
+
 <script type="text/html" id="project_created">
 created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
