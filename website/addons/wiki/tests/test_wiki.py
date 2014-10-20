@@ -252,12 +252,17 @@ class TestWikiViews(OsfTestCase):
     def test_project_wiki_home_api_route(self):
         url = self.project.api_url_for('project_wiki_home')
         res = self.app.get(url, auth=self.user.auth)
-        assert_equals(res.status_code, 200)
+        assert_equals(res.status_code, 302)
+        # TODO: should this route exist? it redirects you to the web_url_for, not api_url_for.
+        # page_url = self.project.api_url_for('project_wiki_page', wname='home')
+        # assert_in(page_url, res.location)
 
     def test_project_wiki_home_web_route(self):
+        page_url = self.project.web_url_for('project_wiki_page', wname='home', _guid=True)
         url = self.project.web_url_for('project_wiki_home')
         res = self.app.get(url, auth=self.user.auth)
-        assert_in('home', res)
+        assert_equals(res.status_code, 302)
+        assert_in(page_url, res.location)
 
     def test_wiki_id_url_get_returns_302_and_resolves(self):
         name = 'page by id'
