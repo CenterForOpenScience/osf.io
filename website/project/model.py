@@ -2573,6 +2573,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
 
         # rename the page first in case we hit a validation exception.
+        old_name = page.page_name
         page.rename(new_name)
 
         # transfer the old page versions/current keys to the new name.
@@ -2588,9 +2589,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': page._primary_key,
-                'name_new': new_name,
-                'name_old': name,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+                'old_page': old_name,
                 'version': page.version,
             },
             auth=auth,

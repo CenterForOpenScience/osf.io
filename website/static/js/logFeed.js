@@ -28,7 +28,7 @@
             return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
         });
         self.wikiIdUrl = ko.computed(function() {
-            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page);
+            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page_id);
         });
 
         /**
