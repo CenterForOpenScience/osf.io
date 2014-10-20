@@ -23,13 +23,14 @@ def get_metadata_ids(node_addon, **kwargs):
         'ids': [m._id for m in node_addon.metadata__owner]
     }
 
+
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def get_metadata(node_addon, mid, **kwargs):
     try:
         return Metadata.load(mid).to_json()
-    except TypeError:
+    except AttributeError:
         raise HTTPError(http.NOT_FOUND)
 
 
@@ -54,9 +55,10 @@ def create_metadata(node_addon, **kwargs):
 @must_have_addon('app', 'node')
 def promote_metadata(node_addon, mid, **kwargs):
     metastore = Metadata.load(mid)
+    request_json = request.json or {}
 
     if not metastore:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.NOT_FOUND)
 
     node = metastore.parent or metastore.node
 
@@ -68,18 +70,18 @@ def promote_metadata(node_addon, mid, **kwargs):
         }
 
     creator = node_addon.system_user
-    tags = request.json.get('tags') or metastore.get('tags', [])
-    contributors = request.json.get('contributors') or metastore.get('contributors', [])
+    tags = request_json.get('tags') or metastore.get('tags', [])
+    contributors = request_json.get('contributors') or metastore.get('contributors', [])
     for contributor in contributors:
         contributor['full_name'] = ' '.join([
             contributor['given'],
             contributor['middle'],
             contributor['family']
         ]).strip()
-    category = request.json.get('category') or metastore.get('category', 'project')
-    title = request.json.get('title') or metastore.get('title')
-    project = Node.load(request.json.get('parent') or metastore.get('parent'))
-    description = request.json.get('description') or metastore.get('description')
+    category = request_json.get('category') or metastore.get('category', 'project')
+    title = request_json.get('title') or metastore.get('title', 'No Title')
+    project = Node.load(request_json.get('parent') or metastore.get('parent'))
+    description = request_json.get('description') or metastore.get('description')
 
     node = new_node(category, title, creator, description, project)
 
@@ -122,8 +124,7 @@ def update_metadata(node_addon, mid, **kwargs):
         metastore = Metadata.load(mid)
         metastore.update(metadata)
         metastore.save()
-        return http.OK
-    except TypeError:
+    except AttributeError:
         raise HTTPError(http.NOT_FOUND)
 
 
@@ -144,6 +145,8 @@ def delete_metadata(node_addon, mid, **kwargs):
                 del metastore[k]
             except KeyError:
                 pass
+
+        metastore.save()
 
         return {
             'deleted': key
