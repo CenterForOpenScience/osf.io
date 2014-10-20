@@ -948,6 +948,7 @@ class TestRenameNodeWiki(OsfTestCase):
         page = self.project.get_wiki_page(new_name)
         assert_not_equal(old_name, page.page_name)
         assert_equal(new_name, page.page_name)
+        assert_equal(self.project.logs[-1].action, NodeLog.WIKI_RENAMED)
 
     def test_rename_page_case_sensitive(self):
         old_name = 'new page'
@@ -956,20 +957,27 @@ class TestRenameNodeWiki(OsfTestCase):
         self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
         new_page = self.project.get_wiki_page(new_name)
         assert_equal(new_name, new_page.page_name)
+        assert_equal(self.project.logs[-1].action, NodeLog.WIKI_RENAMED)
 
     def test_rename_existing_deleted_page(self):
-        name = 'new page'
-        old_content = 'deleted content'
+        old_name = 'old page'
+        new_name = 'new page'
+        old_content = 'old content'
         new_content = 'new content'
-        self.project.update_node_wiki(name, old_content, self.consolidate_auth)
-        assert_in(name, self.project.wiki_pages_current)
-        self.project.delete_node_wiki(name, self.consolidate_auth)
-        assert_not_in(name, self.project.wiki_pages_current)
-        self.project.update_node_wiki(name, new_content, self.consolidate_auth)
-        new_page = self.project.get_wiki_page(name)
-        old_page = self.project.get_wiki_page(name, version=1)
-        assert_equal(old_content, old_page.content)
+        # create the old page and delete it
+        self.project.update_node_wiki(old_name, old_content, self.consolidate_auth)
+        assert_in(old_name, self.project.wiki_pages_current)
+        self.project.delete_node_wiki(old_name, self.consolidate_auth)
+        assert_not_in(old_name, self.project.wiki_pages_current)
+        # create the new page and rename it
+        self.project.update_node_wiki(new_name, new_content, self.consolidate_auth)
+        self.project.rename_node_wiki(new_name, old_name, self.consolidate_auth)
+        new_page = self.project.get_wiki_page(old_name)
+        old_page = self.project.get_wiki_page(old_name, version=1)
+        # renaming over an existing deleted page replaces it.
+        assert_equal(new_content, old_page.content)
         assert_equal(new_content, new_page.content)
+        assert_equal(self.project.logs[-1].action, NodeLog.WIKI_RENAMED)
 
     def test_rename_page_conflict(self):
         existing_name = 'existing page'
