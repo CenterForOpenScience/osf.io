@@ -2462,28 +2462,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         from website.addons.wiki.model import NodeWikiPage
 
         if id:
-            for page_versions in self.wiki_pages_versions.values():
-                if id in page_versions:
-                    return NodeWikiPage.load(id)
-        elif name:
+            return NodeWikiPage.load(id)
+
+        try:
             name = name.strip()
             key = to_mongo_key(name)
             if version:
-                try:
-                    version = int(version)
-                except:
-                    return None
-
-                if key not in self.wiki_pages_versions:
-                    return None
-
-                if version > len(self.wiki_pages_versions[key]):
-                    return None
-                else:
-                    return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
-            if key in self.wiki_pages_current:
-                return NodeWikiPage.load(self.wiki_pages_current[key])
-        return None
+                return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
+            return NodeWikiPage.load(self.wiki_pages_current[key])
+        except (KeyError, IndexError):
+            return None
 
     # TODO: Move to wiki add-on
     def update_node_wiki(self, name, content, auth):
