@@ -367,7 +367,7 @@ def project_wiki_rename(wname, **kwargs):
     new_wiki_key = to_mongo_key(new_wiki_name)
 
     if wiki_page and new_wiki_key:
-        if new_wiki_key in node.wiki_pages_current:
+        if new_wiki_key in node.wiki_pages_current or new_wiki_key == 'home':
             if wiki_key == new_wiki_key:
                 wiki_page.rename(new_wiki_name)
                 return {'message': new_wiki_name}
@@ -392,7 +392,7 @@ def project_wiki_validate_name(wname, **kwargs):
     wiki_name = wname.strip()
     wiki_key = to_mongo_key(wiki_name)
 
-    if wiki_key in node.wiki_pages_current:
+    if wiki_key in node.wiki_pages_current or wiki_key == 'home':
         raise HTTPError(http.CONFLICT, data=dict(
             message_short='Wiki page name conflict.',
             message_long='A wiki page with that name already exists.'
