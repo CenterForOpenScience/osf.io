@@ -2520,6 +2520,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         new_wiki.save()
 
+        # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
             self.wiki_pages_versions[key] = []
         self.wiki_pages_versions[key].append(new_wiki._primary_key)
@@ -2555,16 +2556,16 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
         name = (name or '').strip()
-        new_name = (new_name or '').strip()
         key = to_mongo_key(name)
-        key_new = to_mongo_key(new_name)
+        new_name = (new_name or '').strip()
+        new_key = to_mongo_key(new_name)
         page = self.get_wiki_page(name)
 
         if key == 'home':
             raise PageCannotRenameError('Cannot rename wiki home page')
         if not page:
             raise PageNotFoundError('Wiki page not found')
-        if (key_new in self.wiki_pages_current and key != key_new) or key_new == 'home':
+        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
             raise PageConflictError(
                 'Page already exists with name {0}'.format(
                     new_name,
@@ -2575,10 +2576,10 @@ class Node(GuidStoredObject, AddonModelMixin):
         page.rename(new_name)
 
         # transfer the old page versions/current keys to the new name.
-        if key != key_new:
-            self.wiki_pages_versions[key_new] = self.wiki_pages_versions[key]
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
             del self.wiki_pages_versions[key]
-            self.wiki_pages_current[key_new] = self.wiki_pages_current[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
             del self.wiki_pages_current[key]
 
         # TODO: (not clear) self.add_log is calling self.save so field changes above are written to the database.
