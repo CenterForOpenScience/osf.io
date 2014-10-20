@@ -672,16 +672,18 @@
         if (!row.isSmartFolder) {
             var buttonDefs = [
                 {
-                    text: '<i class="project-organizer-info-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Info"></i>',
+                    text: '<i class="project-organizer-info-icon" title=""></i>',
                     action: 'showProjectDetails',
-                    cssClass: 'project-organizer-icon-info'
+                    cssClass: 'project-organizer-icon-info',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Info"'
                 }
             ];
             if (url !== null) {
                 buttonDefs.push({
-                    text: '<i class="project-organizer-visit-icon" title="" data-placement="right" data-toggle="tooltip" data-original-title="Go to page"></i>',
+                    text: '<i class="project-organizer-visit-icon" title="" ></i>',
                     action: 'visitPage',
-                    cssClass: 'project-organizer-icon-visit'
+                    cssClass: 'project-organizer-icon-visit',
+                    attributes:'data-placement="right" data-toggle="tooltip" data-original-title="Go to page"'
                 });
             }
             return HGrid.Fmt.buttons(buttonDefs);
@@ -1059,3 +1061,6 @@
 
     return ProjectOrganizer;
 }));
+$(document).ready(function() {
+    $("#projectOrganizerScope").tooltip({selector: '[data-toggle=tooltip]'});
+});

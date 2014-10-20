@@ -13,6 +13,9 @@
 .slick-row.active{
     /*background-color: #fefab4;*/
 }
+.slick-row .l1 {
+    overflow: visible;
+}
 
 .project-organizer-dand {
 	display: block;
