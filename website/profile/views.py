@@ -164,6 +164,7 @@ def user_addons(auth, **kwargs):
     out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
+    out['addon_capabilities'] = settings.ADDON_CAPABILITIES
     return out
 
 

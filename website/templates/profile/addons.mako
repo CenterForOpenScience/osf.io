@@ -41,6 +41,7 @@
                                         <input
                                             type="checkbox"
                                             name="${addon.short_name}"
+                                            class="addon-select"
                                             ${'checked' if (addon.short_name in addons_enabled) else ''}
                                         />
                                         ${addon.full_name}
@@ -84,6 +85,12 @@
 
 </div>
 
+
+% for name, capabilities in addon_capabilities.iteritems():
+    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+% endfor
+
+
 <script type="text/javascript">
 
 
@@ -95,6 +102,27 @@
         });
         return rv;
     }
+
+    // Show capabilities modal on selecting an addon; unselect if user
+    // rejects terms
+    $('.addon-select').on('change', function() {
+        var that = this,
+            $that = $(that);
+        if ($that.is(':checked')) {
+            var name = $that.attr('name');
+            var capabilities = $('#capabilities-' + name).html();
+            if (capabilities) {
+                bootbox.confirm(
+                    capabilities,
+                    function(result) {
+                        if (!result) {
+                            $(that).attr('checked', false);
+                        }
+                    }
+                );
+            }
+        }
+    });
 
     // Set up submission for addon selection form
     var checkedOnLoad = $("#selectAddonsForm input:checked");
