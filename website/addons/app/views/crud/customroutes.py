@@ -82,7 +82,7 @@ def create_route(node_addon, **kwargs):
     node_addon.routes[route] = query
     node_addon.save()
 
-    return http.CREATED
+    return {}, http.CREATED
 
 
 # PUT
@@ -91,12 +91,15 @@ def create_route(node_addon, **kwargs):
 def update_route(node_addon, route, **kwargs):
     query = request.json.get('query')
 
-    if not route or query:
+    if not query:
         raise HTTPError(http.BAD_REQUEST)
 
-    if not node_addon.routes.get(route):
+    if node_addon.routes.get(route):
         node_addon.routes[route] = query
-        return http.CREATED
+        node_addon.save()
+        return http.OK
+
+    raise HTTPError(http.NOT_FOUND)
 
 
 # DELETE
@@ -109,4 +112,4 @@ def delete_route(node_addon, route, **kwargs):
     del node_addon.routes[route]
     node_addon.save()
 
-    return http.NO_CONTENT
+    raise HTTPError(http.NO_CONTENT)
