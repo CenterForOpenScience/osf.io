@@ -259,6 +259,24 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_in('home', res)
 
+    def test_wiki_id_url_get_returns_302_and_resolves(self):
+        name = 'page by id'
+        self.project.update_node_wiki(name, 'some content', Auth(self.project.creator))
+        page = self.project.get_wiki_page(name)
+        page_url = self.project.web_url_for('project_wiki_page', wname=page.page_name, _guid=True)
+        url = self.project.web_url_for('project_wiki_id_page', wid=page._primary_key, _guid=True)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 302)
+        assert_in(page_url, res.location)
+        res = res.follow()
+        assert_equal(res.status_code, 200)
+        assert_in(page_url, res.request.url)
+
+    def test_wiki_id_url_get_returns_404(self):
+        url = self.project.web_url_for('project_wiki_id_page', wid='12345', _guid=True)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
 
 class TestViewHelpers(OsfTestCase):
 
