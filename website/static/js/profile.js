@@ -207,10 +207,6 @@
         // Must be set after isValid is defined in inherited view models
         self.hasValidProperty = ko.observable(false);
 
-        self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
-        });
-
         // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
