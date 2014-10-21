@@ -570,33 +570,36 @@ class TestWikiShareJS(OsfTestCase):
         super(TestWikiShareJS, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.wname = 'foo.bar'
+        self.wkey = to_mongo_key(self.wname)
 
     def test_uuid_generated(self):
-        wname = 'foo'
-        assert_is_none(self.project.wiki_sharejs_uuids.get(wname))
-        url = self.project.web_url_for('project_wiki_edit', wname=wname)
+        assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
+        url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
         self.project.reload()
-        assert_true(self.project.wiki_sharejs_uuids.get(wname))
-        assert_not_in(self.project.wiki_sharejs_uuids.get(wname), res.body)
-        assert_in(docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wname)), res.body)
+        assert_true(self.project.wiki_sharejs_uuids.get(self.wkey))
+        assert_not_in(self.project.wiki_sharejs_uuids.get(self.wkey), res.body)
+        assert_in(docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey)), res.body)
 
     def test_uuids_differ_between_pages(self):
-        wname1 = 'foo'
+        wname1 = 'foo.bar'
+        wkey1 = to_mongo_key(wname1)
         url1 = self.project.web_url_for('project_wiki_edit', wname=wname1)
         res1 = self.app.get(url1, auth=self.user.auth)
         assert_equal(res1.status_code, 200)
 
-        wname2 = 'bar'
+        wname2 = 'bar.baz'
+        wkey2 = to_mongo_key(wname2)
         url2 = self.project.web_url_for('project_wiki_edit', wname=wname2)
         res2 = self.app.get(url2, auth=self.user.auth)
         assert_equal(res2.status_code, 200)
 
         self.project.reload()
-        uuid1 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wname1))
-        uuid2 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wname2))
+        uuid1 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey1))
+        uuid2 = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wkey2))
 
         assert_not_equal(uuid1, uuid2)
         assert_in(uuid1, res1)
@@ -605,27 +608,26 @@ class TestWikiShareJS(OsfTestCase):
         assert_not_in(uuid2, res1)
 
     def test_uuids_differ_between_forks(self):
-        wname = 'foo'
-        url = self.project.web_url_for('project_wiki_edit', wname=wname)
+        url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
         project_res = self.app.get(url, auth=self.user.auth)
         assert_equal(project_res.status_code, 200)
         self.project.reload()
 
         fork = self.project.fork_node(Auth(self.user))
         assert_true(fork.is_fork_of(self.project))
-        fork_url = fork.web_url_for('project_wiki_edit', wname=wname)
+        fork_url = fork.web_url_for('project_wiki_edit', wname=self.wname)
         fork_res = self.app.get(fork_url, auth=self.user.auth)
         assert_equal(fork_res.status_code, 200)
         fork.reload()
 
         # uuids are stored the same internally
         assert_equal(
-            self.project.wiki_sharejs_uuids.get(wname),
-            fork.wiki_sharejs_uuids.get(wname)
+            self.project.wiki_sharejs_uuids.get(self.wkey),
+            fork.wiki_sharejs_uuids.get(self.wkey)
         )
 
-        project_uuid = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(wname))
-        fork_uuid = docs_uuid(fork, fork.wiki_sharejs_uuids.get(wname))
+        project_uuid = docs_uuid(self.project, self.project.wiki_sharejs_uuids.get(self.wkey))
+        fork_uuid = docs_uuid(fork, fork.wiki_sharejs_uuids.get(self.wkey))
 
         assert_not_equal(project_uuid, fork_uuid)
         assert_in(project_uuid, project_res)
@@ -634,52 +636,51 @@ class TestWikiShareJS(OsfTestCase):
         assert_not_in(fork_uuid, project_res)
 
     def test_uuid_persists_after_delete(self):
-        wname = 'foo'
-        assert_is_none(self.project.wiki_sharejs_uuids.get(wname))
+        assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
 
         # Create wiki page
-        self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
+        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
 
         # Visit wiki edit page
-        edit_url = self.project.web_url_for('project_wiki_edit', wname=wname)
+        edit_url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
         res = self.app.get(edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        original_uuid = self.project.wiki_sharejs_uuids.get(wname)
+        original_uuid = self.project.wiki_sharejs_uuids.get(self.wkey)
 
         # Delete wiki
-        delete_url = self.project.api_url_for('project_wiki_delete', wname=wname)
+        delete_url = self.project.api_url_for('project_wiki_delete', wname=self.wname)
         res = self.app.delete(delete_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(wname))
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
 
         # Revisit wiki edit page
         res = self.app.get(edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(wname))
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
         assert_in(docs_uuid(self.project, original_uuid), res.body)
 
     def test_uuid_persists_after_rename(self):
-        original_wname = 'foo'
-        new_wname = 'bar'
-        assert_is_none(self.project.wiki_sharejs_uuids.get(original_wname))
-        assert_is_none(self.project.wiki_sharejs_uuids.get(new_wname))
+        new_wname = 'bar.baz'
+        new_wkey = to_mongo_key(new_wname)
+        assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
+        assert_is_none(self.project.wiki_sharejs_uuids.get(new_wkey))
 
         # Create wiki page
-        self.project.update_node_wiki(original_wname, 'Hello world', Auth(self.user))
-        wiki_page = self.project.get_wiki_page(original_wname)
+        self.project.update_node_wiki(self.wname, 'Hello world', Auth(self.user))
+        wiki_page = self.project.get_wiki_page(self.wname)
 
         # Visit wiki edit page
-        original_edit_url = self.project.web_url_for('project_wiki_edit', wname=original_wname)
+        original_edit_url = self.project.web_url_for('project_wiki_edit', wname=self.wname)
         res = self.app.get(original_edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        original_uuid = self.project.wiki_sharejs_uuids.get(original_wname)
+        original_uuid = self.project.wiki_sharejs_uuids.get(self.wkey)
 
         # Rename wiki
-        rename_url = self.project.api_url_for('project_wiki_rename', wname=original_wname)
+        rename_url = self.project.api_url_for('project_wiki_rename', wname=self.wname)
         res = self.app.put_json(
             rename_url,
             {'value': new_wname, 'pk': wiki_page._id},
@@ -687,14 +688,14 @@ class TestWikiShareJS(OsfTestCase):
         )
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_is_none(self.project.wiki_sharejs_uuids.get(original_wname))
-        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(new_wname))
+        assert_is_none(self.project.wiki_sharejs_uuids.get(self.wkey))
+        assert_equal(original_uuid, self.project.wiki_sharejs_uuids.get(new_wkey))
 
         # Revisit original wiki edit page
         res = self.app.get(original_edit_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         self.project.reload()
-        assert_not_equal(original_uuid, self.project.wiki_sharejs_uuids.get(original_wname))
+        assert_not_equal(original_uuid, self.project.wiki_sharejs_uuids.get(self.wkey))
         assert_not_in(docs_uuid(self.project, original_uuid), res.body)
 
 
@@ -704,7 +705,8 @@ class TestWikiShareJSMongo(OsfTestCase):
         super(TestWikiShareJSMongo, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.wname = 'foo'
+        self.wname = 'foo.bar'
+        self.wkey = to_mongo_key(self.wname)
         self.share_uuid = generate_share_uuid(self.project, self.wname)
         self.docs_uuid = docs_uuid(self.project, self.share_uuid)
         self.ops_uuid = ops_uuid(self.project, self.share_uuid)
@@ -720,12 +722,17 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.db.docs.insert(docs)
         self.db[self.ops_uuid].insert(EXAMPLE_OPS)
 
+    def test_migrate_uuid_updates_node(self):
+        assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
+        self.wiki_page.migrate_uuid(self.project)
+        assert_not_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
+
     def test_migrate_uuid(self):
         self.wiki_page.migrate_uuid(self.project)
         assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
         assert_is_none(self.db[self.ops_uuid].find_one())
 
-        new_share_uuid = self.project.wiki_sharejs_uuids.get(self.wname)
+        new_share_uuid = self.project.wiki_sharejs_uuids.get(self.wkey)
         new_docs_uuid = docs_uuid(self.project, new_share_uuid)
         new_ops_uuid = ops_uuid(self.project, new_share_uuid)
         assert_equal(
@@ -738,7 +745,8 @@ class TestWikiShareJSMongo(OsfTestCase):
         )
 
     def test_migrate_uuid_no_docs(self):
-        wname = 'bar'
+        wname = 'bar.baz'
+        wkey = to_mongo_key(wname)
         share_uuid = generate_share_uuid(self.project, wname)
         original_ops_uuid = ops_uuid(self.project, share_uuid)
 
@@ -747,7 +755,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.db[original_ops_uuid].insert(EXAMPLE_OPS_SHORT)
 
         wiki_page.migrate_uuid(self.project)
-        new_share_uuid = self.project.wiki_sharejs_uuids.get(wname)
+        new_share_uuid = self.project.wiki_sharejs_uuids.get(wkey)
         # There is no item in docs because there were less than 20 ops
         new_ops_uuid = ops_uuid(self.project, new_share_uuid)
 
@@ -804,13 +812,14 @@ class TestWikiUtils(OsfTestCase):
         assert_not_equal(docs_uuid(self.project, share_uuid), docs_uuid(fork, share_uuid))
 
     def test_generate_share_uuid(self):
-        wname = 'foo'
-        assert_is_none(self.project.wiki_sharejs_uuids.get(wname))
+        wname = 'foo.bar'
+        wkey = to_mongo_key(wname)
+        assert_is_none(self.project.wiki_sharejs_uuids.get(wkey))
         share_uuid = generate_share_uuid(self.project, wname)
         self.project.reload()
-        assert_equal(self.project.wiki_sharejs_uuids[wname], share_uuid)
+        assert_equal(self.project.wiki_sharejs_uuids[wkey], share_uuid)
 
         new_uuid = generate_share_uuid(self.project, wname)
         self.project.reload()
         assert_not_equal(share_uuid, new_uuid)
-        assert_equal(self.project.wiki_sharejs_uuids[wname], new_uuid)
+        assert_equal(self.project.wiki_sharejs_uuids[wkey], new_uuid)

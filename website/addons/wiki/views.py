@@ -273,7 +273,7 @@ def project_wiki_edit(auth, wname, **kwargs):
         is_current = False
         content = ''
         wiki_page_api_url = None
-        if wiki_name in node.wiki_sharejs_uuids:
+        if wiki_key in node.wiki_sharejs_uuids:
             share_uuid = node.wiki_sharejs_uuids[wiki_key]
         else:
             share_uuid = generate_share_uuid(node, wiki_name)
