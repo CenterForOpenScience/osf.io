@@ -86,7 +86,10 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         else:
             session_error_code = None
         if session_error_code:
-            raise HTTPError(session_error_code)
+            return renderer(
+                HTTPError(session_error_code),
+                **renderer_kwargs or {}
+            )
         try:
             if renderer_kwargs:
                 kwargs.update(renderer_kwargs)
