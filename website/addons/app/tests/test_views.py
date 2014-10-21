@@ -211,6 +211,7 @@ class TestMetadataViews(OsfTestCase):
 
         assert_equals(ret.status_code, 403)
 
+
 class TestCustomRouteViews(OsfTestCase):
 
     def setUp(self):
@@ -520,3 +521,29 @@ class TestAppQueryViews(OsfTestCase):
 
         assert_equals(ret.status_code, 200)
         assert_equals(ret.json, {'sort': 0, 'foo':'baz'})
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_project_metadata_sort_no_key(self, mock_search):
+        mock_search.return_value = {
+            'results': [
+                {
+                    '_source': {
+                        'foo': 'bar',
+                        'sort': 1
+                    }
+                },
+                {
+                    '_source': {
+                        'foo': 'baz',
+                        'sort': 0
+                    }
+                }
+            ]
+        }
+
+        url = self.project.api_url_for('get_project_metadata', guid=self.project._id)
+        ret = self.app.get(url + '?sort=soort')
+
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(ret.json, {'sort': 1, 'foo':'bar'})
