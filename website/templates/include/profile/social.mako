@@ -83,7 +83,7 @@
 
                 <button
                         class="btn btn-default"
-                        data-bind="visible: viewable, click: cancel"
+                        data-bind="click: cancel"
                     >Cancel</button>
 
                 <button
