@@ -40,8 +40,8 @@
             <!-- /ko -->
 
             <div class="col-md-9">
-                <!-- ko if: searchStarted() && totalCount() == 0 -->
-                <div class="results hidden" data-bind="css: {hidden: totalCount() === 0 }">No results found.</div>
+                <!-- ko if: searchStarted() && !totalCount() -->
+                <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                 <!-- /ko -->
 
                 <div data-bind="foreach: results">

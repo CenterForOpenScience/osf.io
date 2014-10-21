@@ -124,7 +124,7 @@
         };
 
         self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote/'
+            claimURL = self.appURL + 'metadata/' + mid + '/promote/';
             $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
                 window.location = data.url;
             });
@@ -188,12 +188,16 @@
                     self.totalResults(data.counts[self.category().rawName()]);
                 }
                 else {
-                    self.totalResults(self.totalCount());
+                    if(self.totalCount()) {
+                        self.totalResults(self.totalCount());
+                    }
+                     else {
+                        self.totalResults(0);
+                    }
                 }
 
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
-                console.log(self.category().name);
 
             }).fail(function(){
                 console.log("error");
