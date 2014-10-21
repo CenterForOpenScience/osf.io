@@ -104,7 +104,7 @@ class NodeWikiPage(GuidStoredObject):
 
     # TODO: Improve handling of page names in migration and deletion
 
-    def delete_share_document(self, node, page_name=None, save=True):
+    def delete_share_doc(self, node, save=True):
         """Deletes share document and removes namespace from model."""
 
         db = share_db()
@@ -114,7 +114,7 @@ class NodeWikiPage(GuidStoredObject):
 
         self.share_uuid = None
 
-        wiki_key = to_mongo_key(page_name)
+        wiki_key = to_mongo_key(self.page_name)
         del node.wiki_sharejs_uuids[wiki_key]
         node.save()
 

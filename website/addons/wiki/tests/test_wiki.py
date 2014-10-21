@@ -722,11 +722,6 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.db.docs.insert(docs)
         self.db[self.ops_uuid].insert(EXAMPLE_OPS)
 
-    def test_migrate_uuid_updates_node(self):
-        assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
-        self.wiki_page.migrate_uuid(self.project)
-        assert_not_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
-
     def test_migrate_uuid(self):
         self.wiki_page.migrate_uuid(self.project)
         assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
@@ -773,10 +768,22 @@ class TestWikiShareJSMongo(OsfTestCase):
     def test_migrate_uuid_no_mongo(self):
         assert_true(False)
 
-    def test_delete_share_document(self):
-        self.wiki_page.delete_share_document(self.project, self.wname)
+    def test_migrate_uuid_updates_node(self):
+        assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
+        self.wiki_page.migrate_uuid(self.project)
+        assert_not_equal(self.share_uuid, self.wiki_page.share_uuid)
+        assert_equal(self.wiki_page.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
+
+    def test_delete_share_doc(self):
+        self.wiki_page.delete_share_doc(self.project, self.wname)
         assert_is_none(self.db['docs'].find_one({'_id': self.docs_uuid}))
         assert_is_none(self.db[self.ops_uuid].find_one())
+
+    def test_delete_share_doc_updates_node(self):
+        assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
+        self.wiki_page.delete_share_doc(self.project)
+        assert_is_none(self.wiki_page.share_uuid)
+        assert_not_in(self.wkey, self.project.wiki_sharejs_uuids)
 
     def tearDown(self):
         super(TestWikiShareJSMongo, self).tearDown()
