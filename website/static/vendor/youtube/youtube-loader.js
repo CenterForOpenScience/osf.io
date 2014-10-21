@@ -50,7 +50,11 @@
     var onClick = function () {
         var iframe = document.createElement('iframe');
         iframe.className += 'youtube-loader-embedded';
+        iframe.id = 'ytplayer';
         iframe.setAttribute('src', 'https://www.youtube.com/embed/' + this.id + '?autoplay=1&autohide=1&border=0&wmode=opaque&enablejsapi=1&hd=1&showinfo=0');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('type', 'text/html');
         iframe.style.width = this.style.width;
         iframe.style.height = this.style.height;
         this.parentNode.replaceChild(iframe, this);
