@@ -271,7 +271,7 @@
 
     BaseViewModel.prototype.setOriginal = function() {};
 
-    BaseViewModel.prototype.dirty = function() { return false };
+    BaseViewModel.prototype.dirty = function() { return false; };
 
     BaseViewModel.prototype.fetch = function() {
         var self = this;
@@ -309,7 +309,7 @@
             ).done(
                 this.handleSuccess.bind(this)
             ).done(
-                this.setOriginal
+                this.setOriginal.bind(this)
             ).fail(
                 this.handleError.bind(this)
             );
