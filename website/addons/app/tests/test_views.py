@@ -437,3 +437,86 @@ class TestAppQueryViews(OsfTestCase):
 
         assert_equals(ret.status_code, 400)
         assert_false(mock_search.called)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    @mock.patch('website.addons.app.views.crud.args_to_query')
+    @mock.patch('website.addons.app.views.crud.elastic_to_rss')
+    def test_query_post_empty_json(self, mock_rss, mock_query, mock_search):
+        mock_rss.return_value = ''
+
+        url = self.project.api_url_for('query_app_rss', _xml=True)
+        ret = self.app.get(url)
+
+        assert_true(mock_rss.called)
+        assert_true(mock_search.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('*', None, None)
+
+    def test_project_metadata_no_project(self):
+        url = self.project.api_url_for('get_project_metadata', guid='garbage')
+        ret = self.app.get(url, expect_errors=True)
+
+        assert_equals(ret.status_code, 404)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_project_metadata(self, mock_search):
+        mock_search.return_value = {
+            'results': [
+                {
+                    '_source': {
+                        'foo': 'bar'
+                    }
+                },
+                {
+                    '_source': {
+                        'bar': 'foo'
+                    }
+                }
+            ]
+        }
+
+        url = self.project.api_url_for('get_project_metadata', guid=self.project._id)
+        ret = self.app.get(url)
+
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(ret.json, {'bar':'foo', 'foo':'bar'})
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_project_metadata_no_meta(self, mock_search):
+        mock_search.return_value = {
+            'results': []
+        }
+
+        url = self.project.api_url_for('get_project_metadata', guid=self.project._id)
+        ret = self.app.get(url)
+
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(ret.json, {})
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_project_metadata_sort(self, mock_search):
+        mock_search.return_value = {
+            'results': [
+                {
+                    '_source': {
+                        'foo': 'bar',
+                        'sort': 1
+                    }
+                },
+                {
+                    '_source': {
+                        'foo': 'baz',
+                        'sort': 0
+                    }
+                }
+            ]
+        }
+
+        url = self.project.api_url_for('get_project_metadata', guid=self.project._id)
+        ret = self.app.get(url + '?sort=sort')
+
+
+        assert_equals(ret.status_code, 200)
+        assert_equals(ret.json, {'sort': 0, 'foo':'baz'})
