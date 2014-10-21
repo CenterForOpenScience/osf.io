@@ -44,6 +44,9 @@ def query_app(node_addon, **kwargs):
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_json(node_addon, **kwargs):
+    if not request.json:
+        raise HTTPError(http.BAD_REQUEST)
+
     try:
         del request.json['format']
     except KeyError:
@@ -52,17 +55,12 @@ def query_app_json(node_addon, **kwargs):
     request_data = request.json
 
     try:
-        ret = search(request_data, _type=node_addon.namespace, index='metadata')
+        # Note: This will break scrapi
+        # Fix before pushing changes
+        return search(request_data, _type=node_addon.namespace, index='metadata')
     except SearchException:
-        return {
-            'results': [],
-            'total': 0
-        }
+        raise HTTPError(http.BAD_REQUEST)
 
-    return {
-        'results': ret['results'],
-        'total': ret['counts']['total']
-    }
 
 # GET
 @must_be_contributor_or_public
