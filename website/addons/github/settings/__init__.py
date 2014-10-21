@@ -1,7 +1,10 @@
 import logging
-from .defaults import *
+from .defaults import *  # noqa
+
+
+logger = logging.getLogger(__name__)
 
 try:
-    from .local import *
+    from .local import *  # noqa
 except ImportError as error:
-    logging.warn('No local.py settings file found')
+    logger.warn('No local.py settings file found')

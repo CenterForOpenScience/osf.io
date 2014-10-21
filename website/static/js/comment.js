@@ -27,7 +27,7 @@
      */
     var relativeDate = function(datetime) {
         var now = moment.utc();
-        var then = moment.utc(datetime, 'MM/DD/YY HH:mm:ss');
+        var then = moment.utc(datetime);
         then = then > now ? now : then;
         return then.fromNow();
     };
@@ -78,6 +78,20 @@
         self.submittingReply = ko.observable(false);
 
         self.comments = ko.observableArray();
+        self.unreadComments = ko.observable(0);
+
+        self.displayCount = ko.computed(function() {
+            if (self.unreadComments() !== 0) {
+                return self.unreadComments().toString();
+            } else {
+                return ' ';
+            }
+        });
+
+        /* Removes number of unread comments from tab when comments pane is opened  */
+        self.removeCount = function() {
+            self.unreadComments(0);
+        };
 
         self.replyNotEmpty = ko.computed(function() {
             return notEmpty(self.replyContent());
@@ -129,6 +143,7 @@
                         return new CommentModel(comment, self, self.$root);
                     })
                 );
+                self.unreadComments(response.nUnread);
                 deferred.resolve(self.comments());
                 self._loaded = true;
             }
@@ -140,7 +155,7 @@
         var self = this;
         if (!self.replyContent()) {
             self.replyErrorMessage('Please enter a comment');
-            return
+            return;
         }
         // Quit if already submitting reply
         if (self.submittingReply()) {
@@ -152,24 +167,23 @@
             {
                 target: self.id(),
                 content: self.replyContent(),
-            },
-            function(response) {
-                self.cancelReply();
-                self.replyContent(null);
-                self.comments.unshift(new CommentModel(response.comment, self, self.$root));
-                if (!self.hasChildren()) {
-                    self.hasChildren(true);
-                }
-                self.replyErrorMessage('');
-                // Update discussion in case we aren't already in it
-                // TODO: This can lead to unnecessary API calls; fix this
-                if (!self.$root.commented()) {
-                    self.$root.fetchDiscussion();
-                    self.$root.commented(true);
-                }
-                self.onSubmitSuccess(response);
             }
-        ).fail(function(xhr) {
+        ).done(function(response) {
+            self.cancelReply();
+            self.replyContent(null);
+            self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+            if (!self.hasChildren()) {
+                self.hasChildren(true);
+            }
+            self.replyErrorMessage('');
+            // Update discussion in case we aren't already in it
+            // TODO: This can lead to unnecessary API calls; fix this
+            if (!self.$root.commented()) {
+                self.$root.fetchDiscussion();
+                self.$root.commented(true);
+            }
+            self.onSubmitSuccess(response);
+        }).fail(function() {
             self.cancelReply();
             self.errorMessage('Could not submit comment');
         });
@@ -244,7 +258,7 @@
 
     CommentModel.prototype = new BaseComment();
 
-    CommentModel.prototype.edit = function(data) {
+    CommentModel.prototype.edit = function() {
         if (this.canEdit()) {
             this._content = this.content();
             this.editing(true);
@@ -271,24 +285,21 @@
             .find('[data-toggle="tooltip"]');
         if (!self.content()) {
             self.errorMessage('Please enter a comment');
-            return
+            return;
         }
         $.osf.putJSON(
             nodeApiUrl + 'comment/' + self.id() + '/',
-            {
-                content: self.content(),
-            },
-            function(response) {
-                self.content(response.content);
-                self.dateModified(response.dateModified);
-                self.editing(false);
-                self.modified(true);
-                self.editErrorMessage('');
-                self.$root.editors -= 1;
-                // Refresh tooltip on date modified, if present
-                $tips.tooltip('destroy').tooltip();
-            }
-        ).fail(function() {
+            {content: self.content()}
+        ).done(function(response) {
+            self.content(response.content);
+            self.dateModified(response.dateModified);
+            self.editing(false);
+            self.modified(true);
+            self.editErrorMessage('');
+            self.$root.editors -= 1;
+            // Refresh tooltip on date modified, if present
+            $tips.tooltip('destroy').tooltip();
+        }).fail(function() {
             self.cancelEdit();
             self.errorMessage('Could not submit comment');
         });
@@ -311,11 +322,12 @@
             {
                 category: self.abuseCategory(),
                 text: self.abuseText()
-            },
-            function() {
-                self.isAbuse(true);
             }
-        )
+        ).done(function() {
+            self.isAbuse(true);
+        }).fail(function() {
+            self.errorMessage('Could not report abuse.');
+        });
     };
 
     CommentModel.prototype.startDelete = function() {
@@ -327,13 +339,11 @@
         $.ajax({
             type: 'DELETE',
             url: nodeApiUrl + 'comment/' + self.id() + '/',
-            success: function(response) {
-                self.isDeleted(true);
-                self.deleting(false);
-            },
-            error: function() {
-                self.deleting(false);
-            }
+        }).done(function() {
+            self.isDeleted(true);
+            self.deleting(false);
+        }).fail(function() {
+            self.deleting(false);
         });
     };
 
@@ -347,17 +357,13 @@
 
     CommentModel.prototype.submitUndelete = function() {
         var self = this;
-        $.ajax({
-            type: 'PUT',
-            url: nodeApiUrl + 'comment/' + self.id() + '/undelete/',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                self.isDeleted(false);
-            },
-            complete: function() {
-                self.undeleting(false);
-            }
+        $.osf.putJSON(
+            nodeApiUrl + 'comment/' + self.id() + '/undelete/',
+            {}
+        ).done(function() {
+            self.isDeleted(false);
+        }).fail(function() {
+            self.undeleting(false);
         });
     };
 
@@ -371,21 +377,17 @@
 
     CommentModel.prototype.submitUnreportAbuse = function() {
         var self = this;
-        $.ajax({
-            type: 'POST',
-            url: nodeApiUrl + 'comment/' + self.id() + '/unreport/',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function(response) {
-                self.isAbuse(false);
-            },
-            complete: function() {
-                self.unreporting(false);
-            }
+        $.osf.postJSON(
+            nodeApiUrl + 'comment/' + self.id() + '/unreport/',
+            {}
+        ).done(function() {
+            self.isAbuse(false);
+        }).fail(function() {
+            self.unreporting(false);
         });
     };
 
-    CommentModel.prototype.cancelUnreportSpam = function() {
+    CommentModel.prototype.cancelUnreportAbuse = function() {
         this.unreporting(false);
     };
 
@@ -402,7 +404,7 @@
         this.showChildren(!this.showChildren());
     };
 
-    CommentModel.prototype.onSubmitSuccess = function(response) {
+    CommentModel.prototype.onSubmitSuccess = function() {
         this.showChildren(true);
     };
 
@@ -462,6 +464,8 @@
         }
         ko.applyBindings(viewModel, $elm[0]);
         viewModel.initListeners();
+
+        return viewModel;
     };
 
     return {

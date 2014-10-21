@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import os
 
-from flask import redirect
+from flask import send_from_directory
 
-import framework
-from framework import status
+from framework import sentry, status
+from framework.flask import redirect
+from framework.auth import get_current_user, get_display_name
 from framework.exceptions import HTTPError
-from framework import (Rule, process_rules,
-                       WebRenderer, json_renderer,
-                       render_mako_string)
+from framework.routing import (
+    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
+)
 from framework.auth import views as auth_views
-from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
@@ -20,34 +21,38 @@ from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
 from website.assets import env as assets_env
+from website.util import sanitize
+from website.conferences import views as conference_views
 
 
 def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
-
     """
-    user = framework.auth.get_current_user()
+    user = get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
         'user_id': user._primary_key if user else '',
         'user_url': user.url if user else '',
         'user_api_url': user.api_url if user else '',
-        'display_name': framework.auth.get_display_name(user.fullname) if user else '',
+        'display_name': get_display_name(user.fullname) if user else '',
         'use_cdn': settings.USE_CDN_FOR_CLIENT_LIBS,
         'piwik_host': settings.PIWIK_HOST,
         'piwik_site_id': settings.PIWIK_SITE_ID,
+        'sentry_dsn_js': settings.SENTRY_DSN_JS if sentry.enabled else None,
         'dev_mode': settings.DEV_MODE,
         'allow_login': settings.ALLOW_LOGIN,
-        'status': framework.status.pop_status_messages(),
+        'status': status.pop_status_messages(),
         'js_all': assets_env['js'].urls(),
         'css_all': assets_env['css'].urls(),
         'js_bottom': assets_env['js_bottom'].urls(),
         'domain': settings.DOMAIN,
+        'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
+        'sanitize': sanitize,
     }
 
 
@@ -62,7 +67,7 @@ notemplate = OsfWebRenderer('', render_mako_string)
 
 
 def favicon():
-    return framework.send_from_directory(
+    return send_from_directory(
         settings.STATIC_FOLDER,
         'favicon.ico',
         mimetype='image/vnd.microsoft.icon'
@@ -125,7 +130,8 @@ def make_url_map(app):
     process_rules(app, [
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        Rule('/reproducibility/', 'get', website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
+        Rule('/reproducibility/', 'get',
+            website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
 
         Rule('/about/', 'get', {}, OsfWebRenderer('public/pages/about.mako')),
         Rule('/howosfworks/', 'get', {}, OsfWebRenderer('public/pages/howosfworks.mako')),
@@ -137,22 +143,29 @@ def make_url_map(app):
         Rule(
             '/view/<meeting>/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting.mako'),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
-            project_views.email.conference_results,
+            conference_views.conference_results,
             OsfWebRenderer('public/pages/meeting_plain.mako'),
             endpoint_suffix='__plain',
         ),
 
         Rule(
+            '/api/v1/view/<meeting>/',
+            'get',
+            conference_views.conference_data,
+            json_renderer,
+        ),
+
+        Rule(
             '/presentations/',
             'get',
-            project_views.email.conference_view,
+            conference_views.conference_view,
             OsfWebRenderer('public/pages/meeting_landing.mako'),
         ),
 
@@ -180,9 +193,13 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
-
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
-
+        Rule(
+            [
+                '/dashboard/<nid>',
+                '/dashboard/',
+            ],
+            'get', website_views.get_dashboard, json_renderer),
     ], prefix='/api/v1')
 
     ### Meta-data ###
@@ -251,6 +268,16 @@ def make_url_map(app):
 
         Rule(
             [
+                '/project/<pid>/comments/timestamps/',
+                '/project/<pid>/node/<nid>/comments/timestamps/',
+            ],
+            'put',
+            project_views.comment.update_comments_timestamp,
+            json_renderer,
+        ),
+
+        Rule(
+            [
                 '/project/<pid>/comment/<cid>/report/',
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
@@ -278,14 +305,14 @@ def make_url_map(app):
         Rule('/forms/signin/', 'get', website_views.signin_form, json_renderer),
         Rule('/forms/forgot_password/', 'get', website_views.forgot_password_form, json_renderer),
         Rule('/forms/reset_password/', 'get', website_views.reset_password_form, json_renderer),
-        Rule('/forms/new_project/', 'get', website_views.new_project_form, json_renderer),
     ], prefix='/api/v1')
 
     ### Discovery ###
 
     process_rules(app, [
 
-        Rule('/explore/activity/', 'get', discovery_views.activity, OsfWebRenderer('public/pages/active_nodes.mako')),
+        Rule('/explore/activity/', 'get', discovery_views.activity,
+            OsfWebRenderer('public/pages/active_nodes.mako')),
 
     ])
 
@@ -318,16 +345,22 @@ def make_url_map(app):
         ),
 
         # TODO: Remove `auth_register_post`
-        Rule('/register/', 'post', auth_views.auth_register_post, OsfWebRenderer('public/login.mako')),
+        Rule('/register/', 'post', auth_views.auth_register_post,
+            OsfWebRenderer('public/login.mako')),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
-        Rule(['/login/', '/account/'], 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/', 'post', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
-        Rule('/login/first/', 'get', auth_views.auth_login, OsfWebRenderer('public/login.mako'), endpoint_suffix='__first', view_kwargs={'first': True}),
+        Rule(['/login/', '/account/'], 'get',
+            auth_views.auth_login, OsfWebRenderer('public/login.mako')),
+        Rule('/login/', 'post', auth_views.auth_login,
+            OsfWebRenderer('public/login.mako'), endpoint_suffix='__post'),
+        Rule('/login/first/', 'get', auth_views.auth_login,
+            OsfWebRenderer('public/login.mako'),
+            endpoint_suffix='__first', view_kwargs={'first': True}),
 
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
 
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password, OsfWebRenderer('public/login.mako')),
+        Rule('/forgotpassword/', 'post', auth_views.forgot_password,
+            OsfWebRenderer('public/login.mako')),
 
         Rule([
             '/midas/', '/summit/', '/accountbeta/', '/decline/'
@@ -341,16 +374,23 @@ def make_url_map(app):
 
     process_rules(app, [
         Rule('/profile/', 'get', profile_views.profile_view, OsfWebRenderer('profile.mako')),
-        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id, OsfWebRenderer('profile.mako')),
-        Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, OsfWebRenderer('profile/key_history.mako')),
-        Rule('/addons/', 'get', profile_views.profile_addons, OsfWebRenderer('profile/addons.mako')),
-        Rule(["/user/merge/"], 'get', auth_views.merge_user_get, OsfWebRenderer("merge_accounts.mako")),
-        Rule(["/user/merge/"], 'post', auth_views.merge_user_post, OsfWebRenderer("merge_accounts.mako")),
-        # Route for claiming and setting email and password. Verification token must be querystring argument
+        Rule('/profile/<uid>/', 'get', profile_views.profile_view_id,
+            OsfWebRenderer('profile.mako')),
+        Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history,
+            OsfWebRenderer('profile/key_history.mako')),
+        Rule('/addons/', 'get', profile_views.profile_addons,
+            OsfWebRenderer('profile/addons.mako')),
+        Rule(["/user/merge/"], 'get', auth_views.merge_user_get,
+            OsfWebRenderer("merge_accounts.mako")),
+        Rule(["/user/merge/"], 'post', auth_views.merge_user_post,
+            OsfWebRenderer("merge_accounts.mako")),
+        # Route for claiming and setting email and password.
+        # Verification token must be querystring argument
         Rule(['/user/<uid>/<pid>/claim/'], ['get', 'post'],
             project_views.contributor.claim_user_form, OsfWebRenderer('claim_account.mako')),
         Rule(['/user/<uid>/<pid>/claim/verify/<token>/'], ['get', 'post'],
-            project_views.contributor.claim_user_registered, OsfWebRenderer('claim_account_registered.mako')),
+            project_views.contributor.claim_user_registered,
+            OsfWebRenderer('claim_account_registered.mako')),
 
 
         Rule(
@@ -378,16 +418,20 @@ def make_url_map(app):
 
         # Used by profile.html
         Rule('/profile/<uid>/edit/', 'post', profile_views.edit_profile, json_renderer),
-        Rule('/profile/<uid>/public_projects/', 'get', profile_views.get_public_projects, json_renderer),
-        Rule('/profile/<uid>/public_components/', 'get', profile_views.get_public_components, json_renderer),
+        Rule('/profile/<uid>/public_projects/', 'get',
+            profile_views.get_public_projects, json_renderer),
+        Rule('/profile/<uid>/public_components/', 'get',
+            profile_views.get_public_components, json_renderer),
 
         Rule('/settings/keys/', 'get', profile_views.get_keys, json_renderer),
         Rule('/settings/create_key/', 'post', profile_views.create_user_key, json_renderer),
         Rule('/settings/revoke_key/', 'post', profile_views.revoke_user_key, json_renderer),
         Rule('/settings/key_history/<kid>/', 'get', profile_views.user_key_history, json_renderer),
 
-        Rule('/profile/<user_id>/summary/', 'get', profile_views.get_profile_summary, json_renderer),
-        Rule('/user/<uid>/<pid>/claim/email/', 'post', project_views.contributor.claim_user_post, json_renderer),
+        Rule('/profile/<user_id>/summary/', 'get',
+            profile_views.get_profile_summary, json_renderer),
+        Rule('/user/<uid>/<pid>/claim/email/', 'post',
+            project_views.contributor.claim_user_post, json_renderer),
 
         # Rules for user profile configuration
         Rule('/settings/names/', 'get', profile_views.serialize_names, json_renderer),
@@ -498,19 +542,25 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
 
-        # Create
-        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node, OsfWebRenderer('', render_mako_string)),
+        # Create a new subproject/component
+        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
+            OsfWebRenderer('', render_mako_string)),
 
         Rule([
             '/project/<pid>/key_history/<kid>/',
             '/project/<pid>/node/<nid>/key_history/<kid>/',
         ], 'get', project_views.key.node_key_history, OsfWebRenderer('project/key_history.mako')),
 
-        # TODO: Add API endpoint for tags
-        Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
+        # # TODO: Add API endpoint for tags
+        # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
 
-        Rule('/project/new/', 'get', project_views.node.project_new, OsfWebRenderer('project/new.mako')),
-        Rule('/project/new/', 'post', project_views.node.project_new_post, OsfWebRenderer('project/new.mako')),
+        Rule('/project/new/', 'get', project_views.node.project_new,
+            OsfWebRenderer('project/new.mako')),
+        Rule('/folder/<nid>', 'get', project_views.node.folder_new,
+            OsfWebRenderer('project/new_folder.mako')),
+        Rule('/api/v1/folder/<nid>', 'post', project_views.node.folder_new_post, json_renderer),
+        Rule('/project/new/<pid>/beforeTemplate/', 'get',
+            project_views.node.project_before_template, json_renderer),
 
         Rule(
             [
@@ -545,13 +595,6 @@ def make_url_map(app):
 
         ### Logs ###
 
-        Rule('/log/<log_id>/', 'get', project_views.log.get_log, OsfWebRenderer('util/render_log.mako')),
-
-        Rule([
-            '/project/<pid>/log/',
-            '/project/<pid>/node/<nid>/log/',
-        ], 'get', project_views.log.get_logs, OsfWebRenderer('util/render_logs.mako')),
-
         # View forks
         Rule([
             '/project/<pid>/forks/',
@@ -562,23 +605,27 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/register/',
             '/project/<pid>/node/<nid>/register/',
-        ], 'get', project_views.register.node_register_page, OsfWebRenderer('project/register.mako')),
+        ], 'get', project_views.register.node_register_page,
+            OsfWebRenderer('project/register.mako')),
 
         Rule([
             '/project/<pid>/register/<template>/',
             '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'get', project_views.register.node_register_template_page, OsfWebRenderer('project/register.mako')),
+        ], 'get', project_views.register.node_register_template_page,
+            OsfWebRenderer('project/register.mako')),
 
         Rule([
             '/project/<pid>/registrations/',
             '/project/<pid>/node/<nid>/registrations/',
-        ], 'get', project_views.node.node_registrations, OsfWebRenderer('project/registrations.mako')),
+        ], 'get', project_views.node.node_registrations,
+            OsfWebRenderer('project/registrations.mako')),
 
         # Statistics
         Rule([
             '/project/<pid>/statistics/',
             '/project/<pid>/node/<nid>/statistics/',
-        ], 'get', project_views.node.project_statistics, OsfWebRenderer('project/statistics.mako')),
+        ], 'get', project_views.node.project_statistics,
+            OsfWebRenderer('project/statistics.mako')),
 
         ### Files ###
 
@@ -592,7 +639,7 @@ def make_url_map(app):
             'get',
             project_views.file.collect_file_trees,
             OsfWebRenderer('project/files.mako'),
-            endpoint_suffix='__page', view_kwargs={'mode': 'page'},
+            view_kwargs={'mode': 'page'},
         ),
 
 
@@ -605,9 +652,12 @@ def make_url_map(app):
         Rule(
             '/email/meeting/',
             'post',
-            project_views.email.meeting_hook,
+            conference_views.meeting_hook,
             json_renderer,
         ),
+
+        # Create project, used by projectCreator.js
+        Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule([
             '/project/<pid>/contributors_abbrev/',
@@ -620,6 +670,14 @@ def make_url_map(app):
             '/project/<pid>/',
             '/project/<pid>/node/<nid>/',
         ], 'get', project_views.node.view_project, json_renderer),
+        Rule([
+            '/project/<pid>/expand/',
+            '/project/<pid>/node/<nid>/expand/',
+        ], 'post', project_views.node.expand, json_renderer),
+        Rule([
+            '/project/<pid>/collapse/',
+            '/project/<pid>/node/<nid>/collapse/',
+        ], 'post', project_views.node.collapse, json_renderer),
 
         Rule(
             [
@@ -641,6 +699,22 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/pointer/',
+            ],
+            'post',
+            project_views.node.add_pointer,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/pointers/move/',
+            ],
+            'post',
+            project_views.node.move_pointers,
+            json_renderer,
+        ),
+        Rule(
+            [
                 '/project/<pid>/pointer/',
                 '/project/<pid>/node/<nid>pointer/',
             ],
@@ -648,7 +722,31 @@ def make_url_map(app):
             project_views.node.remove_pointer,
             json_renderer,
         ),
-
+        Rule(
+            [
+                '/folder/<pid>/pointer/<pointer_id>',
+            ],
+            'delete',
+            project_views.node.remove_pointer_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>/pointers/',
+            ],
+            'delete',
+            project_views.node.remove_pointers_from_folder,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/folder/<pid>',
+            ],
+            'delete',
+            project_views.node.delete_folder,
+            json_renderer,
+        ),
+        Rule('/folder/', 'put', project_views.node.add_folder, json_renderer),
         Rule([
             '/project/<pid>/get_summary/',
             '/project/<pid>/node/<nid>/get_summary/',
@@ -658,6 +756,9 @@ def make_url_map(app):
             '/project/<pid>/get_children/',
             '/project/<pid>/node/<nid>/get_children/',
         ], 'get', project_views.node.get_children, json_renderer),
+        Rule([
+            '/project/<pid>/get_folder_pointers/'
+        ], 'get', project_views.node.get_folder_pointers, json_renderer),
         Rule([
             '/project/<pid>/get_forks/',
             '/project/<pid>/node/<nid>/get_forks/',
@@ -705,16 +806,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),
 
-        # Create
-        Rule(
-            [
-                '/project/new/',
-                '/project/<pid>/newnode/',
-            ],
-            'post',
-            project_views.node.project_new_node,
-            json_renderer,
-        ),
 
         # Private Link
         Rule([
@@ -761,14 +852,15 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/revoke_key/',
             '/project/<pid>/node/<nid>/revoke_key/'
-        ], 'post', project_views.key.revoke_node_key,  json_renderer),
+        ], 'post', project_views.key.revoke_node_key, json_renderer),
         Rule([
             '/project/<pid>/keys/',
             '/project/<pid>/node/<nid>/keys/',
         ], 'get', project_views.key.get_node_keys, json_renderer),
 
         # Reorder components
-        Rule('/project/<pid>/reorder_components/', 'post', project_views.node.project_reorder_components, json_renderer),
+        Rule('/project/<pid>/reorder_components/', 'post',
+                project_views.node.project_reorder_components, json_renderer),
 
         # Edit node
         Rule([
@@ -898,8 +990,9 @@ def make_url_map(app):
 
         # Endpoint to fetch Rubeus.JS/Hgrid-formatted data
         Rule(
-            ['/project/<pid>/files/grid/',
-            '/project/<pid>/node/<nid>/files/grid/'
+            [
+                '/project/<pid>/files/grid/',
+                '/project/<pid>/node/<nid>/files/grid/'
             ],
             'get',
             project_views.file.grid_data,
@@ -946,3 +1039,12 @@ def make_url_map(app):
             json_renderer
         ),
     ], prefix='/api/v1')
+
+    # Set up static routing for addons
+    # NOTE: We use nginx to serve static addon assets in production
+    addon_base_path = os.path.abspath('website/addons')
+    if settings.DEV_MODE:
+        @app.route('/static/addons/<addon>/<path:filename>')
+        def addon_static(addon, filename):
+            addon_path = os.path.join(addon_base_path, addon, 'static')
+            return send_from_directory(addon_path, filename)

@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-import mock
-import unittest
-from nose.tools import *
+from nose.tools import *  # noqa
 from tests.factories import ProjectFactory, UserFactory
 from tests.base import OsfTestCase
 from utils import create_mock_s3
-from website.addons.s3 import api
+
 
 # TODO: finish me
 class TestS3Api(OsfTestCase):
 
     def setUp(self):
+
+        super(TestS3Api, self).setUp()
+
         self.user = UserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('s3')

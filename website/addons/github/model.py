@@ -1,16 +1,15 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import urlparse
 import itertools
 import httplib as http
 
+from modularodm import fields
 from github3 import GitHubError
 
-from framework import fields
 from framework.auth import Auth
+from framework.mongo import StoredObject
 
 from website import settings
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
@@ -36,27 +35,82 @@ class GithubGuidFile(GuidFile):
         return os.path.join('github', 'file', self.path)
 
 
-class AddonGitHubUserSettings(AddonUserSettingsBase):
+class AddonGitHubOauthSettings(StoredObject):
+    """
+    this model address the problem if we have two osf user link
+    to the same github user and their access token conflicts issue
+    """
 
-    github_user = fields.StringField()
+    #github user id, for example, "4974056"
+    # Note that this is a numeric ID, not the user's login.
+    github_user_id = fields.StringField(primary=True, required=True)
 
-    oauth_state = fields.StringField()
+    #github user name this is the user's login
+    github_user_name = fields.StringField()
     oauth_access_token = fields.StringField()
     oauth_token_type = fields.StringField()
 
-    @property
-    def has_auth(self):
-        return self.oauth_access_token is not None
+
+class AddonGitHubUserSettings(AddonUserSettingsBase):
+
+    oauth_state = fields.StringField()
+    oauth_settings = fields.ForeignField(
+        'addongithuboauthsettings', backref='accessed'
+    )
 
     @property
+    def has_auth(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token is not None
+        return False
+
+    @property
+    def github_user_name(self):
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
+
+    @github_user_name.setter
+    def github_user_name(self, user_name):
+        self.oauth_settings.github_user_name = user_name
+
+    @property
+    def oauth_access_token(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_access_token
+        return None
+
+    @oauth_access_token.setter
+    def oauth_access_token(self, oauth_access_token):
+        self.oauth_settings.oauth_access_token = oauth_access_token
+
+    @property
+    def oauth_token_type(self):
+        if self.oauth_settings:
+            return self.oauth_settings.oauth_token_type
+        return None
+
+    @oauth_token_type.setter
+    def oauth_token_type(self, oauth_token_type):
+        self.oauth_settings.oauth_token_type = oauth_token_type
+
+    # Required for importing username from social profile configuration page
+    @property
     def public_id(self):
-        return self.github_user
+        if self.oauth_settings:
+            return self.oauth_settings.github_user_name
+        return None
+
+    def save(self, *args, **kwargs):
+        if self.oauth_settings:
+            self.oauth_settings.save()
+        return super(AddonGitHubUserSettings, self).save(*args, **kwargs)
 
     def to_json(self, user):
         rv = super(AddonGitHubUserSettings, self).to_json(user)
         rv.update({
             'authorized': self.has_auth,
-            'authorized_github_user': self.github_user if self.github_user else '',
+            'authorized_github_user': self.github_user_name if self.github_user_name else '',
             'show_submit': False,
         })
         return rv
@@ -75,11 +129,18 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
             else:
                 raise
 
-    def clear_auth(self, save=False):
+    def clear_auth(self, auth=None, save=False):
         for node_settings in self.addongithubnodesettings__authorized:
-            node_settings.deauthorize(save=True)
-        self.revoke_token()
-        self.oauth_access_token, self.oauth_token_type = None, None
+            node_settings.deauthorize(auth=auth, save=True)
+
+        # if there is only one osf user linked to this github user oauth, revoke the token,
+        # otherwise, disconnect the osf user from the addongithuboauthsettings
+        if self.oauth_settings:
+            if len(self.oauth_settings.addongithubusersettings__accessed) < 2:
+                self.revoke_token()
+
+        # Clear tokens on oauth_settings
+            self.oauth_settings = None
         if save:
             self.save()
 
@@ -159,7 +220,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         connection = GitHub.from_settings(self.user_settings)
         return connection.repo(user=self.user, repo=self.repo).private
 
-
     # TODO: Delete me and replace with serialize_settings / Knockout
     def to_json(self, user):
         rv = super(AddonGitHubNodeSettings, self).to_json(user)
@@ -183,7 +243,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 ]
                 rv.update({
                     'repo_names': repo_names,
-                    })
+                })
             rv.update({
                 'node_has_auth': True,
                 'github_user': self.user or '',
@@ -192,8 +252,8 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'auth_osf_name': owner.fullname,
                 'auth_osf_url': owner.url,
                 'auth_osf_id': owner._id,
-                'github_user_name': self.user_settings.github_user,
-                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user),
+                'github_user_name': self.user_settings.github_user_name,
+                'github_user_url': 'https://github.com/{0}'.format(self.user_settings.github_user_name),
                 'is_owner': owner == user,
             })
         return rv
@@ -459,7 +519,11 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         return clone, message
 
     def before_make_public(self, node):
-        if self.is_private:
+        try:
+            is_private = self.is_private
+        except NotFoundError:
+            return None
+        if is_private:
             return (
                 'This {cat} is connected to a private GitHub repository. Users '
                 '(other than contributors) will not be able to see the '
@@ -481,6 +545,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
 
         if self.user_settings:
             connect = GitHub.from_settings(self.user_settings)
+            secret = utils.make_hook_secret()
             hook = connect.add_hook(
                 self.user, self.repo,
                 'web',
@@ -492,13 +557,13 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                         )
                     ),
                     'content_type': github_settings.HOOK_CONTENT_TYPE,
-                    'secret': utils.make_hook_secret(),
+                    'secret': secret,
                 }
             )
 
             if hook:
                 self.hook_id = hook.id
-                self.hook_secret = hook.config['secret']
+                self.hook_secret = secret
                 if save:
                     self.save()
 

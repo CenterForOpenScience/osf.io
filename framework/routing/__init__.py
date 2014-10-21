@@ -3,7 +3,6 @@ import os
 import logging
 import copy
 import json
-import pystache
 import functools
 import httplib as http
 
@@ -12,11 +11,13 @@ import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
+from flask import request, make_response
 
-from framework import session, request, make_response
-from framework.exceptions import HTTPError
-from framework.flask import app, redirect
 from framework import sentry
+from framework.flask import app, redirect
+from framework.sessions import session
+from framework.exceptions import HTTPError
+
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
 ]
+
 
 class Rule(object):
     """ Container for routing and rendering rules."""
@@ -79,10 +81,15 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
     """
     @functools.wraps(fn)
     def wrapped(*args, **kwargs):
-
-        session_error_code = session.data.get('auth_error_code')
+        if session:
+            session_error_code = session.data.get('auth_error_code')
+        else:
+            session_error_code = None
         if session_error_code:
-            raise HTTPError(session_error_code)
+            return renderer(
+                HTTPError(session_error_code),
+                **renderer_kwargs or {}
+            )
         try:
             if renderer_kwargs:
                 kwargs.update(renderer_kwargs)
@@ -170,6 +177,7 @@ def process_rules(app, rules, prefix=''):
 ### Renderer helpers ###
 
 def render_mustache_string(tpl_string, data):
+    import pystache
     return pystache.render(tpl_string, context=data)
 
 def render_jinja_string(tpl, data):
@@ -298,7 +306,6 @@ class Renderer(object):
         return make_response(rendered, status_code, headers)
 
 
-
 class JSONRenderer(Renderer):
     """Renderer for API views. Generates JSON; ignores
     redirects from views and exceptions.
@@ -317,13 +324,15 @@ class JSONRenderer(Renderer):
             return json.JSONEncoder.default(self, obj)
 
     def handle_error(self, error):
-        return self.render(error.to_data(), None), error.code
+        headers = {'Content-Type': self.CONTENT_TYPE}
+        return self.render(error.to_data(), None), error.code, headers
 
     def render(self, data, redirect_url, *args, **kwargs):
         return json.dumps(data, cls=self.Encoder)
 
 # Create a single JSONRenderer instance to avoid repeated construction
 json_renderer = JSONRenderer()
+
 
 class WebRenderer(Renderer):
     """Renderer for web views. Generates HTML; follows redirects
@@ -432,7 +441,7 @@ class WebRenderer(Renderer):
             except NotFound:
                 return '<div>URI {} not found</div>'.format(uri), is_replace
             except Exception as error:
-                logging.exception(error)
+                logger.exception(error)
                 if error_msg:
                     return '<div>{}</div>'.format(error_msg), is_replace
                 return '<div>Error retrieving URI {}: {}</div>'.format(

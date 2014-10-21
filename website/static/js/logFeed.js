@@ -25,7 +25,10 @@
         $.extend(self, params);
         self.date = new FormattableDate(params.date);
         self.wikiUrl = ko.computed(function() {
-            return self.nodeUrl + 'wiki/' + self.params.page;
+            return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
+        });
+        self.wikiIdUrl = ko.computed(function() {
+            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page_id);
         });
 
         /**
@@ -36,6 +39,13 @@
         };
 
         /**
+         * Return whether a knockout template exists for the log.
+         */
+        self.hasTemplate = ko.computed(function() {
+            return $('script#' + self.action).length > 0;
+        });
+
+        /**
          * Return the html for a comma-delimited list of contributor links, formatted
          * with correct list grammar.
          * e.g. "Dasher and Dancer", "Comet, Cupid, and Blitzen"
@@ -43,24 +53,24 @@
         self.displayContributors = ko.computed(function(){
             var ret = '';
             if (self.anonymous){
-                    ret += '<span><em>some anonymous contributor(s)</em></span>';
+                ret += '<span class="contributor-anonymous">some anonymous contributor(s)</span>';
             } else {
                 for (var i = 0; i < self.contributors.length; i++) {
                     var person = self.contributors[i];
                     if (i === self.contributors.length - 1 && self.contributors.length > 2) {
                         ret += ' and ';
                     }
-                    if (person.registered)
+                    if (person.registered) {
                         ret += self._asContribLink(person);
-                    else
+                    } else {
                         ret += '<span>' + person.fullname + '</span>';
+                    }
                     if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                         ret += ', ';
                     } else if (i < self.contributors.length - 1 && self.contributors.length === 2) {
                         ret += ' and ';
                     }
                 }
-
             }
             return ret;
         });
@@ -83,22 +93,22 @@
         self.moreLogs = function(){
             pageNum+=1;
             $.ajax({
+                type: 'get',
                 url: self.url,
                 data:{
-                    pageNum:pageNum
+                    pageNum: pageNum
                 },
-                type: 'get',
-                cache: false,
-                success: function(response){
-                    // Initialize LogViewModel
-                    var logModelObjects = createLogs(response.logs);  // Array of Log model objects
-                    for(var i=0;i<logModelObjects.length;i++)
-                    {
-                        self.logs.push(logModelObjects[i]);
-                    }
-                    self.enableMoreLogs(response.has_more_logs);
+                cache: false
+            }).done(function(response) {
+                // Initialize LogViewModel
+                var logModelObjects = createLogs(response.logs); // Array of Log model objects
+                for (var i=0; i<logModelObjects.length; i++) {
+                    self.logs.push(logModelObjects[i]);
                 }
-            });
+                self.enableMoreLogs(response.has_more_logs);
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.tzname = ko.computed(function() {
@@ -119,12 +129,12 @@
     var createLogs = function(logData){
         var mappedLogs = $.map(logData, function(item) {
             return new Log({
-                "anonymous": item.anonymous,
+                'anonymous': item.anonymous,
                 'action': item.action,
                 'date': item.date,
                 // The node type, either 'project' or 'component'
                 // NOTE: This is NOT the component category (e.g. 'hypothesis')
-                'nodeType': item.node.node_type,
+                'nodeType': item.node.is_registration ? 'registration': item.node.node_type,
                 'nodeCategory': item.node.category,
                 'contributors': item.contributors,
                 'nodeUrl': item.node.url,
@@ -154,13 +164,13 @@
         self.viewModel = new LogsViewModel(self.logs, hasMoreLogs, url);
         self.init();
     };
+
     /**
      * A log list feed.
      * @param {string} selector
-     * @param {string or Array} data
+     * @param {string} url
      * @param {object} options
      */
-
     function LogFeed(selector, data, options) {
         var self = this;
         self.selector = selector;
@@ -169,9 +179,9 @@
         self.$progBar = $(self.options.progBar);
         if (Array.isArray(data)) { // data is an array of log object from server
             initViewModel(self, data, self.options.hasMoreLogs, self.options.url);
-        } else { // data is a URL
+        } else { // data is an URL
             $.getJSON(data, function(response) {
-                  initViewModel(self, response.logs, response.has_more_logs,data);
+                initViewModel(self, response.logs, response.has_more_logs, data);
             });
         }
     }
@@ -180,7 +190,7 @@
         var self = this;
         self.$progBar.hide();
         ko.cleanNode(self.$element[0]);
-        ko.applyBindings(self.viewModel, self.$element[0]);
+        $.osf.applyBindings(self.viewModel, self.selector);
     };
 
     return LogFeed;

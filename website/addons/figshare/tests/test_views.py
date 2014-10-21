@@ -1,13 +1,15 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import mock
+import unittest
 from nose.tools import *
-from webtest_plus import TestApp
 
 import httplib as http
 
-import website.app
 from tests.base import OsfTestCase
 
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 
 from website.addons.figshare.tests.utils import create_mock_figshare
 from website.addons.figshare import views
@@ -18,10 +20,6 @@ from website.addons.figshare.views.config import serialize_settings
 from framework.auth import Auth
 
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 figshare_mock = create_mock_figshare(project=436)
 
 
@@ -31,7 +29,6 @@ class TestViewsConfig(OsfTestCase):
 
         super(TestViewsConfig, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -57,11 +54,11 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.save()
 
         self.figshare = create_mock_figshare('test')
-    
+
     def test_import_auth(self):
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
         settings = self.node_settings
-        settings.user_settings = None        
+        settings.user_settings = None
         settings.save()
         url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
         self.app.put(url, auth=self.user.auth)
@@ -70,14 +67,21 @@ class TestViewsConfig(OsfTestCase):
         assert_true(is_not_none)
 
     def test_deauthorize(self):
-        """Testing figshare_deauthorize to ensure user auth gets removed from the node and that the AddonNodeSettings are cleared"""
+        """Testing figshare_deauthorize to ensure user auth gets removed from
+        the node and that the AddonNodeSettings are cleared
+
+        """
         settings = self.node_settings
         url = '/api/v1/project/{0}/figshare/config/'.format(self.project._id)
         self.app.delete(url, auth=self.user.auth)
         self.node_settings.reload()
         assert_true(settings.user_settings is None)
-        is_none = (settings.figshare_id is None) and (settings.figshare_title is None) and (settings.figshare_type is None)
-        assert_true(is_none)    
+        is_none = (
+            settings.figshare_id is None
+            and settings.figshare_title is None
+            and settings.figshare_type is None
+        )
+        assert_true(is_none)
 
     def test_config_no_change(self):
         nlogs = len(self.project.logs)
@@ -135,7 +139,7 @@ class TestViewsConfig(OsfTestCase):
         self.project.reload()
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
-        
+
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
@@ -148,13 +152,13 @@ class TestViewsConfig(OsfTestCase):
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
-        
+
 class TestUtils(OsfTestCase):
 
     def setUp(self):
+
         super(TestUtils, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -231,9 +235,9 @@ class TestUtils(OsfTestCase):
 class TestViewsCrud(OsfTestCase):
 
     def setUp(self):
+
         super(TestViewsCrud, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -320,6 +324,21 @@ class TestViewsCrud(OsfTestCase):
         assert_true('file is unpublished we cannot render it.' in resp.body)
 
     @mock.patch('website.addons.figshare.api.Figshare.from_settings')
+    def test_view_file_with_anonymous_link(self, mock_fig):
+        link = PrivateLinkFactory(anonymous=True)
+        link.nodes.append(self.project)
+        link.save()
+        mock_fig.return_value = self.figshare
+        url = self.project.web_url_for(
+            'figshare_view_file', aid='564',fid='1348803'
+        )
+        self.app.auth = self.user.auth
+        resp = self.app.get(url, {'view_only': link.key}).maybe_follow()
+        assert_equal(resp.status_int, http.OK)
+        assert_true('file is unpublished we cannot render it.' in resp.body)
+        assert_not_in('View on Figshare', resp.body)
+
+    @mock.patch('website.addons.figshare.api.Figshare.from_settings')
     def test_view_bad_file(self, mock_fig):
         mock_fig.return_value = self.figshare
         url = '/project/{0}/figshare/article/564/file/958351351/'.format(self.project._id)
@@ -339,9 +358,9 @@ class TestViewsCrud(OsfTestCase):
 class TestViewsAuth(OsfTestCase):
 
     def setUp(self):
+
         super(TestViewsAuth, self).setUp()
 
-        self.app = TestApp(app)
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -362,13 +381,11 @@ class TestViewsAuth(OsfTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
 
-    #TODO Finish me, would require a lot of mocking it seems.
+    @unittest.skip('finish this')
     def test_oauth_fail(self):
-        url = '/api/v1/project/{0}/figshare/oauth'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        pass
+        url = '/api/v1/project/{0}/figshare/oauth/'.format(self.project._id)
+        rv = self.app.get(url, auth=self.user.auth)
 
-
-    #TODO Finish me
+    @unittest.skip('finish this')
     def test_oauth_bad_token(self):
         pass

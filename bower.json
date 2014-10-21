@@ -7,7 +7,14 @@
     "requirejs": "~2.1.11",
     "zeroclipboard": "~1.3.5",
     "dropzone": "~3.10.2",
-    "hgrid": "https://github.com/CenterForOpenScience/hgrid.git#f0efa5807e21f9894fa38f1d4f0c7d9d86f8b23e",
+    "hgrid": ">=0.2.6",
+    "moment": "~2.7.0",
+    "qunit": "~1.14.0",
+    "sinon": "~1.10.2",
+    "select2": "~3.5.1",
+    "jquery-mockjax": "1.5.3",
+    "raven-js": "~1.1.16",
+    "sinon-qunit": "~1.0.0",
     "moment": "~2.7.0"
   }
 }

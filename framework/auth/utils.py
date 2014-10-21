@@ -19,3 +19,17 @@ def impute_names_model(name):
         'family_name': human.last,
         'suffix': human.suffix,
     }
+
+
+def privacy_info_handle(info, anonymous, name=False):
+    """hide user info from api if anonymous
+
+    :param str info: info which suppose to return
+    :param bool anonymous: anonymous or not
+    :param bool name: if the info is a name,
+    :return str: the handled info should be passed through api
+
+    """
+    if anonymous:
+        return 'A user' if name else ''
+    return info

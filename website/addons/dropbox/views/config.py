@@ -1,22 +1,20 @@
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
-import logging
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.auth import get_current_user
+from framework.exceptions import HTTPError
+
 from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
     must_have_permission, must_not_be_registration,
     must_be_valid_project
 )
-from framework.exceptions import HTTPError
 from website.util import web_url_for
 
 from website.addons.dropbox import utils
-
-logger = logging.getLogger(__name__)
-debug = logger.debug
 
 
 @must_be_valid_project
@@ -71,7 +69,7 @@ def serialize_urls(node_settings):
         'deauthorize': node.api_url_for('dropbox_deauthorize'),
         'auth': node.api_url_for('dropbox_oauth_start'),
         'importAuth': node.api_url_for('dropbox_import_user_auth'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'folders': node.api_url_for('dropbox_hgrid_data_contents',
             foldersOnly=1, includeRoot=1),
@@ -153,6 +151,7 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('dropbox', 'node')
+@must_not_be_registration
 def dropbox_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth)
     node_addon.save()

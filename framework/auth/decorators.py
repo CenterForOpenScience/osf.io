@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import functools
-from framework.flask import request, redirect
 
+from flask import request
+
+from framework.flask import redirect
 from .core import Auth
 
 

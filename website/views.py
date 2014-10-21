@@ -2,23 +2,29 @@
 import logging
 import itertools
 import httplib as http
-from flask import request, redirect
+
+from flask import request
 from modularodm import Q
 
+from framework.auth.core import User
+from framework.flask import redirect  # VOL-aware redirect
+from framework import utils
+from framework.forms import utils as form_utils
+from framework import sentry
 from framework.exceptions import HTTPError
-from framework.forms import utils
 from framework.routing import proxy_url
 from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
-
-from website.models import Guid
-from website.util import web_url_for
-from website.project.forms import NewProjectForm
-from website.project import model
+from framework.sessions import get_session, set_session
+from framework.guid.model import GuidStoredObject
+from website.models import Guid, Node
+from website.util import web_url_for, rubeus
+from website.project import model, new_dashboard
 from website import settings
 
+from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
 logger = logging.getLogger(__name__)
 
@@ -51,13 +57,13 @@ def _render_node(node):
 
     """
     return {
+        'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
         'primary': node.primary,
         'title': node.title,
     }
-
 
 
 def _render_nodes(nodes):
@@ -87,7 +93,7 @@ def _get_user_activity(node, user, rescale_ratio):
     # using deep caching might be even faster down the road.
 
     ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count # base length of blue bar
+    non_ua_count = total_count - ua_count  # base length of blue bar
 
     # Normalize over all nodes
     ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
@@ -106,16 +112,124 @@ def index(auth, **kwargs):
     return {}
 
 
+def find_dashboard(user):
+    dashboard_folder = user.node__contributed.find(
+        Q('is_dashboard', 'eq', True)
+    )
+
+    if dashboard_folder.count() == 0:
+        new_dashboard(user)
+        dashboard_folder = user.node__contributed.find(
+            Q('is_dashboard', 'eq', True)
+        )
+    return dashboard_folder[0]
+
+
 @must_be_logged_in
-def get_dashboard_nodes(auth, **kwargs):
+def get_dashboard(auth, nid=None, **kwargs):
+    user = auth.user
+    if nid is None:
+        node = find_dashboard(user)
+        dashboard_projects = [rubeus.to_project_root(node, auth, **kwargs)]
+        return_value = {'data': dashboard_projects}
+    elif nid == ALL_MY_PROJECTS_ID:
+        return_value = {'data': get_all_projects_smart_folder(**kwargs)}
+    elif nid == ALL_MY_REGISTRATIONS_ID:
+        return_value = {'data': get_all_registrations_smart_folder(**kwargs)}
+    else:
+        node = Node.load(nid)
+        dashboard_projects = rubeus.to_project_hgrid(node, auth, **kwargs)
+        return_value = {'data': dashboard_projects}
+    return return_value
+
+@must_be_logged_in
+def get_all_projects_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
     user = auth.user
 
-    contributed = user.node__contributed  # nodes user cotributed to
+    contributed = user.node__contributed
 
     nodes = contributed.find(
         Q('category', 'eq', 'project') &
         Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
+    )
+
+    comps = contributed.find(
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
         Q('is_registration', 'eq', False)
+    )
+
+    return_value = [rubeus.to_project_root(node, auth, **kwargs) for node in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return return_value
+
+@must_be_logged_in
+def get_all_registrations_smart_folder(auth, **kwargs):
+    #TODO: Unit tests
+    user = auth.user
+    contributed = user.node__contributed
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'eq', None)
+    ).sort('-title')
+
+    parents_to_exclude = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', True) &
+        Q('is_folder', 'eq', False)
+    )
+
+    comps = contributed.find(
+        Q('is_folder', 'eq', False) &
+        # parent is not in the nodes list
+        Q('__backrefs.parent.node.nodes', 'nin', parents_to_exclude.get_keys()) &
+        # is not in the nodes list
+        Q('_id', 'nin', nodes.get_keys()) &
+        # exclude deleted nodes
+        Q('is_deleted', 'eq', False) &
+        # exclude registrations
+        Q('is_registration', 'eq', True)
+    )
+
+    return_value = [rubeus.to_project_root(comp, auth, **kwargs) for comp in comps]
+    return_value.extend([rubeus.to_project_root(node, auth, **kwargs) for node in nodes])
+    return return_value
+
+@must_be_logged_in
+def get_dashboard_nodes(auth, **kwargs):
+    user = auth.user
+
+    contributed = user.node__contributed  # nodes user contributed to
+
+    nodes = contributed.find(
+        Q('category', 'eq', 'project') &
+        Q('is_deleted', 'eq', False) &
+        Q('is_registration', 'eq', False) &
+        Q('is_folder', 'eq', False)
     )
 
     comps = contributed.find(
@@ -132,8 +246,21 @@ def get_dashboard_nodes(auth, **kwargs):
 
 
 @must_be_logged_in
-def dashboard(**kwargs):
-    return {'addons_enabled': kwargs['auth'].user.get_addon_names()}
+def dashboard(auth):
+    user = auth.user
+    dashboard_folder = find_dashboard(user)
+    dashboard_id = dashboard_folder._id
+    session = get_session()
+    if 'seen_dashboard' in session.data:
+        seen_dashboard = session.data['seen_dashboard']
+    else:
+        seen_dashboard = False
+    session.data['seen_dashboard'] = True
+    set_session(session)
+    return {'addons_enabled': user.get_addon_names(),
+            'dashboard_id': dashboard_id,
+            'seen_dashboard': seen_dashboard,
+            }
 
 
 @must_be_logged_in
@@ -149,12 +276,29 @@ def watched_logs_get(**kwargs):
 
     for log in logs:
         if len(watch_logs) < page_size:
-            watch_logs.append(log.serialize())
+            watch_logs.append(serialize_log(log))
         else:
-            has_more_logs =True
+            has_more_logs = True
             break
 
     return {"logs": watch_logs, "has_more_logs": has_more_logs}
+
+
+def serialize_log(node_log, anonymous=False):
+    '''Return a dictionary representation of the log.'''
+    return {
+        'id': str(node_log._primary_key),
+        'user': node_log.user.serialize()
+        if isinstance(node_log.user, User)
+        else {'fullname': node_log.foreign_user},
+        'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
+        'api_key': node_log.api_key.label if node_log.api_key else '',
+        'action': node_log.action,
+        'params': node_log.params,
+        'date': utils.iso8601format(node_log.date),
+        'node': node_log.node.serialize() if node_log.node else None,
+        'anonymous': anonymous
+    }
 
 
 def reproducibility():
@@ -162,23 +306,19 @@ def reproducibility():
 
 
 def registration_form():
-    return utils.jsonify(RegistrationForm(prefix='register'))
+    return form_utils.jsonify(RegistrationForm(prefix='register'))
 
 
 def signin_form():
-    return utils.jsonify(SignInForm())
+    return form_utils.jsonify(SignInForm())
 
 
 def forgot_password_form():
-    return utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
+    return form_utils.jsonify(ForgotPasswordForm(prefix='forgot_password'))
 
 
 def reset_password_form():
-    return utils.jsonify(ResetPasswordForm())
-
-
-def new_project_form():
-    return utils.jsonify(NewProjectForm())
+    return form_utils.jsonify(ResetPasswordForm())
 
 
 ### GUID ###
@@ -214,11 +354,26 @@ def resolve_guid(guid, suffix=None):
     # Look up GUID
     guid_object = Guid.load(guid)
     if guid_object:
+
+        # verify that the object is a GuidStoredObject descendant. If a model
+        #   was once a descendant but that relationship has changed, it's
+        #   possible to have referents that are instances of classes that don't
+        #   have a redirect_mode attribute or otherwise don't behave as
+        #   expected.
+        if not isinstance(guid_object.referent, GuidStoredObject):
+            sentry.log_message(
+                'Guid `{}` resolved to non-guid object'.format(guid)
+            )
+
+            raise HTTPError(http.NOT_FOUND)
+
         referent = guid_object.referent
         if referent is None:
             logger.error('Referent of GUID {0} not found'.format(guid))
             raise HTTPError(http.NOT_FOUND)
         mode = referent.redirect_mode
+        if mode is None:
+            raise HTTPError(http.NOT_FOUND)
         url = referent.deep_url if mode == 'proxy' else referent.url
         url = _build_guid_url(url, prefix, suffix)
         # Always redirect API URLs; URL should identify endpoint being called

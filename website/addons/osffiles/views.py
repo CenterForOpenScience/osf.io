@@ -1,33 +1,43 @@
-"""
-
-"""
+# -*- coding: utf-8 -*-
 
 import os
 import cgi
 import time
+import hashlib
 from cStringIO import StringIO
 import httplib as http
 import logging
 
-from framework import request, redirect, send_file, Q
-from framework.git.exceptions import FileNotModified
+from flask import request, send_file
+from modularodm import Q
+
+from framework.flask import redirect
 from framework.exceptions import HTTPError
 from framework.analytics import get_basic_counters, update_counters
-
+from framework.auth.utils import privacy_info_handle
 from website.project.views.node import _view_project
 from website.project.decorators import (
     must_not_be_registration, must_be_valid_project,
     must_be_contributor_or_public, must_have_addon, must_have_permission
 )
 from website.project.views.file import get_cache_content, prepare_file
+from website.project.model import has_anonymous_link
 from website.addons.base.views import check_file_guid
 from website import settings
 from website.project.model import NodeLog
 from website.util import rubeus, permissions
 
-from .model import NodeFile, OsfGuidFile
+from website.addons.osffiles.model import NodeFile, OsfGuidFile
+from website.addons.osffiles.exceptions import FileNotModified
+from website.addons.osffiles.utils import get_latest_version_number, urlsafe_filename
+from website.addons.osffiles.exceptions import (
+    InvalidVersionError,
+    VersionNotFoundError,
+    FileNotFoundError,
+)
 
 logger = logging.getLogger(__name__)
+
 
 def _clean_file_name(name):
     " HTML-escape file name and encode to UTF-8. "
@@ -80,11 +90,10 @@ def get_osffiles_hgrid(node_settings, auth, **kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles(**kwargs):
+def get_osffiles(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
     node = node_settings.owner
-    auth = kwargs['auth']
     can_view = node.can_view(auth)
 
     info = []
@@ -105,17 +114,15 @@ def get_osffiles(**kwargs):
 
 @must_be_contributor_or_public
 @must_have_addon('osffiles', 'node')
-def get_osffiles_public(**kwargs):
+def get_osffiles_public(auth, **kwargs):
 
     node_settings = kwargs['node_addon']
-    auth = kwargs['auth']
 
     return get_osffiles_hgrid(node_settings, auth)
 
 
-
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def list_file_paths(**kwargs):
 
@@ -127,18 +134,27 @@ def list_file_paths(**kwargs):
     ]}
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # returns project
 @must_have_permission(permissions.WRITE)  # returns user, project
 @must_not_be_registration
 @must_have_addon('osffiles', 'node')
-def upload_file_public(**kwargs):
+def upload_file_public(auth, node_addon, **kwargs):
 
-    auth = kwargs['auth']
     node = kwargs['node'] or kwargs['project']
 
     do_redirect = request.form.get('redirect', False)
 
     name, content, content_type, size = prepare_file(request.files['file'])
+
+    if size > (node_addon.config.max_file_size):
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data={
+                'message_short': 'File too large.',
+                'message_long': 'The file you are trying to upload exceeds '
+                'the maximum file size limit.',
+            },
+        )
 
     try:
         fobj = node.add_file(
@@ -199,20 +215,25 @@ def upload_file_public(**kwargs):
 
     return file_info, 201
 
-@must_be_valid_project #returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
-def file_info(**kwargs):
+def file_info(auth, fid, **kwargs):
     versions = []
     node = kwargs['node'] or kwargs['project']
-    file_name = kwargs['fid']
-
-    file_name_clean = file_name.replace('.', '_')
+    file_name = fid
+    file_name_clean = urlsafe_filename(file_name)
+    files_page_url = node.web_url_for('collect_file_trees')
+    latest_download_url = None
+    api_url = None
+    anonymous = has_anonymous_link(node, auth)
 
     try:
         files_versions = node.files_versions[file_name_clean]
     except KeyError:
         raise HTTPError(http.NOT_FOUND)
+    latest_version_number = get_latest_version_number(file_name_clean, node) + 1
+
     for idx, version in enumerate(list(reversed(files_versions))):
         node_file = NodeFile.load(version)
         number = len(files_versions) - idx
@@ -221,25 +242,38 @@ def file_info(**kwargs):
             file_name_clean,
             number,
         ))
+        download_url = node_file.download_url(node)
+        api_url = node_file.api_url(node)
         versions.append({
             'file_name': file_name,
-            'download_url': node_file.download_url(node),
+            'download_url': download_url,
             'version_number': number,
             'display_number': number if idx > 0 else 'current',
             'modified_date': node_file.date_uploaded.strftime('%Y/%m/%d %I:%M %p'),
             'downloads': total if total else 0,
-            'committer_name': node_file.uploader.fullname,
-            'committer_url': node_file.uploader.url,
+            'committer_name': privacy_info_handle(
+                node_file.uploader.fullname, anonymous, name=True
+            ),
+            'committer_url': privacy_info_handle(node_file.uploader.url, anonymous),
         })
+        if number == latest_version_number:
+            latest_download_url = download_url
     return {
-        'files_url': node.url + "files/",
         'node_title': node.title,
         'file_name': file_name,
         'versions': versions,
+        'registered': node.is_registration,
+        'urls': {
+            'api': api_url,
+            'files': files_page_url,
+            'latest': {
+                'download': latest_download_url,
+            },
+        }
     }
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
+@must_be_valid_project  # returns project
+@must_be_contributor_or_public  # returns user, project
 @must_have_addon('osffiles', 'node')
 def view_file(auth, **kwargs):
 
@@ -283,6 +317,7 @@ def view_file(auth, **kwargs):
 
     download_url = file_object.download_url(node)
     render_url = file_object.render_url(node)
+    info_url = file_object.info_url(node)
 
     file_path = os.path.join(
         settings.UPLOADS_PATH,
@@ -310,91 +345,93 @@ def view_file(auth, **kwargs):
         'file_name': file_name,
         'render_url': render_url,
         'rendered': rendered,
-        'info_url': file_object.api_url(node) + 'info/',
+        'info_url': info_url,
     }
 
     rv.update(_view_project(node, auth))
     return rv
 
+FILE_NOT_FOUND_ERROR = HTTPError(http.NOT_FOUND, data=dict(
+    message_short='File not found',
+    message_long='The file you requested could not be found.'
+))
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
-def download_file(**kwargs):
-
-    node_to_use = kwargs['node'] or kwargs['project']
-    filename = kwargs['fid']
+@must_be_valid_project  # injects project
+@must_be_contributor_or_public  # injects user, project
+def download_file(fid, **kwargs):
+    node = kwargs['node'] or kwargs['project']
 
     try:
-        vid = len(node_to_use.files_versions[filename.replace('.', '_')])
-    except KeyError:
-        raise HTTPError(http.NOT_FOUND)
-
-    redirect_url = '{url}osffiles/{fid}/version/{vid}/'.format(
-        url=node_to_use.url,
-        fid=filename,
-        vid=vid,
-    )
+        vid = get_latest_version_number(fid, node) + 1
+    except FileNotFoundError:
+        raise FILE_NOT_FOUND_ERROR
+    redirect_url = node.web_url_for('download_file_by_version', fid=fid, vid=vid)
     return redirect(redirect_url)
 
-@must_be_valid_project # returns project
-@must_be_contributor_or_public # returns user, project
-@update_counters('download:{pid}:{fid}:{vid}')
-@update_counters('download:{nid}:{fid}:{vid}')
-@update_counters('download:{pid}:{fid}')
-@update_counters('download:{nid}:{fid}')
+
+@must_be_valid_project  # injects project
+@must_be_contributor_or_public  # injects user, project
+@update_counters('download:{target_id}:{fid}:{vid}')
+@update_counters('download:{target_id}:{fid}')
 def download_file_by_version(**kwargs):
     node = kwargs['node'] or kwargs['project']
     filename = kwargs['fid']
+    invalid_version_error = HTTPError(http.BAD_REQUEST, data=dict(
+        message_short='Invalid version',
+        message_long='The version number you requested is invalid.'
+    ))
+    try:
+        version_number = int(kwargs['vid']) - 1
+    except (TypeError, ValueError):
+        raise invalid_version_error
+    try:
+        current_version = get_latest_version_number(filename, node=node)
+    except FileNotFoundError:
+        raise FILE_NOT_FOUND_ERROR
 
-    version_number = int(kwargs['vid']) - 1
-    current_version = len(node.files_versions[filename.replace('.', '_')]) - 1
-
-    content, content_type = node.get_file(filename, version=version_number)
-    if content is None:
-        raise HTTPError(http.NOT_FOUND)
-
+    try:
+        file_object = node.get_file_object(filename, version=version_number)
+    except InvalidVersionError:
+        raise invalid_version_error
+    except VersionNotFoundError:
+        raise HTTPError(http.NOT_FOUND, data=dict(
+            message_short='Version not found',
+            message_long='The version number you requested could not be found.'
+        ))
+    content, content_type = node.read_file_object(file_object)
     if version_number == current_version:
-        file_path = os.path.join(settings.UPLOADS_PATH, node._primary_key, filename)
-        return send_file(
-            file_path,
-            mimetype=content_type,
-            as_attachment=True,
-            attachment_filename=filename,
+        attachment_filename = filename
+    else:
+        filename_base, file_extension = os.path.splitext(file_object.path)
+        attachment_filename = '{base}_{tmstp}{ext}'.format(
+            base=filename_base,
+            ext=file_extension,
+            tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
         )
-
-    file_object = node.get_file_object(filename, version=version_number)
-    filename_base, file_extension = os.path.splitext(file_object.path)
-    returned_filename = '{base}_{tmstp}{ext}'.format(
-        base=filename_base,
-        ext=file_extension,
-        tmstp=file_object.date_uploaded.strftime('%Y%m%d%H%M%S')
-    )
     return send_file(
         StringIO(content),
         mimetype=content_type,
         as_attachment=True,
-        attachment_filename=returned_filename,
+        attachment_filename=attachment_filename,
     )
 
 
-@must_be_valid_project # returns project
-@must_have_permission(permissions.WRITE) # returns user, project
+@must_be_valid_project  # injects project
+@must_have_permission(permissions.WRITE)  # injects user, project
 @must_not_be_registration
-def delete_file(**kwargs):
-
-    auth = kwargs['auth']
-    filename = kwargs['fid']
-    node_to_use = kwargs['node'] or kwargs['project']
-
-    if node_to_use.remove_file(auth, filename):
-        return {}
-
-    raise HTTPError(http.BAD_REQUEST)
+def delete_file(fid, auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+    try:
+        node.remove_file(auth, fid)
+    except FileNotFoundError:
+        raise FILE_NOT_FOUND_ERROR
+    return {'message': 'Successfully deleted file'}
 
 
 def get_cache_file(fid, vid):
     return '{0}_v{1}.html'.format(
-        fid.replace('.', '_'), vid,
+        hashlib.md5(fid).hexdigest(),
+        vid,
     )
 
 @must_be_valid_project

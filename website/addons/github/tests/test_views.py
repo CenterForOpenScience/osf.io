@@ -1,30 +1,136 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import httplib as http
+
 import mock
 import unittest
-from nose.tools import *  # PEP8 asserts
-from tests.base import OsfTestCase
-from webtest_plus import TestApp
+import urlparse
 
+from nose.tools import *  # noqa (PEP8 asserts)
+from tests.base import OsfTestCase
+from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
+
+from github3.git import Commit
 from github3.repos.branch import Branch
+from github3.repos.contents import Contents
 
 from framework.exceptions import HTTPError
-import website.app
-from tests.factories import ProjectFactory, UserFactory, AuthUserFactory
 from framework.auth import Auth
+
+from website.util import web_url_for, api_url_for
 from website.addons.github.tests.utils import create_mock_github
 from website.addons.github import views, api, utils
-from website.addons.github.model import GithubGuidFile
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings',
-)
+from website.addons.github.model import GithubGuidFile, AddonGitHubUserSettings, AddonGitHubOauthSettings
+from website.addons.github.utils import MESSAGES
+from website.addons.github.exceptions import TooBigError
 
 github_mock = create_mock_github(user='fred', private=False)
 
 
-class TestHGridViews(OsfTestCase):
+# TODO: Test remaining CRUD methods
+# TODO: Test exception handling
+class TestCRUD(OsfTestCase):
+
     def setUp(self):
+        super(TestCRUD, self).setUp()
+        self.github = github_mock
+        self.user = AuthUserFactory()
+        self.consolidated_auth = Auth(user=self.user)
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_addon('github', auth=self.consolidated_auth)
+        self.project.creator.add_addon('github')
+        self.node_settings = self.project.get_addon('github')
+        self.node_settings.user_settings = self.project.creator.get_addon('github')
+        # Set the node addon settings to correspond to the values of the mock repo
+        self.node_settings.user = self.github.repo.return_value.owner.login
+        self.node_settings.repo = self.github.repo.return_value.name
+        self.node_settings.save()
+
+    @mock.patch('website.addons.github.views.crud.build_github_urls')
+    @mock.patch('website.addons.github.api.GitHub.create_file')
+    @mock.patch('website.addons.github.api.GitHub.tree')
+    def test_create_file(self, mock_tree, mock_create, mock_urls):
+        sha = '12345'
+        size = 128
+        file_name = 'my_file'
+        file_content = 'my_data'
+        branch = 'master'
+        mock_tree.return_value.tree = []
+        mock_create.return_value = {
+            'commit': Commit(dict(sha=sha)),
+            'content': Contents(dict(size=size, url='http://fake.url/')),
+        }
+        mock_urls.return_value = {}
+        url = self.project.api_url_for('github_upload_file', branch=branch)
+        self.app.post(
+            url,
+            upload_files=[
+                ('file', file_name, file_content),
+            ],
+            auth=self.user.auth,
+        )
+        mock_create.assert_called_once_with(
+            self.node_settings.user,
+            self.node_settings.repo,
+            file_name,
+            MESSAGES['add'],
+            file_content,
+            branch=branch,
+            author={
+                'name': self.user.fullname,
+                'email': '{0}@osf.io'.format(self.user._id),
+            },
+        )
+
+    @unittest.skip('Finish me')
+    def test_update_file(self):
+        assert 0
+
+    @unittest.skip('Finish me')
+    def def_view_file(self):
+        assert 0
+
+    @mock.patch('website.addons.github.api.GitHub.file')
+    def test_download_file(self, mock_file):
+        file_name = 'my_file'
+        file_content = 'my_content'
+        file_size = 1024
+        mock_file.return_value = (file_name, file_content, file_size)
+        url = self.project.web_url_for(
+            'github_download_file',
+            path='my_file',
+            branch='master',
+        )
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        )
+        assert_equal(res.body, file_content)
+
+    @mock.patch('website.addons.github.api.GitHub.file')
+    def test_download_file_too_big(self, mock_file):
+        mock_file.side_effect = TooBigError
+        url = self.project.web_url_for(
+            'github_download_file',
+            path='my_file',
+            branch='master',
+        )
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, http.BAD_REQUEST)
+
+    @unittest.skip('finish this')
+    def test_delete_file(self):
+        assert 0
+
+
+class TestHGridViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestHGridViews, self).setUp()
         self.github = github_mock
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
@@ -65,12 +171,11 @@ class TestHGridViews(OsfTestCase):
 class TestGithubViews(OsfTestCase):
 
     def setUp(self):
-
-        self.app = TestApp(app)
+        super(TestGithubViews, self).setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 
-        self.project = ProjectFactory.build(creator=self.user)
+        self.project = ProjectFactory(creator=self.user)
         self.non_authenticator = UserFactory()
         self.project.add_contributor(
             contributor=self.non_authenticator,
@@ -110,7 +215,7 @@ class TestGithubViews(OsfTestCase):
             branch,
             github_mock.repo.return_value.default_branch
         )
-        assert_equal(sha, self._get_sha_for_branch(branch=None)) # Get refs for default branch
+        assert_equal(sha, self._get_sha_for_branch(branch=None))  # Get refs for default branch
         assert_equal(
             branches,
             github_mock.branches.return_value
@@ -204,6 +309,24 @@ class TestGithubViews(OsfTestCase):
     def test_github_contents(self):
         pass
 
+    def check_hook_urls(self, urls, node, path, sha):
+        assert_equal(
+            urls['view'],
+            node.web_url_for(
+                'github_view_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+        assert_equal(
+            urls['download'],
+            node.web_url_for(
+                'github_download_file',
+                path=path,
+                sha=sha,
+            ),
+        )
+
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_not_thro_osf(self, mock_verify):
         url = "/api/v1/project/{0}/github/hook/".format(self.project._id)
@@ -217,8 +340,8 @@ class TestGithubViews(OsfTestCase):
                     "message": "foo",
                     "timestamp": "2014-01-08T14:15:51-08:00",
                     "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                    "author": {"name":"Illidan","email":"njqpw@osf.io"},
-                    "committer": {"name":"Testor","email":"test@osf.io","username":"tester"},
+                    "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                    "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
                     "added": ["PRJWN3TV"],
                     "removed": [],
                     "modified": [],
@@ -228,6 +351,13 @@ class TestGithubViews(OsfTestCase):
         ).maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_added")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_modify_file_not_thro_osf(self, mock_verify):
@@ -235,17 +365,25 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-                 "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "distinct":True,
-                              "message":"foo",
-                              "timestamp":"2014-01-08T14:15:51-08:00",
-                              "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                              "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                              "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                              "added":[],"removed":[],"modified":["PRJWN3TV"]}]},
+                 "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "distinct": True,
+                              "message": " foo",
+                              "timestamp": "2014-01-08T14:15:51-08:00",
+                              "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                              "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                              "committer": {"name": "Testor", "email": "test@osf.io",
+                                            "username": "tester"},
+                              "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_updated")
+        urls = self.project.logs[-1].params['urls']
+        self.check_hook_urls(
+            urls,
+            self.project,
+            path='PRJWN3TV',
+            sha='b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce',
+        )
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_remove_file_not_thro_osf(self, mock_verify):
@@ -253,17 +391,19 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"foo",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":["PRJWN3TV"],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "foo",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed": ["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_equal(self.project.logs[-1].action, "github_file_removed")
+        urls = self.project.logs[-1].params['urls']
+        assert_equal(urls, {})
 
     @mock.patch('website.addons.github.views.hooks.utils.verify_hook_signature')
     def test_hook_callback_add_file_thro_osf(self, mock_verify):
@@ -271,14 +411,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Added via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":["PRJWN3TV"],"removed":[],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Added via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": ["PRJWN3TV"], "removed":[], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_added")
@@ -289,14 +429,14 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Updated via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":[],"modified":["PRJWN3TV"]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Updated via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed":[], "modified":["PRJWN3TV"]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_updated")
@@ -307,17 +447,47 @@ class TestGithubViews(OsfTestCase):
         self.app.post_json(
             url,
             {"test": True,
-             "commits": [{"id":"b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "distinct":True,
-                          "message":"Deleted via the Open Science Framework",
-                          "timestamp":"2014-01-08T14:15:51-08:00",
-                          "url":"https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
-                          "author":{"name":"Illidan","email":"njqpw@osf.io"},
-                          "committer":{"name":"Testor","email":"test@osf.io","username":"tester"},
-                          "added":[],"removed":["PRJWN3TV"],"modified":[]}]},
+             "commits": [{"id": "b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "distinct": True,
+                          "message": "Deleted via the Open Science Framework",
+                          "timestamp": "2014-01-08T14:15:51-08:00",
+                          "url": "https://github.com/tester/addontesting/commit/b08dbb5b6fcd74a592e5281c9d28e2020a1db4ce",
+                          "author": {"name": "Illidan", "email": "njqpw@osf.io"},
+                          "committer": {"name": "Testor", "email": "test@osf.io", "username": "tester"},
+                          "added": [], "removed":["PRJWN3TV"], "modified":[]}]},
             content_type="application/json").maybe_follow()
         self.project.reload()
         assert_not_equal(self.project.logs[-1].action, "github_file_removed")
+
+    @mock.patch('website.addons.github.api.GitHub.history')
+    @mock.patch('website.addons.github.api.GitHub.contents')
+    @mock.patch('website.addons.github.api.GitHub.repo')
+    def test_view_not_found_does_not_create_guid(self, mock_repo, mock_contents, mock_history):
+
+        mock_repo.return_value = github_mock.repo.return_value
+        mock_contents.return_value = github_mock.contents.return_value['octokit']
+        mock_history.return_value = []
+
+        guid_count = GithubGuidFile.find().count()
+
+        # View file for the first time
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+
+        assert_equal(
+            404,
+            res.status_code,
+        )
+
+        guids = GithubGuidFile.find()
+
+        # GUID count has not changed
+        assert_equal(
+            guids.count(),
+            guid_count,
+        )
 
     @mock.patch('website.addons.github.api.GitHub.history')
     @mock.patch('website.addons.github.api.GitHub.contents')
@@ -331,8 +501,10 @@ class TestGithubViews(OsfTestCase):
         guid_count = GithubGuidFile.find().count()
 
         # View file for the first time
-        url = self.project.url + 'github/file/test.py'
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        # Because we've overridden mock_history above, it doesn't matter if the
+        #   file exists.
+        url = self.project.web_url_for('github_view_file', path='test.py')
+        res = self.app.get(url, auth=self.user.auth)
 
         guids = GithubGuidFile.find()
 
@@ -342,14 +514,29 @@ class TestGithubViews(OsfTestCase):
             guid_count + 1
         )
 
+        file_guid = guids[guids.count() - 1]._id
+        file_url = web_url_for('resolve_guid', guid=file_guid)
+
         # Client has been redirected to GUID
-        assert_in(
-            guids[guids.count() - 1]._id,
-            res.request.path
+        assert_equal(
+            302,
+            res.status_code
+        )
+        assert_equal(
+            file_url,
+            urlparse.urlparse(res.location).path
+        )
+
+        # View the file
+        res = self.app.get(file_url, auth=self.user.auth)
+
+        assert_equal(
+            200,
+            res.status_code
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(file_url, auth=self.user.auth)
 
         # GUID count has not been incremented
         assert_equal(
@@ -357,14 +544,13 @@ class TestGithubViews(OsfTestCase):
             guid_count + 1
         )
 
-
     ######################
     # This test currently won't work with webtest; self.app.get() fails
     # on a url containing Unicode.
     #
     # In addition, this test currently is incorrect: it really just ensures
     # a guid is created for the file
-    # 
+    #
     # @mambocab
     #
     # @mock.patch('website.addons.github.api.GitHub.history')
@@ -477,7 +663,7 @@ class TestGithubSettings(OsfTestCase):
     def setUp(self):
 
         super(TestGithubSettings, self).setUp()
-        self.app = TestApp(app)
+
         self.project = ProjectFactory.build()
         self.project.save()
         self.auth = self.project.creator.auth
@@ -611,6 +797,169 @@ class TestGithubSettings(OsfTestCase):
 
         assert_equal(self.project.logs[-1].action, 'github_node_deauthorized')
 
+
+class TestAuthViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestAuthViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.add_addon('github')
+        self.user.save()
+        self.user_settings = self.user.get_addon('github')
+
+    def test_oauth_callback_with_invalid_user(self):
+        url = api_url_for('github_oauth_callback', uid="")
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_oauth_callback_with_invalid_node(self):
+        url = api_url_for('github_oauth_callback', uid=self.user._id, nid="")
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_oauth_callback_without_github_enabled(self):
+        user2 = AuthUserFactory()
+        url = api_url_for('github_oauth_callback', uid=user2._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_oauth_callback_with_no_code(self):
+        url = api_url_for('github_oauth_callback', uid=self.user._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.views.auth.oauth_get_token')
+    def test_oauth_callback_without_node(self, mock_get_token, mock_github_user):
+        mock_get_token.return_value = {
+            "access_token": "testing access token",
+            "token_type": "testing token type",
+            "scope": ["repo"]
+        }
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+
+        url = api_url_for('github_oauth_callback', uid=self.user._id)
+        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
+        self.user_settings.reload()
+        assert_true(res.status_code, 302)
+        assert_in("/settings/addons/", res.location)
+        assert_true(self.user_settings.oauth_settings)
+        assert_equal(self.user_settings.oauth_access_token, "testing access token")
+        assert_equal(self.user_settings.oauth_token_type, "testing token type")
+        assert_equal(self.user_settings.github_user_name, "testing user")
+        assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.views.auth.oauth_get_token')
+    def test_oauth_callback_with_node(self, mock_get_token, mock_github_user):
+        mock_get_token.return_value = {
+            "access_token": "testing access token",
+            "token_type": "testing token type",
+            "scope": ["repo"]
+        }
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+
+        project = ProjectFactory(creator=self.user)
+        project.add_addon('github', auth=Auth(user=self.user))
+        project.save()
+
+        url = api_url_for('github_oauth_callback', uid=self.user._id, nid=project._id)
+        res = self.app.get(url, {"code": "12345"}, auth=self.user.auth)
+        self.user_settings.reload()
+
+        node_settings = project.get_addon('github')
+        node_settings.reload()
+
+        assert_true(res.status_code, 302)
+        assert_not_in("/settings/addons/", res.location)
+        assert_in("/settings", res.location)
+        assert_true(self.user_settings.oauth_settings)
+        assert_equal(self.user_settings.oauth_access_token, "testing access token")
+        assert_equal(self.user_settings.oauth_token_type, "testing token type")
+        assert_equal(self.user_settings.github_user_name, "testing user")
+        assert_equal(self.user_settings.oauth_settings.github_user_id, "testing user id")
+        assert_equal(node_settings.user_settings, self.user_settings)
+
+
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    def test_create_and_attach_oauth(self, mock_github_user):
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+        views.auth.create_and_attach_oauth(self.user_settings, "testing access token", "testing token type")
+        assert_true(self.user_settings.oauth_settings)
+        assert_false(self.user_settings.oauth_state)
+        assert_equal(
+            self.user_settings.github_user_name,
+            "testing user"
+        )
+        assert_equal(
+            self.user_settings.oauth_access_token,
+            "testing access token"
+        )
+        assert_equal(
+            self.user_settings.oauth_token_type,
+            "testing token type"
+        )
+        assert_equal(
+            self.user_settings.oauth_settings.github_user_id,
+            "testing user id"
+        )
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.api.GitHub.revoke_token')
+    def test_oauth_delete_user_one_osf_user(self, mock_revoke_token, mock_github_user):
+        mock_revoke_token.return_value = True
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+        views.auth.create_and_attach_oauth(self.user_settings, "testing access token", "testing token type")
+        url = api_url_for("github_oauth_delete_user")
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+        assert_false(self.user_settings.oauth_token_type)
+        assert_false(self.user_settings.oauth_access_token)
+        assert_false(self.user_settings.github_user_name)
+        assert_false(self.user_settings.oauth_settings)
+
+    @mock.patch('website.addons.github.api.GitHub.user')
+    @mock.patch('website.addons.github.api.GitHub.revoke_token')
+    def test_oauth_delete_user_two_osf_user(self, mock_revoke_token, mock_github_user):
+        mock_revoke_token.return_value = True
+        user = mock.Mock()
+        user.id = "testing user id"
+        user.login = "testing user"
+        mock_github_user.return_value = user
+        views.auth.create_and_attach_oauth(self.user_settings, "testing acess token", "testing token type")
+
+        user2 = AuthUserFactory()
+        user2.add_addon('github')
+        user2.save()
+        user_settings2 = user2.get_addon('github')
+        views.auth.create_and_attach_oauth(user_settings2, "testing access token", "testing token type")
+
+        url = api_url_for("github_oauth_delete_user")
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+        user_settings2.reload()
+        assert_false(self.user_settings.oauth_token_type)
+        assert_false(self.user_settings.oauth_access_token)
+        assert_false(self.user_settings.github_user_name)
+        assert_false(self.user_settings.oauth_settings)
+        assert_true(user_settings2.oauth_settings)
+        assert_equal(user_settings2.oauth_token_type, "testing token type")
+        assert_equal(user_settings2.oauth_access_token, "testing access token")
+        assert_equal(user_settings2.github_user_name, "testing user")
 
 if __name__ == '__main__':
     unittest.main()

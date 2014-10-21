@@ -122,15 +122,14 @@
                 return;
             }
             // Else submit
-            $.ajax({
-                type: 'POST',
-                url: submitUrl,
-                data: ko.toJSON(self),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: self.submitSuccess,
-                error: self.submitError
-            });
+            $.osf.postJSON(
+                submitUrl,
+                ko.toJS(self)
+            ).done(
+                self.submitSuccess
+            ).fail(
+                self.submitError
+            );
         };
 
     };

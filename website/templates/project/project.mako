@@ -2,8 +2,14 @@
 
 <%def name="title()">${node['title']}</%def>
 
+<%include file="project/modal_add_pointer.mako"/>
+
+% if node['node_type'] == 'project':
+    <%include file="project/modal_add_component.mako"/>
+% endif
+
 % if user['can_comment'] or node['has_comments']:
-    <%include file="include/comment_template.mako" />
+    <%include file="include/comment_template.mako"/>
 % endif
 
 <div class="row">
@@ -15,22 +21,24 @@
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
+                    %if addon == 'wiki':
+                        %if user['show_wiki_widget']:
+                            <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+                            "uri": "${node['api_url']}wiki/widget/"
+                        }'></div>
+                        %endif
+
+                    %else:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
+                    %endif
                 % endif
             % endfor
 
         % else:
-
-            % if 'wiki' in addons and addons['wiki']['has_widget']:
-                <div class="addon-widget-container" mod-meta='{
-                        "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                        "uri": "${node['api_url']}wiki/widget/"
-                    }'></div>
-            % endif
-
             <!-- If no widgets, show components -->
             ${children()}
 
@@ -54,40 +62,39 @@
     <div class="col-md-6">
 
         <!-- Citations -->
-        <div class="citations">
-            <span class="citation-label">Citation:</span>
-            <span>${node['display_absolute_url']}</span>
-            <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
-            <dl class="citation-list">
-                <dt>APA</dt>
-                    <dd class="citation-text">${node['citations']['apa']}</dd>
-                <dt>MLA</dt>
-                    <dd class="citation-text">${node['citations']['mla']}</dd>
-                <dt>Chicago</dt>
-                    <dd class="citation-text">${node['citations']['chicago']}</dd>
-            </dl>
-        </div>
-
+        % if not node['anonymous']:
+            <div class="citations">
+                <span class="citation-label">Citation:</span>
+                <span>${node['display_absolute_url']}</span>
+                <a href="#" class="citation-toggle" style="padding-left: 10px;">more</a>
+                <dl class="citation-list">
+                    <dt>APA</dt>
+                        <dd class="citation-text">${node['citations']['apa']}</dd>
+                    <dt>MLA</dt>
+                        <dd class="citation-text">${node['citations']['mla']}</dd>
+                    <dt>Chicago</dt>
+                        <dd class="citation-text">${node['citations']['chicago']}</dd>
+                </dl>
+            </div><!-- end .citations -->
         <hr />
+        % endif
 
         <!-- Show child on right if widgets -->
         % if addons:
             ${children()}
         % endif
 
-        <div class="tags">
-            <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
-        </div>
+
+        %if node['tags'] or 'write' in user['permissions']:
+            <div class="tags">
+                <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
+            </div>
+        %endif
 
         <hr />
 
         <div class="logs">
-            <div id='logScope'>
-                <%include file="log_list.mako"/>
-                <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-            </div><!-- end #logScope -->
-            ## Hide More widget until paging for logs is implemented
-            ##<div class="paginate pull-right">more</div>
+            <%include file="log_list.mako"/>
         </div>
 
     </div>
@@ -95,18 +102,18 @@
 </div>
 
 <%def name="children()">
-<div class="page-header">
     % if node['node_type'] == 'project':
-        <div class="pull-right btn-group">
-            % if 'write' in user['permissions'] and not node['is_registration']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % endif
-        </div>
-
-    <h2>Components</h2>
+        <div class="page-header">
+            <div class="pull-right btn-group">
+                % if 'write' in user['permissions'] and not node['is_registration']:
+                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                % endif
+            </div>
+        <h2>Components</h2>
+    </div>
     % endif
-</div>
+
 
 % if node['node_type'] == 'project':
   % if node['children']:
@@ -115,7 +122,7 @@
                   "tpl": "util/render_nodes.mako",
                   "uri": "${node["api_url"]}get_children/",
                   "replace": true,
-		  "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
+          "kwargs": {"sortable" : ${'true' if not node['is_registration'] else 'false'}}
               }'></div>
       </div>
   % else:
@@ -144,6 +151,19 @@ ${parent.javascript_bottom()}
 % endfor
 
 <script type="text/javascript">
+    $script(['/static/js/logFeed.js'], 'logFeed');
+
+    $('body').on('nodeLoad', function(event, data) {
+       $script.ready('logFeed', function() {
+           var logFeed = new LogFeed('#logScope', nodeApiUrl + 'log/');
+       });
+    });
+
+    ##  NOTE: pointers.js is loaded in project_base.mako
+    $script.ready('pointers', function() {
+       var pointerManager = new Pointers.PointerManager('#addPointer', contextVars.node.title);
+    });
+
 
     var $comments = $('#comments');
     var userName = '${user_full_name}';
@@ -155,10 +175,20 @@ ${parent.javascript_bottom()}
         $script(['/static/js/commentpane.js', '/static/js/comment.js'], 'comments');
 
         $script.ready('comments', function () {
-            var commentPane = new CommentPane('#commentPane');
-            Comment.init('#comments', userName, canComment, hasChildren);
+            var timestampUrl = nodeApiUrl + 'comments/timestamps/';
+            var onOpen = function() {
+                var request = $.osf.putJSON(timestampUrl);
+                request.fail(function(xhr, textStatus, errorThrown) {
+                    Raven.captureMessage('Could not update comment timestamp', {
+                        url: timestampUrl,
+                        textStatus: textStatus,
+                        errorThrown: errorThrown
+                    });
+                });
+            }
+            var commentPane = new CommentPane('#commentPane', {onOpen: onOpen});
+            Comment.init('#commentPane', userName, canComment, hasChildren);
         });
-
     }
 
 </script>
@@ -193,13 +223,16 @@ ${parent.javascript_bottom()}
         });
 
         // Remove delete UI if not contributor
-        % if 'write' not in user['permissions']:
+        % if 'write' not in user['permissions'] or node['is_registration']:
             $('a[title="Removing tag"]').remove();
             $('span.tag span').each(function(idx, elm) {
                 $(elm).text($(elm).text().replace(/\s*$/, ''))
             });
         % endif
 
+        %if node['is_registration'] and not node['tags']:
+            $('div.tags').remove();
+        %endif
 
     });
     $script.ready(['rubeus'], function() {

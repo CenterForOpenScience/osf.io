@@ -31,19 +31,19 @@
         callback: function (evt, row) {
             var self = this;
             var url = row.urls.release;
-            bootbox.confirm(
-                'By releasing this study, all content will be ' +
+            bootbox.confirm({
+                title: 'Release this study?',
+                message: 'By releasing this study, all content will be ' +
                     'made available through the Harvard Dataverse using their ' +
                     'internal privacy settings, regardless of your OSF project ' +
                     'settings. Are you sure you want to release this study?',
-                function(result) {
-                    if (result) {
+                callback: function(result) {
+                    if(result) {
                         self.changeStatus(row, Rubeus.Status.RELEASING_STUDY);
-                        $.ajax({
-                            url: url,
-                            type: 'PUT',
-                            dataType: 'json'
-                        }).success(function() {
+                        $.osf.putJSON(
+                            url,
+                            {}
+                        ).done(function() {
                             bootbox.alert('Your study has been released. Please ' +
                             'allow up to 24 hours for the released version to ' +
                             'appear on your OSF project\'s file page.');
@@ -58,9 +58,9 @@
                         });
                     }
                 }
-            )
+            });
         }
-    }
+    };
 
     // Register configuration
     Rubeus.cfg.dataverse = {

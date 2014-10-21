@@ -1,12 +1,16 @@
-import os
+# -*- coding: utf-8 -*-
+
+import os  # noqa
 import datetime
 import logging
 import requests
 from bs4 import BeautifulSoup
+from flask import request, make_response
 
-from framework import request, make_response
-from framework.flask import secure_filename, redirect
+from framework.flask import redirect
 from framework.exceptions import HTTPError
+from framework.utils import secure_filename
+from framework.auth.utils import privacy_info_handle
 from website.addons.dataverse.client import delete_file, upload_file, \
     get_file, get_file_by_id, release_study, get_study, get_dataverse, \
     connect_from_settings_or_403, get_files
@@ -17,6 +21,7 @@ from website.project.decorators import must_not_be_registration
 from website.project.decorators import must_have_addon
 from website.project.views.node import _view_project
 from website.project.views.file import get_cache_content
+from website.project.model import has_anonymous_link
 from website.util import rubeus
 from website.addons.dataverse.model import DataverseFile
 from website.addons.dataverse.settings import HOST
@@ -115,16 +120,18 @@ def dataverse_get_file_info(node_addon, auth, **kwargs):
     fail_if_unauthorized(node_addon, auth, file_id)
     fail_if_private(file_id)
 
+    anonymous = has_anonymous_link(node, auth)
+
     download_url = node.web_url_for('dataverse_download_file', path=file_id)
     dataverse_url = 'http://{0}/dvn/dv/'.format(HOST) + node_addon.dataverse_alias
     study_url = 'http://dx.doi.org/' + node_addon.study_hdl
 
     data = {
-        'dataverse': node_addon.dataverse,
-        'dataverse_url': dataverse_url,
-        'study': node_addon.study,
-        'study_url': study_url,
-        'download_url': download_url,
+        'dataverse': privacy_info_handle(node_addon.dataverse, anonymous),
+        'dataverse_url': privacy_info_handle(dataverse_url, anonymous),
+        'study': privacy_info_handle(node_addon.study, anonymous),
+        'study_url': privacy_info_handle(study_url, anonymous),
+        'download_url': privacy_info_handle(download_url, anonymous),
     }
 
     return {
@@ -255,12 +262,12 @@ def dataverse_upload_file(node_addon, auth, **kwargs):
         ],
         rubeus.KIND: rubeus.FILE,
         'urls': {
-                'view': node.web_url_for('dataverse_view_file',
+            'view': node.web_url_for('dataverse_view_file',
+                                     path=file.id),
+            'download': node.web_url_for('dataverse_download_file',
                                          path=file.id),
-                'download': node.web_url_for('dataverse_download_file',
-                                             path=file.id),
-                'delete': node.api_url_for('dataverse_delete_file',
-                                           path=file.id),
+            'delete': node.api_url_for('dataverse_delete_file',
+                                          path=file.id),
         },
         'permissions': {
             'view': can_view,
@@ -344,10 +351,10 @@ def scrape_dataverse(file_id, name_only=False):
         parsed = BeautifulSoup(response.content)
         view_state = parsed.find(id='javax.faces.ViewState').attrs.get('value')
         data = {
-            'form1':'form1',
+            'form1': 'form1',
             'javax.faces.ViewState': view_state,
-            'form1:termsAccepted':'on',
-            'form1:termsButton':'Continue',
+            'form1:termsAccepted': 'on',
+            'form1:termsButton': 'Continue',
         }
         terms_url = 'http://{0}/dvn/faces/study/TermsOfUsePage.xhtml'.format(HOST)
         session.post(terms_url, data=data)
@@ -402,5 +409,5 @@ def fail_if_private(file_id):
                     'The dataverse does not allow users to download files on ' +
                     'private studies at this time. Please contact the owner ' +
                     'of this Dataverse study for access to this file.',
-              }
+            }
         )

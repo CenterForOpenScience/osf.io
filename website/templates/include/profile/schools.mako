@@ -2,12 +2,13 @@
 
     <div data-bind="if: mode() === 'edit'">
 
-        <form role="form" data-bind="submit: submit">
+        <form role="form" data-bind="submit: submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
 
             <div data-bind="sortable: {
                     data: contents,
                     options: {
-                        handle: '.sort-handle'
+                        handle: '.sort-handle',
+                        containment: '#containDrag'
                     }
                 }">
 
@@ -27,7 +28,11 @@
 
                     <div class="form-group">
                         <label>Institution</label>
-                        <input class="form-control" data-bind="value: institution" />
+                        <input class="form-control" data-bind="value: institution" 
+                            placeholder="Required" />
+                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                            <p data-bind="validationMessage: institution"></p>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -42,12 +47,45 @@
 
                     <div class="form-group">
                         <label>Start Date</label>
-                        <input class="form-control" data-bind="value: start" />
+                        <div class="row">
+                            <div class ="col-md-3">
+                                <select class="form-control" data-bind="options: months,
+                                         optionsCaption: '-- Month --',
+                                         value: startMonth">
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input class="form-control" placeholder="Year" data-bind="value: startYear" />
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group" data-bind="ifnot: ongoing">
                         <label>End Date</label>
-                        <input class="form-control" data-bind="value: end" />
+                            <div class="row">
+                                <div class ="col-md-3">
+                                    <select class="form-control" data-bind="options: months,
+                                         optionsCaption: '-- Month --',
+                                         value: endMonth">
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <input class="form-control" placeholder="Year" data-bind="value: endYear" />
+                                </div>
+                            </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label>Ongoing</label>
+                        <input type="checkbox" data-bind="checked: ongoing, click: clearEnd"/>
+                    </div>
+
+                    <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                        <p data-bind="validationMessage: start"></p>
+                        <p data-bind="validationMessage: end"></p>
+                        <p data-bind="validationMessage: startYear"></p>
+                        <p data-bind="validationMessage: endYear"></p>
                     </div>
 
                     <hr data-bind="visible: $index() != ($parent.contents().length - 1)" />
@@ -65,15 +103,13 @@
             <div class="padded">
 
                 <button
-                        type="submit"
                         class="btn btn-default"
-                        data-bind="visible: viewable, click: cancel"
+                        data-bind="click: cancel"
                     >Cancel</button>
 
                 <button
                         type="submit"
                         class="btn btn-primary"
-                        data-bind="enable: enableSubmit"
                     >Submit</button>
 
             </div>
@@ -102,8 +138,8 @@
                         <th>Institution</th>
                         <th>Department</th>
                         <th>Degree</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
+                        <th>Start&nbsp;Date</th>
+                        <th>End&nbsp;Date</th>
                     </tr>
                 </thead>
 
@@ -114,8 +150,8 @@
                         <td>{{ institution }}</td>
                         <td>{{ department }}</td>
                         <td>{{ degree }}</td>
-                        <td>{{ start }}</td>
-                        <td>{{ end }}</td>
+                        <td>{{ startMonth }} {{ startYear }}</td>
+                        <td>{{ endView }}</td>
 
                     </tr>
 

@@ -1,29 +1,25 @@
 import mock
-from nose.tools import *
-from webtest_plus import TestApp
+from nose.tools import *  # noqa
 
 import httplib as http
 from boto.exception import S3ResponseError
 
 from framework.auth import Auth
-import website.app
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory, AuthUserFactory
-from website.addons.s3.model import AddonS3NodeSettings, S3GuidFile
+from website.addons.s3.model import S3GuidFile
 
 from website.addons.s3.utils import validate_bucket_name
 
 from utils import create_mock_wrapper, create_mock_key
 
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
-
 
 class TestS3ViewsConfig(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsConfig, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -110,7 +106,6 @@ class TestS3ViewsConfig(OsfTestCase):
         )
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-
     @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
     @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
     def test_s3_set_bucket_registered(self, mock_from_addon, mock_wrapped_key):
@@ -164,6 +159,17 @@ class TestS3ViewsConfig(OsfTestCase):
         self.user_settings.reload()
         assert_equals(self.user_settings.access_key, None)
         assert_equals(self.user_settings.secret_key, None)
+        assert_equals(mock_access.call_count, 1)
+
+    @mock.patch('website.addons.s3.model.AddonS3UserSettings.remove_iam_user')
+    def test_s3_remove_user_settings_none(self, mock_access):
+        self.user_settings.access_key = None
+        self.user_settings.secret_key = None
+        self.user_settings.save()
+        url = '/api/v1/settings/s3/'
+        self.app.delete(url, auth=self.user.auth)
+        self.user_settings.reload()
+        assert_equals(mock_access.call_count, 0)
 
     @mock.patch('website.addons.s3.views.config.has_access')
     def test_user_settings_no_auth(self, mock_access):
@@ -200,7 +206,7 @@ class TestS3ViewsConfig(OsfTestCase):
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
 
         # GUID count has not been incremented
         assert_equal(
@@ -245,8 +251,11 @@ class TestS3ViewsConfig(OsfTestCase):
 
 
 class TestS3ViewsCRUD(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsCRUD, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -265,7 +274,40 @@ class TestS3ViewsCRUD(OsfTestCase):
         self.node_settings.user_settings = self.project.creator.get_addon('s3')
 
         self.node_settings.save()
-        self.node_url =  '/api/v1/project/{0}/'.format(self.project._id)
+        self.node_url = '/api/v1/project/{0}/'.format(self.project._id)
+
+    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_view_file(self, mock_from_addon, mock_wrapped_key):
+        mock_from_addon.return_value = create_mock_wrapper()
+        mock_wrapped_key.return_value = create_mock_key()
+        url = '/project/{0}/s3/view/pizza.png/'.format(self.project._id)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).maybe_follow(
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_in('Delete <i class="icon-trash"></i>', res)
+
+    @mock.patch('website.addons.s3.api.S3Wrapper.get_wrapped_key')
+    @mock.patch('website.addons.s3.api.S3Wrapper.from_addon')
+    def test_view_file_non_contributor(self, mock_from_addon, mock_wrapped_key):
+        mock_from_addon.return_value = create_mock_wrapper()
+        mock_wrapped_key.return_value = create_mock_key()
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = '/project/{0}/s3/view/pizza.png/'.format(self.project._id)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).maybe_follow(
+            auth=user2.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_not_in('Delete <i class="icon-trash"></i>', res)
 
     @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
     def test_view_faux_file(self, mock_from_addon):
@@ -289,10 +331,26 @@ class TestS3ViewsCRUD(OsfTestCase):
         rv = self.app.post_json(self.node_url + 's3/download/', {'path': 'faux.show'}, expect_errors=True)
         assert_equals(rv.status_int, http.NOT_FOUND)
 
+    @mock.patch('website.addons.s3.views.crud.S3Wrapper.from_addon')
+    def test_get_info_for_deleting_file(self, mock_from_addon):
+        mock_from_addon.return_value = mock.Mock()
+        mock_from_addon.return_value.does_key_exist.return_value = False
+        res = self.app.get(
+            self.project.api_url_for(
+                'file_delete_info',
+                fid='faux.sho',
+            ),
+            auth=self.user.auth,
+        )
+        assert_equals(res.status_int, http.OK)
+
 
 class TestS3ViewsHgrid(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestS3ViewsHgrid, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)
@@ -340,8 +398,11 @@ class TestS3ViewsHgrid(OsfTestCase):
 
 
 class TestCreateBucket(OsfTestCase):
+
     def setUp(self):
-        self.app = TestApp(app)
+
+        super(TestCreateBucket, self).setUp()
+
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
         self.auth = ('test', self.user.api_keys[0]._primary_key)

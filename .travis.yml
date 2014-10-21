@@ -2,23 +2,39 @@
 
 language: python
 services:
-    - mongodb
     - elasticsearch
 
 python:
     - "2.7"
 
 before_install:
-    - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i elasticsearch-1.2.1.deb && sudo service elasticsearch restart
+    - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-key 505A7412
+    - echo "deb [arch=amd64] http://s3.amazonaws.com/tokumx-debs $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/tokumx.list
+    - sudo apt-get update
+    - sudo apt-get -y install tokumx
+    - wget https://download.elasticsearch.org/elasticsearch/elasticsearch/elasticsearch-1.2.1.deb && sudo dpkg -i --force-confold elasticsearch-1.2.1.deb && sudo service elasticsearch restart
+
 
 install:
     - cp website/settings/local-travis.py website/settings/local.py
-    - travis_retry pip install invoke==0.8.1
+    # - travis_retry invoke encryption
+    - travis_retry pip install invoke==0.9.0 --force-reinstall --upgrade
+    - travis_retry pip install flake8 --force-reinstall --upgrade
     - travis_retry invoke travis_addon_settings
     - travis_retry invoke requirements
     - travis_retry invoke addon_requirements
-    - travis_retry invoke encryption
     - npm install -g bower
     - bower install
 
+before_script:
+    - flake8 .
+
 script: invoke test_all
+
+cache:
+  directories:
+    - website/vendor/bower_components
+    - $HOME/virtualenv/python2.7/lib/python2.7/site-packages
+
+notifications:
+  flowdock: 0221882cdda034c0e9ac2a0e766053dd

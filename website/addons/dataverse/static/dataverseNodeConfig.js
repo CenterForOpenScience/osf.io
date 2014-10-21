@@ -135,17 +135,21 @@
 
         // Update above observables with data from the server
         $.ajax({
-            url: url, type: 'GET', dataType: 'json',
-            success: function(response) {
-                // Update view model
-                self.updateFromData(response.result);
-                self.loadedSettings(true);
-            },
-            error: function(xhr, textStatus, error){
-                console.error(textStatus); console.error(error);
-                self.changeMessage(language.userSettingsError, 'text-warning');
-            }
-        })
+            url: url, 
+            type: 'GET', 
+            dataType: 'json'
+        }).done(function(response) {
+            // Update view model
+            self.updateFromData(response.result);
+            self.loadedSettings(true);
+        }).fail(function(xhr, textStatus, error) {
+            self.changeMessage(language.userSettingsError, 'text-warning');
+            Raven.captureMessage('Could not GET dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
 
         // Flashed messages
         self.message = ko.observable('');
@@ -153,30 +157,25 @@
 
         self.setInfo = function() {
             self.submitting(true);
-            return $.ajax({
-                url: self.urls().set,
-                type: 'POST',
-                data: ko.toJSON({
+            $.osf.postJSON(
+                self.urls().set,
+                ko.toJS({
                     dataverse: {alias: self.selectedDataverseAlias},
                     study: {hdl: self.selectedStudyHdl}
-                }),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    self.submitting(false);
-                    self.savedDataverseAlias(self.selectedDataverseAlias());
-                    self.savedDataverseTitle(self.selectedDataverseTitle());
-                    self.savedStudyHdl(self.selectedStudyHdl());
-                    self.savedStudyTitle(self.selectedStudyTitle());
-                    self.studyWasFound(true);
-                    self.changeMessage('Settings updated.', 'text-success', 5000);
-                },
-                error: function(xhr) {
-                    self.submitting(false);
-                    var errorMessage = (xhr.status === 410) ? language.studyDeaccessioned :
-                        (xhr.status = 406) ? language.forbiddenCharacters : language.setStudyError;
-                    self.changeMessage(errorMessage, 'text-danger');
-                }
+                })
+            ).done(function(response) {
+                self.submitting(false);
+                self.savedDataverseAlias(self.selectedDataverseAlias());
+                self.savedDataverseTitle(self.selectedDataverseTitle());
+                self.savedStudyHdl(self.selectedStudyHdl());
+                self.savedStudyTitle(self.selectedStudyTitle());
+                self.studyWasFound(true);
+                self.changeMessage('Settings updated.', 'text-success', 5000);
+            }).fail(function(xhr) {
+                self.submitting(false);
+                var errorMessage = (xhr.status === 410) ? language.studyDeaccessioned :
+                    (xhr.status = 406) ? language.forbiddenCharacters : language.setStudyError;
+                self.changeMessage(errorMessage, 'text-danger');
             });
         }
 
@@ -197,43 +196,34 @@
             self.studies([]);
             self.badStudies([]);
             self.loadedStudies(false);
-            return $.ajax({
-                url: self.urls().getStudies,
-                type: 'POST',
-                data: ko.toJSON({alias: self.selectedDataverseAlias}),
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    self.studies(response.studies);
-                    self.badStudies(response.badStudies);
-                    self.loadedStudies(true);
-                    self.selectedStudyHdl(self.savedStudyHdl());
-                    self.findStudy();
-                },
-                error: function() {
-                    self.changeMessage('Could not load studies', 'text-danger');
-                }
+            return $.osf.postJSON(
+                self.urls().getStudies,
+                ko.toJS({alias: self.selectedDataverseAlias})
+            ).done(function(response) {
+                self.studies(response.studies);
+                self.badStudies(response.badStudies);
+                self.loadedStudies(true);
+                self.selectedStudyHdl(self.savedStudyHdl());
+                self.findStudy();
+            }).fail(function() {
+                self.changeMessage('Could not load studies', 'text-danger');
             });
         }
 
         /** Send POST request to authorize Dataverse */
         self.sendAuth = function() {
-            return $.ajax({
-                url: self.urls().create,
-                data: ko.toJSON({
+            return $.osf.postJSON(
+                self.urls().create,
+                ko.toJS({
                     dataverse_username: self.dataverseUsername,
                     dataverse_password: self.dataversePassword
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function() {
-                    // User now has auth
-                    authorizeNode();
-                },
-                error: function(xhr, textStatus, error) {
-                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-                    self.changeMessage(errorMessage, 'text-danger');
-                }
+                })
+            ).done(function() {
+                // User now has auth
+                authorizeNode();
+            }).fail(function(xhr) {
+                var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+                self.changeMessage(errorMessage, 'text-danger');
             });
         }
 
@@ -265,34 +255,28 @@
         };
 
         function authorizeNode() {
-            return $.ajax({
-                url: self.urls().importAuth,
-                type: 'PUT',
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function(response) {
-                    self.updateFromData(response.result);
-                    self.changeMessage(language.authSuccess, 'text-success', 3000);
-                },
-                error: function() {
-                    self.changeMessage(language.authError, 'text-danger');
-                }
+            return $.osf.putJSON(
+                self.urls().importAuth,
+                {}
+            ).done(function(response) {
+                self.updateFromData(response.result);
+                self.changeMessage(language.authSuccess, 'text-success', 3000);
+            }).fail(function() {
+                self.changeMessage(language.authError, 'text-danger');
             });
         }
 
         function sendDeauth() {
             return $.ajax({
                 url: self.urls().deauthorize,
-                type: 'DELETE',
-                success: function() {
-                    self.nodeHasAuth(false);
-                    self.userIsOwner(false);
-                    self.connected(false);
-                    self.changeMessage(language.deauthSuccess, 'text-success', 5000);
-                },
-                error: function() {
-                    self.changeMessage(language.deauthError, 'text-danger');
-                }
+                type: 'DELETE'
+            }).done(function() {
+                self.nodeHasAuth(false);
+                self.userIsOwner(false);
+                self.connected(false);
+                self.changeMessage(language.deauthSuccess, 'text-success', 5000);
+            }).fail(function() {
+                self.changeMessage(language.deauthError, 'text-danger');
             });
         }
 

@@ -3,10 +3,11 @@
 
 import shutil
 
-from framework import app
+from framework.flask import app
 
 from website.app import init_app
 from website.project.model import ensure_schemas
+
 
 _LOG_TEMPLATES = 'website/templates/_log_templates.mako'
 LOG_TEMPLATES = 'website/templates/log_templates.mako'
@@ -21,4 +22,4 @@ init_app('website.settings', set_backends=True, routes=True)
 ensure_schemas()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='127.0.0.1', port=5000)

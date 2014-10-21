@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Content</%def>
+<%def name="title()">Collaborator Network</%def>
 
 <%def name="javascript()">
     %if use_cdn:

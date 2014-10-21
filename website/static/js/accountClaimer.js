@@ -38,12 +38,17 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
                         'will be emailed to confirm your identity.',
                 callback: function(confirmed) {
                     if (confirmed) {
-                        $.osf.postJSON(getClaimUrl(), {
-                            claimerId: currentUserId,
-                            pk: pk
-                        }, function(response) {
+                        $.osf.postJSON(
+                            getClaimUrl(),
+                            {
+                                claimerId: currentUserId,
+                                pk: pk
+                            }
+                        ).done(function(response) {
                             alertFinished(response.email);
-                        });
+                        }).fail(
+                            $.osf.handleJSONError
+                        );
                     }
                 }
             });
@@ -71,6 +76,7 @@ this.OSFAccountClaimer = (function($, global, bootbox) {
                     success: function(data) {
                         alertFinished(data.email);
                     },
+                    error: $.osf.handleEditableError,
                     display: function(value, sourceData){
                         if (sourceData && sourceData.fullname) {
                             $(this).text(sourceData.fullname);

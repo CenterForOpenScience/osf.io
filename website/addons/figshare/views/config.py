@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
-from framework import request
+from flask import request
+
 from framework.exceptions import HTTPError
 from framework.auth import get_current_user
 
@@ -67,6 +70,7 @@ def figshare_import_user_auth(auth, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('figshare', 'node')
+@must_not_be_registration
 def figshare_deauthorize(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}
@@ -76,7 +80,7 @@ def serialize_settings(node_settings, current_user, client=None):
     """View helper that returns a dictionary representation of a
     FigshareNodeSettings record. Provides the return value for the
     figshare config endpoints.
-    """    
+    """
 
     current_user_settings = current_user.get_addon('figshare')
     user_settings = node_settings.user_settings
@@ -111,7 +115,7 @@ def serialize_urls(node_settings):
         'auth': node.api_url_for('figshare_oauth_start'),
         'importAuth': node.api_url_for('figshare_import_user_auth'),
         'options': node.api_url_for('figshare_get_options'),
-        'files': node.web_url_for('collect_file_trees__page'),
+        'files': node.web_url_for('collect_file_trees'),
         # Endpoint for fetching only folders (including root)
         'contents': node.api_url_for('figshare_hgrid_data_contents'),
     }

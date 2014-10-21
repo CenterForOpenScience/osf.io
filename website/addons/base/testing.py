@@ -13,7 +13,6 @@ class AddonTestCase(OsfTestCase):
     Must define:
 
         - ADDON_SHORT_NAME (class variable)
-        - create_app(self): Returns a webtest app
         - set_user_settings(self, settings): Method that makes any modifications
             to the UserSettings object, e.g. setting access_token
         - set_node_settings(self, settings): Metehod that makes any modifications
@@ -25,7 +24,7 @@ class AddonTestCase(OsfTestCase):
         - self.project: A project created by self.user and has the addon enabled
         - self.user_settings: AddonUserSettings object for the addon
         - self.node_settings: AddonNodeSettings object for the addon
-        - self.app: A webtest app.
+
     """
 
     ADDON_SHORT_NAME = None
@@ -39,13 +38,10 @@ class AddonTestCase(OsfTestCase):
     def create_project(self):
         return ProjectFactory(creator=self.user)
 
-    # Required abstract methods
-    def create_app(self):
-        raise NotImplementedError('Must define create_app(self) method.')
-
     def set_user_settings(self, settings):
         """Make any necessary modifications to the user settings object,
         e.g. setting access_token.
+
         """
         raise NotImplementedError('Must define set_user_settings(self, settings) method')
 
@@ -81,7 +77,9 @@ class AddonTestCase(OsfTestCase):
         self.node_settings.save()
 
     def setUp(self):
-        self.app = self.create_app()
+
+        super(AddonTestCase, self).setUp()
+
         self.user = self.create_user()
         if not self.ADDON_SHORT_NAME:
             raise ValueError('Must define ADDON_SHORT_NAME in the test class.')

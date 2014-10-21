@@ -13,7 +13,7 @@
     height: 100px;
     width: 150px;
     background-color:#D9E8F4 ;
-    font-family: 'Carrois Gothic', Helvetica;
+    font-family: 'Carrois Gothic', Helvetica, sans-serif;
     font-size: 18px;
     font-weight: bold;
 }
@@ -24,75 +24,82 @@
 
 /* Getting Started */
 
-
-.gs-sidenav > .active > a {
-
-    padding: 9px 15px;
+/* links */
+.gs-sidebar .nav a,
+.gs-sidebar .nav a:hover,
+.gs-sidebar .nav a:focus {
+    padding: 0;
+    text-decoration: none;
+    background-color: transparent;
+}
+/* nested links */
+.gs-sidebar .nav .nav>li>a {
+    font-size: 12px;
+    padding: 4px 0 4px 15px;
+    opacity: 0.8;
+}
+/* nested link icons */
+.gs-sidebar .nav .nav>li>a i {
+    display: none;
+}
+/* active & hover links */
+.gs-sidebar .nav>.active>a,
+.gs-sidebar .nav>li>a:hover,
+.gs-sidebar .nav>li>a:focus {
     font-weight: bold;
 }
-.gs-sidenav li {
-    height: 25px;
+/* nested active links */
+.gs-sidebar .nav .nav>.active>a,
+.gs-sidebar .nav .nav>.active:hover>a,
+.gs-sidebar .nav .nav>.active:focus>a {
+    font-weight: bold;
 }
-.gs-sidenav a {
-    height: 25px;
-}
-.gs-sidenav li i {
-    display: none
-}
-
-.gs-sidenav .active i {
+/* nested active link icons */
+.gs-sidebar .nav .nav>.active>a i {
     display: inline-block;
 }
 
-.nav .little-nav>li>a {
- font-size: 12px;
- opacity: .8;
- padding-left: 30px;
-
+/* affixed sidenav */
+.gs-sidenav,
+.gs-sidenav.affix {
+    position: fixed;
+    top: 80px;
+}
+.gs-sidenav.affix-top {
+    position: static;
+}
+.gs-sidenav.affix-bottom {
+    position: relative;
 }
 
-.nav .little-nav> li>a>i{
-    display:none;
+/* embedded video */
+.gs-video {
+    margin-top: 25px;
+    margin-bottom: 25px;
+    margin-left: auto;
+    margin-right: auto;
+    border: solid 1px #ddd;
+    width: 560px;
+    height: 315px;
 }
-.nav .little-nav> li > a:hover {
-    background: none;
-    font-weight: bold;
-}
-.gs-sidenav> li > a:hover {
-     background: none;
-    font-weight: bold;
-}
-
-.nav .little-nav .active a{
-    font-weight: bold;
-}
-.nav .little-nav .active i {
-    display: inline-block;
+.gs-video iframe {
+    border: 0;
 }
 
- .gs-video {
-        margin-top: 25px;
-        margin-bottom: 25px;
-        margin-left: auto;
-        margin-right: auto;
-     border: solid 1px #ddd;
-     width: 560px;
-     height: 315px;
- ;
-    }
- .gs-count {
-     margin-bottom: 20px;
-     margin-top: 50px;
- }
+/* phase number counters */
+.gs-count {
+    margin-bottom: 20px;
+    margin-top: 50px;
+}
 
- .gs-header {
-         display: block;
+/* headers */
+.gs-header {
+    display: block;
     font-family: 'Patua One', cursive;
     font-size: 24px;
     padding-bottom: 20px;
     padding-top: 20px;
-
- }
+}
 
 #conferenceViewTable td {
     vertical-align: middle;
@@ -102,7 +109,7 @@
 
 /* Knockout Validation Styles */
 
-.validationMessage { color: #a94442; }
+.validationMessage { color: #A94442; }
 .customMessage { color: #ed9c28; }
 
 .hideValidation .validationMessage { display: none; }
@@ -324,7 +331,6 @@ font-weight: bold;
 
 /* Knockout Validation Styles */
 
-.validationMessage { color: #d9534f; }
 .customMessage { color: #ed9c28; }
 
 .spaced-buttons { margin-top: 10px; }
@@ -357,7 +363,8 @@ a.disabled {
     cursor: default;
 }
 
-a.btn-primary.disabled {
+a.btn-primary.disabled,
+a.btn-success.disabled {
     color: white;
 }
 
@@ -409,6 +416,14 @@ li.pointer {
     vertical-align: middle;
     line-height: 50px;
     cursor: pointer;
+    position: relative;
+}
+
+.unread-comments-count {
+    font-size: medium;
+    color: white;
+    position: absolute;
+    margin-left: 40px;
 }
 
 .addon-auth {
@@ -601,6 +616,20 @@ h4 {
     color: #666666;
 }
 
+@media (min-width: 992px) {
+    .left-margin {
+        margin-left: 2.083332%;
+    }
+
+    .custom-offset-left {
+        margin-left: 15.625%;
+    }
+
+    .custom-offset-right {
+        margin-right: 15.625%;
+    }
+}
+
 .header-image {
     background: url(http://placehold.it/200x300) repeat;/* Use a tiling background image or a full width image - if you're using full width you will need to change no-repeat center center cover  */
     background-position: top;
@@ -782,8 +811,8 @@ border-radius: 6px;
 #profile-gravatar{
     float:left;
     margin-right:.5em;
-    width:40px;
-    height:40px;
+    width:70px;
+    height:70px;
 }
 
 /* Data Vis
@@ -944,6 +973,35 @@ h1.node-title, h1.node-parent-title {
   line-height: 36px;
   border-bottom: none;
   margin-top: 0.3em;
+}
+
+.wiki-title {
+    line-height: 36px;
+    border-bottom: none;
+    margin-top: 0.2em;
+    margin-bottom: 20px;
+}
+
+/* Extra small devices */
+@media (max-width: 767px) {
+    .wiki-title-xs {
+        font-size: 20px;
+        line-height: 20px;
+    }
+}
+
+.wiki-title-container {
+    display: inline-block;
+    width:60%;
+}
+
+.wiki-component {
+    list-style-type: none;
+    padding-right: 20px;
+}
+
+.wiki-component li {
+    margin-bottom: 8px;
 }
 
 .btn-toolbar.node-control {
@@ -1124,25 +1182,43 @@ h1.unavailable {
     font-style: italic;
 }
 
+.anchor {
+    margin-top: -50px;
+    padding-top: 50px;
+    display: block;
+}
+
 /* Search */
-.nested
-    {
-        padding-left: 25px;
-    }
 .navigate
     {
         padding:25px;
         font-size: 18px;
     }
+.result
+    {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
 .title h4
+    {
+        padding: 0px;
+        padding-bottom: 5px;
+        margin: 0px;
+    }
+.user h4
     {
         padding: 0px;
         margin: 0px;
     }
 .description h5
     {
-        padding: 5px;
+        padding: 0px;
         margin: 0px;
+        font-weight: normal;
+    }
+.tags
+    {
+        padding-top: 2px;
     }
 /* Search Contributors */
 
@@ -1176,7 +1252,7 @@ h1.unavailable {
     margin-left: 5px;
     margin-right: 5px;
     margin-bottom: 5px;
-    margin-top: 10px;
+    margin-top: 0px;
     padding: 0px;
     height: 20px;
 }
@@ -1329,6 +1405,12 @@ h1.unavailable {
     margin-bottom: 0;
   }
 }
+
+.superlist li {
+    display: inline-block;
+    float: none;
+}
+
 @media (min-width: 1200px) {
   /* Widen the fixed sidebar again */
   .osf-sidenav.affix-bottom,
@@ -1356,6 +1438,12 @@ h1.unavailable {
     max-width: 100%;
 }
 
+/* Need to use this class with a fixed width */
+.overflow-block {
+    display: block;
+    word-wrap: break-word;
+}
+
 .preview-overflow{
     overflow:hidden;
     width:100%;
@@ -1378,10 +1466,6 @@ div#logScope a.moreLogs{
 
 .text-align{
     margin-left: 7px;
-}
-
-.private-link-name{
-    width: 60%
 }
 
 .list-overflow{
@@ -1409,10 +1493,18 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
+#projectScope .form-control {
+    width: 400px;
+}
+
 /* Contributors list */
 
 #contributors {
     margin-bottom:10px;
+}
+
+#contributors #description {
+    vertical-align: top;
 }
 
 #contributors ol {
@@ -1433,6 +1525,10 @@ div#logScope a.moreLogs{
 
 #contributors ol li:last-child:after {
     content: "";
+}
+
+.contributor-name {
+    margin-right: -4px;
 }
 
 /* Contributor page */
@@ -1479,6 +1575,10 @@ li.contributor-list-item img {
 
 li.contributor-list-item a.name {
     margin-left:30px;
+}
+
+.contributor-anonymous {
+    font-style: italic;
 }
 
 /* Handle popovers inside modals */
@@ -1587,6 +1687,12 @@ a {
     color: #505050;
 }
 
+/* Fix for pydocx bug */
+div.pydocx-center{
+	margin-left: 0 !important;
+	margin-right: 0 !important;
+}
+
 /* jQuery UI Autocomplete (WTForms Widget) */
 .ui-autocomplete-category { font-weight: bold }
 
@@ -1650,4 +1756,9 @@ a {
     line-height:20px;
     font-weight:normal;
     font-size:14px;
+}
+
+.search-term-label,
+.tag {
+    white-space: pre;
 }

@@ -77,7 +77,6 @@ def update_node(node, updated_fields=None):
         )
 
 
-
 def _users_with_view_access(node):
     """ Given a node, calls Piwik and returns the set of users with view access.
     Filters out "anonymous".
@@ -102,7 +101,6 @@ def _users_with_view_access(node):
         raise PiwikException('Failed to retrieve users for {}'.format(node._id))
 
 
-
 def _change_view_access(users, node, access):
     """ Grants view access for a Piwik site to a Piwik user
 
@@ -119,8 +117,8 @@ def _change_view_access(users, node, access):
             # The next line unpacks a dictionary, thereby adding the elements
             #   as key/value pairs to the dict being built. They can't just be
             #   passed as a list because Piwik uses PHP-style URL params.
-            **{ # OMG... WTF?
-                'urls[{}]'.format(idx): url # PHP-style params :(
+            **{  # OMG... WTF?
+                'urls[{}]'.format(idx): url  # PHP-style params :(
                 for idx, url in enumerate(
                     (   # Innermost comprehension (generator) - iterates once
                         #   for each user passed in, returns a URL query string.
@@ -140,7 +138,8 @@ def _change_view_access(users, node, access):
         # Could also raise ValueError
         rv = json.loads(response.content)
         for x in rv:
-            if x.get("result" != "success"): raise ValueError()
+            if x.get("result" != "success"):
+                raise ValueError()
     except ValueError:
         raise PiwikException(
             'Failed to update Piwik user permissions for {}'.format(node._id)
@@ -149,19 +148,19 @@ def _change_view_access(users, node, access):
 
 def _provision_node(node):
     response = requests.post(
-            settings.PIWIK_HOST,
-            data={
-                'module': 'API',
-                'token_auth': settings.PIWIK_ADMIN_TOKEN,
-                'format': 'json',
-                'method': 'SitesManager.addSite',
-                'siteName': 'Node: ' + node._id,
-                'urls': [
-                    settings.CANONICAL_DOMAIN + node.url,
-                    settings.SHORT_DOMAIN + node.url,
-                ],
-            }
-        )
+        settings.PIWIK_HOST,
+        data={
+            'module': 'API',
+            'token_auth': settings.PIWIK_ADMIN_TOKEN,
+            'format': 'json',
+            'method': 'SitesManager.addSite',
+            'siteName': 'Node: ' + node._id,
+            'urls': [
+                settings.CANONICAL_DOMAIN + node.url,
+                settings.SHORT_DOMAIN + node.url,
+            ],
+        }
+    )
 
     try:
         node.piwik_site_id = json.loads(response.content)['value']
@@ -227,7 +226,7 @@ class CustomVariableField(object):
 
     def __init__(self, client, **kwargs):
         # accepts a dictionary from Piwik's JSON repsonse.
-        # TODO: Not all variables here are captured
+        # Note: Not all variables here are captured
         self.client = client
         self.subtable_id = kwargs.get('idsubdatatable')
         self.label = kwargs.get('label')
@@ -240,7 +239,8 @@ class CustomVariableField(object):
     @property
     def values(self, _force=False):
         if _force or not self.__values:
-            self.__values = [CustomVariableValue(**x) for x in
+            self.__values = [
+                CustomVariableValue(**x) for x in
                 self.client._get_custom_variable_values(self)
             ]
 

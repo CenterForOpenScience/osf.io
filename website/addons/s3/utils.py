@@ -2,6 +2,7 @@ import re
 import time
 import base64
 import urllib
+import hashlib
 import hmac
 import sha
 
@@ -166,7 +167,8 @@ def build_urls(node, file_name, url=None, etag=None, vid=None):
         'delete': u'{node_api}s3/{file_name}/'.format(node_api=node.api_url, file_name=file_name),
         'render': u'{node_api}s3/{file_name}/render/{etag}'.format(node_api=node.api_url,
             file_name=file_name, etag='' if not etag else '?etag={0}'.format(etag)),
-        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name)
+        'fetch': u'{node_api}s3/hgrid/{file_name}'.format(node_api=node.api_url, file_name=file_name),
+        'info': node.api_url_for('file_delete_info', fid=file_name),
     }
     if not url:
         return rv
@@ -175,7 +177,10 @@ def build_urls(node, file_name, url=None, etag=None, vid=None):
 
 
 def get_cache_file_name(key_name, etag):
-    return u'{0}_{1}.html'.format(key_name.replace('/', ''), etag)
+    return u'{0}_{1}.html'.format(
+        hashlib.md5(key_name).hexdigest(),
+        etag,
+    )
 
 
 def validate_bucket_name(name):

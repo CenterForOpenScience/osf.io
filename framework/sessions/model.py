@@ -1,5 +1,10 @@
-from framework import StoredObject, fields
+# -*- coding: utf-8 -*-
+
 from bson import ObjectId
+from modularodm import fields
+
+from framework.mongo import StoredObject
+
 
 class Session(StoredObject):
 

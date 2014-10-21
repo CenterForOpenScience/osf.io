@@ -38,47 +38,52 @@
 
         // Update above observables with data from the server
         $.ajax({
-            url: url, type: 'GET', dataType: 'json',
-            success: function(response) {
-                var data = response.result;
-                self.userHasAuth(data.userHasAuth);
-                self.urls(data.urls);
-                self.loaded(true);
-                self.dataverseUsername(data.dataverseUsername);
-                self.connected(data.connected)
-            },
-            error: function(xhr, textStatus, error){
-                console.error(textStatus); console.error(error);
-                self.changeMessage(language.userSettingsError, 'text-warning');
-            }
-        })
+            url: url,
+            type: 'GET',
+            dataType: 'json'
+        }).done(function(response) {
+            var data = response.result;
+            self.userHasAuth(data.userHasAuth);
+            self.urls(data.urls);
+            self.loaded(true);
+            self.dataverseUsername(data.dataverseUsername);
+            self.connected(data.connected);
+        }).fail(function(xhr, textStatus, error) {
+            self.changeMessage(language.userSettingsError, 'text-warning');
+            Raven.captureMessage('Could not GET Dataverse settings', {
+                url: url,
+                textStatus: textStatus,
+                error: error
+            });
+        });
 
         // Flashed messages
         self.message = ko.observable('');
-        self.messageClass = ko.observable('text-info')
+        self.messageClass = ko.observable('text-info');
 
         /** Send POST request to authorize Dataverse */
         self.sendAuth = function() {
-            return $.ajax({
-                url: self.urls().create,
-                data: ko.toJSON({
+            return $.osf.postJSON(
+                self.urls().create,
+                ko.toJS({
                     dataverse_username: self.dataverseUsername,
                     dataverse_password: self.dataversePassword
-                }),
-                contentType: 'application/json',
-                type: 'POST',
-                success: function() {
-                    // User now has auth
-                    self.userHasAuth(true);
-                    self.connected(true);
-                    self.changeMessage(language.authSuccess, 'text-info', 5000);
-                },
-                error: function(xhr, textStatus, error) {
-                    var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
-                    self.changeMessage(errorMessage, 'text-danger');
-                }
+                })
+            ).done(function() {
+                // User now has auth
+                self.userHasAuth(true);
+                self.connected(true);
+                self.changeMessage(language.authSuccess, 'text-info', 5000);
+            }).fail(function(xhr, textStatus, error) {
+                var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
+                self.changeMessage(errorMessage, 'text-danger');
+                Raven.captureMessage('Could not authenticate with Dataverse', {
+                    url: self.urls().create,
+                    textStatus: textStatus,
+                    error: error
+                });
             });
-        }
+        };
 
        /** Pop up confirm dialog for deleting user's credentials. */
         self.deleteKey = function() {
@@ -97,21 +102,19 @@
         function sendDeauth() {
             return $.ajax({
                 url: self.urls().delete,
-                type: 'DELETE',
-                success: function() {
-                    // Page must be refreshed to remove the list of authorized nodes
-                    location.reload()
+                type: 'DELETE'
+            }).done(function() {
+                // Page must be refreshed to remove the list of authorized nodes
+                location.reload();
 
-                    // KO logic. Uncomment if page ever doesn't need refreshing
-                    // self.userHasAuth(false);
-                    // self.connected(false);
-                    // self.dataverseUsername('');
-                    // self.dataversePassword('');
-                    // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
-                },
-                error: function() {
-                    self.changeMessage(language.deauthError, 'text-danger');
-                }
+                // KO logic. Uncomment if page ever doesn't need refreshing
+                // self.userHasAuth(false);
+                // self.connected(false);
+                // self.dataverseUsername('');
+                // self.dataversePassword('');
+                // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
+            }).fail(function() {
+                self.changeMessage(language.deauthError, 'text-danger');
             });
         }
 
@@ -129,7 +132,7 @@
             }
         };
 
-    };
+    }
 
     function DataverseUserConfig(selector, url) {
         // Initialization code

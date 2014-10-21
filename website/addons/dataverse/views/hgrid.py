@@ -1,7 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import os
 
-from framework import request
+from flask import request
 from mako.template import Template
+
 from website.addons.dataverse.client import get_study, get_files, \
     get_dataverse, connect_from_settings
 
@@ -134,12 +137,12 @@ def dataverse_hgrid_data_contents(node_addon, auth, **kwargs):
             'file_id': f.id,
             'ext': os.path.splitext(f.name)[1],
             'urls': {
-                    'view': node.web_url_for('dataverse_view_file',
+                'view': node.web_url_for('dataverse_view_file',
+                                         path=f.id),
+                'download': node.web_url_for('dataverse_download_file',
                                              path=f.id),
-                    'download': node.web_url_for('dataverse_download_file',
-                                                 path=f.id),
-                    'delete': node.api_url_for('dataverse_delete_file',
-                                               path=f.id),
+                'delete': node.api_url_for('dataverse_delete_file',
+                                           path=f.id),
             },
             'permissions': {
                 'view': can_view,

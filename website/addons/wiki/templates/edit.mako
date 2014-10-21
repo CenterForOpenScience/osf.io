@@ -1,36 +1,42 @@
 <%inherit file="project/project_base.mako"/>
+<%page expression_filter="h"/>
 <%def name="title()">${node['title']} Wiki (Edit)</%def>
 
 <div class="wiki">
     <div class="row">
-        <div class="col-md-9">
-            <form action="${node['url']}wiki/${pageName}/edit/" method="POST">
+        <div class="col-md-3">
+            <%include file="wiki/templates/nav.mako"/>
+            <%include file="wiki/templates/toc.mako"/>
+        </div>
+         <div class="col-md-9">
+                 <%include file="wiki/templates/status.mako"/>
+            <form action="${urls['web']['edit']}" method="POST">
                 <div class="form-group wmd-panel">
                     <div id="wmd-button-bar"></div>
-                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content">${wiki_content}</textarea>
+                    <textarea class="form-control wmd-input" rows="25" id="wmd-input" name="content" data-bind="value: wikiText"></textarea>
                 </div>
-                <input type="submit" class="btn btn-primary pull-right" value="Save">
+                <div class="pull-right">
+                    <!-- clicking "Cancel" overrides unsaved changes check -->
+                    % if wiki_created:
+                        <a href="${urls['web']['home']}" class="btn btn-default">Cancel</a>
+                    % else:
+                        <a href="${urls['web']['page']}" class="btn btn-default">Cancel</a>
+                    % endif
+                    <input type="submit" class="btn btn-primary" value="Save" onclick=$(window).off('beforeunload')>
+                </div>
                 <p class="help-block">Preview</p>
                 <div id="wmd-preview" class="wmd-panel wmd-preview"></div>
             </form>
         </div>
-        <div class="col-md-3">
-            <div>
-                <%include file="wiki/templates/nav.mako" />
-                <%include file="wiki/templates/history.mako" />
-            </div>
-        </div>
     </div><!-- end row -->
 </div><!-- end wiki -->
 
-<%def name="javascript_bottom()">
+<script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
+<script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
+<script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
 
-    <script src="/static/vendor/pagedown/Markdown.Converter.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Sanitizer.js"></script>
-    <script src="/static/vendor/pagedown/Markdown.Editor.js"></script>
-    <script>
-        var converter1 = Markdown.getSanitizingConverter();
-        var editor1 = new Markdown.Editor(converter1);
-        editor1.run();
-    </script>
-</%def>
+<script>
+    $script('/static/addons/wiki/WikiEditor.js', function() {
+        WikiEditor('.wiki', '${urls['api']['content']}');
+    });
+</script>

@@ -45,10 +45,11 @@
                     if (result) {
                         $.osf.postJSON(
                             URLS[urlKey],
-                            {permissions: permissions},
-                            function(data) {
-                                window.location.reload();
-                            }
+                            {permissions: permissions}
+                        ).done(function() {
+                            window.location.reload();
+                        }).fail(
+                            $.osf.handleJSONError
                         );
                     }
                 }
@@ -73,9 +74,7 @@
             confirmModal(message);
         }
 
-
     }
-
 
     /**
      * The ProjectViewModel, scoped to the project header.
@@ -101,7 +100,7 @@
             return self.watchedCount().toString();
         });
         self.watchButtonAction = ko.computed(function() {
-            return self.userIsWatching() ? "Unwatch" : "Watch";
+            return self.userIsWatching() ? 'Unwatch' : 'Watch';
         });
 
         // Editable Title and Description
@@ -111,9 +110,9 @@
                 pk:    self._id,
                 url:   self.apiUrl + 'edit/',
                 ajaxOptions: {
-                    'type': 'POST',
-                    "dataType": "json",
-                    "contentType": "application/json"
+                    type: 'POST',
+                    dataType: 'json',
+                    contentType: 'application/json',
                 },
                 params: function(params){
                     // Send JSON data
@@ -122,10 +121,12 @@
                 success: function(data){
                     document.location.reload(true);
                 },
+                error: $.osf.handleEditableError,
                 placement: 'bottom'
             };
 
             // TODO: Remove hardcoded selectors.
+            $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
                 title: 'Edit Title'
@@ -143,18 +144,16 @@
          */
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
-            $.ajax({
-                url: self.apiUrl + "togglewatch/",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({}),
-                contentType: "application/json",
-                success: function(data, status, xhr) {
-                    // Update watch count in DOM
-                    self.userIsWatching(data['watched']);
-                    self.watchedCount(data['watchCount']);
-                }
-            });
+            $.osf.postJSON(
+                self.apiUrl + 'togglewatch/',
+                {}
+            ).done(function(data) {
+                // Update watch count in DOM
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
+            }).fail(
+                $.osf.handleJSONError
+            );
         };
 
         self.forkNode = function() {
@@ -177,7 +176,6 @@
     var defaults = {
         removeCss: '.user-quickedit'
     };
-
 
     function NodeControl (selector, data, options) {
         var self = this;

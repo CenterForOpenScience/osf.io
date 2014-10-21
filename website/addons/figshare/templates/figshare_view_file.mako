@@ -23,20 +23,20 @@ $('#figsharePublishArticle').on('click', function(){
 -->
 % endif
 %if download_url:
-    <a href="${download_url}">
-      <i class="icon-download-alt"></i>
-    </a><br />
+    <p><a href="${download_url}" class="btn btn-primary btn-sm">
+    Download <i class="icon-download-alt"></i>
+    </a></p>
 %endif
 %if file_versions:
-    Versions: ${file_version}
-    <a href="${version_url}">Version History</a><br />
-%endif 
-%if figshare_url:
-    <a href="${figshare_url}">View on FigShare</a><br />
+    <p>Versions: ${file_version}
+    <a href="${version_url}">Version History</a></p>
+%endif
+%if figshare_url and not node['anonymous']:
+    <p><a href="${figshare_url}">View on FigShare</a></p>
 %endif
 
 %if file_status == 'Public':
-    FigShare DOI: <a href="${doi}">${doi}</a><br />
+    <p>FigShare DOI: <a href="${doi}">${doi}</a></p>
 %endif
 </%def>
 

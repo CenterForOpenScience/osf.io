@@ -29,7 +29,7 @@
                     <i class="icon-remove remove-pointer" data-id="${summary['id']}" data-toggle="tooltip" title="Remove link"></i>
                     <i class="icon-code-fork" onclick="NodeActions.forkPointer('${summary['id']}', '${summary['primary_id']}');" data-toggle="tooltip" title="Fork this ${summary['node_type']} into ${node['node_type']} ${node['title']}"></i>
                 % endif
-                <i id="icon-${summary['id']}" class="icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
+                <i id="icon-${summary['id']}" class="pointer icon-plus" onclick="NodeActions.openCloseNode('${summary['id']}');" data-toggle="tooltip" title="More"></i>
             </div>
         </h4>
         <div class="list-group-item-text"></div>
@@ -83,12 +83,17 @@
     </li>
 
 % else:
-
     <li
         node_reference="${summary['id']}:${'node' if summary['primary'] else 'pointer'}"
         class="project list-group-item list-group-item-node unavailable">
         <h4 class="list-group-item-heading">
-            Private Component
+            %if summary['is_registration']:
+                Private Registration
+            %elif summary['is_fork']:
+                Private Fork
+            %else:
+                Private Component
+            %endif
         </h4>
     </li>
 

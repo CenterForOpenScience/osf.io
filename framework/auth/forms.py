@@ -18,7 +18,7 @@ from framework.forms import (
 
 from framework import auth
 
-from website import language
+from website import language, settings
 
 
 ##### Custom validators #####
@@ -101,8 +101,10 @@ confirm_email_field = TextField(
 password_field = PasswordField('Password',
     [
         validators.Required(message=u'Password is required'),
-        validators.Length(min=6, message=u'Password is too short. Password should be at least 6 characters.'),
-        validators.Length(max=35, message=u'Password is too long. Password should be at most 35 characters.'),
+        validators.Length(min=6, message=u'Password is too short. '
+            'Password should be at least 6 characters.'),
+        validators.Length(max=35, message=u'Password is too long. '
+            'Password should be at most 35 characters.'),
     ],
     filters=[stripped],
     widget=BootstrapPasswordInput()
@@ -145,6 +147,16 @@ class SignInForm(Form):
     username = email_field
     password = password_field
 
+# Only add the 2FA code if the twofactor addon is enabled
+if 'twofactor' in settings.ADDONS_REQUESTED:
+    SignInForm.two_factor = TextField(
+        'Two-factor Code (<span id="twoFactorHelpText">if applicable</span>)',
+        [
+            NoHtmlCharacters(),
+        ],
+        widget=BootstrapTextInput(),
+    )
+
 
 class PasswordForm(Form):
     password = password_field
@@ -164,13 +176,15 @@ class MergeAccountForm(Form):
         NoHtmlCharacters(),
         EmailExists(),
     ],
-    filters=[lowerstripped],
-    widget=BootstrapTextInput())
+        filters=[lowerstripped],
+        widget=BootstrapTextInput())
     merged_password = PasswordField("Duplicate User's Password",
-                                    [validators.Required(message=u"Please enter the user's password")],
+                                    [validators.Required(
+                                        message=u"Please enter the user's password")],
                                     filters=[stripped],
                                     widget=BootstrapPasswordInput())
     user_password = PasswordField("This Account's Password",
-                                    [validators.Required(message=u"Please enter the password for this account")],
+                                    [validators.Required(
+                                        message=u"Please enter the password for this account")],
                                     filters=[stripped],
                                     widget=BootstrapPasswordInput())

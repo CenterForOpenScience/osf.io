@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import httplib as http
 
+from flask import request
 from boto.exception import BotoServerError
 
-from framework import request
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 from framework.auth.decorators import must_be_logged_in
@@ -133,6 +135,7 @@ def s3_node_settings(auth, user_addon, node_addon, **kwargs):
 
 @must_have_permission('write')
 @must_have_addon('s3', 'node')
+@must_not_be_registration
 def s3_remove_node_settings(auth, node_addon, **kwargs):
     node_addon.deauthorize(auth=auth, save=True)
     return {}

@@ -43,43 +43,21 @@
     var makeRegexValidator = function(regex, message, match) {
         match = match || match === undefined;
         return {
-            validator: function(value, options) {
-                if (ko.validation.utils.isEmptyVal(value))
+            validator: function(value) {
+                if (ko.validation.utils.isEmptyVal(value)) {
                     return true;
+                }
                 return match === regex.test(ko.utils.unwrapObservable(value));
             },
             message: message
         };
     };
 
-    var printDate = function(date, dlm) {
-        dlm = dlm || '-';
-        var formatted = date.getFullYear() + dlm + (date.getMonth() + 1);
-        if (date.getDate()) {
-            formatted += dlm + date.getDate()
-        }
-        return formatted;
-    };
-
-    addExtender('asDate', function(value, options) {
-        var out;
-        if (value) {
-            var date;
-            if (value.match(/^\d{4}$/)) {
-                date = new Date(value, 0, 1);
-            } else {
-                date = moment(value).toDate();
-            }
-            out = date != 'Invalid Date' ? printDate(date) : value;
-        }
-        return out;
-    });
-
     addExtender('cleanup', function(value, cleaner) {
         return !!value ? cleaner(value) : '';
     });
 
-    addExtender('ensureHttp', function(value, options) {
+    addExtender('ensureHttp', function(value) {
         if (!value || value.search(/^https?:\/\//i) === 0) {
             return value;
         }
@@ -109,14 +87,65 @@
             // Skip if dates invalid
             var dateVal = new Date(uwVal);
             var dateMin = new Date(uwMin);
-            if (dateVal == 'Invalid Date' || dateMin == 'Invalid Date') {
+            if (dateVal.toString() === 'Invalid Date' || dateMin.toString() === 'Invalid Date') {
+                return true;
+            }
+            // Check if end date is ongoing
+            if (uwVal === 'ongoing') {
                 return true;
             }
             // Compare dates
             return dateVal >= dateMin;
         },
-        message: 'Date must be greater than or equal to {0}.'
+        message: 'End date must be greater than or equal to the start date.'
     };
+
+    ko.validation.rules['pyDate'] = {
+        validator: function (val) {
+            // Skip if values empty
+            var uwVal = ko.utils.unwrapObservable(val);
+            if (uwVal === null) {
+                return true;
+            }
+            // Skip if dates invalid
+            var dateVal = new Date(uwVal);
+            if (dateVal.toString() === 'Invalid Date') {
+                return true;
+            }
+            // Compare years
+            return parseInt(uwVal) >= 1900;
+        },
+        message: 'Date must be greater than or equal to 1900.'
+    };
+
+    ko.validation.rules['notInFuture'] = {
+        validator: function (val) {
+            // Skip if values empty
+            var uwVal = ko.utils.unwrapObservable(val);
+            if (uwVal === null || uwVal === undefined) {
+                return true;
+            }
+
+            //Skip if dates invalid
+            var dateVal = new Date(uwVal);
+
+            if (dateVal.toString() === 'Invalid Date') {
+                return true;
+            }
+            // Compare dates
+            var now = new Date();
+            return dateVal <= now;
+
+        },
+        message: 'Please enter a date prior to the current date.'
+    };
+
+
+    ko.validation.rules['year'] = makeRegexValidator(
+        new RegExp('^\\d{4}$'),
+        'Please enter a valid year.'
+    );
+
 
     ko.validation.rules['url'] = makeRegexValidator(
         new RegExp(

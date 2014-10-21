@@ -1,4 +1,6 @@
-from framework import fields
+# -*- coding: utf -*-
+
+from modularodm import fields
 
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 

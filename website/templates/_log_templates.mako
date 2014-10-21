@@ -3,6 +3,11 @@ created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+<script type="text/html" id="project_deleted">
+deleted <span data-bind="text: nodeType"></span>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+</script>
+
 <script type="text/html" id="created_from">
 created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another <span data-bind="text: nodeType"></span></a>
@@ -15,19 +20,14 @@ created <span data-bind="text: nodeType"></span>
 
 <script type="text/html" id="node_removed">
 removed <span data-bind="text: nodeType"></span>
-<span class="overflow" data-bind="text: nodeTitle"></span>
-</script>
-
-<script type="text/html" id="wiki_updated">
-updated wiki page
-<a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
-to version <span data-bind="text: params.version"></span>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="contributor_added">
 added
 <span data-bind="html: displayContributors"></span>
-to <span data-bind="text: nodeType"></span>
+as contributor(s) to
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
@@ -64,11 +64,11 @@ made <span data-bind="text: nodeType"></span>
 <script type="text/html" id="tag_added">
 tagged
 <span data-bind="text: nodeType"></span>
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a data-bind="attr: {href: '/tags/' + params.tag + '/'}, text: params.tag"></a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 </script>
 
 <script type="text/html" id="tag_removed">
-removed tag <a data-bind="attr: {href: '/tags/' + params.tag + '/'}, text: params.tag"></a>
+removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>

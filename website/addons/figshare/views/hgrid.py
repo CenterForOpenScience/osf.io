@@ -1,4 +1,6 @@
-from framework import request
+# -*- coding: utf-8 -*-
+
+from flask import request
 
 from website.project.decorators import must_be_contributor_or_public
 from website.project.decorators import must_have_addon
@@ -61,7 +63,7 @@ def figshare_dummy_folder(node_settings, auth, parent=None, **kwargs):
     auth = kwargs.get('auth')
     data = request.args.to_dict()
 
-    parent = data.pop('parent', 'null')
+    parent = data.pop('parent', 'null')  # noqa
     return figshare_hgrid_data(node_settings, auth, None, contents=False, **data)
 
 

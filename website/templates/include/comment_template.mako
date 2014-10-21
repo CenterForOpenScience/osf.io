@@ -1,13 +1,12 @@
 <div id="commentPane">
 
-    <div class="cp-handle">
+    <div class="cp-handle" data-bind="click:removeCount">
+        <p data-bind="text: displayCount" class="unread-comments-count"></p>
         <i class="icon-comments-alt icon-white icon-2x comment-handle-icon" style=""></i>
     </div>
-
     <div class="cp-bar"></div>
 
     <div id="comments" class="cp-sidebar">
-
         <h4>
             <span>${node['title']} Discussion</span>
             <span data-bind="foreach: {data: discussion, afterAdd: setupToolTips}" class="pull-right">
@@ -67,7 +66,7 @@
                 </div>
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 <div data-bind="if: unreporting">
-                    <a class="btn btn-default btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
+                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
                 </div>
             </div>
@@ -77,7 +76,12 @@
                 <div class="comment-info">
                     <form class="form-inline">
                         <img data-bind="attr: {src: author.gravatarUrl}"/>
-                        <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                        <span data-bind="if: author.id">
+                            <a class="comment-author" data-bind="text: author.name, attr: {href: author.url}"></a>
+                        </span>
+                        <span data-bind="ifnot: author.id">
+                            <span class="comment-author" data-bind="text: author.name"></span>
+                        </span>
                         <span class="comment-date pull-right">
                             <span data-bind="template: {if: modified, afterRender: setupToolTips}">
                                 <a data-toggle="tooltip" data-bind="attr: {title: prettyDateModified()}">*</a>
@@ -142,12 +146,12 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-default btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="icon-undo"></i> Cancel</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="icon-undo"></i> Cancel</a>
                     </div>
 
@@ -185,3 +189,4 @@
     </div>
 
 </script>
+

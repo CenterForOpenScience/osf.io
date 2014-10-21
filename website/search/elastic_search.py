@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division
 import logging
 import pyelasticsearch
 import re
 import copy
+import math
+
+from framework import sentry
 
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -25,13 +28,22 @@ try:
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
 except pyelasticsearch.exceptions.ConnectionError as e:
-    logger.error(e)
-    logger.warn("The SEARCH_ENGINE setting is set to 'elastic', but there "
-                "was a problem starting the elasticsearch interface. Is "
-                "elasticsearch running?")
+    sentry.log_exception()
+    sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
+                        "was a problem starting the elasticsearch interface. Is "
+                        "elasticsearch running?")
     elastic = None
 
 
+def requires_search(func):
+    def wrapped(*args, **kwargs):
+        if elastic is not None:
+            return func(*args, **kwargs)
+        sentry.log_message('Elastic search action failed. Is elasticsearch running?')
+    return wrapped
+
+
+@requires_search
 def search(raw_query, start=0):
     orig_query = raw_query
 
@@ -173,6 +185,7 @@ def _build_query(raw_query, start=0):
     return query, raw_query
 
 
+@requires_search
 def update_node(node):
     from website.addons.wiki.model import NodeWikiPage
 
@@ -209,7 +222,7 @@ def update_node(node):
             'title': node.title,
             'category': node.category,
             'public': node.is_public,
-            'tags': [x._id for x in node.tags],
+            'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
@@ -221,7 +234,7 @@ def update_node(node):
             NodeWikiPage.load(x)
             for x in node.wiki_pages_current.values()
         ]:
-            elastic_document['wikis'][wiki.page_name] = wiki.raw_text
+            elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
         try:
             elastic.update('website', category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
@@ -229,6 +242,7 @@ def update_node(node):
             elastic.index('website', category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
+@requires_search
 def update_user(user):
     if not user.is_active():
         try:
@@ -251,6 +265,7 @@ def update_user(user):
         elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
 
 
+@requires_search
 def delete_all():
     try:
         elastic.delete_index('website')
@@ -259,6 +274,7 @@ def delete_all():
         logger.error("The index 'website' was not deleted from elasticsearch")
 
 
+@requires_search
 def delete_doc(elastic_document_id, node):
     category = 'registration' if node.is_registration else node.project_or_component
     try:
@@ -272,28 +288,12 @@ def _load_parent(parent):
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
-        parent_info['wiki_url'] = parent.url + 'wiki/'
-        parent_info['contributors'] = [
-            contributor.fullname
-            for contributor in parent.visible_contributors
-        ]
-        parent_info['tags'] = [tag._id for tag in parent.tags]
-        parent_info['contributors_url'] = [
-            contributor.url
-            for contributor in parent.visible_contributors
-        ]
         parent_info['is_registration'] = parent.is_registration
-        parent_info['description'] = parent.description
         parent_info['id'] = parent._id
     else:
         parent_info['title'] = '-- private project --'
         parent_info['url'] = ''
-        parent_info['wiki_url'] = ''
-        parent_info['contributors'] = []
-        parent_info['tags'] = []
-        parent_info['contributors_url'] = []
         parent_info['is_registration'] = None
-        parent_info['description'] = ''
         parent_info['id'] = None
     return parent_info
 
@@ -322,18 +322,19 @@ def create_result(results, counts):
         'wiki_link': '{LINK TO WIKIS}',
         'title': '{TITLE TEXT}',
         'url': '{URL FOR NODE}',
-        'nest': {Nested node attributes},
+        'is_component': {TRUE OR FALSE},
+        'parent_title': {TITLE TEXT OF PARENT NODE},
+        'parent_url': {URL FOR PARENT NODE},
         'tags': [{LIST OF TAGS}],
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
         'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}]
-        'description': {PROJECT DESCRIPTION}
+        'highlight': [{No longer used, need to phase out}],
+        'description': {PROJECT DESCRIPTION},
     }
     '''
     formatted_results = []
     word_cloud = {}
     visited_nodes = {}  # For making sure projects are only returned once
-    num_deleted = 0  # For making deleting projects from the list faster
     index = 0  # For keeping track of what index a project is stored
     for result in results:
         # User results are handled specially
@@ -354,19 +355,9 @@ def create_result(results, counts):
             parent = Node.load(result['parent_id'])
             parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
 
-            # Check if parent has already been visited, if so, delete it
-            if parent and visited_nodes.get(parent_info['id']):
-                for i in range(visited_nodes.get(parent_info['id']) - num_deleted, len(formatted_results)):
-                    if formatted_results[i]['url'] == parent_info['url']:
-                        del formatted_results[i]
-                        num_deleted += 1
-                        break
-                visited_nodes[parent_info['id']] = index
-            elif visited_nodes.get(result['id']):
+            if visited_nodes.get(result['id']):
                 # If node already visited, it should not be returned as a result
                 continue
-            elif parent_info['id']:
-                visited_nodes[parent_info['id']] = index
             else:
                 visited_nodes[result['id']] = index
 
@@ -379,78 +370,85 @@ def create_result(results, counts):
 
 def _format_result(result, parent, parent_info):
     formatted_result = {
-        'contributors': result['contributors'] if parent is None
-            else parent_info['contributors'],
-        'wiki_link': result['url'] + 'wiki/' if parent is None
-            else parent_info['wiki_url'],
-        'title': result['title'] if parent is None
-            else parent_info['title'],
-        'url': result['url'] if parent is None else parent_info['url'],
-        'nest': {
-            result['id']:{#Nested components have all their own attributes
-                'title': result['title'],
-                'url': result['url'],
-                'wiki_link': result['url'] + 'wiki/',
-                'contributors': result['contributors'],
-                'contributors_url': result['contributors_url'],
-                'highlight': [],
-                'description': result['description'],
-            }
-        } if parent is not None else {},
-        'tags': result['tags'] if parent is None else parent_info['tags'],
-        'contributors_url': result['contributors_url'] if parent is None
-            else parent_info['contributors_url'],
-        'is_registration': result['registeredproject'] if parent is None
-            else parent_info['is_registration'],
+        'contributors': result['contributors'],
+        'wiki_link': result['url'] + 'wiki/',
+        'title': result['title'],
+        'url': result['url'],
+        'is_component': False if parent is None else True,
+        'parent_title': parent_info['title'] if parent is not None else None,
+        'parent_url': parent_info['url'] if parent is not None else None,
+        'tags': result['tags'],
+        'contributors_url': result['contributors_url'],
+        'is_registration': (result['registeredproject'] if parent is None
+                                                        else parent_info['is_registration']),
         'highlight': [],
-        'description': result['description'] if parent is None
-            else parent_info['description'],
+        'description': result['description'] if parent is None else None,
     }
 
     return formatted_result
 
 
-def search_contributor(query, exclude=None, current_user=None):
+@requires_search
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
-    :param: Search query, current_user
+    :param query: The substring of the username to search for
+    :param page: For pagination, the page number to use for results
+    :param size: For pagination, the number of results per page
+    :param exclude: A list of User objects to exclude from the search
+    :param current_user: A User object of the current user
+
     :return: List of dictionaries, each containing the ID, full name,
         most recent employment and education, gravatar URL of an OSF user
 
     """
+    start = (page * size)
     query.replace(" ", "_")
     query = re.sub(r'[\-\+]', '', query)
     query = re.split(r'\s+', query)
+    bool_filter = {
+        'must': [],
+        'should': [],
+        'must_not': [],
+    }
+    if exclude is not None:
+        for excluded in exclude:
+            bool_filter['must_not'].append({
+                'term': {
+                    'id': excluded._id
+                }
+            })
 
     if len(query) > 1:
-        and_filter = {'and': []}
         for item in query:
-            and_filter['and'].append({
+            bool_filter['must'].append({
                 'prefix': {
                     'user': item.lower()
                 }
             })
     else:
-        and_filter = {
+        bool_filter['must'].append({
             'prefix': {
                 'user': query[0].lower()
             }
-        }
+        })
 
     query = {
         'query': {
             'filtered': {
-                'filter': and_filter
+                'filter': {
+                    'bool': bool_filter
+                }
             }
-        }
+        },
+        'from': start,
+        'size': size,
     }
 
     results = elastic.search(query, index='website')
     docs = [hit['_source'] for hit in results['hits']['hits']]
-
-    if exclude:
-        docs = (x for x in docs if x.get('id') not in exclude)
+    pages = math.ceil(results[u'hits'][u'total'] / size)
 
     users = []
     for doc in docs:
@@ -492,6 +490,10 @@ def search_contributor(query, exclude=None, current_user=None):
 
             })
 
-
-
-    return {'users': users}
+    return \
+        {
+            'users': users,
+            'total': results[u'hits'][u'total'],
+            'pages': pages,
+            'page': page,
+        }

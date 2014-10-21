@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
-from nose.tools import *  # PEP8 asserts
-from webtest_plus import TestApp
-from website.app import init_app
+from nose.tools import *  # noqa (PEP8 asserts)
+
 from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
-
-app = init_app(set_backends=False, routes=True)
 
 
 class TestDropboxIntegration(OsfTestCase):
 
     def setUp(self):
-        self.app = TestApp(app)
+        super(TestDropboxIntegration, self).setUp()
         self.user = AuthUserFactory()
         # User is logged in
         self.app.authenticate(*self.user.auth)
@@ -30,5 +27,7 @@ class TestDropboxIntegration(OsfTestCase):
         res = self.app.get(url).follow()
 
         # Is redirected back to settings page
-        assert_equal(res.request.path,
-            web_url_for('user_addons'))
+        assert_equal(
+            res.request.path,
+            web_url_for('user_addons')
+        )

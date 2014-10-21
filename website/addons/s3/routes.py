@@ -118,6 +118,15 @@ api_routes = {
             views.hgrid.s3_dummy_folder,
             json_renderer,
         ),
+        Rule(
+            [
+                '/project/<pid>/s3/<fid>/info/',
+                '/project/<pid>/node/<nid>/s3/<fid>/info/',
+            ],
+            'get',
+            views.crud.file_delete_info,
+            json_renderer,
+        ),
     ],
     'prefix': '/api/v1',
 }

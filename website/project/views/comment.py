@@ -1,20 +1,22 @@
 # -*- coding: utf-8 -*-
-import logging
 import collections
 import httplib as http
 
-from framework import request
+from flask import request
+from modularodm import Q
+
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
+from framework.auth.utils import privacy_info_handle
 from framework.forms.utils import sanitize
 
 from website import settings
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
+from datetime import datetime
+from website.project.model import has_anonymous_link
 
-
-logger = logging.getLogger(__name__)
 
 def resolve_target(node, guid):
 
@@ -40,9 +42,9 @@ def collect_discussion(target, users=None):
 def comment_discussion(**kwargs):
 
     node = kwargs['node'] or kwargs['project']
-
+    auth = kwargs['auth']
     users = collect_discussion(node)
-
+    anonymous = has_anonymous_link(node, auth)
     # Sort users by comment frequency
     # TODO: Allow sorting by recency, combination of frequency and recency
     sorted_users = sorted(
@@ -54,13 +56,15 @@ def comment_discussion(**kwargs):
     return {
         'discussion': [
             {
-                'id': user._id,
-                'url': user.url,
-                'fullname': user.fullname,
+                'id': privacy_info_handle(user._id, anonymous),
+                'url': privacy_info_handle(user.url, anonymous),
+                'fullname': privacy_info_handle(user.fullname, anonymous, name=True),
                 'isContributor': node.is_contributor(user),
-                'gravatarUrl': gravatar(
-                    user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION,
+                'gravatarUrl': privacy_info_handle(
+                    gravatar(
+                        user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
+                    ),
+                    anonymous
                 ),
 
             }
@@ -69,19 +73,25 @@ def comment_discussion(**kwargs):
     }
 
 
-def serialize_comment(comment, auth):
+def serialize_comment(comment, auth, anonymous=False):
     return {
         'id': comment._id,
         'author': {
-            'id': comment.user._id,
-            'url': comment.user.url,
-            'name': comment.user.fullname,
-            'gravatarUrl': gravatar(
+            'id': privacy_info_handle(comment.user._id, anonymous),
+            'url': privacy_info_handle(comment.user.url, anonymous),
+            'name': privacy_info_handle(
+                comment.user.fullname, anonymous, name=True
+            ),
+            'gravatarUrl': privacy_info_handle(
+                gravatar(
                     comment.user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION),
+                    size=settings.GRAVATAR_SIZE_DISCUSSION
+                ),
+                anonymous
+            ),
         },
-        'dateCreated': comment.date_created.strftime('%m/%d/%y %H:%M:%S'),
-        'dateModified': comment.date_modified.strftime('%m/%d/%y %H:%M:%S'),
+        'dateCreated': comment.date_created.isoformat(),
+        'dateModified': comment.date_modified.isoformat(),
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -91,10 +101,10 @@ def serialize_comment(comment, auth):
     }
 
 
-def serialize_comments(record, auth):
+def serialize_comments(record, auth, anonymous=False):
 
     return [
-        serialize_comment(comment, auth)
+        serialize_comment(comment, auth, anonymous)
         for comment in getattr(record, 'commented', [])
     ]
 
@@ -147,21 +157,37 @@ def add_comment(**kwargs):
 
     return {
         'comment': serialize_comment(comment, auth)
-   }, http.CREATED
+    }, http.CREATED
 
 
 @must_be_contributor_or_public
-def list_comments(**kwargs):
-
-    auth = kwargs['auth']
+def list_comments(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-
+    anonymous = has_anonymous_link(node, auth)
     guid = request.args.get('target')
     target = resolve_target(node, guid)
+    serialized_comments = serialize_comments(target, auth, anonymous)
+    n_unread = 0
 
+    if node.is_contributor(auth.user):
+        if auth.user.comments_viewed_timestamp is None:
+            auth.user.comments_viewed_timestamp = {}
+            auth.user.save()
+        n_unread = n_unread_comments(target, auth.user)
     return {
-        'comments': serialize_comments(target, auth),
+        'comments': serialized_comments,
+        'nUnread': n_unread
     }
+
+
+def n_unread_comments(node, user):
+    """Return the number of unread comments on a node for a user."""
+    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+    return Comment.find(Q('target', 'eq', node) &
+                        Q('user', 'ne', user) &
+                        Q('date_created', 'gt', view_timestamp) &
+                        Q('date_modified', 'gt', view_timestamp)).count()
 
 
 @must_be_logged_in
@@ -208,6 +234,20 @@ def undelete_comment(**kwargs):
     comment.undelete(auth=auth, save=True)
 
     return {}
+
+
+@must_be_logged_in
+@must_be_contributor_or_public
+def update_comments_timestamp(auth, **kwargs):
+    node = kwargs['node'] or kwargs['project']
+
+    if node.is_contributor(auth.user):
+        auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
+        auth.user.save()
+        list_comments(**kwargs)
+        return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
+    else:
+        return {}
 
 
 @must_be_logged_in

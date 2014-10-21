@@ -14,29 +14,32 @@ import urlparse
 import uuid
 
 import pytz
+from flask import request
 from dulwich.repo import Repo
 from dulwich.object_store import tree_lookup_path
 import blinker
 
+from modularodm import fields, Q
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationValueError, ValidationTypeError
 
 from framework import status
 from framework.mongo import ObjectId
-from framework.mongo.utils import to_mongo
+from framework.mongo.utils import to_mongo, to_mongo_key
 from framework.auth import get_user, User, Auth
+from framework.auth.utils import privacy_info_handle
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters, piwik
 )
 from framework.exceptions import PermissionsError
-from framework.git.exceptions import FileNotModified
-from framework import StoredObject, fields, utils
-from framework import GuidStoredObject, Q
+from framework.mongo import StoredObject
+from framework.guid.model import GuidStoredObject
 from framework.addons import AddonModelMixin
 
 
 from website.exceptions import NodeStateError
-from website.util.permissions import (expand_permissions,
+from website.util.permissions import (
+    expand_permissions,
     DEFAULT_CONTRIBUTOR_PERMISSIONS,
     CREATOR_PERMISSIONS
 )
@@ -60,8 +63,25 @@ def normalize_unicode(ustr):
         .encode('ascii', 'ignore')
 
 
-def has_anonymous_link(node, link):
-    return any([x.anonymous for x in node.private_links_active if x.key == link])
+def has_anonymous_link(node, auth):
+    """check if the node is anonymous to the user
+
+    :param Node node: Node which the user wants to visit
+    :param str link: any view-only link in the current url
+    :return bool anonymous: Whether the node is anonymous to the user or not
+
+    """
+    view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
+    if not view_only_link:
+        return False
+    if node.is_public:
+        return False
+    return any(
+        link.anonymous
+        for link in node.private_links_active
+        if link.key == view_only_link
+    )
+
 
 signals = blinker.Namespace()
 contributor_added = signals.signal('contributor-added')
@@ -290,6 +310,7 @@ class NodeLog(StoredObject):
 
     PROJECT_CREATED = 'project_created'
     PROJECT_REGISTERED = 'project_registered'
+    PROJECT_DELETED = 'project_deleted'
 
     NODE_CREATED = 'node_created'
     NODE_FORKED = 'node_forked'
@@ -300,6 +321,8 @@ class NodeLog(StoredObject):
     POINTER_REMOVED = 'pointer_removed'
 
     WIKI_UPDATED = 'wiki_updated'
+    WIKI_DELETED = 'wiki_deleted'
+    WIKI_RENAMED = 'wiki_renamed'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -329,8 +352,13 @@ class NodeLog(StoredObject):
     MADE_CONTRIBUTOR_VISIBLE = 'made_contributor_visible'
     MADE_CONTRIBUTOR_INVISIBLE = 'made_contributor_invisible'
 
+    def __repr__(self):
+        return ('<NodeLog({self.action!r}, params={self.params!r}) '
+                'with id {self._id!r}>').format(self=self)
+
     @property
     def node(self):
+        """Return the :class:`Node` associated with this log."""
         return (
             Node.load(self.params.get('node')) or
             Node.load(self.params.get('project'))
@@ -344,7 +372,7 @@ class NodeLog(StoredObject):
         # missing dates; return None and log error if date missing
         if self.date:
             return self.date.replace(tzinfo=pytz.UTC)
-        logging.error('Date missing on NodeLog {}'.format(self._primary_key))
+        logger.error('Date missing on NodeLog {}'.format(self._primary_key))
 
     @property
     def formatted_date(self):
@@ -354,7 +382,31 @@ class NodeLog(StoredObject):
         if self.tz_date:
             return self.tz_date.isoformat()
 
-    def _render_log_contributor(self, contributor):
+    def resolve_node(self, node):
+        """A single `NodeLog` record may be attached to multiple `Node` records
+        (parents, forks, registrations, etc.), so the node that the log refers
+        to may not be the same as the node the user is viewing. Use
+        `resolve_node` to determine the relevant node to use for permission
+        checks.
+
+        :param Node node: Node being viewed
+        """
+        if self.node == node or self.node in node.nodes:
+            return self.node
+        if node.is_fork_of(self.node) or node.is_registration_of(self.node):
+            return node
+        for child in node.nodes:
+            if child.is_fork_of(self.node) or node.is_registration_of(self.node):
+                return child
+        return False
+
+    def can_view(self, node, auth):
+        node_to_check = self.resolve_node(node)
+        if node_to_check:
+            return node_to_check.can_view(auth)
+        return False
+
+    def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
             return None
@@ -363,34 +415,18 @@ class NodeLog(StoredObject):
         else:
             fullname = user.fullname
         return {
-            'id': user._primary_key,
-            'fullname': fullname,
+            'id': privacy_info_handle(user._primary_key, anonymous),
+            'fullname': privacy_info_handle(fullname, anonymous, name=True),
             'registered': user.is_registered,
-        }
-
-    # TODO: Move to separate utility function
-    def serialize(self, anonymous=False):
-        '''Return a dictionary representation of the log.'''
-        return {
-            'id': str(self._primary_key),
-            'user': self.user.serialize()
-                    if isinstance(self.user, User)
-                    else {'fullname': self.foreign_user},
-            'contributors': [self._render_log_contributor(c) for c in self.params.get("contributors", [])],
-            'api_key': self.api_key.label if self.api_key else '',
-            'action': self.action,
-            'params': self.params,
-            'date': utils.rfcformat(self.date),
-            'node': self.node.serialize() if self.node else None,
-            'anonymous': anonymous
         }
 
 
 class Tag(StoredObject):
 
     _id = fields.StringField(primary=True, validate=MaxLengthValidator(128))
-    count_public = fields.IntegerField(default=0)
-    count_total = fields.IntegerField(default=0)
+
+    def __repr__(self):
+        return '<Tag() with id {self._id!r}>'.format(self=self)
 
     @property
     def url(self):
@@ -446,6 +482,15 @@ class Pointer(StoredObject):
             )
         )
 
+def resolve_pointer(pointer):
+    """Given a `Pointer` object, return the node that it resolves to.
+    """
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    return parent_refs[0]
 
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
@@ -453,6 +498,14 @@ def validate_category(value):
     """
     if value not in Node.CATEGORY_MAP.keys():
         raise ValidationValueError('Invalid value for category.')
+    return True
+
+
+def validate_user(value):
+    if value != {}:
+        user_id = value.iterkeys().next()
+        if User.find(Q('_id', 'eq', user_id)).count() != 1:
+            raise ValidationValueError('User does not exist.')
     return True
 
 
@@ -490,7 +543,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         ('analysis', 'Analysis'),
         ('communication', 'Communication'),
         ('other', 'Other')
-        ])
+    ])
 
     _id = fields.StringField(primary=True)
 
@@ -502,6 +555,17 @@ class Node(GuidStoredObject, AddonModelMixin):
     # User mappings
     permissions = fields.DictionaryField()
     visible_contributor_ids = fields.StringField(list=True)
+
+    # Project Organization
+    is_dashboard = fields.BooleanField(default=False)
+    is_folder = fields.BooleanField(default=False)
+
+    # Expanded: Dictionary field mapping user IDs to expand state of this node:
+    # {
+    #   'icpnw': True,
+    #   'cdi38': False,
+    # }
+    expanded = fields.DictionaryField(default={}, validate=validate_user)
 
     is_deleted = fields.BooleanField(default=False)
     deleted_date = fields.DateTimeField()
@@ -520,9 +584,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     # TODO: Add validator for this field (must be one of the keys in
     # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
-
-    registration_list = fields.StringField(list=True)
-    fork_list = fields.StringField(list=True)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -559,7 +620,6 @@ class Node(GuidStoredObject, AddonModelMixin):
     }
 
     def __init__(self, *args, **kwargs):
-
         super(Node, self).__init__(*args, **kwargs)
 
         # Crash if parent provided and not project
@@ -577,6 +637,11 @@ class Node(GuidStoredObject, AddonModelMixin):
             # Add default creator permissions
             for permission in CREATOR_PERMISSIONS:
                 self.add_permission(self.creator, permission, save=False)
+
+    def __repr__(self):
+        return ('<Node(title={self.title!r}, category={self.category!r}) '
+                'with _id {self._id!r}>').format(self=self)
+
     @property
     def category_display(self):
         """The human-readable representation of this node's category."""
@@ -622,15 +687,45 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
 
     def can_view(self, auth):
-        if auth.user and auth.user.private_links:
-            key_ring = set(auth.user.private_link_keys)
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or not key_ring.isdisjoint(self.private_link_keys_active)
+        return self.is_public or auth.user \
+            and self.has_permission(auth.user, 'read') \
+            or auth.private_key in self.private_link_keys_active
+
+    def is_expanded(self, user=None):
+        """Return if a user is has expanded the folder in the dashboard view.
+        Must specify one of (`auth`, `user`).
+
+        :param User user: User object to check
+        :returns: Boolean if the folder is expanded.
+
+        """
+        if user._id in self.expanded:
+            return self.expanded[user._id]
         else:
-            return self.is_public or auth.user \
-                and self.has_permission(auth.user, 'read') \
-                or auth.private_key in self.private_link_keys_active
+            return False
+
+    def expand(self, user=None):
+        self.expanded[user._id] = True
+        self.save()
+
+    def collapse(self, user=None):
+        self.expanded[user._id] = False
+        self.save()
+
+    def is_derived_from(self, other, attr):
+        derived_from = getattr(self, attr)
+        while True:
+            if derived_from is None:
+                return False
+            if derived_from == other:
+                return True
+            derived_from = getattr(derived_from, attr)
+
+    def is_fork_of(self, other):
+        return self.is_derived_from(other, 'forked_from')
+
+    def is_registration_of(self, other):
+        return self.is_derived_from(other, 'registered_from')
 
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
@@ -699,7 +794,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         if user is None:
-            logger.error('User is ``None``.')
+            logger.warn('User is ``None``.')
             return False
         try:
             return permission in self.permissions[user._id]
@@ -778,7 +873,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     def can_comment(self, auth):
         if self.comment_level == 'public':
-            return auth.logged_in and self.can_view(auth)
+            return auth.logged_in and (
+                self.is_public or
+                (auth.user and self.has_permission(auth.user, 'read'))
+            )
         return self.can_edit(auth)
 
     def save(self, *args, **kwargs):
@@ -786,6 +884,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.adjust_permissions()
 
         first_save = not self._is_loaded
+        if first_save and self.is_dashboard:
+            existing_dashboards = self.creator.node__contributed.find(
+                Q('is_dashboard', 'eq', True)
+            )
+            if existing_dashboards.count() > 0:
+                raise NodeStateError("Only one dashboard allowed per user.")
+
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
             suppress_log = kwargs['suppress_log']
@@ -840,6 +945,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         if not self.is_public:
             if first_save or 'is_public' not in saved_fields:
                 need_update = False
+        if self.is_folder:
+            need_update = False
         if need_update:
             self.update_search()
 
@@ -884,8 +991,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.files_versions = {}
         new.wiki_pages_current = {}
         new.wiki_pages_versions = {}
-        new.fork_list = []
-        new.registration_list = []
 
         # set attributes which may be overridden by `changes`
         new.is_public = False
@@ -901,6 +1006,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         new.template_node = self
         new.is_fork = False
         new.is_registration = False
+        new.piwik_site_id = None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -969,6 +1075,18 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'Pointer to node {0} already in list'.format(node._id)
             )
 
+        # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
+        # Also, no pointers to the dashboard project, which could cause loops as well.
+        already_pointed = node.pointed
+        if node.is_folder and len(already_pointed) > 0:
+            raise ValueError(
+                'Pointer to folder {0} already exists. Only one pointer to any given folder allowed'.format(node._id)
+            )
+        if node.is_dashboard:
+            raise ValueError(
+                'Pointer to dashboard ({0}) not allowed.'.format(node._id)
+            )
+
         # Append pointer
         pointer = Pointer(node=node)
         pointer.save()
@@ -997,16 +1115,18 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         return pointer
 
-    def rm_pointer(self, pointer, auth, save=True):
+    def rm_pointer(self, pointer, auth):
         """Remove a pointer.
 
         :param Pointer pointer: Pointer to remove
         :param Auth auth: Consolidated authorization
-        :param bool save: Save changes
-
         """
-        # Remove pointer from `nodes`
-        self.nodes.remove(pointer)
+        if pointer not in self.nodes:
+            raise ValueError
+
+        # Remove `Pointer` object; will also remove self from `nodes` list of
+        # parent node
+        Pointer.remove_one(pointer)
 
         # Add log
         self.add_log(
@@ -1024,11 +1144,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             auth=auth,
             save=False,
         )
-
-        # Optionally save changes
-        if save:
-            self.save()
-            pointer.remove_one(pointer)
 
     @property
     def node_ids(self):
@@ -1070,9 +1185,32 @@ class Node(GuidStoredObject, AddonModelMixin):
     def pointed(self):
         return getattr(self, '_pointed', [])
 
-    @property
-    def points(self):
-        return len(self.pointed)
+    def pointing_at(self, pointed_node_id):
+        """This node is pointed at another node.
+
+        :param Node pointed_node_id: The node id of the node being pointed at.
+        :return: pointer_id
+
+        """
+        for pointer in self.nodes_pointer:
+            node_id = pointer.node._id
+            if node_id == pointed_node_id:
+                return pointer._id
+        return None
+
+    def get_points(self, folders=False, deleted=False, resolve=True):
+        ret = []
+        for each in self.pointed:
+            pointer_node = resolve_pointer(each)
+            if not folders and pointer_node.is_folder:
+                continue
+            if not deleted and pointer_node.is_deleted:
+                continue
+            if resolve:
+                ret.append(pointer_node)
+            else:
+                ret.append(each)
+        return ret
 
     def resolve(self):
         return self
@@ -1220,8 +1358,17 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         # TODO: rename "date" param - it's shadowing a global
 
+        if self.is_dashboard:
+            raise NodeStateError("Dashboards may not be deleted.")
+
         if not self.can_edit(auth):
-            raise PermissionsError()
+            raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
+
+        #if this is a folder, remove all the folders that this is pointing at.
+        if self.is_folder:
+            for pointed in self.nodes_pointer:
+                if pointed.node.is_folder:
+                    pointed.node.remove_node(auth=auth)
 
         if [x for x in self.nodes_primary if not x.is_deleted]:
             raise NodeStateError("Any child components must be deleted prior to deleting this project.")
@@ -1245,24 +1392,16 @@ class Node(GuidStoredObject, AddonModelMixin):
                 log_date=log_date,
                 save=True,
             )
-
-        # Remove self from parent registration list
-        if self.is_registration:
-            try:
-                self.registered_from.registration_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.registered_from.save()
-
-        # Remove self from parent fork list
-        if self.is_fork:
-            try:
-                self.forked_from.fork_list.remove(self._primary_key)
-            except ValueError:
-                pass
-            else:
-                self.forked_from.save()
+        else:
+            self.add_log(
+                NodeLog.PROJECT_DELETED,
+                params={
+                    'project': self._primary_key,
+                },
+                auth=auth,
+                log_date=log_date,
+                save=True,
+            )
 
         self.is_deleted = True
         self.deleted_date = date
@@ -1280,9 +1419,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         user = auth.user
 
-        # todo: should this raise an error?
-        if not self.can_view(auth):
-            return
+        # Non-contributors can't fork private nodes
+        if not (self.is_public or self.has_permission(user, 'read')):
+            raise PermissionsError('{0!r} does not have permission to fork node {1!r}'.format(user, self._id))
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1300,8 +1439,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.logs = self.logs
         forked.tags = self.tags
 
+        # Recursively fork child nodes
         for node_contained in original.nodes:
-            forked_node = node_contained.fork_node(auth=auth, title='')
+            forked_node = None
+            try:  # Catch the potential PermissionsError above
+                forked_node = node_contained.fork_node(auth=auth, title='')
+            except PermissionsError:
+                pass  # If this excpetion is thrown omit the node from the result set
             if forked_node is not None:
                 forked.nodes.append(forked_node)
 
@@ -1311,6 +1455,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         forked.forked_date = when
         forked.forked_from = original
         forked.creator = user
+        forked.piwik_site_id = None
 
         # Forks default to private status
         forked.is_public = False
@@ -1345,9 +1490,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             folder_new = os.path.join(settings.UPLOADS_PATH, forked._primary_key)
             Repo(folder_old).clone(folder_new)
 
-        original.fork_list.append(forked._primary_key)
-        original.save()
-
         return forked
 
     def register_node(self, schema, auth, template, data):
@@ -1361,6 +1503,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if not self.can_edit(auth):
             return
+
+        if self.is_folder:
+            raise NodeStateError("Folders may not be registered")
 
         folder_old = os.path.join(settings.UPLOADS_PATH, self._primary_key)
         template = urllib.unquote_plus(template)
@@ -1391,6 +1536,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         registered.creator = self.creator
         registered.logs = self.logs
         registered.tags = self.tags
+        registered.piwik_site_id = None
 
         registered.save()
 
@@ -1408,24 +1554,22 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         for node_contained in original.nodes:
             registered_node = node_contained.register_node(
-                 schema, auth, template, data
+                schema, auth, template, data
             )
             if registered_node is not None:
                 registered.nodes.append(registered_node)
 
-
         original.add_log(
             action=NodeLog.PROJECT_REGISTERED,
             params={
-                'project':original.parent_id,
-                'node':original._primary_key,
-                'registration':registered._primary_key,
+                'project': original.parent_id,
+                'node': original._primary_key,
+                'registration': registered._primary_key,
             },
             auth=auth,
             log_date=when,
             save=False,
         )
-        original.registration_list.append(registered._id)
         original.save()
 
         registered.save()
@@ -1438,9 +1582,9 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
                 params={
-                    'project':self.parent_id,
-                    'node':self._primary_key,
-                    'tag':tag,
+                    'project': self.parent_id,
+                    'node': self._primary_key,
+                    'tag': tag,
                 },
                 auth=auth,
                 save=False,
@@ -1453,9 +1597,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
-            new_tag.count_total += 1
-            if self.is_public:
-                new_tag.count_public += 1
             new_tag.save()
             self.tags.append(new_tag)
             self.add_log(
@@ -1471,26 +1612,50 @@ class Node(GuidStoredObject, AddonModelMixin):
             if save:
                 self.save()
 
-    def get_file(self, path, version=None):
-        from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(folder_name, ".git")):
-                file_object = NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-                repo = Repo(folder_name)
-                tree = repo.commit(file_object.git_commit).tree
-                (mode, sha) = tree_lookup_path(repo.get_object, tree, path)
-                return repo[sha].data, file_object.content_type
-        return None, None
+    # TODO: Move to NodeFile
+    def read_file_object(self, file_object):
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        repo = Repo(folder_name)
+        tree = repo.commit(file_object.git_commit).tree
+        mode, sha = tree_lookup_path(repo.get_object, tree, file_object.path)
+        return repo[sha].data, file_object.content_type
+
+    def get_file(self, path, version):
+        #folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        file_object = self.get_file_object(path, version)
+        return self.read_file_object(file_object)
 
     def get_file_object(self, path, version=None):
+        """Return the :class:`NodeFile` object at the given path.
+
+        :param str path: Path to the file.
+        :param int version: Version number, 0-indexed.
+        """
+        # TODO: Fix circular imports
         from website.addons.osffiles.model import NodeFile
-        if version is not None:
-            directory = os.path.join(settings.UPLOADS_PATH, self._primary_key)
-            if os.path.exists(os.path.join(directory, '.git')):
-                return NodeFile.load(self.files_versions[path.replace('.', '_')][version])
-            # TODO: Raise exception here
-        return None, None # TODO: Raise exception here
+        from website.addons.osffiles.exceptions import (
+            InvalidVersionError,
+            VersionNotFoundError,
+        )
+        folder_name = os.path.join(settings.UPLOADS_PATH, self._primary_key)
+        err_msg = 'Upload directory is not a git repo'
+        assert os.path.exists(os.path.join(folder_name, ".git")), err_msg
+        try:
+            file_versions = self.files_versions[path.replace('.', '_')]
+            # Default to latest version
+            version = version or len(file_versions) - 1
+        except (AttributeError, KeyError):
+            raise ValueError('Invalid path: {}'.format(path))
+        if version < 0:
+            raise InvalidVersionError('Version number must be >= 0.')
+        try:
+            file_id = file_versions[version]
+        except IndexError:
+            raise VersionNotFoundError('Invalid version number: {}'.format(version))
+        except TypeError:
+            raise InvalidVersionError('Invalid version type. Version number'
+                    'must be an integer >= 0.')
+        return NodeFile.load(file_id)
 
     def remove_file(self, auth, path):
         '''Removes a file from the filesystem, NodeFile collection, and does a git delete ('git rm <file>')
@@ -1498,12 +1663,13 @@ class Node(GuidStoredObject, AddonModelMixin):
         :param auth: All the auth informtion including user, API key.
         :param path:
 
-        :return: True on success, False on failure
+        :raises: website.osffiles.exceptions.FileNotFoundError if file is not found.
         '''
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotFoundError
+        from website.addons.osffiles.utils import urlsafe_filename
 
-        #FIXME: encoding the filename this way is flawed. For instance - foo.bar resolves to the same string as foo_bar.
-        file_name_key = path.replace('.', '_')
+        file_name_key = urlsafe_filename(path)
 
         repo_path = os.path.join(settings.UPLOADS_PATH, self._primary_key)
 
@@ -1522,19 +1688,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             committer = self._get_committer(auth)
 
             repo.do_commit(message, committer)
-
         except subprocess.CalledProcessError as error:
-            # This exception can be ignored if the file has already been
-            # deleted, e.g. if two users attempt to delete a file at the same
-            # time. If another subprocess error is raised, fail.
-            if error.returncode == 128 and 'did not match any files' in error.output:
-                logger.warning(
-                    'Attempted to delete file {0}, but file was not found.'.format(
-                        path
-                    )
-                )
-                return True
-            return False
+            if error.returncode == 128:
+                raise FileNotFoundError('File {0!r} was not found'.format(path))
+            raise
 
         if file_name_key in self.files_current:
             nf = NodeFile.load(self.files_current[file_name_key])
@@ -1552,9 +1709,9 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=NodeLog.FILE_REMOVED,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
-                'path':path
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'path': path
             },
             auth=auth,
             log_date=nf.date_modified,
@@ -1563,8 +1720,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         # Updates self.date_modified
         self.save()
-
-        return True
 
     @staticmethod
     def _get_committer(auth):
@@ -1609,6 +1764,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         necessary.
         """
         from website.addons.osffiles.model import NodeFile
+        from website.addons.osffiles.exceptions import FileNotModified
         # TODO: Reading the whole file into memory is not scalable. Fix this.
 
         # This node's folder
@@ -1653,7 +1809,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             f.write(content)
 
         # Deal with git
-        repo.stage([file_name])
+        repo.stage([str(file_name)])
 
         committer = self._get_committer(auth)
 
@@ -1682,7 +1838,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.files_current[file_name_key] = node_file._primary_key
 
         # Create a version history if necessary
-        if not file_name_key in self.files_versions:
+        if file_name_key not in self.files_versions:
             self.files_versions[file_name_key] = []
 
         # Add reference to the version history
@@ -1736,15 +1892,15 @@ class Node(GuidStoredObject, AddonModelMixin):
     def url(self):
         return '/{}/'.format(self._primary_key)
 
-    def web_url_for(self, view_name, _absolute=False, *args, **kwargs):
+    def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
         # inconsistencies [jmcarp]
         if self.parent_node is None:
             return web_url_for(view_name, pid=self._primary_key, _absolute=_absolute,
-                *args, **kwargs)
+                _guid=_guid, *args, **kwargs)
         else:
             return web_url_for(view_name, pid=self.parent_node._primary_key,
-                nid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+                nid=self._primary_key, _absolute=_absolute, _guid=_guid, *args, **kwargs)
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         # Note: Check `parent_node` rather than `category` to avoid database
@@ -1759,7 +1915,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def absolute_url(self):
         if not self.url:
-            logging.error("Node {0} has a parent that is not a project".format(self._id))
+            logger.error("Node {0} has a parent that is not a project".format(self._id))
             return None
         return urlparse.urljoin(settings.DOMAIN, self.url)
 
@@ -1772,7 +1928,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     @property
     def api_url(self):
         if not self.url:
-            logging.error('Node {0} has a parent that is not a project'.format(self._id))
+            logger.error('Node {0} has a parent that is not a project'.format(self._id))
             return None
         return '/api/v1{0}'.format(self.deep_url)
 
@@ -1786,7 +1942,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                     self.parent_id,
                     self._primary_key
                 )
-        logging.error("Node {0} has a parent that is not a project".format(self._id))
+        logger.error("Node {0} has a parent that is not a project".format(self._id))
 
     def author_list(self, and_delim='&'):
         author_names = [
@@ -1816,7 +1972,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_apa(self):
-        return u'{authors}, ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} ({year}). {title}. Retrieved from Open Science Framework, <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='&'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
@@ -1826,7 +1982,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_mla(self):
-        return u'{authors}. "{title}". Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} "{title}." Open Science Framework, {year}. <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
@@ -1836,7 +1992,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     @property
     def citation_chicago(self):
-        return u'{authors}. "{title}". Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
+        return u'{authors} "{title}." Open Science Framework ({year}). <a href="{url}">{display_url}</a>'.format(
             authors=self.author_list(and_delim='and'),
             year=self.logs[-1].date.year if self.logs else '?',
             title=self.title,
@@ -1881,17 +2037,19 @@ class Node(GuidStoredObject, AddonModelMixin):
             )
         )
 
-    def add_addon(self, addon_name, auth, log=True):
-        """Add an add-on to the node.
+    def add_addon(self, addon_name, auth, log=True, *args, **kwargs):
+        """Add an add-on to the node. Do nothing if the addon is already
+        enabled.
 
         :param str addon_name: Name of add-on
         :param Auth auth: Consolidated authorization object
         :param bool log: Add a log after adding the add-on
-        :return bool: Add-on was added
+        :return: A boolean, whether the addon was added
 
         """
-        rv = super(Node, self).add_addon(addon_name, auth)
-        if rv and log:
+        ret = AddonModelMixin.add_addon(self, addon_name, auth=auth,
+                                        *args, **kwargs)
+        if ret and log:
             config = settings.ADDONS_AVAILABLE_DICT[addon_name]
             self.add_log(
                 action=NodeLog.ADDON_ADDED,
@@ -1903,8 +2061,8 @@ class Node(GuidStoredObject, AddonModelMixin):
                 auth=auth,
                 save=False,
             )
-            self.save() # TODO: here, or outside the conditional? @mambocab
-        return rv
+            self.save()  # TODO: here, or outside the conditional? @mambocab
+        return ret
 
     def delete_addon(self, addon_name, auth):
         """Delete an add-on from the node.
@@ -1996,7 +2154,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         admins = [
             user for user in self.contributors
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if not admins:
             return False
@@ -2062,7 +2220,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param list user_dicts: Ordered list of contributors represented as
             dictionaries of the form:
-            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>}
+            {'id': <id>, 'permission': <One of 'read', 'write', 'admin'>, 'visible': bool}
         :param Auth auth: Consolidated authentication information
         :param bool save: Save changes
         :raises: ValueError if any users in `users` not in contributors or if
@@ -2070,7 +2228,10 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         """
         users = []
+        user_ids = []
         permissions_changed = {}
+        to_retain = []
+        to_remove = []
         for user_dict in user_dicts:
             user = User.load(user_dict['id'])
             if user is None:
@@ -2085,29 +2246,25 @@ class Node(GuidStoredObject, AddonModelMixin):
                 permissions_changed[user._id] = permissions
             self.set_visible(user, user_dict['visible'], auth=auth)
             users.append(user)
+            user_ids.append(user_dict['id'])
 
-        to_retain = [
-            user for user in self.contributors
-            if user in users
-        ]
-        to_remove = [
-            user for user in self.contributors
-            if user not in users
-        ]
+        for user in self.contributors:
+            if user._id in user_ids:
+                to_retain.append(user)
+            else:
+                to_remove.append(user)
 
         # TODO: Move to validator or helper @jmcarp
-        # TODO: Test me @jmcarp
         admins = [
             user for user in users
             if self.has_permission(user, 'admin')
-                and user.is_registered
+            and user.is_registered
         ]
         if users is None or not admins:
             raise ValueError(
                 'Must have at least one registered admin contributor'
             )
 
-        # TODO: Test me @jmcarp
         if to_retain != users:
             self.add_log(
                 action=NodeLog.CONTRIB_REORDERED,
@@ -2276,9 +2433,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         """
         if permissions == 'public' and not self.is_public:
             self.is_public = True
-            # If the node doesn't have a piwik site, make one.
-            if settings.PIWIK_HOST:
-                piwik.update_node(self)
         elif permissions == 'private' and self.is_public:
             self.is_public = False
         else:
@@ -2294,8 +2448,8 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.add_log(
             action=action,
             params={
-                'project':self.parent_id,
-                'node':self._primary_key,
+                'project': self.parent_id,
+                'node': self._primary_key,
             },
             auth=auth,
             save=False,
@@ -2304,85 +2458,163 @@ class Node(GuidStoredObject, AddonModelMixin):
         return True
 
     # TODO: Move to wiki add-on
-    def get_wiki_page(self, page, version=None):
+    def get_wiki_page(self, name=None, version=None, id=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
+        if id:
+            for page_versions in self.wiki_pages_versions.values():
+                if id in page_versions:
+                    return NodeWikiPage.load(id)
+        elif name:
+            name = name.strip()
+            key = to_mongo_key(name)
+            if version:
+                try:
+                    version = int(version)
+                except (ValueError, TypeError):
+                    return None
 
-        page = str(page).lower()
-        if version:
-            try:
-                version = int(version)
-            except:
-                return None
-
-            if not page in self.wiki_pages_versions:
-                return None
-
-            if version > len(self.wiki_pages_versions[page]):
-                return None
-            else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version-1])
-
-        if page in self.wiki_pages_current:
-            pw = NodeWikiPage.load(self.wiki_pages_current[page])
-        else:
-            pw = None
-
-        return pw
+                if key not in self.wiki_pages_versions:
+                    return None
+                if version > len(self.wiki_pages_versions[key]):
+                    return None
+                else:
+                    return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
+            return NodeWikiPage.load(self.wiki_pages_current.get(key))
+        return None
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, auth):
+    def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
 
-        temp_page = page
+        name = (name or '').strip()
+        key = to_mongo_key(name)
 
-        page = urllib.unquote_plus(page)
-        page = to_mongo(page)
-        page = str(page).lower()
-
-        if page not in self.wiki_pages_current:
-            version = 1
+        if key not in self.wiki_pages_current:
+            if key in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[key]) + 1
+            else:
+                version = 1
         else:
-            current = NodeWikiPage.load(self.wiki_pages_current[page])
+            current = NodeWikiPage.load(self.wiki_pages_current[key])
             current.is_current = False
             version = current.version + 1
             current.save()
 
-        v = NodeWikiPage(
-            page_name=temp_page,
+        new_wiki = NodeWikiPage(
+            page_name=name,
             version=version,
             user=auth.user,
             is_current=True,
             node=self,
             content=content
         )
-        v.save()
+        new_wiki.save()
 
-        if page not in self.wiki_pages_versions:
-            self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(v._primary_key)
-        self.wiki_pages_current[page] = v._primary_key
+        # check if the wiki page already exists in versions (existed once and is now deleted)
+        if key not in self.wiki_pages_versions:
+            self.wiki_pages_versions[key] = []
+        self.wiki_pages_versions[key].append(new_wiki._primary_key)
+        self.wiki_pages_current[key] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': v.page_name,
-                'version': v.version,
+                'page': new_wiki.page_name,
+                'version': new_wiki.version,
             },
             auth=auth,
-            log_date=v.date
+            log_date=new_wiki.date,
+            save=False,
         )
+        self.save()
+
+    # TODO: Move to wiki add-on
+    def rename_node_wiki(self, name, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information including user, API key.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.exceptions import (
+            PageCannotRenameError,
+            PageConflictError,
+            PageNotFoundError,
+        )
+
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        new_name = (new_name or '').strip()
+        new_key = to_mongo_key(new_name)
+        page = self.get_wiki_page(name)
+
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page')
+        if not page:
+            raise PageNotFoundError('Wiki page not found')
+        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        old_name = page.page_name
+        page.rename(new_name)
+
+        # transfer the old page versions/current keys to the new name.
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
+            del self.wiki_pages_versions[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
+            del self.wiki_pages_current[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+                'old_page': old_name,
+                'version': page.version,
+            },
+            auth=auth,
+            save=False,
+        )
+        self.save()
+
+    def delete_node_wiki(self, name, auth):
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(key)
+
+        del self.wiki_pages_current[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_DELETED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+            },
+            auth=auth,
+            save=False,
+        )
+        self.save()
 
     def get_stats(self, detailed=False):
         if detailed:
@@ -2408,6 +2640,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             'title': html_parser.unescape(self.title),
             'api_url': self.api_url,
             'is_public': self.is_public,
+            'is_registration': self.is_registration
         }
 
 
@@ -2462,6 +2695,9 @@ class WatchConfig(StoredObject):
     digest = fields.BooleanField(default=False)
     immediate = fields.BooleanField(default=False)
 
+    def __repr__(self):
+        return '<WatchConfig(node="{self.node}")>'.format(self=self)
+
 
 class MailRecord(StoredObject):
 
@@ -2506,8 +2742,7 @@ class PrivateLink(StoredObject):
             "date_created": self.date_created.strftime('%m/%d/%Y %I:%M %p UTC'),
             "key": self.key,
             "name": self.name,
-            "creator": self.creator.fullname,
+            "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'imgUrl': self.node_icon(x)} for x in self.nodes],
             "anonymous": self.anonymous
         }
-
