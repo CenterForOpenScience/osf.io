@@ -19,13 +19,11 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, start=0):
-    result, tags, counts = search_engine.search(query, start)
-    return result, tags, counts
-
+def search(query, index='_all', _type=None):
+    return search_engine.search(query, index=index, search_type=_type)
 
 @requires_search
-def update_node(node):
+def update_node(node, index='website'):
     search_engine.update_node(node)
 
 
