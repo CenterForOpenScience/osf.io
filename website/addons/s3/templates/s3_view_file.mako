@@ -10,11 +10,9 @@
 
         % if user['can_edit'] and 'write' in user['permissions']:
             <p>
-            % if versions:
-                <a href="${versions[0]['download']}" class ="btn btn-success btn-md" download="${file_name}">
+                <a href="${download_url}" class ="btn btn-success btn-md" download="${file_name}">
                                  Download <i class="icon-download-alt"></i>
                 </a>
-            % endif
                 <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md">
                     Delete <i class="icon-trash"></i>
                 </a>
