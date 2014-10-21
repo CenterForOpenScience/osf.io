@@ -98,7 +98,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     return elastic_to_resourcelist(name, ret['results'], q)
 
 
-# GET
+
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_changelist(node_addon, **kwargs):
@@ -115,8 +115,8 @@ def query_app_changelist(node_addon, **kwargs):
 
     return elastic_to_changelist(name, ret['results'], q)
 
-# GET
-# @must_be_valid_project
+
+
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
 def query_app_capabilitylist(node_addon, **kwargs):
@@ -125,6 +125,7 @@ def query_app_capabilitylist(node_addon, **kwargs):
     changelist_url = node.api_url_for('query_app_changelist', _xml=True, _absolute=True)
 
     return generate_capabilitylist(resourcelist_url, changelist_url)
+
 
 @must_have_permission('admin')
 @must_have_addon('app', 'node')
@@ -202,7 +203,7 @@ def get_project_metadata(node_addon, guid, **kwargs):
     rets = search(query, _type=node_addon.namespace, index='metadata')
     ret = {}
 
-    for blob in sorted(rets['results'], key=lambda x: x['_source'].get(sort_on)):
+    for blob in reversed(sorted(rets['results'], key=lambda x: x['_source'].get(sort_on))):
         ret.update(blob['_source'])
 
     return ret
