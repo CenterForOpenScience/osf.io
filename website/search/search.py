@@ -22,6 +22,10 @@ def requires_search(func):
 def search(query, index='_all', _type=None):
     return search_engine.search(query, index=index, search_type=_type)
 
+@requires_search
+def aggregation_search(query, index='_all', _type=None):
+    return search_engine.aggregation_search(query, index=index, search_type=_type)
+
 
 @requires_search
 def update_node(node, index='website'):

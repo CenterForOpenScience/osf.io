@@ -50,6 +50,12 @@ api_routes = {
             json_renderer
         ),
         Rule(
+            '/app/<pid>/agg/',
+            'post',
+            views.crud.query_app_aggregation,
+            json_renderer
+        ),
+        Rule(
             '/app/<pid>/',
             'get',
             views.crud.query_app,

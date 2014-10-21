@@ -12,6 +12,8 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
+from website.search.search import aggregation_search
+
 from website.search.exceptions import SearchException
 from website.project import new_node, Node
 from website.project.decorators import must_have_addon
@@ -58,6 +60,27 @@ def query_app_json(node_addon, **kwargs):
         # Note: This will break scrapi
         # Fix before pushing changes
         return search(request_data, _type=node_addon.namespace, index='metadata')
+    except SearchException:
+        raise HTTPError(http.BAD_REQUEST)
+
+# POST
+@must_be_contributor_or_public
+@must_have_addon('app', 'node')
+def query_app_aggregation(node_addon, **kwargs):
+    if not request.json:
+        raise HTTPError(http.BAD_REQUEST)
+
+    try:
+        del request.json['format']
+    except KeyError:
+        pass
+
+    request_data = request.json
+
+    try:
+        # Note: This will break scrapi
+        # Fix before pushing changes
+        return aggregation_search(request_data, _type=node_addon.namespace, index='metadata')
     except SearchException:
         raise HTTPError(http.BAD_REQUEST)
 
