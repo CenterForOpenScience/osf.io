@@ -362,3 +362,78 @@ class TestCustomRouteViews(OsfTestCase):
         assert_true(mock_elastic.called)
         assert_equals(ret.status_code, 200)
         mock_query.assert_called_once_with('back', None, None)
+
+
+class TestAppQueryViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestAppQueryViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.project = ProjectFactory(creator=self.user)
+
+        self.project.add_addon('app', self.auth)
+        self.app_addon = self.project.get_addon('app')
+
+        # Log user in
+        self.app.authenticate(*self.user.auth)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    @mock.patch('website.addons.app.views.crud.args_to_query')
+    def test_query_get(self, mock_query, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app')
+        ret = self.app.get(url)
+
+        assert_true(mock_search.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('*', None, None)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    @mock.patch('website.addons.app.views.crud.args_to_query')
+    def test_query_get_start_finish(self, mock_query, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app')
+        ret = self.app.get(url + '?size=10&from=50')
+
+        assert_true(mock_search.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('*', '10', '50')
+
+    @mock.patch('website.addons.app.views.crud.search')
+    @mock.patch('website.addons.app.views.crud.args_to_query')
+    def test_query_get_query(self, mock_query, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app')
+        ret = self.app.get(url + '?q=horses')
+
+        assert_true(mock_search.called)
+        assert_equals(ret.status_code, 200)
+        mock_query.assert_called_once_with('horses', None, None)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_query_post(self, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app_json')
+        ret = self.app.get(url)
+
+        assert_true(mock_search.called)
+        assert_equals(ret.status_code, 200)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_query_post_no_json(self, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app_json')
+        ret = self.app.post(url, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+        assert_false(mock_search.called)
+
+    @mock.patch('website.addons.app.views.crud.search')
+    def test_query_post_empty_json(self, mock_search):
+        mock_search.return_value = {}
+        url = self.project.api_url_for('query_app_json')
+        ret = self.app.post_json(url, {}, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+        assert_false(mock_search.called)
