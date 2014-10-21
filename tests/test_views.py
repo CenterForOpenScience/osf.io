@@ -3006,7 +3006,7 @@ class TestWikiWidgetViews(OsfTestCase):
         # project with no home wiki content
         self.project2 = ProjectFactory(creator=self.project.creator)
         self.project2.add_contributor(self.read_only_contrib, permissions='read')
-        self.project2.update_node_wiki(page='home', content='', auth=Auth(self.project.creator))
+        self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
 
     def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
         assert_true(_should_show_wiki_widget(self.project, self.project.creator))
@@ -3118,6 +3118,14 @@ class TestProjectCreation(OsfTestCase):
     def test_title_must_be_less_than_200(self):
         payload = {
             'title': ''.join([str(x) for x in xrange(0, 250)])
+        }
+        res = self.app.post_json(
+            self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_fails_to_create_project_with_whitespace_title(self):
+        payload = {
+            'title': '   '
         }
         res = self.app.post_json(
             self.url, payload, auth=self.creator.auth, expect_errors=True)

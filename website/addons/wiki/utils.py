@@ -1,6 +1,7 @@
 import uuid
 from pymongo import MongoClient
 
+from framework.mongo.utils import to_mongo_key
 from website import settings
 
 
@@ -26,11 +27,12 @@ def share_db():
     return client.sharejs
 
 
-def generate_share_uuid(node, wid):
+def generate_share_uuid(node, wname):
     """Generate uuid for use in sharejs namespacing"""
 
     share_uuid = str(uuid.uuid1())
-    node.wiki_sharejs_uuids[wid] = share_uuid
+    wiki_key = to_mongo_key(wname)
+    node.wiki_sharejs_uuids[wiki_key] = share_uuid
     node.save()
 
     return share_uuid
