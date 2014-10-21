@@ -26,9 +26,14 @@ logger = logging.getLogger(__name__)
 
 def args_to_query(query, start=0, size=250):
     try:
-        size, start = int(size), int(start)
+        size = abs(int(size))
     except (ValueError, TypeError):
-        size, start = 250, 0
+        size = 250
+
+    try:
+        start = abs(int(start))
+    except (ValueError, TypeError):
+        start = 0
 
     if size > 1000:
         size = 1000
@@ -138,11 +143,3 @@ def generate_capabilitylist(changelist_url, resourcelist_url):
     cl.add(Resource(resourcelist_url))
 
     return cl.as_xml()
-
-# def update_pubsubhubbub(application, )
-
-
-
-
-
-
