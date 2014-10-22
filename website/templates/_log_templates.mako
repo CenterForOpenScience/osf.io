@@ -23,19 +23,6 @@ removed <span data-bind="text: nodeType"></span>
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
-<script type="text/html" id="wiki_updated">
-updated wiki page
-<a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
-to version <span data-bind="text: params.version"></span>
-of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
-<script type="text/html" id="wiki_deleted">
-deleted wiki page
-<a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
-of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
 <script type="text/html" id="contributor_added">
 added
 <span data-bind="html: displayContributors"></span>
