@@ -35,6 +35,7 @@ def main():
     ctx.push()
 
     search.delete_all()
+    search.create_index()
     migrate_nodes()
     migrate_users()
     migrate_metadata()
