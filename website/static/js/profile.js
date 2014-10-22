@@ -271,7 +271,7 @@
 
     BaseViewModel.prototype.setOriginal = function() {};
 
-    BaseViewModel.prototype.dirty = function() { return false };
+    BaseViewModel.prototype.dirty = function() { return false; };
 
     BaseViewModel.prototype.fetch = function() {
         var self = this;
@@ -291,10 +291,19 @@
     };
 
     BaseViewModel.prototype.cancel = function(data, event) {
+        var self = this;
         event && event.preventDefault();
 
         if (this.dirty()) {
-            this.restoreOriginal();
+            bootbox.confirm({
+                title: 'Discard changes?',
+                message: 'Are you sure you want to discard your unsaved changes?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        self.restoreOriginal();
+                    }
+                }
+            });
         }
         if ($.inArray('view', this.modes) !== -1) {
             this.mode('view');
@@ -309,7 +318,7 @@
             ).done(
                 this.handleSuccess.bind(this)
             ).done(
-                this.setOriginal
+                this.setOriginal.bind(this)
             ).fail(
                 this.handleError.bind(this)
             );

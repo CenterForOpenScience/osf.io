@@ -7,13 +7,10 @@ import math
 import logging
 import pyelasticsearch
 
-from requests.exceptions import ConnectionError
-
 from framework import sentry
 
 from website import settings
 from website.filters import gravatar
-from website.search import exceptions
 from website.models import User, Node
 
 
@@ -86,7 +83,7 @@ def search(query, index='website', search_type='_all', return_raw=False):
             count = 0
         counts[ALIASES.get(_type, _type)] = count
     # Figure out which count we should display as a total
-    counts['total'] = counts.get(ALIASES.get(search_type, 'total'))
+    counts['total'] = sum([counts[key] for key in counts.keys()])
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
@@ -365,3 +362,12 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             'pages': pages,
             'page': page,
         }
+
+
+@requires_search
+def update_metadata(metadata):
+    index = "metadata"
+    app_id = metadata.namespace
+    data = metadata.to_json()
+    data['category'] = 'metadata'
+    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)

@@ -7,7 +7,7 @@ from modularodm import fields
 
 from website.project import Node
 from website.addons.base import AddonNodeSettingsBase
-from website.search.search import update_metadata, get_mapping
+from website.search.search import update_metadata
 
 from framework.auth import User
 from framework.mongo import StoredObject, ObjectId
