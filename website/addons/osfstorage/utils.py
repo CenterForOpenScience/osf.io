@@ -150,7 +150,12 @@ def get_file_name(path):
 
 
 def make_signed_request(method, url, signer, payload):
-    """
+    """Make a signed request to the upload service.
+
+    :param str method: HTTP method
+    :param str url: URL to send to
+    :param Signer signer: Signed URL signer
+    :param dict payload: Data to send
     """
     signature, body = sign.build_hook_body(signer, payload)
     resp = requests.request(
@@ -162,6 +167,7 @@ def make_signed_request(method, url, signer, payload):
             'Content-Type': 'application/json',
             settings.SIGNATURE_HEADER_KEY: signature,
         },
+        **settings.SIGNED_REQUEST_KWARGS
     )
     return resp.json()
 

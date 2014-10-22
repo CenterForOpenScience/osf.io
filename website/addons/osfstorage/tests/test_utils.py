@@ -10,6 +10,8 @@ from tests.factories import ProjectFactory
 import datetime
 import urlparse
 
+from cloudstorm import sign
+
 from website.addons.osfstorage.tests import factories
 
 from website.addons.osfstorage import model
@@ -125,10 +127,36 @@ class TestHGridUtils(OsfTestCase):
             utils.get_item_kind('pizza')
 
 
-class GetDownloadUrl(OsfTestCase):
+@mock.patch('website.addons.osfstorage.utils.requests.request')
+def test_make_signed_request(mock_request):
+    expected = {'status': 'delicious'}
+    mock_request.return_value.json.return_value = expected
+    payload = {'peppers': True, 'sausage': True}
+    signature, body = sign.build_hook_body(utils.url_signer, payload)
+    resp = utils.make_signed_request(
+        'POST',
+        'http://frozen.pizza.com/',
+        utils.url_signer,
+        payload,
+    )
+    mock_request.assert_called_with(
+        'POST',
+        'http://frozen.pizza.com/',
+        data=body,
+        headers={
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            settings.SIGNATURE_HEADER_KEY: signature,
+        },
+        **settings.SIGNED_REQUEST_KWARGS
+    )
+    assert_equal(resp, expected)
+
+
+class TestGetDownloadUrl(OsfTestCase):
 
     def setUp(self):
-        super(GetDownloadUrl, self).setUp()
+        super(TestGetDownloadUrl, self).setUp()
         self.project = ProjectFactory()
         self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'frozen/pizza/reviews.gif'
