@@ -30,7 +30,7 @@
                             <i class="icon-hand-right"></i>
                         % endif
 
-                        ${child['title']}
+                        ${child['title'] | n}
                             % if child['category']:
                                 (${child['category']})
                             % endif

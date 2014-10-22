@@ -52,7 +52,7 @@
                 }
             },
             params: function(params) {
-               return JSON.stringify(params);
+                return JSON.stringify(params);
             },
             success: function(response, value) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
