@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
+
 import re
 import copy
 import math
 import logging
+from requests.exceptions import ConnectionError
+
 import pyelasticsearch
 
 from framework import sentry
@@ -12,7 +15,7 @@ from framework import sentry
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
+from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +93,7 @@ def search(query, index='website', search_type='_all'):
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
-  return {
+    return {
         'results': format_results(results),
         'counts': counts,
         'typeAliases': {
@@ -125,7 +128,7 @@ def format_result(result, parent_id=None):
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': (result['registeredproject'] if parent_info is None
+        'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category')
@@ -245,6 +248,26 @@ def delete_all():
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
         logger.error(e)
         logger.error("The index 'website' was not deleted from elasticsearch")
+
+
+@requires_search
+def create_index():
+    '''Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, and registrations'''
+    mapping = {
+        'properties': {
+            'tags': {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        }
+    }
+    try:
+        elastic.create_index('website')
+        for type_ in ['project','component','registration']:
+            elastic.put_mapping('website', type_, mapping)
+    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
+        pass
 
 
 @requires_search
