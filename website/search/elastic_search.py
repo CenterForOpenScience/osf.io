@@ -59,7 +59,7 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type='_all'):
+def search(query, index='website', search_type='_all', return_raw=False):
 
     # Get document counts by type
     counts = {}
@@ -87,6 +87,8 @@ def search(query, index='website', search_type='_all'):
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
+    if return_raw:
+        return raw_results
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
