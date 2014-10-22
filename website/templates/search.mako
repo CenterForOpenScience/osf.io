@@ -104,28 +104,44 @@
         <!-- ko if social -->
         <ul class="list-inline">
             <li data-bind="visible: social.personal">
-                <a data-bind="attr.href: social.personal"><i class="fa fa-globe"></i></a>
+                <a data-bind="attr.href: social.personal">
+                    <i class="fa fa-globe" data-toggle="tooltip" title="Personal Website"></i>
+                </a>
             </li>
             <li data-bind="visible: social.twitter">
-                <a data-bind="attr.href: social.twitter"><i class="fa fa-twitter"></i></a>
+                <a data-bind="attr.href: social.twitter">
+                    <i class="fa fa-twitter" data-toggle="tooltip" title="Twitter"></i>
+                </a>
             </li>
             <li data-bind="visible: social.github">
-                <a data-bind="attr.href: social.github"><i class="fa fa-github-alt"></i></a>
+                <a data-bind="attr.href: social.github">
+                    <i class="fa fa-github-alt" data-toggle="tooltip" title="Github"></i>
+                </a>
             </li>
             <li data-bind="visible: social.linkedIn">
-                <a data-bind="attr.href: social.linkedIn"><i class="fa fa-linkedin"></i></a>
+                <a data-bind="attr.href: social.linkedIn">
+                    <i class="fa fa-linkedin" data-toggle="tooltip" title="LinkedIn"></i>
+                </a>
             </li>
             <li data-bind="visible: social.scholar">
-                <a data-bind="attr.href: social.scholar"><img height=14 src="/static/img/googlescholar.png"></a>
+                <a data-bind="attr.href: social.scholar">
+                    <img height=14 src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                </a>
             </li>
             <li data-bind="visible: social.impactStory">
-                <a data-bind="attr.href: social.impactStory"><i class="fa fa-info-circle"></i></a>
+                <a data-bind="attr.href: social.impactStory">
+                    <i class="fa fa-info-circle" data-toggle="tooltip" title="ImpactStory"></i>
+                </a>
             </li>
             <li data-bind="visible: social.orcid">
-                <a data-bind="attr.href: social.orcid"><i class="fa">iD</i></a>
+                <a data-bind="attr.href: social.orcid">
+                    <i class="fa" data-toggle="tooltip" title="ORCiD">iD</i>
+                </a>
             </li>
             <li data-bind="visible: social.researcherId">
-                <a data-bind="attr.href: social.researcherId"><i class="fa">R</i></a>
+                <a data-bind="attr.href: social.researcherId">
+                    <i class="fa" data-toggle="tooltip" title="ResearcherID">R</i>
+                </a>
             </li>
         </ul>
         <!-- /ko -->
