@@ -24,7 +24,7 @@ def search(query, index='_all', _type=None):
 
 @requires_search
 def aggregation_search(query, index='_all', _type=None):
-    return search_engine.aggregation_search(query, index=index, search_type=_type)
+    return search_engine.search(query, index=index, search_type=_type, return_raw=True)
 
 
 @requires_search

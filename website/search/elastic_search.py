@@ -60,7 +60,7 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type='_all'):
+def search(query, index='website', search_type='_all', return_raw=False):
 
     # Get document counts by type
     counts = {}
@@ -89,7 +89,8 @@ def search(query, index='website', search_type='_all'):
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
-
+    if return_raw:
+        return raw_results
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
@@ -104,41 +105,6 @@ def search(query, index='website', search_type='_all'):
             'users': 'user',
         }
     }
-
-@requires_search
-def aggregation_search(query, index='website', search_type='_all'):
-    '''
-    A special function to show aggregations without special formatting 
-    '''
-    # Get document counts by type
-    counts = {}
-    count_query = copy.deepcopy(query)
-    try:
-        import re
-        count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
-    except Exception:
-        pass
-
-    if count_query.get('from') is not None: del count_query['from']
-    if count_query.get('size')is not None: del count_query['size']
-    if count_query.get('sort'): del count_query['sort']
-    for _type in TYPES:
-        try:
-            if len(_type.split('/')) > 1:
-                count_index, count_type = _type.split('/')
-            else:
-                count_index, count_type = index, _type
-            count = elastic.count(count_query, index=count_index, doc_type=count_type)['count']
-        except Exception:
-            count = 0
-        counts[ALIASES.get(_type, _type)] = count
-    # Figure out which count we should display as a total
-    counts['total'] = counts.get(ALIASES.get(search_type, 'total'))
-
-    # Run the real query and get the results
-    raw_results = elastic.search(query, index=index, doc_type=search_type)
-
-    return raw_results
 
 
 def format_results(results):

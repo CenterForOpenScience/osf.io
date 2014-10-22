@@ -80,6 +80,7 @@ def query_app_aggregation(node_addon, **kwargs):
     try:
         # Note: This will break scrapi
         # Fix before pushing changes
+        print('GOT HERE!')
         return aggregation_search(request_data, _type=node_addon.namespace, index='metadata')
     except SearchException:
         raise HTTPError(http.BAD_REQUEST)
