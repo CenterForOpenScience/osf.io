@@ -213,6 +213,26 @@ def update_node(node, index='website'):
             elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 
+def generate_social_links(social):
+    social_links = {}
+    if 'github' in social and social['github']:
+        social_links['github'] = 'http://github.com/{}'.format(social['github'])
+    if 'impactStory' in social and social['impactStory']:
+        social_links['impactStory'] = 'https://impactstory.org/{}'.format(social['impactStory'])
+    if 'linkedIn' in social and social['linkedIn']:
+        social_links['linkedIn'] = 'https://www.linkedin.com/profile/view?id={}'.format(social['linkedIn'])
+    if 'orcid' in social and social['orcid']:
+        social_links['orcid'] = 'http://orcid.com/{}'.format(social['orcid']),
+    if 'personal' in social and social['personal']:
+        social_links['personal'] = social['personal']
+    if 'researcherId' in social and social['researcherId']:
+        social_links['researcherId'] = 'http://researcherid.com/rid/{}'.format(social['researcherId'])
+    if 'scholar' in social and social['scholar']:
+        social_links['scholar'] = 'http://scholar.google.com/citations?user={}'.format(social['scholar'])
+    if 'twitter' in social and social['twitter']:
+        social_links['twitter'] = 'http://twitter.com/{}'.format(social['twitter'])
+    return social_links
+
 @requires_search
 def update_user(user):
     if not user.is_active():
@@ -231,7 +251,8 @@ def update_user(user):
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
-         'degree': user.schools[0]['degree'] if user.schools else '',
+        'degree': user.schools[0]['degree'] if user.schools else '',
+        'social': generate_social_links(user.social),
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 

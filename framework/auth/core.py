@@ -185,6 +185,7 @@ class User(GuidStoredObject, AddonModelMixin):
         'merged_by',
         'jobs',
         'schools',
+        'social',
     }
 
     _id = fields.StringField(primary=True)

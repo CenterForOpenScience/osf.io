@@ -1,6 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Search</%def>
 <%def name="content()">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
         $('input[name=q]').remove();
     </script>
@@ -100,6 +101,34 @@
         <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
         <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
         <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
+        <!-- ko if social -->
+        <ul class="list-inline">
+            <li data-bind="visible: social.personal">
+                <a data-bind="attr.href: social.personal"><i class="fa fa-globe"></i></a>
+            </li>
+            <li data-bind="visible: social.twitter">
+                <a data-bind="attr.href: social.twitter"><i class="fa fa-twitter"></i></a>
+            </li>
+            <li data-bind="visible: social.github">
+                <a data-bind="attr.href: social.github"><i class="fa fa-github-alt"></i></a>
+            </li>
+            <li data-bind="visible: social.linkedIn">
+                <a data-bind="attr.href: social.linkedIn"><i class="fa fa-linkedin"></i></a>
+            </li>
+            <li data-bind="visible: social.scholar">
+                <a data-bind="attr.href: social.scholar"><img height=14 src="/static/img/googlescholar.png"></a>
+            </li>
+            <li data-bind="visible: social.impactStory">
+                <a data-bind="attr.href: social.impactStory"><i class="fa fa-info-circle"></i></a>
+            </li>
+            <li data-bind="visible: social.orcid">
+                <a data-bind="attr.href: social.orcid"><i class="fa">iD</i></a>
+            </li>
+            <li data-bind="visible: social.researcherId">
+                <a data-bind="attr.href: social.researcherId"><i class="fa">R</i></a>
+            </li>
+        </ul>
+        <!-- /ko -->
     </script>
     <script type="text/html" id="project">
         <h4><a data-bind="attr.href: url">{{title }}</a></h4>
