@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from __future__ import division
 
+from __future__ import division
 import re
 import copy
 import math
@@ -16,13 +16,13 @@ from website.filters import gravatar
 from website.search import exceptions
 from website.models import User, Node
 
+
 logger = logging.getLogger(__name__)
 
+
 # These are the doc_types that exist in the search database
-TYPES = ['_all', 'website/project', 'website/component', 'website/registration', 'website/user', 'metadata/{}'.format(settings.SHARE_APP_ID)]
+TYPES = ['website/project', 'website/component', 'website/registration', 'website/user']
 ALIASES = {
-    'metadata/{}'.format(settings.SHARE_APP_ID): 'SHARE',
-    '_all': 'total',
     'website/project': 'projects',
     'website/component': 'components',
     'website/registration': 'registrations',
@@ -31,17 +31,17 @@ ALIASES = {
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-        settings.ELASTIC_URI,
-        timeout=settings.ELASTIC_TIMEOUT
-    )
+            settings.ELASTIC_URI,
+            timeout=settings.ELASTIC_TIMEOUT
+            )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
-except pyelasticsearch.exceptions.ConnectionError as e:
+except ConnectionError as e:
     sentry.log_exception()
     sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
-                        "was a problem starting the elasticsearch interface. Is "
-                        "elasticsearch running?")
+            "was a problem starting the elasticsearch interface. Is "
+            "elasticsearch running?")
     elastic = None
 
 
@@ -50,10 +50,12 @@ def requires_search(func):
         if elastic is not None:
             try:
                 return func(*args, **kwargs)
+            except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+                raise exceptions.IndexNotFoundError(e.error)
             except pyelasticsearch.exceptions.ElasticHttpError as e:
+                if 'ParseException' in e.error:
+                    raise exceptions.MalformedQueryError(e.error)
                 raise exceptions.SearchException(e.error)
-            except ConnectionError:
-                raise exceptions.SearchException('Can not connect to ElasticSearch')
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
@@ -66,7 +68,6 @@ def search(query, index='website', search_type='_all'):
     counts = {}
     count_query = copy.deepcopy(query)
     try:
-        import re
         count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
     except Exception:
         pass
@@ -100,7 +101,6 @@ def search(query, index='website', search_type='_all'):
             'components': 'component',
             'projects': 'project',
             'registrations': 'registration',
-            'SHARE': 'metadata',
             'users': 'user',
         }
     }
@@ -113,13 +113,10 @@ def format_results(results):
             result['url'] = '/profile/' + result['id']
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
-        elif result.get('category') == 'metadata':
-            result['contributors'] = [' '.join([x['prefix'], x['given'], x['middle'], x['family'], x['suffix']]).strip() for x in result['contributors']]
         ret.append(result)
     return ret
 
 
-# for formatting projects, components, and registrations
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
     formatted_result = {
@@ -169,9 +166,6 @@ def update_node(node, index='website'):
         elastic_document_id = node._id
         parent_id = None
         category = 'registration' if node.is_registration else category
-    elif category == 'report':
-        elastic_document_id = node._id
-        parent_id = node.parent_id
     else:
         try:
             elastic_document_id = node._id
@@ -180,7 +174,6 @@ def update_node(node, index='website'):
         except IndexError:
             # Skip orphaned components
             return
-
     if node.is_deleted or not node.is_public:
         delete_doc(elastic_document_id, node)
     else:
@@ -189,18 +182,18 @@ def update_node(node, index='website'):
             'contributors': [
                 x.fullname for x in node.visible_contributors
                 if x is not None
-                and (x.is_active() or category == 'report')
+                and x.is_active()
             ],
             'contributors_url': [
                 x.profile_url for x in node.visible_contributors
                 if x is not None
                 and x.is_active()
             ],
-            'description': node.description,
             'title': node.title,
             'category': category,
             'public': node.is_public,
             'tags': [tag._id for tag in node.tags if tag],
+            'description': node.description,
             'url': node.url,
             'registeredproject': node.is_registration,
             'wikis': {},
@@ -222,11 +215,13 @@ def update_node(node, index='website'):
 
 @requires_search
 def update_user(user):
-    if not user.is_active() or user.is_system_user:
+    if not user.is_active():
         try:
             elastic.delete('website', 'user', user._id, refresh=True)
+            logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
             return
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            logger.error(e)
             return
 
     user_doc = {
@@ -244,19 +239,11 @@ def update_user(user):
 
 @requires_search
 def delete_all():
-    indices = [
-        'website',
-        'metadata',
-        'application',
-        'application_created'
-    ]
-
-    for index in indices:
-        try:
-            elastic.delete_index(index)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-            logger.warn(e)
-            logger.warn('The index "{}" was not deleted from elasticsearch'.format(index))
+    try:
+        elastic.delete_index('website')
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+        logger.error(e)
+        logger.error("The index 'website' was not deleted from elasticsearch")
 
 
 @requires_search
@@ -266,7 +253,6 @@ def delete_doc(elastic_document_id, node, index='website'):
         elastic.delete(index, category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
         logger.warn("Document with id {} not found in database".format(elastic_document_id))
-
 
 
 @requires_search
@@ -371,108 +357,10 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
 
             })
 
-    return {'users': users}
-
-
-# ## Metadata stuff ## #
-
-@requires_search
-def update_metadata(metadata):
-    index = "metadata"
-    app_id = metadata.namespace
-    data = metadata.to_json()
-    data['category'] = 'metadata'
-    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
-
-
-@requires_search
-def search_metadata(query, _type):
-    return elastic.search(query, index='metadata', doc_type=_type)
-
-
-@requires_search
-def get_mapping(index, _type):
-    try:
-        mapping = elastic.get_mapping(index, _type)[index]['mappings'][_type]['properties']
-    except KeyError:
-        return None  # For now
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        return None  # No mapping
-
-    return _strings_to_types(mapping)
-
-
-def _strings_to_types(mapping):
-    type_map = {
-        u'boolean': bool,
-        u'object': dict,
-        u'long': int,
-        u'int': int,
-        u'float': float,
-        u'double': float,
-        u'null': type(None),
-        u'string': str,
-    }
-
-    for key, val in mapping.items():
-        if val.get('type') and isinstance(val['type'], basestring):
-            mapping[key] = type_map.get(val['type'])
-        else:
-            mapping[key] = _strings_to_types(val)
-
-    return mapping
-
-
-@requires_search
-def get_recent_documents(raw_query='', start=0, size=10):
-
-    query = _recent_document_query(raw_query, start, size)
-    raw_results = elastic.search(query, index='website', doc_type='project')
-    results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    count = raw_results['hits']['total']
-
-    return {'results': results, 'count': count}
-
-
-def _recent_document_query(raw_query, start=0, size=10):
-    inner_query = {}
-    if not raw_query or ':' not in raw_query:
-        inner_query = {'match_all': {}} if not raw_query else {'match': {'_all': raw_query}}
-    else:
-        items = raw_query.split(';')
-        filters = []
-        for item in items:
-            item = item.split(':')
-            if len(item) == 1:
-                item = ['_all', item[0]]
-
-            filters.append({
-                "query": {
-                    'match': {
-                        item[0]: {
-                            'query': item[1],
-                            'operator': 'and',
-                            'type': 'phrase',
-                        }
-                    }
-                }
-            })
-
-        inner_query = {
-            'filtered': {
-                'filter': {
-                    'and': filters
-                },
-            },
+    return \
+        {
+            'users': users,
+            'total': results[u'hits'][u'total'],
+            'pages': pages,
+            'page': page,
         }
-
-    return {
-        'sort': [{
-            'iso_timestamp': {
-                'order': 'desc'
-            }
-        }],
-        'query': inner_query,
-        'from': start,
-        'size': size
-    }

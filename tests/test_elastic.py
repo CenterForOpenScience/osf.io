@@ -10,10 +10,8 @@ from tests.factories import (
 
 from framework.auth.core import Auth
 
-#Uncomment to force elasticsearch to load for testing
-# if settings.SEARCH_ENGINE is not None:
-#    settings.SEARCH_ENGINE = 'elastic'
 import website.search.search as search
+from website.search.util import build_query
 
 
 @requires_search
@@ -25,12 +23,12 @@ class SearchTestCase(OsfTestCase):
 
 
 def query(term):
-    results, _, _ = search.search(term)
-    return results
+    results = search.search(build_query(term))
+    return results['results']
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name)
+    term = 'category:user AND "{}"'.format(name)
     return query(term)
 
 
