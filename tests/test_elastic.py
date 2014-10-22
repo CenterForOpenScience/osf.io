@@ -176,15 +176,15 @@ class TestPublicNodes(SearchTestCase):
         in search.
         """
         self.project.set_privacy('private')
-        docs = query('project:' + self.title)
+        docs = query('category:project AND ' + self.title)
         assert_equal(len(docs), 0)
 
         self.component.set_privacy('private')
-        docs = query('component:' + self.title)
+        docs = query('category:component AND ' + self.title)
         assert_equal(len(docs), 0)
 
         self.registration.set_privacy('private')
-        docs = query('registration:' + self.title)
+        docs = query('category:registration AND ' + self.title)
         assert_equal(len(docs), 0)
 
     def test_make_parent_private(self):
@@ -202,11 +202,11 @@ class TestPublicNodes(SearchTestCase):
 
         """
         self.component.remove_node(self.consolidate_auth)
-        docs = query('component:' + self.title)
+        docs = query('category:component AND ' + self.title)
         assert_equal(len(docs), 0)
 
         self.project.remove_node(self.consolidate_auth)
-        docs = query('project:' + self.title)
+        docs = query('category:project AND ' + self.title)
         assert_equal(len(docs), 0)
 
     def test_change_title(self):
@@ -217,10 +217,10 @@ class TestPublicNodes(SearchTestCase):
         self.project.set_title(
             'Blue Ordinary', self.consolidate_auth, save=True)
 
-        docs = query('project:' + title_original)
+        docs = query('category:project AND ' + title_original)
         assert_equal(len(docs), 0)
 
-        docs = query('project:' + self.project.title)
+        docs = query('category:project AND ' + self.project.title)
         assert_equal(len(docs), 1)
 
     def test_add_tags(self):
@@ -309,10 +309,10 @@ class TestPublicNodes(SearchTestCase):
         user2 = UserFactory(fullname='Brian May')
         self.project.add_contributor(user2)
         self.project.set_visible(user2, False, save=True)
-        docs = query('project:"{}"'.format(user2.fullname))
+        docs = query('category:project AND "{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
         self.project.set_visible(user2, True, save=True)
-        docs = query('project:"{}"'.format(user2.fullname))
+        docs = query('category:project AND "{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
     def test_wrong_order_search(self):
