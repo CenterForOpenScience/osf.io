@@ -23,15 +23,9 @@ def search(query, index='_all', _type=None, return_raw=False):
     return search_engine.search(query, index=index, search_type=_type, return_raw=return_raw)
 
 
-
 @requires_search
 def update_node(node, index='website'):
-    search_engine.update_node(node, index)
-
-
-@requires_search
-def update_metadata(metadata):
-    search_engine.update_metadata(metadata)
+    search_engine.update_node(node)
 
 
 @requires_search
@@ -49,13 +43,3 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     result = search_engine.search_contributor(query=query, page=page, size=size,
                                               exclude=exclude, current_user=current_user)
     return result
-
-
-@requires_search
-def get_mapping(index, _type):
-    search_engine.get_mapping(index, _type)
-
-
-@requires_search
-def get_recent_documents(query='', start=0, size=10):
-    return search_engine.get_recent_documents(query, start, size)

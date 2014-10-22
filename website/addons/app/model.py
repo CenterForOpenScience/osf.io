@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Persistence layer for the app addon.
 """
+import copy
+
 from modularodm import fields
 
 from website.project import Node
@@ -87,7 +89,7 @@ class Metadata(StoredObject):
         super(Metadata, self).save()
 
     def to_json(self):
-        ret = self.data
+        ret = copy.deepcopy(self.data)
         ret['_id'] = self._id
         return ret
 

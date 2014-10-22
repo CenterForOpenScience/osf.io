@@ -69,6 +69,7 @@ def project_new_post(auth, **kwargs):
     title = strip_html(request.json.get('title'))
     template = request.json.get('template')
     description = strip_html(request.json.get('description'))
+    title = title.strip()
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)

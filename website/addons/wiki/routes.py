@@ -37,7 +37,13 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
 
-        # View | GET
+        # View (Id) | GET
+        Rule([
+            '/project/<pid>/wiki/id/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/id/<wid>/',
+        ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+
+        # View (Name) | GET
         Rule([
             '/project/<pid>/wiki/<path:wname>/',
             '/project/<pid>/node/<nid>/wiki/<path:wname>/',
@@ -62,13 +68,6 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/<path:wname>/compare/<int:wver>/',
         ], 'get', views.project_wiki_compare, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'compare.mako'))),
 
-        # Version : GET
-        # <wver> refers to a wiki page's version number
-        Rule([
-            '/project/<pid>/wiki/<path:wname>/version/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/version/<int:wver>/',
-        ], 'get', views.project_wiki_version, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'compare.mako'))),
-
     ]
 
 }
@@ -83,7 +82,7 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, json_renderer),
 
-        # View : GET
+        # View (Name) : GET
         Rule([
             '/project/<pid>/wiki/<path:wname>/',
             '/project/<pid>/node/<nid>/wiki/<path:wname>/',
@@ -119,13 +118,6 @@ api_routes = {
             '/project/<pid>/wiki/<path:wname>/compare/<int:wver>/',
             '/project/<pid>/node/<nid>/wiki/<path:wname>/compare/<int:wver>/',
         ], 'get', views.project_wiki_compare, json_renderer),
-
-        # Version : GET
-        # <wver> refers to a wiki page's version number
-        Rule([
-            '/project/<pid>/wiki/<path:wname>/version/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/version/<int:wver>/',
-        ], 'get', views.project_wiki_version, json_renderer),
 
         # Delete : DELETE
         Rule([

@@ -15,12 +15,14 @@
         return match && decodeURIComponent(match[1].replace(/\+/g, " "));
     }
 
-    var Category = function(categoryName, categroryCount, alias){
+    var Category = function(categoryName, categoryCount, alias){
         var self = this;
         self.name = ko.observable(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
-        self.count = ko.observable(categroryCount);
+
+        self.count = ko.observable(categoryCount);
         self.rawName = ko.observable(categoryName);
         self.alias = ko.observable(alias);
+
         self.getAlias = ko.computed(function() {
             if (self.name() === 'Total')
                 return '';
@@ -46,7 +48,20 @@
         self.endDate = ko.observable(Date('1970-01-01'));
         self.categories = ko.observableArray([]);
 
+        self.totalCount = ko.computed(function() {
+            var theCount = 0;
+            $.each(self.categories(), function(index, category) {
+                if(category.name() !== 'Total'){
+                    theCount += category.count();
+                }
+            });
+            return theCount;
+        });
+
         self.totalPages = ko.computed(function() {
+            if(self.totalResults() === 0){
+                self.totalResults(self.totalCount());
+            }
             var pageCount = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
             pageCount = Math.ceil(self.totalResults() / resultsCount);
@@ -100,11 +115,16 @@
         });
 
         self.sortCategories = function(a, b) {
+            if(a.name() === 'Total') {
+                return -1;
+            } else if (b.name() === 'Total'){
+                return 1;
+            }
                 return a.count() >  b.count() ? -1 : 1;
         };
 
         self.claim = function(mid) {
-            claimURL = self.appURL + 'metadata/' + mid + '/promote/'
+            claimURL = self.appURL + 'metadata/' + mid + '/promote/';
             $.osf.postJSON(claimURL, {category: 'project'}).success(function(data) {
                 window.location = data.url;
             });
@@ -145,10 +165,7 @@
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
-                if (self.category().name !== undefined)
-                    self.totalResults(data.counts[self.category().rawName()]);
-                else
-                    self.totalResults(data.counts.total);
+
 
                 self.results.removeAll();
 
@@ -159,10 +176,27 @@
 
                 self.categories.removeAll();
                 var categories = data.counts;
-                for (var key in categories) {
-                    self.categories.push(new Category(key, categories[key], data.typeAliases[key]));
-                }
+                $.each(categories, function(key, value){
+                    if (value === null) {
+                        value = 0;
+                    }
+                    self.categories.push(new Category(key, value, data.typeAliases[key]));
+                });
                 self.categories(self.categories().sort(self.sortCategories));
+
+                 if (self.category().name !== undefined) {
+                    self.totalResults(data.counts[self.category().rawName()]);
+                }
+                else {
+                    if(self.totalCount()) {
+                        self.totalResults(self.totalCount());
+                    }
+                     else {
+                        self.totalResults(0);
+                    }
+                }
+
+                self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
             }).fail(function(){

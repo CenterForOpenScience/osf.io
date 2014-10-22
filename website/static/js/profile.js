@@ -207,10 +207,6 @@
         // Must be set after isValid is defined in inherited view models
         self.hasValidProperty = ko.observable(false);
 
-        self.dirty = ko.computed(function() {
-            return self.mode() === 'edit' && ko.toJSON(self.tracked) !== ko.toJSON(self.original());
-        });
-
         // Warn on URL change if dirty
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
@@ -273,6 +269,10 @@
         );
     };
 
+    BaseViewModel.prototype.setOriginal = function() {};
+
+    BaseViewModel.prototype.dirty = function() { return false };
+
     BaseViewModel.prototype.fetch = function() {
         var self = this;
         $.ajax({
@@ -292,10 +292,13 @@
 
     BaseViewModel.prototype.cancel = function(data, event) {
         event && event.preventDefault();
+
         if (this.dirty()) {
             this.restoreOriginal();
         }
-        this.mode('view');
+        if ($.inArray('view', this.modes) !== -1) {
+            this.mode('view');
+        }
     };
 
     BaseViewModel.prototype.submit = function() {
@@ -320,6 +323,7 @@
 
         var self = this;
         BaseViewModel.call(self, urls, modes);
+        TrackedMixin.call(self);
 
         self.full = $.osf.ko.sanitizedObservable().extend({
             required: true
@@ -329,7 +333,7 @@
         self.family = $.osf.ko.sanitizedObservable();
         self.suffix = $.osf.ko.sanitizedObservable();
 
-        self.tracked = [
+        self.trackedProperties = [
             self.full,
             self.given,
             self.middle,
@@ -417,7 +421,9 @@
 
     };
     NameViewModel.prototype = Object.create(BaseViewModel.prototype);
-    $.extend(NameViewModel.prototype, SerializeMixin.prototype);
+    $.extend(NameViewModel.prototype,
+             SerializeMixin.prototype,
+             TrackedMixin.prototype);
 
     /*
      * Custom observable for use with external services.

@@ -13,83 +13,32 @@ from framework.auth.core import get_current_user
 from framework.auth.decorators import must_be_logged_in
 
 import website.search.search as search
+from website.search.util import build_query
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 import httplib as http
-from website.settings import SHARE_APP_ID
 
 logger = logging.getLogger(__name__)
 
 
 def search_search():
-    if request.method == 'GET':
-        return {'shareID': SHARE_APP_ID}
-
     tick = time.time()
     ERROR_RETURN = {
         'results': [],
         'query': '',
     }
 
-    if request.json:
+    if request.method == 'POST' and request.json:
         results = search.search(request.json)
         results['time'] = round(time.time() - tick, 2)
-        return results
+    elif request.method == 'GET':
+        q = request.args.get('q', '*')
+        start = request.args.get('from', '0')
+        size = request.args.get('size', '10')
+        results = search.search(build_query(q, start, size))
 
-    raise Exception("Why are we here?")
+    return results
 
-    # search results are automatically paginated. on the pages that are
-    # not the first page, we pass the page number along with the url
-    start = request.args.get('pagination', 0)
-    try:
-        start = int(start)
-    except (TypeError, ValueError):
-        logger.error(u'Invalid pagination value: {0}'.format(start))
-        start = 0
-    query = request.args.get('q')
-    # if there is not a query, tell our users to enter a search
-    query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No search query', 'info')
-        return ERROR_RETURN
-
-    # if the search does not work,
-    # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
-    try:
-        results_search, tags, counts = search.search(query, start)
-    except HTTPError:
-        status.push_status_message('Malformed query. Please try again')
-        return ERROR_RETURN
-    except TypeError:
-        status.push_status_message('There was a problem querying the search database. Please try again later.')
-        return ERROR_RETURN
-
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else counts['total']
-    return {
-        'highlight': [],
-        'results': results_search,
-        'total': total,
-        'query': query,
-        'spellcheck': [],
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'tags': tags,
-        'searching_users': searching_users,
-        'counts': counts
-    }
-
-
-def share_search():
-
-    return {
-        'shareAppId': SHARE_APP_ID,
-    }
 
 def conditionally_add_query_item(query, item, condition):
     """ Helper for the search_projects_by_title function which will add a condition to a query
@@ -202,7 +151,7 @@ def process_project_search_results(results, **kwargs):
             'authors': authors_html,
         })
 
-    return {'results': out, 'count': len(out)}
+    return out
 
 
 def search_contributor():

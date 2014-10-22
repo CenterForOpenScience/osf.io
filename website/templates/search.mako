@@ -21,32 +21,33 @@
 
         <div class="row">
             <!-- ko if: categories().length > 1-->
-            <div class="col-md-3" data-bind="css: {hidden: categories().length < 1 }">
+            <div class="col-md-3 hidden" data-bind="css: {hidden: categories().length < 1 }">
                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                    <!-- ko if: $parent.alias().indexOf(alias()) != -1 -->
-                    <li class="active">
-                        <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
-                    </li>
-                    <!-- /ko -->
-                    <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
-                    <li>
-                        <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
-                    </li>
+                    <!-- ko if: count() > 0 -->
+                        <!-- ko if: $parent.alias().indexOf(alias()) !== -1 -->
+                            <li class="active">
+                                <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                            </li>
+                        <!-- /ko -->
+                        <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
+                            <li>
+                                <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                            </li>
+                        <!-- /ko -->
                     <!-- /ko -->
                 </ul>
             </div>
             <!-- /ko -->
 
             <div class="col-md-9">
-                <!-- ko if: searchStarted() && !totalResults() -->
-                <div class="results">No results found.</div>
+                <!-- ko if: searchStarted() && !totalCount() -->
+                <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                 <!-- /ko -->
 
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data }"></div>
                 </div>
-
-                <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() < 0 }">
+                <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() <= 1 }">
                     <span data-bind="visible: prevPageExists">
                         <a href="#" data-bind="click: pagePrev">Previous Page</a> -
                     </span>
@@ -151,9 +152,12 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    <script type='text/javascript'>
-        $script(['/static/js/search.js'], function(){
-        var search =  new Search('#searchControls', '/api/v1/search/', '/api/v1/app/${shareID}/');
-        });
-    </script>
+
+        <script type='text/javascript'>
+            $script(['/static/js/search.js'], function(){
+            var search =  new Search('#searchControls', '/api/v1/search/', '');
+            });
+        </script>
+
+
 </%def>
