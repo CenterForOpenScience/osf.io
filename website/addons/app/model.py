@@ -8,6 +8,7 @@ from modularodm import fields
 from website.project import Node
 from website.addons.base import AddonNodeSettingsBase
 from website.search.search import update_metadata
+from website.addons.app.settings import SYSTEM_USERS_UNCRACKABLE_PASSWORD
 
 from framework.auth import User
 from framework.mongo import StoredObject, ObjectId
@@ -108,12 +109,14 @@ class AppNodeSettings(AddonNodeSettingsBase):
         self.owner.save()
 
         # Use owner ID as email as it needs to be a unique ID
-        system_user = User.create_confirmed(self.owner._id, '12', self.owner.title)
+        system_user = User.create_confirmed(self.owner._id,
+                SYSTEM_USERS_UNCRACKABLE_PASSWORD, self.owner.title)
+
         system_user.is_system_user = True
 
         # Note: Password is a bcrypt hash
-        # Nothing has a hash of 12
-        system_user.password = '12'
+        # Nothing has a hash of ****
+        system_user.password = SYSTEM_USERS_UNCRACKABLE_PASSWORD
         system_user.save()
 
         self.system_user = system_user
