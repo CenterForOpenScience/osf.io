@@ -20,9 +20,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', _type=None):
+def search(query, index='website', _type=None, types=None):
     try:
-        return search_engine.search(query, index=index, search_type=_type)
+        return search_engine.search(query, index=index, search_type=_type, types=types)
     except exceptions.IndexNotFoundError:
         return {
             "results": [],

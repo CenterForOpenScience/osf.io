@@ -62,7 +62,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type='_all', return_raw=False):
+def search(query, index='website', search_type='_all', return_raw=False, types=None):
+    types = types or TYPES
 
     # Get document counts by type
     counts = {}
@@ -75,7 +76,8 @@ def search(query, index='website', search_type='_all', return_raw=False):
     if count_query.get('from') is not None: del count_query['from']
     if count_query.get('size')is not None: del count_query['size']
     if count_query.get('sort'): del count_query['sort']
-    for _type in TYPES:
+
+    for _type in types:
         try:
             if len(_type.split('/')) > 1:
                 count_index, count_type = _type.split('/')
