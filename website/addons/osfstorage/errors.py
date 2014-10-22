@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 class OsfStorageError(Exception):
     pass
@@ -26,4 +27,3 @@ class UndeleteError(OsfStorageError):
 
 class InvalidVersionError(OsfStorageError):
     pass
-

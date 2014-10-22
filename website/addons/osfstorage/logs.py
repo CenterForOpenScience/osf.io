@@ -49,4 +49,3 @@ class OsfStorageNodeLogger(object):
         )
         if save:
             self.node.save()
-

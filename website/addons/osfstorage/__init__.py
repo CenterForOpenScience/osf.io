@@ -1,4 +1,5 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+# encoding: utf-8
 
 from . import routes, views, model
 
@@ -37,4 +38,3 @@ INCLUDE_JS = {
 
 HAS_HGRID_FILES = True
 GET_HGRID_DATA = views.osf_storage_root
-
