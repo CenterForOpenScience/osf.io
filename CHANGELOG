@@ -2,12 +2,18 @@
 Changelog
 *********
 
-0.19.0 (unreleased)
+0.21.0 (unreleased)
+===================
+
+- OSF Files 2.0.
+- Improvements to search.
+
+0.20.0 (unreleased)
 ==================
 
-- Improvements to site search.
+- Onboarding interface on dashboard.
 
-0.18.22 (unreleased)
+0.19.0 (unreleased)
 ====================
 
 - Wiki names have mixed-case page names.
