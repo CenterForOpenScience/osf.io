@@ -16,7 +16,7 @@ from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project
+from website.project.views.node import _get_summary, _view_project, _serialize_node_search
 from website.profile import utils
 from website.views import serialize_log
 
@@ -95,6 +95,16 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_fork
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
+
+    def test_serialize_node_search_returns_only_visible_contributors(self):
+        node = NodeFactory()
+        non_visible_contributor = UserFactory()
+        node.add_contributor(non_visible_contributor, visible=False)
+        serialized_node = _serialize_node_search(node)
+
+        assert_equal(serialized_node['firstAuthor'], node.visible_contributors[0].family_name)
+        assert_equal(len(node.visible_contributors), 1)
+        assert_false(serialized_node['etal'])
 
 
 class TestViewProject(OsfTestCase):
