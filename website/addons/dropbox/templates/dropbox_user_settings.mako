@@ -16,7 +16,7 @@
                     <p class="text-success">
                     Add-on successfully authorized. To link this add-on to an OSF project, go to the
                     settings page of the project, enable Dropbox, and choose content to connect.
-                </p>
+                    </p>
             </span>
 
             <!-- Create Access Token Button -->

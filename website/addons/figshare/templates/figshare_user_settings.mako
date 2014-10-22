@@ -11,7 +11,6 @@
                     Add-on successfully authorized. To link this add-on to an OSF project, go to the
                     settings page of the project, enable FigShare, and choose content to connect.
                 </p>
-
             % else:
                 <a id="figshareAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token
