@@ -3,6 +3,8 @@ import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 
+from lxml import etree
+
 from website.addons.app import utils
 
 
@@ -48,5 +50,13 @@ class TestUtils(unittest.TestCase):
         assert_in('name', ret)
         assert_in('All', ret)
         assert_in('ccreeeeeeeeed', ret)
+
+    def test_rss_returns_valid_xml(self):
+        ret = utils.elastic_to_rss('name', [], '*', 'http://website.web')
+        parser = etree.XMLParser(dtd_validation=True)
+        import pdb; pdb.set_trace()
+
+
+
 
 # TODO Figure out a good way to test XML....
