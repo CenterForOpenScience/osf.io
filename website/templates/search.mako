@@ -96,6 +96,10 @@
     </script>
     <script type="text/html" id="user">
         <h4><a data-bind="attr.href: url"><span>{{ user }}</span></a></h4>
+        <span data-bind="visible: job_title, text: job_title"></span><!-- ko if: job_title && job --> at <!-- /ko -->
+        <span data-bind="visible: job, text: job"></span><!-- ko if: job_title || job --><br /><!-- /ko -->
+        <span data-bind="visible: degree, text: degree"></span><!-- ko if: degree && school --> from <!-- /ko -->
+        <span data-bind="visible: school, text: school"></span><!-- ko if: degree || school --><br /><!-- /ko -->
     </script>
     <script type="text/html" id="project">
         <h4><a data-bind="attr.href: url">{{title }}</a></h4>
