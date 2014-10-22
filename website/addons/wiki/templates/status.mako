@@ -25,7 +25,7 @@
             data-toggle="tooltip"
             title="Note: Home page cannot be renamed."
         % endif
-    >${wiki_name}</span>
+        >${wiki_name if wiki_name != 'home' else 'Home'}</span>
 </h3>
 
 <script type="text/javascript">
@@ -52,7 +52,7 @@
                 }
             },
             params: function(params) {
-               return JSON.stringify(params);
+                return JSON.stringify(params);
             },
             success: function(response, value) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
