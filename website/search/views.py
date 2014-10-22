@@ -35,43 +35,31 @@ def search_search():
     except (TypeError, ValueError):
         logger.error(u'Invalid pagination value: {0}'.format(start))
         start = 0
-    query = request.args.get('q')
-    # if there is not a query, tell our users to enter a search
+    query = request.args.get('q', '')
+    result_type = request.args.get('type', '')
+    tags = request.args.get('tags', '')
+    # if there is not a query, don't start the search
     query = bleach.clean(query, tags=[], strip=True)
-    if query == '':
-        status.push_status_message('No search query', 'info')
+    if not (query or tags):
         return ERROR_RETURN
-
+    full_query = {'query': query, 'type': result_type, 'tags': tags.strip(',')}
     # if the search does not work,
     # post an error message to the user, otherwise,
-    # the document, highlight,
-    # and spellcheck suggestions are returned to us
+    # the results are returned to us
     try:
-        results_search, tags, counts = search.search(query, start)
+        full_result = search.search(full_query, start)
     except HTTPError:
         status.push_status_message('Malformed query. Please try again')
         return ERROR_RETURN
     except TypeError:
         status.push_status_message('There was a problem querying the search database. Please try again later.')
         return ERROR_RETURN
-
-    # with our highlights and search result 'documents' we build the search
-    # results so that it is easier for us to display
-    # Whether or not the user is searching for users
-    searching_users = query.startswith("user:")
-    total = counts if not isinstance(counts, dict) else counts['total']
-    return {
-        'highlight': [],
-        'results': results_search,
-        'total': total,
-        'query': query,
-        'spellcheck': [],
-        'current_page': start,
-        'time': round(time.time() - tick, 2),
-        'tags': tags,
-        'searching_users': searching_users,
-        'counts': counts
-    }
+    # put the rest of the variables into the dict before returning
+    counts = full_result['counts']
+    full_result['total'] = counts if not isinstance(counts, dict) else counts['total']
+    full_result['current_page'] = start
+    full_result['time'] = round(time.time() - tick, 2)
+    return full_result
 
 
 def conditionally_add_query_item(query, item, condition):

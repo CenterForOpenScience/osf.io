@@ -19,9 +19,9 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, start=0):
-    result, tags, counts = search_engine.search(query, start)
-    return result, tags, counts
+def search(full_query, start=0):
+    full_result = search_engine.search(full_query, start)
+    return full_result
 
 
 @requires_search
@@ -37,6 +37,10 @@ def update_user(user):
 @requires_search
 def delete_all():
     search_engine.delete_all()
+
+@requires_search
+def create_index():
+    search_engine.create_index()
 
 
 @requires_search

@@ -24,14 +24,14 @@ class SearchTestCase(OsfTestCase):
         search.delete_all()
 
 
-def query(term):
-    results, _, _ = search.search(term)
-    return results
+def query(term, tags=''):
+    full_result = search.search({'query': term, 'type': '', 'tags': tags})
+    return full_result['results']
 
 
 def query_user(name):
-    term = 'user:"{}"'.format(name)
-    return query(term)
+    full_result = search.search({'query': name, 'type': 'user', 'tags': ''})
+    return full_result['results']
 
 
 @requires_search
@@ -39,6 +39,8 @@ class TestUserUpdate(SearchTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(fullname='David Bowie')
 
     def test_new_user(self):
@@ -85,12 +87,46 @@ class TestUserUpdate(SearchTestCase):
         assert_equal(len(query_user(user.fullname)), 1)
         assert_equal(len(query_user(merged_user.fullname)), 0)
 
+    def test_employment(self):
+        user = UserFactory(fullname='Helga Finn')
+        user.save()
+        institution = 'Finn\'s Fine Filers'
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 0)
+        user.jobs.append({
+            'institution': institution,
+            'title': 'The Big Finn',
+        })
+        user.save()
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 1)
+
+    def test_education(self):
+        user = UserFactory(fullname='Henry Johnson')
+        user.save()
+        institution = 'Henry\'s Amazing School!!!'
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 0)
+        user.schools.append({
+            'institution': institution,
+            'degree': 'failed all classes',
+        })
+        user.save()
+
+        docs = query('user:' + institution)
+        assert_equal(len(docs), 1)
+
 
 @requires_search
 class TestProject(SearchTestCase):
 
     def setUp(self):
         super(TestProject, self).setUp()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(fullname='John Deacon')
         self.project = ProjectFactory(title='Red Special', creator=self.user)
 
@@ -114,6 +150,8 @@ class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
         super(TestPublicNodes, self).setUp()
+        search.delete_all()
+        search.create_index()
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -151,6 +189,16 @@ class TestPublicNodes(SearchTestCase):
         docs = query('registration:' + self.title)
         assert_equal(len(docs), 0)
 
+    def test_make_parent_private(self):
+        """Make parent of component, public, then private, and verify that the
+        component still appears but doesn't link to the parent in search.
+        """
+        self.project.set_privacy('private')
+        docs = query('component:' + self.title)
+        assert_equal(len(docs), 1)
+        assert_equal(docs[0]['parent_title'], '-- private project --')
+        assert_false(docs[0]['parent_url'])
+
     def test_delete_project(self):
         """
 
@@ -182,12 +230,12 @@ class TestPublicNodes(SearchTestCase):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
         for tag in tags:
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 0)
             self.project.add_tag(tag, self.consolidate_auth, save=True)
 
         for tag in tags:
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 1)
 
     def test_remove_tag(self):
@@ -197,7 +245,7 @@ class TestPublicNodes(SearchTestCase):
         for tag in tags:
             self.project.add_tag(tag, self.consolidate_auth, save=True)
             self.project.remove_tag(tag, self.consolidate_auth, save=True)
-            docs = query(tag)
+            docs = query('', tags=tag)
             assert_equal(len(docs), 0)
 
     def test_update_wiki(self):
@@ -238,7 +286,7 @@ class TestPublicNodes(SearchTestCase):
         """
         user2 = UserFactory(fullname='Adam Lambert')
 
-        docs = query('"project:{}"'.format(user2.fullname))
+        docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 0)
 
         self.project.add_contributor(user2, save=True)
@@ -269,6 +317,29 @@ class TestPublicNodes(SearchTestCase):
         docs = query('project:"{}"'.format(user2.fullname))
         assert_equal(len(docs), 1)
 
+    def test_word_cloud(self):
+        tag1 = 'general tag'
+        tag2 = 'specific tag'
+        self.project.add_tag(tag1, self.consolidate_auth, save=True)
+        self.component.add_tag(tag1, self.consolidate_auth, save=True)
+        self.component.add_tag(tag2, self.consolidate_auth, save=True)
+
+        # can't use "query" function because I need the word cloud, not results
+        res = search.search({'query': self.title, 'type': '', 'tags': ''})
+        cloud = res['cloud']
+
+        assert_equal(len(cloud), 2)
+        assert_equal(cloud[0], (tag1, 2))
+        assert_equal(cloud[1], (tag2, 1))
+
+    def test_wrong_order_search(self):
+        title_parts = self.title.split(' ')
+        title_parts.reverse()
+        title_search = ' '.join(title_parts)
+
+        docs = query(title_search)
+        assert_equal(len(docs), 3)
+
 
 @requires_search
 class TestAddContributor(SearchTestCase):
@@ -278,6 +349,8 @@ class TestAddContributor(SearchTestCase):
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
+        search.delete_all()
+        search.create_index()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)

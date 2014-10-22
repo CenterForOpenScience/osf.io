@@ -44,72 +44,130 @@ def requires_search(func):
 
 
 @requires_search
-def search(raw_query, start=0):
-    orig_query = raw_query
-
-    query, filtered_query = _build_query(raw_query, start)
+def search(full_query, start=0):
+    """full_query is a dictionary that must include the keys
+    'query' 'type' and 'tags'"""
+    query, filtered_query, result_type, tags = _build_query(full_query, start)
 
     # Get document counts by type
     counts = {}
     count_query = copy.deepcopy(query)
     del count_query['from']
     del count_query['size']
-    for type in TYPES:
+    counts['all'] = 0
+    for type_ in TYPES:
         try:
-            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type
+            count_query['query']['function_score']['query']['filtered']['filter']['type']['value'] = type_
         except KeyError:
             pass
 
-        counts[type + 's'] = elastic.count(count_query, index='website', doc_type=type)['count']
+        counts[type_ + 's'] = elastic.count(count_query, index='website', doc_type=type_)['count']
+        counts['all'] += counts[type_ + 's']
 
     # Figure out which count we should display as a total
-    for type in TYPES:
-        if type + ':' in orig_query:
-            counts['total'] = counts[type + 's']
-    if not counts.get('total'):
-        counts['total'] = sum([x for x in counts.values()])
+    if result_type:
+        counts['total'] = counts[result_type + 's']
+    else:
+        counts['total'] = counts['all']
+
+    # Build word cloud
+    if not (result_type == 'user'):
+        cloud_query = copy.deepcopy(query)
+        cloud_query['from'] = 0
+        cloud_query['size'] = counts['total']
+        cloud_results = elastic.search(cloud_query, index='website')
+        cloud_results = [hit['_source'] for hit in cloud_results['hits']['hits']]
+        word_cloud = {}
+        for tag in get_cloud_tags(cloud_results,tags):
+            word_cloud[tag] = 1 if word_cloud.get(tag) is None \
+                else word_cloud[tag] + 1
+        word_cloud = sorted(word_cloud.iteritems(), key=lambda item: -item[1])
+        if len(word_cloud) > 10:
+            word_cloud = word_cloud[:10]
+    else:
+        word_cloud = []
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index='website')
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-    formatted_results, tags = create_result(results, counts)
+    formatted_results = create_result(results, counts)
 
-    return formatted_results, tags, counts
+    full_result = {
+        'results': formatted_results,
+        'query': filtered_query,
+        'type': result_type,
+        'tags': tags,
+        'cloud': word_cloud,
+        'counts': counts
+    }
+
+    return full_result
 
 
-def _build_query(raw_query, start=0):
+def get_cloud_tags(results,search_tags):
+    """Gets all tags that were not in the search from a list of results"""
+
+    tags = []
+
+    for result in results:
+        # Check both tags in search and those already used by this result,
+        # in case of multiple tags being seen by the system as the same
+        item_tags = [tag for tag in set(result.get('tags', []))
+                     if not tag in search_tags]
+        tags.extend(item_tags)
+
+    return tags
+
+
+def _build_query(full_query, start=0):
+
+    # Grab variables from dict
+    raw_query = full_query['query']
+    result_type = full_query['type']
+    tags = full_query['tags']
 
     # Default to searching all types with a big 'or' query
     type_filter = {}
     type_filter['or'] = [{
         'type': {
-            'value': type
+            'value': type_
         }
-    } for type in TYPES]
+    } for type_ in TYPES]
 
     # But make sure to filter by type if requested
-    for type in TYPES:
-        if type + ':' in raw_query:
-            type_filter = {
-                'type': {
-                    'value': type
-                }
+    if result_type:
+        type_filter = {
+            'type': {
+                'value': result_type
             }
+        }
+    else:
+        # Also check for type at beginning of query
+        for type_ in TYPES:
+            if raw_query[:len(type_ + ':')] == type_ + ':':
+                raw_query = raw_query[len(type_ + ':'):]
+                result_type = type_
+                type_filter = {
+                    'type': {
+                        'value': type_
+                    }
+                }
+                break
+
+    # If the search has a tag filter, add that to the query
+    tag_filter, raw_query, tags = _build_tag_filter(raw_query,tags)
 
     # Cleanup string before using it to query
-    for type in TYPES:
-        raw_query = raw_query.replace(type + ':', '')
-
     raw_query = raw_query.replace('(', '').replace(')', '').replace('\\', '').replace('"', '')
-
     raw_query = raw_query.replace(',', ' ').replace('-', ' ').replace('_', ' ')
 
-    # If the search contains wildcards, make them mean something
-    if '*' in raw_query:
+    # Build the inner query
+    # Search for everything if the search is only an asterisk
+    if raw_query == '*':
         inner_query = {
             'query_string': {
                 'default_field': '_all',
-                'query': raw_query + '*',
+                'query': '*',
                 'analyze_wildcard': True,
             }
         }
@@ -117,48 +175,22 @@ def _build_query(raw_query, start=0):
         inner_query = {
             'multi_match': {
                 'query': raw_query,
-                'type': 'phrase_prefix',
                 'fields': '_all',
             }
         }
 
-    # If the search has a tag filter, add that to the query
-    if 'tags:' in raw_query:
-        tags = raw_query.replace('AND', ' ').split('tags:')
-        tag_filter = {
-            'query': {
-                'match': {
-                    'tags': {
-                        'query': '',
-                        'operator': 'or'
-                    }
-                }
-            }
-        }
-        for i in range(1, len(tags)):
-            for tag in tags[i].split():
-                tag_filter['query']['match']['tags']['query'] += ' ' + tag
-
-        # If the query is empty, turn it back to a wildcard search
-        if not tags[0].strip():
+    if tags:
+        if raw_query and raw_query != '*':
             inner_query = {
-                'query_string': {
-                    'default_field': '_all',
-                    'query': '*',
-                    'analyze_wildcard': True,
+                'filtered': {
+                    'filter': tag_filter,
+                    'query': inner_query
                 }
             }
-        elif inner_query.get('query_string'):
-            inner_query['query_string']['query'] = tags[0]
-        elif inner_query.get('multi_match'):
-            inner_query['multi_match']['query'] = tags[0]
+        else:
+            inner_query = tag_filter
+            raw_query = ''
 
-        inner_query = {
-            'filtered': {
-                'filter': tag_filter,
-                'query': inner_query
-            }
-        }
 
     # This is the complete query
     query = {
@@ -182,7 +214,34 @@ def _build_query(raw_query, start=0):
         'size': 10,
     }
 
-    return query, raw_query
+    return query, raw_query, result_type, tags
+
+
+def _build_tag_filter(raw_query='', tags=''):
+    # Check for tag-based query
+    if raw_query[0:5] == 'tags:':
+        tags += ',' + raw_query[5:]
+        raw_query = ''
+    # Create tag filter
+    if tags:
+        # First, split by comma to create tag list
+        tags = tags.strip(',').split(',')
+        # Then make sure to remove duplicates while retaining order
+        seen = set()
+        tags = [x for x in tags if not (x in seen or seen.add(x))]
+        tag_filter = {
+            'bool': {
+                'must': []
+            }
+        }
+        for tag in tags:
+            tag_filter['bool']['must'].append({'term': {'tags': tag}})
+    # Need to make sure that tags is a list, even if an empty one,
+    # and that tag_filter is a dictionary
+    else:
+        tags = []
+        tag_filter = {}
+    return tag_filter, raw_query, tags
 
 
 @requires_search
@@ -225,7 +284,8 @@ def update_node(node):
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
-            'registeredproject': node.is_registration,
+            'is_registration': node.is_registration,
+            'registered_date': str(node.registered_date)[:10],
             'wikis': {},
             'parent_id': parent_id,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
@@ -256,6 +316,10 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'job': user.jobs[0]['institution'] if user.jobs else '',
+        'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'school': user.schools[0]['institution'] if user.schools else '',
+        'degree': user.schools[0]['degree'] if user.schools else '',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
@@ -289,13 +353,35 @@ def _load_parent(parent):
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
         parent_info['is_registration'] = parent.is_registration
+        parent_info['registered_date'] = str(parent.registered_date)[:10]
         parent_info['id'] = parent._id
     else:
         parent_info['title'] = '-- private project --'
         parent_info['url'] = ''
         parent_info['is_registration'] = None
+        parent_info['registered_date'] = None
         parent_info['id'] = None
     return parent_info
+
+@requires_search
+def create_index():
+    '''Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, and registrations'''
+    mapping = {
+        'properties': {
+            'tags': {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        }
+    }
+    try:
+        elastic.create_index('website')
+        for type_ in ['project','component','registration']:
+            elastic.put_mapping('website', type_, mapping)
+    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
+        pass
+
 
 
 def create_result(results, counts):
@@ -313,7 +399,7 @@ def create_result(results, counts):
         'parent_title': {TITLE TEXT OF PARENT NODE},
         'wikis': {LIST OF WIKIS AND THEIR TEXT},
         'public': {TRUE OR FALSE},
-        'registeredproject': {TRUE OR FALSE}
+        'is_registration': {TRUE OR FALSE}
     }
 
     Returns list of dicts of the following structure:
@@ -328,12 +414,10 @@ def create_result(results, counts):
         'tags': [{LIST OF TAGS}],
         'contributors_url': [{LIST OF LINKS TO CONTRIBUTOR PAGES}],
         'is_registration': {TRUE OR FALSE},
-        'highlight': [{No longer used, need to phase out}],
         'description': {PROJECT DESCRIPTION},
     }
     '''
     formatted_results = []
-    word_cloud = {}
     visited_nodes = {}  # For making sure projects are only returned once
     index = 0  # For keeping track of what index a project is stored
     for result in results:
@@ -343,14 +427,13 @@ def create_result(results, counts):
                 'id': result['id'],
                 'user': result['user'],
                 'user_url': '/profile/' + result['id'],
+                'job': result['job'],
+                'job_title': result['job_title'],
+                'school': result['school'],
+                'degree': result['degree'],
             })
             index += 1
         else:
-            # Build up word cloud
-            for tag in result['tags']:
-                word_cloud[tag] = 1 if word_cloud.get(tag) is None \
-                    else word_cloud[tag] + 1
-
             # Ensures that information from private projects is never returned
             parent = Node.load(result['parent_id'])
             parent_info = _load_parent(parent)  # This is to keep track of information, without using the node (for security)
@@ -365,7 +448,7 @@ def create_result(results, counts):
             formatted_results.append(_format_result(result, parent, parent_info))
             index += 1
 
-    return formatted_results, word_cloud
+    return formatted_results
 
 
 def _format_result(result, parent, parent_info):
@@ -379,9 +462,10 @@ def _format_result(result, parent, parent_info):
         'parent_url': parent_info['url'] if parent is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': (result['registeredproject'] if parent is None
-                                                        else parent_info['is_registration']),
-        'highlight': [],
+        'is_registration': result['is_registration'] if parent is None
+            else parent_info['is_registration'] or result['is_registration'],
+        'registered_date': result['registered_date'] if parent is None
+            else parent_info['registered_date'] or result['registered_date'],
         'description': result['description'] if parent is None else None,
     }
 
