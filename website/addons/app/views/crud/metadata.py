@@ -12,6 +12,7 @@ from framework.exceptions import HTTPError
 from website.project import new_node, Node
 from website.addons.app.model import Metadata
 from website.project.decorators import must_have_addon
+from website.search.exceptions import TypeCollisionError
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
 
@@ -137,7 +138,11 @@ def update_metadata(node_addon, mid, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     metastore.update(metadata)
-    metastore.save()
+
+    try:
+        metastore.save()
+    except TypeCollisionError:
+        raise HTTPError(http.BAD_REQUEST)
 
 
 # DELETE
