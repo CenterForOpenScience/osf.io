@@ -26,7 +26,9 @@ def search(query, index='website', _type=None, types=None):
     except exceptions.IndexNotFoundError:
         return {
             "results": [],
-            "counts": {},
+            "counts": {
+                'total': 0
+            },
             "typeAliases": {}
         }
 
