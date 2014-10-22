@@ -6,11 +6,13 @@
             % if authorized:
                     authorized
                 <a id="figshareDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
-                <br><br>
-                <p class="text-success">
+                % if not nodes:
+                    <br><br>
+                    <p class="text-success">
                     Add-on successfully authorized. To link this add-on to an OSF project, go to the
                     settings page of the project, enable FigShare, and choose content to connect.
-                </p>
+                    </p>
+                % endif
             % else:
                 <a id="figshareAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token

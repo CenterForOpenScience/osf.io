@@ -8,11 +8,14 @@
             <small class="authorized-by">
                 authorized by {{ dataverseUsername }}
                     <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Credentials</a>
-                    <br><br>
-                    <p class="text-success">
-                    Add-on successfully authorized. To link this add-on to an OSF project, go to the
-                    settings page of the project, enable Dataverse, and choose a study to connect.
-                    </p>
+                    % if not nodes:
+                        <br><br>
+                        <p class="text-success">
+                        Add-on successfully authorized. To link this add-on to an OSF project, go to the
+                        settings page of the project, enable Dataverse, and choose a study to connect.
+                        </p>
+                    % endif
+
             </small>
         </span>
     </h4>
