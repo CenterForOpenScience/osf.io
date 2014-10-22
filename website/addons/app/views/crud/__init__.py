@@ -12,8 +12,9 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-from website.search.exceptions import SearchException
 from website.project import new_node, Node
+from website.search.exceptions import IndexNotFoundError
+from website.search.exceptions import MalformedQueryError
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
 from website.project.decorators import must_be_contributor_or_public
@@ -32,13 +33,15 @@ from . import metadata, customroutes
 @must_have_addon('app', 'node')
 def query_app(node_addon, **kwargs):
     q = request.args.get('q', '*')
-
     size = request.args.get('size')
     start = request.args.get('from')
 
     query = args_to_query(q, size, start)
 
-    return search(query, _type=node_addon.namespace, index='metadata')
+    try:
+        return search(query, _type=node_addon.namespace, index='metadata')
+    except MalformedQueryError:
+        raise HTTPError(http.BAD_REQUEST)
 
 # POST
 @must_be_contributor_or_public
@@ -55,10 +58,8 @@ def query_app_json(node_addon, **kwargs):
     request_data = request.json
 
     try:
-        # Note: This will break scrapi
-        # Fix before pushing changes
         return search(request_data, _type=node_addon.namespace, index='metadata')
-    except SearchException:
+    except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
 
@@ -71,7 +72,10 @@ def query_app_rss(node_addon, **kwargs):
     start = request.args.get('from')
     query = args_to_query(q, size, start)
 
-    ret = search(query, _type=node_addon.namespace, index='metadata')
+    try:
+        ret = search(query, _type=node_addon.namespace, index='metadata')
+    except SearchException:
+        raise HTTPError(http.BAD_REQUEST)
 
     node = node_addon.owner
     name = node_addon.system_user.username
@@ -93,10 +97,12 @@ def query_app_resourcelist(node_addon, **kwargs):
 
     query = args_to_query(q, start, size)
 
-    ret = search(query, _type=node_addon.namespace, index='metadata')
+    try:
+        return search(query, _type=node_addon.namespace, index='metadata')
+    except SearchException:
+        raise HTTPError(http.BAD_REQUEST)
 
     return elastic_to_resourcelist(name, ret['results'], q)
-
 
 
 @must_be_contributor_or_public
@@ -111,7 +117,10 @@ def query_app_changelist(node_addon, **kwargs):
 
     query = args_to_query(q, start, size)
 
-    ret = search(query, _type=node_addon.namespace, index='metadata')
+    try:
+        return search(query, _type=node_addon.namespace, index='metadata')
+    except SearchException:
+        raise HTTPError(http.BAD_REQUEST)
 
     return elastic_to_changelist(name, ret['results'], q)
 
