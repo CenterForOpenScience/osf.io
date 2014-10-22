@@ -97,16 +97,13 @@ class TestUserValidation(OsfTestCase):
         self.user.jobs = [{
             'institution': 'School of Lover Boys',
             'department': 'Fancy Patter',
-            'position': 'Lover Boy',
+            'title': 'Lover Boy',
             'startMonth': 1,
             'startYear': 1970,
             'endMonth': 1,
             'endYear': 1980,
         }]
-        try:
-            self.user.save()
-        except:
-            assert 0
+        self.user.save()
 
     def test_validate_jobs_institution_empty(self):
         self.user.jobs = [{'institution': ''}]
