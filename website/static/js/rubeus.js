@@ -174,7 +174,10 @@
         for (var i=0; i<siblings.length; i++) {
             if (item.name === siblings[i].data.name) {
                 matchCount += 1;
-                if (matchCount > 1) {
+                // If `item` is being updated, it will appear twice in the grid:
+                // once for the original version, and a second time for the
+                // temporary item added on drop.
+                if (matchCount >= 2) {
                     return true;
                 }
             }
