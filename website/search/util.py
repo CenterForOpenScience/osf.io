@@ -11,6 +11,6 @@ def build_query_string(q):
             'default_field': '_all',
             'query': q,
             'analyze_wildcard': True,
-            'lenient': True # TODO, may not want to do this
-            }
+            'lenient': True  # TODO, may not want to do this
         }
+    }

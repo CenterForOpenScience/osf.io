@@ -9,6 +9,10 @@ class NameEmptyError(WikiError, ValidationValueError):
     """Raised if user tries to provide an empty name value."""
     pass
 
+class NameInvalidError(WikiError, ValidationValueError):
+    """Raised if user tries to provide a string containing an invalid character."""
+    pass
+
 class NameMaximumLengthError(WikiError, ValidationValueError):
     """Raised if user tries to provide a name which exceeds the maximum accepted length."""
     pass

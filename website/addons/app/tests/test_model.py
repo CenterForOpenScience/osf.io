@@ -9,7 +9,7 @@ from tests.factories import ProjectFactory
 from framework.auth import User
 
 from website.addons.app.model import Metadata, AppNodeSettings
-
+from website.search.exceptions import TypeCollisionError
 
 class TestMetadata(OsfTestCase):
 
@@ -38,6 +38,35 @@ class TestMetadata(OsfTestCase):
 
         assert_equals(meta.to_json(), data)
 
+    def test_merge_nested_dict(self):
+        meta = Metadata(app=self.app)
+        meta['foo'] = {'bar': 'zyzz', 'zyzz': 10}
+
+        meta.update({
+            'foo': {
+                'baz': 4,
+                'zyzz': 11
+            }
+        })
+
+        data = {'foo': {'bar': 'zyzz', 'baz': 4, 'zyzz': 11}}
+        data['_id'] = meta._id
+
+        assert_equals(meta.to_json(), data)
+
+    def test_merge_nested_list(self):
+        meta = Metadata(app=self.app)
+        meta['foo'] = [1,2,3]
+
+        meta.update({
+            'foo': [4,5,6]
+        })
+
+        data = {'foo': [1,2,3,4,5,6]}
+        data['_id'] = meta._id
+
+        assert_equals(meta.to_json(), data)
+
     def test_implicit_keys(self):
         meta = Metadata(app=self.app)
 
@@ -56,6 +85,47 @@ class TestMetadata(OsfTestCase):
         meta.reload()
 
         assert_equals(meta.node, self.project)
+
+    def test_attached_none(self):
+        meta = Metadata(app=self.app)
+
+        meta.save()
+        meta.reload()
+
+        assert_equals(meta.node, None)
+        assert_equals(meta.parent, None)
+        assert_equals(meta.children, [])
+        assert_equals(meta.project, None)
+
+    def test_conflicting_types(self):
+        meta = Metadata(app=self.app)
+        meta.update({'bar': 'zyzz', 'zyzz': 10})
+
+        meta.save()
+        meta.reload()
+
+        meta.update({
+            'baz': 49,
+            'zyzz': 'str'
+        })
+
+        self.assertRaises(TypeCollisionError, meta.save)
+
+    def test_conflicting_types_str_dict(self):
+        meta = Metadata(app=self.app)
+        meta.update({'bax': 'zyzz'})
+
+        meta.save()
+        meta.reload()
+
+        meta.update({
+            'bax': {}
+        })
+
+        meta.save()
+        meta.reload()
+
+        assert_equal(meta.data, {'bax': {}})
 
     def test_attached_project(self):
         meta = Metadata(app=self.app)

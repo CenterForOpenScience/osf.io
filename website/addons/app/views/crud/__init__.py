@@ -13,7 +13,6 @@ from framework.exceptions import HTTPError
 
 from website.search.search import search
 from website.project import new_node, Node
-from website.search.exceptions import IndexNotFoundError
 from website.search.exceptions import MalformedQueryError
 from website.project.decorators import must_have_addon
 from website.project.decorators import must_have_permission
@@ -26,7 +25,8 @@ from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import elastic_to_changelist
 from website.addons.app.utils import generate_capabilitylist
 
-from . import metadata, customroutes
+from . import metadata, customroutes  # noqa
+
 
 # GET
 @must_be_contributor_or_public
@@ -75,7 +75,7 @@ def query_app_rss(node_addon, **kwargs):
 
     try:
         ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
-    except SearchException:
+    except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
     node = node_addon.owner
@@ -99,8 +99,8 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        return search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
-    except SearchException:
+        ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+    except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
     return elastic_to_resourcelist(name, ret['results'], q)
@@ -119,12 +119,11 @@ def query_app_changelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        return search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
-    except SearchException:
+        ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+    except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
     return elastic_to_changelist(name, ret['results'], q)
-
 
 
 @must_be_contributor_or_public

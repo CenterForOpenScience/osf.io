@@ -78,6 +78,29 @@ class TestMetadataViews(OsfTestCase):
 
         assert_equals(Metadata.find().count(), num)
 
+    def test_update_metadata_type_issue(self):
+        meta = Metadata(app=self.app_addon)
+        meta['best'] = {'test': 'newp'}
+        meta.save()
+
+        num = Metadata.find().count()
+
+        url = self.project.api_url_for('update_metadata', mid=meta._id)
+        ret = self.app.put_json(url, {'best': 'savinme'}, expect_errors=True)
+
+        assert_equals(ret.status_code, 400)
+
+        meta.reload()
+
+        assert_equals(meta.to_json(), {
+            u'_id': meta._id,
+            u'best': {
+                u'test': u'newp'
+            },
+        })
+
+        assert_equals(Metadata.find().count(), num)
+
     def test_update_metadata_no_json(self):
         meta = Metadata(app=self.app_addon)
         meta['best'] = 'savinme'

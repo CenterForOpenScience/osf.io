@@ -29,7 +29,10 @@ class Metadata(StoredObject):
                 continue
 
             if isinstance(val, dict):
-                cls._merge_dicts(dict1[key], val)
+                if not isinstance(dict1[key], dict):
+                    dict1[key] = val
+                else:
+                    cls._merge_dicts(dict1[key], val)
             elif isinstance(val, list):
                 dict1[key] += [index for index in val if index not in dict1[key]]
             else:
@@ -65,7 +68,7 @@ class Metadata(StoredObject):
                 for cmid in
                 self['attached'].get('cmids', [])
             ]
-        return None
+        return []
 
     def __getitem__(self, key):
         return self.data[key]
@@ -123,28 +126,6 @@ class AppNodeSettings(AddonNodeSettingsBase):
 
         self.system_user.save()
         self.save()
-
-    def _ensure_types(self, blob, metadata):
-        types = get_mapping('metadata', self.namespace)
-
-        if not types:
-            return
-
-        for key, val in blob.items():
-            if not types.get(key):
-                continue
-
-            if isinstance(val, list):
-
-                for index in val:
-                    if not isinstance(index, types.get(key)):
-                        raise ValueError
-                continue
-
-            if isinstance(val, types.get(key)):
-                continue
-
-            raise ValueError
 
     @property
     def name(self):

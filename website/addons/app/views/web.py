@@ -1,9 +1,7 @@
 from website.project.views.node import _view_project
-from website.project.decorators import (
-    must_be_valid_project,
-    must_have_addon, must_have_permission,
-    must_not_be_registration, must_be_contributor_or_public
-)
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_be_contributor_or_public
+
 
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
