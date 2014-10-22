@@ -51,10 +51,10 @@ class TestUtils(unittest.TestCase):
         assert_in('All', ret)
         assert_in('ccreeeeeeeeed', ret)
 
-    def test_rss_returns_valid_xml(self):
-        ret = utils.elastic_to_rss('name', [], '*', 'http://website.web')
-        parser = etree.XMLParser(dtd_validation=True)
-        import pdb; pdb.set_trace()
+    # def test_rss_returns_valid_xml(self):
+    #     ret = utils.elastic_to_rss('name', [], '*', 'http://website.web')
+    #     parser = etree.XMLParser(dtd_validation=True)
+    #     import pdb; pdb.set_trace()
 
 
 
