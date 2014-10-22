@@ -22,7 +22,7 @@
                 </thead>
                 <tbody data-bind="foreach: results">
                     <tr data-bind="click: $parent.setSelected.bind($data)">
-                        <td>{{guid}}</td>
+                        <td>{{title | default:"No Title"}}</td>
                     </tr>
                 </tbody>
             </table>
