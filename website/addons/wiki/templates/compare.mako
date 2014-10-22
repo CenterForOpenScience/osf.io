@@ -1,6 +1,6 @@
 <%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Wiki (History)</%def>
+<%def name="title()">${node['title'] | n} Wiki (History)</%def>
 
 <div class="wiki">
     <div class="row">
@@ -22,6 +22,6 @@
 
 <script type="text/javascript">
     window.onload = function() {
-        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>${compare_id}</h5>');
+        $('#pageName').append('<h5 style="margin-top:5px"><span>Version: </span>${compare_version}</h5>');
     }
 </script>

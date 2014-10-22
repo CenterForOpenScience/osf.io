@@ -12,13 +12,18 @@ import markdown
 from markdown.extensions import codehilite, fenced_code, wikilinks
 
 from modularodm import fields
-from modularodm.exceptions import ValidationValueError
 
 from framework.forms.utils import sanitize
 from framework.guid.model import GuidStoredObject
 
 from website import settings
 from website.addons.base import AddonNodeSettingsBase
+
+from .exceptions import (
+    NameEmptyError,
+    NameInvalidError,
+    NameMaximumLengthError,
+)
 
 
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
@@ -28,11 +33,17 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
 
 def build_wiki_url(node, label, base, end):
-    return node.web_url_for('project_wiki_page', wid=label)
+    return node.web_url_for('project_wiki_page', wname=label)
 
 def validate_page_name(value):
-    if value and len(value) > 100:
-        raise ValidationValueError('Page name cannot be greater than 100 characters.')
+    value = (value or '').strip()
+
+    if not value:
+        raise NameEmptyError('Page name cannot be blank.')
+    if value.find('/') != -1:
+        raise NameInvalidError('Page name cannot contain forward slashes.')
+    if len(value) > 100:
+        raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
 
 class NodeWikiPage(GuidStoredObject):

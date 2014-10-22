@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
-import httplib as http
 
 from tests.factories import (
     ProjectFactory,
@@ -9,7 +8,6 @@ from tests.factories import (
     RegistrationFactory,
     NodeFactory,
     NodeLogFactory,
-    AuthUserFactory,
     FolderFactory,
 )
 from tests.base import OsfTestCase
@@ -128,7 +126,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['node']['category'], 'Hypothesis')
 
         assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], framework_utils.rfcformat(log.date))
+        assert_equal(d['date'], framework_utils.iso8601format(log.date))
         assert_in('contributors', d)
         assert_equal(d['user']['fullname'], log.user.fullname)
         assert_equal(d['user']['url'], log.user.url)
@@ -239,4 +237,3 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-

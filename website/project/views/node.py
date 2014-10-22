@@ -7,6 +7,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework import status
+from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -68,6 +69,7 @@ def project_new_post(auth, **kwargs):
     title = strip_html(request.json.get('title'))
     template = request.json.get('template')
     description = strip_html(request.json.get('description'))
+    title = title.strip()
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -681,14 +683,14 @@ def _view_project(node, auth, primary=False):
                 'chicago': node.citation_chicago,
             } if not anonymous else '',
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
+            'date_created': iso8601format(node.date_created),
+            'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
+            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -701,7 +703,7 @@ def _view_project(node, auth, primary=False):
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
-            'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
+            'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
             'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),

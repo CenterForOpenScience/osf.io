@@ -9,9 +9,9 @@ from website import settings
 from . import rubeus  # noqa
 
 
-guid_url_node_pattern = re.compile('^/project/.*?/node')
-guid_url_project_pattern = re.compile('^/project')
-guid_url_profile_pattern = re.compile('^/profile')
+guid_url_node_pattern = re.compile('^/project/[a-zA-Z0-9]{5,}/node(?=/[a-zA-Z0-9]{5,})')
+guid_url_project_pattern = re.compile('^/project(?=/[a-zA-Z0-9]{5,})')
+guid_url_profile_pattern = re.compile('^/profile(?=/[a-zA-Z0-9]{5,})')
 
 
 def _get_guid_url_for(url):
