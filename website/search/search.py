@@ -19,12 +19,12 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='_all', _type=None):
-    return search_engine.search(query, index=index, search_type=_type)
+def search(query, index='_all', _type=None, return_raw=False):
+    return search_engine.search(query, index=index, search_type=_type, return_raw=return_raw)
 
-@requires_search
-def aggregation_search(query, index='_all', _type=None):
-    return search_engine.search(query, index=index, search_type=_type, return_raw=True)
+# @requires_search
+# def aggregation_search(query, index='_all', _type=None):
+#     return search_engine.search(query, index=index, search_type=_type, return_raw=True)
 
 
 @requires_search
