@@ -52,13 +52,10 @@
                 }
             },
             params: function(params) {
-                // TODO: helper to eliminate slashes in the url.
-                params.value = params.value.split('/').join(' ');
                 return JSON.stringify(params);
             },
             success: function(response, value) {
-                // TODO: helper to eliminate slashes in the url.
-                window.location.href = '${urls['web']['base']}' + encodeURIComponent(value.split('/').join(' ')) + '/';
+                window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';
             },
             error: function(response) {
                 var msg = response.responseJSON.message_long;
