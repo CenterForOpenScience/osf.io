@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import division
+
 import re
 import copy
 import math
 import logging
+from requests.exceptions import ConnectionError
+
 import pyelasticsearch
 
 from framework import sentry
@@ -12,12 +15,13 @@ from framework import sentry
 from website import settings
 from website.filters import gravatar
 from website.models import User, Node
-
+from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database
+INDICES = ['website', 'metadata']
 TYPES = ['website/project', 'website/component', 'website/registration', 'website/user']
 ALIASES = {
     'website/project': 'projects',
@@ -28,9 +32,9 @@ ALIASES = {
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-            settings.ELASTIC_URI,
-            timeout=settings.ELASTIC_TIMEOUT
-            )
+        settings.ELASTIC_URI,
+        timeout=settings.ELASTIC_TIMEOUT
+    )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
@@ -59,7 +63,8 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type='_all', return_raw=False):
+def search(query, index='website', search_type='_all', return_raw=False, types=None):
+    types = types or TYPES
 
     # Get document counts by type
     counts = {}
@@ -72,7 +77,8 @@ def search(query, index='website', search_type='_all', return_raw=False):
     if count_query.get('from') is not None: del count_query['from']
     if count_query.get('size')is not None: del count_query['size']
     if count_query.get('sort'): del count_query['sort']
-    for _type in TYPES:
+
+    for _type in types:
         try:
             if len(_type.split('/')) > 1:
                 count_index, count_type = _type.split('/')
@@ -127,7 +133,7 @@ def format_result(result, parent_id=None):
         'parent_url': parent_info.get('url') if parent_info is not None else None,
         'tags': result['tags'],
         'contributors_url': result['contributors_url'],
-        'is_registration': (result['registeredproject'] if parent_info is None
+        'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category')
@@ -193,7 +199,8 @@ def update_node(node, index='website'):
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
-            'registeredproject': node.is_registration,
+            'is_registration': node.is_registration,
+            'registered_date': str(node.registered_date)[:10],
             'wikis': {},
             'parent_id': parent_id,
             'iso_timestamp': node.date_created,
@@ -225,7 +232,11 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'job': user.jobs[0]['institution'] if user.jobs else '',
+        'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
+         'degree': user.schools[0]['degree'] if user.schools else '',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
@@ -237,11 +248,32 @@ def update_user(user):
 
 @requires_search
 def delete_all():
+    for index in INDICES:
+        try:
+            elastic.delete_index(index)
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            logger.error(e)
+            logger.error("The index 'website' was not deleted from elasticsearch")
+
+
+@requires_search
+def create_index():
+    '''Creates index with some specified mappings to begin with,
+    all of which are applied to all projects, components, and registrations'''
+    mapping = {
+        'properties': {
+            'tags': {
+                'type': 'string',
+                'index': 'not_analyzed',
+            }
+        }
+    }
     try:
-        elastic.delete_index('website')
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-        logger.error(e)
-        logger.error("The index 'website' was not deleted from elasticsearch")
+        elastic.create_index('website')
+        for type_ in ['project','component','registration']:
+            elastic.put_mapping('website', type_, mapping)
+    except pyelasticsearch.exceptions.IndexAlreadyExistsError:
+        pass
 
 
 @requires_search

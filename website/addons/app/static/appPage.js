@@ -43,7 +43,7 @@
 
         self.getMetadata = function(id) {
             $.ajax({
-                url: self.url + id,
+                url: self.url + 'metadata/' + id + '/',
                 type: 'GET',
                 success: self.metadataRecieved
             });
@@ -60,7 +60,7 @@
 
         self.setSelected = function(datum) {
             self.chosen(datum);
-            self.getMetadata(datum.guid)
+            self.getMetadata(datum._id)
         };
 
     };

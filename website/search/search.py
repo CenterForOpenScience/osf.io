@@ -1,6 +1,7 @@
-from website import settings
 import logging
 
+from website import settings
+from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +20,17 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='_all', _type=None, return_raw=False):
-    return search_engine.search(query, index=index, search_type=_type, return_raw=return_raw)
+def search(query, index='website', _type=None, types=None):
+    try:
+        return search_engine.search(query, index=index, search_type=_type, types=types)
+    except exceptions.IndexNotFoundError:
+        return {
+            "results": [],
+            "counts": {
+                'total': 0
+            },
+            "typeAliases": {}
+        }
 
 
 @requires_search
@@ -36,6 +46,10 @@ def update_user(user):
 @requires_search
 def delete_all():
     search_engine.delete_all()
+
+@requires_search
+def create_index():
+    search_engine.create_index()
 
 
 @requires_search
