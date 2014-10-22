@@ -25,6 +25,9 @@ from website.addons.app.utils import elastic_to_resourcelist
 from website.addons.app.utils import elastic_to_changelist
 from website.addons.app.utils import generate_capabilitylist
 
+from . import metadata, customroutes  # noqa
+
+
 # GET
 @must_be_contributor_or_public
 @must_have_addon('app', 'node')
