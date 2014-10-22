@@ -442,7 +442,7 @@ class TestAppQueryViews(OsfTestCase):
     @mock.patch('website.addons.app.views.crud.search')
     @mock.patch('website.addons.app.views.crud.args_to_query')
     @mock.patch('website.addons.app.views.crud.elastic_to_rss')
-    def test_query_post_empty_json(self, mock_rss, mock_query, mock_search):
+    def test_query_rss(self, mock_rss, mock_query, mock_search):
         mock_rss.return_value = ''
 
         url = self.project.api_url_for('query_app_rss', _xml=True)
