@@ -79,7 +79,7 @@ api_routes = {
             views.crud.query_app_changelist,
             xml_renderer
         ),
-            Rule(
+        Rule(
             '/app/<pid>/resync/capabilitylist/',
             'get',
             views.crud.query_app_capabilitylist,

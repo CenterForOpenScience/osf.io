@@ -27,7 +27,7 @@ def recent_rss():
     return feed
 
 
-def recent_resourcelist(): 
+def recent_resourcelist():
     ''' Returns a resourcelist with everything in it'''
 
     resourcelist = resourcesync.gen_resourcelist()

@@ -76,9 +76,11 @@ def search(query, index='website', search_type='_all', return_raw=False, types=N
     except Exception:
         pass
 
-    if count_query.get('from') is not None: del count_query['from']
-    if count_query.get('size')is not None: del count_query['size']
-    if count_query.get('sort'): del count_query['sort']
+    for key in ['from', 'size', 'sort']:
+        try:
+            del count_query[key]
+        except KeyError:
+            pass
 
     for _type in types:
         try:
@@ -146,8 +148,12 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = Node.load(parent_id)
-    if parent is None: return None
+
+    if parent is None:
+        return None
+
     parent_info = {}
+
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
         parent_info['url'] = parent.url
@@ -238,7 +244,7 @@ def update_user(user):
         'job_title': user.jobs[0]['title'] if user.jobs else '',
         'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
-         'degree': user.schools[0]['degree'] if user.schools else '',
+        'degree': user.schools[0]['degree'] if user.schools else '',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
@@ -272,7 +278,7 @@ def create_index():
     }
     try:
         elastic.create_index('website')
-        for type_ in ['project','component','registration']:
+        for type_ in ['project', 'component', 'registration']:
             elastic.put_mapping('website', type_, mapping)
     except pyelasticsearch.exceptions.IndexAlreadyExistsError:
         pass

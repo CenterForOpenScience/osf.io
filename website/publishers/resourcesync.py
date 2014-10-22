@@ -1,19 +1,12 @@
-
-
 from website import settings
 from website.search import search
 
-from datetime import date
-
-
 from resync.resource import Resource
 from resync.resource_list import ResourceList
-from resync.change_list import ChangeList
-from resync.capability_list import CapabilityList
 
 
 @search.requires_search
-def gen_resourcelist(): 
+def gen_resourcelist():
     ''' Returns a list of most recent 100 projects in the current OSF as a
         resourceSync XML Document'''
 

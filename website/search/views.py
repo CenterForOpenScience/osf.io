@@ -8,7 +8,6 @@ from urllib2 import HTTPError
 from flask import request
 from modularodm import Q
 
-from framework import status
 from framework.auth.core import get_current_user
 from framework.auth.decorators import must_be_logged_in
 
@@ -23,10 +22,6 @@ logger = logging.getLogger(__name__)
 
 def search_search():
     tick = time.time()
-    ERROR_RETURN = {
-        'results': [],
-        'query': '',
-    }
 
     if request.method == 'POST' and request.json:
         results = search.search(request.json)

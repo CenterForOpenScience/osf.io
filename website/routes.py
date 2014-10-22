@@ -12,7 +12,6 @@ from framework.routing import (
     Rule, process_rules, WebRenderer, json_renderer, render_mako_string, xml_renderer
 )
 from framework.auth import views as auth_views
-from framework.auth import get_current_user
 
 from website import settings, language, util
 from website import views as website_views
