@@ -12,7 +12,6 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-
 from website.search.exceptions import SearchException
 from website.project import new_node, Node
 from website.project.decorators import must_have_addon
@@ -59,7 +58,6 @@ def query_app_json(node_addon, **kwargs):
     try:
         # Note: This will break scrapi
         # Fix before pushing changes
-        # import pdb; pdb.set_trace()
         return search(request_data, _type=node_addon.namespace, index='metadata', return_raw=return_raw)
     except SearchException:
         raise HTTPError(http.BAD_REQUEST)
