@@ -289,6 +289,12 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_home_is_capitalized_in_web_view(self):
+        url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
+        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        page_name_elem = res.html.find('span', {'id': 'pageName'})
+        assert_in('Home', page_name_elem.text)
+
 
 class TestViewHelpers(OsfTestCase):
 
