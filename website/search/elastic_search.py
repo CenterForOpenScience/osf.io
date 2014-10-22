@@ -56,6 +56,8 @@ def requires_search(func):
             except pyelasticsearch.exceptions.ElasticHttpError as e:
                 if 'ParseException' in e.error:
                     raise exceptions.MalformedQueryError(e.error)
+                if 'MapperParsingException' in e.error:
+                    raise exceptions.TypeCollisionError(e.error)
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
