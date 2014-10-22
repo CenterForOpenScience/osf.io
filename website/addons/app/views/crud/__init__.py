@@ -12,7 +12,6 @@ from framework.guid.model import Guid
 from framework.exceptions import HTTPError
 
 from website.search.search import search
-# from website.search.search import aggregation_search
 
 from website.search.exceptions import SearchException
 from website.project import new_node, Node
