@@ -44,6 +44,10 @@ def update_user(user):
 def delete_all():
     search_engine.delete_all()
 
+@requires_search
+def create_index():
+    search_engine.create_index()
+
 
 @requires_search
 def search_contributor(query, page=0, size=10, exclude=None, current_user=None):

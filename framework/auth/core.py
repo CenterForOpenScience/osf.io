@@ -183,6 +183,8 @@ class User(GuidStoredObject, AddonModelMixin):
     SEARCH_UPDATE_FIELDS = {
         'fullname',
         'merged_by',
+        'jobs',
+        'schools',
     }
 
     _id = fields.StringField(primary=True)
@@ -244,7 +246,7 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # Employment history
     # Format: {
-    #     'position': <position or job title>,
+    #     'title': <position or job title>,
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,

@@ -28,9 +28,9 @@ ALIASES = {
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-            settings.ELASTIC_URI,
-            timeout=settings.ELASTIC_TIMEOUT
-            )
+        settings.ELASTIC_URI,
+        timeout=settings.ELASTIC_TIMEOUT
+    )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
@@ -90,7 +90,7 @@ def search(query, index='website', search_type='_all'):
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
 
-    return {
+  return {
         'results': format_results(results),
         'counts': counts,
         'typeAliases': {
@@ -191,7 +191,8 @@ def update_node(node, index='website'):
             'tags': [tag._id for tag in node.tags if tag],
             'description': node.description,
             'url': node.url,
-            'registeredproject': node.is_registration,
+            'is_registration': node.is_registration,
+            'registered_date': str(node.registered_date)[:10],
             'wikis': {},
             'parent_id': parent_id,
             'iso_timestamp': node.date_created,
@@ -223,7 +224,11 @@ def update_user(user):
     user_doc = {
         'id': user._id,
         'user': user.fullname,
+        'job': user.jobs[0]['institution'] if user.jobs else '',
+        'job_title': user.jobs[0]['title'] if user.jobs else '',
+        'school': user.schools[0]['institution'] if user.schools else '',
         'category': 'user',
+         'degree': user.schools[0]['degree'] if user.schools else '',
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
