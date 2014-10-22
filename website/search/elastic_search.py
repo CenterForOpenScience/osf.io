@@ -364,3 +364,12 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
             'pages': pages,
             'page': page,
         }
+
+
+@requires_search
+def update_metadata(metadata):
+    index = "metadata"
+    app_id = metadata.namespace
+    data = metadata.to_json()
+    data['category'] = 'metadata'
+    elastic.update(index=index, doc_type=app_id, upsert=data, doc=data, id=metadata._id, refresh=True)
