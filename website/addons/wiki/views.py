@@ -24,6 +24,7 @@ from website.project.decorators import (
 
 from .exceptions import (
     NameEmptyError,
+    NameInvalidError,
     NameMaximumLengthError,
     PageCannotRenameError,
     PageConflictError,
@@ -37,6 +38,10 @@ logger = logging.getLogger(__name__)
 WIKI_NAME_EMPTY_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='The wiki page name cannot be empty.'
+))
+WIKI_NAME_INVALID_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The wiki page name cannot contain forward slashes.'
 ))
 WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
@@ -90,6 +95,7 @@ def _get_wiki_pages_current(node):
             node.get_wiki_page(sorted_key)
             for sorted_key in sorted(node.wiki_pages_current)
         ]
+        if sorted_page is not None
     ]
 
 
@@ -232,7 +238,6 @@ def project_wiki_delete(auth, wname, **kwargs):
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(wiki_name, auth)
-    node.save()
     return {}
 
 
@@ -388,6 +393,8 @@ def project_wiki_rename(auth, wname, **kwargs):
         node.rename_node_wiki(wiki_name, new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
+    except NameInvalidError:
+        raise WIKI_NAME_INVALID_ERROR
     except NameMaximumLengthError:
         raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
     except PageCannotRenameError:
