@@ -409,6 +409,8 @@ class TestWikiRename(OsfTestCase):
             expect_errors=True,
         )
         assert_equal(http.BAD_REQUEST, res.status_code)
+        assert_equal(res.json['message_short'], 'Invalid name')
+        assert_equal(res.json['message_long'], 'Page name cannot contain forward slashes.')
         self.project.reload()
         old_wiki = self.project.get_wiki_page(self.page_name)
         assert_true(old_wiki)

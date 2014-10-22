@@ -39,10 +39,6 @@ WIKI_NAME_EMPTY_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='The wiki page name cannot be empty.'
 ))
-WIKI_NAME_INVALID_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
-    message_short='Invalid request',
-    message_long='The wiki page name cannot contain forward slashes.'
-))
 WIKI_NAME_MAXIMUM_LENGTH_ERROR = HTTPError(http.BAD_REQUEST, data=dict(
     message_short='Invalid request',
     message_long='The wiki page name cannot be more than 100 characters.'
@@ -95,6 +91,7 @@ def _get_wiki_pages_current(node):
             node.get_wiki_page(sorted_key)
             for sorted_key in sorted(node.wiki_pages_current)
         ]
+        # TODO: remove after forward slash migration
         if sorted_page is not None
     ]
 
@@ -393,8 +390,11 @@ def project_wiki_rename(auth, wname, **kwargs):
         node.rename_node_wiki(wiki_name, new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
-    except NameInvalidError:
-        raise WIKI_NAME_INVALID_ERROR
+    except NameInvalidError as error:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid name',
+            message_long=error.args[0]
+        ))
     except NameMaximumLengthError:
         raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
     except PageCannotRenameError:

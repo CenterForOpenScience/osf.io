@@ -2466,10 +2466,10 @@ class Node(GuidStoredObject, AddonModelMixin):
             key = to_mongo_key(name)
             try:
                 if version:
-                    id = self.wiki_pages_versions.get(key)[version - 1]
+                    id = self.wiki_pages_versions[key][version - 1]
                 else:
-                    id = self.wiki_pages_current.get(key)
-            except (TypeError, IndexError):
+                    id = self.wiki_pages_current[key]
+            except (KeyError, IndexError):
                 return None
         return NodeWikiPage.load(id)
 
