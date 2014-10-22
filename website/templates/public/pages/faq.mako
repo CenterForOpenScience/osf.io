@@ -2,20 +2,19 @@
 <%def name="title()">FAQ</%def>
 <%def name="content()">
 <h1 class="page-title">Frequently Asked Questions</h1>
-<h3>How much does the OSF service cost?</h3>
+<h3>How much does the OSF service cost?</h3><p>It's free!</p>
 
-<p>It's free!</p><h3>How can it be free? How are you funded?</h3><p>OSF is
+<h3>How can it be free? How are you funded?</h3><p>OSF is
     maintained and developed by the Center for Open Science (COS), a non-profit
-    organization. COS is supported by grants from <a
-            href="http://www.arnoldfoundation.org/">The Laura and John Arnold
-        Foundation</a>, <a href="http://www.sloan.org/">Alfred P. Sloan
-        Foundation</a>, and an anonymous donor.</p>
+    organization. COS is supported through grants from a variety of supporters,
+    including <a href="http://centerforopenscience.org/about_sponsors/">
+    federal agencies, private foundations, and commercial entities</a>.</p>
 
 <h3>How will the OSF be useful to my research?</h3><p>The OSF integrates with
     the scientist's daily workflow. OSF helps document and archive study
-    designs, materials and data. OSF facilitates sharing of materials and data
-    within a laboratory or across laboratories. OSF facilitates transparency of
-    laboratory research, and provides a network design that details and credits
+    designs, materials, and data. OSF facilitates sharing of materials and data
+    within a laboratory or across laboratories. OSF also facilitates transparency of
+    laboratory research and provides a network design that details and credits
     individual contributions for all aspects of the research process. To see how
     it works, watch our <a href="http://youtu.be/c6lCJFSnMcg">3-minute
         introduction video</a>, read the <a
@@ -30,11 +29,11 @@
 <h3>What if I don't want to make anything available publicly in the OSF?</h3><p>
     The OSF is designed to support both private and public workflows. You can
     keep projects, or individual components of projects, private so that only
-    your project collaborators can access it them.</p>
+    your project collaborators have access to them.</p>
 
 <h3>What is a registration?</h3><p>A registration certifies what was done in
-    advance of data analysis, or confirm the exact state of the project at
-    important points of the lifecycle such as manuscript submission or at the
+    advance of data analysis or confirms the exact state of the project at
+    important points of the lifecycle, such as manuscript submission or the
     onset of data collection.</p>
 
 <h3>Do registrations have to be public?</h3><p>No. Registration can occur
@@ -51,10 +50,10 @@
         hash</a> of your password. This is a computation on your password that
     cannot be reversed, but is the same every time it is computed from your
     password. This provides extra security. No one but you can know your
-    password. When you click "Forgot your password" OSF sends you a new random
-    password because it does not have and cannot compute your password.</p>
+    password. When you click "Forgot your password," OSF sends you a new random
+    password because it neither stores nor has the ability to compute your password.</p>
 
-<p>Data and materials posted on OSF are not yet encrypted unless you encrypt
+<p>Data and materials posted on OSF are not yet encrypted, unless you encrypt
     them before uploading to the site. This means that if our servers were
     compromised, the intruder would have access to raw data. While we have taken
     technological measures to minimize this risk, the level of security can be

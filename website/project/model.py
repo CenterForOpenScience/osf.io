@@ -322,6 +322,7 @@ class NodeLog(StoredObject):
 
     WIKI_UPDATED = 'wiki_updated'
     WIKI_DELETED = 'wiki_deleted'
+    WIKI_RENAMED = 'wiki_renamed'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -481,6 +482,15 @@ class Pointer(StoredObject):
             )
         )
 
+def resolve_pointer(pointer):
+    """Given a `Pointer` object, return the node that it resolves to.
+    """
+    # The `parent_node` property of the `Pointer` schema refers to the parents
+    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
+    # back-reference syntax to find the parents of the `Pointer`.
+    parent_refs = pointer.node__parent
+    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
+    return parent_refs[0]
 
 def validate_category(value):
     """Validator for Node#category. Makes sure that the value is one of the
@@ -1188,9 +1198,19 @@ class Node(GuidStoredObject, AddonModelMixin):
                 return pointer._id
         return None
 
-    @property
-    def points(self):
-        return len(self.pointed)
+    def get_points(self, folders=False, deleted=False, resolve=True):
+        ret = []
+        for each in self.pointed:
+            pointer_node = resolve_pointer(each)
+            if not folders and pointer_node.is_folder:
+                continue
+            if not deleted and pointer_node.is_deleted:
+                continue
+            if resolve:
+                ret.append(pointer_node)
+            else:
+                ret.append(each)
+        return ret
 
     def resolve(self):
         return self
@@ -2438,60 +2458,58 @@ class Node(GuidStoredObject, AddonModelMixin):
         return True
 
     # TODO: Move to wiki add-on
-    def get_wiki_page(self, page, version=None):
+    def get_wiki_page(self, name=None, version=None, id=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        page = to_mongo_key(page)
+        if id:
+            for page_versions in self.wiki_pages_versions.values():
+                if id in page_versions:
+                    return NodeWikiPage.load(id)
+        elif name:
+            name = name.strip()
+            key = to_mongo_key(name)
+            if version:
+                try:
+                    version = int(version)
+                except (ValueError, TypeError):
+                    return None
 
-        if version:
-            try:
-                version = int(version)
-            except:
-                return None
-
-            if page not in self.wiki_pages_versions:
-                return None
-
-            if version > len(self.wiki_pages_versions[page]):
-                return None
-            else:
-                return NodeWikiPage.load(self.wiki_pages_versions[page][version - 1])
-
-        if page in self.wiki_pages_current:
-            pw = NodeWikiPage.load(self.wiki_pages_current[page])
-        else:
-            pw = None
-
-        return pw
+                if key not in self.wiki_pages_versions:
+                    return None
+                if version > len(self.wiki_pages_versions[key]):
+                    return None
+                else:
+                    return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
+            return NodeWikiPage.load(self.wiki_pages_current.get(key))
+        return None
 
     # TODO: Move to wiki add-on
-    def update_node_wiki(self, page, content, auth):
+    def update_node_wiki(self, name, content, auth):
         """Update the node's wiki page with new content.
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
 
-        temp_page = page
+        name = (name or '').strip()
+        key = to_mongo_key(name)
 
-        page = to_mongo_key(page)
-
-        if page not in self.wiki_pages_current:
-            if page in self.wiki_pages_versions:
-                version = len(self.wiki_pages_versions[page]) + 1
+        if key not in self.wiki_pages_current:
+            if key in self.wiki_pages_versions:
+                version = len(self.wiki_pages_versions[key]) + 1
             else:
                 version = 1
         else:
-            current = NodeWikiPage.load(self.wiki_pages_current[page])
+            current = NodeWikiPage.load(self.wiki_pages_current[key])
             current.is_current = False
             version = current.version + 1
             current.save()
 
         new_wiki = NodeWikiPage(
-            page_name=temp_page,
+            page_name=name,
             version=version,
             user=auth.user,
             is_current=True,
@@ -2500,10 +2518,11 @@ class Node(GuidStoredObject, AddonModelMixin):
         )
         new_wiki.save()
 
-        if page not in self.wiki_pages_versions:
-            self.wiki_pages_versions[page] = []
-        self.wiki_pages_versions[page].append(new_wiki._primary_key)
-        self.wiki_pages_current[page] = new_wiki._primary_key
+        # check if the wiki page already exists in versions (existed once and is now deleted)
+        if key not in self.wiki_pages_versions:
+            self.wiki_pages_versions[key] = []
+        self.wiki_pages_versions[key].append(new_wiki._primary_key)
+        self.wiki_pages_current[key] = new_wiki._primary_key
 
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
@@ -2514,13 +2533,77 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'version': new_wiki.version,
             },
             auth=auth,
-            log_date=new_wiki.date
+            log_date=new_wiki.date,
+            save=False,
+        )
+        self.save()
+
+    # TODO: Move to wiki add-on
+    def rename_node_wiki(self, name, new_name, auth):
+        """Rename the node's wiki page with new name.
+
+        :param name: A string, the page's name, e.g. ``"My Page"``.
+        :param new_name: A string, the new page's name, e.g. ``"My Renamed Page"``.
+        :param auth: All the auth information including user, API key.
+
+        """
+        # TODO: Fix circular imports
+        from website.addons.wiki.exceptions import (
+            PageCannotRenameError,
+            PageConflictError,
+            PageNotFoundError,
         )
 
-    def delete_node_wiki(self, node, page, auth):
-        page_name_key = to_mongo_key(page.page_name)
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        new_name = (new_name or '').strip()
+        new_key = to_mongo_key(new_name)
+        page = self.get_wiki_page(name)
 
-        del node.wiki_pages_current[page_name_key]
+        if key == 'home':
+            raise PageCannotRenameError('Cannot rename wiki home page')
+        if not page:
+            raise PageNotFoundError('Wiki page not found')
+        if (new_key in self.wiki_pages_current and key != new_key) or new_key == 'home':
+            raise PageConflictError(
+                'Page already exists with name {0}'.format(
+                    new_name,
+                )
+            )
+
+        # rename the page first in case we hit a validation exception.
+        old_name = page.page_name
+        page.rename(new_name)
+
+        # transfer the old page versions/current keys to the new name.
+        if key != new_key:
+            self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
+            del self.wiki_pages_versions[key]
+            self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
+            del self.wiki_pages_current[key]
+
+        self.add_log(
+            action=NodeLog.WIKI_RENAMED,
+            params={
+                'project': self.parent_id,
+                'node': self._primary_key,
+                'page': page.page_name,
+                'page_id': page._primary_key,
+                'old_page': old_name,
+                'version': page.version,
+            },
+            auth=auth,
+            save=False,
+        )
+        self.save()
+
+    def delete_node_wiki(self, name, auth):
+        name = (name or '').strip()
+        key = to_mongo_key(name)
+        page = self.get_wiki_page(key)
+
+        del self.wiki_pages_current[key]
+
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2529,8 +2612,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': page.page_name,
             },
             auth=auth,
-            log_date=datetime.datetime.utcnow(),
+            save=False,
         )
+        self.save()
 
     def get_stats(self, detailed=False):
         if detailed:

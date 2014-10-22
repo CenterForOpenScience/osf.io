@@ -52,7 +52,7 @@
         <h3> Improve Your Search:</h3>
             % for key, value in tags.iteritems():
                 % if not (u' tags:"{s}"'.format(s=key) in components or u' tags:"{s}" '.format(s=key) in components):
-                    <span id="tagCloud">
+                    <span class="tagCloud">
                     <a class="tag" href="/search/?q=(${query.replace('(', '').replace(')', '') | h} AND tags:&quot;${key}&quot;)" rel=${value}>${key}</a>
                     </span>
                 % endif
@@ -206,7 +206,7 @@
     };
 
     $(function () {
-      $('#tagCloud a').tagcloud();
+      $('.tagCloud a').tagcloud();
     });
 </script>
 

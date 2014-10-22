@@ -5,6 +5,8 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from tests.base import OsfTestCase
 from StringIO import StringIO
 
+from modularodm import Q
+
 from framework.auth import Auth
 from tests.factories import ProjectFactory, AuthUserFactory, PrivateLinkFactory
 from website import settings
@@ -235,28 +237,46 @@ class TestFilesViews(OsfTestCase):
 
     def test_view_creates_guid(self):
 
+        guid_fid = 'unique'
+        guid_content = 'snowflake'
+        self._upload_file(guid_fid, guid_content)
+        node_file = NodeFile.load(self.project.files_current[guid_fid])
+
         guid_count = OsfGuidFile.find().count()
 
         # View file for the first time
-        url = self.project.uploads[0].url(self.project)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow(auth=self.user.auth)
+        url = node_file.url(self.project)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
 
-        guids = OsfGuidFile.find()
+        guid = OsfGuidFile.find_one(
+            Q('node', 'eq', self.project) &
+            Q('name', 'eq', guid_fid)
+        )
 
         # GUID count has been incremented by one
         assert_equal(
-            guids.count(),
+            OsfGuidFile.find().count(),
             guid_count + 1
         )
 
         # Client has been redirected to GUID
         assert_equal(
             res.request.path.strip('/'),
-            guids[guids.count() - 1]._id
+            guid._id,
         )
 
         # View file for the second time
-        self.app.get(url, auth=self.user.auth).maybe_follow()
+        self.app.get(
+            url,
+            auth=self.user.auth,
+        ).follow(
+            auth=self.user.auth,
+        )
 
         # GUID count has not been incremented
         assert_equal(
@@ -270,6 +290,31 @@ class TestFilesViews(OsfTestCase):
         url = '/{}/'.format(f._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_sees_delete_button_if_can_write(self):
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=self.user.auth,
+        ).maybe_follow(
+            auth=self.user.auth,
+        )
+        assert_in('Download', res)
+        assert_in('Delete', res)
+
+    def test_does_not_see_delete_button_if_cannot_write(self):
+        self.project.is_public = True
+        self.project.save()
+        user2 = AuthUserFactory()
+        url = self.project.uploads[0].url(self.project)
+        res = self.app.get(
+            url,
+            auth=user2.auth,
+        ).maybe_follow(
+            auth=user2.auth,
+        )
+        assert_in('Download', res)
+        assert_not_in('Delete', res)
 
 def make_file_like(name='file', content='data'):
     sio = StringIO(content)
