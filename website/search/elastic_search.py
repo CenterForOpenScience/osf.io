@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database
+INDICES = ['website', 'metadata']
 TYPES = ['website/project', 'website/component', 'website/registration', 'website/user']
 ALIASES = {
     'website/project': 'projects',
@@ -247,11 +248,12 @@ def update_user(user):
 
 @requires_search
 def delete_all():
-    try:
-        elastic.delete_index('website')
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-        logger.error(e)
-        logger.error("The index 'website' was not deleted from elasticsearch")
+    for index in INDICES:
+        try:
+            elastic.delete_index(index)
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+            logger.error(e)
+            logger.error("The index 'website' was not deleted from elasticsearch")
 
 
 @requires_search
