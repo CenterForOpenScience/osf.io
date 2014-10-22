@@ -107,79 +107,6 @@
                 </h4>
               </div><!-- end title -->
 
-    ##                            jeff's nice logic for displaying users
-                            <div class="contributors">
-                                % for index, (contributor, url) in enumerate(zip(result['contributors'][:3], result['contributors_url'][:3])):
-                                    <%
-                                        if index == 2 and len(result['contributors']) > 3:
-                                            # third item, > 3 total items
-                                            sep = ' & <a href="{url}">{num} other{plural}</a>'.format(
-                                                num=len(result['contributors']) - 3,
-                                                plural='s' if len(result['contributors']) - 3 else '',
-                                                url=result['url']
-                                            )
-                                        elif index == len(result['contributors']) - 1:
-                                            # last item
-                                            sep = ''
-                                        elif index == len(result['contributors']) - 2:
-                                            # second to last item
-                                            sep = ' & '
-                                        else:
-                                            sep = ','
-                                    %>
-                                    <a href=${url}>${contributor}</a>${sep}
-                                % endfor
-                            </div><!-- end contributors -->
-    ##                      if there is a wiki link, display that
-                            % if result['wiki_link']:
-                                <div class="search-field">
-                                    <a href=${result['wiki_link']}> jump to wiki </a>
-                                </div><!-- end wiki link -->
-                            % endif
-                            </div><!-- end highlight -->
-    ##                      show all the tags for the project
-                            <div class="tags">
-                                % if 'tags' in result:
-                                    % for tag in result['tags']:
-                                    <a href='/search/?q=tags:"${tag}"' class="label label-info btn-mini tag" style="margin-right:.5em">${tag}</a>
-                                    % endfor
-                                % endif
-                            </div>
-                    %endif
-                    </div><!-- end result-->
-                % endfor
-##            pagination! we're simply going to build a query by telling solr which 'row' we want to start on
-                <div class="navigate">
-                    <ul class="pagination">
-                    % if counts['total'] > 10:
-                        <li> <a href="?q=${query | h}&pagination=${0}">First</a></li>
-                        % if current_page >= 10:
-                              <li><a href="?q=${query | h}&pagination=${(current_page)-10}">&laquo;</a></li>
-                        % else:
-                            <li><a href="#">&laquo;</a></li>
-                        % endif
-                            % for i, page in enumerate(range(0, counts['total'], 10)):
-                                % if i == current_page/10:
-                                  <li class="active"><a href="#">${i+1}</a></li>
-                                ## The following conditionals force the page to display at least 5 pages in the navigation bar
-                                % elif (current_page/10 == 0) and (i in range(1,5)):
-                                     <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == 1) and (i in range(2,5)):
-                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == total/10) and (i in range((counts['total']/10 - 4), counts['total'])):
-                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (current_page/10 == ((total/10) - 1)) and (i in range((counts['total']/10 -4), counts['total'])):
-                                   <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % elif (i in range((current_page-20)/10, current_page/10)) or (i in range(current_page/10, (current_page+30)/10)):
-                                    <li><a href="?q=${query | h}&pagination=${page}">${i+1}</a></li>
-                                % endif
-                            % endfor
-                        % if current_page < (counts['total']-10):
-                            <li><a href="?q=${query | h}&pagination=${(current_page)+10}">&raquo;</a></li>
-                        % else:
-                            <li><a href="#">&raquo;</a></li>
-                        % endif
-                        <li><a href="?q=${query | h}&pagination=${(counts['total']-1)/10 * 10}">Last</a></li>
               <div class="description">
                 % if result['description']:
                   <h5>
@@ -238,6 +165,7 @@
               % endif
             %endif
           </div><!-- end result-->
+        %endfor
       </div>
 ##    pagination! we're simply going to build a query by telling solr which 'row' we want to start on
       <div class="navigate">
