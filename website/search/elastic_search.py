@@ -31,24 +31,32 @@ ALIASES = {
 
 try:
     elastic = pyelasticsearch.ElasticSearch(
-        settings.ELASTIC_URI,
-        timeout=settings.ELASTIC_TIMEOUT
-    )
+            settings.ELASTIC_URI,
+            timeout=settings.ELASTIC_TIMEOUT
+            )
     logging.getLogger('pyelasticsearch').setLevel(logging.WARN)
     logging.getLogger('requests').setLevel(logging.WARN)
     elastic.health()
-except pyelasticsearch.exceptions.ConnectionError as e:
+except ConnectionError as e:
     sentry.log_exception()
     sentry.log_message("The SEARCH_ENGINE setting is set to 'elastic', but there "
-                        "was a problem starting the elasticsearch interface. Is "
-                        "elasticsearch running?")
+            "was a problem starting the elasticsearch interface. Is "
+            "elasticsearch running?")
     elastic = None
 
 
 def requires_search(func):
     def wrapped(*args, **kwargs):
         if elastic is not None:
-            return func(*args, **kwargs)
+            try:
+                return func(*args, **kwargs)
+            except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+                raise exceptions.IndexNotFoundError(e.error)
+            except pyelasticsearch.exceptions.ElasticHttpError as e:
+                if 'ParseException' in e.error:
+                    raise exceptions.MalformedQueryError(e.error)
+                raise exceptions.SearchException(e.error)
+
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
     return wrapped
 

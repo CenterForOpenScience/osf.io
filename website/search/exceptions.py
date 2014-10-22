@@ -2,3 +2,11 @@
 
 class SearchException(Exception):
     pass
+
+
+class IndexNotFoundError(SearchException):
+    pass
+
+
+class MalformedQueryError(SearchException):
+    pass
