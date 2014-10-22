@@ -2495,7 +2495,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
@@ -2530,7 +2530,6 @@ class Node(GuidStoredObject, AddonModelMixin):
         self.wiki_pages_versions[key].append(new_wiki._primary_key)
         self.wiki_pages_current[key] = new_wiki._primary_key
 
-        # TODO: (not clear) self.add_log is calling self.save so field changes above are written to the database.
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
@@ -2540,8 +2539,10 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'version': new_wiki.version,
             },
             auth=auth,
-            log_date=new_wiki.date
+            log_date=new_wiki.date,
+            save=False,
         )
+        self.save()
 
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
@@ -2587,7 +2588,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
             del self.wiki_pages_current[key]
 
-        # TODO: (not clear) self.add_log is calling self.save so field changes above are written to the database.
         self.add_log(
             action=NodeLog.WIKI_RENAMED,
             params={
@@ -2599,8 +2599,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'version': page.version,
             },
             auth=auth,
-            log_date=page.date
+            save=False,
         )
+        self.save()
 
     def delete_node_wiki(self, name, auth):
         name = (name or '').strip()
@@ -2608,6 +2609,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2616,8 +2618,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': page.page_name,
             },
             auth=auth,
-            log_date=datetime.datetime.utcnow(),
+            save=False,
         )
+        self.save()
 
     def get_stats(self, detailed=False):
         if detailed:
