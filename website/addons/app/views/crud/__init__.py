@@ -59,7 +59,7 @@ def query_app_json(node_addon, **kwargs):
     request_data = request.json
 
     try:
-        return search(request_data, _type=node_addon.namespace, index='metadata')
+        return search(request_data, _type=node_addon.namespace, index='metadata', return_raw=return_raw)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
