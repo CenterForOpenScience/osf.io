@@ -20,7 +20,7 @@
         <span class="sr-only">Loading</span>
     </div>
 </div></%doc>
-<div id="myGrid" class="filebrowser"></div>
+<div id="treeGrid" class="filebrowser"></div>
 
 
 <%def name="stylesheets()">
@@ -43,31 +43,11 @@ ${parent.javascript_bottom()}
 $script.ready(['fangorn'], function() {
     console.log(Fangorn);
     var fangornOpts = {
-        filesData: nodeApiUrl + 'files/grid/',
-        columns : [
-            {
-                title: "Title",
-                width : "60%",
-                data : "name",
-                folderIcons : true,
-                sort : true
-            },
-            {
-                title: "Downloads",
-                width : "20%",
-                data : "downloads",
-                sort : true
-            },
-            {
-                title: "Size",
-                width : "20%",
-                sort : false,
-                data : "size"
-            }
-        ]
+        divID:"treeGrid",
+        filesData: nodeApiUrl + 'files/grid/'
     };
-    console.log("fangord", Fangorn);
-    var filebrowser = new Fangorn(document.getElementById('myGrid'), fangornOpts);
+    console.log("fangorn", Fangorn);
+    var filebrowser = new Fangorn(fangornOpts);
 
 });
 

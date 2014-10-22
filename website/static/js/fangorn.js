@@ -44,26 +44,69 @@
                 title: "Title",
                 width : "60%",
                 data : "name",
+                folderIcons : true,
                 sort : true
             },
             {
-                title: "Author",
-                width : "30%",
-                data : "name",
+                title: "Downloads",
+                width : "20%",
+                data : "downloads",
                 sort : true
             },
             {
-                title: "Actions",
-                width : "10%",
+                title: "Size",
+                width : "20%",
                 sort : false,
-                data : "name"
+                data : "size"
             }
-        ]
+        ],
+        deletecheck : function(){  // When user attempts to delete a row, allows for checking permissions etc. NOT YET IMPLEMENTED
+            // this = Item to be deleted.
+        },
+        ondelete : function(){  // When row is deleted successfully
+            // this = parent of deleted row
+            console.log("ondelete", this);
+        },
+        movecheck : function(to, from){
+            // This method gives the users an option to do checks and define their return
+
+            console.log("movecheck: to", to, "from", from);
+            return true;
+        },
+        onmove : function(to, from){  // After move happens
+            // to = actual tree object we are moving to
+            // from = actual tree object we are moving
+            console.log("onmove: to", to, "from", from);
+        },
+        addcheck : function(item, file){
+            // item = item to be added to
+            // info about the file being added
+            return true;
+        },
+        onadd : function(item, response){
+            // item = item that just received the added content
+            // response : what's returned from the server
+        },
+        onselectrow : function(){
+            // this = row
+            console.log("onselectrow", this);
+        },
+        ontogglefolder : function(){
+            // this = toggled folder
+            console.log("ontogglefolder", this);
+        },
+        dropzone : {            // All dropzone options.
+            url: "http://www.torrentplease.com/dropzone.php",  // Users provide single URL, if they need to generate url dynamicaly they can use the events.
+            dropend : function(item, event){     // An example dropzone event to override.
+                // this = dropzone object
+                // item = item in the tree
+                // event = event
+            }
+        }
     };
 
-    function Fangorn(selector, options) {
+    function Fangorn(options) {
         console.log("hi");
-        this.selector = selector;
         this.options = $.extend({}, baseOptions, options);
         this.grid = null; // Set by _initGrid
         this.init();
@@ -90,7 +133,7 @@
 //        },
         // Create the Treebeard once all addons have been configured
         _initGrid: function() {
-            this.grid = Treebeard.run(this.selector, this.options);
+            this.grid = Treebeard.run(this.options);
             //console.log(this.options);
             return this;
         }
