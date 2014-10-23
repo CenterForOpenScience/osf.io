@@ -20,6 +20,7 @@ from framework.analytics import get_basic_counters
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
+from website.addons.osfstorage import views
 from website.addons.osfstorage import settings as osf_storage_settings
 
 
@@ -395,6 +396,7 @@ class TestViewFile(OsfTestCase):
     def setUp(self):
         super(TestViewFile, self).setUp()
         self.project = ProjectFactory()
+        self.auth_obj = Auth(user=self.project.creator)
         self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'kind/of/magic.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)

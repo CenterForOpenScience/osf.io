@@ -4,6 +4,25 @@
 
 <div class="scripted" id="revisionScope">
 
+    <ol class="breadcrumb">
+        <li><a href="{{ urls.files }}">{{ node }}</a></li>
+        <li class="active overflow">{{ path }}</li>
+    </ol>
+
+    <a
+            class="btn btn-success btn-md"
+            data-bind="attr.href: urls.download"
+        >Download <i class="icon-download-alt"></i>
+    </a>
+    <!-- ko if: editable -->
+    <button
+            class="btn btn-danger btn-md"
+            data-bind="click: askDelete"
+        >Delete <i class="icon-trash"></i>
+    </button>
+    <!-- /ko -->
+
+
     <table class="table osfstorage-revision-table ">
 
         <thead>
@@ -44,8 +63,18 @@
 
 <script>
     $script(['/static/addons/osfstorage/storageRevisions.js'], function() {
-        var url = '${revisions_url}';
-        var revisionTable = new RevisionTable('#revisionScope', url);
+        var revisionTable = new RevisionTable(
+            '#revisionScope',
+            '${node['title']}',
+            '${file_path}',
+            ${int(user['can_edit'])},
+            {
+                files: '${files_url}',
+                download: '${download_url}',
+                delete: '${delete_url}',
+                revisions: '${revisions_url}'
+            }
+        );
     });
 </script>
 

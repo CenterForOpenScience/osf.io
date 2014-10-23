@@ -239,20 +239,17 @@ def get_version(path, node_settings, version_str):
     return version_idx, file_version, record
 
 
-@must_be_contributor_or_public
-@must_have_addon('osfstorage', 'node')
-def osf_storage_view_file(auth, path, node_addon, **kwargs):
-    node = node_addon.owner
-    version = request.args.get('version')
-    idx, version, record = get_version(path, node_addon, version)
-    file_obj = model.StorageFile.get_or_create(node=node, path=path)
-    redirect_url = check_file_guid(file_obj)
-    if redirect_url:
-        return redirect(redirect_url)
+def serialize_file(idx, version, record, path, node):
+    """Serialize data used to render a file.
+    """
     rendered = utils.render_file(idx, version, record)
-    ret = {
-        'file_name': utils.get_file_name(path),
+    return {
+        'file_name': record.name,
+        'file_path': record.path,
         'rendered': rendered,
+        'files_url': node.web_url_for('collect_file_trees'),
+        'download_url': node.web_url_for('osf_storage_download_file', path=path),
+        'delete_url': node.api_url_for('osf_storage_delete_file', path=path),
         'revisions_url': node.api_url_for(
             'osf_storage_get_revisions',
             path=path,
@@ -263,6 +260,19 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
             version=idx,
         ),
     }
+
+
+@must_be_contributor_or_public
+@must_have_addon('osfstorage', 'node')
+def osf_storage_view_file(auth, path, node_addon, **kwargs):
+    node = node_addon.owner
+    version = request.args.get('version')
+    idx, version, record = get_version(path, node_addon, version)
+    file_obj = model.StorageFile.get_or_create(node=node, path=path)
+    redirect_url = check_file_guid(file_obj)
+    if redirect_url:
+        return redirect(redirect_url)
+    ret = serialize_file(idx, version, record, path, node)
     ret.update(serialize_node(node, auth, primary=True))
     return ret
 

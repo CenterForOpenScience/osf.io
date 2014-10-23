@@ -145,10 +145,6 @@ def serialize_revision(node, record, version, index):
     }
 
 
-def get_file_name(path):
-    return os.path.basename(path.strip('/'))
-
-
 def make_signed_request(method, url, signer, payload):
     """Make a signed request to the upload service.
 
@@ -288,7 +284,7 @@ def render_file(version_idx, file_version, file_record):
             node_settings=node_settings,
             cache_file=cache_filename,
             start_render=True,
-            file_path=get_file_name(file_obj.path),
+            file_path=file_record.path,
             file_content=file_response.content,
             download_path=file_obj.get_download_path(version_idx),
         )
