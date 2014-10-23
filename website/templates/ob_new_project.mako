@@ -5,8 +5,8 @@
             <img class="ob-expand-icon pull-right" id="obIconNewProject" src="/static/img/plus.png">
         </div><!-- end .obNewProjectBtn -->
 
-        <div class="ob-reveal" id="obRevealNewProject">
-            <br> 
+    <div class="ob-reveal" id="obRevealNewProject">
+            <br>
             <%include file="project/new_project_form.mako"/>
         </div>
     </li> <!-- end #obNewProject" -->
