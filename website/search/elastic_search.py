@@ -65,7 +65,9 @@ def requires_search(func):
 def get_counts(count_query, index):
     counts = {}
     try:
-        count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
+        count_query['query']['filtered']['query']['query_string']['query'] = \
+            re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
+    #TODO: Overly broad exception needs fixing
     except Exception:
         pass
 
@@ -82,6 +84,7 @@ def get_counts(count_query, index):
             else:
                 count_index, count_type = index, _type
             count = elastic.count(count_query, index=count_index, doc_type=count_type)['count']
+        #TODO: Overly broad exception needs fixing
         except Exception:
             count = 0
         counts[ALIASES.get(_type, _type)] = count
@@ -89,21 +92,44 @@ def get_counts(count_query, index):
     counts['total'] = sum([counts[key] for key in counts.keys()])
     return counts
 
+@requires_search
+def get_tags(query, index):
+    query['aggregations'] = {
+        'tag_cloud': {
+            'terms': {'field': "tags"}
+        }
+    }
+    if query.get('from') is not None:
+        del query['from']
+    if query.get('size')is not None:
+        del query['size']
+    if query.get('sort'):
+        del query['sort']
+
+    try:
+        results = elastic.search(query, index=index, doc_type='_all')
+        tags = results['aggregations']['tag_cloud']['buckets']
+    #TODO: Overly broad exception needs fixing
+    except Exception as exc:
+        tags = []
+
+    return tags
 
 @requires_search
 def search(query, index='website', search_type='_all'):
 
     # Get document counts by type
     counts = get_counts(copy.deepcopy(query), index)
+    tags = get_tags(copy.deepcopy(query), index)
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
 
     results = [hit['_source'] for hit in raw_results['hits']['hits']]
-
-    return {
+    return_value = {
         'results': format_results(results),
         'counts': counts,
+        'tags': tags,
         'typeAliases': {
             'components': 'component',
             'projects': 'project',
@@ -111,6 +137,8 @@ def search(query, index='website', search_type='_all'):
             'users': 'user',
         }
     }
+    return return_value
+
 
 
 def format_results(results):
