@@ -53,6 +53,17 @@ def attach_handlers(app, settings):
     add_handlers(app, {'before_request': framework.sessions.before_request})
     return app
 
+def init_log_file(build_fp, settings):
+    """Write header and core templates to the built log templates file."""
+    build_fp.write('## Built templates file. DO NOT MODIFY.\n')
+    with open(settings.CORE_TEMPLATES) as core_fp:
+        # Exclude comments in core templates mako file
+        content = '\n'.join([line.rstrip() for line in
+            core_fp.readlines() if not line.strip().startswith('##')])
+        build_fp.write(content)
+    build_fp.write('\n')
+    return None
+
 
 def init_app(settings_module='website.settings', set_backends=True, routes=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
@@ -66,16 +77,14 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True)
     """
     # The settings module
     settings = importlib.import_module(settings_module)
+
+    with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
+        init_log_file(build_fp, settings)
+
     try:
         init_addons(settings, routes)
     except AssertionError as error:  # Addon Route map has already been created
         logger.error(error)
-
-    # Ensure that the built templates file exists
-    try:
-        shutil.copyfile(settings.CORE_TEMPLATES, settings.BUILT_TEMPLATES)
-    except OSError:
-        pass
 
     app.debug = settings.DEBUG_MODE
     if set_backends:
