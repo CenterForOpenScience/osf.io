@@ -20,9 +20,6 @@ from website.addons.osfstorage import errors
 from website.addons.osfstorage import settings
 
 
-UPLOAD_FAILED_LOG = 'file_upload_failed'
-
-
 oid_primary_key = fields.StringField(
     primary=True,
     default=lambda: str(bson.ObjectId())
@@ -225,8 +222,6 @@ class FileRecord(BaseFileObject):
     def cancel_pending_version(self, signature, log=True):
         latest_version = self.get_latest_version(required=True)
         latest_version.cancel(signature)
-        if log:
-            self.log(Auth(latest_version.creator), UPLOAD_FAILED_LOG)
         return latest_version
 
     def log(self, auth, action):
