@@ -240,6 +240,7 @@ logging.basicConfig(level=logging.ERROR)
 fake = Factory.create()
 fake.add_provider(Sciencer)
 
+
 def create_fake_user():
     email = fake.email()
     name = fake.name()
@@ -265,10 +266,11 @@ def parse_args():
     parser.add_argument('--ncomponents', dest='n_components', type=int, default=0)
     parser.add_argument('-p', '--privacy', dest="privacy", type=str, default='private', choices=['public', 'private'])
     parser.add_argument('-n', '--name', dest='name', type=str, default=None)
+    parser.add_argument('-t', '--tags', dest='n_tags', type=int, default=5)
     return parser.parse_args()
 
 
-def create_fake_project(creator, n_users, privacy, n_components, name):
+def create_fake_project(creator, n_users, privacy, n_components, name, n_tags):
     auth = Auth(user=creator)
     project_title = name if name else fake.science_sentence()
     project = ProjectFactory.build(title=project_title, description=fake.science_paragraph(), creator=creator)
@@ -278,6 +280,9 @@ def create_fake_project(creator, n_users, privacy, n_components, name):
         project.add_contributor(contrib, auth=auth)
     for _ in range(n_components):
         NodeFactory(project=project, title=fake.science_sentence(), description=fake.science_paragraph(), creator=creator)
+    for _ in range(n_tags):
+        project.add_tag(fake.science_word(), auth=auth)
+
     project.save()
     logger.info('Created project: {0}'.format(project.title))
     return project
@@ -288,7 +293,7 @@ def main():
     creator = models.User.find(Q('username', 'eq', args.user))[0]
     for i in range(args.n_projects):
         name = args.name + str(i) if args.name else ''
-        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name)
+        create_fake_project(creator, args.n_users, args.privacy, args.n_components, name, args.n_tags)
     print('Created {n} fake projects.'.format(n=args.n_projects))
     sys.exit(0)
 
