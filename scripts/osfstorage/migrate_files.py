@@ -5,6 +5,7 @@ must be *exactly* the same as in the production upload service, else files
 could be uploaded to the wrong place.
 """
 
+import logging
 from cStringIO import StringIO
 
 import requests
@@ -23,10 +24,18 @@ from website.addons.osfstorage import utils
 from scripts.osfstorage import settings as scripts_settings
 
 
+logger = logging.getLogger(__name__)
+
 client = scripts_settings.STORAGE_CLIENT_CLASS(
     **scripts_settings.STORAGE_CLIENT_OPTIONS
 )
-container = client.get_container(scripts_settings.STORAGE_CONTAINER_NAME)
+container = client.create_container(scripts_settings.STORAGE_CONTAINER_NAME)
+
+def ensure_osf_files():
+    """Ensure `osffiles` is enabled for access to legacy models.
+    """
+    if 'osffiles' not in settings.ADDONS_REQUESTED:
+        settings.ADDONS_REQUESTED.append('osffiles')
 
 
 def migrate_version(idx, node_file, node_settings):
@@ -57,7 +66,7 @@ def migrate_node(node):
             try:
                 node_file = NodeFile.load(version)
             except Exception as error:
-                logger.error('Could not migrate object {0}'.format(node_file._id))
+                logger.error('Could not migrate object {0}'.format(version))
                 logger.exception(error)
                 break
             migrate_version(idx, node_file, node_settings)
@@ -79,11 +88,14 @@ def main(dry_run=True):
 if __name__ == '__main__':
     import sys
     dry_run = 'dry' in sys.argv
-    init_app()
+    ensure_osf_files()
+    init_app(set_backends=True, routes=False)
     main(dry_run=dry_run)
 
 
 from nose.tools import *  # noqa
+
+ensure_osf_files()
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
@@ -116,7 +128,7 @@ class TestMigrateFiles(OsfTestCase):
         for idx, version in enumerate(record.versions):
             assert_equal(version.status, model.status['COMPLETE'])
             expected = 'i want {0} pizzas'.format(idx)
-            download_url = utils.get_download_url(version)
+            download_url = utils.get_download_url(idx + 1, version, record)
             resp = requests.get(download_url)
             assert_equal(expected, resp.content)
 
