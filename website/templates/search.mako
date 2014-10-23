@@ -108,6 +108,7 @@
                     <i class="fa fa-globe" data-toggle="tooltip" title="Personal Website"></i>
                 </a>
             </li>
+
             <li data-bind="visible: social.twitter">
                 <a data-bind="attr.href: social.twitter">
                     <i class="fa fa-twitter" data-toggle="tooltip" title="Twitter"></i>

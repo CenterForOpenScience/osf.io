@@ -137,11 +137,9 @@
                     '<p>Search uses the <a href="http://extensions.xwiki.org/xwiki/bin/view/Extension/Search+Application+Query+Syntax#HAND">Lucene search syntax</a>. ' +
                     'This gives you many options, but can be very simple as well. ' +
                     'Examples of valid searches include:' +
-                    '<ul><li><a href="/search/?q=bird*">bird*</a></li>' +
-                    '<li><a href="/search/?q=bird*+AND+source%3Ascitech">bird* AND source:scitech</a></li>' +
-                    '<li><a href="/search/?q=title%3Aquantum">title:quantum</a></li></ul>' +
-                    'If you want to see information from combined metadata resources rather than individual reports, try:' +
-                    '<ul><li><a href="/search/?q=birds+AND+isResource%3Atrue">birds AND isResource:true</a></li></ul>' +
+                    '<ul><li><a href="/search/?q=repro*">repro*</a></li>' +
+                    '<li><a href="/search/?q=brian+AND+title%3Amany">brian AND title:many</a></li>' +
+                    '<li><a href="/search/?q=tags%3A%28psychology%29">tags:(psychology)</a></li></ul>' +
                     '</p>'
             });
         };
