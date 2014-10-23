@@ -62,19 +62,19 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index='website', search_type='_all'):
-
-    # Get document counts by type
+def get_counts(count_query, index):
     counts = {}
-    count_query = copy.deepcopy(query)
     try:
         count_query['query']['filtered']['query']['query_string']['query'] = re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
     except Exception:
         pass
 
-    if count_query.get('from') is not None: del count_query['from']
-    if count_query.get('size')is not None: del count_query['size']
-    if count_query.get('sort'): del count_query['sort']
+    if count_query.get('from') is not None:
+        del count_query['from']
+    if count_query.get('size')is not None:
+        del count_query['size']
+    if count_query.get('sort'):
+        del count_query['sort']
     for _type in TYPES:
         try:
             if len(_type.split('/')) > 1:
@@ -87,6 +87,14 @@ def search(query, index='website', search_type='_all'):
         counts[ALIASES.get(_type, _type)] = count
     # Figure out which count we should display as a total
     counts['total'] = sum([counts[key] for key in counts.keys()])
+    return counts
+
+
+@requires_search
+def search(query, index='website', search_type='_all'):
+
+    # Get document counts by type
+    counts = get_counts(copy.deepcopy(query), index)
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
