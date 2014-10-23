@@ -43,7 +43,15 @@
                 <div class="row hidden" data-bind="css: {hidden: tags().length < 1}">
                     <h3> Improve Your Search:</h3>
                     <span data-bind="foreach: tags">
+                        <!-- ko if: count() === $parent.tagMaxCount() -->
+                        <button type="button" class="btn btn-link btn-lg" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                        <!-- /ko -->
+                        <!-- ko if: count() < $parent.tagMaxCount() && count() > 1 -->
+                        <button type="button" class="btn btn-link btn-sm" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                        <!-- /ko -->
+                        <!-- ko if: count() === 1 -->
                         <button type="button" class="btn btn-link btn-xs" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                        <!-- /ko -->
                     </span>
                 </div>
                 <!-- /ko -->

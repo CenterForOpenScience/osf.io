@@ -55,6 +55,7 @@
         self.categories = ko.observableArray([]);
         self.tags = ko.observableArray([]);
         self.tag = ko.observable('');
+        self.tagMaxCount = ko.observable(1);
 
         self.totalCount = ko.computed(function() {
             var theCount = 0;
@@ -206,6 +207,7 @@
                 }
                 $.each(data.tags, function(key, value){
                     self.tags.push(new Tag(value))
+                    self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count))
                 });
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
