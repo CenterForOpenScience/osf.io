@@ -18,11 +18,9 @@ from website.project.decorators import (
     must_have_permission, must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
-from website.models import NodeLog
 from website.project.utils import serialize_node
 from website.addons.base.views import check_file_guid
 
-from website.addons.osfstorage import logs
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
@@ -292,7 +290,6 @@ def osf_storage_render_file(path, node_addon, **kwargs):
 @must_have_permission('write')
 @must_have_addon('osfstorage', 'node')
 def osf_storage_delete_file(auth, path, node_addon, **kwargs):
-    node = node_addon.owner
     file_record = model.FileRecord.find_by_path(path, node_addon)
     if file_record is None:
         raise HTTPError(httplib.NOT_FOUND)
@@ -301,8 +298,6 @@ def osf_storage_delete_file(auth, path, node_addon, **kwargs):
     except errors.DeleteError:
         raise HTTPError(httplib.NOT_FOUND)
     file_record.save()
-    node_logger = logs.OsfStorageNodeLogger(node=node, auth=auth, path=path)
-    node_logger.log(NodeLog.FILE_REMOVED, save=True)
     return {'status': 'success'}
 
 
