@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import importlib
-import shutil
 
 from modularodm import storage
 
