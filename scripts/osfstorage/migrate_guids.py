@@ -8,12 +8,14 @@ record, and set its `referent` to the newly created record.
 from modularodm import Q
 from modularodm import exceptions as modm_errors
 
+from website import settings
 from website.models import Guid
 from website.app import init_app
 
 from website.addons.osffiles.model import OsfGuidFile
-
 from website.addons.osfstorage.model import StorageFile
+
+from scripts.osfstorage.utils import ensure_osf_files
 
 
 def get_or_create_storage_file(node, path, **kwargs):
@@ -64,9 +66,13 @@ def main(dry_run=True):
 if __name__ == '__main__':
     import sys
     dry_run = 'dry' in sys.argv
-    init_app()
+    ensure_osf_files(settings)
+    init_app(set_backends=True, routes=False)
     main(dry_run=dry_run)
 
+
+# Hack: Must configure add-ons before importing `OsfTestCase`
+ensure_osf_files(settings)
 
 from nose.tools import *  # noqa
 

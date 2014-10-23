@@ -21,6 +21,7 @@ from website.addons.osffiles.model import NodeFile
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 
+from scripts.osfstorage.utils import ensure_osf_files
 from scripts.osfstorage import settings as scripts_settings
 
 
@@ -30,12 +31,6 @@ client = scripts_settings.STORAGE_CLIENT_CLASS(
     **scripts_settings.STORAGE_CLIENT_OPTIONS
 )
 container = client.create_container(scripts_settings.STORAGE_CONTAINER_NAME)
-
-def ensure_osf_files():
-    """Ensure `osffiles` is enabled for access to legacy models.
-    """
-    if 'osffiles' not in settings.ADDONS_REQUESTED:
-        settings.ADDONS_REQUESTED.append('osffiles')
 
 
 def migrate_version(idx, node_file, node_settings):
@@ -88,14 +83,15 @@ def main(dry_run=True):
 if __name__ == '__main__':
     import sys
     dry_run = 'dry' in sys.argv
-    ensure_osf_files()
+    ensure_osf_files(settings)
     init_app(set_backends=True, routes=False)
     main(dry_run=dry_run)
 
 
-from nose.tools import *  # noqa
+# Hack: Must configure add-ons before importing `OsfTestCase`
+ensure_osf_files(settings)
 
-ensure_osf_files()
+from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
