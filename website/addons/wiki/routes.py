@@ -37,37 +37,36 @@ page_routes = {
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
 
-        # View | GET
+        # View (Id) | GET
         Rule([
-            '/project/<pid>/wiki/<path:wname>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/',
+            '/project/<pid>/wiki/id/<wid>/',
+            '/project/<pid>/node/<nid>/wiki/id/<wid>/',
+        ], 'get', views.project_wiki_id_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
+
+        # View (Name) | GET
+        Rule([
+            '/project/<pid>/wiki/<wname>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'get', views.project_wiki_page, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'wiki.mako'))),
 
         # Edit | GET
         Rule([
-            '/project/<pid>/wiki/<path:wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/edit/',
+            '/project/<pid>/wiki/<wname>/edit/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
         ], 'get', views.project_wiki_edit, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Edit | POST
         Rule([
-            '/project/<pid>/wiki/<path:wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/edit/',
+            '/project/<pid>/wiki/<wname>/edit/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
         ], 'post', views.project_wiki_edit_post, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'edit.mako'))),
 
         # Compare | GET
         # <wver> refers to a wiki page's version number
         Rule([
-            '/project/<pid>/wiki/<path:wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/compare/<int:wver>/',
+            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
         ], 'get', views.project_wiki_compare, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'compare.mako'))),
-
-        # Version : GET
-        # <wver> refers to a wiki page's version number
-        Rule([
-            '/project/<pid>/wiki/<path:wname>/version/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/version/<int:wver>/',
-        ], 'get', views.project_wiki_version, OsfWebRenderer(os.path.join(TEMPLATE_DIR, 'compare.mako'))),
 
     ]
 
@@ -83,54 +82,47 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/',
         ], 'get', views.project_wiki_home, json_renderer),
 
-        # View : GET
+        # View (Name) : GET
         Rule([
-            '/project/<pid>/wiki/<path:wname>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/',
+            '/project/<pid>/wiki/<wname>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'get', views.project_wiki_page, json_renderer),
 
         # Content : GET
         Rule([
-            '/project/<pid>/wiki/<path:wname>/content/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/content/',
+            '/project/<pid>/wiki/<wname>/content/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/content/',
         ], 'get', views.wiki_page_content, json_renderer),
 
         # Validate | GET
         Rule([
-            '/project/<pid>/wiki/<path:wname>/validate/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/validate/',
+            '/project/<pid>/wiki/<wname>/validate/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/validate/',
         ], 'get', views.project_wiki_validate_name, json_renderer),
 
         # Edit | POST
         Rule([
-            '/project/<pid>/wiki/<path:wname>/edit/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/edit/',
+            '/project/<pid>/wiki/<wname>/edit/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/edit/',
         ], 'post', views.project_wiki_edit_post, json_renderer),
 
         # Rename : PUT
         Rule([
-            '/project/<pid>/wiki/<path:wname>/rename/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/rename/',
+            '/project/<pid>/wiki/<wname>/rename/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/rename/',
         ], 'put', views.project_wiki_rename, json_renderer),
 
         # Compare : GET
         # <wver> refers to a wiki page's version number
         Rule([
-            '/project/<pid>/wiki/<path:wname>/compare/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/compare/<int:wver>/',
+            '/project/<pid>/wiki/<wname>/compare/<int:wver>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/compare/<int:wver>/',
         ], 'get', views.project_wiki_compare, json_renderer),
-
-        # Version : GET
-        # <wver> refers to a wiki page's version number
-        Rule([
-            '/project/<pid>/wiki/<path:wname>/version/<int:wver>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/version/<int:wver>/',
-        ], 'get', views.project_wiki_version, json_renderer),
 
         # Delete : DELETE
         Rule([
-            '/project/<pid>/wiki/<path:wname>/',
-            '/project/<pid>/node/<nid>/wiki/<path:wname>/',
+            '/project/<pid>/wiki/<wname>/',
+            '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
 
     ],
