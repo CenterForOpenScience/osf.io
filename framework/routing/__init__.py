@@ -343,7 +343,7 @@ class XMLRenderer(Renderer):
     CONTENT_TYPE = "application/xml"
 
     def handle_error(self, error):
-        return self.render(error.to_data(), None), error.code
+        return str(error.to_data()['message_long']), error.code
 
     def render(self, data, redirect_url, *args, **kwargs):
         return data
