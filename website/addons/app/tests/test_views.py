@@ -570,3 +570,16 @@ class TestAppQueryViews(OsfTestCase):
 
         assert_equals(ret.status_code, 200)
         assert_equals(ret.json, {'sort': 1, 'foo':'bar'})
+
+    def test_app_page_at_least_loads(self):
+        url = self.project.web_url_for('application_page')
+        ret = self.app.get(url)
+        assert_equals(ret.status_code, 200)
+
+    def test_rss_properly_404s(self):
+        url = self.project.api_url_for('query_app_rss', _xml=True)
+        url = url.replace(self.project._id, 'bogusId')
+
+        ret = self.app.get(url, expect_errors=True)
+
+        assert_equals(ret.status_code, 404)
