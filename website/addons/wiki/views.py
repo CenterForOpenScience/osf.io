@@ -24,6 +24,7 @@ from website.project.decorators import (
 
 from .exceptions import (
     NameEmptyError,
+    NameInvalidError,
     NameMaximumLengthError,
     PageCannotRenameError,
     PageConflictError,
@@ -90,6 +91,8 @@ def _get_wiki_pages_current(node):
             node.get_wiki_page(sorted_key)
             for sorted_key in sorted(node.wiki_pages_current)
         ]
+        # TODO: remove after forward slash migration
+        if sorted_page is not None
     ]
 
 
@@ -232,7 +235,6 @@ def project_wiki_delete(auth, wname, **kwargs):
     if not wiki_page:
         raise HTTPError(http.NOT_FOUND)
     node.delete_node_wiki(wiki_name, auth)
-    node.save()
     return {}
 
 
@@ -388,6 +390,11 @@ def project_wiki_rename(auth, wname, **kwargs):
         node.rename_node_wiki(wiki_name, new_wiki_name, auth)
     except NameEmptyError:
         raise WIKI_NAME_EMPTY_ERROR
+    except NameInvalidError as error:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid name',
+            message_long=error.args[0]
+        ))
     except NameMaximumLengthError:
         raise WIKI_NAME_MAXIMUM_LENGTH_ERROR
     except PageCannotRenameError:
