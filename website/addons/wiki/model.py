@@ -132,12 +132,15 @@ class NodeWikiPage(GuidStoredObject):
         old_uuid = self.share_uuid
         self.share_uuid = generate_share_uuid(node, self.page_name)
 
-        db[ops_uuid(node, old_uuid)].rename(ops_uuid(node, self.share_uuid))
-        new_doc = db['docs'].find_one({'_id': docs_uuid(node, old_uuid)})
-        if new_doc:
-            new_doc['_id'] = docs_uuid(node, self.share_uuid)
-            db['docs'].insert(new_doc)
-            db['docs'].remove({'_id': docs_uuid(node, old_uuid)})
+        ops_collection = db[ops_uuid(node, old_uuid)]
+        if ops_collection.find_one():  # Collection exists
+            ops_collection.rename(ops_uuid(node, self.share_uuid))
+
+            new_doc = db['docs'].find_one({'_id': docs_uuid(node, old_uuid)})
+            if new_doc:
+                new_doc['_id'] = docs_uuid(node, self.share_uuid)
+                db['docs'].insert(new_doc)
+                db['docs'].remove({'_id': docs_uuid(node, old_uuid)})
 
         if save:
             self.save()

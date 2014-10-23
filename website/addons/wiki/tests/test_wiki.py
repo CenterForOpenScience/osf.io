@@ -740,6 +740,7 @@ class TestWikiShareJSMongo(OsfTestCase):
         )
 
     def test_migrate_uuid_no_docs(self):
+        # Case where 20 or fewer edits have been made
         wname = 'bar.baz'
         wkey = to_mongo_key(wname)
         share_uuid = generate_share_uuid(self.project, wname)
@@ -764,9 +765,21 @@ class TestWikiShareJSMongo(OsfTestCase):
         self.db.drop_collection(new_ops_uuid)
         assert_is_none(self.db[new_ops_uuid].find_one())
 
-    @unittest.skip('Finish me!')
     def test_migrate_uuid_no_mongo(self):
-        assert_true(False)
+        # Case where no edits have been made to the wiki
+        wname = 'bar.baz'
+        wkey = to_mongo_key(wname)
+        share_uuid = generate_share_uuid(self.project, wname)
+
+        self.project.update_node_wiki(wname, 'Hello world', Auth(self.user))
+        wiki_page = self.project.get_wiki_page(wname)
+        wiki_page.migrate_uuid(self.project)
+
+        assert_not_equal(share_uuid, self.project.wiki_sharejs_uuids.get(wkey))
+        assert_is_none(self.db[ops_uuid(self.project, share_uuid)].find_one())
+        assert_is_none(self.db['docs'].find_one(
+            {'_id': docs_uuid(self.project, share_uuid)})
+        )
 
     def test_migrate_uuid_updates_node(self):
         assert_equal(self.share_uuid, self.project.wiki_sharejs_uuids[self.wkey])
