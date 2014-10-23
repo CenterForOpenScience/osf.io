@@ -1425,6 +1425,10 @@ h1.unavailable {
     cursor: pointer;
 }
 
+.log-node-title-link {
+    font-weight: bold;
+}
+
 .log-date {
     font-size: 13px;
 }
