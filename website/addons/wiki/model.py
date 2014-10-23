@@ -21,6 +21,7 @@ from website.addons.base import AddonNodeSettingsBase
 
 from .exceptions import (
     NameEmptyError,
+    NameInvalidError,
     NameMaximumLengthError,
 )
 
@@ -39,6 +40,8 @@ def validate_page_name(value):
 
     if not value:
         raise NameEmptyError('Page name cannot be blank.')
+    if value.find('/') != -1:
+        raise NameInvalidError('Page name cannot contain forward slashes.')
     if len(value) > 100:
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
