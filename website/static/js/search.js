@@ -30,6 +30,12 @@
         });
     };
 
+    var Tag = function(tagInfo){
+        var self = this;
+        self.name = ko.observable(tagInfo.key);
+        self.count = ko.observable(tagInfo.doc_count);
+    };
+
     var ViewModel = function(url, appURL) {
         var self = this;
 
@@ -47,6 +53,8 @@
         self.startDate = ko.observable(Date.now());
         self.endDate = ko.observable(Date('1970-01-01'));
         self.categories = ko.observableArray([]);
+        self.tags = ko.observableArray([]);
+        self.tag = ko.observable('');
 
         self.totalCount = ko.computed(function() {
             var theCount = 0;
@@ -150,11 +158,15 @@
             self.search();
         };
 
+        self.addTag = function(name) {
+            self.query(self.query() + ' AND tags:("' + name.name() + '")');
+            self.search();
+        };
+
         self.submit = function() {
             self.searchStarted(false);
             self.totalResults(0);
             self.currentPage(1);
-            self.results.removeAll();
             self.search();
         };
 
@@ -163,9 +175,8 @@
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
-
-
                 self.results.removeAll();
+                self.tags([]);
 
                 data.results.forEach(function(result){
                     self.results.push(result);
@@ -182,7 +193,7 @@
                 });
                 self.categories(self.categories().sort(self.sortCategories));
 
-                 if (self.category().name !== undefined) {
+                if (self.category().name !== undefined) {
                     self.totalResults(data.counts[self.category().rawName()]);
                 }
                 else {
@@ -193,7 +204,9 @@
                         self.totalResults(0);
                     }
                 }
-
+                $.each(data.tags, function(key, value){
+                    self.tags.push(new Tag(value))
+                });
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
@@ -203,6 +216,7 @@
                 self.currentPage(0);
                 self.results.removeAll();
             });
+
         };
 
         self.pageNext = function() {

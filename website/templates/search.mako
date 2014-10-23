@@ -21,25 +21,34 @@
         <br />
 
         <div class="row">
-            <!-- ko if: categories().length > 1-->
+            <!-- ko if: categories().length > 0-->
             <div class="col-md-3 hidden" data-bind="css: {hidden: categories().length < 1 }">
-                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                    <!-- ko if: count() > 0 -->
-                        <!-- ko if: $parent.alias().indexOf(alias()) !== -1 -->
-                            <li class="active">
-                                <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
-                            </li>
+                <div class="row">
+                    <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
+                        <!-- ko if: count() > 0 -->
+                            <!-- ko if: $parent.alias().indexOf(alias()) !== -1 -->
+                                <li class="active">
+                                    <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                                </li>
+                            <!-- /ko -->
+                            <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
+                                <li>
+                                    <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
+                                </li>
+                            <!-- /ko -->
                         <!-- /ko -->
-                        <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
-                            <li>
-                                <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
-                            </li>
-                        <!-- /ko -->
-                    <!-- /ko -->
-                </ul>
+                    </ul>
+                </div>
+                <!-- ko if: tags -->
+                <div class="row hidden" data-bind="css: {hidden: tags().length < 1}">
+                    <h3> Improve Your Search:</h3>
+                    <span data-bind="foreach: tags">
+                        <button type="button" class="btn btn-link btn-xs" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                    </span>
+                </div>
+                <!-- /ko -->
             </div>
             <!-- /ko -->
-
             <div class="col-md-9">
                 <!-- ko if: searchStarted() && !totalCount() -->
                 <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
