@@ -52,7 +52,7 @@ website/static/vendor/node_modules/*
 website/static/vendor/bower_components/
 
 # OSF-specific
-#######################
+##############
 website/cache/*
 website/settings/uploads/*
 website/uploads/*
@@ -61,10 +61,12 @@ website/gpg/*
 # Local settings
 */settings/local.py
 
+# Built log templates
+website/templates/_log_templates.mako
+
 # Add-ons
-#######################
+#########
 website/addons/*/settings/local.py
-website/templates/log_templates.mako
 .cache/
 osf.sublime-workspace
 osf.sublime-project

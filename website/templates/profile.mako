@@ -182,7 +182,7 @@
     </div>
 </div><!-- end row -->
 
-<%include file="log_templates.mako"/>
+<%include file="_log_templates.mako"/>
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />
