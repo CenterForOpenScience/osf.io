@@ -25,7 +25,7 @@
             data-toggle="tooltip"
             title="Note: Home page cannot be renamed."
         % endif
-    >${wiki_name}</span>
+        >${wiki_name if wiki_name != 'home' else 'Home'}</span>
 </h3>
 
 <script type="text/javascript">
@@ -35,6 +35,7 @@
     // Activate editable title unless on home page or in edit mode only for users that can edit
     %if 'write' in user['permissions'] and not is_edit and wiki_id and wiki_name != 'home':
     $(document).ready(function() {
+        $.fn.editable.defaults.mode = 'inline';
         $pageName.editable({
             type: 'text',
             send: 'always',
@@ -52,7 +53,7 @@
                 }
             },
             params: function(params) {
-               return JSON.stringify(params);
+                return JSON.stringify(params);
             },
             success: function(response, value) {
                 window.location.href = '${urls['web']['base']}' + encodeURIComponent(value) + '/';

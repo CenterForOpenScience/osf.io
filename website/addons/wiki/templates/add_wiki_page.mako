@@ -50,14 +50,16 @@
                     .removeAttr('disabled', 'disabled')
                     .text('OK');
             } else {
+                // TODO: helper to eliminate slashes in the url.
+                var wikiName = $data.val().split('/').join(' ');
                 var request = $.ajax({
                     type: 'GET',
                     cache: false,
-                    url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
+                    url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
                     dataType: 'json'
                 });
                 request.done(function (response) {
-                    window.location.href = '${urls['web']['base']}' + encodeURIComponent($data.val()) + '/edit/';
+                    window.location.href = '${urls['web']['base']}' + encodeURIComponent(wikiName) + '/edit/';
                 });
                 request.fail(function (response, textStatus, error) {
                     if (response.status === 409) {
@@ -65,7 +67,7 @@
                     } else {
                         $alert.text('Could not validate wiki page. Please try again.');
                         Raven.captureMessage('Error occurred while validating page', {
-                            url: '${urls['api']['base']}' + encodeURIComponent($data.val()) + '/validate/',
+                            url: '${urls['api']['base']}' + encodeURIComponent(wikiName) + '/validate/',
                             textStatus: textStatus,
                             error: error
                         });

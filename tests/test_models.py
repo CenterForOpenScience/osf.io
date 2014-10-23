@@ -37,6 +37,7 @@ from website.addons.osffiles.exceptions import (
 )
 from website.addons.wiki.exceptions import (
     NameEmptyError,
+    NameInvalidError,
     NameMaximumLengthError,
     PageCannotRenameError,
     PageConflictError,
@@ -897,6 +898,12 @@ class TestUpdateNodeWiki(OsfTestCase):
         assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         assert_equal(self.project.get_wiki_page('second').content, 'Hola mundo')
 
+    def test_update_name_invalid(self):
+        # forward slashes are not allowed
+        invalid_name = 'invalid/name'
+        with assert_raises(NameInvalidError):
+            self.project.update_node_wiki(invalid_name, 'more valid content', self.consolidate_auth)
+
 
 class TestRenameNodeWiki(OsfTestCase):
 
@@ -911,17 +918,25 @@ class TestRenameNodeWiki(OsfTestCase):
         self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
         self.versions = self.project.wiki_pages_versions
 
-    def test_rename_name_invalid(self):
+    def test_rename_name_not_found(self):
         for invalid_name in [None, '', '   ', 'Unknown Name']:
             with assert_raises(PageNotFoundError):
                 self.project.rename_node_wiki(invalid_name, None, auth=self.consolidate_auth)
 
-    def test_rename_new_name_invalid(self):
+    def test_rename_new_name_invalid_none_or_blank(self):
         name = 'New Page'
         self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
         for invalid_name in [None, '', '   ']:
             with assert_raises(NameEmptyError):
                 self.project.rename_node_wiki(name, invalid_name, auth=self.consolidate_auth)
+
+    def test_rename_new_name_invalid_special_characters(self):
+        old_name = 'old name'
+        # forward slashes are not allowed
+        invalid_name = 'invalid/name'
+        self.project.update_node_wiki(old_name, 'some content', self.consolidate_auth)
+        with assert_raises(NameInvalidError):
+            self.project.rename_node_wiki(old_name, invalid_name, self.consolidate_auth)
 
     def test_rename_name_maximum_length(self):
         old_name = 'short name'

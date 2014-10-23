@@ -35,7 +35,7 @@
         </div>
 
 
-    <%include file='log_templates.mako'/>
+    <%include file='_log_templates.mako'/>
     </div>
     <div class="row">
         <div class="col-md-5">
