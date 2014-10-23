@@ -59,9 +59,8 @@
                 </div>
                 <div class="tab-pane" id="watchlist">
                     <div id="logScope">
-                    <%include file="log_list.mako"/>
-                    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
-                </div><!-- end #logScope -->
+                        <%include file="log_list.mako"/>
+                    </div><!-- end #logScope -->
 
                 </div>
                 ## %if 'badges' in addons_enabled:

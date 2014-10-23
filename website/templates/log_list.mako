@@ -5,7 +5,7 @@
     </div>
 </div>
 
-<div class="scripted" id="logScope">
+<div id="logScope">
     <p class="help-block" data-bind="if: tzname">
         All times displayed at
         <span data-bind="text: tzname"></span>
