@@ -59,7 +59,7 @@
                 </div>
                 <div class="tab-pane" id="watchlist">
                     <div id="logScope">
-                        <%include file="log_list.mako"/>
+                        <%include file="log_list.mako" args="scripted=False"/>
                     </div><!-- end #logScope -->
 
                 </div>
