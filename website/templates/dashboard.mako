@@ -80,13 +80,14 @@
                      "uri": "/api/v1/dashboard/get_badges/",
                      "replace": true
                 }'></div>
-        </div>
+        </div><!-- end col-md -->
         <div class="col-md-5">
             <div class="page-header">
                 <h3>Badges You've Awarded</h3>
             </div>
-        </div>
-    </div>
+        </div><!-- end col-md-->
+    </div><!-- end row -->
+%endif
 </div>
 </%def>
 
