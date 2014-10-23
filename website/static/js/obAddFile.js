@@ -17,7 +17,7 @@
     var $obDropzoneSelected = $('#obDropzoneSelected');
     var $uploadProgress = $('#uploadProgress');
     var $addLink = $('#addLink'+ namespace);
-    var $fakeAddLink = $('#fakeAddLinkAddFile'); // perm disabled button until file uploaded, button is enabled by project 
+    var $fakeAddLink = $('#fakeAddLinkAddFile'); // perm disabled button until file uploaded, button is enabled by project
     var $obDropzoneError = $('#obDropzoneError');
     var $uploadIcon = $('#uploadIcon');
     var $obDropzoneFilename = $('#obDropzoneFilename');
@@ -25,9 +25,9 @@
 
     var uploadCounter = 1; // used to track upload count while uploading
 
-    var myDropzone = new Dropzone('div#obDropzone', { 
+    var myDropzone = new Dropzone('div#obDropzone', {
         url: '/', // specified per upload
-        autoProcessQueue: false, 
+        autoProcessQueue: false,
         createImageThumbnails: false,
         //over
         maxFiles:9001,
@@ -46,7 +46,7 @@
             // Submit logic
             submitButton.addEventListener('click', function() {
                 var projectRoute = get_route($addLink);
-                
+
                 $addLink.attr('disabled', true);
                 $uploadProgress.show();
 
@@ -54,7 +54,7 @@
                 myDropzone.processQueue(); // Tell Dropzone to process all queued files.
             });
 
-            var clearError = document.querySelector('#obDropzone');            
+            var clearError = document.querySelector('#obDropzone');
             clearError.addEventListener('click', function() {
                $obDropzoneError.empty(); // remove any lingering errors on click
 
@@ -62,12 +62,12 @@
 
 
             // clear dropzone logic
-            var clearButton = document.querySelector('#clearDropzone');            
+            var clearButton = document.querySelector('#clearDropzone');
             clearButton.addEventListener('click', function() {
 
                 $obDropzone.show(); // swap filedisplay with file dropzone
                 $obDropzoneSelected.hide();
-                
+
                 $addLink.hide(); // swap active link with pseudo button
                 $fakeAddLink.show();
 
@@ -84,7 +84,7 @@
                 if(myDropzone.files.length===0){
                     $obDropzone.show(); // swap filedisplay with file dropzone
                     $obDropzoneSelected.hide();
-                    
+
                     $addLink.hide(); // swap active link with pseudo button
                     $fakeAddLink.show();
 
@@ -101,7 +101,7 @@
                 }
             });
 
-            this.on('drop',function(){ // clear errors on drop or click 
+            this.on('drop',function(){ // clear errors on drop or click
                 $('#obDropzoneError').empty();
             });
 
@@ -110,8 +110,8 @@
                 $obDropzoneFilename.text(uploadCounter + ' / ' + myDropzone.files.length + ' files');
                  myDropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
                  uploadCounter+= 1;
-                 if(uploadCounter> myDropzone.files.length){ // when finished redirect to project/component page where uploaded. 
-                    
+                 if(uploadCounter> myDropzone.files.length){ // when finished redirect to project/component page where uploaded.
+
                     //redirect to project or componenet
                     if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
                         redirect_to_poc('Component');
@@ -138,7 +138,7 @@
 
                 $fakeAddLink.hide(); // swap fake with real
                 $addLink.show();
-                
+
                 $inputProjectAddFile.focus();
                 $inputProjectAddFile.css('background-color', 'white !important;');
             });
@@ -215,13 +215,13 @@
 // Helper Functions
     // redictor to project or component
     function redirect_to_poc(poc){ // str project or componenet (poc)
-        var url = '/'+ $addLink.prop('linkID' + poc); 
+        var url = '/'+ $addLink.prop('linkID' + poc);
             if(url !== '/undefined'){
             window.location = url;
         }
     }
 
-    // ensure it is not 
+    // ensure it is not
     function get_route(addLink){
         if(typeof addLink.prop('routeIDComponent')!=='undefined'){
             return addLink.prop('routeIDComponent');
@@ -231,7 +231,7 @@
     }
 
     // this takes a filename and finds the icon for it
-    function get_dz_icon(file_name){    
+    function get_dz_icon(file_name){
         var ext = file_name.split('.').pop().toLowerCase();
         if(icon_list.indexOf(ext) >= 0){
             return ext + '.png';
@@ -245,7 +245,7 @@
         if(string.indexOf('.') !== -1){
             return string.split('.').pop().toLowerCase();
         }else{
-            return string.substring(string.length-3);    
+            return string.substring(string.length-3);
         }
     }
 

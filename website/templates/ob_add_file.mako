@@ -35,7 +35,7 @@
             <div class="col-md-12">
                 <h4>3. Select a component (optional)</h4>
                 <div class="ob-search" class="projectSearchAddFile">
-                    <img class="ob-clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">         
+                    <img class="ob-clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">
                     <input class="typeahead" disabled="disabled" type="text" placeholder="First select a project" id='inputComponentAddFile'>
                 </div>
                 <span class="findBtn btn btn-default pull-right" id="addLinkAddFile" disabled="disabled">Upload</span>

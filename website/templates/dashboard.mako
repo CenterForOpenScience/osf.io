@@ -101,7 +101,6 @@
     $script.ready('obAddFile', function() {
         var obaddfile = new ObAddFile();
     });
-    $script(['/static/js/obNewProject.js']);
     $script(['/static/js/obRegisterProject.js']);
     $script.ready('obRegisterProject', function() {
         var obregisterproject = new ObRegisterProject();
