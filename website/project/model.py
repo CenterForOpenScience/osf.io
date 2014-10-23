@@ -2461,27 +2461,17 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_wiki_page(self, name=None, version=None, id=None):
         from website.addons.wiki.model import NodeWikiPage
 
-        if id:
-            for page_versions in self.wiki_pages_versions.values():
-                if id in page_versions:
-                    return NodeWikiPage.load(id)
-        elif name:
-            name = name.strip()
+        if name:
+            name = (name or '').strip()
             key = to_mongo_key(name)
-            if version:
-                try:
-                    version = int(version)
-                except (ValueError, TypeError):
-                    return None
-
-                if key not in self.wiki_pages_versions:
-                    return None
-                if version > len(self.wiki_pages_versions[key]):
-                    return None
+            try:
+                if version:
+                    id = self.wiki_pages_versions[key][version - 1]
                 else:
-                    return NodeWikiPage.load(self.wiki_pages_versions[key][version - 1])
-            return NodeWikiPage.load(self.wiki_pages_current.get(key))
-        return None
+                    id = self.wiki_pages_current[key]
+            except (KeyError, IndexError):
+                return None
+        return NodeWikiPage.load(id)
 
     # TODO: Move to wiki add-on
     def update_node_wiki(self, name, content, auth):
@@ -2489,7 +2479,7 @@ class Node(GuidStoredObject, AddonModelMixin):
 
         :param page: A string, the page's name, e.g. ``"home"``.
         :param content: A string, the posted content.
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
 
         """
         from website.addons.wiki.model import NodeWikiPage
@@ -2508,7 +2498,7 @@ class Node(GuidStoredObject, AddonModelMixin):
             version = current.version + 1
             current.save()
 
-        new_wiki = NodeWikiPage(
+        new_page = NodeWikiPage(
             page_name=name,
             version=version,
             user=auth.user,
@@ -2516,26 +2506,27 @@ class Node(GuidStoredObject, AddonModelMixin):
             node=self,
             content=content
         )
-        new_wiki.save()
+        new_page.save()
 
         # check if the wiki page already exists in versions (existed once and is now deleted)
         if key not in self.wiki_pages_versions:
             self.wiki_pages_versions[key] = []
-        self.wiki_pages_versions[key].append(new_wiki._primary_key)
-        self.wiki_pages_current[key] = new_wiki._primary_key
+        self.wiki_pages_versions[key].append(new_page._primary_key)
+        self.wiki_pages_current[key] = new_page._primary_key
 
-        # TODO: (not clear) self.add_log is calling self.save so field changes above are written to the database.
         self.add_log(
             action=NodeLog.WIKI_UPDATED,
             params={
                 'project': self.parent_id,
                 'node': self._primary_key,
-                'page': new_wiki.page_name,
-                'version': new_wiki.version,
+                'page': new_page.page_name,
+                'version': new_page.version,
             },
             auth=auth,
-            log_date=new_wiki.date
+            log_date=new_page.date,
+            save=False,
         )
+        self.save()
 
     # TODO: Move to wiki add-on
     def rename_node_wiki(self, name, new_name, auth):
@@ -2574,6 +2565,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         old_name = page.page_name
         page.rename(new_name)
 
+        # TODO: merge historical records like update (prevents log breaks)
         # transfer the old page versions/current keys to the new name.
         if key != new_key:
             self.wiki_pages_versions[new_key] = self.wiki_pages_versions[key]
@@ -2581,7 +2573,6 @@ class Node(GuidStoredObject, AddonModelMixin):
             self.wiki_pages_current[new_key] = self.wiki_pages_current[key]
             del self.wiki_pages_current[key]
 
-        # TODO: (not clear) self.add_log is calling self.save so field changes above are written to the database.
         self.add_log(
             action=NodeLog.WIKI_RENAMED,
             params={
@@ -2593,8 +2584,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'version': page.version,
             },
             auth=auth,
-            log_date=page.date
+            save=False,
         )
+        self.save()
 
     def delete_node_wiki(self, name, auth):
         name = (name or '').strip()
@@ -2602,6 +2594,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         page = self.get_wiki_page(key)
 
         del self.wiki_pages_current[key]
+
         self.add_log(
             action=NodeLog.WIKI_DELETED,
             params={
@@ -2610,8 +2603,9 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'page': page.page_name,
             },
             auth=auth,
-            log_date=datetime.datetime.utcnow(),
+            save=False,
         )
+        self.save()
 
     def get_stats(self, detailed=False):
         if detailed:
