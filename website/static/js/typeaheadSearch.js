@@ -148,7 +148,8 @@
 
     // logic for typeahead searching a project's componenets
     function initProjectTypeahead(namespace, nodeType, componentBool){
-        $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
+        var url = '/api/v1/dashboard/get_nodes/';
+        var request = $.getJSON(url, function (projects) {
 
             var myProjects = projects.nodes.map(
                 function(item){return {
@@ -167,6 +168,11 @@
             typeaheadAddListener($clearInputProject, $inputProject,
                                   $addLink, namespace, nodeType, componentBool);
             initTypeahead(nodeType, namespace, myProjects);
+        });
+        request.fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not fetch dashboard nodes.', {
+                url: url, textStatus: textStatus, error: error
+            });
         });
     }
 
