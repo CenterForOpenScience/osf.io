@@ -19,8 +19,8 @@
 
     function ObRegisterProject(){
         var $addLink = $('#addLink' + namespace);
-        self.projectTypeahead  = new TypeaheadSearch(namespace, 'Project', 1);
-        self.componentTypeahead  = new TypeaheadSearch(namespace, 'Component', 0);
+        self.projectTypeahead  = new TypeaheadSearch(namespace, 'Project', true);
+        self.componentTypeahead  = new TypeaheadSearch(namespace, 'Component', false);
 
         // to  do any of this just edit the click functionality editing the name spaced add_link
         $addLink.click(function() {
