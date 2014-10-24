@@ -13,7 +13,8 @@
     'use strict';
 
     var namespace = 'AddFile';
-    var $obDropzone = $('#obDropzone');
+    var obDropzoneSelector = '#obDropzone';
+    var $obDropzone = $(obDropzoneSelector);
     var $obDropzoneSelected = $('#obDropzoneSelected');
     var $uploadProgress = $('#uploadProgress');
     var $addLink = $('#addLink'+ namespace);
@@ -25,7 +26,7 @@
 
     var uploadCounter = 1; // used to track upload count while uploading
 
-    var myDropzone = new Dropzone('div#obDropzone', {
+    var dropzoneOpts = {
         url: '/', // specified per upload
         autoProcessQueue: false,
         createImageThumbnails: false,
@@ -45,7 +46,7 @@
 
             // Submit logic
             submitButton.addEventListener('click', function() {
-                var projectRoute = get_route($addLink);
+                var projectRoute = getRoute($addLink);
 
                 $addLink.attr('disabled', true);
                 $uploadProgress.show();
@@ -92,12 +93,14 @@
                 }
 
                 if(fileSize > self.options.maxFilesize){
-
-                    $obDropzoneError.append('<div>' + fileName + ' is too big (max = ' + self.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
+                    $obDropzoneError.append('<div>' + fileName + ' is too big (max = ' +
+                                            self.options.maxFilesize +
+                                            ' MiB) and was not added to the upload queue.</div>');
                     $obDropzoneError.show();
-                }else{
-                    $obDropzoneError.text(fileName + 'could not be added to the upload queue'); // I don't know if this will ever be called, just a back up error handling
+                } else{
+                    $obDropzoneError.text(fileName + 'could not be added to the upload queue');
                     $obDropzoneError.show();
+                    Raven.captureMessage('Could not upload: ' + fileName);
                 }
             });
 
@@ -129,7 +132,7 @@
                 }else{
                     // $('#obDropzone').click();
                     var file_name = truncateFilename(self.files[0].name);
-                    $uploadIcon.attr('src', '/static/img/upload_icons/' + get_dz_icon(file_name));
+                    $uploadIcon.attr('src', '/static/img/upload_icons/' + getFiletypeIconName(file_name));
                     $obDropzoneFilename.text(file_name);
                 }
 
@@ -143,9 +146,10 @@
                 $inputProjectAddFile.css('background-color', 'white !important;');
             });
         }
-});
+    };
 
-    var icon_list = [
+
+    var iconList = [
     '_blank',
     '_page',
     'aac',
@@ -223,7 +227,7 @@
     }
 
     // ensure it is not
-    function get_route(addLink){
+    function getRoute(addLink){
         if(typeof addLink.prop('routeIDComponent')!=='undefined'){
             return addLink.prop('routeIDComponent');
         }else{
@@ -232,9 +236,9 @@
     }
 
     // this takes a filename and finds the icon for it
-    function get_dz_icon(file_name){
+    function getFiletypeIconName(file_name){
         var ext = file_name.split('.').pop().toLowerCase();
-        if(icon_list.indexOf(ext) >= 0){
+        if(iconList.indexOf(ext) >= 0){
             return ext + '.png';
         }else{
             return '_blank.png';
@@ -255,7 +259,7 @@
         var ext = getStringEnd(string);
         if (string.length > 40){
             return string.substring(0, 40-ext.length-3) + '...' + ext;
-        }else{
+        } else{
             return string;
         }
     }
@@ -263,6 +267,7 @@
     function ObAddFile(){
         self.projectTypeahead  = new TypeaheadSearch(namespace, 'Project', true);
         self.componentTypeahead  = new TypeaheadSearch(namespace, 'Component', false);
+        self.dropzone = new Dropzone(obDropzoneSelector, dropzoneOpts);
     }
 
     return ObAddFile;
