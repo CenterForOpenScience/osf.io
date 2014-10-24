@@ -56,16 +56,18 @@
                         <%include file="ob_register_project.mako"/>
                         <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
-                </div>
+                </div><!-- end .tab-pane -->
                 <div class="tab-pane" id="watchlist">
                     <div id="logScope">
                         <%include file="log_list.mako" args="scripted=False"/>
                     </div><!-- end #logScope -->
-
-                </div>
+                </div><!-- end tab-pane -->
                 ## %if 'badges' in addons_enabled:
                    ## <%include file="dashboard_badges.mako"/>
                 ## %endif
+            </div><!-- end .tab-content -->
+        </div><!-- end col-md -->
+    </div><!-- end row -->
 
 %if 'badges' in addons_enabled:
     <div class="row">
