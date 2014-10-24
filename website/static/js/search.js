@@ -154,12 +154,15 @@
         };
 
         self.filter = function(alias) {
+            self.searchStarted(false);
+            self.currentPage(1);
             self.category(alias);
             self.alias(alias.getAlias());
             self.search();
         };
 
         self.addTag = function(name) {
+            self.currentPage(1);
             self.query(self.query() + ' AND tags:("' + name.name() + '")');
             self.search();
         };
