@@ -15,6 +15,7 @@
                     <label for="project"></label>
                     <input class="typeahead form-control" name="project" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->
+                <span class="findBtn btn btn-default pull-right" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
             </div>
         </div><!-- end row -->
     </div><!-- end ob-reveal -->
