@@ -94,7 +94,7 @@
 <%def name="javascript_bottom()">
 
 <script>
-    $script(['/static/js/typeahead.js'],'typeahead');
+    $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
     $script(['/static/js/typeaheadSearch.js'], 'typeaheadSearch');
 
     $script(['/static/js/obAddFile.js']);
