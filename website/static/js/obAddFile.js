@@ -221,16 +221,16 @@
     /** Redirect to a project or component based on its linkId property **/
     function redirectToPOC(poc){ // str project or componenet (poc)
         var url = '/'+ $addLink.prop('linkID' + poc);
-            if(url !== '/undefined'){
+        if(url !== '/undefined'){
             window.location = url;
         }
     }
 
     // ensure it is not
     function getRoute(addLink){
-        if(typeof addLink.prop('routeIDComponent')!=='undefined'){
+        if(addLink.prop('routeIDComponent')){
             return addLink.prop('routeIDComponent');
-        }else{
+        } else{
             return addLink.prop('routeIDProject');
         }
     }
@@ -238,25 +238,25 @@
     // this takes a filename and finds the icon for it
     function getFiletypeIconName(file_name){
         var ext = file_name.split('.').pop().toLowerCase();
-        if(iconList.indexOf(ext) >= 0){
+        if(iconList.indexOf(ext)  !== -1){
             return ext + '.png';
         }else{
             return '_blank.png';
         }
     }
 
-    // if has an extention return it, else return the last three in a string
-    function getStringEnd(string){
+    // if has an extention return it, else return the last three chars
+    function getExtension(string){
         if(string.indexOf('.') !== -1){
             return string.split('.').pop().toLowerCase();
         }else{
-            return string.substring(string.length-3);
+            return string.substring(string.length - 3);
         }
     }
 
     // truncate long file names
     function truncateFilename(string){
-        var ext = getStringEnd(string);
+        var ext = getExtension(string);
         if (string.length > 40){
             return string.substring(0, 40-ext.length-3) + '...' + ext;
         } else{
