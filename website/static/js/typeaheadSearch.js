@@ -49,9 +49,9 @@
         };
     };
 
-    function TypeaheadSelectedOption(inputProject, clearInputProject,
+    function initSelectedOption(inputProject, clearInputProject,
                                      addLink, namespace, nodeType, componentBool){
-    //  once a typeahead option is selected, enable the button and assign the add_link variable for use later
+        //  once a typeahead option is selected, enable the button and assign the add_link variable for use later
         inputProject.bind('typeahead:selected', function(obj, datum) {
             var linkID = datum.value.node_id;
             var routeID = datum.value.route;
@@ -92,7 +92,7 @@
     }
 
     // add listeners to clear inputs
-    function TypeaheadAddListener(clearInputProject, inputProject,
+    function typeaheadAddListener(clearInputProject, inputProject,
                                    addLink, namespace, nodeType, componentBool){
         clearInputProject[0].addEventListener('click', function() {
             clearInputProject.hide();
@@ -117,7 +117,7 @@
         });
     }
 
-    function TypeaheadLogic(nodeType, namespace, myProjects){
+    function initTypeahead(nodeType, namespace, myProjects){
         $('#input' + nodeType + namespace).typeahead({
             hint: false,
             highlight: true,
@@ -133,21 +133,21 @@
     }
 
     // logic for typeahead searching user's projects
-    function TypeaheadComponent(namespace, nodeType, componentBool){
+    function initComponentTypeahead(namespace, nodeType, componentBool){
         var myProjects = [];
         var $addLink = $('#addLink' + namespace);
         var $clearInputProject = $('#clearInput' + nodeType + namespace);
         var $inputProject = $('#input'+ nodeType + namespace);
 
-        TypeaheadSelectedOption($inputProject, $clearInputProject,
+        initSelectedOption($inputProject, $clearInputProject,
                                 $addLink, namespace, nodeType, componentBool);
-        TypeaheadAddListener($clearInputProject, $inputProject,
+        typeaheadAddListener($clearInputProject, $inputProject,
                               $addLink, namespace, nodeType, componentBool);
-        TypeaheadLogic(nodeType, namespace, myProjects);
+        initTypeahead(nodeType, namespace, myProjects);
     }
 
     // logic for typeahead searching a project's componenets
-    function TypeaheadProject(namespace, nodeType, componentBool){
+    function initProjectTypeahead(namespace, nodeType, componentBool){
         $.getJSON('/api/v1/dashboard/get_nodes/', function (projects) {
 
             var myProjects = projects.nodes.map(
@@ -162,19 +162,19 @@
             var $clearInputProject = $('#clearInput' + nodeType + namespace);
             var $inputProject = $('#input'+ nodeType + namespace);
 
-            TypeaheadSelectedOption($inputProject, $clearInputProject,
+            initSelectedOption($inputProject, $clearInputProject,
                                     $addLink, namespace, nodeType, componentBool);
-            TypeaheadAddListener($clearInputProject, $inputProject,
+            typeaheadAddListener($clearInputProject, $inputProject,
                                   $addLink, namespace, nodeType, componentBool);
-            TypeaheadLogic(nodeType, namespace, myProjects);
+            initTypeahead(nodeType, namespace, myProjects);
         });
     }
 
     function TypeaheadSearch(namespace, nodeType, componentBool) {
         if(nodeType === 'Project'){
-            TypeaheadProject(namespace, nodeType, componentBool);
+            initProjectTypeahead(namespace, nodeType, componentBool);
         }else{
-            TypeaheadComponent(namespace, nodeType, componentBool);
+            initComponentTypeahead(namespace, nodeType, componentBool);
         }
     }
 
