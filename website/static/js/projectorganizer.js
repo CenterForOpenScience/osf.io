@@ -350,11 +350,6 @@
         }
     });
 
-    $(document).ready(function() {
-        document.oncontextmenu = function () {
-            return false;
-        };
-    });
     function addFormKeyBindings(nodeID){
         $('#ptd-'+nodeID).keyup(function (e){
             /*if(e.which == 13){ //return
@@ -915,6 +910,13 @@
 
 
         }); // end onSelectedRowsChanged
+
+        // Disable right clicking within the grid
+        // Fixes https://github.com/CenterForOpenScience/openscienceframework.org/issues/945
+        self.grid.element[0].oncontextmenu = function() {
+            return false;
+        };
+
     };
 
 
