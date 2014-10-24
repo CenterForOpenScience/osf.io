@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+import mock
 from nose.tools import *  # noqa
 
 from tests.base import OsfTestCase
@@ -11,6 +12,7 @@ from website.addons.osfstorage.tests import factories
 import os
 import datetime
 
+from dateutil.relativedelta import relativedelta
 from modularodm import exceptions as modm_errors
 
 from framework.auth import Auth
@@ -77,9 +79,15 @@ class TestNodeSettingsModel(OsfTestCase):
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'
         record = model.FileRecord.get_or_create(path, self.node_settings)
-        version_pending = model.FileVersion(status=model.status['PENDING'])
+        version_pending = model.FileVersion(
+            status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
+        )
         version_pending.save()
-        version_failed = model.FileVersion(status=model.status['FAILED'])
+        version_failed = model.FileVersion(
+            status=model.status['FAILED'],
+            date_created=datetime.datetime.utcnow(),
+        )
         version_failed.save()
         record.versions.extend([version_pending, version_failed])
         record.save()
@@ -94,11 +102,13 @@ class TestNodeSettingsModel(OsfTestCase):
         version_pending = model.FileVersion(
             creator=self.user,
             status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
         )
         version_pending.save()
         version_failed = model.FileVersion(
             creator=self.user,
             status=model.status['FAILED'],
+            date_created=datetime.datetime.utcnow(),
         )
         version_failed.save()
         record.versions.extend([version_pending, version_failed])
@@ -299,6 +309,7 @@ class TestFileRecord(OsfTestCase):
         version = model.FileVersion(
             creator=self.user,
             status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
         )
         version.save()
         self.record.versions.append(version)
@@ -321,7 +332,6 @@ class TestFileRecord(OsfTestCase):
             factories.generic_location,
             {'size': 1024},
         )
-        self.project.reload()
         assert_equal(len(self.project.logs), nlogs + 1)
         logged = self.project.logs[-1]
         assert_equal(
@@ -407,6 +417,7 @@ class TestFileVersion(OsfTestCase):
     def setUp(self):
         super(TestFileVersion, self).setUp()
         self.user = factories.AuthUserFactory()
+        self.mock_date = datetime.datetime(1991, 10, 31)
 
     def test_fields(self):
         version = factories.FileVersionFactory(
@@ -424,10 +435,35 @@ class TestFileVersion(OsfTestCase):
         assert_true(retrieved.content_type)
         assert_true(retrieved.date_modified)
 
-    def test_resolve(self):
+    def test_validate_location(self):
+        version = factories.FileVersionFactory.build(location={})
+        with assert_raises(modm_errors.ValidationValueError):
+            version.save()
+        version.location = {
+            'service': 'cloud',
+            'container': 'container',
+            'object': 'object',
+        }
+        version.save()
+
+    def test_validate_dates(self):
+        version = factories.FileVersionFactory.build(date_resolved=None)
+        with assert_raises(modm_errors.ValidationValueError):
+            version.save()
+        version.date_resolved = version.date_created - relativedelta(seconds=1)
+        with assert_raises(modm_errors.ValidationValueError):
+            version.save()
+        version.date_resolved = version.date_created + relativedelta(seconds=1)
+        version.save()
+
+
+    @mock.patch('website.addons.osfstorage.model.datetime.datetime')
+    def test_resolve(self, mock_datetime):
+        mock_datetime.utcnow.return_value = self.mock_date
         version = model.FileVersion(
             creator=self.user,
             status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
         version.resolve(
@@ -435,6 +471,7 @@ class TestFileVersion(OsfTestCase):
             factories.generic_location,
             {'size': 1024},
         )
+        assert_equal(version.date_resolved, self.mock_date)
         assert_equal(version.status, model.status['COMPLETE'])
         assert_equal(version.size, 1024)
 
@@ -442,6 +479,7 @@ class TestFileVersion(OsfTestCase):
         version = model.FileVersion(
             creator=self.user,
             status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
         version.cancel('c22b5f9')
@@ -458,6 +496,7 @@ class TestFileVersion(OsfTestCase):
         version = model.FileVersion(
             creator=self.user,
             status=model.status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
             signature='c22b5f9',
         )
         version.save()

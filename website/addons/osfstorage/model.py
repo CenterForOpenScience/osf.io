@@ -3,6 +3,7 @@
 
 import os
 import bson
+import datetime
 
 from dateutil.parser import parse as parse_date
 
@@ -201,6 +202,7 @@ class FileRecord(BaseFileObject):
             creator=creator,
             signature=signature,
             status=status['PENDING'],
+            date_created=datetime.datetime.utcnow(),
         )
         version.save()
         self.versions.append(version)
@@ -271,8 +273,11 @@ class FileVersion(StoredObject):
     creator = fields.ForeignField('user', required=True)
 
     status = fields.StringField(validate=validate_status)
-    location = fields.DictionaryField()
+    date_created = fields.DateTimeField(required=True)
     signature = fields.StringField()
+
+    date_resolved = fields.DateTimeField()
+    location = fields.DictionaryField()
 
     size = fields.IntegerField()
     content_type = fields.StringField()
@@ -297,6 +302,7 @@ class FileVersion(StoredObject):
     def resolve(self, signature, location, metadata):
         self.before_update(signature)
         self.status = status['COMPLETE']
+        self.date_resolved = datetime.datetime.utcnow()
         self.location = location
         for key, value in metadata.iteritems():
             parser = metadata_parsers.get(key)
@@ -312,9 +318,18 @@ class FileVersion(StoredObject):
 
 LOCATION_KEYS = ['service', 'container', 'object']
 @FileVersion.subscribe('before_save')
-def validate_file_version(schema, instance):
+def validate_version_location(schema, instance):
     if instance.status == status['COMPLETE']:
         if any(key not in instance.location for key in LOCATION_KEYS):
+            raise modm_errors.ValidationValueError
+
+
+@FileVersion.subscribe('before_save')
+def validate_version_dates(schema, instance):
+    if instance.status == status['COMPLETE']:
+        if not instance.date_resolved:
+            raise modm_errors.ValidationValueError
+        if instance.date_created > instance.date_resolved:
             raise modm_errors.ValidationValueError
 
 
