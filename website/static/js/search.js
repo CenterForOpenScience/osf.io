@@ -1,6 +1,6 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'knockoutpunches', 'History'], factory);
+        define(['knockout', 'jquery', 'knockoutpunches', 'History', 'osfutils'], factory);
     } else {
         global.Search  = factory(ko, jQuery, History);
     }
@@ -248,8 +248,7 @@
             self.viewModel.submit();
         }
 
-        element = $(selector).get();
-        ko.applyBindings(self.viewModel, element[0]);
+        $.osf.applyBindings(self.viewModel, selector);
     }
 
     return Search;
