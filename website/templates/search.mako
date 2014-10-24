@@ -5,7 +5,7 @@
     <script>
         $('input[name=q]').remove();
     </script>
-    <div id="searchControls">
+    <div id="searchControls" class="scripted">
         <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
