@@ -15,7 +15,7 @@
                 </div> <!-- end #projectSearchRegisterProject -->
             </div>
         </div><!-- end row -->
-    </div>
+    </div><!-- end ob-reveal -->
 </li> <!-- end #obInputProject" -->
 
 <script>

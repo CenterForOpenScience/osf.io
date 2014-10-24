@@ -3,7 +3,6 @@
 
 <%def name="stylesheets()">
 <link rel="stylesheet" href="/static/css/typeahead.css">
-<link rel="stylesheet" href="/static/vendor/bower_components/jquery-ui/themes/base/jquery-ui.css">
 <link rel="stylesheet" href="/static/css/onboarding.css">
 </%def>
 
