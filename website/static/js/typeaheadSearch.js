@@ -67,8 +67,8 @@
             if(componentBool){
 
 
-                parent_node = $('#addLink' + namespace).prop('linkID' + nodeType);
-                $.getJSON('/api/v1/project/'+ parent_node +'/get_children/', function (projects) {
+                parentNode = $('#addLink' + namespace).prop('linkID' + nodeType);
+                $.getJSON('/api/v1/project/'+ parentNode +'/get_children/', function (projects) {
                 var myProjects = projects.nodes.map(
                     function(item){return {
                         'name': item.title,
@@ -111,7 +111,7 @@
                 $('#inputComponent' + namespace).attr('placeholder', 'First select a project');
             }
 
-            if(nodeType==='Project'){
+            if(nodeType === 'Project'){
                 addLink.attr('disabled', true);
             }
         });

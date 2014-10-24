@@ -78,8 +78,8 @@
 
             // file add error logic
             this.on('error', function(file){
-                var file_name = file.name;
-                var file_size = file.size;
+                var fileName = file.name;
+                var fileSize = file.size;
                 self.removeFile(file);
                 if(self.files.length===0){
                     $obDropzone.show(); // swap filedisplay with file dropzone
@@ -91,12 +91,12 @@
                     self.removeAllFiles();
                 }
 
-                if(file_size > self.options.maxFilesize){
+                if(fileSize > self.options.maxFilesize){
 
-                    $obDropzoneError.append('<div>' + file_name + ' is too big (max = ' + self.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
+                    $obDropzoneError.append('<div>' + fileName + ' is too big (max = ' + self.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
                     $obDropzoneError.show();
                 }else{
-                    $obDropzoneError.text(file_name + 'could not be added to the upload queue'); // I don't know if this will ever be called, just a back up error handling
+                    $obDropzoneError.text(fileName + 'could not be added to the upload queue'); // I don't know if this will ever be called, just a back up error handling
                     $obDropzoneError.show();
                 }
             });
@@ -114,9 +114,9 @@
 
                     //redirect to project or componenet
                     if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
-                        redirect_to_poc('Component');
+                        redirectToPOC('Component');
                     }else{
-                        redirect_to_poc('Project');
+                        redirectToPOC('Project');
                     }
                 }
             });
@@ -212,9 +212,10 @@
     ];
 
 
-// Helper Functions
-    // redictor to project or component
-    function redirect_to_poc(poc){ // str project or componenet (poc)
+    /** Helper functions **/
+
+    /** Redirect to a project or component based on its linkId property **/
+    function redirectToPOC(poc){ // str project or componenet (poc)
         var url = '/'+ $addLink.prop('linkID' + poc);
             if(url !== '/undefined'){
             window.location = url;
