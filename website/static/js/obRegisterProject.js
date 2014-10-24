@@ -2,7 +2,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['typeahead', 'typeaheadSearch'], function() {
+        $script.ready(['typeaheadSearch'], function() {
             global.ObRegisterProject = factory(jQuery);
             $script.done('obRegisterProject');
         });

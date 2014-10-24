@@ -95,7 +95,7 @@
 
 <script>
     $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
-    $script(['/static/js/typeaheadSearch.js'], 'typeaheadSearch');
+    $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
 
     $script(['/static/js/obAddFile.js']);
     $script.ready('obAddFile', function() {

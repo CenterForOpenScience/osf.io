@@ -2,14 +2,14 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['typeahead', 'typeaheadSearch', 'dropzone'], function() {
-            global.ObAddFile = factory(jQuery);
+        $script.ready(['typeaheadSearch', 'dropzone'], function() {
+            global.ObAddFile = factory(jQuery, Dropzone);
             $script.done('obAddFile');
         });
     } else {
-        global.ObAddFile = factory(jQuery);
+        global.ObAddFile = factory(jQuery, Dropzone);
     }
-}(this, function ($) {
+}(this, function ($, Dropzone) {
     'use strict';
 
     var namespace = 'AddFile';
