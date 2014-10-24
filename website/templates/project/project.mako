@@ -222,6 +222,9 @@ ${parent.javascript_bottom()}
             }
         });
 
+        // Limit the maximum length that you can type when adding a tag
+        $('#node-tags_tag').attr("maxlength", "128");
+
         // Remove delete UI if not contributor
         % if 'write' not in user['permissions'] or node['is_registration']:
             $('a[title="Removing tag"]').remove();
