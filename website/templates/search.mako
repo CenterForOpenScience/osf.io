@@ -42,15 +42,21 @@
                 <!-- ko if: tags -->
                 <div class="row hidden" data-bind="css: {hidden: tags().length < 1}">
                     <h3> Improve Your Search:</h3>
-                    <span data-bind="foreach: tags">
-                        <!-- ko if: count() === $parent.tagMaxCount() && $parent.tagMaxCount() !== 1 -->
-                        <button type="button" class="tag btn btn-link btn-lg" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                    <span class="tag-cloud" data-bind="foreach: tags">
+                        <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
+                        <span class="cloud-tag tag-big" data-bind="click: $parent.addTag.bind(name)">
+                            {{ name() }}
+                        </span>
                         <!-- /ko -->
-                        <!-- ko if: count() < $parent.tagMaxCount() && count() > 1 -->
-                        <button type="button" class="tag btn btn-link btn-sm" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                        <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
+                        <span class="cloud-tag tag-med" data-bind="click: $parent.addTag.bind(name)">
+                            {{ name() }}
+                        </span>
                         <!-- /ko -->
-                        <!-- ko if: count() === 1 -->
-                        <button type="button" class="tag btn btn-link btn-xs" data-bind="click: $parent.addTag.bind(name)">{{ name() }}</button>
+                        <!-- ko if: count() <= $parent.tagMaxCount()/2-->
+                        <span class="cloud-tag tag-sm" data-bind="click: $parent.addTag.bind(name)">
+                            {{ name() }}
+                        </span>
                         <!-- /ko -->
                     </span>
                 </div>
@@ -209,7 +215,7 @@
 
         <!-- ko if: contributors.length > 0 -->
         <h5>
-            Contributors: <small data-bind="foreach: contributors">
+            Contributors: <small data-bind="foreach: contribut ors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
             </small>
