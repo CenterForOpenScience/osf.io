@@ -9,7 +9,6 @@
     <div class="ob-reveal" id="obRevealRegisterProject">
         <div class="row">
             <div class="col-md-12" >
-                <h4>Select Project</h4>
                 <div class="ob-search" class="projectSearchRegisterProject">
                     <img class="ob-clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
                     <input class="typeahead" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>

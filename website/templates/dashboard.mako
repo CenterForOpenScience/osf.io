@@ -20,7 +20,7 @@
             <div class="alert alert-info">The OSF has a new dashboard. Find out how it works on our <a href="/getting-started/#dashboards">getting started</a> page.</div>
         % endif
 
-        <div id="projectOrganizerScope">
+        <div class="project-organizer" id="projectOrganizerScope">
             <%include file="projectGridTemplates.html"/>
 
             <div class="hgrid" id="project-grid"></div>
