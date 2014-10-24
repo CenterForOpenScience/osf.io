@@ -278,6 +278,18 @@ class TestFileRecord(OsfTestCase):
         )
         self.record.create_pending_version(self.user, '78c9a53')
 
+    def test_create_pending_record_deleted(self):
+        self.record.delete(self.auth_obj, log=False)
+        assert_true(self.record.is_deleted)
+        self.record.create_pending_version(self.user, 'c22b59f')
+        self.record.resolve_pending_version(
+            'c22b59f',
+            factories.generic_location,
+            {},
+        )
+        assert_false(self.record.is_deleted)
+        self.record.create_pending_version(self.user, '78c9a53')
+
     def test_create_pending_previous_cancelled(self):
         self.record.create_pending_version(self.user, 'c22b59f')
         self.record.cancel_pending_version('c22b59f')

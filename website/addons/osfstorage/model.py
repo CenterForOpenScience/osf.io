@@ -204,6 +204,7 @@ class FileRecord(BaseFileObject):
         )
         version.save()
         self.versions.append(version)
+        self.is_deleted = False
         self.save()
         return version
 
