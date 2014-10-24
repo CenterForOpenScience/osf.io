@@ -22,7 +22,7 @@
     <br />
     <div class="row">
         <div class="col-md-12">
-            <button class="btn btn-primary" type="submit" data-bind="enable: title.isValid()" disabled>Create New Project</button>
+            <button class="btn btn-primary pull-right" type="submit" data-bind="enable: title.isValid()" disabled>Create</button>
         </div>
     </div>
 </form>

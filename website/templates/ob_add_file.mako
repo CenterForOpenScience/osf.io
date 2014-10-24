@@ -38,8 +38,8 @@
                     <img class="ob-clear-button ob-reveal" id="clearInputComponentAddFile" src="/static/img/close2.png">
                     <input class="typeahead" disabled="disabled" type="text" placeholder="First select a project" id='inputComponentAddFile'>
                 </div>
-                <span class="findBtn btn btn-default pull-right" id="addLinkAddFile" disabled="disabled">Upload</span>
-                <span class="findBtn btn btn-default pull-right" id="fakeAddLinkAddFile" disabled="disabled">Upload</span>
+                <span class="findBtn btn btn-primary pull-right" id="addLinkAddFile" disabled="disabled">Upload</span>
+                <span class="findBtn btn btn-primary pull-right" id="fakeAddLinkAddFile" disabled="disabled">Upload</span>
             </div>
         </div>
     </div>

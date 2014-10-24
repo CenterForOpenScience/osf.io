@@ -1,6 +1,6 @@
 
 <!-- start #obRegisterProject -->
-<li id="obRegisterProject" class="ob-list list-group-item"> 
+<li id="obRegisterProject" class="ob-list list-group-item">
     <div id="obRegisterProjectBtn" class="ob-unselectable">
         <h3 class="ob-heading" >Register a project or component</h3>
         <img class="ob-expand-icon pull-right" id="obIconRegisterProject" src="/static/img/plus.png">
@@ -25,7 +25,7 @@
                     <input class="typeahead" type="text" placeholder="First select a project" disabled="disabled" id = 'inputComponentRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->
 
-                <span class="findBtn btn btn-default pull-right" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
+                <span class="findBtn btn btn-primary pull-right" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
             </div>
         </div>
     </div>
