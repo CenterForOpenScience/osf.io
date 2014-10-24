@@ -55,6 +55,7 @@ def migrate_version(idx, node_file, node_settings):
 
 
 def migrate_node(node):
+    logger.info('Migrating node {0}'.format(node._id))
     node_settings = node.get_or_add_addon('osfstorage', auth=None, log=False)
     for path, versions in node.files_versions.iteritems():
         for idx, version in enumerate(versions):
@@ -73,7 +74,7 @@ def get_nodes():
 
 def main(dry_run=True):
     nodes = get_nodes()
-    print('Migrating files on {0} `Node` records'.format(len(nodes)))
+    logger.info('Migrating files on {0} `Node` records'.format(len(nodes)))
     if dry_run:
         return
     for node in nodes:
