@@ -10,7 +10,6 @@
     <div class="col-md-7">
         <div class="project-details"></div>
         <div class="page-header">
-            <div class="pull-right"><a class="btn btn-primary" href="/project/new/">New Project</a></div>
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>
         </div>
