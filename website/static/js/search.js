@@ -55,6 +55,7 @@
         self.categories = ko.observableArray([]);
         self.tags = ko.observableArray([]);
         self.tag = ko.observable('');
+        self.calledBySearch = false;
 
         self.totalCount = ko.computed(function() {
             var theCount = 0;
@@ -168,13 +169,25 @@
             self.totalResults(0);
             self.currentPage(1);
             self.search();
-            History.pushState({page: self.currentPage()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
         };
 
         self.search = function() {
-
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
+                var state = {
+                    query: self.query(),
+                    page: self.currentPage(),
+                    scrollTop: $(window).scrollTop(),
+                };
+
+                var url = '?q=' + self.query();
+
+                if (self.category().rawName !== undefined) {
+                    url += ('&filter=' + self.category().rawName());
+                    state.filter = self.category().rawName();
+                } else {
+                    state.filter = '';
+                }
 
                 self.results.removeAll();
                 self.tags([]);
@@ -211,6 +224,12 @@
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
+                url += ('&page=' + self.currentPage());
+
+                self.calledBySearch = true;
+                History.pushState(state, 'OSF | Search', url);
+
+
             }).fail(function(){
                 console.log('error');
                 self.totalResults(0);
@@ -222,17 +241,33 @@
 
         self.paginate = function(val) {
             window.scrollTo(0, 0);
-            History.replaceState({page: self.currentPage(), scrollTop: $(window).scrollTop()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
             self.currentPage(self.currentPage()+val);
-            History.pushState({page: self.currentPage(), scrollTop: 0}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
+            self.search();
         };
 
         self.pagePrev = self.paginate.bind(self, -1);
         self.pageNext = self.paginate.bind(self, 1);
 
         self.pageChange = function() {
-            self.currentPage(History.getState().data.page);
+            if (self.calledBySearch) {
+                self.calledBySearch = false;
+                return;
+            }
+
+            self.calledBySearch = false;
+
+            var state = History.getState().data;
+            self.currentPage(state.page || 1);
+            self.setCategory(state.filter);
+            self.query(state.query || '');
             self.search();
+        };
+
+        self.setCategory = function(cat) {
+            if (cat !== undefined && cat !== null) {
+                self.category(new Category(cat, cat, cat));
+                self.alias(self.category().getAlias());
+            }
         };
 
     };
@@ -240,13 +275,19 @@
     function Search(selector, url, appURL) {
         // Initialization code
         var self = this;
-        var query = qs('q');
+
         self.viewModel = new ViewModel(url, appURL);
         History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
-        if (query !== null) {
-            self.viewModel.query(query);
-            self.viewModel.submit();
-        }
+
+        var data = {
+            query: qs('q'),
+            page: Number(qs('page')),
+            scrollTop: 0,
+            filter: qs('filter')
+        };
+        History.replaceState(data, 'OSF | Search', location.search);
+        self.viewModel.pageChange();
+        // self.viewModel.search(true);
 
         $.osf.applyBindings(self.viewModel, selector);
     }
