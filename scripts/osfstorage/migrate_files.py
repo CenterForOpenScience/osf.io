@@ -60,11 +60,11 @@ def migrate_node(node):
         for idx, version in enumerate(versions):
             try:
                 node_file = NodeFile.load(version)
+                migrate_version(idx, node_file, node_settings)
             except Exception as error:
                 logger.error('Could not migrate object {0}'.format(version))
                 logger.exception(error)
                 break
-            migrate_version(idx, node_file, node_settings)
 
 
 def get_nodes():
@@ -77,7 +77,11 @@ def main(dry_run=True):
     if dry_run:
         return
     for node in nodes:
-        migrate_node(node)
+        try:
+            migrate_node(node)
+        except Exception as error:
+            logger.error('Could not migrate node {0}'.format(node._id))
+            logger.exception(error)
 
 
 if __name__ == '__main__':
