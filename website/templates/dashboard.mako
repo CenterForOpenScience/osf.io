@@ -1,11 +1,13 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Dashboard</%def>
-<%def name="content()">
 
+<%def name="stylesheets()">
 <link rel="stylesheet" href="/static/css/typeahead.css">
-<link rel="stylesheet" href="/static/css/onboarding.css">
 <link rel="stylesheet" href="/static/vendor/bower_components/jquery-ui/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="/static/css/onboarding.css">
+</%def>
 
+<%def name="content()">
 <div class="row">
     <div class="col-md-7">
         <div class="project-details"></div>
