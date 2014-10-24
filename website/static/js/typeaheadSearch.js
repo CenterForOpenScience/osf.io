@@ -67,7 +67,7 @@
             if(componentBool){
 
 
-                parentNode = $('#addLink' + namespace).prop('linkID' + nodeType);
+                var parentNode = $('#addLink' + namespace).prop('linkID' + nodeType);
                 $.getJSON('/api/v1/project/'+ parentNode +'/get_children/', function (projects) {
                     var myProjects = projects.nodes.map(
                         function(item){return {

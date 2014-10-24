@@ -285,7 +285,7 @@ div.organize-project-controls {
 
 /* Typeahead autocomplete box */
 
-input.typeahead{
+.project-organizer input.typeahead{
     width: 100%;
     margin-bottom: 5px;
 }

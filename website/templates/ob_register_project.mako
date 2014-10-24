@@ -11,7 +11,9 @@
             <div class="col-md-12" >
                 <div class="ob-search" class="projectSearchRegisterProject">
                     <img class="ob-clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
-                    <input class="typeahead" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>
+                    ## Add label for proper spacing
+                    <label for="project"></label>
+                    <input class="typeahead form-control" name="project" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->
             </div>
         </div><!-- end row -->
