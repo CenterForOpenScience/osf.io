@@ -5,7 +5,7 @@
     <script>
         $('input[name=q]').remove();
     </script>
-    <div id="searchControls">
+    <div id="searchControls" class="scripted">
         <div class="row">
             <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
@@ -221,7 +221,7 @@
 <%def name="javascript_bottom()">
 
         <script type='text/javascript'>
-            $script(['/static/js/search.js'], function(){
+            $script(['/static/js/search.js', '/static/vendor/bower_components/history.js/scripts/bundled/html5/jquery.history.js'], function(){
             var search =  new Search('#searchControls', '/api/v1/search/', '');
             });
         </script>

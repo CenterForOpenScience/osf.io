@@ -1,18 +1,18 @@
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'knockoutpunches'], factory);
+        define(['knockout', 'jquery', 'knockoutpunches', 'History', 'osfutils'], factory);
     } else {
-        global.Search  = factory(ko, jQuery);
+        global.Search  = factory(ko, jQuery, History);
     }
-}(this, function(ko, $) {
+}(this, function(ko, $, History) {
     // Enable knockout punches
     ko.punches.enableAll();
 
     //https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
     function qs(key) {
-        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, "\\$&"); // escape RegEx meta chars
-        var match = location.search.match(new RegExp("[?&]"+key+"=([^&]+)(&|$)"));
-        return match && decodeURIComponent(match[1].replace(/\+/g, " "));
+        key = key.replace(/[*+?^$.\[\]{}()|\\\/]/g, '\\$&'); // escape RegEx meta chars
+        var match = location.search.match(new RegExp('[?&]'+key+'=([^&]+)(&|$)'));
+        return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
     }
 
     var Category = function(categoryName, categoryCount, alias){
@@ -172,6 +172,7 @@
             self.totalResults(0);
             self.currentPage(1);
             self.search();
+            History.pushState({page: self.currentPage()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
         };
 
         self.search = function() {
@@ -209,14 +210,14 @@
                     }
                 }
                 $.each(data.tags, function(key, value){
-                    self.tags.push(new Tag(value))
+                    self.tags.push(new Tag(value));
                     self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count))
                 });
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
             }).fail(function(){
-                console.log("error");
+                console.log('error');
                 self.totalResults(0);
                 self.currentPage(0);
                 self.results.removeAll();
@@ -224,13 +225,18 @@
 
         };
 
-        self.pageNext = function() {
-            self.currentPage(self.currentPage() + 1);
-            self.search();
+        self.paginate = function(val) {
+            window.scrollTo(0, 0);
+            History.replaceState({page: self.currentPage(), scrollTop: $(window).scrollTop()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
+            self.currentPage(self.currentPage()+val);
+            History.pushState({page: self.currentPage(), scrollTop: 0}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
         };
 
-        self.pagePrev = function() {
-            self.currentPage(self.currentPage() - 1);
+        self.pagePrev = self.paginate.bind(self, -1);
+        self.pageNext = self.paginate.bind(self, 1);
+
+        self.pageChange = function() {
+            self.currentPage(History.getState().data.page);
             self.search();
         };
 
@@ -241,12 +247,13 @@
         var self = this;
         var query = qs('q');
         self.viewModel = new ViewModel(url, appURL);
+        History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
         if (query !== null) {
             self.viewModel.query(query);
-            self.viewModel.search();
+            self.viewModel.submit();
         }
-        element = $(selector).get();
-        ko.applyBindings(self.viewModel, element[0]);
+
+        $.osf.applyBindings(self.viewModel, selector);
     }
 
     return Search;
