@@ -69,23 +69,23 @@
 
                 parentNode = $('#addLink' + namespace).prop('linkID' + nodeType);
                 $.getJSON('/api/v1/project/'+ parentNode +'/get_children/', function (projects) {
-                var myProjects = projects.nodes.map(
-                    function(item){return {
-                        'name': item.title,
-                        'node_id': item.id,
-                        'route': item.api_url,
-                    };
-                });
+                    var myProjects = projects.nodes.map(
+                        function(item){return {
+                            'name': item.title,
+                            'node_id': item.id,
+                            'route': item.api_url,
+                        };
+                    });
 
-                if(myProjects.length > 0){
-                    $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
-                    $('#inputComponent' + namespace).attr('disabled', false);
-                    $('#inputComponent' + namespace).focus();
-                    $('#inputComponent' + namespace).attr('placeholder', 'Type to search');
-                }else{
-                    $('#inputComponent' + namespace).attr('disabled', true);
-                    $('#inputComponent' + namespace).attr('placeholder', 'Selected project has no components');
-                }
+                    if(myProjects.length > 0){
+                        $('#inputComponent' + namespace).data('ttTypeahead').dropdown.datasets[0].source = substringMatcher(myProjects);
+                        $('#inputComponent' + namespace).attr('disabled', false);
+                        $('#inputComponent' + namespace).focus();
+                        $('#inputComponent' + namespace).attr('placeholder', 'Type to search');
+                    } else{
+                        $('#inputComponent' + namespace).attr('disabled', true);
+                        $('#inputComponent' + namespace).attr('placeholder', 'Selected project has no components');
+                    }
                 });
             }
         });
