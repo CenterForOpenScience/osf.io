@@ -64,11 +64,10 @@
             addLink.prop('linkID' + nodeType, linkID)
                 .removeAttr('disabled')
                 .prop('routeID'+ nodeType, routeID);
-            if(componentBool){
-
-
+            if (componentBool){
                 var parentNode = $('#addLink' + namespace).prop('linkID' + nodeType);
-                $.getJSON('/api/v1/project/'+ parentNode +'/get_children/', function (projects) {
+                var url = '/api/v1/project/'+ parentNode +'/get_children/';
+                var request = $.getJSON(url, function (projects) {
                     var myProjects = projects.nodes.map(
                         function(item){return {
                             'name': item.title,
@@ -87,6 +86,12 @@
                         $('#inputComponent' + namespace).attr('placeholder', 'Selected project has no components');
                     }
                 });
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Could not fetch child nodes of ' + parentNode, {
+                        url: url, textStatus: textStatus, error: error
+                    });
+                });
+
             }
         });
     }
