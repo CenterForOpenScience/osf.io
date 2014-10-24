@@ -41,7 +41,7 @@
 
         init: function() {
             var submitButton = document.querySelector('#addLink' + namespace);
-            myDropzone = this;
+            self = this;
 
             // Submit logic
             submitButton.addEventListener('click', function() {
@@ -50,8 +50,8 @@
                 $addLink.attr('disabled', true);
                 $uploadProgress.show();
 
-                myDropzone.options.url = projectRoute + 'osffiles/';
-                myDropzone.processQueue(); // Tell Dropzone to process all queued files.
+                self.options.url = projectRoute + 'osffiles/';
+                self.processQueue(); // Tell Dropzone to process all queued files.
             });
 
             var clearError = document.querySelector('#obDropzone');
@@ -71,7 +71,7 @@
                 $addLink.hide(); // swap active link with pseudo button
                 $fakeAddLink.show();
 
-                myDropzone.removeAllFiles();
+                self.removeAllFiles();
                 $('#obDropzoneError').empty();
 
             });
@@ -80,20 +80,20 @@
             this.on('error', function(file){
                 var file_name = file.name;
                 var file_size = file.size;
-                myDropzone.removeFile(file);
-                if(myDropzone.files.length===0){
+                self.removeFile(file);
+                if(self.files.length===0){
                     $obDropzone.show(); // swap filedisplay with file dropzone
                     $obDropzoneSelected.hide();
 
                     $addLink.hide(); // swap active link with pseudo button
                     $fakeAddLink.show();
 
-                    myDropzone.removeAllFiles();
+                    self.removeAllFiles();
                 }
 
-                if(file_size > myDropzone.options.maxFilesize){
+                if(file_size > self.options.maxFilesize){
 
-                    $obDropzoneError.append('<div>' + file_name + ' is too big (max = ' + myDropzone.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
+                    $obDropzoneError.append('<div>' + file_name + ' is too big (max = ' + self.options.maxFilesize + ' MiB) and was not added to the upload queue.</div>');
                     $obDropzoneError.show();
                 }else{
                     $obDropzoneError.text(file_name + 'could not be added to the upload queue'); // I don't know if this will ever be called, just a back up error handling
@@ -107,10 +107,10 @@
 
             // upload and process queue logic
             this.on('success',function(){
-                $obDropzoneFilename.text(uploadCounter + ' / ' + myDropzone.files.length + ' files');
-                 myDropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
+                $obDropzoneFilename.text(uploadCounter + ' / ' + self.files.length + ' files');
+                 self.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
                  uploadCounter+= 1;
-                 if(uploadCounter> myDropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                 if(uploadCounter> self.files.length){ // when finished redirect to project/component page where uploaded.
 
                     //redirect to project or componenet
                     if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
@@ -123,12 +123,12 @@
 
             // add file logic and dropzone to file display swap
             this.on('addedfile', function() {
-                if(myDropzone.files.length>1){
+                if(self.files.length>1){
                     $uploadIcon.attr('src', '/static/img/upload_icons/multiple_blank.png');
-                    $obDropzoneFilename.text(myDropzone.files.length + ' files');
+                    $obDropzoneFilename.text(self.files.length + ' files');
                 }else{
                     // $('#obDropzone').click();
-                    var file_name = truncateFilename(myDropzone.files[0].name);
+                    var file_name = truncateFilename(self.files[0].name);
                     $uploadIcon.attr('src', '/static/img/upload_icons/' + get_dz_icon(file_name));
                     $obDropzoneFilename.text(file_name);
                 }

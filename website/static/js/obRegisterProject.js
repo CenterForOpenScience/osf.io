@@ -13,21 +13,21 @@
     'use strict';
     var namespace = 'RegisterProject';
 
-    function redirect_to_poc(poc){
-        window.location = '/'+ $('#addLink' + namespace).prop('linkID' + poc) + '/register';
+    function redirectToPOC(poc){
+        window.location = '/'+ $('#addLink' + namespace).prop('linkID' + poc) + '/register/';
     }
 
     function ObRegisterProject(){
         var $addLink = $('#addLink' + namespace);
-        var typeaheadsearch3  = new TypeaheadSearch(namespace, 'Project', 1);
-        var typeaheadsearch4  = new TypeaheadSearch(namespace, 'Component', 0);
+        self.projectTypeahead  = new TypeaheadSearch(namespace, 'Project', 1);
+        self.componentTypeahead  = new TypeaheadSearch(namespace, 'Component', 0);
 
         // to  do any of this just edit the click functionality editing the name spaced add_link
         $addLink.click(function() {
             if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
-                redirect_to_poc('Component');
+                redirectToPOC('Component');
             }else{
-                redirect_to_poc('Project');
+                redirectToPOC('Project');
             }
         });
     }
