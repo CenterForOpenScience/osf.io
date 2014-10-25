@@ -130,6 +130,7 @@ def serialize_revision(node, record, version, index):
             'url': version.creator.url,
         },
         'date': version.date_modified.isoformat(),
+        'downloads': get_download_count(record, node, index),
         'urls': {
             'view': node.web_url_for(
                 'osf_storage_view_file',

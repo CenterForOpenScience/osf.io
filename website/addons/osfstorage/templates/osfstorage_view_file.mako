@@ -30,7 +30,7 @@
                 <th>Version</th>
                 <th>User</th>
                 <th>Date</th>
-                <th></th>
+                <th colspan=2>Downloads</th>
             </tr>
         </thead>
 
@@ -43,11 +43,12 @@
                     <a data-bind="attr.href: revision.user.url">{{ revision.user.name }}</a>
                 </td>
                 <td>{{ revision.date.local }}</td>
+                <td>{{ revision.downloads }}</td>
                 <td>
                     <a
                             data-bind="attr.href: revision.urls.download"
                             class="btn btn-primary btn-sm"
-                        >Download <i class="icon-download-alt"></i>
+                        ><i class="icon-download-alt"></i>
                     </a>
                 </td>
             </tr>

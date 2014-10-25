@@ -210,21 +210,39 @@ class TestSerializeRevision(OsfTestCase):
         self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'kind/of/magic.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
-        self.version = factories.FileVersionFactory(
-            creator=self.user,
-            date_modified=datetime.datetime.utcnow(),
-        )
-        self.record.versions.append(self.version)
+        self.versions = [
+             factories.FileVersionFactory(
+                creator=self.user,
+                date_modified=datetime.datetime.utcnow(),
+            )
+            for _ in range(3)
+        ]
+        self.record.versions = self.versions
         self.record.save()
 
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def download_version(self, version, mock_get_url):
+        self.app.get(
+            self.project.web_url_for(
+                'osf_storage_download_file',
+                path=self.path,
+                version=version,
+            ),
+            auth=self.user.auth,
+        )
+
     def test_serialize_revision(self):
+        self.download_version(1)
+        self.download_version(1)
+        self.download_version(3)
         expected = {
             'index': 1,
             'user': {
                 'name': self.user.fullname,
                 'url': self.user.url,
             },
-            'date': self.version.date_modified.isoformat(),
+            'date': self.versions[0].date_modified.isoformat(),
+            'downloads': 2,
             'urls': {
                 'view': self.project.web_url_for(
                     'osf_storage_view_file',
@@ -241,7 +259,7 @@ class TestSerializeRevision(OsfTestCase):
         observed = utils.serialize_revision(
             self.project,
             self.record,
-            self.version,
+            self.versions[0],
             1,
         )
         assert_equal(expected, observed)
