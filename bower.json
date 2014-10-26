@@ -15,6 +15,7 @@
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
-    "typeahead.js": "~0.10.5"
+    "typeahead.js": "~0.10.5",
+    "knockout": "~3.2.0"
   }
 }
