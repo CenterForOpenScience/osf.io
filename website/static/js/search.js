@@ -60,6 +60,14 @@
         self.endDate = ko.observable(Date('1970-01-01'));
 
 
+        self.totalCount = ko.computed(function() {
+            if (self.categories().length === 0 || self.categories()[0] === undefined) {
+                return 0;
+            }
+
+            return self.categories()[0].count();
+        });
+
         self.totalPages = ko.computed(function() {
             var pageCount = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
