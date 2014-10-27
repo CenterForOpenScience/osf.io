@@ -8,7 +8,6 @@ from urllib2 import HTTPError
 from flask import request
 from modularodm import Q
 
-from framework import status
 from framework.auth.core import get_current_user
 from framework.auth.decorators import must_be_logged_in
 
@@ -23,10 +22,7 @@ logger = logging.getLogger(__name__)
 
 def search_search():
     tick = time.time()
-    ERROR_RETURN = {
-        'results': [],
-        'query': '',
-    }
+    results = {}
 
     if request.method == 'POST' and request.json:
         results = search.search(request.json)
@@ -60,6 +56,7 @@ def conditionally_add_query_item(query, item, condition):
 
     raise HTTPError(http.BAD_REQUEST)
 
+
 @must_be_logged_in
 def search_projects_by_title(**kwargs):
     """ Search for nodes by title. Can pass in arguments from the URL to modify the search
@@ -75,7 +72,7 @@ def search_projects_by_title(**kwargs):
     :return: a list of dictionaries of projects
 
     """
-    #TODO(fabianvf): At some point, it would be nice to do this with elastic search
+    # TODO(fabianvf): At some point, it would be nice to do this with elastic search
     user = kwargs['auth'].user
 
     term = request.args.get('term', '')
@@ -90,7 +87,7 @@ def search_projects_by_title(**kwargs):
 
     matching_title = (
         Q('title', 'icontains', term) &  # search term (case insensitive)
-        Q('category', 'eq', category)   # is a project
+        Q('category', 'eq', category)  # is a project
     )
 
     matching_title = conditionally_add_query_item(matching_title, 'is_deleted', is_deleted)
