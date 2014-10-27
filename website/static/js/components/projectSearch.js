@@ -71,7 +71,7 @@
         });
     }
 
-    function noop() {};
+    function noop() {}
 
     ko.bindingHandlers.projectSearch = {
         init: function(element, valueAccessor, allBindings, viewModel) {
@@ -99,20 +99,32 @@
                 });
             });
         }
-    }
+    };
 
-    var OPEN_ICON = '/static/img/plus.png';
-    var CLOSE_ICON = '/static/img/minus.png';
     function ProjectSearchViewModel(params) {
         var self = this;
 
         self.taSelected = ko.observable(null); // set by typeahead
 
         self.heading = params.heading;
-        self.isOpen = ko.observable(false);
-        self.toggleIconSrc = ko.observable(OPEN_ICON);
         self.hasSelected = ko.observable(false);
         self.onSubmit = params.onSubmit || noop;
+        self.enableButton = function() {
+            self.hasSelected(true);
+        };
+    }
+
+    ko.components.register('osf-project-search', {
+        viewModel: ProjectSearchViewModel,
+        template: {element: 'osf-project-search'}
+    });
+
+    var OPEN_ICON = '/static/img/plus.png';
+    var CLOSE_ICON = '/static/img/minus.png';
+    function OBRegisterViewModel(params) {
+        var self = this;
+        self.isOpen = ko.observable(false);
+        self.toggleIconSrc = ko.observable(OPEN_ICON);
         self.open = function() {
             self.isOpen(true);
             self.toggleIconSrc(CLOSE_ICON);
@@ -128,16 +140,11 @@
                 self.close();
             }
         };
-        self.enableButton = function() {
-            self.hasSelected(true);
-            console.log('hi');
-        };
     }
 
-
-    ko.components.register('osf-project-search', {
-        viewModel: ProjectSearchViewModel,
-        template: {element: 'osf-project-search'}
+    ko.components.register('osf-ob-register', {
+        viewModel: OBRegisterViewModel,
+        template: {element: 'osf-ob-register'}
     });
 
 }));

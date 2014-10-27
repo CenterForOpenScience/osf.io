@@ -58,13 +58,7 @@
                         <div id="obRegisterProject">
                             <div
                                 data-bind='component: {
-                                    name: "osf-project-search",
-                                    params: {
-                                        heading: "Register a project",
-                                        onSubmit: function() {
-                                            window.location = this.taSelected().urls.register;
-                                        }
-                                    }
+                                    name: "osf-ob-register"
                                 }'></div>
                         </div>
                         <%include file="ob_add_file.mako"/>
