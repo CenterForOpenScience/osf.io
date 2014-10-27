@@ -18,7 +18,7 @@
             placeholder="Type to search for a project">
         </div>
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: hasSelected(), text: params.submitText || 'Submit'"
+    <button type="submit" data-bind="visible: showSubmit(), text: params.submitText || 'Submit'"
             class="btn btn-primary pull-right" >
     </button>
 </form>
@@ -82,12 +82,14 @@
             <div data-bind="component:
                 {
                     name: 'osf-project-search',
-                    params: {onSubmit: startUpload,
-                            submitText: 'Upload...'}
+                    params: {
+                        onSubmit: startUpload,
+                        submitText: 'Upload',
+                    }
                 }">
             </div>
         </div>
     </div><!-- end row -->
-    <div data-bind="text: errorMessage()" class="text-danger"></div>
+    <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
 </li> <!-- end .ob-list -->
 </template>

@@ -129,7 +129,7 @@
      */
     function ProjectSearchViewModel(params) {
         var self = this;
-        self.params = params;
+        self.params = params || {};
         self.heading = params.heading;
         /* Observables */
         self.selectedProject = ko.observable(null);
@@ -137,6 +137,11 @@
         self.hasSelected = ko.computed(function() {
             return self.selectedProject() !== null;
         });
+
+        self.showSubmit = ko.computed(function() {
+            return self.hasSelected();
+        });
+
         // Project name to display in the text input
         self.selectedProjectName = ko.computed(function() {
             return self.selectedProject() ? self.selectedProject().name : '';
@@ -310,30 +315,47 @@
         self.iconSrc = ko.observable('//:0');
         self.uploadCount = ko.observable(1);
         self.disableUpload = ko.observable(false);
+        // Flashed messages
+        self.message = ko.observable('');
+        self.messageClass = ko.observable('text-info');
         // The target node to upload to to
         self.target = ko.observable(null);
         /* Functions */
         self.startUpload = function(selected) {
             if (!self.dropzone.getQueuedFiles().length) {
-                self.errorMessage('Please select at least one file to upload.');
+                self.changeMessage('Please select at least one file to upload.', 'text-danger');
                 return false;
             }
             self.target(selected);
-            self.clearErrors();
+            self.clearMessages();
             // TODO: disable component search
             // $addLink.attr('disabled', true);
             self.showProgress(true);
             self.dropzone.options.url = selected.urls.upload;
             self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
         };
-        self.clearErrors = function() {
-            self.errorMessage('');
+        self.clearMessages = function() {
+            self.message('');
+            self.messageClass('text-info')
         };
         self.clearDropzone = function() {
             self.enableUpload(true);
             self.dropzone.removeAllFiles();
             self.uploadCount(1);
-            self.clearErrors();
+            self.clearMessages();
+        };
+        /** Change the flashed message. */
+        self.changeMessage = function(text, css, timeout) {
+            self.message(text);
+            var cssClass = css || 'text-info';
+            timeout = timeout || 3000;
+            self.messageClass(cssClass);
+            if (timeout) {
+                // Reset message after timeout period
+                setTimeout(function() {
+                    self.clearMessages();
+                }, timeout);
+            }
         };
 
 
@@ -365,16 +387,16 @@
                         dropzone.removeAllFiles();
                     }
                     if (fileSize > dropzone.options.maxFilesize){
-                        self.errorMessage(fileName + ' is too big (max = ' +
+                        self.changeMessage(fileName + ' is too big (max = ' +
                                          dropzone.options.maxFilesize +
-                                         ' MiB) and was not added to the upload queue.');
+                                         ' MiB) and was not added to the upload queue.', 'text-danger');
                     } else {
-                        self.errorMessage(fileName + 'could not be added to the upload queue');
+                        self.changeMessage(fileName + 'could not be added to the upload queue', 'text-danger');
                         Raven.captureMessage('Could not upload: ' + fileName);
                     }
                 });
                 this.on('drop',function(){ // clear errors on drop or click
-                    self.clearErrors();
+                    self.clearMessages();
                 });
                 // upload and process queue logic
                 this.on('success',function(){
@@ -384,6 +406,7 @@
                     self.uploadCount(oldCount + 1);
 
                     if(self.uploadCount() > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                        self.changeMessage('Success!', 'text-success');
                         window.location = self.target().urls.files;
                     }
                 });
