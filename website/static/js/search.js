@@ -183,7 +183,7 @@
             self.search();
         };
 
-        self.search = function(noPush) {
+        self.search = function(noPush, validate) {
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
@@ -206,7 +206,7 @@
                 self.categories(self.categories().sort(self.sortCategories));
 
                 if (self.category().name !== undefined) {
-                    self.totalResults(data.counts[self.category().rawName()]);
+                    self.totalResults(data.counts[self.category().rawName()] || 0);
                 }
                 else {
                     if(self.totalCount()) {
@@ -218,13 +218,19 @@
                 }
                 $.each(data.tags, function(key, value){
                     self.tags.push(new Tag(value));
-                    self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count))
+                    self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
                 });
+
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
-                if (!noPush)
+                if (validate) {
+                    self.validateSearch();
+                }
+
+                if (!noPush) {
                     self.pushState();
+                }
 
             }).fail(function(){
                 console.log('error');
@@ -252,10 +258,26 @@
 
             self.loadState();
 
-            // if (self.ogId === History.getState().id)
-            //     return false;
-
             self.search(true);
+        };
+
+        self.validateSearch = function() {
+            if (self.category().alias !== undefined) {
+                possibleCategories = $.map(self.categories().filter(function(category) {
+                    return category.count() > 0;
+                }), function(category) {
+                    return category.alias();
+                });
+
+                if (possibleCategories.indexOf(self.category().alias()) === -1) {
+                    self.filter(self.categories()[0]);
+                    return self.search(true);
+                }
+            }
+            if (self.currentPage() > self.totalPages()) {
+                self.currentPage(self.totalPages());
+                return self.search(true);
+            }
         };
 
         self.loadState = function() {
@@ -315,7 +337,7 @@
         History.replaceState(data, 'OSF | Search', location.search);
         self.viewModel.ogId = History.getState().id;
         self.viewModel.loadState();
-        self.viewModel.search(true);
+        self.viewModel.search(true, true);
 
         $.osf.applyBindings(self.viewModel, selector);
     }
