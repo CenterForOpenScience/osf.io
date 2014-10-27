@@ -15,8 +15,8 @@
         </div>
     </div> <!-- end .ob-search -->
     ## TODO: don't hardcode button text
-    <button type="submit" data-bind="visible: hasSelected()"
-            class="btn btn-primary pull-right" >Go to registration page
+    <button type="submit" data-bind="visible: hasSelected(), text: params.submitText || 'Submit'"
+            class="btn btn-primary pull-right" >
     </button>
 </form>
 </template>
@@ -24,7 +24,7 @@
 <template id="osf-ob-register">
 <li class="ob-list list-group-item">
     <div data-bind="click: toggle" class="pointer">
-        <h3 class="ob-heading">Register a project.</h3>
+        <h3 class="ob-heading">Register a project</h3>
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
             class="pointer icon-large pull-right">
         </i>
@@ -36,7 +36,7 @@
                 <div data-bind="component:
                     {
                         name: 'osf-project-search',
-                        params: {onSubmit: onRegisterSubmit}
+                        params: {onSubmit: onRegisterSubmit, submitText: 'Continue registration...'}
                     }">
                 </div>
             </div><!-- end col-md -->
