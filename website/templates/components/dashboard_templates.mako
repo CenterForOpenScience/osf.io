@@ -4,7 +4,6 @@
     <div class="ob-search">
         ## Add label for proper spacing
         <div data-bind="css: {'has-success': hasSelected()}" class="form-group">
-            <label for="project"></label>
             <img
                 data-bind="click: clearSearch, visible: hasSelected()"
                 class="ob-clear-button" src="/static/img/close2.png">
@@ -27,10 +26,10 @@
 ## The onboarding "register" widget
 <template id="osf-ob-register">
 <li class="ob-list list-group-item">
-    <div data-bind="click: toggle" class="pointer">
-        <h3 class="ob-heading">Register a project</h3>
+    <div data-bind="click: toggle" class="ob-header pointer">
+        <h3 class="ob-heading list-group-item-heading">Register a project</h3>
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-            class="pointer icon-large pull-right">
+            class="pointer ob-expand-icon icon-large pull-right">
         </i>
     </div><!-- end ob-unselectable -->
 

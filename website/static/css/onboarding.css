@@ -7,9 +7,11 @@ li.ob-list {
 
 .ob-heading {
 	display:inline;
-
 	margin: 5px;
-	margin-bottom: 20px;
+}
+
+.ob-header {
+    margin-bottom: 15px;
 }
 
 .ob-search{

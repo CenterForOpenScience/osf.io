@@ -336,7 +336,7 @@
         };
         self.clearMessages = function() {
             self.message('');
-            self.messageClass('text-info')
+            self.messageClass('text-info');
         };
         self.clearDropzone = function() {
             self.enableUpload(true);
