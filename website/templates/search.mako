@@ -22,7 +22,7 @@
 
         <div class="row">
             <!-- ko if: categories().length > 0-->
-            <div class="col-md-3 hidden" data-bind="css: {hidden: categories().length < 1 }">
+            <div class="col-md-3">
                 <div class="row">
                     <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
                         <!-- ko if: count() > 0 -->
@@ -40,7 +40,7 @@
                     </ul>
                 </div>
                 <!-- ko if: tags -->
-                <div class="row hidden" data-bind="css: {hidden: tags().length < 1}">
+                <div class="row">
                     <h3> Improve Your Search:</h3>
                     <span class="tag-cloud" data-bind="foreach: tags">
                         <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
@@ -71,7 +71,7 @@
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data }"></div>
                 </div>
-                <div class="navigation-controls hidden" data-bind="css: {hidden: totalPages() <= 1 }">
+                <div class="navigation-controls">
                     <span data-bind="visible: prevPageExists">
                         <a href="#" data-bind="click: pagePrev">Previous Page</a> -
                     </span>
@@ -182,6 +182,7 @@
             </small>
         </h5>
         <!-- /ko -->
+
     </script>
     <script type="text/html" id="app">
         <h4><a data-bind="attr.href: url">{{title }}</a></h4>
