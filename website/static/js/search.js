@@ -166,10 +166,10 @@
         self.addTag = function(name) {
             // To handle passing from template vs. in main html
             if(typeof name.name === "undefined"){
-                var tag = name
+                var tag = name;
             }
             else {
-                tag = name.name()
+                tag = name.name();
             }
             self.currentPage(1);
             self.query(self.query() + ' AND tags:("' + tag + '")');
@@ -312,10 +312,10 @@
 
         self.setCategory = function(cat) {
             if (cat !== undefined && cat !== null && cat !== '') {
-                self.category(new Category(cat, cat, cat));
+                self.category(new Category(cat + 's', cat, cat));
                 self.alias(self.category().getAlias());
             } else {
-                self.category({});
+                self.category(new Category('total', 0, 'total'));
                 self.alias('');
             }
         };

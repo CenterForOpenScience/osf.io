@@ -26,12 +26,12 @@
                 <div class="row">
                     <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
                         <!-- ko if: count() > 0 -->
-                            <!-- ko if: $parent.alias().indexOf(alias()) !== -1 -->
+                        <!-- ko if: $parent.category().rawName().indexOf(rawName()) !== -1 -->
                                 <li class="active">
                                     <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
                                 </li>
                             <!-- /ko -->
-                            <!-- ko if: $parent.alias().indexOf(alias()) == -1 -->
+                            <!-- ko if: $parent.category().rawName().indexOf(rawName()) == -1 -->
                                 <li>
                                     <a data-bind="click: $parent.filter.bind($data)">{{ name() }}<span class="badge pull-right">{{count()}}</span></a>
                                 </li>
