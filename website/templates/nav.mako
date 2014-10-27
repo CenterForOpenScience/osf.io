@@ -14,7 +14,7 @@
             <ul class="nav navbar-nav">
                 <li class="visible-xs"><a href="/">Home</a></li>
                 %if user_name:
-                <li><a href="${ web_url_for('dashboard') }">My Dashboard</a></li>
+                <li><a href="${web_url_for('dashboard')}">My Dashboard</a></li>
                 %endif
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
@@ -35,7 +35,7 @@
                 </li><!-- end dropdown -->
             </ul><!-- end nav navbar-nav -->
             <!-- Search bar -->
-            <form id="searchBar" class="navbar-form navbar-left" action="${ web_url_for('search_search') }" method="get" role="search">
+            <form id="searchBar" class="navbar-form navbar-left" action="${web_url_for('search_search')}" method="get" role="search">
                 <div class="form-group">
                     <input type="text" class="form-control search-query" placeholder="Search" name="q">
                 </div>
@@ -51,19 +51,19 @@
                     </a>
                 </li>
                 <li>
-                    <a href="${ web_url_for('user_profile') }">
+                    <a href="${web_url_for('user_profile')}">
                         <span rel="tooltip" title="Settings" class="icon-cog hidden-xs"></span>
                         <span class="visible-xs">Settings</span>
                     </a>
                 </li>
                 <li>
-                    <a href="${ web_url_for('auth_logout') }">
+                    <a href="${web_url_for('auth_logout')}">
                         <span rel="tooltip" title="Log&nbsp;out" class="icon-signout hidden-xs"></span>
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
                 %elif allow_login:
-                <a class="btn btn-primary navbar-btn" href="${ web_url_for('auth_login') }">Create an Account or Sign-In</a>
+                <a class="btn btn-primary navbar-btn" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
                 %endif
             </ul><!-- end nav navbar-nav navbar-right -->
         </div><!-- end navbar-collapse -->
