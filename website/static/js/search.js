@@ -184,6 +184,7 @@
         };
 
         self.search = function(noPush, validate) {
+            self.tagMaxCount(1);
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
