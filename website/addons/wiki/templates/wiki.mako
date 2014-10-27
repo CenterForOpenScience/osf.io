@@ -10,8 +10,8 @@
     <div class="col-md-9">
         <%include file="wiki/templates/status.mako"/>
         % if not page and wiki_name != 'home':
-            <p>This wiki page does not currently exist. Would you like to
-                <a href="edit/">create it</a>?</p>
+            <p><i>This wiki page does not currently exist. Would you like to
+                <a href="edit/">create it</a>?</i></p>
         % elif not wiki_content:
             <p><em>No wiki content</em></p>
         % else:
