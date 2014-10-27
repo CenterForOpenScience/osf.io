@@ -171,7 +171,7 @@
             self.search();
         };
 
-        self.search = function() {
+        self.search = function(calledByChange) {
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
                 var state = {
@@ -182,9 +182,9 @@
 
                 var url = '?q=' + self.query();
 
-                if (self.category().rawName !== undefined) {
-                    url += ('&filter=' + self.category().rawName());
-                    state.filter = self.category().rawName();
+                if (self.category().alias !== undefined && self.category().alias() !== undefined) {
+                    url += ('&filter=' + self.category().alias());
+                    state.filter = self.category().alias();
                 } else {
                     state.filter = '';
                 }
@@ -226,7 +226,11 @@
 
                 url += ('&page=' + self.currentPage());
 
-                self.calledBySearch = true;
+                if (calledByChange === undefined)
+                    self.calledBySearch = true;
+                else
+                    self.calledBySearch = calledByChange;
+
                 History.pushState(state, 'OSF | Search', url);
 
 
@@ -260,13 +264,16 @@
             self.currentPage(state.page || 1);
             self.setCategory(state.filter);
             self.query(state.query || '');
-            self.search();
+            self.search(false);
         };
 
         self.setCategory = function(cat) {
-            if (cat !== undefined && cat !== null) {
+            if (cat !== undefined && cat !== null && cat !== '') {
                 self.category(new Category(cat, cat, cat));
                 self.alias(self.category().getAlias());
+            } else {
+                self.category({});
+                self.alias('');
             }
         };
 
