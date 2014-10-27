@@ -260,7 +260,7 @@
 
         <script type='text/javascript'>
             $script(['/static/js/search.js',
-                '/static/vendor/bower_components/history.js/scripts/bundled/html5/jquery.history.js'], function(){
+                '/static/vendor/bower_components/history.js/scripts/bundled/html4+html5/jquery.history.js'], function(){
             var search =  new Search('#searchControls', '/api/v1/search/', '');
             });
         </script>
