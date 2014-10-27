@@ -51,8 +51,10 @@ class TestNodeSettingsModel(OsfTestCase):
         record.save()
         fork = self.node.fork_node(Auth(user=self.node.creator))
         fork_node_settings = fork.get_addon('osfstorage')
+        fork_node_settings.reload()
         cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
         assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
+        assert_true(fork_node_settings.file_tree)
 
     def test_after_register_copies_stable_versions(self):
         path = 'jazz/dreamers-ball.mp3'
@@ -73,8 +75,10 @@ class TestNodeSettingsModel(OsfTestCase):
             {},
         )
         registration_node_settings = registration.get_addon('osfstorage')
+        registration_node_settings.reload()
         cloned_record = model.FileRecord.find_by_path(path, registration_node_settings)
         assert_equal(cloned_record.versions, record.versions[:num_versions - 2])
+        assert_true(registration_node_settings.file_tree)
 
     def test_after_fork_copies_stable_records(self):
         path = 'jazz/dreamers-ball.mp3'

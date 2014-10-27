@@ -76,7 +76,8 @@ class OsfStorageNodeSettings(AddonNodeSettingsBase):
         """
         dest.save()
         if self.file_tree:
-            dest.tree = copy_file_tree_stable(self.file_tree, dest)
+            dest.file_tree = copy_file_tree_stable(self.file_tree, dest)
+            dest.save()
 
     def after_fork(self, node, fork, user, save=True):
         clone, message = super(OsfStorageNodeSettings, self).after_fork(
