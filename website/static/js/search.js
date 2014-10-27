@@ -162,8 +162,15 @@
         };
 
         self.addTag = function(name) {
+            // To handle passing from template vs. in main html
+            if(typeof name.name === "undefined"){
+                var tag = name
+            }
+            else {
+                tag = name.name()
+            }
             self.currentPage(1);
-            self.query(self.query() + ' AND tags:("' + name.name() + '")');
+            self.query(self.query() + ' AND tags:("' + tag + '")');
             self.search();
         };
 
