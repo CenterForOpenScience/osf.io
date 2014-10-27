@@ -36,6 +36,8 @@
 
 
     <%include file='_log_templates.mako'/>
+    ## Knockout componenet templates
+    <%include file="components/dashboard_templates.mako"/>
     </div>
     <div class="row">
         <div class="col-md-5">
@@ -54,7 +56,6 @@
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
                         ## <%include file="ob_register_project.mako"/>
-                        <%include file="components/osf-project-search.mako"/>
                         <div id="obRegisterProject">
                             <div
                                 data-bind='component: {
