@@ -39,7 +39,7 @@
                         <!-- /ko -->
                     </ul>
                 </div>
-                <!-- ko if: tags -->
+                <!-- ko if: tags().length -->
                 <div class="row">
                     <h4> Improve your search:</h4>
                     <span class="tag-cloud" data-bind="foreach: tags">
