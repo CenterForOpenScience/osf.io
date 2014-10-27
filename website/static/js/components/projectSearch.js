@@ -46,7 +46,7 @@
         };
     };
 
-    function initTypeahead(element, myProjects, viewModel, onSelected){
+    function initTypeahead(element, myProjects, viewModel, params){
         var $inputElem = $(element);
         $inputElem.typeahead({
             hint: false,
@@ -65,19 +65,28 @@
             $inputElem.css('background-color', '#f5f5f5')
                 .attr('disabled', true)
                 .css('border', '2px solid LightGreen');
-            // set the taSelected observable of the viewModel
-            viewModel.taSelected(datum.value);
-            onSelected();
+            // Call the parent viewModel's onSelected
+            var onSelected = params.onSelected || viewModel.onSelected;
+            onSelected(datum.value);
         });
     }
 
     function noop() {}
 
+    /**
+     * Binding handler for attaching an OSF typeahead search input.
+     * Takes an optional parameter onSelected, which is called when a project
+     * is selected.
+     *
+     * Example:
+     *
+     *  <div data-bind="projectSearch: {onSelected: onSelected}></div>
+     */
+    var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
     ko.bindingHandlers.projectSearch = {
         init: function(element, valueAccessor, allBindings, viewModel) {
             var params = valueAccessor();
-            var url = params.url || '/api/v1/dashboard/get_nodes/';
-            var onSelected = params.onSelected || noop;
+            var url = params.url || DEFAULT_FETCH_URL;
             var request = $.getJSON(url, function (projects) {
                 var myProjects = projects.nodes.map(
                     function(item){return {
@@ -90,8 +99,7 @@
                         }
                     };
                 });
-
-                initTypeahead(element, myProjects, viewModel, onSelected.bind(viewModel));
+                initTypeahead(element, myProjects, viewModel, params);
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -101,16 +109,31 @@
         }
     };
 
+    /**
+     * ViewModel for the OSF project typeahead search widget.
+     *
+     * Template: osf-project-search element in components/osf-project-search.mako
+     *
+     * Params:
+     *  onSubmit: Function to call on submit. Receives the selected item.
+     */
     function ProjectSearchViewModel(params) {
         var self = this;
-
-        self.taSelected = ko.observable(null); // set by typeahead
-
+        self.params = params;
         self.heading = params.heading;
-        self.hasSelected = ko.observable(false);
-        self.onSubmit = params.onSubmit || noop;
-        self.enableButton = function() {
-            self.hasSelected(true);
+        /* Observables */
+        self.taSelected = ko.observable(null);
+        /* Computeds */
+        self.hasSelected = ko.computed(function() {
+            return self.taSelected() !== null;
+        });
+        /* Functions */
+        self.onSubmit = function() {
+            var func = params.onSubmit || noop;
+            func(self.taSelected());
+        };
+        self.onSelected = function(selected) {
+            self.taSelected(selected);
         };
     }
 
@@ -119,19 +142,17 @@
         template: {element: 'osf-project-search'}
     });
 
-    var OPEN_ICON = '/static/img/plus.png';
-    var CLOSE_ICON = '/static/img/minus.png';
     function OBRegisterViewModel(params) {
         var self = this;
+        self.params = params;
+        /* Observables */
         self.isOpen = ko.observable(false);
-        self.toggleIconSrc = ko.observable(OPEN_ICON);
+        /* Functions */
         self.open = function() {
             self.isOpen(true);
-            self.toggleIconSrc(CLOSE_ICON);
         };
         self.close = function() {
             self.isOpen(false);
-            self.toggleIconSrc(OPEN_ICON);
         };
         self.toggle = function() {
             if (!self.isOpen()) {
@@ -139,6 +160,10 @@
             } else {
                 self.close();
             }
+        };
+        /* On submit, redirect to the selected page's registration page */
+        self.onRegisterSubmit = function(selected) {
+            window.location = selected.urls.register;
         };
     }
 

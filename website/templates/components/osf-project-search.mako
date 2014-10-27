@@ -7,14 +7,14 @@
         <div class="form-group">
             <label for="project"></label>
         <input
-            data-bind="projectSearch: {onSelected: enableButton}"
+        data-bind="projectSearch: {onSelected: onSelected}"
             class="typeahead form-control"
             name="project"
             type="text"
             placeholder="Type to search for a project or component">
         </div>
     </div> <!-- end .ob-search -->
-    ## TODO: Don't hardcode text
+    ## TODO: don't hardcode button text
     <button type="submit" data-bind="visible: hasSelected()"
             class="btn btn-primary pull-right" >Go to registration page
     </button>
@@ -36,11 +36,7 @@
                 <div data-bind="component:
                     {
                         name: 'osf-project-search',
-                        params: {
-                            onSubmit: function() {
-                                window.location = this.taSelected().urls.register;
-                            }
-                        }
+                        params: {onSubmit: onRegisterSubmit}
                     }">
                 </div>
             </div><!-- end col-md -->
