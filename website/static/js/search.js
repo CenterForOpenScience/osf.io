@@ -55,7 +55,9 @@
         self.categories = ko.observableArray([]);
         self.tags = ko.observableArray([]);
         self.tag = ko.observable('');
-        self.calledBySearch = false;
+        self.stateJustPushed = false;
+        self.ogId = '';
+        self.tagMaxCount = ko.observable(1);
 
         self.totalCount = ko.computed(function() {
             var theCount = 0;
@@ -154,12 +156,15 @@
         };
 
         self.filter = function(alias) {
+            self.searchStarted(false);
+            self.currentPage(1);
             self.category(alias);
             self.alias(alias.getAlias());
             self.search();
         };
 
         self.addTag = function(name) {
+            self.currentPage(1);
             self.query(self.query() + ' AND tags:("' + name.name() + '")');
             self.search();
         };
@@ -171,23 +176,9 @@
             self.search();
         };
 
-        self.search = function(calledByChange) {
+        self.search = function(noPush) {
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
-                var state = {
-                    query: self.query(),
-                    page: self.currentPage(),
-                    scrollTop: $(window).scrollTop(),
-                };
-
-                var url = '?q=' + self.query();
-
-                if (self.category().alias !== undefined && self.category().alias() !== undefined) {
-                    url += ('&filter=' + self.category().alias());
-                    state.filter = self.category().alias();
-                } else {
-                    state.filter = '';
-                }
 
                 self.results.removeAll();
                 self.tags([]);
@@ -220,19 +211,13 @@
                 }
                 $.each(data.tags, function(key, value){
                     self.tags.push(new Tag(value));
+                    self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count))
                 });
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
-                url += ('&page=' + self.currentPage());
-
-                if (calledByChange === undefined)
-                    self.calledBySearch = true;
-                else
-                    self.calledBySearch = calledByChange;
-
-                History.pushState(state, 'OSF | Search', url);
-
+                if (!noPush)
+                    self.pushState();
 
             }).fail(function(){
                 console.log('error');
@@ -253,18 +238,46 @@
         self.pageNext = self.paginate.bind(self, 1);
 
         self.pageChange = function() {
-            if (self.calledBySearch) {
-                self.calledBySearch = false;
+            if (self.stateJustPushed) {
+                self.stateJustPushed = false;
                 return;
             }
 
-            self.calledBySearch = false;
+            self.loadState();
 
+            // if (self.ogId === History.getState().id)
+            //     return false;
+
+            self.search(true);
+        };
+
+        self.loadState = function() {
             var state = History.getState().data;
             self.currentPage(state.page || 1);
             self.setCategory(state.filter);
             self.query(state.query || '');
-            self.search(false);
+        };
+
+        self.pushState = function() {
+            var state = {
+                query: self.query(),
+                page: self.currentPage(),
+                scrollTop: $(window).scrollTop(),
+            };
+
+            var url = '?q=' + self.query();
+
+            if (self.category().alias !== undefined && self.category().alias() !== undefined) {
+                url += ('&filter=' + self.category().alias());
+                state.filter = self.category().alias();
+            } else {
+                state.filter = '';
+            }
+            url += ('&page=' + self.currentPage());
+
+            console.log('state pushed');
+            self.stateJustPushed = true;
+            History.pushState(state, 'OSF | Search', url);
         };
 
         self.setCategory = function(cat) {
@@ -293,8 +306,9 @@
             filter: qs('filter')
         };
         History.replaceState(data, 'OSF | Search', location.search);
-        self.viewModel.pageChange();
-        // self.viewModel.search(true);
+        self.viewModel.ogId = History.getState().id;
+        self.viewModel.loadState();
+        self.viewModel.search(true);
 
         $.osf.applyBindings(self.viewModel, selector);
     }

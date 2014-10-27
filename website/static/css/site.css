@@ -1215,10 +1215,40 @@ h1.unavailable {
     }
 .tag-cloud
     {
-        margin-top: 20px;
-        margin-bottom: 20px;
-        overflow: hidden;
+
     }
+
+.tag-cloud .cloud-tag
+{
+    font-size: 11pt;
+    display: inline-block;
+    word-wrap: break-word;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+.tag-cloud .cloud-tag:hover
+{
+    background-color: #31b0d5;
+}
+.tag-cloud .tag-big
+{
+    font-size: 13pt;
+    background-color: #AABCDD;
+}
+
+.tag-cloud .tag-med
+{
+    font-size: 11pt;
+    background-color: #CCDDEE;
+}
+
+.tag-cloud .tag-sm
+{
+    font-size: 9pt;
+    background-color: #DDEEFF;
+}
+
 .tag-cloud h3
     {
         margin: 0;
