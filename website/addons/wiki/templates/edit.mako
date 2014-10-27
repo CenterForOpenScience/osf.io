@@ -58,10 +58,47 @@
 <script>
 
     var url = '${urls['api']['content']}';
+    var shareServer = 'http://localhost:7007';
+    var connection = new sharejs.Connection(shareServer + '/channel');
+
+    var socketIsOpen = true;
+    var socketOnOpen = connection.socket.onopen;
+    var socketOnClose = connection.socket.onclose;
+
+    // TODO: Replace with heartbeat
+    connection.socket.onopen = function () {
+        socketOnOpen();
+
+        $.post(
+            shareServer + '/add/${share_uuid}/${user_full_name}'
+        ).done(function() {
+            socketIsOpen = true;
+        });
+    };
+    connection.socket.onclose = function () {
+        socketOnClose();
+
+        if (socketIsOpen) {
+            $.post(
+                shareServer + '/remove/${share_uuid}/${user_full_name}'
+            ).done(function() {
+                socketIsOpen = false;
+            });
+        }
+    };
+    $(window).bind('beforeunload', function() {
+        if (socketIsOpen) {
+            $.post(
+                shareServer + '/remove/${share_uuid}/${user_full_name}'
+            ).done(function () {
+                socketIsOpen = false;
+            });
+        }
+    });
 
     var setDoc = function(docName) {
 
-        sharejs.open(docName, "text", 'http://localhost:7007/channel', function(error, newDoc) {
+        connection.open(docName, "text", function(error, newDoc) {
 
             if (doc != null) {
                 doc.close();
@@ -80,8 +117,7 @@
             editor.setReadOnly(false);
 
             // If no share data is loaded, fetch most recent wiki from osf
-            // TODO: Only works sometimes, likely based on order of execution
-            if (newDoc.version === 0) {
+            if (doc.created) {
                 $.ajax({
                     type: 'GET',
                     url: url,
