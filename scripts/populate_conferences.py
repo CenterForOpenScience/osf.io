@@ -1,17 +1,23 @@
 #!/usr/bin/env python
 # encoding: utf-8
+
+import os
 import sys
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.auth.core import User
-from website.conferences.model import Conference
+
+from website import settings
 from website.app import init_app
+from website.conferences.model import Conference
+
 
 def main():
     init_app(set_backends=True, routes=False)
     populate_conferences()
+
 
 MEETING_DATA = {
     'spsp2014': {
@@ -67,6 +73,22 @@ MEETING_DATA = {
         ],
         'public_projects': True,
     },
+    'bitss2014': {
+        'name': 'BITSS Research Transparency Forum 2014',
+        'info_url': None,
+        'logo_url': os.path.join(
+            settings.STATIC_URL_PATH,
+            'img',
+            'conferences',
+            'bitss.jpg',
+        ),
+        'active': True,
+        'admins': [
+            'gkroll@berkeley.edu',
+            'andrew@cos.io',
+        ],
+        'public_projects': True,
+    },
     # TODO: Uncomment on 2015/02/01
     # 'spsp2015': {
     #     'name': 'SPSP 2015',
@@ -75,6 +97,7 @@ MEETING_DATA = {
     #     'active': False,
     # },
 }
+
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
