@@ -45,6 +45,49 @@
                 </div>
             </div><!-- end col-md -->
         </div><!-- end row -->
-    </div><!-- end ob-reveal -->
+    </div>
+</li> <!-- end .ob-list -->
+</template>
+
+## Template for the onboarder Dropzone component
+<template id="osf-ob-dropzone">
+<div data-bind="text: errorMessage()" id="obDropzoneError" class="ob-reveal"></div>
+
+<!-- Dropzone -->
+<div data-bind="visible: enableUpload()" id="obDropzone" class="ob-dropzone-box pull-left"></div>
+
+<!-- File queue display -->
+<div data-bind="visible: !enableUpload()" id="obDropzoneSelected" class="ob-dropzone-box pull-left">
+    <img data-bind="attr: {src: iconSrc()}" id="uploadIcon">
+    <div data-bind="text: filename" id="obDropzoneFilename"></div>
+    <progress data-bind="attr: {value: progress()}" class="ob-reveal" id="uploadProgress" max="100"></progress>
+    <img data-bind="click: clearDropzone" class="ob-clear-button" id="clearDropzone" src="/static/img/close2.png">
+</div>
+
+## TODO: Clean this up. Shouldn't have 2 buttons. Just change click behavior when
+## observables change.
+<button data-bind="click: startUpload, visible: !enableUpload()"
+        class="btn btn-primary pull-right">
+        Upload
+</button>
+<span data-bind="visible: enableUpload()"
+    class="btn btn-primary pull-right"
+    >Upload
+</span>
+</template>
+
+
+<template id="osf-ob-uploader">
+<li class="ob-list list-group-item">
+    <div class="pointer">
+        <h3 class="ob-heading">Upload file(s)</h3>
+    </div><!-- end ob-unselectable -->
+
+    <div class="row">
+        <div class="col-md-12">
+            <h4>1. Drop file (or click below)</h4>
+            <div data-bind="component: 'osf-ob-dropzone'"></div>
+        </div><!-- end col-md -->
+    </div><!-- end row -->
 </li> <!-- end .ob-list -->
 </template>
