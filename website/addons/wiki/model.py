@@ -4,6 +4,7 @@
 
 import datetime
 import functools
+import logging
 
 from bleach import linkify
 from bleach.callbacks import nofollow
@@ -26,6 +27,9 @@ from .exceptions import (
 )
 
 
+logger = logging.getLogger(__name__)
+
+
 class AddonWikiNodeSettings(AddonNodeSettingsBase):
 
     def to_json(self, user):
@@ -45,6 +49,31 @@ def validate_page_name(value):
     if len(value) > 100:
         raise NameMaximumLengthError('Page name cannot be greater than 100 characters.')
     return True
+
+
+def render_content(content, node):
+    html_output = markdown.markdown(
+        content,
+        extensions=[
+            wikilinks.WikiLinkExtension(
+                configs=[
+                    ('base_url', ''),
+                    ('end_url', ''),
+                    ('build_url', functools.partial(build_wiki_url, node))
+                ]
+            ),
+            fenced_code.FencedCodeExtension(),
+            codehilite.CodeHiliteExtension(
+                [('css_class', 'highlight')]
+            )
+        ]
+    )
+
+    # linkify gets called after santize, because we're adding rel="nofollow"
+    #   to <a> elements - but don't want to allow them for other elements.
+    sanitized_content = sanitize(html_output, **settings.WIKI_WHITELIST)
+    return sanitized_content
+
 
 class NodeWikiPage(GuidStoredObject):
 
@@ -71,30 +100,15 @@ class NodeWikiPage(GuidStoredObject):
 
     def html(self, node):
         """The cleaned HTML of the page"""
-
-        html_output = markdown.markdown(
-            self.content,
-            extensions=[
-                wikilinks.WikiLinkExtension(
-                    configs=[
-                        ('base_url', ''),
-                        ('end_url', ''),
-                        ('build_url', functools.partial(build_wiki_url, node))
-                    ]
-                ),
-                fenced_code.FencedCodeExtension(),
-                codehilite.CodeHiliteExtension(
-                    [('css_class', 'highlight')]
-                )
-            ]
-        )
-
-        # linkify gets called after santize, because we're adding rel="nofollow"
-        #   to <a> elements - but don't want to allow them for other elements.
-        return linkify(
-            sanitize(html_output, **settings.WIKI_WHITELIST),
-            [nofollow, ],
-        )
+        sanitized_content = render_content(self.content, node=node)
+        try:
+            return linkify(
+                sanitized_content,
+                [nofollow, ],
+            )
+        except TypeError:
+            logger.warning('Returning unlinkified content.')
+            return sanitized_content
 
     def raw_text(self, node):
         """ The raw text of the page, suitable for using in a test search"""
