@@ -502,9 +502,15 @@ h4 {
 
 
 
-/* Navbar */
+/* Bootstrap Navbar */
 .navbar .search-query {
     width:190px
+}
+/* Extra small devices */
+@media (max-width: 767px) {
+    .navbar-btn {
+        margin-left: 15px;
+    }
 }
 
 .tab-pane {
