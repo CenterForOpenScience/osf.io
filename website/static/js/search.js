@@ -312,7 +312,7 @@
 
         self.setCategory = function(cat) {
             if (cat !== undefined && cat !== null && cat !== '') {
-                self.category(new Category(cat, cat, cat));
+                self.category(new Category(cat + 's', cat, cat));
                 self.alias(self.category().getAlias());
             } else {
                 self.category({});
