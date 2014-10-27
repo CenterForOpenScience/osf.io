@@ -5,8 +5,6 @@
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}" class="pointer icon-large pull-right"></i>
     </div><!-- end ob-unselectable -->
 
-    div.foo
-
     <div data-bind="visible: isOpen()">
         <div class="row">
             <div class="col-md-12" >
