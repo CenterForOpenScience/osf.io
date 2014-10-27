@@ -70,9 +70,8 @@
 
         $inputElem.bind('typeahead:selected', function(obj, datum) {
             // TODO: Use data-binds to apply these styles
-            $inputElem.css('background-color', '#f5f5f5')
-                .attr('disabled', true)
-                .css('border', '2px solid LightGreen');
+            // $inputElem.css('background-color', '#f5f5f5')
+            //     .css('border', '2px solid LightGreen');
             // Call the parent viewModel's onSelected
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
@@ -140,6 +139,10 @@
         };
         self.onSelected = function(selected) {
             self.taSelected(selected);
+        };
+
+        self.clearSearch = function() {
+            self.taSelected(null);
         };
     }
 

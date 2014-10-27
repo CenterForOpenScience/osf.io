@@ -2,14 +2,16 @@
 <template id="osf-project-search">
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
-        ## TODO: Clear search button
-        ## <img data-bind="click: clearSearch" class="ob-clear-button" src="/static/img/close2.png">
         ## Add label for proper spacing
-        <div class="form-group">
+        <div data-bind="css: {'has-success': hasSelected()}" class="form-group">
             <label for="project"></label>
+            ## TODO: Fix placement of clear search button
+            <img
+                data-bind="click: clearSearch, visible: hasSelected()"
+                class="ob-clear-button" src="/static/img/close2.png">
         <input
-        data-bind="projectSearch: {onSelected: onSelected}"
-            class="typeahead form-control"
+            data-bind="projectSearch: {onSelected: onSelected}, attr: {disabled: hasSelected()}"
+            class="typeahead ob-typeahead-input form-control"
             name="project"
             type="text"
             placeholder="Type to search for a project">
