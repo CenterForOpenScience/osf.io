@@ -94,6 +94,7 @@
             var params = valueAccessor();
             var url = params.url || DEFAULT_FETCH_URL;
             var request = $.getJSON(url, function (projects) {
+                // Compute relevant URLs for each search result
                 var myProjects = projects.nodes.map(
                     function(item){return {
                         name: item.title,
@@ -102,6 +103,8 @@
                             web: item.url,
                             api: item.api_url,
                             register: item.url + 'register/',
+                            upload: item.api_url + 'osffiles/',
+                            files: item.url + 'files/'
                         }
                     };
                 });
@@ -261,30 +264,14 @@
     'zip'
     ];
 
-    /** Redirect to a project or component based on its linkId property **/
-    function redirectToPOC(poc){ // str project or componenet (poc)
-        var url = '/'+ $addLink.prop('linkID' + poc);
-        if(url !== '/undefined'){
-            window.location = url;
-        }
-    }
-
-    // ensure it is not
-    function getRoute(addLink){
-        if(addLink.prop('routeIDComponent')){
-            return addLink.prop('routeIDComponent');
-        } else{
-            return addLink.prop('routeIDProject');
-        }
-    }
-
     // this takes a filename and finds the icon for it
-    function getFiletypeIconName(file_name){
+    function getFiletypeIcon(file_name){
+        var baseUrl ='/static/img/upload_icons/';
         var ext = file_name.split('.').pop().toLowerCase();
         if(iconList.indexOf(ext)  !== -1){
-            return ext + '.png';
+            return baseUrl + ext + '.png';
         }else{
-            return '_blank.png';
+            return baseUrl + '_blank.png';
         }
     }
 
@@ -308,9 +295,9 @@
     }
 
     /**
-     * ViewModel for the onboarding Dropzone component
+     * ViewModel for the onboarding uploader
      */
-    function OBDropzoneViewModel(params) {
+    function OBUploaderViewModel(params) {
         var self = this;
         self.params = params || {};
         self.selector = self.params.selector || '#obDropzone';
@@ -321,29 +308,34 @@
         self.enableUpload = ko.observable(true);
         self.filename = ko.observable('');
         self.iconSrc = ko.observable('//:0');
-        self.uploadCount = ko.observable(0);
-
+        self.uploadCount = ko.observable(1);
+        self.disableUpload = ko.observable(false);
+        // The target node to upload to to
+        self.target = ko.observable(null);
         /* Functions */
-        self.startUpload = function() {
+        self.startUpload = function(selected) {
+            if (!self.dropzone.getQueuedFiles().length) {
+                self.errorMessage('Please select at least one file to upload.');
+                return false;
+            }
+            self.target(selected);
             self.clearErrors();
-            console.log('starting upload');
-            // var projectRoute = getRoute($addLink);
-//             $addLink.attr('disabled', true);
-//             $uploadProgress.show();
+            // TODO: disable component search
+            // $addLink.attr('disabled', true);
             self.showProgress(true);
-            // self.dropzone.options = projectRoute + 'osffiles/';
-            // self.dropzone.processQueue();
-
+            self.dropzone.options.url = selected.urls.upload;
+            self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
         };
         self.clearErrors = function() {
-            console.log('clearing errors');
             self.errorMessage('');
         };
         self.clearDropzone = function() {
             self.enableUpload(true);
             self.dropzone.removeAllFiles();
+            self.uploadCount(1);
             self.clearErrors();
         };
+
 
         var dropzoneOpts = {
 
@@ -368,14 +360,13 @@
                     var fileName = file.name;
                     var fileSize = file.size;
                     dropzone.removeFile(file);
-                    if(dropzone.files.length === 0){
+                    if (dropzone.files.length === 0){
                         self.enableUpload(true);
                         dropzone.removeAllFiles();
                     }
-
-                    if(fileSize > self.options.maxFilesize){
+                    if (fileSize > dropzone.options.maxFilesize){
                         self.errorMessage(fileName + ' is too big (max = ' +
-                                         self.options.maxFilesize +
+                                         dropzone.options.maxFilesize +
                                          ' MiB) and was not added to the upload queue.');
                     } else {
                         self.errorMessage(fileName + 'could not be added to the upload queue');
@@ -388,17 +379,12 @@
                 // upload and process queue logic
                 this.on('success',function(){
                     self.filename(self.uploadCount() + ' / ' + dropzone.files.length + ' files');
-                    self.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
-                    self.uploadCount(self.uploadCount() + 1);
+                    dropzone.processQueue(); // this is a bit hackish -- it fails to process full queue but this ensures it runs the process again after each success.
+                    var oldCount = self.uploadCount();
+                    self.uploadCount(oldCount + 1);
 
-                    if(uploadCounter > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
-                        console.log('TODO: redirect to project page');
-                        // //redirect to project or componenet
-                        // if(typeof $addLink.prop('linkIDComponent')!=='undefined'){
-                        //     redirectToPOC('Component');
-                        // }else{
-                        //     redirectToPOC('Project');
-                        // }
+                    if(self.uploadCount() > dropzone.files.length){ // when finished redirect to project/component page where uploaded.
+                        window.location = self.target().urls.files;
                     }
                 });
 
@@ -410,7 +396,7 @@
                     }else{
                         // $('#obDropzone').click();
                         var fileName = truncateFilename(dropzone.files[0].name);
-                        self.iconSrc('/static/img/upload_icons/' + getFiletypeIconName(fileName));
+                        self.iconSrc(getFiletypeIcon(fileName));
                         self.filename(fileName);
                     }
                     self.enableUpload(false);
@@ -422,19 +408,6 @@
             }
         };
         self.dropzone = new Dropzone(self.selector, dropzoneOpts);
-    }
-
-    ko.components.register('osf-ob-dropzone', {
-        viewModel: OBDropzoneViewModel,
-        template: {element: 'osf-ob-dropzone'}
-    });
-
-    /**
-     * ViewModel for the onboarding uploader
-     */
-    function OBUploaderViewModel(params) {
-        var self = this;
-        self.params = params;
     }
 
     ko.components.register('osf-ob-uploader', {

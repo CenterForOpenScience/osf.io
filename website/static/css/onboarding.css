@@ -99,10 +99,6 @@ li.ob-list {
 	margin-top:20px;
 }
 
-#obDropzoneError{
-	color:red;
-	text-align:center;
-}
 
 #obRegisterProjectBtn:hover{
 	cursor: pointer;

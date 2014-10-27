@@ -58,7 +58,10 @@
                         <div id="obRegisterProject">
                             <div data-bind='component: "osf-ob-register"'></div>
                         </div>
-                        <%include file="ob_add_file.mako"/>
+                        <div id="obUploader">
+                            <div data-bind='component: "osf-ob-uploader"'></div>
+                        </div>
+                        ## <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
                 </div><!-- end .tab-pane -->
                 <div class="tab-pane" id="watchlist">
@@ -103,12 +106,13 @@
 
     $script.ready('onboarder', function() {
         $.osf.applyBindings({}, '#obRegisterProject');
+        $.osf.applyBindings({}, '#obUploader');
     });
 
-    $script(['/static/js/obAddFile.js']);
-    $script.ready('obAddFile', function() {
-        var obaddfile = new ObAddFile();
-    });
+    ## $script(['/static/js/obAddFile.js']);
+    ## $script.ready('obAddFile', function() {
+    ##     var obaddfile = new ObAddFile();
+    ## });
 
      // initialize the logfeed
     $script(['/static/js/logfeed.js']);
