@@ -57,10 +57,7 @@
                         <%include file="ob_new_project.mako"/>
                         ## <%include file="ob_register_project.mako"/>
                         <div id="obRegisterProject">
-                            <div
-                                data-bind='component: {
-                                    name: "osf-ob-register"
-                                }'></div>
+                            <div data-bind='component: "osf-ob-register"'></div>
                         </div>
                         <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->

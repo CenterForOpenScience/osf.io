@@ -12,6 +12,8 @@
 }(this, function ($, ko) {
     'use strict';
 
+    var MAX_RESULTS = 14;
+
     var substringMatcher = function(strs) {
         return function findMatches(q, cb) {
 
@@ -25,20 +27,20 @@
             // iterate through the pool of strings and for any string that
             // contains the substring `q`, add it to the `matches` array
             $.each(strs, function(i, str) {
-            if (substrRegex.test(str.name)) {
-                count += 1;
-                // the typeahead jQuery plugin expects suggestions to a
-                // JavaScript object, refer to typeahead docs for more info
-                matches.push({ value: str });
+                if (substrRegex.test(str.name)) {
+                    count += 1;
+                    // the typeahead jQuery plugin expects suggestions to a
+                    // JavaScript object, refer to typeahead docs for more info
+                    matches.push({ value: str });
 
-                //alex's hack to limit number of results
-                if(count > 14){
-                    return false;
+                    //alex's hack to limit number of results
+                    if(count > MAX_RESULTS){
+                        return false;
+                    }
+                    // above you can return name or a dict of name/node id,
                 }
-                // above you can return name or a dict of name/node id,
-            }
-            // add an event to the input box -- listens for keystrokes and if there is a keystroke then it should clearrr
-            //
+                // add an event to the input box -- listens for keystrokes and if there is a keystroke then it should clearrr
+                //
             });
 
             cb(matches);
@@ -111,7 +113,7 @@
     /**
      * ViewModel for the OSF project typeahead search widget.
      *
-     * Template: osf-project-search element in components/osf-project-search.mako
+     * Template: osf-project-search element in components/dashboard_templates.mako
      *
      * Params:
      *  onSubmit: Function to call on submit. Receives the selected item.
@@ -141,6 +143,11 @@
         template: {element: 'osf-project-search'}
     });
 
+    /**
+     * ViewModel for the onboarding project registration component.
+     *
+     * Template: osf-ob-register element in components/dashboard_templates.mako
+     */
     function OBRegisterViewModel(params) {
         var self = this;
         self.params = params;

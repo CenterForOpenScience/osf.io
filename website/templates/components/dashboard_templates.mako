@@ -11,7 +11,7 @@
             class="typeahead form-control"
             name="project"
             type="text"
-            placeholder="Type to search for a project or component">
+            placeholder="Type to search for a project">
         </div>
     </div> <!-- end .ob-search -->
     ## TODO: don't hardcode button text
