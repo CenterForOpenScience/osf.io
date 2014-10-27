@@ -100,10 +100,9 @@
 <script>
     $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
     $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
-    $script(['/static/js/components/projectSearch.js']);
+    $script(['/static/js/onboarder.js']);  // exports onboarder
 
-    // TODO: Put this with osf-project-search.mako ?
-    $script.ready('projectSearch', function() {
+    $script.ready('onboarder', function() {
         $.osf.applyBindings({}, '#obRegisterProject');
     });
 

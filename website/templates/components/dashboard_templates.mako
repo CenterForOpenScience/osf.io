@@ -1,3 +1,4 @@
+## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
 <template id="osf-project-search">
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
@@ -14,13 +15,13 @@
             placeholder="Type to search for a project">
         </div>
     </div> <!-- end .ob-search -->
-    ## TODO: don't hardcode button text
     <button type="submit" data-bind="visible: hasSelected(), text: params.submitText || 'Submit'"
             class="btn btn-primary pull-right" >
     </button>
 </form>
 </template>
 
+## The onboarding "register" widget
 <template id="osf-ob-register">
 <li class="ob-list list-group-item">
     <div data-bind="click: toggle" class="pointer">

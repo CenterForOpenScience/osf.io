@@ -1,10 +1,15 @@
+/**
+ * Components and binding handlers for the dashboard "onboarding" interface.
+ * Includes a custom component for OSF project typeahead search, as well
+ * the viewmodels for each of the individual onboarding widgets.
+ */
 ;(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'knockout'], factory);
     } else if (typeof $script === 'function') {
         $script.ready(['typeahead'], function() {
             factory(jQuery, ko);
-            $script.done('projectSearch');
+            $script.done('onboarder');
         });
     } else {
         factory(jQuery, ko);
@@ -12,6 +17,7 @@
 }(this, function ($, ko) {
     'use strict';
 
+    function noop() {}
     var MAX_RESULTS = 14;
 
     var substringMatcher = function(strs) {
@@ -71,8 +77,6 @@
             onSelected(datum.value);
         });
     }
-
-    function noop() {}
 
     /**
      * Binding handler for attaching an OSF typeahead search input.
@@ -177,5 +181,4 @@
         viewModel: OBRegisterViewModel,
         template: {element: 'osf-ob-register'}
     });
-
 }));
