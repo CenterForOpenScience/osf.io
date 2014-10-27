@@ -110,7 +110,7 @@ def get_tags(query, index):
         results = elastic.search(query, index=index, doc_type='_all')
         tags = results['aggregations']['tag_cloud']['buckets']
     #TODO: Overly broad exception needs fixing
-    except Exception as exc:
+    except Exception:
         tags = []
 
     return tags
@@ -138,7 +138,6 @@ def search(query, index='website', search_type='_all'):
         }
     }
     return return_value
-
 
 
 def format_results(results):
@@ -175,7 +174,8 @@ def format_result(result, parent_id=None):
 
 def load_parent(parent_id):
     parent = Node.load(parent_id)
-    if parent is None: return None
+    if parent is None:
+        return None
     parent_info = {}
     if parent is not None and parent.is_public:
         parent_info['title'] = parent.title
@@ -321,7 +321,7 @@ def create_index():
     }
     try:
         elastic.create_index('website')
-        for type_ in ['project','component','registration']:
+        for type_ in ['project', 'component', 'registration']:
             elastic.put_mapping('website', type_, mapping)
     except pyelasticsearch.exceptions.IndexAlreadyExistsError:
         pass
