@@ -7,7 +7,7 @@
     </script>
     <div id="searchControls" class="scripted">
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-md-13">
                 <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
                     <span class="input-group-btn">
@@ -41,7 +41,7 @@
                 </div>
                 <!-- ko if: tags -->
                 <div class="row">
-                    <h3> Improve Your Search:</h3>
+                    <h4> Improve your search:</h4>
                     <span class="tag-cloud" data-bind="foreach: tags">
                         <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
                         <span class="cloud-tag tag-big" data-bind="click: $root.addTag.bind(name)">
@@ -183,7 +183,7 @@
         </h5>
         <!-- /ko -->
         <!-- ko if tags.length > 0 -->
-        <h5>Tags:
+        <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
@@ -204,7 +204,7 @@
         </h5>
         <!-- /ko -->
         <!-- ko if tags.length > 0 -->
-        <h5>Tags:
+        <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
@@ -225,7 +225,7 @@
         </h5>
         <!-- /ko -->
         <!-- ko if tags.length > 0 -->
-        <h5>Tags:
+        <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
@@ -246,7 +246,7 @@
         </h5>
         <!-- /ko -->
         <!-- ko if tags.length > 0 -->
-        <h5>Tags:
+        <h5 data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
