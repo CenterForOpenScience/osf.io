@@ -13,6 +13,7 @@ import hashlib
 import urlparse
 
 import furl
+import markupsafe
 from cloudstorm import sign
 
 from framework.auth import Auth
@@ -424,6 +425,17 @@ class TestViewFile(OsfTestCase):
         n_objs = model.StorageFile.find().count()
         res = self.view_file(self.path)
         assert_equal(n_objs, model.StorageFile.find().count())
+
+    @mock.patch('website.addons.osfstorage.utils.render_file')
+    def test_view_file_escapes_html_in_name(self, mock_render):
+        mock_render.return_value = 'mock'
+        path = 'kind/of/<strong>magic.mp3'
+        record = model.FileRecord.get_or_create(path, self.node_settings)
+        version = factories.FileVersionFactory()
+        record.versions.append(version)
+        record.save()
+        res = self.view_file(path).follow(auth=self.project.creator.auth)
+        assert markupsafe.escape(record.name) in res
 
 
 class TestGetRevisions(OsfTestCase):

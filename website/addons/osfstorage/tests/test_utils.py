@@ -10,6 +10,7 @@ from tests.factories import ProjectFactory
 import datetime
 import urlparse
 
+import markupsafe
 from cloudstorm import sign
 
 from website.addons.osfstorage.tests import factories
@@ -90,7 +91,7 @@ class TestHGridUtils(OsfTestCase):
 
     def test_serialize_metadata_file(self):
         file_record = model.FileRecord(
-            path='kind/of/magic.mp3',
+            path='kind/of/<strong>magic.mp3',
             node_settings=self.project.get_addon('osfstorage'),
         )
         permissions = {'edit': False, 'view': True}
@@ -100,8 +101,14 @@ class TestHGridUtils(OsfTestCase):
             permissions,
         )
         assert_equal(serialized['addon'], 'osfstorage')
-        assert_equal(serialized['path'], 'kind/of/magic.mp3')
-        assert_equal(serialized['name'], 'magic.mp3')
+        assert_equal(
+            serialized['path'],
+            markupsafe.escape('kind/of/<strong>magic.mp3'),
+        )
+        assert_equal(
+            serialized['name'],
+            markupsafe.escape('<strong>magic.mp3'),
+        )
         assert_equal(serialized['ext'], '.mp3')
         assert_equal(serialized['kind'], 'item')
         assert_equal(

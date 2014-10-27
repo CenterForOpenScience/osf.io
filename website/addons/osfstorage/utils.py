@@ -7,6 +7,7 @@ import itertools
 
 import furl
 import requests
+import markupsafe
 
 from modularodm import Q
 from cloudstorm import sign
@@ -104,8 +105,9 @@ def serialize_metadata_hgrid(item, node, permissions):
     """
     return {
         'addon': 'osfstorage',
-        'path': item.path,
-        'name': item.name,
+        # Must escape names rendered by HGrid
+        'path': markupsafe.escape(item.path),
+        'name': markupsafe.escape(item.name),
         'ext': item.extension,
         rubeus.KIND: get_item_kind(item),
         'urls': build_hgrid_urls(item, node),

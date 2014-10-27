@@ -18,7 +18,7 @@
 
     <section>
         <div class="page-header overflow">
-            <h1>${file_name}</h1>
+            <h1>${file_name | h}</h1>
         </div>
     </section>
 
