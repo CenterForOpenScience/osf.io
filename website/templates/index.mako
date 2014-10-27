@@ -1,4 +1,5 @@
 <%inherit file="base.mako"/>
+
 <%def name="title()">Home</%def>
 
 <%def name="content()">
@@ -6,7 +7,7 @@
         <div id="containerOneHeader" class="col-md-6">
             <p class="headOne">Project management with collaborators,<br> project sharing with the public</p>
             <br>
-            <p class="subHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery. </p>
+            <p class="subHeadOne">The Open Science Framework (OSF) supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
         </div>
         <div id="signUpScope" class="sign-up img-rounded col-md-4">
             <form data-bind="submit: submit, css: {hideValidation: !showValidation()}">
@@ -113,4 +114,5 @@
             );
         });
     </script>
+
 </%def>
