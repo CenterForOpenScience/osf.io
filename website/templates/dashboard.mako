@@ -53,14 +53,25 @@
                 <div class="tab-pane active" id="quicktasks">
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
-                        <%include file="ob_register_project.mako"/>
+                        ## <%include file="ob_register_project.mako"/>
+                        <%include file="components/osf-project-search.mako"/>
+                        <div id="obRegisterProject">
+                            <div
+                                data-bind='component: {
+                                    name: "osf-project-search",
+                                    params: {
+                                        heading: "Register a project",
+                                        onSubmit: function() {
+                                            window.location = this.taSelected().urls.register;
+                                        }
+                                    }
+                                }'></div>
+                        </div>
                         <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
                 </div><!-- end .tab-pane -->
                 <div class="tab-pane" id="watchlist">
-                    <div id="logScope">
-                        <%include file="log_list.mako" args="scripted=False"/>
-                    </div><!-- end #logScope -->
+                    <%include file="log_list.mako" args="scripted=False"/>
                 </div><!-- end tab-pane -->
                 ## %if 'badges' in addons_enabled:
                    ## <%include file="dashboard_badges.mako"/>
@@ -97,18 +108,20 @@
 <script>
     $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
     $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
+    $script(['/static/js/components/projectSearch.js']);
+
+    // TODO: Put this with osf-project-search.mako ?
+    $script.ready('projectSearch', function() {
+        $.osf.applyBindings({}, '#obRegisterProject');
+    });
 
     $script(['/static/js/obAddFile.js']);
     $script.ready('obAddFile', function() {
         var obaddfile = new ObAddFile();
     });
-    $script(['/static/js/obRegisterProject.js']);
-    $script.ready('obRegisterProject', function() {
-        var obregisterproject = new ObRegisterProject();
-    });
 
-     // Initialize the LogFeed
-    $script(['/static/js/logFeed.js']);
+     // initialize the logfeed
+    $script(['/static/js/logfeed.js']);
     $script.ready('logFeed', function() {
         // NOTE: the div#logScope comes from log_list.mako
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");

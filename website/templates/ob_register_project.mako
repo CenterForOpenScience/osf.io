@@ -13,7 +13,8 @@
                     <img class="ob-clear-button ob-reveal" id="clearInputProjectRegisterProject" src="/static/img/close2.png">
                     ## Add label for proper spacing
                     <label for="project"></label>
-                    <input class="typeahead form-control" name="project" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>
+                    <input
+                        data-bind="projectSearch: {url: 'api/v1/dashboard/get_nodes'}" class="typeahead form-control" name="project" type="text" placeholder="Type to search for a project or component" id = 'inputProjectRegisterProject'>
                 </div> <!-- end #projectSearchRegisterProject -->
                 <span class="findBtn btn btn-default pull-right" id="addLinkRegisterProject" disabled="disabled">Go to registration page</span>
             </div>
