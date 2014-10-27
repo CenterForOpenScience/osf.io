@@ -14,7 +14,6 @@ from invoke import task, run
 from invoke.exceptions import Failure
 
 from website import settings
-from website.app import init_app
 
 logging.getLogger('invoke').setLevel(logging.CRITICAL)
 
@@ -40,6 +39,7 @@ except Failure:
 @task
 def server(host=None, port=5000, debug=True):
     """Run the app server."""
+    from website.app import init_app
     app = init_app(set_backends=True, routes=True)
     app.run(host=host, port=port, debug=debug)
 
