@@ -15,6 +15,8 @@ import uuid
 
 import pytz
 from flask import request
+from dulwich.repo import Repo
+from dulwich.object_store import tree_lookup_path
 import blinker
 
 from modularodm import fields, Q
