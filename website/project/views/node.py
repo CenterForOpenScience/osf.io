@@ -452,9 +452,10 @@ def project_before_set_public(**kwargs):
 
     for private_link in node.private_links_active:
         if private_link.anonymous:
-            anonymous_link_warning += "This project has existing anonymous view-only link. " \
-                                      "All anoymous view-only link <b>WILL NO LONGER</b> " \
-                                      "anonymize contributor list once this is public."
+            anonymous_link_warning \
+                += "This " + node.project_or_component + " has existing anonymous view-only link(s). " \
+                   "All anoymous view-only link(s) <b>WILL NO LONGER</b> anonymize contributor list " \
+                   "of this " + node.project_or_component + " once this is public."
             break
 
     return {
@@ -972,20 +973,16 @@ def project_generate_private_link_post(auth, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    is_public = False
-    for node in nodes:
-        if node.is_public:
-            is_public = True
-            break
+    has_public_node = any(node.is_public for node in nodes)
 
     new_link = new_private_link(
         name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
 
-    if anonymous and is_public:
+    if anonymous and has_public_node:
         status.push_status_message(
-            "You have created an anonymous view-only link including public project or component. "
-            "Please note that anonymity <b>DOES NOT</b> work on public project or component.")
+            "You have created an anonymous view-only link including public project(s) or component(s). "
+            "Please note that anonymity <b>DOES NOT</b> work on public project(s) or component(s).")
 
     return new_link
 
