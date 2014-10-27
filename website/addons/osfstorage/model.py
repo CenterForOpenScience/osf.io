@@ -176,12 +176,12 @@ class FileRecord(BaseFileObject):
     is_deleted = fields.BooleanField(default=False)
     versions = fields.ForeignField('FileVersion', list=True)
 
-    def get_latest_version(self, required=False):
+    def get_version(self, index=-1, required=False):
         try:
-            return self.versions[-1]
+            return self.versions[index]
         except IndexError:
             if required:
-                raise errors.NoVersionsError
+                raise errors.VersionNotFoundError
             return None
 
     def get_versions(self, page, size=settings.REVISIONS_PAGE_SIZE):
@@ -193,7 +193,7 @@ class FileRecord(BaseFileObject):
         return indices, versions, more
 
     def create_pending_version(self, creator, signature):
-        latest_version = self.get_latest_version()
+        latest_version = self.get_version()
         if latest_version and latest_version.pending:
             raise errors.PathLockedError
         if latest_version and latest_version.signature == signature:
@@ -211,8 +211,14 @@ class FileRecord(BaseFileObject):
         return version
 
     def resolve_pending_version(self, signature, location, metadata, log=True):
-        latest_version = self.get_latest_version(required=True)
+        latest_version = self.get_version(required=True)
         latest_version.resolve(signature, location, metadata)
+        previous_version = self.get_version(-2)
+        if previous_version and previous_version.is_duplicate(latest_version):
+            self.versions.remove(latest_version)
+            self.save()
+            FileVersion.remove_one(latest_version)
+            return previous_version
         if log:
             action = (
                 NodeLog.FILE_UPDATED
@@ -223,7 +229,7 @@ class FileRecord(BaseFileObject):
         return latest_version
 
     def cancel_pending_version(self, signature, log=True):
-        latest_version = self.get_latest_version(required=True)
+        latest_version = self.get_version(required=True)
         latest_version.cancel(signature)
         return latest_version
 
@@ -298,6 +304,9 @@ class FileVersion(StoredObject):
             raise errors.VersionNotPendingError
         if self.signature != signature:
             raise errors.PendingSignatureMismatchError
+
+    def is_duplicate(self, other):
+        return self.location_hash == other.location_hash
 
     def resolve(self, signature, location, metadata):
         self.before_update(signature)

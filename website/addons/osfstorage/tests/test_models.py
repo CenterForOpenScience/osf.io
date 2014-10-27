@@ -258,6 +258,23 @@ class TestFileRecord(OsfTestCase):
         assert_equal(num_trees, model.FileTree.find().count())
         assert_equal(num_records, model.FileRecord.find().count())
 
+    def test_get_version_defaults_found(self):
+        versions = [factories.FileVersionFactory() for _ in range(3)]
+        self.record.versions = versions
+        assert_equal(self.record.get_version(), self.record.versions[-1])
+
+    def test_get_version_defaults_not_found(self):
+        assert_equal(self.record.get_version(), None)
+
+    def test_get_version_at_index(self):
+        versions = [factories.FileVersionFactory() for _ in range(3)]
+        self.record.versions = versions
+        assert_equal(self.record.get_version(1), self.record.versions[1])
+
+    def test_get_version_required_not_found(self):
+        with assert_raises(errors.VersionNotFoundError):
+            self.record.get_version(required=True)
+
     def test_get_versions(self):
         self.record.versions = [
             factories.FileVersionFactory()
@@ -352,7 +369,11 @@ class TestFileRecord(OsfTestCase):
         self.record.create_pending_version(self.user, 'c22b59f')
         self.record.resolve_pending_version(
             'c22b59f',
-            factories.generic_location,
+            {
+                'service': 'cloud',
+                'container': 'container',
+                'object': '7035161',
+            },
             {'size': 1024},
         )
         self.project.reload()
@@ -367,6 +388,25 @@ class TestFileRecord(OsfTestCase):
             logged.params['urls'],
             logs.build_log_urls(self.project, self.path),
         )
+
+    def test_resolve_pending_duplicate_delete_version_without_log(self):
+        nlogs = len(self.project.logs)
+        version = factories.FileVersionFactory()
+        self.record.versions.append(version)
+        self.record.save()
+        nversions = model.FileVersion.find().count()
+        nversions_record = len(self.record.versions)
+        self.record.create_pending_version(self.user, 'c22b59f')
+        self.record.resolve_pending_version(
+            'c22b59f',
+            factories.generic_location,
+            {'size': 1024},
+        )
+        self.project.reload()
+        self.record.reload()
+        assert_equal(len(self.project.logs), nlogs)
+        assert_equal(nversions, model.FileVersion.find().count())
+        assert_equal(nversions_record, len(self.record.versions))
 
     def test_delete_record(self):
         nlogs = len(self.project.logs)

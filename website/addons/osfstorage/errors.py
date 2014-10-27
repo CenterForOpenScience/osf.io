@@ -10,7 +10,7 @@ class PathLockedError(OsfStorageError):
 class SignatureConsumedError(OsfStorageError):
     pass
 
-class NoVersionsError(OsfStorageError):
+class VersionNotFoundError(OsfStorageError):
     pass
 
 class PendingSignatureMismatchError(OsfStorageError):
