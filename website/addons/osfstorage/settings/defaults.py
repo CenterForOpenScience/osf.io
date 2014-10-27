@@ -7,7 +7,7 @@ from website import settings
 
 
 DOMAIN = settings.DOMAIN
-UPLOAD_SERVICE_URL = 'changeme'
+UPLOAD_SERVICE_URLS = ['changeme']
 
 SIGNED_REQUEST_KWARGS = {}
 

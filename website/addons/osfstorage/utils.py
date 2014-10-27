@@ -3,6 +3,7 @@
 
 import os
 import urlparse
+import itertools
 
 import furl
 import requests
@@ -146,6 +147,11 @@ def serialize_revision(node, record, version, index):
     }
 
 
+chooser = itertools.cycle(settings.UPLOAD_SERVICE_URLS)
+def choose_upload_url():
+    return next(chooser)
+
+
 def make_signed_request(method, url, signer, payload):
     """Make a signed request to the upload service.
 
@@ -209,7 +215,7 @@ def get_upload_url(node, user, size, content_type, file_path):
     data = make_signed_request(
         'post',
         urlparse.urljoin(
-            settings.UPLOAD_SERVICE_URL,
+            choose_upload_url(),
             'urls/upload/',
         ),
         signer=url_signer,
@@ -248,7 +254,7 @@ def get_download_url(version_idx, file_version, file_record):
     data = make_signed_request(
         'POST',
         urlparse.urljoin(
-            settings.UPLOAD_SERVICE_URL,
+            choose_upload_url(),
             'urls/download/',
         ),
         signer=url_signer,

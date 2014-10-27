@@ -185,7 +185,7 @@ class TestGetDownloadUrl(OsfTestCase):
         mock_request.return_value = {'url': url}
         ret = utils.get_download_url(3, self.record.versions[-1], self.record)
         request_url = urlparse.urljoin(
-            settings.UPLOAD_SERVICE_URL,
+            utils.choose_upload_url(),
             'urls/download/',
         )
         payload = {
