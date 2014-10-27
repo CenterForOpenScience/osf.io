@@ -76,6 +76,7 @@
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
         });
+        return $inputElem;
     }
 
     /**
@@ -104,7 +105,8 @@
                         }
                     };
                 });
-                initTypeahead(element, myProjects, viewModel, params);
+                var $typeahead = initTypeahead(element, myProjects, viewModel, params);
+                viewModel.$typeahead = $typeahead;
             });
             request.fail(function(xhr, textStatus, error) {
                 Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -127,22 +129,25 @@
         self.params = params;
         self.heading = params.heading;
         /* Observables */
-        self.taSelected = ko.observable(null);
+        self.selectedProject = ko.observable(null);
         /* Computeds */
         self.hasSelected = ko.computed(function() {
-            return self.taSelected() !== null;
+            return self.selectedProject() !== null;
+        });
+        // Project name to display in the text input
+        self.selectedProjectName = ko.computed(function() {
+            return self.selectedProject() ? self.selectedProject().name : '';
         });
         /* Functions */
         self.onSubmit = function() {
             var func = params.onSubmit || noop;
-            func(self.taSelected());
+            func(self.selectedProject());
         };
         self.onSelected = function(selected) {
-            self.taSelected(selected);
+            self.selectedProject(selected);
         };
-
         self.clearSearch = function() {
-            self.taSelected(null);
+            self.selectedProject(null);
         };
     }
 

@@ -55,7 +55,6 @@
                 <div class="tab-pane active" id="quicktasks">
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
-                        ## <%include file="ob_register_project.mako"/>
                         <div id="obRegisterProject">
                             <div data-bind='component: "osf-ob-register"'></div>
                         </div>
