@@ -67,6 +67,10 @@
                             alerts += '<div class="alert alert-warning">' +
                                        addonMessages[i] + '</div>';
                         }
+                    if (data.anonymous_link_warning){
+                         alerts += '<div class="alert alert-warning">' +
+                                       data.anonymous_link_warning + '</div>'
+                    }
                     confirmModal(alerts + message);
                 }
             )
