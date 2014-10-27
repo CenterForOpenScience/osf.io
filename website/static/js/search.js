@@ -55,6 +55,8 @@
         self.categories = ko.observableArray([]);
         self.tags = ko.observableArray([]);
         self.tag = ko.observable('');
+        self.stateJustPushed = false;
+        self.ogId = '';
         self.tagMaxCount = ko.observable(1);
 
         self.totalCount = ko.computed(function() {
@@ -179,11 +181,9 @@
             self.totalResults(0);
             self.currentPage(1);
             self.search();
-            History.pushState({page: self.currentPage()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
         };
 
-        self.search = function() {
-
+        self.search = function(noPush) {
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
@@ -223,6 +223,9 @@
                 self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
+                if (!noPush)
+                    self.pushState();
+
             }).fail(function(){
                 console.log('error');
                 self.totalResults(0);
@@ -234,17 +237,64 @@
 
         self.paginate = function(val) {
             window.scrollTo(0, 0);
-            History.replaceState({page: self.currentPage(), scrollTop: $(window).scrollTop()}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
             self.currentPage(self.currentPage()+val);
-            History.pushState({page: self.currentPage(), scrollTop: 0}, 'OSF | Search', '?q=' + self.query() + '&page=' + self.currentPage());
+            self.search();
         };
 
         self.pagePrev = self.paginate.bind(self, -1);
         self.pageNext = self.paginate.bind(self, 1);
 
         self.pageChange = function() {
-            self.currentPage(History.getState().data.page);
-            self.search();
+            if (self.stateJustPushed) {
+                self.stateJustPushed = false;
+                return;
+            }
+
+            self.loadState();
+
+            // if (self.ogId === History.getState().id)
+            //     return false;
+
+            self.search(true);
+        };
+
+        self.loadState = function() {
+            var state = History.getState().data;
+            self.currentPage(state.page || 1);
+            self.setCategory(state.filter);
+            self.query(state.query || '');
+        };
+
+        self.pushState = function() {
+            var state = {
+                query: self.query(),
+                page: self.currentPage(),
+                scrollTop: $(window).scrollTop(),
+            };
+
+            var url = '?q=' + self.query();
+
+            if (self.category().alias !== undefined && self.category().alias() !== undefined) {
+                url += ('&filter=' + self.category().alias());
+                state.filter = self.category().alias();
+            } else {
+                state.filter = '';
+            }
+            url += ('&page=' + self.currentPage());
+
+            console.log('state pushed');
+            self.stateJustPushed = true;
+            History.pushState(state, 'OSF | Search', url);
+        };
+
+        self.setCategory = function(cat) {
+            if (cat !== undefined && cat !== null && cat !== '') {
+                self.category(new Category(cat, cat, cat));
+                self.alias(self.category().getAlias());
+            } else {
+                self.category({});
+                self.alias('');
+            }
         };
 
     };
@@ -252,13 +302,20 @@
     function Search(selector, url, appURL) {
         // Initialization code
         var self = this;
-        var query = qs('q');
+
         self.viewModel = new ViewModel(url, appURL);
         History.Adapter.bind(window, 'statechange', self.viewModel.pageChange);
-        if (query !== null) {
-            self.viewModel.query(query);
-            self.viewModel.submit();
-        }
+
+        var data = {
+            query: qs('q'),
+            page: Number(qs('page')),
+            scrollTop: 0,
+            filter: qs('filter')
+        };
+        History.replaceState(data, 'OSF | Search', location.search);
+        self.viewModel.ogId = History.getState().id;
+        self.viewModel.loadState();
+        self.viewModel.search(true);
 
         $.osf.applyBindings(self.viewModel, selector);
     }
