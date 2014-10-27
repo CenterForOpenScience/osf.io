@@ -24,8 +24,9 @@
         self.alias = ko.observable(alias);
 
         self.getAlias = ko.computed(function() {
-            if (self.name() === 'Total')
+            if (self.name() === 'Total') {
                 return '';
+            }
             return ' AND category:' + self.alias();
         });
     };
@@ -39,40 +40,27 @@
     var ViewModel = function(url, appURL) {
         var self = this;
 
-        self.searchStarted = ko.observable(false);
         self.queryUrl = url;
         self.appURL = appURL;
-        self.category = ko.observable({});
-        self.alias = ko.observable('');
-        self.totalResults = ko.observable(0);
-        self.resultsPerPage = ko.observable(10);
-        self.currentPage = ko.observable(1);
-        self.query = ko.observable('');
-        self.results = ko.observableArray([]);
-        self.searching = ko.observable(false);
-        self.startDate = ko.observable(Date.now());
-        self.endDate = ko.observable(Date('1970-01-01'));
-        self.categories = ko.observableArray([]);
-        self.tags = ko.observableArray([]);
         self.tag = ko.observable('');
         self.stateJustPushed = false;
-        self.ogId = '';
+        self.query = ko.observable('');
+        self.alias = ko.observable('');
+        self.category = ko.observable({});
+        self.tags = ko.observableArray([]);
         self.tagMaxCount = ko.observable(1);
+        self.currentPage = ko.observable(1);
+        self.totalResults = ko.observable(0);
+        self.results = ko.observableArray([]);
+        self.searching = ko.observable(false);
+        self.resultsPerPage = ko.observable(10);
+        self.categories = ko.observableArray([]);
+        self.searchStarted = ko.observable(false);
+        self.startDate = ko.observable(Date.now());
+        self.endDate = ko.observable(Date('1970-01-01'));
 
-        self.totalCount = ko.computed(function() {
-            var theCount = 0;
-            $.each(self.categories(), function(index, category) {
-                if(category.name() !== 'Total'){
-                    theCount += category.count();
-                }
-            });
-            return theCount;
-        });
 
         self.totalPages = ko.computed(function() {
-            if(self.totalResults() === 0){
-                self.totalResults(self.totalCount());
-            }
             var pageCount = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
             pageCount = Math.ceil(self.totalResults() / resultsCount);
@@ -116,11 +104,11 @@
                 }
             };
         });
+
         self.fullQuery = ko.computed(function() {
             return {
                 'filtered': {
                     'query': self.queryObject()
-//                    'filter': self.dateFilter()
                 }
             };
         });
@@ -128,10 +116,10 @@
         self.sortCategories = function(a, b) {
             if(a.name() === 'Total') {
                 return -1;
-            } else if (b.name() === 'Total'){
+            } else if (b.name() === 'Total') {
                 return 1;
             }
-                return a.count() >  b.count() ? -1 : 1;
+            return a.count() >  b.count() ? -1 : 1;
         };
 
         self.claim = function(mid) {
@@ -165,12 +153,12 @@
 
         self.addTag = function(name) {
             // To handle passing from template vs. in main html
-            if(typeof name.name === "undefined"){
-                var tag = name;
-            }
-            else {
+            var tag = name;
+
+            if(typeof name.name !== 'undefined') {
                 tag = name.name();
             }
+
             self.currentPage(1);
             self.query(self.query() + ' AND tags:("' + tag + '")');
             self.search();
@@ -188,15 +176,16 @@
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
             $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
 
-                self.results.removeAll();
+                //Clear out our variables
                 self.tags([]);
+                self.results.removeAll();
+                self.categories.removeAll();
 
                 data.results.forEach(function(result){
                     self.results.push(result);
                 });
 
-
-                self.categories.removeAll();
+                //Load our categories
                 var categories = data.counts;
                 $.each(categories, function(key, value){
                     if (value === null) {
@@ -206,23 +195,19 @@
                 });
                 self.categories(self.categories().sort(self.sortCategories));
 
+                // If our category is named attempt to load its total else set it to the total total
                 if (self.category().name !== undefined) {
                     self.totalResults(data.counts[self.category().rawName()] || 0);
+                } else {
+                    self.totalResults(self.self.categories()[0].count());
                 }
-                else {
-                    if(self.totalCount()) {
-                        self.totalResults(self.totalCount());
-                    }
-                     else {
-                        self.totalResults(0);
-                    }
-                }
+
+                // Load up our tags
                 $.each(data.tags, function(key, value){
                     self.tags.push(new Tag(value));
                     self.tagMaxCount(Math.max(self.tagMaxCount(), value.doc_count));
                 });
 
-                self.categories()[0].count(self.totalCount());
                 self.searchStarted(true);
 
                 if (validate) {
@@ -251,6 +236,7 @@
         self.pagePrev = self.paginate.bind(self, -1);
         self.pageNext = self.paginate.bind(self, 1);
 
+        //History JS callback
         self.pageChange = function() {
             if (self.stateJustPushed) {
                 self.stateJustPushed = false;
@@ -262,6 +248,7 @@
             self.search(true);
         };
 
+        //Ensure that the first url displays properly
         self.validateSearch = function() {
             if (self.category().alias !== undefined) {
                 possibleCategories = $.map(self.categories().filter(function(category) {
@@ -281,6 +268,7 @@
             }
         };
 
+        //Load state from History JS
         self.loadState = function() {
             var state = History.getState().data;
             self.currentPage(state.page || 1);
@@ -288,8 +276,10 @@
             self.query(state.query || '');
         };
 
+        //Push a new state to History
         self.pushState = function() {
             var state = {
+                filter: '',
                 query: self.query(),
                 page: self.currentPage(),
                 scrollTop: $(window).scrollTop(),
@@ -298,14 +288,14 @@
             var url = '?q=' + self.query();
 
             if (self.category().alias !== undefined && self.category().alias() !== undefined) {
-                url += ('&filter=' + self.category().alias());
                 state.filter = self.category().alias();
-            } else {
-                state.filter = '';
+                url += ('&filter=' + self.category().alias());
             }
+
             url += ('&page=' + self.currentPage());
 
-            console.log('state pushed');
+            //Indicate that we've just pushed a state so the
+            //Call back does not process this push as a state change
             self.stateJustPushed = true;
             History.pushState(state, 'OSF | Search', url);
         };
@@ -335,9 +325,11 @@
             scrollTop: 0,
             filter: qs('filter')
         };
+        //Ensure our state keeps its URL paramaters
         History.replaceState(data, 'OSF | Search', location.search);
-        self.viewModel.ogId = History.getState().id;
+        //Set out observables from the newly replaced state
         self.viewModel.loadState();
+        //Preform search from url params
         self.viewModel.search(true, true);
 
         $.osf.applyBindings(self.viewModel, selector);
