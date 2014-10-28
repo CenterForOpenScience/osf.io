@@ -54,8 +54,9 @@
         };
     };
 
-    function initTypeahead(element, myProjects, viewModel, params){
+    function initTypeahead(element, nodes, viewModel, params){
         var $inputElem = $(element);
+        var myProjects = nodes.map(serializeNode);
         $inputElem.typeahead({
             hint: false,
             highlight: true,
@@ -79,6 +80,12 @@
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
         });
+        var onFetched = ko.unwrap(params.onFetched);
+        if (onFetched) {
+            onFetched(myProjects);
+        }
+        // Attach $typeahead element to viewModel
+        viewModel.$typeahead = $inputElem;
         return $inputElem;
     }
 
@@ -124,27 +131,12 @@
             if (Array.isArray(nodesOrURL)) {
                 var nodes = params.data;
                 // Compute relevant URLs for each search result
-                var myProjects = nodes.map(serializeNode);
-                var $typeahead = initTypeahead(element, myProjects, viewModel, params);
-                // Attach $typeahead element to viewModel
-                viewModel.$typeahead = $typeahead;
-                var onFetched = ko.unwrap(params.onFetched);
-                if (onFetched) {
-                    onFetched(myProjects);
-                }
-            // TODO: Repetition here. Refactor.
+                initTypeahead(element, nodes, viewModel, params);
             } else if (typeof nodesOrURL === 'string') { // params.data is a URL
                 var url = nodesOrURL;
-                var request = $.getJSON(url, function (projects) {
+                var request = $.getJSON(url, function (response) {
                     // Compute relevant URLs for each search result
-                    var myProjects = projects.nodes.map(serializeNode);
-                    var $typeahead = initTypeahead(element, myProjects, viewModel, params);
-                    // Attach $typeahead element to viewModel
-                    viewModel.$typeahead = $typeahead;
-                    var onFetched = ko.unwrap(params.onFetched);
-                    if (onFetched) {
-                        onFetched(myProjects);
-                    }
+                    initTypeahead(element, response.nodes, viewModel, params);
                 });
                 request.fail(function(xhr, textStatus, error) {
                     Raven.captureMessage('Could not fetch dashboard nodes.', {
