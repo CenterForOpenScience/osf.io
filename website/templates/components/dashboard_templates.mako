@@ -1,8 +1,6 @@
 ## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
 <template id="osf-project-search">
 <form data-bind="submit: onSubmit">
-    <pre data-bind="text: ko.toJSON({showComps: showComponents(), compURL: componentURL()}, null, 2)"></pre>
-
     <div class="ob-search">
         <!-- Project search typeahead -->
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
