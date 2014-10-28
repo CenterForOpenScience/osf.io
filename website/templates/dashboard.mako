@@ -100,7 +100,6 @@
 <%def name="javascript_bottom()">
 
 <script>
-    $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
     $script(['/static/js/onboarder.js']);  // exports onboarder
 
     $script.ready('onboarder', function() {
@@ -118,7 +117,7 @@
     });
 
      // initialize the logfeed
-    $script(['/static/js/logfeed.js']);
+    $script(['/static/js/logFeed.js']);
     $script.ready('logFeed', function() {
         // NOTE: the div#logScope comes from log_list.mako
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");

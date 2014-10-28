@@ -209,10 +209,10 @@
             'zeroclipboard');
         $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
         $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
-        $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
 </%def>
