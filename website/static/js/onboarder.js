@@ -144,7 +144,11 @@
         var self = this;
         self.params = params || {};
         self.heading = params.heading;
+
         /* Observables */
+        // If params.enableComponents is passed in, use that value, otherwise default to true
+        var enableComps = params.enableComponents;
+        self.showComponents = ko.observable(typeof enableComps !== 'undefined' ? enableComps : true);
         self.selectedProject = ko.observable(null);
         self.selectedComponent = ko.observable(null);
         /* Computeds */
@@ -172,7 +176,6 @@
             return self.selectedProject() ? self.selectedProject().urls.children : null;
         });
 
-        self.showComponents = ko.observable(true);
         /* Functions */
         self.onSubmit = function() {
             var func = params.onSubmit || noop;

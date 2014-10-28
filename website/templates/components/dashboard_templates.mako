@@ -1,6 +1,7 @@
 ## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
 <template id="osf-project-search">
 <form data-bind="submit: onSubmit">
+
     <div class="ob-search">
         ## Add label for proper spacing
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
@@ -27,7 +28,7 @@
                             onSelected: onSelectedComponent,
                             onFetched: onFetchedComponents
                         },
-                    visible: hasSelectedProject(),
+                    visible: showComponents() && hasSelectedProject(),
                     value: selectedComponentName,
                     attr: {disabled: hasSelectedComponent()}"
                 class="typeahead ob-typeahead-input form-control"
@@ -58,7 +59,7 @@
             <div class="col-md-12" >
                 <osf-project-search
                 params="onSubmit: onRegisterSubmit,
-                        disableComponents: true,
+                        enableComponents: false,
                         submitTest: 'Continue registration...'">
                 </osf-project-search>
             </div><!-- end col-md -->
