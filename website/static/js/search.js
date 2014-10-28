@@ -15,19 +15,18 @@
         return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
     }
 
-    var Category = function(categoryName, categoryCount, alias){
+    var Category = function(name, count, display){
         var self = this;
-        self.name = ko.observable(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
 
-        self.count = ko.observable(categoryCount);
-        self.rawName = ko.observable(categoryName);
-        self.alias = ko.observable(alias);
+        self.name = ko.observable(name);
+        self.count = ko.observable(count);
+        self.display = ko.observable(display);
 
-        self.getAlias = ko.computed(function() {
-            if (self.name() === 'Total') {
+        self.url = ko.computed(function() {
+            if (self.name() === 'total') {
                 return '';
             }
-            return ' AND category:' + self.alias();
+            return self.name() + '/';
         });
     };
 
@@ -45,7 +44,6 @@
         self.tag = ko.observable('');
         self.stateJustPushed = false;
         self.query = ko.observable('');
-        self.alias = ko.observable('');
         self.category = ko.observable({});
         self.tags = ko.observableArray([]);
         self.tagMaxCount = ko.observable(1);
@@ -95,7 +93,7 @@
             return {
                 'query_string': {
                     'default_field': '_all',
-                    'query': self.query() + self.alias(),
+                    'query': self.query(),
                     'analyze_wildcard': true,
                     'lenient': true
                 }
@@ -155,7 +153,6 @@
             self.searchStarted(false);
             self.currentPage(1);
             self.category(alias);
-            self.alias(alias.getAlias());
             self.search();
         };
 
@@ -182,7 +179,9 @@
         self.search = function(noPush, validate) {
             self.tagMaxCount(1);
             var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
-            $.osf.postJSON(self.queryUrl , jsonData).success(function(data) {
+            var url = self.queryUrl + self.category().url();
+
+            $.osf.postJSON(url, jsonData).success(function(data) {
 
                 //Clear out our variables
                 self.tags([]);
@@ -205,7 +204,7 @@
 
                 // If our category is named attempt to load its total else set it to the total total
                 if (self.category().name !== undefined) {
-                    self.totalResults(data.counts[self.category().rawName()] || 0);
+                    self.totalResults(data.counts[self.category().name()] || 0);
                 } else {
                     self.totalResults(self.self.categories()[0].count());
                 }
@@ -258,14 +257,14 @@
 
         //Ensure that the first url displays properly
         self.validateSearch = function() {
-            if (self.category().alias !== undefined) {
+            if (self.category().name !== undefined) {
                 possibleCategories = $.map(self.categories().filter(function(category) {
                     return category.count() > 0;
                 }), function(category) {
-                    return category.alias();
+                    return category.name();
                 });
 
-                if (possibleCategories.indexOf(self.category().alias()) === -1) {
+                if (possibleCategories.indexOf(self.category().name()) === -1) {
                     self.filter(self.categories()[0]);
                     return self.search(true);
                 }
@@ -295,9 +294,9 @@
 
             var url = '?q=' + self.query();
 
-            if (self.category().alias !== undefined && self.category().alias() !== undefined) {
-                state.filter = self.category().alias();
-                url += ('&filter=' + self.category().alias());
+            if (self.category().name !== undefined && self.category().url() !== '') {
+                state.filter = self.category().name();
+                url += ('&filter=' + self.category().name());
             }
 
             url += ('&page=' + self.currentPage());
@@ -311,10 +310,8 @@
         self.setCategory = function(cat) {
             if (cat !== undefined && cat !== null && cat !== '') {
                 self.category(new Category(cat + 's', cat, cat));
-                self.alias(self.category().getAlias());
             } else {
-                self.category(new Category('total', 0, 'total'));
-                self.alias('');
+                self.category(new Category('total', 0, 'Total'));
             }
         };
 
