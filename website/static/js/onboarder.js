@@ -416,7 +416,6 @@
         self.changeMessage = function(text, css, timeout) {
             self.message(text);
             var cssClass = css || 'text-info';
-            timeout = timeout || 3000;
             self.messageClass(cssClass);
             if (timeout) {
                 // Reset message after timeout period
@@ -485,7 +484,6 @@
                         self.iconSrc('/static/img/upload_icons/multiple_blank.png');
                         self.filename(dropzone.files.length + ' files');
                     }else{
-                        // $('#obDropzone').click();
                         var fileName = truncateFilename(dropzone.files[0].name);
                         self.iconSrc(getFiletypeIcon(fileName));
                         self.filename(fileName);

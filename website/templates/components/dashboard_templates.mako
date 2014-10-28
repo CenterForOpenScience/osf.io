@@ -83,7 +83,7 @@
             <h4>1. Drop file (or click below)</h4>
 
             <!-- Dropzone -->
-            <div data-bind="visible: enableUpload()" id="obDropzone" class="ob-dropzone-box pull-left"></div>
+            <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone-box pull-left"></div>
 
             <!-- File queue display -->
             <div data-bind="visible: !enableUpload()" id="obDropzoneSelected" class="ob-dropzone-box pull-left">
