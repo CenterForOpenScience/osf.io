@@ -13,9 +13,9 @@
         <div class="collapse navbar-collapse navbar-ex1-collapse">
             <ul class="nav navbar-nav">
                 <li class="visible-xs"><a href="/">Home</a></li>
-                %if user_name:
+                % if user_name:
                 <li><a href="${web_url_for('dashboard')}">My Dashboard</a></li>
-                %endif
+                % endif
                 <li class="dropdown">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Explore <b class="caret"></b></a>
                     <ul class="dropdown-menu">
@@ -41,7 +41,7 @@
                 </div>
             </form>
             <ul class="nav navbar-nav navbar-right">
-                %if user_name and display_name:
+                % if user_name and display_name:
                 <li>
                     <a class="hidden-lg hidden-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}" class="icon-user"></span>
@@ -62,9 +62,9 @@
                         <span class="visible-xs">Log out</span>
                     </a>
                 </li>
-                %elif allow_login:
+                % elif allow_login:
                 <a class="btn btn-primary navbar-btn" href="${web_url_for('auth_login')}">Create an Account or Sign-In</a>
-                %endif
+                % endif
             </ul><!-- end nav navbar-nav navbar-right -->
         </div><!-- end navbar-collapse -->
     </div><!-- end container-->
