@@ -66,6 +66,11 @@
             displayKey: function(data) {
                 return data.value.name;
             },
+            templates: {
+                suggestion: Handlebars.compile('<p>{{value.name}}</p> ' +
+                                               '<p><small class="ob-suggestion-date text-muted">' +
+                                               'modified {{value.dateModified.local}}</small></p>')
+            },
             source: substringMatcher(myProjects)
         });
 
@@ -79,9 +84,11 @@
 
     // Defines the format of items in the typeahead data source
     function serializeNode(node) {
+        var dateModified = new $.osf.FormattableDate(node.date_modified);
         return {
             name: node.title,
             id: node.id,
+            dateModified: dateModified,
             urls: {
                 web: node.url,
                 api: node.api_url,
@@ -125,6 +132,7 @@
                 if (onFetched) {
                     onFetched(myProjects);
                 }
+            // TODO: Repetition here. Refactor.
             } else if (typeof nodesOrURL === 'string') { // params.data is a URL
                 var url = nodesOrURL;
                 var request = $.getJSON(url, function (projects) {

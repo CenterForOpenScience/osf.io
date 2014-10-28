@@ -62,6 +62,7 @@ def _render_node(node):
         'url': node.url,
         'api_url': node.api_url,
         'primary': node.primary,
+        'date_modified': utils.iso8601format(node.date_modified),
     }
 
 

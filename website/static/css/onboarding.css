@@ -39,6 +39,10 @@ li.ob-list {
 	display: none;
 }
 
+.ob-suggestion-date {
+    margin-left: 15px;
+}
+
 .ob-reveal-btn {
 	height: 100%;
 	width: 100%;
