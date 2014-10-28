@@ -184,7 +184,7 @@
     function TypeaheadSearch(namespace, nodeType, componentBool) {
         if(nodeType.toLowerCase() === 'project'){
             initProjectTypeahead(namespace, nodeType, componentBool);
-        }else{
+        } else{
             initComponentTypeahead(namespace, nodeType, componentBool);
         }
     }

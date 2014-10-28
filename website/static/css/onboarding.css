@@ -7,9 +7,11 @@ li.ob-list {
 
 .ob-heading {
 	display:inline;
-
 	margin: 5px;
-	margin-bottom: 20px;
+}
+
+.ob-header {
+    margin-bottom: 15px;
 }
 
 .ob-search{
@@ -56,7 +58,7 @@ li.ob-list {
 .ob-clear-button{
 	position:absolute;
 	z-index: 1;
-	top: -12px;
+	top: -5px;
 	right: -12px;
 }
 
@@ -99,10 +101,6 @@ li.ob-list {
 	margin-top:20px;
 }
 
-#obDropzoneError{
-	color:red;
-	text-align:center;
-}
 
 #obRegisterProjectBtn:hover{
 	cursor: pointer;

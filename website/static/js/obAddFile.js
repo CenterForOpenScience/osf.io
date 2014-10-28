@@ -38,7 +38,7 @@
 
         uploadprogress: function(file, progress) { // progress bar update
             $('#uploadProgress').attr('value', Math.round(progress));
-      },
+        },
 
         init: function() {
             var submitButton = document.querySelector('#addLink' + namespace);

@@ -36,6 +36,8 @@
 
 
     <%include file='_log_templates.mako'/>
+    ## Knockout componenet templates
+    <%include file="components/dashboard_templates.mako"/>
     </div>
     <div class="row">
         <div class="col-md-5">
@@ -53,14 +55,17 @@
                 <div class="tab-pane active" id="quicktasks">
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
-                        <%include file="ob_register_project.mako"/>
-                        <%include file="ob_add_file.mako"/>
+                        <div id="obRegisterProject">
+                            <osf-ob-register></osf-ob-register>
+                        </div>
+                        <div id="obUploader">
+                            <osf-ob-uploader></osf-ob-uploader>
+                        </div>
+                        ## <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
                 </div><!-- end .tab-pane -->
                 <div class="tab-pane" id="watchlist">
-                    <div id="logScope">
-                        <%include file="log_list.mako" args="scripted=False"/>
-                    </div><!-- end #logScope -->
+                    <%include file="log_list.mako" args="scripted=False"/>
                 </div><!-- end tab-pane -->
                 ## %if 'badges' in addons_enabled:
                    ## <%include file="dashboard_badges.mako"/>
@@ -97,18 +102,20 @@
 <script>
     $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
     $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
+    $script(['/static/js/onboarder.js']);  // exports onboarder
 
-    $script(['/static/js/obAddFile.js']);
-    $script.ready('obAddFile', function() {
-        var obaddfile = new ObAddFile();
-    });
-    $script(['/static/js/obRegisterProject.js']);
-    $script.ready('obRegisterProject', function() {
-        var obregisterproject = new ObRegisterProject();
+    $script.ready('onboarder', function() {
+        $.osf.applyBindings({}, '#obRegisterProject');
+        $.osf.applyBindings({}, '#obUploader');
     });
 
-     // Initialize the LogFeed
-    $script(['/static/js/logFeed.js']);
+    ## $script(['/static/js/obAddFile.js']);
+    ## $script.ready('obAddFile', function() {
+    ##     var obaddfile = new ObAddFile();
+    ## });
+
+     // initialize the logfeed
+    $script(['/static/js/logfeed.js']);
     $script.ready('logFeed', function() {
         // NOTE: the div#logScope comes from log_list.mako
         var logFeed = new LogFeed("#logScope", "/api/v1/watched/logs/");
