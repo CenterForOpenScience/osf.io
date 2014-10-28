@@ -288,7 +288,7 @@
     //    }
 
         // Build tooltips on user activity widgets
-        $('.ua-meter').tooltip();
+        $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

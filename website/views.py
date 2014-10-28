@@ -81,26 +81,6 @@ def _render_nodes(nodes):
     return ret
 
 
-def _get_user_activity(node, user, rescale_ratio):
-
-    # Counters
-    total_count = len(node.logs)
-
-    # Note: It's typically much faster to find logs of a given node
-    # attached to a given user using node.logs.find(...) than by
-    # loading the logs into Python and checking each one. However,
-    # using deep caching might be even faster down the road.
-
-    ua_count = node.logs.find(Q('user', 'eq', user)).count()
-    non_ua_count = total_count - ua_count  # base length of blue bar
-
-    # Normalize over all nodes
-    ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-    non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
-
-    return ua_count, ua, non_ua
-
-
 @collect_auth
 def index(auth, **kwargs):
     """Redirect to dashboard if user is logged in, else show homepage.

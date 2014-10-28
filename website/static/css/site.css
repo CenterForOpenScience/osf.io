@@ -817,38 +817,11 @@ border-radius: 6px;
 
 /* Data Vis
 -------------------------------------------------- */
-/* Activity meters (user profile) */
-.ua_meter_legend ul{
-    list-style:none;
-}
-.ua_meter_legend li{
-    display:inline;
-    float:left;
-}
-.user-activity-meter{
-    height: 10px;
-    margin: 8px 0px;
-}
-.user-activity-meter ul{
-    height:100%;
-    list-style:none;
-    padding-left: 0px;
-}
-.user-activity-meter ul li{
-    display:inline;
-    float:left;
-    height:100%;
-}
-
-.pa-meter{
-    background:#4572A7;
-}
-.ua-meter{
-    background:#89A54E;
-}
-.pa-meter-label{
-    margin: -4px 0 0 5px;
-    font-size: 11px;
+/* Activity progress bar (user profile) */
+.progress-user-activity {
+    max-height: 10px;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 

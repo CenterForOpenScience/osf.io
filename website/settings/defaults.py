@@ -101,9 +101,6 @@ GRAVATAR_SIZE_DISCUSSION = 20
 # Conference options
 CONFERNCE_MIN_COUNT = 5
 
-# User activity style
-USER_ACTIVITY_MAX_WIDTH = 325
-
 WIKI_WHITELIST = {
     'tags': [
         'a', 'abbr', 'acronym', 'b', 'bdo', 'big', 'blockquote', 'br',
