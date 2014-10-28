@@ -21,8 +21,8 @@ STATIC_URL_PATH = "/static"
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
-CORE_TEMPLATES = 'website/templates/log_templates.mako'
-BUILT_TEMPLATES = 'website/templates/_log_templates.mako'
+CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
+BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')
 
 DOMAIN = 'http://localhost:5000/'
 GNUPG_HOME = os.path.join(BASE_PATH, 'gpg')
