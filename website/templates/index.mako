@@ -95,9 +95,9 @@
     </div>
     <div class="row text-center">
         <div class="col-md-12">
-            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="https://osf.io/account/">Sign up.</a></p>
-            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="https://osf.io/getting-started/">Learn how to build a project.</a></p>
-            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="https://osf.io/explore/activity/">Get inspired.</a></p>
+            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/account/">Sign up.</a></p>
+            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/getting-started/">Learn how to build a project.</a></p>
+            <p class="hpSubHeadThree hpSteps"><a class="hpLink" href="/explore/activity/">Get inspired.</a></p>
         </div>
     </div>
     <div class="row text-center">
