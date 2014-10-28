@@ -4,7 +4,6 @@
 from copy import deepcopy
 import httplib as http
 import uuid
-import unittest
 
 from nose.tools import *  # noqa
 from modularodm.exceptions import ValidationValueError
@@ -15,8 +14,10 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from framework.forms.utils import sanitize
+from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
-from website.addons.wiki.model import NodeWikiPage
+from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     docs_uuid, generate_share_uuid, share_db, ops_uuid
 )
@@ -536,6 +537,14 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wname='wiki2'),
             wiki.html(project),
         )
+
+    # Regression test for https://sentry.osf.io/osf/production/group/310/
+    def test_bad_links(self):
+        content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
+        node = ProjectFactory()
+        wiki = NodeWikiFactory(content=content, node=node)
+        expected = render_content(content, node)
+        assert_equal(expected, wiki.html(node))
 
 
 class TestWikiCompare(OsfTestCase):

@@ -1493,7 +1493,10 @@ div#logScope a.moreLogs{
     padding:5px;
 }
 
-#projectScope .form-control {
+/** The project and wiki name editable inputs should be larger
+ * than the editable inputs elsewhere on the site.
+ */
+#projectScope .form-control, #wikiName .form-control {
     width: 400px;
 }
 

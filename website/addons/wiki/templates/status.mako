@@ -38,6 +38,7 @@
     // Activate editable title unless on home page or in edit mode only for users that can edit
     %if 'write' in user['permissions'] and not is_edit and wiki_id and wiki_name != 'home':
     $(document).ready(function() {
+        $.fn.editable.defaults.mode = 'inline';
         $pageName.editable({
             type: 'text',
             send: 'always',
