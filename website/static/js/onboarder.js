@@ -86,6 +86,8 @@
         }
         // Attach $typeahead element to viewModel
         viewModel.$typeahead = $inputElem;
+        // Set a flag on the viewModel to prevent multiple typeahead instantiations
+        viewModel._taInitialized = true;
         return $inputElem;
     }
 
@@ -127,8 +129,7 @@
             var params = valueAccessor() || {};
             // Either an Array of nodes or a URL
             var nodesOrURL = ko.unwrap(params.data);
-
-            if (Array.isArray(nodesOrURL)) {
+            if (!viewModel._taInitialized && Array.isArray(nodesOrURL)) {
                 var nodes = params.data;
                 // Compute relevant URLs for each search result
                 initTypeahead(element, nodes, viewModel, params);
