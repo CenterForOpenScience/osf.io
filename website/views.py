@@ -22,7 +22,6 @@ from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
 from website.util import web_url_for, rubeus
 from website.project import model, new_dashboard
-from website import settings
 
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
