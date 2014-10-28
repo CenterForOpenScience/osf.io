@@ -3,19 +3,39 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         ## Add label for proper spacing
-        <div data-bind="css: {'has-success': hasSelected()}" class="form-group">
+        <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
-                data-bind="click: clearSearch, visible: hasSelected()"
+                data-bind="click: clearSearch, visible: hasSelectedProject()"
                 class="ob-clear-button" src="/static/img/close2.png">
-        <input
-        data-bind="projectSearch: {onSelected: onSelected},
-                    value: selectedProjectName,
-                    attr: {disabled: hasSelected()}"
-            class="typeahead ob-typeahead-input form-control"
-            name="project"
-            type="text"
-            placeholder="Type to search for a project">
-        </div>
+            <input
+            data-bind="projectSearch: {
+                            url:  '/api/v1/dashboard/get_nodes/',
+                            onSelected: onSelectedProject
+                        },
+                        value: selectedProjectName,
+                        attr: {disabled: hasSelectedProject()}"
+                class="typeahead ob-typeahead-input form-control"
+                name="project"
+                type="text"
+                placeholder="Type to search for a project">
+        </div><!-- end .form-group -->
+        <!-- ko if: !params.disableComponents -->
+        <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
+            <input
+            data-bind="projectSearch: {
+                            url: componentURL,
+                            onSelected: onSelectedComponent,
+                            onFetched: onFetchedComponents
+                        },
+                    visible: hasSelectedProject(),
+                    value: selectedComponentName,
+                    attr: {disabled: hasSelectedComponent()}"
+                class="typeahead ob-typeahead-input form-control"
+                name="component"
+                type="text"
+                placeholder="Type to search for a component">
+        </div><!-- end .form-group -->
+        <!-- /ko -->
     </div> <!-- end .ob-search -->
     <button type="submit" data-bind="visible: showSubmit(), text: params.submitText || 'Submit'"
             class="btn btn-primary pull-right" >
@@ -39,7 +59,9 @@
                 <div data-bind="component:
                     {
                         name: 'osf-project-search',
-                        params: {onSubmit: onRegisterSubmit, submitText: 'Continue registration...'}
+                        params: {onSubmit: onRegisterSubmit,
+                                disableComponents: true,
+                                submitText: 'Continue registration...'}
                     }">
                 </div>
             </div><!-- end col-md -->

@@ -58,7 +58,7 @@ li.ob-list {
 .ob-clear-button{
 	position:absolute;
 	z-index: 1;
-	top: 10px;
+	top: -5px;
 	right: -12px;
 }
 

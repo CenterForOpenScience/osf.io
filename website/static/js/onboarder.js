@@ -69,9 +69,6 @@
         });
 
         $inputElem.bind('typeahead:selected', function(obj, datum) {
-            // TODO: Use data-binds to apply these styles
-            // $inputElem.css('background-color', '#f5f5f5')
-            //     .css('border', '2px solid LightGreen');
             // Call the parent viewModel's onSelected
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
@@ -79,43 +76,59 @@
         return $inputElem;
     }
 
+    function serializeNode(node) {
+        return {
+            name: node.title,
+            id: node.id,
+            urls: {
+                web: node.url,
+                api: node.api_url,
+                register: node.url + 'register/',
+                upload: node.api_url + 'osffiles/',
+                files: node.url + 'files/',
+                children: node.api_url + 'get_children/'
+            }
+        };
+    }
+
     /**
      * Binding handler for attaching an OSF typeahead search input.
      * Takes an optional parameter onSelected, which is called when a project
      * is selected.
      *
+     * Params:
+     *  url: URL where to fetch nodes. Defaults to the dashboard node endpoint.
+     *  onSelected: Callback for when a node is selected.
+     *  onFetched: Callback for when nodes are fetched from server.
+     *
      * Example:
      *
-     *  <div data-bind="projectSearch: {onSelected: onSelected}></div>
+     *  <div data-bind="projectSearch: {url: '/api/v1/dashboard/get_nodes/',
+     *                                     onSelected: onSelected}></div>
      */
-    var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
     ko.bindingHandlers.projectSearch = {
-        init: function(element, valueAccessor, allBindings, viewModel) {
+        update: function(element, valueAccessor, allBindings, viewModel) {
             var params = valueAccessor();
-            var url = params.url || DEFAULT_FETCH_URL;
-            var request = $.getJSON(url, function (projects) {
-                // Compute relevant URLs for each search result
-                var myProjects = projects.nodes.map(
-                    function(item){return {
-                        name: item.title,
-                        id: item.id,
-                        urls: {
-                            web: item.url,
-                            api: item.api_url,
-                            register: item.url + 'register/',
-                            upload: item.api_url + 'osffiles/',
-                            files: item.url + 'files/'
-                        }
-                    };
+            var url = ko.unwrap(params.url);
+            // Only request data if url is defined, else defer the request
+            if (url) {
+                var request = $.getJSON(url, function (projects) {
+                    // Compute relevant URLs for each search result
+                    var myProjects = projects.nodes.map(serializeNode);
+                    var $typeahead = initTypeahead(element, myProjects, viewModel, params);
+                    // Attach $typeahead element to viewModel
+                    viewModel.$typeahead = $typeahead;
+                    var onFetched = ko.unwrap(params.onFetched);
+                    if (onFetched) {
+                        onFetched(myProjects);
+                    }
                 });
-                var $typeahead = initTypeahead(element, myProjects, viewModel, params);
-                viewModel.$typeahead = $typeahead;
-            });
-            request.fail(function(xhr, textStatus, error) {
-                Raven.captureMessage('Could not fetch dashboard nodes.', {
-                    url: url, textStatus: textStatus, error: error
+                request.fail(function(xhr, textStatus, error) {
+                    Raven.captureMessage('Could not fetch dashboard nodes.', {
+                        url: url, textStatus: textStatus, error: error
+                    });
                 });
-            });
+            }
         }
     };
 
@@ -133,26 +146,46 @@
         self.heading = params.heading;
         /* Observables */
         self.selectedProject = ko.observable(null);
+        self.selectedComponent = ko.observable(null);
         /* Computeds */
-        self.hasSelected = ko.computed(function() {
+        self.hasSelectedProject = ko.computed(function() {
             return self.selectedProject() !== null;
+        });
+        self.hasSelectedComponent = ko.computed(function() {
+            return self.selectedComponent() !== null;
         });
 
         self.showSubmit = ko.computed(function() {
-            return self.hasSelected();
+            return self.hasSelectedProject();
         });
 
         // Project name to display in the text input
         self.selectedProjectName = ko.computed(function() {
             return self.selectedProject() ? self.selectedProject().name : '';
         });
+        // Component name to display in the text input
+        self.selectedComponentName = ko.computed(function() {
+            return self.selectedComponent() ? self.selectedComponent().name : '';
+        });
+
+        self.componentURL = ko.computed(function() {
+            return self.selectedProject() ? self.selectedProject().urls.children : null;
+        });
+
         /* Functions */
         self.onSubmit = function() {
             var func = params.onSubmit || noop;
             func(self.selectedProject());
         };
-        self.onSelected = function(selected) {
+        self.onSelectedProject = function(selected) {
             self.selectedProject(selected);
+        };
+        self.onSelectedComponent = function(selected) {
+            self.selectedComponent(selected);
+        };
+        self.onFetchedComponents = function(components) {
+            console.log('fetched');
+            console.log(components);
         };
         self.clearSearch = function() {
             self.selectedProject(null);
