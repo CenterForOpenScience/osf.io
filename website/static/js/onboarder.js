@@ -172,10 +172,12 @@
             return self.selectedProject() ? self.selectedProject().urls.children : null;
         });
 
+        self.showComponents = ko.observable(true);
         /* Functions */
         self.onSubmit = function() {
             var func = params.onSubmit || noop;
-            func(self.selectedProject());
+            var selected = self.selectedComponent() || self.selectedProject();
+            func(selected);
         };
         self.onSelectedProject = function(selected) {
             self.selectedProject(selected);
@@ -184,8 +186,11 @@
             self.selectedComponent(selected);
         };
         self.onFetchedComponents = function(components) {
-            console.log('fetched');
-            console.log(components);
+            if (!components.length) {
+                self.showComponents(false);
+            }
+            var func = params.onFetchedComponents || noop;
+            func(components);
         };
         self.clearSearch = function() {
             self.selectedProject(null);
@@ -348,6 +353,7 @@
         self.iconSrc = ko.observable('//:0');
         self.uploadCount = ko.observable(1);
         self.disableUpload = ko.observable(false);
+        self.disableComponents = ko.observable(false);
         // Flashed messages
         self.message = ko.observable('');
         self.messageClass = ko.observable('text-info');
@@ -376,6 +382,11 @@
             self.dropzone.removeAllFiles();
             self.uploadCount(1);
             self.clearMessages();
+        };
+        self.onFetchedComponents = function(components) {
+            if (!components.length) {
+                self.disableComponents(true);
+            }
         };
         /** Change the flashed message. */
         self.changeMessage = function(text, css, timeout) {

@@ -19,7 +19,7 @@
                 type="text"
                 placeholder="Type to search for a project">
         </div><!-- end .form-group -->
-        <!-- ko if: !params.disableComponents -->
+        <!-- ko if: showComponents -->
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
             <input
             data-bind="projectSearch: {
@@ -77,6 +77,7 @@
         <h3 class="ob-heading">Upload file(s)</h3>
     </div><!-- end ob-unselectable -->
 
+
     <div class="row">
         <div class="col-md-12">
             <h4>1. Drop file (or click below)</h4>
@@ -105,7 +106,7 @@
                     name: 'osf-project-search',
                     params: {
                         onSubmit: startUpload,
-                        submitText: 'Upload',
+                        submitText: 'Upload'
                     }
                 }">
             </div>
