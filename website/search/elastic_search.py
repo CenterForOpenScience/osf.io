@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 
 # These are the doc_types that exist in the search database
-TYPES = ['website/project', 'website/component', 'website/registration', 'website/user']
 ALIASES = {
-    'website/project': 'projects',
-    'website/component': 'components',
-    'website/registration': 'registrations',
-    'website/user': 'users'
+    'project': 'Projects',
+    'component': 'Components',
+    'registration': 'Registrations',
+    'user': 'Users',
+    'total': 'Total'
 }
 
 try:
@@ -62,35 +62,23 @@ def requires_search(func):
 
 
 @requires_search
-def get_counts(count_query, index):
-    counts = {}
-    try:
-        count_query['query']['filtered']['query']['query_string']['query'] = \
-            re.sub(r' AND category:\S*', '', count_query['query']['filtered']['query']['query_string']['query'])
-    #TODO: Overly broad exception needs fixing
-    except Exception:
-        pass
+def get_counts(count_query, clean=True):
+    count_query['aggs'] = {
+        'counts': {
+            'terms': {
+                'field': '_type',
+            }
+        }
+    }
+    #pyelastic search is dumb
+    res = elastic.send_request('GET', ['_all', '_search'], body=count_query, query_params={'search_type': 'count'})
 
-    if count_query.get('from') is not None:
-        del count_query['from']
-    if count_query.get('size')is not None:
-        del count_query['size']
-    if count_query.get('sort'):
-        del count_query['sort']
-    for _type in TYPES:
-        try:
-            if len(_type.split('/')) > 1:
-                count_index, count_type = _type.split('/')
-            else:
-                count_index, count_type = index, _type
-            count = elastic.count(count_query, index=count_index, doc_type=count_type)['count']
-        #TODO: Overly broad exception needs fixing
-        except Exception:
-            count = 0
-        counts[ALIASES.get(_type, _type)] = count
-    # Figure out which count we should display as a total
-    counts['total'] = sum([counts[key] for key in counts.keys()])
+    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
+
+    counts['total'] = sum([val for val in counts.values()])
+
     return counts
+
 
 @requires_search
 def get_tags(query, index):
@@ -99,16 +87,11 @@ def get_tags(query, index):
             'terms': {'field': "tags"}
         }
     }
-    if query.get('from') is not None:
-        del query['from']
-    if query.get('size')is not None:
-        del query['size']
-    if query.get('sort'):
-        del query['sort']
 
     try:
         results = elastic.search(query, index=index, doc_type='_all')
         tags = results['aggregations']['tag_cloud']['buckets']
+
     #TODO: Overly broad exception needs fixing
     except Exception:
         tags = []
@@ -117,10 +100,18 @@ def get_tags(query, index):
 
 @requires_search
 def search(query, index='website', search_type='_all'):
+    tag_query = copy.deepcopy(query)
+    count_query = copy.deepcopy(query)
 
-    # Get document counts by type
-    counts = get_counts(copy.deepcopy(query), index)
-    tags = get_tags(copy.deepcopy(query), index)
+    for key in ['from', 'size', 'sort']:
+        try:
+            del tag_query[key]
+            del count_query[key]
+        except KeyError:
+            pass
+
+    tags = get_tags(tag_query, index)
+    counts = get_counts(count_query, index)
 
     # Run the real query and get the results
     raw_results = elastic.search(query, index=index, doc_type=search_type)
@@ -130,12 +121,7 @@ def search(query, index='website', search_type='_all'):
         'results': format_results(results),
         'counts': counts,
         'tags': tags,
-        'typeAliases': {
-            'components': 'component',
-            'projects': 'project',
-            'registrations': 'registration',
-            'users': 'user',
-        }
+        'typeAliases': ALIASES
     }
     return return_value
 
