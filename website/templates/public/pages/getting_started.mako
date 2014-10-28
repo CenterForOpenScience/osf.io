@@ -23,7 +23,7 @@
                             <li><a href="#links"><i class="icon-chevron-right"></i> Links</a></li>
                             <li><a href="#forks"><i class="icon-chevron-right"></i> Forks</a></li>
                             <li><a href="#registrations"><i class="icon-chevron-right"></i> Registrations</a></li>
-                            <li><a href="#folders"><i class="icon-chevron-right"></i> Folders</a></li>
+                            <li><a href="#organizer"><i class="icon-chevron-right"></i> Project Organizer</a></li>
                         </ul>
                     </li>
                     <li>
@@ -88,7 +88,7 @@
                 <p class="gs-header">Dashboards</p>
                 <p>The Dashboard displays all of your projects and their components in the Project Organizer, and is linked in the black navigation bar at the top of the page. From the Project Organizer, you can open any of your projects or components by clicking on the "open" icon to the right of the project's name. To the right of your project organizer you will find a set of widgets that make it easy to create, register, and add files to your projects</p>
             
-                <p>You can shrink or expand each project to display nested components by clicking the + or - to the left of the projects name. A more detailed description of <a href="#folders">folders</a> is below.</p>
+                <p>You can shrink or expand each project to display nested components by clicking the + or - to the left of the projects name. A more detailed description of how to use the <a href="#organizer">Project Organizer</a> is below.</p>
                 <div class="gs-video">
                     <div class="youtube" id="lS0WG8sw2Ig" style="width: 560px; height: 315px;"></div>
                 </div>
@@ -167,8 +167,8 @@
             </div>
             <span id="folders" class="anchor"></span>
             <div class="row">
-                <p class="gs-header">Folders</p>
-                <p> In addition to displaying your projects, components, and registrations, the Project Organizer makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
+                <p class="gs-header">Project Organizer</p>
+                <p> The Project Organizer displays your projects, components, and registrations; and makes it easy for you to arrange your projects and components into folders that make sense for your application. Your projects and registrations will be all be shown in Smart Folders called “All My Registrations” and “All My Projects.” Other folders can be created to help you organize projects or components you might like to see grouped in a different way. For example, you may have many projects and find the list overwhelming. It will be helpful for you to have a folder containing only projects or components you work with most often. Alternatively, you might want to be able to easily access all of your analysis scripts from all of your projects. You can create a folder and add to it only analysis scripts components. </p>
                 <p>To create a folder, click the “New Folder” button above the Project Organizer and give the folder a name.  </p>
 
                 <p>Then simply drag and drop projects or components you’d like associated with this folder, or click on the folder name and choose “Add Existing Project.” </p>
