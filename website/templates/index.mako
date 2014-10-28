@@ -55,7 +55,7 @@
                 <div class="help-block">
                     <p data-bind="html: flashMessage, attr.class: flashMessageClass"></p>
                 </div>
-                <div>
+                <div class="text-right">
                     <button type="submit" class="btn btn-danger" data-bind="visible: !submitted()">Sign up</button>
                 </div>
             </form>

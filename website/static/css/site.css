@@ -122,7 +122,6 @@
 }
 .hpContainerOne{
     margin-top: 0;
-    /*height: 520px;*/
 }
 /* >= sm */
 @media (min-width: 768px) {
@@ -168,7 +167,6 @@
 }
 .hpSignUp {
     background: #aad4f7;
-    /*float: right;*/
     padding: 30px 30px 30px 30px;
     border: solid #bacfd8 1px;
 }
@@ -181,13 +179,10 @@
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
-    float: right;
 }
 .hpHeader {
-    /*display: block;*/
     font-family: 'Patua One', cursive;
     font-size: 24px;
-    /*padding-bottom: 20px;*/
     padding-top: 70px;
 }
 .hpFeature {
@@ -199,7 +194,6 @@
 .hpFeature img {
     height: 85px;
     margin-bottom: 25px;
-    /*padding-top: 5px;*/
 }
 .hpFeature .hpFeatureInfo {
     font-family: 'Inika', serif;
@@ -1724,12 +1718,6 @@ div.pydocx-center{
 .scripted {display: none;}
 
 .pointer {cursor: pointer;}
-
-@media (max-width:991px){
-    #features-nav, [role=complementary] {
-        display:none
-    }
-}
 
 #duplicateModal h4 {
     line-height: 34px;
