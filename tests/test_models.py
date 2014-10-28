@@ -746,6 +746,13 @@ class TestFileActions(OsfTestCase):
         contents, content_type = self.node.read_file_object(file_obj)
         assert_equal(contents, 'newcontent')
 
+    def test_get_file_obj_first_version(self):
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
+        file_obj = self.node.get_file_object('foo', 0)
+        contents, content_type = self.node.read_file_object(file_obj)
+        assert_equal(contents, 'somecontent')
+
     def test_get_file(self):
         self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
         self.node.save()
