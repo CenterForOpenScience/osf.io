@@ -56,14 +56,11 @@
     <div data-bind="visible: isOpen()">
         <div class="row">
             <div class="col-md-12" >
-                <div data-bind="component:
-                    {
-                        name: 'osf-project-search',
-                        params: {onSubmit: onRegisterSubmit,
-                                disableComponents: true,
-                                submitText: 'Continue registration...'}
-                    }">
-                </div>
+                <osf-project-search
+                params="onSubmit: onRegisterSubmit,
+                        disableComponents: true,
+                        submitTest: 'Continue registration...'">
+                </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
     </div>
@@ -101,14 +98,10 @@
     <div class="row">
         <div class="col-md-12">
             <h4> 2. Select a project</h4>
-            <div data-bind="component:
-                {
-                    name: 'osf-project-search',
-                    params: {
-                        onSubmit: startUpload,
-                        submitText: 'Upload'
-                    }
-                }">
+            <osf-project-search
+            params="onSubmit: startUpload,
+                    submitTest: 'Upload'">
+            </osf-project-search>
             </div>
         </div>
     </div><!-- end row -->

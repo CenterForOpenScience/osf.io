@@ -56,10 +56,10 @@
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
                         <div id="obRegisterProject">
-                            <div data-bind='component: "osf-ob-register"'></div>
+                            <osf-ob-register></osf-ob-register>
                         </div>
                         <div id="obUploader">
-                            <div data-bind='component: "osf-ob-uploader"'></div>
+                            <osf-ob-uploader></osf-ob-uploader>
                         </div>
                         ## <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
