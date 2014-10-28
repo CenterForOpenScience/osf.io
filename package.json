@@ -5,7 +5,7 @@
     "version": "0.1.0",
     "devDependencies": {
         "share": "<0.7",
-        "connect": "<2.0.0",
+        "express": "~4.10.0",
         "mongodb": "~1.4.10"
     },
     "repository": {
