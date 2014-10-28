@@ -197,6 +197,7 @@
         };
         self.clearSearch = function() {
             self.selectedProject(null);
+            self.selectedComponent(null);
         };
     }
 
