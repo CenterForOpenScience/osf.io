@@ -245,6 +245,7 @@ def serialize_file(idx, version, record, path, node):
     rendered = utils.render_file(idx, version, record)
     return {
         'file_name': record.name,
+        'file_revision': 'Version {0}'.format(idx),
         'file_path': record.path,
         'rendered': rendered,
         'files_url': node.web_url_for('collect_file_trees'),
