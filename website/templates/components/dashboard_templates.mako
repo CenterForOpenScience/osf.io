@@ -1,16 +1,17 @@
 ## A reuseable OSF project typeahead search widget. Uses the custom projectSearch binding handler.
 <template id="osf-project-search">
 <form data-bind="submit: onSubmit">
+    <pre data-bind="text: ko.toJSON({showComps: showComponents(), compURL: componentURL()}, null, 2)"></pre>
 
     <div class="ob-search">
-        ## Add label for proper spacing
+        <!-- Project search typeahead -->
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
                 class="ob-clear-button" src="/static/img/close2.png">
             <input
             data-bind="projectSearch: {
-                            url:  '/api/v1/dashboard/get_nodes/',
+                            data: data,
                             onSelected: onSelectedProject
                         },
                         value: selectedProjectName,
@@ -20,21 +21,23 @@
                 type="text"
                 placeholder="Type to search for a project">
         </div><!-- end .form-group -->
+
+        <!-- Component search typeahead -->
         <!-- ko if: showComponents -->
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
             <input
             data-bind="projectSearch: {
-                            url: componentURL,
+                            data: componentURL,
                             onSelected: onSelectedComponent,
                             onFetched: onFetchedComponents
                         },
-                    visible: showComponents() && hasSelectedProject(),
+                    visible: hasSelectedProject(),
                     value: selectedComponentName,
                     attr: {disabled: hasSelectedComponent()}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
                 type="text"
-                placeholder="Type to search for a component">
+                placeholder="Optional: Type to search for a component">
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
@@ -58,7 +61,8 @@
         <div class="row">
             <div class="col-md-12" >
                 <osf-project-search
-                params="onSubmit: onRegisterSubmit,
+                params="data: data,
+                        onSubmit: onRegisterSubmit,
                         enableComponents: false,
                         submitTest: 'Continue registration...'">
                 </osf-project-search>
@@ -100,7 +104,8 @@
         <div class="col-md-12">
             <h4> 2. Select a project</h4>
             <osf-project-search
-            params="onSubmit: startUpload,
+            params="data: data,
+                    onSubmit: startUpload,
                     submitTest: 'Upload'">
             </osf-project-search>
             </div>

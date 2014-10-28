@@ -19,6 +19,7 @@
 
     function noop() {}
     var MAX_RESULTS = 14;
+    var DEFAULT_FETCH_URL = '/api/v1/dashboard/get_nodes/';
 
     var substringMatcher = function(strs) {
         return function findMatches(q, cb) {
@@ -76,6 +77,7 @@
         return $inputElem;
     }
 
+    // Defines the format of items in the typeahead data source
     function serializeNode(node) {
         return {
             name: node.title,
@@ -97,7 +99,7 @@
      * is selected.
      *
      * Params:
-     *  url: URL where to fetch nodes. Defaults to the dashboard node endpoint.
+     *  data: An Array of data or a URL where to fetch nodes. Defaults to the dashboard node endpoint.
      *  onSelected: Callback for when a node is selected.
      *  onFetched: Callback for when nodes are fetched from server.
      *
@@ -108,10 +110,23 @@
      */
     ko.bindingHandlers.projectSearch = {
         update: function(element, valueAccessor, allBindings, viewModel) {
-            var params = valueAccessor();
-            var url = ko.unwrap(params.url);
-            // Only request data if url is defined, else defer the request
-            if (url) {
+            var params = valueAccessor() || {};
+            // Either an Array of nodes or a URL
+            var nodesOrURL = ko.unwrap(params.data);
+
+            if (Array.isArray(nodesOrURL)) {
+                var nodes = params.data;
+                // Compute relevant URLs for each search result
+                var myProjects = nodes.map(serializeNode);
+                var $typeahead = initTypeahead(element, myProjects, viewModel, params);
+                // Attach $typeahead element to viewModel
+                viewModel.$typeahead = $typeahead;
+                var onFetched = ko.unwrap(params.onFetched);
+                if (onFetched) {
+                    onFetched(myProjects);
+                }
+            } else if (typeof nodesOrURL === 'string') { // params.data is a URL
+                var url = nodesOrURL;
                 var request = $.getJSON(url, function (projects) {
                     // Compute relevant URLs for each search result
                     var myProjects = projects.nodes.map(serializeNode);
@@ -144,6 +159,8 @@
         var self = this;
         self.params = params || {};
         self.heading = params.heading;
+
+        self.data = params.data || DEFAULT_FETCH_URL;
 
         /* Observables */
         // If params.enableComponents is passed in, use that value, otherwise default to true
@@ -189,15 +206,18 @@
             self.selectedComponent(selected);
         };
         self.onFetchedComponents = function(components) {
-            if (!components.length) {
-                self.showComponents(false);
-            }
+            // Show component search only if selected project has components
+            self.showComponents(Boolean(components.length));
             var func = params.onFetchedComponents || noop;
             func(components);
         };
         self.clearSearch = function() {
-            self.selectedProject(null);
             self.selectedComponent(null);
+            self.selectedProject(null);
+            // This must be set after clearing selectedProject
+            // to avoid sending extra request in the projectSearch
+            // binding handler
+            self.showComponents(true);
         };
     }
 
@@ -216,7 +236,8 @@
      */
     function OBRegisterViewModel(params) {
         var self = this;
-        self.params = params;
+        self.params = params || {};
+        self.data = params.data || DEFAULT_FETCH_URL;
         /* Observables */
         self.isOpen = ko.observable(false);
         /* Functions */
@@ -348,6 +369,7 @@
         var self = this;
         self.params = params || {};
         self.selector = self.params.selector || '#obDropzone';
+        self.data = params.data || DEFAULT_FETCH_URL;
         /* Observables */
         self.progress = ko.observable(0);
         self.showProgress = ko.observable(false);
@@ -371,8 +393,6 @@
             }
             self.target(selected);
             self.clearMessages();
-            // TODO: disable component search
-            // $addLink.attr('disabled', true);
             self.showProgress(true);
             self.dropzone.options.url = selected.urls.upload;
             self.dropzone.processQueue(); // Tell Dropzone to process all queued files.
@@ -471,10 +491,6 @@
                         self.filename(fileName);
                     }
                     self.enableUpload(false);
-
-                    // TODO: Focus project search
-                    // $inputProjectAddFile.focus();
-                    // $inputProjectAddFile.css('background-color', 'white !important;');
                 });
             }
         };

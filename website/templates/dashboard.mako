@@ -56,10 +56,10 @@
                     <ul style="padding:0px;"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
                         <div id="obRegisterProject">
-                            <osf-ob-register></osf-ob-register>
+                            <osf-ob-register params="data: nodes"></osf-ob-register>
                         </div>
                         <div id="obUploader">
-                            <osf-ob-uploader></osf-ob-uploader>
+                            <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
                         </div>
                         ## <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
@@ -104,9 +104,19 @@
     $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
     $script(['/static/js/onboarder.js']);  // exports onboarder
 
+    var url = "${api_url_for('get_dashboard_nodes')}";
+
     $script.ready('onboarder', function() {
-        $.osf.applyBindings({}, '#obRegisterProject');
-        $.osf.applyBindings({}, '#obUploader');
+        // Send a single request to get the data to populate the typeaheads
+        var request = $.getJSON(url, function(response) {
+            $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
+            $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
+        });
+        request.fail(function(xhr, textStatus, error) {
+            Raven.captureMessage('Could not fetch dashboard nodes.', {
+                url: url, textStatus: textStatus, error: error
+            });
+        });
     });
 
     ## $script(['/static/js/obAddFile.js']);
