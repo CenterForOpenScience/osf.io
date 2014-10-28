@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
 
 from nose.tools import *  # noqa (PEP8 asserts)
-import httplib as http
 
-from tests.factories import ProjectFactory, UserFactory, RegistrationFactory, NodeFactory, NodeLogFactory, AuthUserFactory
+from tests.factories import (
+    ProjectFactory,
+    UserFactory,
+    RegistrationFactory,
+    NodeFactory,
+    NodeLogFactory,
+    FolderFactory,
+)
 from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary
+from website.project.views.node import _get_summary, _view_project, _serialize_node_search
 from website.profile import utils
 from website.views import serialize_log
 
@@ -88,31 +94,33 @@ class TestNodeSerializers(OsfTestCase):
         assert_false(res['summary']['can_view'])
         assert_true(res['summary']['is_fork'])
 
-    def test_view_project_returns_whether_to_show_wiki_widget(self):
-        user = AuthUserFactory()
-        project = ProjectFactory.build(creator=user, is_public=True)
-        project.add_contributor(user)
-        project.save()
+    def test_serialize_node_search_returns_only_visible_contributors(self):
+        node = NodeFactory()
+        non_visible_contributor = UserFactory()
+        node.add_contributor(non_visible_contributor, visible=False)
+        serialized_node = _serialize_node_search(node)
 
-        url = project.api_url_for('view_project')
-        res = self.app.get(url, auth=user.auth)
-        assert_equal(res.status_code, http.OK)
-        assert_in('show_wiki_widget', res.json['user'])
+        assert_equal(serialized_node['firstAuthor'], node.visible_contributors[0].family_name)
+        assert_equal(len(node.visible_contributors), 1)
+        assert_false(serialized_node['etal'])
 
-    def test_fork_count_does_not_include_deleted_forks(self):
-        user = AuthUserFactory()
-        project = ProjectFactory(creator=user)
-        auth = Auth(project.creator)
-        fork = project.fork_node(auth)
-        fork2 = project.fork_node(auth)
-        project.save()
-        fork.remove_node(auth)
-        fork.save()
 
-        url = project.api_url_for('view_project')
-        res = self.app.get(url, auth=user.auth)
-        assert_in('fork_count', res.json['node'])
-        assert_equal(1, res.json['node']['fork_count'])
+class TestViewProject(OsfTestCase):
+
+    # related to https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
+    def test_view_project_pointer_count_excludes_folders(self):
+        user = UserFactory()
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        result = _view_project(pointed_project, Auth(pointed_project.creator))
+        # pointer_project is included in count, but not folder
+        assert_equal(result['node']['points'], 1)
 
 
 class TestNodeLogSerializers(OsfTestCase):
@@ -128,7 +136,7 @@ class TestNodeLogSerializers(OsfTestCase):
         assert_equal(d['node']['category'], 'Hypothesis')
 
         assert_equal(d['node']['url'], log.node.url)
-        assert_equal(d['date'], framework_utils.rfcformat(log.date))
+        assert_equal(d['date'], framework_utils.iso8601format(log.date))
         assert_in('contributors', d)
         assert_equal(d['user']['fullname'], log.user.fullname)
         assert_equal(d['user']['url'], log.user.url)
@@ -239,4 +247,3 @@ class TestAddContributorJson(OsfTestCase):
         assert_equal(user_info['active'], True)
         assert_in('secure.gravatar.com', user_info['gravatar_url'])
         assert_equal(user_info['profile_url'], self.profile)
-

@@ -1,3 +1,9 @@
+## Knockout templates for OSF-core (non-addon) logs. Used by logFeed.js to render the log feed
+## the id attribute of each script tag corresponds to NodeLog action.
+## When the application is initialized, this mako template is concatenated with the addons'
+## log templates. An addon's log templates are located in
+## website/addons/<addon_name>/templates/log_templates.mako.
+
 <script type="text/html" id="project_created">
 created <span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -23,23 +29,11 @@ removed <span data-bind="text: nodeType"></span>
 <span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
-<script type="text/html" id="wiki_updated">
-updated wiki page
-<a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
-to version <span data-bind="text: params.version"></span>
-of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
-<script type="text/html" id="wiki_deleted">
-deleted wiki page
-<a data-bind="attr: {href: wikiUrl}, text: params.page"></a>
-of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-</script>
-
 <script type="text/html" id="contributor_added">
 added
 <span data-bind="html: displayContributors"></span>
-to <span data-bind="text: nodeType"></span>
+as contributor(s) to
+<span data-bind="text: nodeType"></span>
 <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 

@@ -11,8 +11,21 @@
             <li><a href="{{files_page_url}}">{{node_title}}</a></li>
             <li class="active overflow" >{{file_name}}</li>
         </ol>
-        <p><a href="{{latest_download_url}}" class="btn btn-success btn-lg">Download <i class="icon-download-alt" ></i></a>
-            <a href="#" data-bind="visible: api_url() && !registered(), click: deleteFile" class="btn btn-danger btn-lg">Delete <i class="icon-trash"></i></a></p>
+        <p>
+            <a
+                    href="{{latest_download_url}}"
+                    class="btn btn-success btn-lg"
+                >Download <i class="icon-download-alt" ></i>
+            </a>
+            % if user['can_edit'] and 'write' in user['permissions']:
+                <a
+                        href="#"
+                        data-bind="visible: api_url() && !registered(), click: deleteFile"
+                        class="btn btn-danger btn-lg"
+                    >Delete <i class="icon-trash"></i>
+                </a>
+            % endif
+        </p>
         <table class="table table-striped" id="file-version-history">
             <thead>
             <tr>

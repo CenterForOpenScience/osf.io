@@ -31,7 +31,7 @@
     PDFJS.disableWorker = true;
     var pdfDoc = null,
         pageNum = 1,
-        scale = 1.25,
+        scale = 1.1,
         canvas = document.getElementById('the-canvas'),
         ctx = canvas.getContext('2d');
 

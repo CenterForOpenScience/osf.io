@@ -116,11 +116,7 @@ def add_poster_by_email(conf, recipient, address, fullname, subject,
         node.set_privacy('public', auth=auth)
 
     # Add body
-    node.update_node_wiki(
-        page='home',
-        content=sanitize(message),
-        auth=auth,
-    )
+    node.update_node_wiki('home', sanitize(message), auth)
 
     # Add tags
     presentation_type = 'talk' if 'talk' in recipient else 'poster'
@@ -347,12 +343,14 @@ def _render_conference_node(node, idx):
         download_url = ''
         download_count = 0
 
+    author = node.visible_contributors[0]
+
     return {
         'id': idx,
         'title': node.title,
         'nodeUrl': node.url,
-        'author': node.creator.family_name if node.creator else '',
-        'authorUrl': node.creator.url if node.creator else '',
+        'author': author.family_name,
+        'authorUrl': node.creator.url,
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
@@ -417,7 +415,7 @@ def conference_view(**kwargs):
     meetings = []
     for conf in Conference.find():
         query = (
-            Q('system_tags', 'eq', conf.endpoint)
+            Q('tags', 'eq', conf.endpoint)
             & Q('is_public', 'eq', True)
             & Q('is_deleted', 'eq', False)
         )

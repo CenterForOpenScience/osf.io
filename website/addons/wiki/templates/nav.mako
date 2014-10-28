@@ -15,13 +15,12 @@
 
 <script type="text/javascript">
     $(document).ready(function () {
-        // tilde special characters are always encoded from the server,
-        // some browsers (chrome) decode them client side.
-        var pathname = window.location.pathname.replace('~', '%7E');
+        // special characters can be encoded differently between server/client.
+        var pathname = decodeURIComponent(window.location.pathname);
 
         $(".navbar-nav li").each(function () {
             var $this = $(this);
-            var href = $this.find('a').attr('href');
+            var href = decodeURIComponent($this.find('a').attr('href'));
 
             if (href === pathname) {
                 $this.addClass('active');

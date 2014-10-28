@@ -255,7 +255,7 @@
         };
 
         function authorizeNode() {
-            return $.osf.postJSON(
+            return $.osf.putJSON(
                 self.urls().importAuth,
                 {}
             ).done(function(response) {

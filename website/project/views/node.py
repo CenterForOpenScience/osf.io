@@ -7,6 +7,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework import status
+from framework.utils import iso8601format
 from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -22,7 +23,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link
+from website.project.model import has_anonymous_link, resolve_pointer
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -68,6 +69,7 @@ def project_new_post(auth, **kwargs):
     title = strip_html(request.json.get('title'))
     template = request.json.get('template')
     description = strip_html(request.json.get('description'))
+    title = title.strip()
 
     if not title or len(title) > 200:
         raise HTTPError(http.BAD_REQUEST)
@@ -681,14 +683,14 @@ def _view_project(node, auth, primary=False):
                 'chicago': node.citation_chicago,
             } if not anonymous else '',
             'is_public': node.is_public,
-            'date_created': node.date_created.strftime('%m/%d/%Y %H:%M UTC'),
-            'date_modified': node.logs[-1].date.strftime('%m/%d/%Y %H:%M UTC') if node.logs else '',
+            'date_created': iso8601format(node.date_created),
+            'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
 
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
-            'registered_date': node.registered_date.strftime('%Y/%m/%d %H:%M UTC') if node.is_registration else '',
+            'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -701,14 +703,14 @@ def _view_project(node, auth, primary=False):
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',
             'forked_from_display_absolute_url': node.forked_from.display_absolute_url if node.is_fork else '',
-            'forked_date': node.forked_date.strftime('%Y/%m/%d %I:%M %p') if node.is_fork else '',
+            'forked_date': iso8601format(node.forked_date) if node.is_fork else '',
             'fork_count': len(node.node__forked.find(Q('is_deleted', 'eq', False))),
             'templated_count': len(node.templated_list),
             'watched_count': len(node.watchconfig__watched),
             'private_links': [x.to_json() for x in node.private_links_active],
             'link': view_only_link,
             'anonymous': anonymous,
-            'points': node.points,
+            'points': len(node.get_points(deleted=False, folders=False)),
             'piwik_site_id': node.piwik_site_id,
 
             'comment_level': node.comment_level,
@@ -988,11 +990,12 @@ def _serialize_node_search(node):
     title = node.title
     if node.is_registration:
         title += ' (registration)'
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.contributors[0].family_name,
-        'etal': len(node.contributors) > 1,
+        'firstAuthor': node.visible_contributors[0].family_name,
+        'etal': len(node.visible_contributors) > 1,
     }
 
 
@@ -1253,14 +1256,10 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    # The `parent_node` property of the `Pointer` schema refers to the parents
-    # of the pointed-at `Node`, not the parents of the `Pointer`; use the
-    # back-reference syntax to find the parents of the `Pointer`.
-    parent_refs = pointer.node__parent
-    assert len(parent_refs) == 1, 'Pointer must have exactly one parent'
-    node = parent_refs[0]
+    node = resolve_pointer(pointer)
     if node.can_view(auth):
         return {
+            'id': node._id,
             'url': node.url,
             'title': node.title,
             'authorShort': abbrev_authors(node),
@@ -1274,8 +1273,11 @@ def serialize_pointer(pointer, auth):
 
 @must_be_contributor_or_public
 def get_pointed(auth, **kwargs):
+    """View that returns the pointers for a project."""
     node = kwargs['node'] or kwargs['project']
+    # exclude folders
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
+        if not resolve_pointer(each).is_folder
     ]}
