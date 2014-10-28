@@ -255,7 +255,7 @@ def rabbitmq():
     run("rabbitmq-server", pty=True)
 
 
-@task
+@task(aliases=['elastic'])
 def elasticsearch():
     """Start a local elasticsearch server
 
