@@ -53,7 +53,7 @@
             </div><!-- end #obTabHead -->
             <div class="tab-content" >
                 <div class="tab-pane active" id="quicktasks">
-                    <ul style="padding:0px;"> <!-- start onboarding -->
+                    <ul class="ob-widget-list"> <!-- start onboarding -->
                         <%include file="ob_new_project.mako"/>
                         <div id="obRegisterProject">
                             <osf-ob-register params="data: nodes"></osf-ob-register>

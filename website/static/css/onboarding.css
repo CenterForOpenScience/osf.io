@@ -1,6 +1,6 @@
 /* class css */
 
-li.ob-list {
+ul.ob-widget-list li.ob-list-item {
 	margin-bottom: 10px;
 	border-style: dashed;
 }
@@ -33,6 +33,10 @@ li.ob-list {
     border-radius: 8px;
     outline: none;
 
+}
+
+ul.ob-widget-list {
+    padding: 0px;
 }
 
 .ob-reveal {

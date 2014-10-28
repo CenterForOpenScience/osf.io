@@ -47,7 +47,7 @@
 
 ## The onboarding "register" widget
 <template id="osf-ob-register">
-<li class="ob-list list-group-item">
+<li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
         <h3 class="ob-heading list-group-item-heading">Register a project</h3>
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
@@ -72,7 +72,7 @@
 
 ## TODO: Remove unnecessary IDs
 <template id="osf-ob-uploader">
-<li class="ob-list list-group-item">
+<li class="ob-list-item list-group-item">
     <div class="pointer">
         <h3 class="ob-heading">Upload file(s)</h3>
     </div><!-- end ob-unselectable -->
