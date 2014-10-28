@@ -83,17 +83,17 @@
             <h4>1. Drop file (or click below)</h4>
 
             <!-- Dropzone -->
-            <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone-box pull-left"></div>
+            <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
 
             <!-- File queue display -->
-            <div data-bind="visible: !enableUpload()" id="obDropzoneSelected" class="ob-dropzone-box pull-left">
-                <img data-bind="attr: {src: iconSrc()}" id="uploadIcon">
-                <div data-bind="text: filename" id="obDropzoneFilename"></div>
+            <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
+                <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon">
+                <div data-bind="text: filename" class="ob-dropzone-filename"></div>
                 <progress
-                data-bind="attr: {value: progress()}"
-                    class="ob-reveal" id="uploadProgress" max="100"></progress>
+                    data-bind="attr: {value: progress()}"
+                        class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
-                    class="ob-clear-button" id="clearDropzone" src="/static/img/close2.png">
+                    class="ob-clear-button" src="/static/img/close2.png">
             </div>
 
         </div><!-- end col-md -->

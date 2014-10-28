@@ -41,7 +41,7 @@
     </div>
     <div class="row">
         <div class="col-md-5">
-            <div id="obTabHead">
+            <div class="ob-tab-head" id="obTabHead">
                 <ul class="nav nav-tabs" role="tablist">
                 <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
                 <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
@@ -101,13 +101,11 @@
 
 <script>
     $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
-    $script(['/static/js/typeaheadSearch.js']);  // exports typeAheadSearch
     $script(['/static/js/onboarder.js']);  // exports onboarder
-
-    var url = "${api_url_for('get_dashboard_nodes')}";
 
     $script.ready('onboarder', function() {
         // Send a single request to get the data to populate the typeaheads
+        var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
             $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
             $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
@@ -118,11 +116,6 @@
             });
         });
     });
-
-    ## $script(['/static/js/obAddFile.js']);
-    ## $script.ready('obAddFile', function() {
-    ##     var obaddfile = new ObAddFile();
-    ## });
 
      // initialize the logfeed
     $script(['/static/js/logfeed.js']);

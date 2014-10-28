@@ -80,11 +80,6 @@ li.ob-list {
 	cursor: pointer;
 }
 
-.obDropText{
-	font-family: inherit;
-	font-weight: 500;
-	font-size: 18px;
-}
 
 .projectSearchAddFile{
 	width:100%;
@@ -95,31 +90,15 @@ li.ob-list {
 	display: block !important;
 }
 
-#inputProjectRegisterProject{
-	width:100%;
-}
-
-#obTabHead {padding-bottom:9px;margin:20px 0 30px;}
-
-#addLinkRegisterProject {
-	margin-top:20px;
-}
+.ob-tab-head {padding-bottom:9px;margin:20px 0 30px;}
 
 
-#obRegisterProjectBtn:hover{
-	cursor: pointer;
-	}
-
-#obNewProjectBtn:hover{
-	cursor: pointer;
-	}
-
-#obDropzoneFilename{
+div.ob-dropzone-filename{
 	margin-top:10px;
 	font-family: "Lucida Console", Monaco, monospace;
 }
 
-#obDropzone{
+.ob-dropzone{
 	background-image: url("/static/img/upload.png");
 	background-repeat:no-repeat;
 	background-size: 60px 60px;
@@ -127,38 +106,18 @@ li.ob-list {
 	background-position:center;
 }
 
-#obDropzoneSelected{
-	border: solid 2px LightGreen;
-	background-color:#f5f5f5;
+div.ob-dropzone-selected{
+	border: solid 2px #3C763D;
+	background-color:  #f5f5f5;
 }
 
-#uploadIcon{
+img.ob-dropzone-icon{
 	height:90px;
 	margin-top:10px;
 	margin-left:auto;
 	margin-right:auto;
 }
 
-#uploadProgress {
-	text-align:center;
-}
-
-#projectSearchAddFile{
-	position:relative;
+.ob-upload-progress {
 	text-align: center;
-}
-
-#inputProjectAddFile{
-	width:100%;
-}
-
-#addLinkAddFile{
-	margin-top: 20px;
-	disabled="disabled";
-	display:none;
-}
-
-#fakeAddLinkAddFile{
-	margin-top: 20px;
-	disabled="disabled";
 }
