@@ -273,7 +273,10 @@ def update_user(user):
 
 @requires_search
 def delete_all():
-    elastic.delete_index('website')
+    try:
+        elastic.delete_index('website')
+    except pyelasticsearch.exceptions.IndexMissingException as e:
+        logger.debug("Index website does not exist; was unable to delete")
 
 
 @requires_search
