@@ -236,7 +236,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
-        <h4><a data-bind="attr.href: url">{{title }}</a></h4>
+        <h4><a data-bind="attr.href: url">{{title }}</a> <i class="icon-lock"></i></h4>
         <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
