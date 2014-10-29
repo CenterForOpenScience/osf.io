@@ -11,8 +11,7 @@
                     authorized
                     <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Delete Credentials</a>
                     % if not nodes:
-                       <br><br>
-                        <p class="text-success">
+                        <p class="text-success addon-message">
                         Add-on successfully authorized. To link this add-on to an OSF project, go to the
                         settings page of the project, enable Amazon Simple Storage Service,
                         and create or choose a bucket to connect.

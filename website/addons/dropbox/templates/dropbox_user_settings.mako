@@ -13,8 +13,7 @@
                     <span data-bind="if: dropboxName()">by {{ dropboxName }}</span>
                     <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
                     % if not nodes:
-                        <br><br>
-                        <p class="text-success">
+                        <p class="text-success addon-message">
                         Add-on successfully authorized. To link this add-on to an OSF project, go to the
                         settings page of the project, enable Dropbox, and choose content to connect.
                         </p>
