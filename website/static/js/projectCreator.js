@@ -1,11 +1,15 @@
-;
 (function(global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils'], factory);
+        define(['jquery', 'knockout', 'osfutils'], factory);
+    } else if (typeof $script === 'function') {
+        $script.ready(['select2'], function() {
+            global.ProjectCreator = factory(jQuery, ko);
+            $script.done('projectCreator');
+        });
     } else {
-        global.ProjectCreator = factory(ko, jQuery);
+        global.ProjectCreator = factory(jQuery, ko);
     }
-}(this, function(ko, $) {
+}(this, function($, ko) {
     'use strict';
 
     function ProjectCreatorViewModel(url) {
@@ -22,7 +26,7 @@
 
         self.submitForm = function () {
             if (self.title().trim() === ''){
-                self.errorMessage('This field is required.')
+                self.errorMessage('This field is required.');
             } else {
                 self.createProject();
             }

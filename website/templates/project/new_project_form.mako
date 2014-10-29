@@ -32,7 +32,8 @@
 <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
 <script>
-    $script(['/static/js/projectCreator.js', '/static/vendor/bower_components/select2/select2.js'], function() {
+    $script(['/static/js/projectCreator.js']);  // exports projectCreator
+    $script.ready('projectCreator', function() {
         ProjectCreator('#creationForm', '/api/v1/project/new/');
     });
 </script>
