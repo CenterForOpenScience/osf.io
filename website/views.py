@@ -221,6 +221,13 @@ def get_all_registrations_smart_folder(auth, **kwargs):
 
 @must_be_logged_in
 def get_dashboard_nodes(auth, **kwargs):
+    """Get summary information about the current user's dashboard nodes.
+
+    :param-query no_components: Exclude components from response.
+        NOTE: By default, components will only be shown if the current user
+        is contributor on a comonent but not its parent project. This query
+        parameter forces ALL components to be excluded from the request.
+    """
     user = auth.user
 
     contributed = user.node__contributed  # nodes user contributed to
@@ -232,16 +239,20 @@ def get_dashboard_nodes(auth, **kwargs):
         Q('is_folder', 'eq', False)
     )
 
-    comps = contributed.find(
-        # components only
-        Q('category', 'ne', 'project') &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
+    # TODO: Store truthy values in a named constant available site-wide
+    if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
+        comps = contributed.find(
+            # components only
+            Q('category', 'ne', 'project') &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+            # exclude deleted nodes
+            Q('is_deleted', 'eq', False) &
+            # exclude registrations
+            Q('is_registration', 'eq', False)
+        )
+    else:
+        comps = []
     return _render_nodes(list(nodes) + list(comps))
 
 
