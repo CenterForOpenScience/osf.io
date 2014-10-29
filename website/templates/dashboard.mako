@@ -54,14 +54,31 @@
             <div class="tab-content" >
                 <div class="tab-pane active" id="quicktasks">
                     <ul class="ob-widget-list"> <!-- start onboarding -->
-                        <%include file="ob_new_project.mako"/>
+                        ## <%include file="ob_new_project.mako"/>
+                        <div id="projectCreate">
+                            <li id="obNewProject" class="ob-list-item list-group-item">
+
+                                <div data-bind="click: toggle" class="ob-header pointer">
+                                    <h3
+                                        class="ob-heading list-group-item-heading">
+                                        Create a project
+                                    </h3>
+                                    <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
+                                        class="pointer ob-expand-icon icon-large pull-right">
+                                    </i>
+                                </div><!-- end ob-header -->
+                                <div data-bind="visible: isOpen()" id="obRevealNewProject">
+                                    <project-create-form params="data: nodes">
+                                    </project-create-form>
+                                </div>
+                            </li> <!-- end ob-list-item -->
+                        </div>
                         <div id="obRegisterProject">
                             <osf-ob-register params="data: nodes"></osf-ob-register>
                         </div>
                         <div id="obUploader">
                             <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
                         </div>
-                        ## <%include file="ob_add_file.mako"/>
                     </ul> <!-- end onboarding -->
                 </div><!-- end .tab-pane -->
                 <div class="tab-pane" id="watchlist">
@@ -101,13 +118,31 @@
 
 <script>
     $script(['/static/js/onboarder.js']);  // exports onboarder
+    $script(['/static/js/projectCreator.js']);  // exports projectCreator
 
-    $script.ready('onboarder', function() {
+    $script.ready(['projectCreator', 'onboarder'], function() {
         // Send a single request to get the data to populate the typeaheads
         var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
             $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
             $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
+            $.osf.applyBindings({
+                isOpen: ko.observable(false),
+                open: function() {
+                    this.isOpen(true);
+                },
+                close: function() {
+                    this.isOpen(false);
+                },
+                toggle: function() {
+                    if (!this.isOpen()) {
+                        this.open();
+                    } else {
+                        this.close();
+                    }
+                },
+                nodes: response.nodes
+            }, '#projectCreate');
         });
         request.fail(function(xhr, textStatus, error) {
             Raven.captureMessage('Could not fetch dashboard nodes.', {

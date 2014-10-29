@@ -53,7 +53,7 @@
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
             class="pointer ob-expand-icon icon-large pull-right">
         </i>
-    </div><!-- end ob-unselectable -->
+    </div><!-- end ob-header -->
 
     <div data-bind="visible: isOpen()">
         <div class="row">
@@ -111,4 +111,34 @@
     </div><!-- end row -->
     <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
 </li> <!-- end .ob-list -->
+</template>
+
+<template id="project-create-form">
+<form id="creationForm" data-bind="submit: submitForm">
+    ## Uncomment for debugging
+    ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
+    <div class="row">
+        <div class="col-md-12">
+            <label for="title">Title</label>
+            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+
+            <!-- flashed validation message -->
+            <span class="text-danger" data-bind="text: errorMessage"></span>
+            </br>
+
+            <label>Description</label>
+            <textarea class="form-control" name="description" data-bind="value: description"></textarea>
+            <br />
+            <label>Template</label>
+            <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
+            <input type="hidden" id="templates" class="select2-container" style="width: 100%">
+        </div>
+    </div>
+    <br />
+    <div class="row">
+        <div class="col-md-12">
+            <button class="btn btn-primary pull-right" type="submit" data-bind="enable: title.isValid()" disabled>Create</button>
+        </div>
+    </div>
+</form>
 </template>
