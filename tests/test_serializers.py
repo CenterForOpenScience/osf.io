@@ -15,6 +15,7 @@ from tests.base import OsfTestCase
 from framework.auth import Auth
 from framework import utils as framework_utils
 from website.project.views.node import _get_summary, _view_project, _serialize_node_search
+from website.views import _render_node
 from website.profile import utils
 from website.views import serialize_log
 
@@ -57,6 +58,18 @@ class TestNodeSerializers(OsfTestCase):
 
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
+
+
+    def test_render_node(self):
+        node = ProjectFactory()
+        res = _render_node(node)
+        assert_equal(res['title'], node.title)
+        assert_equal(res['id'], node._primary_key)
+        assert_equal(res['url'], node.url)
+        assert_equal(res['api_url'], node.api_url)
+        assert_equal(res['primary'], node.primary)
+        assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
+
 
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()

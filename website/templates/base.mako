@@ -191,7 +191,7 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/bower_components/knockout/dist/knockout.js"><script>
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
@@ -204,17 +204,22 @@
     <script>
         // Enable knockout punches
         ko.punches.enableAll();
-        // Filebrowser dependencies
+        // Dependencies that can be loaded with scriptjs
         $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
-        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
         $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+<<<<<<< HEAD
         $script(['/static/js/treebeard.js'], 'treebeard');
+=======
+        $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
+        $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
+        $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
+>>>>>>> 8efc423d59d5f3ca6087e2773448a4c238d03a20
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/fangorn.js']); // exports 'fangorn'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'
-        $script(['/static/js/typeahead.bundle.js'],'typeahead');
     </script>
 
 </%def>
