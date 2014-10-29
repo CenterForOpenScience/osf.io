@@ -160,6 +160,8 @@
         var self = this;
         self.params = params || {};
         self.heading = params.heading;
+        // Data passed to the project typehead
+        self.data = params.data  || DEFAULT_FETCH_URL;
 
         /* Observables */
         // If params.enableComponents is passed in, use that value, otherwise default to true
