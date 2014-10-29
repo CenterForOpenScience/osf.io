@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import time
-import bleach
 import logging
+import functools
+import httplib as http
 
-from flask import request
+import bleach
 from modularodm import Q
+from flask import request
 
 from framework.auth.core import get_current_user
 from framework.auth.decorators import must_be_logged_in
@@ -14,15 +16,14 @@ import website.search.search as search
 from website.search.util import build_query
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-import httplib as http
 from framework.exceptions import HTTPError
 from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
 def handle_http_errors(func):
+    @functools.wraps(func)
     def wrapped(*args, **kwargs):
-        return func(*args, **kwargs)
         try:
             return func(*args, **kwargs)
         except exceptions.IndexNotFoundError as e:
@@ -31,6 +32,7 @@ def handle_http_errors(func):
             raise HTTPError(http.BAD_REQUEST)
         except exceptions.SearchUnavailableError as e:
             raise HTTPError(http.SERVICE_NOT_AVAILABLE)
+    return wrapped
 
 
 @handle_http_errors
