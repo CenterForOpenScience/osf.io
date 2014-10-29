@@ -447,6 +447,7 @@
             uploadprogress: function(file, progress) { // progress bar update
                 self.progress(progress);
             },
+            parallelUploads: 1,
 
             init: function() {
                 var dropzone = this;
