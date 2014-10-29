@@ -71,17 +71,19 @@
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data}"></div>
                 </div>
-                <div class="navigation-controls">
-                    <span data-bind="visible: prevPageExists">
-                        <a href="#" data-bind="click: pagePrev">Previous Page</a> -
-                    </span>
+                <ul class="pager">
+                    <li data-bind="css {disabled: !prevPageExists()}">
+                        <a href="#" data-bind="click: pagePrev">Previous Page </a>
+                    </li>
                     <span data-bind="visible: totalPages() > 0">
                         <span data-bind="text: navLocation"></span>
                     </span>
-                    <span data-bind="visible: nextPageExists"> -
-                        <a href="#" data-bind="click: pageNext">Next Page </a>
-                    </span>
-                </div>
+                    <li data-bind="css {disabled: !nextPageExists()}">
+                        <a href="#" data-bind="click: pageNext"> Next Page</a>
+                    </li>
+
+                </ul>
+
 
 
                 <div class="buffer"></div>

@@ -255,7 +255,7 @@ def rabbitmq():
     run("rabbitmq-server", pty=True)
 
 
-@task
+@task(aliases=['elastic'])
 def elasticsearch():
     """Start a local elasticsearch server
 
@@ -433,9 +433,22 @@ def copy_settings(addons=False):
 
 @task
 def packages():
+    brew_commands = [
+        'update',
+        'upgrade',
+        'install libxml2',
+        'install libxslt',
+        'install elasticsearch',
+        'install gpg',
+        'install node',
+        'tap tokutek/tokumx',
+        'install tokumx-bin',
+    ]
     if platform.system() == 'Darwin':
-        print('Running brew bundle')
-        run('brew bundle')
+        print('Running brew commands')
+        for item in brew_commands:
+            command = 'brew {cmd}'.format(cmd=item)
+            run(command)
     elif platform.system() == 'Linux':
         # TODO: Write a script similar to brew bundle for Ubuntu
         # e.g., run('sudo apt-get install [list of packages]')

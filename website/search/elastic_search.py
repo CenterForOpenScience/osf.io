@@ -85,7 +85,7 @@ def get_counts(count_query, clean=True):
 def get_tags(query, index):
     query['aggregations'] = {
         'tag_cloud': {
-            'terms': {'field': "tags"}
+            'terms': {'field': 'tags'}
         }
     }
 
