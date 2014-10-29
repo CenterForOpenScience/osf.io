@@ -7,7 +7,7 @@
     </script>
     <div id="searchControls" class="scripted">
         <div class="row">
-            <div class="col-md-13">
+            <div class="col-md-12">
                 <form class="input-group" data-bind="submit: submit">
                     <input type="text" class="form-control" placeholder="Search" data-bind="value: query">
                     <span class="input-group-btn">
@@ -15,78 +15,81 @@
                         <button type=button class="btn btn-default" data-bind="click: submit"><i class="icon-search"></i></button>
                     </span>
                 </form>
-            </div>
-        </div>
+                <br />
 
-        <br />
-
-        <div class="row">
-            <!-- ko if: categories().length > 0-->
-            <div class="col-md-3">
                 <div class="row">
-                    <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                        <!-- ko if: count() > 0 -->
-                        <!-- ko if: $parent.category().name() === name() -->
-                                <li class="active">
-                                    <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
-                                </li>
-                            <!-- /ko -->
-                            <!-- ko if: $parent.category().name() !== name() -->
-                                <li>
-                                    <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
-                                </li>
-                            <!-- /ko -->
+                    <!-- ko if: categories().length > 0-->
+                    <div class="col-md-3">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
+                                    <!-- ko if: count() > 0 -->
+                                    <!-- ko if: $parent.category().name() === name() -->
+                                            <li class="active">
+                                                <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
+                                            </li>
+                                        <!-- /ko -->
+                                        <!-- ko if: $parent.category().name() !== name() -->
+                                            <li>
+                                                <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
+                                            </li>
+                                        <!-- /ko -->
+                                    <!-- /ko -->
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- ko if: tags().length -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4> Improve your search:</h4>
+                                <span class="tag-cloud" data-bind="foreach: tags">
+                                    <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
+                                    <span class="cloud-tag tag-big" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name() }}
+                                    </span>
+                                    <!-- /ko -->
+                                    <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
+                                    <span class="cloud-tag tag-med" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name() }}
+                                    </span>
+                                    <!-- /ko -->
+                                    <!-- ko if: count() <= $parent.tagMaxCount()/2-->
+                                    <span class="cloud-tag tag-sm" data-bind="click: $root.addTag.bind(name)">
+                                        {{ name() }}
+                                    </span>
+                                    <!-- /ko -->
+                                </span>
+                            </div>
+                        </div>
                         <!-- /ko -->
-                    </ul>
-                </div>
-                <!-- ko if: tags().length -->
-                <div class="row">
-                    <h4> Improve your search:</h4>
-                    <span class="tag-cloud" data-bind="foreach: tags">
-                        <!-- ko if: count() === $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2  -->
-                        <span class="cloud-tag tag-big" data-bind="click: $root.addTag.bind(name)">
-                            {{ name() }}
-                        </span>
+                    </div>
+                    <!-- /ko -->
+                    <div class="col-md-9">
+                        <!-- ko if: searchStarted() && !totalCount() -->
+                        <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->
-                        <!-- ko if: count() < $parent.tagMaxCount() && count() > $parent.tagMaxCount()/2 -->
-                        <span class="cloud-tag tag-med" data-bind="click: $root.addTag.bind(name)">
-                            {{ name() }}
-                        </span>
-                        <!-- /ko -->
-                        <!-- ko if: count() <= $parent.tagMaxCount()/2-->
-                        <span class="cloud-tag tag-sm" data-bind="click: $root.addTag.bind(name)">
-                            {{ name() }}
-                        </span>
-                        <!-- /ko -->
-                    </span>
-                </div>
-                <!-- /ko -->
-            </div>
-            <!-- /ko -->
-            <div class="col-md-9">
-                <!-- ko if: searchStarted() && !totalCount() -->
-                <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
-                <!-- /ko -->
-                <!-- ko if: totalCount() -->
-                <div data-bind="foreach: results">
-                    <div class="well" data-bind="template: { name: category, data: $data}"></div>
-                </div>
-                <ul class="pager">
-                    <li data-bind="css {disabled: !prevPageExists()}">
-                        <a href="#" data-bind="click: pagePrev">Previous Page </a>
-                    </li>
-                    <span data-bind="visible: totalPages() > 0">
-                        <span data-bind="text: navLocation"></span>
-                    </span>
-                    <li data-bind="css {disabled: !nextPageExists()}">
-                        <a href="#" data-bind="click: pageNext"> Next Page</a>
-                    </li>
+                        <!-- ko if: totalCount() -->
+                        <div data-bind="foreach: results">
+                            <div class="well" data-bind="template: { name: category, data: $data}"></div>
+                        </div>
+                        <ul class="pager">
+                            <li data-bind="css {disabled: !prevPageExists()}">
+                                <a href="#" data-bind="click: pagePrev">Previous Page </a>
+                            </li>
+                            <span data-bind="visible: totalPages() > 0">
+                                <span data-bind="text: navLocation"></span>
+                            </span>
+                            <li data-bind="css {disabled: !nextPageExists()}">
+                                <a href="#" data-bind="click: pageNext"> Next Page</a>
+                            </li>
 
-                </ul>
-                <!-- /ko -->
+                        </ul>
+                        <!-- /ko -->
 
 
-                <div class="buffer"></div>
+                        <div class="buffer"></div>
+                    </div><!--col-->
+                </div><!--row-->
             </div><!--col-->
         </div><!--row-->
     </div>
