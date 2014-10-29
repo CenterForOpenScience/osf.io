@@ -6,6 +6,7 @@ import re
 import copy
 import math
 import logging
+
 from requests.exceptions import ConnectionError
 
 import pyelasticsearch
@@ -50,6 +51,8 @@ def requires_search(func):
         if elastic is not None:
             try:
                 return func(*args, **kwargs)
+            except ConnectionError:
+                raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
             except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except pyelasticsearch.exceptions.ElasticHttpError as e:
