@@ -103,7 +103,6 @@
         </div><!-- end col-md-->
     </div><!-- end row -->
 %endif
-</div>
 </%def>
 
 <%def name="javascript_bottom()">
