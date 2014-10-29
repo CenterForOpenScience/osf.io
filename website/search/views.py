@@ -28,7 +28,6 @@ def search_search(**kwargs):
 
     if request.method == 'POST' and request.json:
         results = search.search(request.json, search_type=_type)
-        results['time'] = round(time.time() - tick, 2)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
@@ -36,6 +35,7 @@ def search_search(**kwargs):
         size = request.args.get('size', '10')
         results = search.search(build_query(q, start, size), search_type=_type)
 
+    results['time'] = round(time.time() - tick, 2)
     return results
 
 
