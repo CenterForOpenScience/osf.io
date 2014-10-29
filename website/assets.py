@@ -20,6 +20,8 @@ css = Bundle(
         'vendor/bootstrap3-editable/css/bootstrap-editable.css',
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
         'vendor/bower_components/hgrid/dist/hgrid.css',
+        'vendor/bower_components/treebeard/dist/treebeard.css',
+
         filters='cssmin'),
     # Site-specific CSS
     Bundle(
@@ -39,6 +41,9 @@ js = Bundle(
         "vendor/bower_components/bootstrap/dist/js/bootstrap.min.js",
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
+        'vendor/bower_components/mithril/mithril.js',
+        'vendor/bower_components/treebeard/dist/treebeard.js',
+
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
     'js/site.js',
