@@ -21,6 +21,7 @@ from website.util import api_url_for, web_url_for
 
 from website.addons.dropbox import settings
 from website.addons.dropbox.client import get_client_from_user_settings
+from dropbox.rest import ErrorResponse
 
 
 logger = logging.getLogger(__name__)
@@ -136,10 +137,21 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
     info = user_addon.dropbox_info
+    valid_credentials = True
+
+    if user_addon.has_auth:
+        try:
+            client = get_client_from_user_settings(user_addon)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
+
     return {
         'result': {
             'userHasAuth': user_addon.has_auth,
+            'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
-            'urls': urls,
+            'urls': urls
         },
     }, http.OK

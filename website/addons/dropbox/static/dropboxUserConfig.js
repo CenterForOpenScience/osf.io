@@ -17,6 +17,8 @@
 
     function ViewModel(url) {
         self.userHasAuth = ko.observable(false);
+        // Whether the auth token is valid
+        self.validCredentials = ko.observable(true);
         self.dropboxName = ko.observable();
         self.urls = ko.observable({});
         // Whether the initial data has been loaded.
@@ -30,6 +32,12 @@
                 self.dropboxName(data.dropboxName);
                 self.urls(data.urls);
                 self.loaded(true);
+                self.validCredentials(data.validCredentials);
+                if (!self.validCredentials()) {
+                    self.changeMessage('Could not retrieve Dropbox settings at ' +
+                        'this time. Try deauthorizing and reauthorizing Dropbox.',
+                        'text-warning');
+                }
             },
             error: function(xhr, textStatus, error){
                 self.changeMessage('Could not retrieve settings. Please refresh the page or ' +
@@ -55,15 +63,20 @@
                 type: 'DELETE',
                 success: function() {
                     // Page must be refreshed to remove the list of authorized nodes
-                    location.reload()
+                    location.reload();
 
                     // KO logic. Uncomment if page ever doesn't need refreshing
                     // self.userHasAuth(false);
                     // self.changeMessage(language.deauthSuccess, 'text-info', 5000);
 
                 },
-                error: function() {
+                error: function(textStatus, error) {
                     self.changeMessage(language.deauthError, 'text-danger');
+                    Raven.captureMessage('Could not deauthorize Dropbox.', {
+                        url: url,
+                        textStatus: textStatus,
+                        error: error
+                    });
                 }
             });
         }
