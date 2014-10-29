@@ -22,14 +22,24 @@
         define(['jquery', 'js/treebeard', 'bootstrap'], factory);
     } else if (typeof $script === 'function' ){
         //A less robust way of calling js files, once it is done call fangorn
+<<<<<<< HEAD
             global.Fangorn = factory(jQuery, global.Treebeard);
             $script.done('fangorn');
+=======
+        $script.ready(['treebeard'], function() {
+            global.Fangorn = factory(jQuery, global.Treebeard);
+            $script.done('fangorn');
+        });
+>>>>>>> 9a26c2404df78be0c1d8697f3da64311c648e461
     }else {
         global.Fangorn = factory(jQuery, global.Treebeard);
     }
 }(this, function($, Treebeard){
 
+<<<<<<< HEAD
  /// Domething else 
+=======
+>>>>>>> 9a26c2404df78be0c1d8697f3da64311c648e461
     // OSF-specific Treebeard options common to all addons
     baseOptions = {
         rowHeight : 35,
@@ -139,4 +149,8 @@
     };
 
     return Fangorn;
+<<<<<<< HEAD
 }));
+=======
+}));
+>>>>>>> 9a26c2404df78be0c1d8697f3da64311c648e461

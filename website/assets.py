@@ -21,13 +21,13 @@ css = Bundle(
         'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
         'vendor/bower_components/hgrid/dist/hgrid.css',
         'vendor/bower_components/treebeard/dist/treebeard.css',
-
         filters='cssmin'),
     # Site-specific CSS
     Bundle(
         'css/site.css',
-        'css/rubeus.css',
+    #    'css/rubeus.css',
         'css/commentpane.css',
+        'css/treebeard.css',
         filters="cssmin"),
     output="public/css/common.css"
 )
@@ -43,12 +43,13 @@ js = Bundle(
         "vendor/script.min.js",
         'vendor/bower_components/mithril/mithril.js',
         'vendor/bower_components/treebeard/dist/treebeard.js'
-
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
     'js/site.js',
     'js/koHelpers.js',
     'js/language.js',
+    'js/treebeard.js',
+    'js/fangorn.js',
     output="public/js/common.js"
 )
 
