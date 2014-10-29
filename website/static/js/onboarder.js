@@ -398,6 +398,10 @@
         self.target = ko.observable(null);
         /* Functions */
         self.startUpload = function(selected) {
+            if (self.dropzone.getUploadingFiles().length) {
+                self.changeMessage('Please wait until the pending uploads are finished.');
+                return false;
+            }
             if (!self.dropzone.getQueuedFiles().length) {
                 self.changeMessage('Please select at least one file to upload.', 'text-danger');
                 return false;
