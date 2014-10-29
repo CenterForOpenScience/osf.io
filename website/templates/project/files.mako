@@ -21,9 +21,12 @@
     </div>
 <<<<<<< HEAD
 </div>
+<<<<<<< HEAD
 =======
 </div></%doc>
 >>>>>>> 9a26c2404df78be0c1d8697f3da64311c648e461
+=======
+>>>>>>> cea9806cf864ee829dd92f85db321e608253ea43
 <div id="treeGrid" class="filebrowser"></div>
 
 
@@ -41,8 +44,9 @@ ${parent.javascript_bottom()}
 % endfor
 <script>
 // Don't show dropped content if user drags outside grid
-//window.ondragover = function(e) { e.preventDefault(); };
-//window.ondrop = function(e) { e.preventDefault(); };
+
+window.ondragover = function(e) { e.preventDefault(); };
+window.ondrop = function(e) { e.preventDefault(); };
 
 $script.ready(['fangorn'], function() {
     
