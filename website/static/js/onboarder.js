@@ -7,7 +7,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'knockout'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['typeahead'], function() {
+        $script.ready(['handlebars', 'typeahead'], function() {
             factory(jQuery, ko);
             $script.done('onboarder');
         });
