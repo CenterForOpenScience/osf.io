@@ -14,19 +14,12 @@
     <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
 </div>
 </div><!--end row -->
-<%doc>## TODO: This progressbar is used else where; separate into a template include
+## TODO: This progressbar is used else where; separate into a template include
 <div id="filebrowserProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
         <span class="sr-only">Loading</span>
     </div>
-<<<<<<< HEAD
 </div>
-<<<<<<< HEAD
-=======
-</div></%doc>
->>>>>>> 9a26c2404df78be0c1d8697f3da64311c648e461
-=======
->>>>>>> cea9806cf864ee829dd92f85db321e608253ea43
 <div id="treeGrid" class="filebrowser"></div>
 
 
@@ -44,7 +37,6 @@ ${parent.javascript_bottom()}
 % endfor
 <script>
 // Don't show dropped content if user drags outside grid
-
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
@@ -62,6 +54,7 @@ $script.ready(['fangorn'], function() {
         console.log("fangorn", Fangorn);
         var filebrowser = new Fangorn(fangornOpts);
     });
+
 });
 
 
