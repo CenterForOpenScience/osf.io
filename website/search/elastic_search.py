@@ -58,6 +58,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
+        raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
 
 
@@ -88,15 +89,11 @@ def get_tags(query, index):
         }
     }
 
-    try:
-        results = elastic.search(query, index=index, doc_type='_all')
-        tags = results['aggregations']['tag_cloud']['buckets']
-
-    #TODO: Overly broad exception needs fixing
-    except Exception:
-        tags = []
+    results = elastic.search(query, index=index, doc_type='_all')
+    tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
+
 
 @requires_search
 def search(query, index='website', search_type='_all'):
