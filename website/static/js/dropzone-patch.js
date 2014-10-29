@@ -54,9 +54,12 @@
         Dropzone.prototype.getUrl = function(file) {
             var self = this;
             if (file.signedUrlFrom) {
+                var url = typeof file.signedUrlFrom === 'function' ?
+                    file.signedUrlFrom() :
+                    file.signedUrlFrom;
                 return $.ajax({
                     type: 'POST',
-                    url: file.signedUrlFrom,
+                    url: url,
                     data: JSON.stringify({
                         name: file.destination || file.name,
                         type: file.type || 'application/octet-stream',

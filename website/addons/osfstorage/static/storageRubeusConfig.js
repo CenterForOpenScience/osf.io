@@ -50,7 +50,8 @@
                 self.changeStatus(row, Rubeus.Status.UPLOAD_SUCCESS, null, 2000,
                     function(row) {
                         self.showButtons(row);
-                    });
+                    }
+                );
             }
         }
 
