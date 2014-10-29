@@ -79,11 +79,6 @@
     margin-left: auto;
     margin-right: auto;
     border: solid 1px #ddd;
-    width: 560px;
-    height: 315px;
-}
-.gs-video iframe {
-    border: 0;
 }
 
 /* phase number counters */
