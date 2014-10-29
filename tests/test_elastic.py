@@ -20,6 +20,11 @@ class SearchTestCase(OsfTestCase):
     def tearDown(self):
         super(SearchTestCase, self).tearDown()
         search.delete_all()
+        search.create_index()
+
+    def setUp(self):
+        super(SearchTestCase, self).setUp()
+        search.create_index()
 
 
 def query(term):
@@ -148,8 +153,6 @@ class TestPublicNodes(SearchTestCase):
 
     def setUp(self):
         super(TestPublicNodes, self).setUp()
-        search.delete_all()
-        search.create_index()
         self.user = UserFactory(usename='Doug Bogie')
         self.title = 'Red Special'
         self.consolidate_auth = Auth(user=self.user)
@@ -351,8 +354,6 @@ class TestAddContributor(SearchTestCase):
 
     def setUp(self):
         super(TestAddContributor, self).setUp()
-        search.delete_all()
-        search.create_index()
         self.name1 = 'Roger1 Taylor1'
         self.name2 = 'John2 Deacon2'
         self.user = UserFactory(fullname=self.name1)
