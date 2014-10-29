@@ -120,17 +120,11 @@
             $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
             $.osf.applyBindings({
                 isOpen: ko.observable(false),
-                open: function() {
-                    this.isOpen(true);
-                },
-                close: function() {
-                    this.isOpen(false);
-                },
                 toggle: function() {
                     if (!this.isOpen()) {
-                        this.open();
+                        this.isOpen(true);
                     } else {
-                        this.close();
+                        this.isOpen(false);
                     }
                 },
                 nodes: response.nodes
