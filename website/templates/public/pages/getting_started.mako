@@ -157,13 +157,10 @@
 
                     <p>Then simply drag and drop projects or components you’d like associated with this folder, or click on the folder name and choose “Add Existing Project.” </p>
                     <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="2jRLBLemnVo"></div>
+                        <div class="embed-responsive-item youtube-loader" id="0yrpBhomKj4"></div>
                     </div>
                     <p> It is important to understand that dropping projects or components into these folders will not change the structure of the original projects themselves, but simply create a new way for you to access your projects and components.</p>
                     <p>Folders can be rearranged by dragging and dropping them wherever you like. Folders can be renamed by clicking on the “info” icon adjacent to the folder, and then clicking on the pencil icon next to the folder name. Projects and components can be renamed in this way too. Folders can be deleted by clicking on the “info” icon and choosing “Delete Folder.”</p>
-                    <div class="gs-video embed-responsive embed-responsive-16by9">
-                        <div class="embed-responsive-item youtube-loader" id="0yrpBhomKj4"></div>
-                    </div>
                 </div>
             </div>
             <div class="row" style="margin-bottom: 70px;">
