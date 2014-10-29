@@ -27,10 +27,6 @@
     </div>
 </form>
 
-
-
-<link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-
 <script>
     $script(['/static/js/projectCreator.js']);  // exports projectCreator
     $script.ready('projectCreator', function() {
