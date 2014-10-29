@@ -48,13 +48,17 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-def _render_node(node):
+def _render_node(node, user=None):
     """
 
     :param node:
     :return:
 
     """
+    perm = None
+    if user:
+        perm_list = node.get_permissions(user)
+        perm = permissions.reduce_permissions(perm_list)
     return {
         'title': node.title,
         'id': node._primary_key,
@@ -62,6 +66,8 @@ def _render_node(node):
         'api_url': node.api_url,
         'primary': node.primary,
         'date_modified': utils.iso8601format(node.date_modified),
+        'category': node.category,
+        'permissions': perm,  # A string, e.g. 'admin', or None
     }
 
 
