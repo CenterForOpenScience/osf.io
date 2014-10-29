@@ -309,7 +309,7 @@
 
         self.setCategory = function(cat) {
             if (cat !== undefined && cat !== null && cat !== '') {
-                self.category(new Category(cat + 's', cat, cat));
+                self.category(new Category(cat, 0, cat.charAt(0).toUpperCase() + cat.slice(1) + 's'));
             } else {
                 self.category(new Category('total', 0, 'Total'));
             }
