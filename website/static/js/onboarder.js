@@ -84,10 +84,6 @@
         if (onFetched) {
             onFetched(myProjects);
         }
-        // Attach $typeahead element to viewModel
-        viewModel.$typeahead = $inputElem;
-        // Set a flag on the viewModel to prevent multiple typeahead instantiations
-        viewModel._taInitialized = true;
         return $inputElem;
     }
 
@@ -129,7 +125,11 @@
             var params = valueAccessor() || {};
             // Either an Array of nodes or a URL
             var nodesOrURL = ko.unwrap(params.data);
-            if (!viewModel._taInitialized && Array.isArray(nodesOrURL)) {
+            if (params.clearOn && params.clearOn()) {
+                $(element).typeahead('destroy');
+                return;
+            }
+            if (Array.isArray(nodesOrURL)) {
                 var nodes = params.data;
                 // Compute relevant URLs for each search result
                 initTypeahead(element, nodes, viewModel, params);
@@ -179,6 +179,12 @@
 
         self.showSubmit = ko.computed(function() {
             return self.hasSelectedProject();
+        });
+
+        // Used by the projectSearch binding to trigger teardown of the component typeahead
+        // when the clear button is clicked
+        self.cleared = ko.computed(function() {
+            return self.selectedProject() == null;
         });
 
         // Project name to display in the text input

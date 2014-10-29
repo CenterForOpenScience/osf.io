@@ -27,7 +27,8 @@
             data-bind="projectSearch: {
                             data: componentURL,
                             onSelected: onSelectedComponent,
-                            onFetched: onFetchedComponents
+                            onFetched: onFetchedComponents,
+                            clearOn: cleared
                         },
                     visible: hasSelectedProject(),
                     value: selectedComponentName,
