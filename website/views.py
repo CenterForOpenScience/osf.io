@@ -71,7 +71,7 @@ def _render_node(node, user=None):
     }
 
 
-def _render_nodes(nodes):
+def _render_nodes(nodes, user=None):
     """
 
     :param nodes:
@@ -79,7 +79,7 @@ def _render_nodes(nodes):
     """
     ret = {
         'nodes': [
-            _render_node(node)
+            _render_node(node, user=user)
             for node in nodes
         ],
         'rescale_ratio': _rescale_ratio(nodes),
@@ -272,7 +272,7 @@ def get_dashboard_nodes(auth, **kwargs):
         response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
     else:
         response_nodes = nodes
-    return _render_nodes(response_nodes)
+    return _render_nodes(response_nodes, user=user)
 
 
 @must_be_logged_in
