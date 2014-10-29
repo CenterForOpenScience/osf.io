@@ -21,7 +21,7 @@ from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
-def handle_http_errors(func):
+def handle_search_errors(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
         try:
@@ -31,11 +31,15 @@ def handle_http_errors(func):
         except exceptions.MalformedQueryError as e:
             raise HTTPError(http.BAD_REQUEST)
         except exceptions.SearchUnavailableError as e:
-            raise HTTPError(http.SERVICE_NOT_AVAILABLE)
+            raise HTTPError(http.SERVICE_NOT_AVAILABLE, data={
+                'message_short': 'Search unavailable',
+                'message_long': ('Our search service is currently unavailable, if the issue persists, '
+                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
     return wrapped
 
 
-@handle_http_errors
+@handle_search_errors
 def search_search(**kwargs):
     _type = kwargs.get('type', '_all')
 
