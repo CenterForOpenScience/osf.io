@@ -30,7 +30,6 @@
         </div><!-- end project-organizer -->
     </div> <!-- end col-md -->
 
-    <%include file='_log_templates.mako'/>
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
     <div class="col-md-5">
@@ -103,7 +102,6 @@
         </div><!-- end col-md-->
     </div><!-- end row -->
 %endif
-</div>
 </%def>
 
 <%def name="javascript_bottom()">
@@ -114,10 +112,21 @@
 
     $script.ready(['projectCreator', 'onboarder'], function() {
         // Send a single request to get the data to populate the typeaheads
-        var url = "${api_url_for('get_dashboard_nodes', no_components=True)}";
+        var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
-            $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
-            $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
+            var allNodes = response.nodes;
+            ##  For uploads, only show projects for which user has write or admin permissions
+            var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
+                return (node.category === 'project' &&
+                        $.inArray(node.permissions, ['write', 'admin']) !== -1);
+            });
+            ## Filter out components and nodes for which user is not admin
+            var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
+                return node.permissions === 'admin';
+            });
+
+            $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+            $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
             $.osf.applyBindings({
                 isOpen: ko.observable(false),
                 toggle: function() {

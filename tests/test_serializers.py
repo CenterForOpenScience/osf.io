@@ -18,6 +18,7 @@ from website.project.views.node import _get_summary, _view_project, _serialize_n
 from website.views import _render_node
 from website.profile import utils
 from website.views import serialize_log
+from website.util import permissions
 
 
 class TestNodeSerializers(OsfTestCase):
@@ -59,7 +60,6 @@ class TestNodeSerializers(OsfTestCase):
         # serialized result should have is_registration
         assert_true(res['summary']['is_registration'])
 
-
     def test_render_node(self):
         node = ProjectFactory()
         res = _render_node(node)
@@ -69,6 +69,23 @@ class TestNodeSerializers(OsfTestCase):
         assert_equal(res['api_url'], node.api_url)
         assert_equal(res['primary'], node.primary)
         assert_equal(res['date_modified'], framework_utils.iso8601format(node.date_modified))
+        assert_equal(res['category'], 'project')
+
+    def test_render_node_returns_permissions(self):
+        node = ProjectFactory()
+        admin = UserFactory()
+        node.add_contributor(admin, auth=Auth(node.creator),
+            permissions=permissions.expand_permissions(permissions.ADMIN))
+        writer = UserFactory()
+        node.add_contributor(writer, auth=Auth(node.creator),
+            permissions=permissions.expand_permissions(permissions.WRITE))
+        node.save()
+
+        res_admin = _render_node(node, admin)
+        assert_equal(res_admin['permissions'], 'admin')
+        res_writer = _render_node(node, writer)
+        assert_equal(res_writer['permissions'], 'write')
+
 
 
     def test_get_summary_private_fork_should_include_is_fork(self):
