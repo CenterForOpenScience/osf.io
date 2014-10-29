@@ -20,7 +20,7 @@
         <span class="sr-only">Loading</span>
     </div>
 </div>
-<div id="myGrid" class="filebrowser hgrid"></div>
+<div id="treeGrid" class="filebrowser"></div>
 
 
 <%def name="stylesheets()">
@@ -40,16 +40,23 @@ ${parent.javascript_bottom()}
 window.ondragover = function(e) { e.preventDefault(); };
 window.ondrop = function(e) { e.preventDefault(); };
 
-$script.ready(['rubeus'], function() {
-    var rubeusOpts = {
-        data: nodeApiUrl + 'files/grid/',
-        searchInput: '#fileSearch'
-    };
-    % if disk_saving_mode:
-    rubeusOpts.uploads = false;
-    % endif
-    var filebrowser = new Rubeus('#myGrid', rubeusOpts);
+$script.ready(['fangorn'], function() {
+    
+    $.ajax({
+      url:  nodeApiUrl + 'files/grid/'
+    })
+    .done(function( data ) {
+        console.log("data", data);
+        var fangornOpts = {
+            divID: "treeGrid",
+            filesData: data.data
+        };
+        console.log("fangorn", Fangorn);
+        var filebrowser = new Fangorn(fangornOpts);
+    });
+
 });
+
 
 </script>
 </%def>
