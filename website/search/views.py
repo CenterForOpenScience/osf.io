@@ -26,11 +26,11 @@ def handle_search_errors(func):
     def wrapped(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except exceptions.IndexNotFoundError as e:
+        except exceptions.IndexNotFoundError:
             pass
-        except exceptions.MalformedQueryError as e:
+        except exceptions.MalformedQueryError:
             raise HTTPError(http.BAD_REQUEST)
-        except exceptions.SearchUnavailableError as e:
+        except exceptions.SearchUnavailableError:
             raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
