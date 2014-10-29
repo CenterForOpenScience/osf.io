@@ -152,7 +152,6 @@
         $script.ready(['hgrid'], function() {
             $script(['/static/vendor/bower_components/hgrid/plugins/hgrid-draggable/hgrid-draggable.js'],'hgrid-draggable');
         });
-        $script(['/static/js/handlebars-v1.3.0.js'],'handlebars');
         $script(['/static/js/projectorganizer.js']);
         $script.ready(['projectorganizer'], function() {
             var projectbrowser = new ProjectOrganizer('#project-grid');
