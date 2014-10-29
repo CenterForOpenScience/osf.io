@@ -19,7 +19,7 @@ from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
 from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
-from website.util import web_url_for, rubeus
+from website.util import web_url_for, rubeus, permissions
 from website.project import model, new_dashboard
 from website import settings
 
@@ -226,6 +226,8 @@ def get_dashboard_nodes(auth, **kwargs):
         NOTE: By default, components will only be shown if the current user
         is contributor on a comonent but not its parent project. This query
         parameter forces ALL components to be excluded from the request.
+    :param-query permissions: Filter upon projects for which the current user
+        has the specified permissions. Examples: 'write', 'admin'
     """
     user = auth.user
 
@@ -252,7 +254,19 @@ def get_dashboard_nodes(auth, **kwargs):
         )
     else:
         comps = []
-    return _render_nodes(list(nodes) + list(comps))
+
+    nodes = list(nodes) + list(comps)
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].strip().lower()
+        if perm not in permissions.PERMISSIONS:
+            raise HTTPError(http.BAD_REQUEST, dict(
+                message_short='Invalid query parameter',
+                message_oong='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
+            ))
+        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
+    else:
+        response_nodes = nodes
+    return _render_nodes(response_nodes)
 
 
 @must_be_logged_in

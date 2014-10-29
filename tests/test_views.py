@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -2935,6 +2936,29 @@ class TestDashboardViews(OsfTestCase):
         res = self.app.get(url, auth=friend.auth)
         nodes = res.json['nodes']
         assert_equal(len(nodes), 0)
+
+    def test_get_dashboard_nodes_admin_only(self):
+        friend = AuthUserFactory()
+        project = ProjectFactory(creator=self.creator)
+        # Friend is added as a contributor with read+write (not admin)
+        # permissions
+        perms = permissions.expand_permissions(permissions.WRITE)
+        project.add_contributor(friend, auth=Auth(self.creator), permissions=perms)
+        project.save()
+
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(res.json['nodes'][0]['id'], project._primary_key)
+
+        # Can filter project according to permission
+        url = api_url_for('get_dashboard_nodes', permissions='admin')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+    def test_get_dashboard_nodes_invalid_permission(self):
+        url = api_url_for('get_dashboard_nodes', permissions='not-valid')
+        res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
