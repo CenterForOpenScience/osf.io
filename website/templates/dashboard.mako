@@ -13,7 +13,7 @@
         <div class="page-header">
             <div class="pull-right"><a class="btn btn-default" href="/folder/${dashboard_id}" id = "${dashboard_id}">New Folder</a></div>
             <h3>Projects</h3>
-        </div>
+        </div><!-- end .page-header -->
         <link rel="stylesheet" href="/static/css/projectorganizer.css">
         % if seen_dashboard == False:
             <div class="alert alert-info">The OSF has a new dashboard. Find out how it works on our <a href="/getting-started/#dashboards">getting started</a> page.</div>
@@ -30,67 +30,62 @@
             <span class = 'organizer-legend'><img src="/static/img/hgrid/component.png">Component</span>
             <span class = 'organizer-legend'><img src="/static/img/hgrid/reg-component.png">Registered Component</span>
             <span class = 'organizer-legend'><img src="/static/img/hgrid/pointer.png">Link</span>
-
-
-        </div>
-
+        </div><!-- end project-organizer -->
+    </div> <!-- end col-md -->
 
     <%include file='_log_templates.mako'/>
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
-    </div>
-    <div class="row">
-        <div class="col-md-5">
-            <div class="ob-tab-head" id="obTabHead">
-                <ul class="nav nav-tabs" role="tablist">
-                <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
-                <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
-                ## %if 'badges' in addons_enabled:
-                ## <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>
-                ## %endif
-                </ul>
+    <div class="col-md-5">
+        <div class="ob-tab-head" id="obTabHead">
+            <ul class="nav nav-tabs" role="tablist">
+            <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
+            <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
+            ## %if 'badges' in addons_enabled:
+            ## <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>
+            ## %endif
+            </ul>
 
-            </div><!-- end #obTabHead -->
-            <div class="tab-content" >
-                <div class="tab-pane active" id="quicktasks">
-                    <ul class="ob-widget-list"> <!-- start onboarding -->
-                        ## <%include file="ob_new_project.mako"/>
-                        <div id="projectCreate">
-                            <li id="obNewProject" class="ob-list-item list-group-item">
+        </div><!-- end #obTabHead -->
+        <div class="tab-content" >
+            <div class="tab-pane active" id="quicktasks">
+                <ul class="ob-widget-list"> <!-- start onboarding -->
+                    ## <%include file="ob_new_project.mako"/>
+                    <div id="projectCreate">
+                        <li id="obNewProject" class="ob-list-item list-group-item">
 
-                                <div data-bind="click: toggle" class="ob-header pointer">
-                                    <h3
-                                        class="ob-heading list-group-item-heading">
-                                        Create a project
-                                    </h3>
-                                    <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
-                                        class="pointer ob-expand-icon icon-large pull-right">
-                                    </i>
-                                </div><!-- end ob-header -->
-                                <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                    <project-create-form params="data: nodes">
-                                    </project-create-form>
-                                </div>
-                            </li> <!-- end ob-list-item -->
-                        </div>
-                        <div id="obRegisterProject">
-                            <osf-ob-register params="data: nodes"></osf-ob-register>
-                        </div>
-                        <div id="obUploader">
-                            <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
-                        </div>
-                    </ul> <!-- end onboarding -->
-                </div><!-- end .tab-pane -->
-                <div class="tab-pane" id="watchlist">
-                    <%include file="log_list.mako" args="scripted=False"/>
-                </div><!-- end tab-pane -->
-                ## %if 'badges' in addons_enabled:
-                   ## <%include file="dashboard_badges.mako"/>
-                ## %endif
-            </div><!-- end .tab-content -->
-        </div><!-- end col-md -->
-    </div><!-- end row -->
-
+                            <div data-bind="click: toggle" class="ob-header pointer">
+                                <h3
+                                    class="ob-heading list-group-item-heading">
+                                    Create a project
+                                </h3>
+                                <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
+                                    class="pointer ob-expand-icon icon-large pull-right">
+                                </i>
+                            </div><!-- end ob-header -->
+                            <div data-bind="visible: isOpen()" id="obRevealNewProject">
+                                <project-create-form params="data: nodes">
+                                </project-create-form>
+                            </div>
+                        </li> <!-- end ob-list-item -->
+                    </div>
+                    <div id="obRegisterProject">
+                        <osf-ob-register params="data: nodes"></osf-ob-register>
+                    </div>
+                    <div id="obUploader">
+                        <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
+                    </div>
+                </ul> <!-- end onboarding -->
+            </div><!-- end .tab-pane -->
+            <div class="tab-pane" id="watchlist">
+                <%include file="log_list.mako" args="scripted=False"/>
+            </div><!-- end tab-pane -->
+            ## %if 'badges' in addons_enabled:
+                ## <%include file="dashboard_badges.mako"/>
+            ## %endif
+        </div><!-- end .tab-content -->
+    </div><!-- end col-md -->
+</div><!-- end row -->
 %if 'badges' in addons_enabled:
     <div class="row">
         <div class="col-md-5">
