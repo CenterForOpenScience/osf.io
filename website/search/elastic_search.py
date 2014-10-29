@@ -6,6 +6,7 @@ import re
 import copy
 import math
 import logging
+
 from requests.exceptions import ConnectionError
 
 import pyelasticsearch
@@ -50,6 +51,8 @@ def requires_search(func):
         if elastic is not None:
             try:
                 return func(*args, **kwargs)
+            except ConnectionError:
+                raise exceptions.SearchUnavailableError('Could not connect to elasticsearch')
             except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
                 raise exceptions.IndexNotFoundError(e.error)
             except pyelasticsearch.exceptions.ElasticHttpError as e:
@@ -58,6 +61,7 @@ def requires_search(func):
                 raise exceptions.SearchException(e.error)
 
         sentry.log_message('Elastic search action failed. Is elasticsearch running?')
+        raise exceptions.SearchUnavailableError("Failed to connect to elasticsearch")
     return wrapped
 
 
@@ -88,15 +92,11 @@ def get_tags(query, index):
         }
     }
 
-    try:
-        results = elastic.search(query, index=index, doc_type='_all')
-        tags = results['aggregations']['tag_cloud']['buckets']
-
-    #TODO: Overly broad exception needs fixing
-    except Exception:
-        tags = []
+    results = elastic.search(query, index=index, doc_type='_all')
+    tags = results['aggregations']['tag_cloud']['buckets']
 
     return tags
+
 
 @requires_search
 def search(query, index='website', search_type='_all'):
@@ -232,8 +232,7 @@ def update_node(node, index='website'):
         try:
             elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
         except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
-
+            elastic.index(index, category, doc=elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
 
 def generate_social_links(social):
     social_links = {}
@@ -261,10 +260,9 @@ def update_user(user):
         try:
             elastic.delete('website', 'user', user._id, refresh=True)
             logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
-            return
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-            logger.error(e)
-            return
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+            pass  # Can't delete what's not there
+        return
 
     user_doc = {
         'id': user._id,
@@ -281,16 +279,15 @@ def update_user(user):
     try:
         elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
+        elastic.index('website', 'user', id=user._id, doc=user_doc, upsert=user_doc, refresh=True)
 
 
 @requires_search
 def delete_all():
     try:
         elastic.delete_index('website')
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-        logger.error(e)
-        logger.error("The index 'website' was not deleted from elasticsearch")
+    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
+        logger.debug("Index website does not exist; was unable to delete")
 
 
 @requires_search
@@ -307,10 +304,10 @@ def create_index():
     }
     try:
         elastic.create_index('website')
-        for type_ in ['project', 'component', 'registration']:
+        for type_ in ['project', 'component', 'registration', 'user']:
             elastic.put_mapping('website', type_, mapping)
     except pyelasticsearch.exceptions.IndexAlreadyExistsError:
-        pass
+        pass  # No harm done
 
 
 @requires_search
@@ -319,7 +316,7 @@ def delete_doc(elastic_document_id, node, index='website'):
     try:
         elastic.delete(index, category, elastic_document_id, refresh=True)
     except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.warn("Document with id {} not found in database".format(elastic_document_id))
+        pass  # can't delete what doesn't exist
 
 
 @requires_search

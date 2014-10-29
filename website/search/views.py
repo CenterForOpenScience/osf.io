@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import time
-import bleach
 import logging
-from urllib2 import HTTPError
+import functools
+import httplib as http
 
-from flask import request
+import bleach
 from modularodm import Q
+from flask import request
 
 from framework.auth.core import get_current_user
 from framework.auth.decorators import must_be_logged_in
@@ -15,11 +16,30 @@ import website.search.search as search
 from website.search.util import build_query
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
-import httplib as http
+from framework.exceptions import HTTPError
+from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
+def handle_search_errors(func):
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except exceptions.IndexNotFoundError as e:
+            pass
+        except exceptions.MalformedQueryError as e:
+            raise HTTPError(http.BAD_REQUEST)
+        except exceptions.SearchUnavailableError as e:
+            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
+                'message_short': 'Search unavailable',
+                'message_long': ('Our search service is currently unavailable, if the issue persists, '
+                'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
+            })
+    return wrapped
 
+
+@handle_search_errors
 def search_search(**kwargs):
     _type = kwargs.get('type', '_all')
 
@@ -28,7 +48,6 @@ def search_search(**kwargs):
 
     if request.method == 'POST' and request.json:
         results = search.search(request.json, search_type=_type)
-        results['time'] = round(time.time() - tick, 2)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
         # TODO Match javascript params?
@@ -36,6 +55,7 @@ def search_search(**kwargs):
         size = request.args.get('size', '10')
         results = search.search(build_query(q, start, size), search_type=_type)
 
+    results['time'] = round(time.time() - tick, 2)
     return results
 
 
