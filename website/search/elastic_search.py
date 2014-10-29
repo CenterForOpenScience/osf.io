@@ -226,10 +226,7 @@ def update_node(node, index='website'):
         ]:
             elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        try:
-            elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-            elastic.index(index, category, elastic_document, id=elastic_document_id, overwrite_existing=True, refresh=True)
+        elastic.update(index, category, id=elastic_document_id, doc=elastic_document, upsert=elastic_document, refresh=True)
 
 
 def generate_social_links(social):
@@ -255,13 +252,9 @@ def generate_social_links(social):
 @requires_search
 def update_user(user):
     if not user.is_active():
-        try:
-            elastic.delete('website', 'user', user._id, refresh=True)
-            logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
-            return
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-            logger.error(e)
-            return
+        elastic.delete('website', 'user', user._id, refresh=True)
+        logger.debug('User ' + user._id + ' successfully removed from the Elasticsearch index')
+        return
 
     user_doc = {
         'id': user._id,
@@ -275,19 +268,12 @@ def update_user(user):
         'boost': 2,  # TODO(fabianvf): Probably should make this a constant or something
     }
 
-    try:
-        elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        elastic.index("website", "user", user_doc, id=user._id, overwrite_existing=True, refresh=True)
+    elastic.update('website', 'user', doc=user_doc, id=user._id, upsert=user_doc, refresh=True)
 
 
 @requires_search
 def delete_all():
-    try:
-        elastic.delete_index('website')
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
-        logger.error(e)
-        logger.error("The index 'website' was not deleted from elasticsearch")
+    elastic.delete_index('website')
 
 
 @requires_search
@@ -304,19 +290,16 @@ def create_index():
     }
     try:
         elastic.create_index('website')
-        for type_ in ['project', 'component', 'registration']:
+        for type_ in ['project', 'component', 'registration', 'user']:
             elastic.put_mapping('website', type_, mapping)
     except pyelasticsearch.exceptions.IndexAlreadyExistsError:
-        pass
+        pass  # No harm done
 
 
 @requires_search
 def delete_doc(elastic_document_id, node, index='website'):
     category = 'registration' if node.is_registration else node.project_or_component
-    try:
-        elastic.delete(index, category, elastic_document_id, refresh=True)
-    except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
-        logger.warn("Document with id {} not found in database".format(elastic_document_id))
+    elastic.delete(index, category, elastic_document_id, refresh=True)
 
 
 @requires_search
