@@ -117,7 +117,7 @@
 
     $script.ready(['projectCreator', 'onboarder'], function() {
         // Send a single request to get the data to populate the typeaheads
-        var url = "${api_url_for('get_dashboard_nodes')}";
+        var url = "${api_url_for('get_dashboard_nodes', no_components=True)}";
         var request = $.getJSON(url, function(response) {
             $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
             $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
