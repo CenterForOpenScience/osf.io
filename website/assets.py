@@ -42,7 +42,7 @@ js = Bundle(
         "vendor/bootbox/bootbox.min.js",
         "vendor/script.min.js",
         'vendor/bower_components/mithril/mithril.js',
-        'vendor/bower_components/treebeard/dist/treebeard.js',
+        'vendor/bower_components/treebeard/dist/treebeard.js'
 
     ),
     'vendor/knockout-sortable/knockout-sortable.js',
@@ -67,6 +67,7 @@ js_bottom = Bundle(
         'js/project.js',
         'js/app.js',
         'js/addons.js',
+        'js/fangorn.js'
         # 'js/dropzone-patch.js',
         # 'js/rubeus.js'
     ),

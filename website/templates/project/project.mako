@@ -110,7 +110,7 @@
                     <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
                 % endif
             </div>
-        <h2>Components</h2>
+        <h2>Components ARE HERE</h2>
     </div>
     % endif
 

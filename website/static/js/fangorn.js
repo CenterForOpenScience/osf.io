@@ -22,15 +22,14 @@
         define(['jquery', 'js/treebeard', 'bootstrap'], factory);
     } else if (typeof $script === 'function' ){
         //A less robust way of calling js files, once it is done call fangorn
-        $script.ready(['treebeard'], function() {
             global.Fangorn = factory(jQuery, global.Treebeard);
             $script.done('fangorn');
-        });
     }else {
         global.Fangorn = factory(jQuery, global.Treebeard);
     }
 }(this, function($, Treebeard){
 
+ /// Domething else 
     // OSF-specific Treebeard options common to all addons
     baseOptions = {
         rowHeight : 35,
