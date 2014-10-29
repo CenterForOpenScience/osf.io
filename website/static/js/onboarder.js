@@ -226,6 +226,10 @@
             // binding handler
             self.showComponents(true);
         };
+        self.clearComponentSearch = function() {
+            self.selectedComponent(null);
+            self.showComponents(true);
+        };
     }
 
     ko.components.register('osf-project-search', {
