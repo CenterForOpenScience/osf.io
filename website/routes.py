@@ -523,7 +523,7 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', ['get', 'post'], search_views.search_search, json_renderer),
+        Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
 
     ], prefix='/api/v1')

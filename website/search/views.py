@@ -20,18 +20,21 @@ import httplib as http
 logger = logging.getLogger(__name__)
 
 
-def search_search():
+def search_search(**kwargs):
+    _type = kwargs.get('type', '_all')
+
     tick = time.time()
     results = {}
 
     if request.method == 'POST' and request.json:
-        results = search.search(request.json)
+        results = search.search(request.json, search_type=_type)
         results['time'] = round(time.time() - tick, 2)
     elif request.method == 'GET':
         q = request.args.get('q', '*')
+        # TODO Match javascript params?
         start = request.args.get('from', '0')
         size = request.args.get('size', '10')
-        results = search.search(build_query(q, start, size))
+        results = search.search(build_query(q, start, size), search_type=_type)
 
     return results
 
