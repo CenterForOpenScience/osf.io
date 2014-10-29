@@ -465,7 +465,7 @@
                                          dropzone.options.maxFilesize +
                                          ' MiB) and was not added to the upload queue.', 'text-danger');
                     } else {
-                        self.changeMessage(fileName + 'could not be added to the upload queue', 'text-danger');
+                        self.changeMessage(fileName + ' could not be added to the upload queue', 'text-danger');
                         Raven.captureMessage('Could not upload: ' + fileName);
                     }
                 });
