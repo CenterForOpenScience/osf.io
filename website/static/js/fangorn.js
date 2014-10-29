@@ -29,6 +29,33 @@
     }
 }(this, function($, Treebeard){
 
+    // TODO: OSF does icons differently. write custom resolve icons. 
+    function _fangornResolveIcon(item){
+        // this = treebeard object;
+        // Item = item acted on
+        if (item.kind === "folder") {
+            if (item.open) { 
+                return m("i.icon-folder-open-alt", " ");
+            }
+            return m("i.icon-folder-close-alt", " ");
+        }
+        if (item.data.icon) {
+            return m("i.fa." + item.data.icon, " ");
+        }
+        return m("i.icon-file-alt");
+    }
+
+    // TODO Action buttons; 
+    function _fangornActionColumn (){
+        var buttons = [ 
+                { title: "Download", "css" : 'btn btn-danger'},
+                { title : "View"}
+                ];
+       return buttons.map(function(btn){ 
+                    // return [ m('i', btn.title )]
+        }); 
+    } 
+
     // OSF-specific Treebeard options common to all addons
     tbOptions = {
             rowHeight : 35,         // user can override or get from .tb-row height
@@ -131,7 +158,7 @@
                 window.console.log("ontogglefolder", this, item, event);
             },
             dropzone : {                                           // All dropzone options.
-                url: "",  // When users provide single URL for all uploads
+                url: "/api/v1/project/",  // When users provide single URL for all uploads
                 dragstart : function (treebeard, event) {     // An example dropzone event to override.
                     // this = dropzone object
                     // treebeard = treebeard object
@@ -139,25 +166,12 @@
                     window.console.log("dragstart", this, treebeard, event);
                 }
             },
-            resolveIcon : function (item) {     // Here the user can interject and add their own icons, uses m()
-                // this = treebeard object;
-                // Item = item acted on
-                if (item.kind === "folder") {
-                    if (item.open) {
-                        return m("i.fa.fa-folder-open-o", " ");
-                    }
-                    return m("i.fa.fa-folder-o", " ");
-                }
-                if (item.data.icon) {
-                    return m("i.fa." + item.data.icon, " ");
-                }
-                return m("i.fa.fa-file ");
-            },
+            resolveIcon : _fangornResolveIcon,
             resolveUploadUrl : function (item) {  // Allows the user to calculate the url of each individual row
                 // this = treebeard object;
                 // Item = item acted on return item.data.ursl.upload
                 window.console.log("resolveUploadUrl", this, item);
-                return "/upload";
+                return item.data.urls.upload;
             },
             resolveLazyloadUrl : false
             // function (item) {
