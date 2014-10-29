@@ -2710,7 +2710,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
     def test_search_projects(self):
-        url = web_url_for('search_search')
+        url = '/search/'
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
