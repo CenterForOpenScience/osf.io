@@ -114,10 +114,16 @@
 
     $script.ready(['projectCreator', 'onboarder'], function() {
         // Send a single request to get the data to populate the typeaheads
-        var url = "${api_url_for('get_dashboard_nodes', no_components=True)}";
+        var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
-            $.osf.applyBindings({nodes: response.nodes }, '#obRegisterProject');
-            $.osf.applyBindings({nodes: response.nodes }, '#obUploader');
+            var allNodes = response.nodes;
+            // Filter out components and nodes for which user is not admin
+            var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
+                return node.category === 'project' && node.permissions === 'admin';
+            });
+
+            $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
+            $.osf.applyBindings({nodes: allNodes }, '#obUploader');
             $.osf.applyBindings({
                 isOpen: ko.observable(false),
                 toggle: function() {
