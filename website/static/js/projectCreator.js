@@ -1,3 +1,6 @@
+/**
+ * A KO component for the project creation form.
+ */
 (function(global, factory) {
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'knockout', 'osfutils'], factory);
