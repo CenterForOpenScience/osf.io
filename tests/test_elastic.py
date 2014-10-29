@@ -334,6 +334,14 @@ class TestPublicNodes(SearchTestCase):
         for doc in docs:
             assert doc['key'] in tags
 
+    def test_count_aggregation(self):
+        docs = query("*")['counts']
+        assert docs['total'] == 4
+        assert docs['project'] == 1
+        assert docs['component'] == 1
+        assert docs['registration'] == 1
+
+
 
 @requires_search
 class TestAddContributor(SearchTestCase):
