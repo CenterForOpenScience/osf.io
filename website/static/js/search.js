@@ -67,10 +67,10 @@
         });
 
         self.totalPages = ko.computed(function() {
-            var pageCount = 1;
+            var countOfPages = 1;
             var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
-            pageCount = Math.ceil(self.totalResults() / resultsCount);
-            return pageCount;
+            countOfPages = Math.ceil(self.totalResults() / resultsCount);
+            return countOfPages;
         });
 
         self.nextPageExists = ko.computed(function() {
@@ -225,11 +225,11 @@
                     self.pushState();
                 }
 
-            }).fail(function(){
-                console.log('error');
+            }).fail(function(response){
                 self.totalResults(0);
                 self.currentPage(0);
                 self.results.removeAll();
+                $.osf.handleJSONError(response);
             });
 
         };
@@ -289,7 +289,7 @@
                 filter: '',
                 query: self.query(),
                 page: self.currentPage(),
-                scrollTop: $(window).scrollTop(),
+                scrollTop: $(window).scrollTop()
             };
 
             var url = '?q=' + self.query();
