@@ -31,7 +31,7 @@ def handle_search_errors(func):
         except exceptions.MalformedQueryError as e:
             raise HTTPError(http.BAD_REQUEST)
         except exceptions.SearchUnavailableError as e:
-            raise HTTPError(http.SERVICE_NOT_AVAILABLE, data={
+            raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',
                 'message_long': ('Our search service is currently unavailable, if the issue persists, '
                 'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.'),
