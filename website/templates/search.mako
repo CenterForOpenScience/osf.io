@@ -67,7 +67,7 @@
                 <!-- ko if: searchStarted() && !totalCount() -->
                 <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                 <!-- /ko -->
-
+                <!-- ko if: totalCount() -->
                 <div data-bind="foreach: results">
                     <div class="well" data-bind="template: { name: category, data: $data}"></div>
                 </div>
@@ -83,7 +83,7 @@
                     </li>
 
                 </ul>
-
+                <!-- /ko -->
 
 
                 <div class="buffer"></div>
