@@ -21,6 +21,7 @@ from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
+
 def handle_search_errors(func):
     @functools.wraps(func)
     def wrapped(*args, **kwargs):
@@ -29,7 +30,11 @@ def handle_search_errors(func):
         except exceptions.IndexNotFoundError:
             pass
         except exceptions.MalformedQueryError:
-            raise HTTPError(http.BAD_REQUEST)
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Bad search query',
+                'message_long': ('Please check our help (the question mark beside the search box) for more information '
+                                 'on advanced search queries.'),
+            })
         except exceptions.SearchUnavailableError:
             raise HTTPError(http.SERVICE_UNAVAILABLE, data={
                 'message_short': 'Search unavailable',

@@ -232,7 +232,10 @@
             }).fail(function(response){
                 self.totalResults(0);
                 self.currentPage(0);
-                self.results.removeAll();
+                self.results([]);
+                self.tags([]);
+                self.categories([]);
+                self.searchStarted(false);
                 $.osf.handleJSONError(response);
             });
 
