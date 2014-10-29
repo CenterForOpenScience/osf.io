@@ -117,13 +117,18 @@
         var url = "${api_url_for('get_dashboard_nodes')}";
         var request = $.getJSON(url, function(response) {
             var allNodes = response.nodes;
-            // Filter out components and nodes for which user is not admin
-            var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
-                return node.category === 'project' && node.permissions === 'admin';
+            ##  For uploads, only show projects for which user has write or admin permissions
+            var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
+                return (node.category === 'project' &&
+                        $.inArray(node.permissions, ['write', 'admin']) !== -1);
+            });
+            ## Filter out components and nodes for which user is not admin
+            var registrationSelection = ko.utils.arrayFilter(uploadSelection, function(node) {
+                return node.permissions === 'admin';
             });
 
             $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
-            $.osf.applyBindings({nodes: allNodes }, '#obUploader');
+            $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
             $.osf.applyBindings({
                 isOpen: ko.observable(false),
                 toggle: function() {

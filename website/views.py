@@ -37,6 +37,7 @@ def _rescale_ratio(nodes):
     """
     if not nodes:
         return 0
+    # TODO: Don't use get_current_user. It is deprecated.
     user = get_current_user()
     counts = [
         len(node.logs)
