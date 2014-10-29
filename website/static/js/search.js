@@ -189,6 +189,10 @@
                 self.categories.removeAll();
 
                 data.results.forEach(function(result){
+                    if(typeof result.url !== "undefined"){
+                        result.wikiUrl = result.url+"wiki/";
+                        result.filesUrl = result.url+"files/";
+                    }
                     self.results.push(result);
                 });
 

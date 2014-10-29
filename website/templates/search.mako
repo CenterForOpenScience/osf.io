@@ -191,6 +191,10 @@
                 </span>
             </span>
         </h5>
+        <h5>Jump to:
+            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr.href: filesUrl">Files</a>
+        </h5>
         <!-- /ko -->
     </script>
     <script type="text/html" id="app">
@@ -233,7 +237,11 @@
                 </span>
             </span>
         </h5>
-        <!-- /ko -->
+          <h5>Jump to:
+            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr.href: filesUrl">Files</a>
+        </h5>
+      <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{title }}</a> <i class="icon-lock"></i></h4>
@@ -253,6 +261,10 @@
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
+        </h5>
+        <h5>Jump to:
+            <a data-bind="attr.href: wikiUrl">Wiki</a> -
+            <a data-bind="attr.href: filesUrl">Files</a>
         </h5>
         <!-- /ko -->
     </script>
