@@ -14,13 +14,13 @@
     <input role="search" class="form-control" placeholder="Search files..." type="text" id="fileSearch" autofocus>
 </div>
 </div><!--end row -->
-## TODO: This progressbar is used else where; separate into a template include
+<%doc>## TODO: This progressbar is used else where; separate into a template include
 <div id="filebrowserProgressBar" class="progress progress-striped active">
     <div class="progress-bar"  role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
         <span class="sr-only">Loading</span>
     </div>
-</div>
-<div id="myGrid" class="filebrowser hgrid"></div>
+</div></%doc>
+<div id="treeGrid" class="filebrowser"></div>
 
 
 <%def name="stylesheets()">
@@ -37,18 +37,18 @@ ${parent.javascript_bottom()}
 % endfor
 <script>
 // Don't show dropped content if user drags outside grid
-window.ondragover = function(e) { e.preventDefault(); };
-window.ondrop = function(e) { e.preventDefault(); };
+//window.ondragover = function(e) { e.preventDefault(); };
+//window.ondrop = function(e) { e.preventDefault(); };
 
-$script.ready(['rubeus'], function() {
-    var rubeusOpts = {
-        data: nodeApiUrl + 'files/grid/',
-        searchInput: '#fileSearch'
+$script.ready(['fangorn'], function() {
+    console.log(Fangorn);
+    var fangornOpts = {
+        divID:"treeGrid",
+        filesData: nodeApiUrl + 'files/grid/'
     };
-    % if disk_saving_mode:
-    rubeusOpts.uploads = false;
-    % endif
-    var filebrowser = new Rubeus('#myGrid', rubeusOpts);
+    console.log("fangorn", Fangorn);
+    var filebrowser = new Fangorn(fangornOpts);
+
 });
 
 </script>

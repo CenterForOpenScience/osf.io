@@ -14,6 +14,6 @@
     "jquery-mockjax": "1.5.3",
     "raven-js": "~1.1.16",
     "sinon-qunit": "~1.0.0",
-    "moment": "~2.7.0"
+    "mithril":"~0.1.22"
   }
 }
