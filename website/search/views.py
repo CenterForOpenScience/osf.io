@@ -3,7 +3,6 @@
 import time
 import bleach
 import logging
-from urllib2 import HTTPError
 
 from flask import request
 from modularodm import Q
@@ -16,10 +15,25 @@ from website.search.util import build_query
 from website.models import User, Node
 from website.project.views.contributor import get_node_contributors_abbrev
 import httplib as http
+from framework.exceptions import HTTPError
+from website.search import exceptions
 
 logger = logging.getLogger(__name__)
 
+def handle_http_errors(func):
+    def wrapped(*args, **kwargs):
+        return func(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        except exceptions.IndexNotFoundError as e:
+            pass
+        except exceptions.MalformedQueryError as e:
+            raise HTTPError(http.BAD_REQUEST)
+        except exceptions.SearchUnavailableError as e:
+            raise HTTPError(http.SERVICE_NOT_AVAILABLE)
 
+
+@handle_http_errors
 def search_search(**kwargs):
     _type = kwargs.get('type', '_all')
 
