@@ -30,7 +30,6 @@
         </div><!-- end project-organizer -->
     </div> <!-- end col-md -->
 
-    <%include file='_log_templates.mako'/>
     ## Knockout componenet templates
     <%include file="components/dashboard_templates.mako"/>
     <div class="col-md-5">

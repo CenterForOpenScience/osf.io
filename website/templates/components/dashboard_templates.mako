@@ -107,7 +107,6 @@
                     onSubmit: startUpload,
                     submitTest: 'Upload'">
             </osf-project-search>
-            </div>
         </div>
     </div><!-- end row -->
     <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
@@ -125,7 +124,7 @@
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
-            </br>
+            <br />
 
             <label>Description</label>
             <textarea class="form-control" name="description" data-bind="value: description"></textarea>
