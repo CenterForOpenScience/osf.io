@@ -226,6 +226,10 @@
             // binding handler
             self.showComponents(true);
         };
+        self.clearComponentSearch = function() {
+            self.selectedComponent(null);
+            self.showComponents(true);
+        };
     }
 
     ko.components.register('osf-project-search', {
@@ -447,6 +451,7 @@
             uploadprogress: function(file, progress) { // progress bar update
                 self.progress(progress);
             },
+            parallelUploads: 1,
 
             init: function() {
                 var dropzone = this;
