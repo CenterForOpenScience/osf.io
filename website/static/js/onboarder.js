@@ -7,7 +7,7 @@
     if (typeof define === 'function' && define.amd) {
         define(['jquery', 'knockout'], factory);
     } else if (typeof $script === 'function') {
-        $script.ready(['handlebars', 'typeahead'], function() {
+        $script.ready(['dropzone', 'handlebars', 'typeahead'], function() {
             factory(jQuery, ko);
             $script.done('onboarder');
         });
@@ -226,6 +226,10 @@
             // binding handler
             self.showComponents(true);
         };
+        self.clearComponentSearch = function() {
+            self.selectedComponent(null);
+            self.showComponents(true);
+        };
     }
 
     ko.components.register('osf-project-search', {
@@ -394,6 +398,10 @@
         self.target = ko.observable(null);
         /* Functions */
         self.startUpload = function(selected) {
+            if (self.dropzone.getUploadingFiles().length) {
+                self.changeMessage('Please wait until the pending uploads are finished.');
+                return false;
+            }
             if (!self.dropzone.getQueuedFiles().length) {
                 self.changeMessage('Please select at least one file to upload.', 'text-danger');
                 return false;
@@ -447,6 +455,7 @@
             uploadprogress: function(file, progress) { // progress bar update
                 self.progress(progress);
             },
+            parallelUploads: 1,
 
             init: function() {
                 var dropzone = this;
