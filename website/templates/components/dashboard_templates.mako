@@ -124,7 +124,7 @@
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+            <input class="form-control" type="text" name="title" maxlength="200" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
