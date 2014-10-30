@@ -247,11 +247,11 @@
       <!-- /ko -->
     </script>
     <script type="text/html" id="registration">
-        <h4><a data-bind="attr.href: url">{{title }}</a> <i class="icon-lock"></i></h4>
-        <h5>Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
+        <h4 class="registration"><a data-bind="attr.href: url">{{title }}</a> </h4>
+        <h5 class="registration">Description: <small>{{ description | default:"No Description" | fit:500 }}</small></h5>
 
         <!-- ko if: contributors.length > 0 -->
-        <h5>
+        <h5 class="registration">
             Contributors: <small data-bind="foreach: contributors">
                 <a data-bind="attr.href: $parent.contributors_url[$index()]">{{ $data }}</a>
             <!-- ko if: ($index()+1) < ($parent.contributors.length) -->&nbsp;- <!-- /ko -->
@@ -259,13 +259,13 @@
         </h5>
         <!-- /ko -->
         <!-- ko if tags.length > 0 -->
-        <h5 data-bind="visible: tags.length">Tags:
+        <h5 class="registration" data-bind="visible: tags.length">Tags:
             <span class="tag-cloud" data-bind="foreach: tags">
                 <span class="cloud-tag tag-sm" data-bind="text: $data, click: $root.addTag.bind($parentContext, $data)">
                 </span>
             </span>
         </h5>
-        <h5>Jump to:
+        <h5 class="registration">Jump to:
             <a data-bind="attr.href: wikiUrl">Wiki</a> -
             <a data-bind="attr.href: filesUrl">Files</a>
         </h5>

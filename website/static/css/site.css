@@ -462,7 +462,6 @@ h4 {
 }
 
 
-
 /* Bootstrap Navbar */
 .navbar .search-query {
     width:190px
@@ -1010,6 +1009,20 @@ h1.unavailable {
     {
         margin: 0;
     }
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration .tag-cloud .cloud-tag {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
 .query-label
     {
         margin-right: .5em;
