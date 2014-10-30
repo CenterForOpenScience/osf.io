@@ -67,17 +67,27 @@ class TestAnUnregisteredUser(OsfTestCase):
         assert_in('has already been registered.', res)
 
     def test_cant_see_new_project_form(self):
-        """ Can't see new project form if not logged in. """
+        """Can't see new project form if not logged in.
+        """
+        res = self.app.get(web_url_for('project_new'))
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
         assert_in(
             'You must log in to access this resource',
-            self.app.get('/project/new/').maybe_follow()
+            res,
         )
 
     def test_cant_see_profile(self):
-        """ Can't see profile if not logged in. """
+        """Can't see profile if not logged in.
+        """
+        res = self.app.get(web_url_for('profile_view'))
+        assert_equal(res.status_code, 302)
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
         assert_in(
             'You must log in to access this resource',
-            self.app.get('/profile/').maybe_follow()
+            res,
         )
 
 
@@ -129,7 +139,8 @@ class TestAUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
-        assert_in('Watched Projects', res)
+        assert_in('Watchlist', res)
+
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -289,9 +300,8 @@ class TestAUser(OsfTestCase):
         project = ProjectFactory(creator=user2, is_public=True)
         # self navigates to project
         res = self.app.get(project.url).maybe_follow()
-        # Should not see wiki at all (since non-contributor and no content)
-        assert_not_in('Wiki', res)
-
+        # Should not see wiki widget (since non-contributor and no content)
+        assert_not_in('No wiki content', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
@@ -438,6 +448,27 @@ class TestComponents(OsfTestCase):
             'Delete {0}'.format(self.component.project_or_component),
             res
         )
+
+    def test_can_configure_comments_if_admin(self):
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=self.user.auth,
+        ).maybe_follow()
+        assert_in('Configure Commenting', res)
+
+    def test_cant_configure_comments_if_not_admin(self):
+        non_admin = AuthUserFactory()
+        self.component.add_contributor(
+            non_admin,
+            permissions=['read', 'write'],
+            auth=self.consolidate_auth,
+            save=True,
+        )
+        res = self.app.get(
+            self.component.url + 'settings/',
+            auth=non_admin.auth
+        ).maybe_follow()
+        assert_not_in('Configure commenting', res)
 
     def test_components_shouldnt_have_component_list(self):
         res = self.app.get(self.component.url, auth=self.user.auth)
@@ -665,7 +696,12 @@ class TestShortUrls(OsfTestCase):
         self.wiki = NodeWikiFactory(user=self.user, node=self.component)
 
     def _url_to_body(self, url):
-        return self.app.get(url, auth=self.auth).maybe_follow().normal_body
+        return self.app.get(
+            url,
+            auth=self.auth
+        ).maybe_follow(
+            auth=self.auth,
+        ).normal_body
 
     def test_profile_url(self):
         res1 = self.app.get('/{}/'.format(self.user._primary_key)).maybe_follow()
@@ -1096,8 +1132,7 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
 
         # Clicks "I am not Lab Comp"
         # Taken to login/register page
-
-        res2 = res.click(linkid='signOutLink')
+        res2 = res.click(linkid='signOutLink', auth=lab_user.auth)
         # Fills in log in form
         form = res2.forms['signinForm']
         form['username'] = right_user.username

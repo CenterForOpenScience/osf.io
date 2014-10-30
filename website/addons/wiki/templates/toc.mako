@@ -1,3 +1,5 @@
+<%page expression_filter="h"/>
+
 <div class="osf-sidenav hidden-print" role="complementary">
 
     <ul class="nav bs-sidenav" style="margin: 0;">
@@ -5,13 +7,13 @@
         <h4 style="margin-left: 10px;" class="node-category"> ${node['category'].title()} Wiki Pages</h4>
             <li>
                 ## NOTE: Do NOT use web_url_for here because we want to use the GUID urls for these links
-                <a href="${node['url']}wiki/home/">${'home'}</a>
+                <a href="${urls['web']['home']}">Home</a>
             </li>
-            % for page_name in pages_current:
-                %if page_name != 'home':
+            % for page in pages_current:
+                %if page['name'] != 'home':
                     <li>
                         ## Again, do not use web_url_for here either
-                        <a href="${node['url']}wiki/${page_name}/">${page_name}</a>
+                        <a href="${page['url']}">${page['name']}</a>
                     </li>
                 % endif
             %endfor
@@ -28,17 +30,17 @@
                             <i class="icon-hand-right"></i>
                         % endif
 
-                        ${child['title']}
+                        ${child['title'] | n}
                             % if child['category']:
                                 (${child['category']})
                             % endif
                     </a>
 
-                    <ul style="list-style-type: none;">
-                        % for k in child['pages']:
-                            % if k != 'home':
-                                <li class="">
-                                    <a href="/${node['id']}/node/${child['id']}/wiki/${k}">${k}</a>
+                    <ul class="wiki-component">
+                        % for child_page in child['pages_current']:
+                            % if child_page['name'] != 'home':
+                                <li>
+                                    <a href="${child_page['url']}">${child_page['name']}</a>
                                 </li>
                             % endif
                         % endfor

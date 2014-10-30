@@ -1,28 +1,50 @@
-;
+/**
+ * A KO component for the project creation form.
+ */
 (function(global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(['knockout', 'jquery', 'osfutils'], factory);
+        define(['jquery', 'knockout', 'osfutils'], factory);
+    } else if (typeof $script === 'function') {
+        $script.ready(['select2'], function() {
+            factory(jQuery, ko);
+            $script.done('projectCreator');
+        });
     } else {
-        global.ProjectCreator = factory(ko, jQuery);
+        factory(jQuery, ko);
     }
-}(this, function(ko, $) {
+}(this, function($, ko) {
     'use strict';
 
-    function ProjectCreatorViewModel(url) {
-        var self = this;
-        self.minSearchLength = 2;
-        self.url = url;
+    var CREATE_URL = '/api/v1/project/new/';
 
+    /*
+     * ViewModel for the project creation form.
+     *
+     * Params:
+     *  - data: Data to populate the template selection input
+     */
+    function ProjectCreatorViewModel(params) {
+        var self = this;
+        self.params = params || {};
+        self.minSearchLength = 2;
         self.title = ko.observable('').extend({
-            required: true,
             maxLength: 200
         });
+
         self.description = ko.observable();
-        self.templates = [];
+        self.errorMessage = ko.observable('');
+
+        self.submitForm = function () {
+            if (self.title().trim() === ''){
+                self.errorMessage('This field is required.');
+            } else {
+                self.createProject();
+            }
+        };
 
         self.createProject = function() {
             $.osf.postJSON(
-                self.url,
+                CREATE_URL,
                 self.serialize()
             ).done(
                 self.createSuccess
@@ -140,36 +162,16 @@
             });
         };
 
-        function fetchSuccess(ret) {
-            self.templates = self.loadNodes(ret.nodes);
-
-            $('#templates').select2({
-                allowClear: true,
-                placeholder: 'Select a Project to Use as a Template',
-                query: self.query
-            });
-        }
-
-        function fetchFailed() {
-            bootbox.alert('Could not retrieve dashboard nodes at this time. Please try again. If the problem persists, email <a href="mailto:support@osf.io.">support@osf.io</a>');
-        }
-
-        $.ajax({
-            type: 'GET',
-            url: '/api/v1/dashboard/get_nodes/',
-            dataType: 'json',
-            success: fetchSuccess,
-            error: fetchFailed
+        self.templates = self.loadNodes(params.data);
+        $('#templates').select2({
+            allowClear: true,
+            placeholder: 'Select a Project to Use as a Template',
+            query: self.query
         });
-
     }
 
-    function ProjectCreator(selector, url) {
-        var viewModel = new ProjectCreatorViewModel(url);
-        // Uncomment for debugging
-        //window.viewModel = viewModel;
-        $.osf.applyBindings(viewModel, selector);
-    }
-
-    return ProjectCreator;
+    ko.components.register('project-create-form', {
+        viewModel: ProjectCreatorViewModel,
+        template: {element: 'project-create-form'}
+    });
 }));

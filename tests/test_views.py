@@ -8,12 +8,12 @@ import datetime as dt
 import mock
 import httplib as http
 
-
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 from werkzeug.wrappers import Response
 
 from modularodm import Q
+from dateutil.parser import parse as parse_date
 
 from framework import auth
 from framework.exceptions import HTTPError, PermissionsError
@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -32,7 +33,7 @@ from website.profile.views import fmt_date_or_none
 from website.util import api_url_for, web_url_for
 from website import mails
 from website.util import rubeus
-from website.project.views.node import _view_project, abbrev_authors
+from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
 from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -75,7 +76,8 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_not_logged_in_no_key(self):
         res = self.app.get(self.project_url, {'view_only': None})
         assert_is_redirect(res)
-        res = res.follow()
+        res = res.follow(expect_errors=True)
+        assert_equal(res.status_code, 401)
         assert_equal(
             res.request.path,
             web_url_for('auth_login')
@@ -436,11 +438,11 @@ class TestProjectViews(OsfTestCase):
         self.app.post_json(url, {}, auth=self.auth)
         self.project.reload()
         # A registration was added to the project's registration list
-        assert_equal(len(self.project.registration_list), 1)
+        assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
         assert_equal(self.project.logs[-1].action, "project_registered")
         # Most recent node is a registration
-        reg = Node.load(self.project.registration_list[-1])
+        reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
     def test_register_template_page_with_invalid_template_name(self):
@@ -672,6 +674,33 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(self.project.api_url, auth=self.auth)
         assert_equal(res.json['node']['watched_count'], 0)
 
+    def test_view_project_returns_whether_to_show_wiki_widget(self):
+        user = AuthUserFactory()
+        project = ProjectFactory.build(creator=user, is_public=True)
+        project.add_contributor(user)
+        project.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(res.status_code, http.OK)
+        assert_in('show_wiki_widget', res.json['user'])
+
+    def test_fork_count_does_not_include_deleted_forks(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        auth = Auth(project.creator)
+        fork = project.fork_node(auth)
+        fork2 = project.fork_node(auth)
+        project.save()
+        fork.remove_node(auth)
+        fork.save()
+
+        url = project.api_url_for('view_project')
+        res = self.app.get(url, auth=user.auth)
+        assert_in('fork_count', res.json['node'])
+        assert_equal(1, res.json['node']['fork_count'])
+
+
 class TestUserProfile(OsfTestCase):
 
     def setUp(self):
@@ -776,15 +805,19 @@ class TestUserProfile(OsfTestCase):
             'institution': 'an institution',
             'department': 'a department',
             'title': 'a title',
-            'start': '2001-01-01',
-            'end': '2001-01-02',
+            'startMonth': 'January',
+            'startYear': '2001',
+            'endMonth': 'March',
+            'endYear': '2001',
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'title': None,
-            'start': '2001-05-03',
-            'end': None,
+            'startMonth': 'May',
+            'startYear': '2001',
+            'endMonth': None,
+            'endYear': None,
             'ongoing': True,
         }]
         payload = {'contents': jobs}
@@ -800,20 +833,24 @@ class TestUserProfile(OsfTestCase):
         for i, job in enumerate(jobs):
             assert_equal(job, res.json['contents'][i])
 
-    def test_userialize_and_serialize_schools(self):
+    def test_unserialize_and_serialize_schools(self):
         schools = [{
             'institution': 'an institution',
             'department': 'a department',
             'degree': 'a degree',
-            'start': '2001-01-01',
-            'end': '2001-01-02',
+            'startMonth': 1,
+            'startYear': 2001,
+            'endMonth': 5,
+            'endYear': 2001,
             'ongoing': False,
         }, {
             'institution': 'another institution',
             'department': None,
             'degree': None,
-            'start': '2001-05-03',
-            'end': None,
+            'startMonth': 5,
+            'startYear': 2001,
+            'endMonth': None,
+            'endYear': None,
             'ongoing': True,
         }]
         payload = {'contents': schools}
@@ -828,6 +865,67 @@ class TestUserProfile(OsfTestCase):
         )
         for i, job in enumerate(schools):
             assert_equal(job, res.json['contents'][i])
+
+    def test_unserialize_jobs(self):
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # jobs field is updated
+        assert_equal(self.user.jobs, jobs)
+
+    def test_unserialize_schools(self):
+        schools = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'degree': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': schools}
+        url = api_url_for('unserialize_schools')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.user.reload()
+        # schools field is updated
+        assert_equal(self.user.schools, schools)
+
+    def test_unserialize_jobs_valid(self):
+        jobs_cached = self.user.jobs
+        jobs = [
+            {
+                'institution': fake.company(),
+                'department': fake.catch_phrase(),
+                'title': fake.bs(),
+                'startMonth': 5,
+                'startYear': 2013,
+                'endMonth': 3,
+                'endYear': 2014,
+                'ongoing': False,
+            }
+        ]
+        payload = {'contents': jobs}
+        url = api_url_for('unserialize_jobs')
+        res = self.app.put_json(url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
 
 
 class TestAddingContributorViews(OsfTestCase):
@@ -1503,6 +1601,24 @@ class TestPointerViews(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
 
+    # https://github.com/CenterForOpenScience/openscienceframework.org/issues/1109
+    def test_get_pointed_excludes_folders(self):
+        pointer_project = ProjectFactory(is_public=True)  # project that points to another project
+        pointed_project = ProjectFactory(creator=self.user)  # project that other project points to
+        pointer_project.add_pointer(pointed_project, Auth(pointer_project.creator), save=True)
+
+        # Project is in a dashboard folder
+        folder = FolderFactory(creator=pointed_project.creator)
+        folder.add_pointer(pointed_project, Auth(pointed_project.creator), save=True)
+
+        url = pointed_project.api_url_for('get_pointed')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # pointer_project's id is included in response, but folder's id is not
+        pointer_ids = [each['id'] for each in res.json['pointed']]
+        assert_in(pointer_project._id, pointer_ids)
+        assert_not_in(folder._id, pointer_ids)
+
     def test_add_pointers(self):
 
         url = self.project.api_url + 'pointer/'
@@ -2056,8 +2172,9 @@ class TestFileViews(OsfTestCase):
 
     def test_files_get(self):
         url = '/api/v1/{0}/files/'.format(self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth).maybe_follow()
+        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
         expected = _view_project(self.project, auth=Auth(user=self.user))
+
         assert_equal(res.status_code, http.OK)
         assert_equal(res.json['node'], expected['node'])
         assert_in('tree_js', res.json)
@@ -2134,13 +2251,15 @@ class TestComments(OsfTestCase):
 
         self.project.reload()
 
+        # Note: Use `parse_date` rather than `strptime` to avoid very rare
+        # missing floating point values
         res_comment = res.json['comment']
-        date_created = dt.datetime.strptime(str(res_comment.pop('dateCreated')), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified = dt.datetime.strptime(str(res_comment.pop('dateModified')), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created = parse_date(res_comment.pop('dateCreated'))
+        date_modified = parse_date(res_comment.pop('dateModified'))
 
         serialized_comment = serialize_comment(self.project.commented[0], Auth(user=self.non_contributor))
-        date_created2 = dt.datetime.strptime(serialized_comment.pop('dateCreated'), '%Y-%m-%dT%H:%M:%S.%f')
-        date_modified2 = dt.datetime.strptime(serialized_comment.pop('dateModified'), '%Y-%m-%dT%H:%M:%S.%f')
+        date_created2 = parse_date(serialized_comment.pop('dateCreated'))
+        date_modified2 = parse_date(serialized_comment.pop('dateModified'))
 
         assert_datetime_equal(date_created, date_created2)
         assert_datetime_equal(date_modified, date_modified2)
@@ -2768,7 +2887,7 @@ class TestDashboardViews(OsfTestCase):
         self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
-    def test_components_with__are_accessible_from_dashboard(self):
+    def test_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
@@ -2779,7 +2898,69 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json), 1)
 
-    def test_registered_components_with__are_accessible_from_dashboard(self):
+    def test_get_dashboard_nodes(self):
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+
+        url = api_url_for('get_dashboard_nodes')
+
+        res = self.app.get(url, auth=self.creator.auth)
+        assert_equal(res.status_code, 200)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+
+        project_serialized = nodes[0]
+        assert_equal(project_serialized['id'], project._primary_key)
+
+    def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
+        # User creates a project with a component
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+        # User adds friend as a contributor to the component but not the
+        # project
+        friend = AuthUserFactory()
+        component.add_contributor(friend, auth=Auth(self.creator))
+        component.save()
+
+        # friend requests their dashboard nodes
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        # Response includes component
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], component._primary_key)
+
+        # friend requests dashboard nodes ,filtering against components
+        url = api_url_for('get_dashboard_nodes', no_components=True)
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 0)
+
+    def test_get_dashboard_nodes_admin_only(self):
+        friend = AuthUserFactory()
+        project = ProjectFactory(creator=self.creator)
+        # Friend is added as a contributor with read+write (not admin)
+        # permissions
+        perms = permissions.expand_permissions(permissions.WRITE)
+        project.add_contributor(friend, auth=Auth(self.creator), permissions=perms)
+        project.save()
+
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(res.json['nodes'][0]['id'], project._primary_key)
+
+        # Can filter project according to permission
+        url = api_url_for('get_dashboard_nodes', permissions='admin')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+    def test_get_dashboard_nodes_invalid_permission(self):
+        url = api_url_for('get_dashboard_nodes', permissions='not-valid')
+        res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
@@ -2872,6 +3053,35 @@ class TestDashboardViews(OsfTestCase):
             if dashboard_item[u'name'] == title:
                 found_item = True
         assert_true(found_item, "Did not find the folder in the dashboard.")
+
+
+class TestWikiWidgetViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestWikiWidgetViews, self).setUp()
+
+        # project with no home wiki page
+        self.project = ProjectFactory()
+        self.read_only_contrib = AuthUserFactory()
+        self.project.add_contributor(self.read_only_contrib, permissions='read')
+        self.noncontributor = AuthUserFactory()
+
+        # project with no home wiki content
+        self.project2 = ProjectFactory(creator=self.project.creator)
+        self.project2.add_contributor(self.read_only_contrib, permissions='read')
+        self.project2.update_node_wiki(name='home', content='', auth=Auth(self.project.creator))
+
+    def test_show_wiki_for_contributors_when_no_wiki_or_content(self):
+        assert_true(_should_show_wiki_widget(self.project, self.project.creator))
+        assert_true(_should_show_wiki_widget(self.project2, self.project.creator))
+
+    def test_show_wiki_is_false_for_read_contributors_when_no_wiki_or_content(self):
+        assert_false(_should_show_wiki_widget(self.project, self.read_only_contrib))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
+
+    def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
+        assert_false(_should_show_wiki_widget(self.project, self.noncontributor))
+        assert_false(_should_show_wiki_widget(self.project2, self.read_only_contrib))
 
 
 class TestForkViews(OsfTestCase):
@@ -2976,6 +3186,14 @@ class TestProjectCreation(OsfTestCase):
             self.url, payload, auth=self.creator.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
+    def test_fails_to_create_project_with_whitespace_title(self):
+        payload = {
+            'title': '   '
+        }
+        res = self.app.post_json(
+            self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_creates_a_project(self):
         payload = {
             'title': 'Im a real title'
@@ -3022,9 +3240,10 @@ class TestProjectCreation(OsfTestCase):
     def test_project_new_from_template_non_user(self):
         project = ProjectFactory()
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth = None)
+        res = self.app.post(url, auth=None)
         assert_equal(res.status_code, 302)
-        res2 = res.maybe_follow()
+        res2 = res.follow(expect_errors=True)
+        assert_equal(res2.status_code, 401)
         assert_in("Sign up or Log in", res2.body)
 
     def test_project_new_from_template_public_non_contributor(self):

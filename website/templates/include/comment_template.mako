@@ -66,7 +66,7 @@
                 </div>
                 <a data-bind="click: startUnreportAbuse">Not abuse</a>
                 <div data-bind="if: unreporting">
-                    <a class="btn btn-default btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
+                    <a class="btn btn-primary btn-sm" data-bind="click: submitUnreportAbuse">Submit</a>
                     <a class="btn btn-default btn-sm" data-bind="click: cancelUnreportAbuse">Cancel</a>
                 </div>
             </div>
@@ -146,12 +146,12 @@
                             <select class="form-control" data-bind="options: abuseOptions, optionsText: abuseLabel, value: abuseCategory"></select>
                             <input class="form-control" data-bind="value: abuseText" placeholder="Describe abuse" />
                         </form>
-                        <a class="btn btn-default btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitAbuse"><i class="icon-check"></i> Report</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelAbuse"><i class="icon-undo"></i> Cancel</a>
                     </div>
 
                     <div class="comment-delete" data-bind="if: deleting">
-                        <a class="btn btn-default btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
+                        <a class="btn btn-danger btn-sm" data-bind="click: submitDelete"><i class="icon-check"></i> Delete</a>
                         <a class="btn btn-default btn-sm" data-bind="click: cancelDelete"><i class="icon-undo"></i> Cancel</a>
                     </div>
 

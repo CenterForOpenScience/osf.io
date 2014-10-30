@@ -12,15 +12,15 @@
                 <div data-bind="if: page() == 'whom'">
 
                     <!-- Find contributors -->
-                    <form class='form'>
+                    <form class='form' data-bind="submit: startSearch">
                         <div class="row" style="padding-bottom: 10px;">
-                            <div class="col-md-8">
+                            <div class="col-md-6">
                                 <div class="input-group">
                                     <input class='form-control'
                                             data-bind="value:query"
                                             placeholder='Search by name' autofocus/>
                                     <span class="input-group-btn">
-                                        <button type='submit' class="btn btn-default" data-bind="click:search">Search</button>
+                                        <input type="submit" value="Search" class="btn btn-default">
                                     </span>
                                 </div>
                             </div>

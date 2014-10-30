@@ -26,11 +26,11 @@ class TestCallbacks(OsfTestCase):
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(self.project.creator)
         self.non_authenticator = UserFactory()
+        self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
         )
-        self.project.save()
 
         self.project.add_addon('github', auth=self.consolidated_auth)
         self.project.creator.add_addon('github')
@@ -247,12 +247,17 @@ class TestCallbacks(OsfTestCase):
         self.node_settings.reload()
         assert_true(self.node_settings.user_settings is None)
 
-# TODO: Finish testing properties and methods
+
 class TestAddonGithubUserSettings(OsfTestCase):
 
     def setUp(self):
         OsfTestCase.setUp(self)
         self.user_settings = AddonGitHubUserSettings()
+        self.oauth_settings = AddonGitHubOauthSettings()
+        self.oauth_settings.github_user_id = 'testuser'
+        self.oauth_settings.save()
+        self.user_settings.oauth_settings = self.oauth_settings
+        self.user_settings.save()
 
     def test_repr(self):
         self.user_settings.owner = UserFactory()
@@ -266,18 +271,26 @@ class TestAddonGithubUserSettings(OsfTestCase):
         #  https://github.com/CenterForOpenScience/openscienceframework.org/issues/1053
         assert_is_none(self.user_settings.public_id)
 
-    @unittest.skip('finish this')
     def test_github_user_name(self):
-        assert 0
+        self.oauth_settings.github_user_name = "test user name"
+        self.oauth_settings.save()
+        assert_equal(self.user_settings.github_user_name, "test user name")
 
-    @unittest.skip('finish this')
     def test_oauth_access_token(self):
-        assert 0
+        self.oauth_settings.oauth_access_token = "test access token"
+        self.oauth_settings.save()
+        assert_equal(self.user_settings.oauth_access_token, "test access token")
 
-    @unittest.skip('finish this')
     def test_oauth_token_type(self):
-        assert 0
+        self.oauth_settings.oauth_token_type = "test token type"
+        self.oauth_settings.save()
+        assert_equal(self.user_settings.oauth_token_type, "test token type")
 
-    @unittest.skip('finish this')
-    def test_clear_auth(self):
-        assert 0
+    @mock.patch('website.addons.github.api.GitHub.revoke_token')
+    def test_clear_auth(self, mock_revoke_token):
+        mock_revoke_token.return_value = True
+        self.user_settings.clear_auth(save=True)
+        assert_false(self.user_settings.github_user_name)
+        assert_false(self.user_settings.oauth_token_type)
+        assert_false(self.user_settings.oauth_access_token)
+        assert_false(self.user_settings.oauth_settings)

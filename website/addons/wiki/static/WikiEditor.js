@@ -26,14 +26,21 @@
             type: 'GET',
             url: url,
             dataType: 'json',
+            cache: false,
             success: function(response) {
                 self.initText = response.wiki_content;
                 self.wikiText(response.wiki_content);
             },
             error: function(xhr, textStatus, error) {
-                console.error(textStatus);
-                console.error(error);
-                bootbox.alert('Could not get wiki content.');
+                bootbox.alert({
+                    title: 'Error',
+                    message: 'The wiki content could not be loaded.'
+                });
+                Raven.captureMessage('Could not GET get wiki contents.', {
+                    url: url,
+                    textStatus: textStatus,
+                    error: error
+                });
             }
         });
 

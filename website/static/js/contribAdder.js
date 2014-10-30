@@ -99,6 +99,10 @@
             }
         }
 
+        self.startSearch = function() {
+            self.currentPage(0);
+            self.search();
+        };
 
         self.search = function() {
             self.notification(false);
@@ -223,7 +227,7 @@
             self.setupEditable(elm, data);
         };
 
-        function postInviteRequest(fullname, email, options) {
+        function postInviteRequest(fullname, email) {
             $.osf.postJSON(
                 nodeApiUrl + 'invite_contributor/',
                 {'fullname': fullname, 'email': email}

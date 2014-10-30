@@ -25,7 +25,10 @@
         $.extend(self, params);
         self.date = new FormattableDate(params.date);
         self.wikiUrl = ko.computed(function() {
-            return self.nodeUrl + 'wiki/' + self.params.page;
+            return self.nodeUrl + 'wiki/' + encodeURIComponent(self.params.page);
+        });
+        self.wikiIdUrl = ko.computed(function() {
+            return self.nodeUrl + 'wiki/id/' + encodeURIComponent(self.params.page_id);
         });
 
         /**

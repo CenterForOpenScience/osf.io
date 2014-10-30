@@ -52,11 +52,16 @@ def string_required(value):
 
 def validate_history_item(item):
     string_required(item.get('institution'))
-    start = item.get('start')
-    end = item.get('end')
-    if start and end and end < start:
-        raise ValidationValueError('End date must be later than start date.')
-
+    startMonth = item.get('startMonth')
+    startYear = item.get('startYear')
+    endMonth = item.get('endMonth')
+    endYear = item.get('endYear')
+    if startYear and endYear:
+        if endYear < startYear:
+            raise ValidationValueError('End date must be later than start date.')
+        elif endYear == startYear:
+            if endMonth and startMonth and endMonth < startMonth:
+                raise ValidationValueError('End date must be later than start date.')
 
 validate_url = URLValidator()
 def validate_personal_site(value):
@@ -243,8 +248,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
     jobs = fields.DictionaryField(list=True, validate=validate_history_item)
@@ -255,8 +262,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #     'institution': <institution or organization>,
     #     'department': <department>,
     #     'location': <location>,
-    #     'start': <start date>,
-    #     'end': <end date>,
+    #     'startMonth': <start month>,
+    #     'startYear': <start year>,
+    #     'endMonth': <end month>,
+    #     'endYear': <end year>,
     #     'ongoing: <boolean>
     # }
     schools = fields.DictionaryField(list=True, validate=validate_history_item)

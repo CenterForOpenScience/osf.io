@@ -21,22 +21,24 @@
             <!-- Show widgets in left column if present -->
             % for addon in addons_enabled:
                 % if addons[addon]['has_widget']:
+                    %if addon == 'wiki':
+                        %if user['show_wiki_widget']:
+                            <div class="addon-widget-container" mod-meta='{
+                            "tpl": "../addons/wiki/templates/wiki_widget.mako",
+                            "uri": "${node['api_url']}wiki/widget/"
+                        }'></div>
+                        %endif
+
+                    %else:
                     <div class="addon-widget-container" mod-meta='{
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
+                    %endif
                 % endif
             % endfor
 
         % else:
-
-            % if 'wiki' in addons and addons['wiki']['has_widget']:
-                <div class="addon-widget-container" mod-meta='{
-                        "tpl": "../addons/wiki/templates/wiki_widget.mako",
-                        "uri": "${node['api_url']}wiki/widget/"
-                    }'></div>
-            % endif
-
             <!-- If no widgets, show components -->
             ${children()}
 
@@ -100,18 +102,18 @@
 </div>
 
 <%def name="children()">
-<div class="page-header">
     % if node['node_type'] == 'project':
-        <div class="pull-right btn-group">
-            % if 'write' in user['permissions'] and not node['is_registration']:
-                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-            % endif
-        </div>
-
-    <h2>Components</h2>
+        <div class="page-header">
+            <div class="pull-right btn-group">
+                % if 'write' in user['permissions'] and not node['is_registration']:
+                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+                % endif
+            </div>
+        <h2>Components</h2>
+    </div>
     % endif
-</div>
+
 
 % if node['node_type'] == 'project':
   % if node['children']:

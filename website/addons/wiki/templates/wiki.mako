@@ -1,5 +1,6 @@
+<%page expression_filter="h"/>
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Wiki</%def>
+<%def name="title()">${node['title'] | n} Wiki</%def>
 
 <div class="row">
     <div class="col-md-3">
@@ -8,17 +9,10 @@
     </div>
     <div class="col-md-9">
         <%include file="wiki/templates/status.mako"/>
-        ${wiki_content}
+        % if wiki_content:
+            <div>${wiki_content | n}</div>
+        % else:
+            <p><em>No wiki content</em></p>
+        % endif
     </div>
 </div>
-
-
-##<div mod-meta='{
-##        "tpl": "metadata/comment_group.mako",
-##        "kwargs": {
-##            "guid": "${wiki_id}",
-##            "top": true
-##        },
-##        "replace": true
-##    }'></div>
-

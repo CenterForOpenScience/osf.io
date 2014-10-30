@@ -20,6 +20,8 @@ def to_mongo(item):
         item = item.replace(key, value)
     return item
 
+def to_mongo_key(item):
+    return to_mongo(item).strip().lower()
 
 def from_mongo(item):
     for key, value in mongo_map.items():

@@ -10,9 +10,13 @@
             if (!bucketName) {
                 return;
             } else if (isValidBucket.exec(bucketName) == null) {
-                bootbox.confirm("Sorry, that's not a valid bucket name. Try another name?", function(result) {
-                    if (result) {
-                        newBucket();
+                bootbox.confirm({
+                    title: 'Invalid bucket name',
+                    message: "Sorry, that's not a valid bucket name. Try another name?",
+                    callback: function(result) {
+                        if(result) {
+                            newBucket();
+                        }
                     }
                 });
             } else {
@@ -25,11 +29,16 @@
                     $select.val(bucketName);
                 }).fail(function(xhr) {
                     var message = JSON.parse(xhr.responseText).message;
-                    if(!message)
+                    if(!message) {
                         message = 'Looks like that name is taken. Try another name?';
-                    bootbox.confirm(message, function(result) {
-                        if (result) {
-                            newBucket();
+                    }
+                    bootbox.confirm({
+                        title: 'Duplicate bucket name',
+                        message: message,
+                        callback: function(result) {
+                            if(result) {
+                                newBucket();
+                            }
                         }
                     });
                 });
@@ -43,7 +52,7 @@
             url: nodeApiUrl + 's3/settings/',
             contentType: 'application/json',
             dataType: 'json'
-        }).done(function(response) {
+        }).done(function() {
             window.location.reload();
         }).fail(
             $.osf.handleJSONError
@@ -68,13 +77,15 @@
         });
 
         $('#s3RemoveToken').on('click', function() {
-            bootbox.confirm(
-                'Are you sure you want to remove this S3 authorization?', function(confirm) {
-                    if (confirm) {
+            bootbox.confirm({
+                title: 'Deauthorize S3?',
+                message: 'Are you sure you want to remove this S3 authorization?',
+                callback: function(confirm) {
+                    if(confirm) {
                         removeNodeAuth();
                     }
                 }
-            );
+            });
         });
 
         $('#s3ImportToken').on('click', function() {

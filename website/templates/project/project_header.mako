@@ -137,22 +137,22 @@
             % endif
         </div>
 
-        <nav id="projectSubnav" class="navbar navbar-default ">
-            <a class="navbar-brand collapse visible-xs">
-              ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
-            </a>
-            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
-              <span class="sr-only">Toggle navigation</span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-              <span class="icon-bar"></span>
-            </button>
+        <nav id="projectSubnav" class="navbar navbar-default" role="navigation">
             <div class="container-fluid">
-                <div class="row">
-                    <ul class="nav navbar-nav project-nav collapse navbar-collapse" >
-
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".project-nav">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand visible-xs" href="#">
+                        ${'Project' if node['node_type'] == 'project' else 'Component'} Navigation
+                    </a>
+                </div>
+                <div class="collapse navbar-collapse project-nav">
+                    <ul class="nav navbar-nav">
                         <li><a href="${node['url']}">Overview</a></li>
-
                         <li><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
@@ -181,9 +181,8 @@
                             <li><a href="${node['url']}settings/">Settings</a></li>
                         % endif
                     </ul>
-                </div><!-- end row -->
-            </div><!-- end container-fluid -->
-
+                </div><!-- /.navbar-collapse -->
+            </div><!-- /.container-fluid -->
         </nav>
     </header>
 
@@ -196,7 +195,9 @@
 
             $(".project-nav a").each(function () {
                 var href = $(this).attr('href');
-                if (path === href || (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
+                if (path === href ||
+                   (path.indexOf('files') > -1 && href.indexOf('files') > -1) ||
+                   (path.indexOf('wiki') > -1 && href.indexOf('wiki') > -1)) {
                     $(this).closest('li').addClass('active');
                 }
             });

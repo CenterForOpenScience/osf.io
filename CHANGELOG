@@ -2,7 +2,32 @@
 Changelog
 *********
 
-0.18.0 (unreleased)
+0.21.0 (unreleased)
+===================
+
+- OSF Files 2.0.
+- Improvements to search.
+
+0.20.0 (unreleased)
+===================
+
+- Onboarding interface on dashboard.
+
+0.19.0 (2014-10-22)
+===================
+
+- Wiki names have mixed-case page names.
+- Allow mixed casing in wiki page names.
+- Wiki rename events are logged.
+- Improved load time of Getting Started page, as well as some minor UI fixes.
+- Improvements and bugfixes to user settings pages.
+- Various UI fixes to the wiki.
+- Fix importing Dataverse authentication to a project.
+- Fix project "Link" counts and lists.
+- Modal dialogs are more visually consistent.
+- Language fixes on FAQ page.
+
+0.18.0 (2014-10-14)
 ===================
 
 - Paginate search results in Add Contributor widget.
@@ -10,8 +35,32 @@ Changelog
 - Add "ongoing" option to Education and Employment sections of user profile.
 - Improved mimetype detection when downloading a file through the Github
 addon.
+- Unread comment counts appear in comment tab.
+- Lots of bug fixes and minor UI improvements to the wiki.
+- Wiki page names can have punctuation and special characters.
+- Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
+- Allow multiple users to authenticate with the same Github credentials for
+the Github addon.
+- Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
+- Update required versions of requests, webassets, and bleach.
+
+Migrations
+----------
+
+- scripts/migrate_piwik_derived_nodes.py
+- scripts/migration/migrate_profile_dates.py
+- scripts/migrate_github_oauth_settings.py
+
+Schema changes
+--------------
+
+- Remove fork_list and registration_list fields from Node model. NOTE: A
+migration was NOT performed to remove these fields.
+- Add AddonGithubOauthSettings model.
+- Remove oauth_access_token and oauth_token_type fields from
+AddonGitHubUserSettings model.
 
 0.17.0 (2014-09-23)
 ===================
