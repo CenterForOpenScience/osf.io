@@ -27,16 +27,15 @@
         var self = this;
         self.params = params || {};
         self.minSearchLength = 2;
-        self.title = ko.observable('').extend({
-            maxLength: 200
-        });
-
+        self.title = ko.observable('');
         self.description = ko.observable();
         self.errorMessage = ko.observable('');
 
         self.submitForm = function () {
-            if (self.title().trim() === ''){
+            if (self.title().trim() === '') {
                 self.errorMessage('This field is required.');
+            } else if (self.title().length > 200) {
+                self.errorMessage('Please enter no more than 200 characters.');
             } else {
                 self.createProject();
             }
