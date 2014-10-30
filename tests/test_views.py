@@ -127,7 +127,7 @@ class TestProjectViews(OsfTestCase):
         ensure_schemas()
         self.user1 = AuthUserFactory()
         self.user1.save()
-        self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
+        self.consolidate_auth1 = Auth(user=self.user1)
         self.auth = self.user1.auth
         self.user2 = UserFactory()
         # A project has 2 contributors
@@ -136,9 +136,7 @@ class TestProjectViews(OsfTestCase):
             description='Honey-baked',
             creator=self.user1
         )
-        self.project.add_contributor(self.user1)
-        self.project.add_contributor(self.user2)
-        self.project.api_keys.append(api_key)
+        self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
     def test_edit_description(self):
