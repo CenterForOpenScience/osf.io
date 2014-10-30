@@ -990,11 +990,12 @@ def _serialize_node_search(node):
     title = node.title
     if node.is_registration:
         title += ' (registration)'
+
     return {
         'id': node._id,
         'title': title,
-        'firstAuthor': node.contributors[0].family_name,
-        'etal': len(node.contributors) > 1,
+        'firstAuthor': node.visible_contributors[0].family_name,
+        'etal': len(node.visible_contributors) > 1,
     }
 
 

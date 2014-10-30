@@ -139,7 +139,8 @@ class TestAUser(OsfTestCase):
         res = form.submit().maybe_follow()
         # Sees dashboard with projects and watched projects
         assert_in('Projects', res)
-        assert_in('Watched Projects', res)
+        assert_in('Watchlist', res)
+
 
     def test_sees_flash_message_on_bad_login(self):
         # Goes to log in page
@@ -638,7 +639,7 @@ class TestSearching(OsfTestCase):
         self.user.save()
         self.auth = ('test', api_key._primary_key)
 
-    @unittest.skip(reason='Changed to a full page app so webtests do not work.')
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_user_from_home_page(self):
         user = UserFactory()
         # Goes to home page
@@ -650,7 +651,7 @@ class TestSearching(OsfTestCase):
         # The username shows as a search result
         assert_in(user.fullname, res)
 
-    @unittest.skip(reason='Changed to a full page app so webtests do not work.')
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_public_project_from_home_page(self):
         project = ProjectFactory(title='Foobar Project', is_public=True)
         # Searches a part of the name
@@ -662,7 +663,7 @@ class TestSearching(OsfTestCase):
         # A link to the project is shown as a result
         assert_in('Foobar Project', res)
 
-    @unittest.skip(reason='Changed to a full page app so webtests do not work.')
+    @unittest.skip(reason='¯\_(ツ)_/¯ knockout.')
     def test_a_public_component_from_home_page(self):
         component = NodeFactory(title='Foobar Component', is_public=True)
         # Searches a part of the name

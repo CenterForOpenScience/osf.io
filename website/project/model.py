@@ -1503,6 +1503,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
+        # TODO: Throw error instead of returning?
         if not self.can_edit(auth):
             return
 
@@ -1647,7 +1648,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
             # Default to latest version
-            version = version or len(file_versions) - 1
+            version = version if version is not None else len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:

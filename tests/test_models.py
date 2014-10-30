@@ -186,7 +186,7 @@ class TestUser(OsfTestCase):
     def test_search_not_updated_for_unreg_users(self, update_search):
         u = User.create_unregistered(fullname=fake.name(), email=fake.email())
         u.save()
-        assert update_search.called
+        assert not update_search.called
 
     @mock.patch('framework.auth.core.User.update_search')
     def test_search_updated_for_registered_users(self, update_search):
@@ -742,6 +742,13 @@ class TestFileActions(OsfTestCase):
 
         contents, content_type = self.node.read_file_object(file_obj)
         assert_equal(contents, 'newcontent')
+
+    def test_get_file_obj_first_version(self):
+        self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')
+        self.node.add_file(Auth(self.node.creator), 'foo', 'newcontent', 128, 'md')
+        file_obj = self.node.get_file_object('foo', 0)
+        contents, content_type = self.node.read_file_object(file_obj)
+        assert_equal(contents, 'somecontent')
 
     def test_get_file(self):
         self.node.add_file(Auth(self.node.creator), 'foo', 'somecontent', 128, 'rst')

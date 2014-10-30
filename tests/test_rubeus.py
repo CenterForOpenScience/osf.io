@@ -31,12 +31,11 @@ class TestRubeus(OsfTestCase):
         self.project = ProjectFactory.build()
         self.consolidated_auth = Auth(user=self.project.creator)
         self.non_authenticator = UserFactory()
+        self.project.save()
         self.project.add_contributor(
             contributor=self.non_authenticator,
             auth=self.consolidated_auth,
         )
-        self.project.save()
-
         self.project.add_addon('s3', self.consolidated_auth)
         self.project.creator.add_addon('s3', self.consolidated_auth)
         self.node_settings = self.project.get_addon('s3')
