@@ -6,7 +6,7 @@
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
-                class="ob-clear-button" src="/static/img/close2.png">
+                class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
             <input
             data-bind="projectSearch: {
                             data: data,
@@ -21,8 +21,11 @@
         </div><!-- end .form-group -->
 
         <!-- Component search typeahead -->
-        <!-- ko if: showComponents -->
+        <!-- ko if: showComponents && hasSelectedProject() -->
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
+            <img
+                data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"
+                class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
             <input
             data-bind="projectSearch: {
                             data: componentURL,
@@ -30,7 +33,6 @@
                             onFetched: onFetchedComponents,
                             clearOn: cleared
                         },
-                    visible: hasSelectedProject(),
                     value: selectedComponentName,
                     attr: {disabled: hasSelectedComponent()}"
                 class="typeahead ob-typeahead-input form-control"
@@ -88,13 +90,13 @@
 
             <!-- File queue display -->
             <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
-                <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon">
+                <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
                 <div data-bind="text: filename" class="ob-dropzone-filename"></div>
                 <progress
                     data-bind="attr: {value: progress()}"
                         class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
-                    class="ob-clear-button" src="/static/img/close2.png">
+                    class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
             </div>
 
         </div><!-- end col-md -->
