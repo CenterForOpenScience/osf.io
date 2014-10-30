@@ -729,6 +729,37 @@ class TestChildrenViews(OsfTestCase):
         assert_equal(nodes[0]['title'], pointed.title)
         assert_equal(nodes[0]['id'], pointed._primary_key)
 
+    def test_get_children_filter_for_permissions(self):
+        # self.user has admin access to this project
+        project = ProjectFactory(creator=self.user)
+
+        # self.user only has read access to this project, which project points
+        # to
+        read_only_pointed =  ProjectFactory()
+        read_only_creator = read_only_pointed.creator
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        read_only_pointed.save()
+
+        # self.user only has read access to this project, which is a subproject
+        # of project
+        read_only = ProjectFactory()
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        project.nodes.append(read_only)
+
+
+        # self.user adds a pointer to read_only
+        project.add_pointer(read_only_pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 2)
+
+        url = project.api_url_for('get_children', permissions='write')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+
 
 class TestUserProfile(OsfTestCase):
 

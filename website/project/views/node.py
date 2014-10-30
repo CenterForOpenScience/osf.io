@@ -911,13 +911,19 @@ def get_summary(**kwargs):
 
 
 @must_be_contributor_or_public
-def get_children(**kwargs):
+def get_children(auth, **kwargs):
+    user = auth.user
     node_to_use = kwargs['node'] or kwargs['project']
-    return _render_nodes([
+    nodes = [
         node.node if isinstance(node, Pointer) else node
         for node in node_to_use.nodes
         if not node.is_deleted
-    ])
+    ]
+
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].lower().strip()
+        nodes = [node for node in nodes if perm in node.get_permissions(user)]
+    return _render_nodes(nodes)
 
 @must_be_contributor_or_public
 def get_folder_pointers(**kwargs):
