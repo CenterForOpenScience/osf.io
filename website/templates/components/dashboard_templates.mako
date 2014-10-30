@@ -3,6 +3,7 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
+        ## <pre data-bind="text: ko.toJSON({pIn: projectInput()}, null, 2)"></pre>
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
@@ -12,7 +13,7 @@
                             data: data,
                             onSelected: onSelectedProject
                         },
-                        value: selectedProjectName,
+                        value: projectInput,
                         attr: {disabled: hasSelectedProject()}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
@@ -33,7 +34,7 @@
                             onFetched: onFetchedComponents,
                             clearOn: cleared
                         },
-                    value: selectedComponentName,
+                    value: componentInput,
                     attr: {disabled: hasSelectedComponent()}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
@@ -73,7 +74,6 @@
 </li> <!-- end .ob-list -->
 </template>
 
-## TODO: Remove unnecessary IDs
 <template id="osf-ob-uploader">
 <li class="ob-list-item list-group-item">
     <div class="pointer">
@@ -107,11 +107,13 @@
             <osf-project-search
             params="data: data,
                     onSubmit: startUpload,
+                    onClear: clearMessages,
+                    onSelected: clearMessages,
                     submitTest: 'Upload'">
             </osf-project-search>
         </div>
     </div><!-- end row -->
-    <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
+    <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
 </li> <!-- end .ob-list -->
 </template>
 
