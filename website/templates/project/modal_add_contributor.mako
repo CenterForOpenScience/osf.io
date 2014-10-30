@@ -25,9 +25,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
+                        <div class="row search-contributor-links">
                             <div class="col-md-12">
-                                <div style="padding-bottom: 10px;">
+                                <div>
                                     <!-- ko if:parentId -->
                                         <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
                                     <!-- /ko -->
