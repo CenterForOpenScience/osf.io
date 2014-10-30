@@ -1,10 +1,10 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Getting Started</%def>
 <%def name="content()">
-    <div class='row'>
+    <div class="row">
         <div class="col-sm-3 nav-list-spy">
-            <div class="gs-sidebar hidden-print hidden-xs" role="complementary">
-                <ul data-spy="affix" data-offset-top="0" data-offset-bottom="270" class="nav gs-sidenav">
+            <div data-spy="affix" data-offset-top="0" data-offset-bottom="220" class="gs-sidebar hidden-print hidden-xs" role="complementary">
+                <ul class="nav gs-sidenav">
                     <li>
                         <a href="#start">Getting Started</a>
                         <ul class="nav">

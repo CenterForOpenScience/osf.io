@@ -1,6 +1,14 @@
 /* Body and structure
 -------------------------------------------------- */
 
+html, body {
+}
+
+body {
+    padding-top: 70px; /* body padding for fixed top nav */
+    position: relative; /* for bootstrap affix */
+}
+
 /*News page*/
 .spacer {
     height: 20px;
@@ -58,17 +66,14 @@
 .gs-sidebar .nav .nav>.active>a i {
     display: inline-block;
 }
-
-/* affixed sidenav */
-.gs-sidenav,
-.gs-sidenav.affix {
+/* affixed sidebar */
+.gs-sidebar,
+.gs-sidebar.affix,
+.gs-sidebar.affix-top {
     position: fixed;
-    top: 80px;
+    top: 70px;
 }
-.gs-sidenav.affix-top {
-    position: static;
-}
-.gs-sidenav.affix-bottom {
+.gs-sidebar.affix-bottom {
     position: relative;
 }
 
@@ -296,14 +301,6 @@ font-weight: bold;
 */
 
 /* Global Styles */
-
-html, body {
-  height:100%;
-}
-
-body {
-  padding-top: 70px; /* body padding for fixed top nav */
-}
 
 .img-home-portfolio,
 .img-customer,
