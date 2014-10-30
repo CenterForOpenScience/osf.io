@@ -21,7 +21,7 @@
         </div><!-- end .form-group -->
 
         <!-- Component search typeahead -->
-        <!-- ko if: showComponents && hasSelectedProject() -->
+        <!-- ko if: enableComponents && showComponents && hasSelectedProject() -->
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
             <img
                 data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"

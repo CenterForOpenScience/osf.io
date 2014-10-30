@@ -166,7 +166,8 @@
         /* Observables */
         // If params.enableComponents is passed in, use that value, otherwise default to true
         var enableComps = params.enableComponents;
-        self.showComponents = ko.observable(typeof enableComps !== 'undefined' ? enableComps : true);
+        self.enableComponents = typeof enableComps !== 'undefined' ? enableComps : true;
+        self.showComponents = ko.observable(self.enableComponents);
         self.selectedProject = ko.observable(null);
         self.selectedComponent = ko.observable(null);
         /* Computeds */
