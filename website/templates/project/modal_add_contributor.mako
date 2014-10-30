@@ -13,7 +13,7 @@
 
                     <!-- Find contributors -->
                     <form class='form' data-bind="submit: startSearch">
-                        <div class="row" style="padding-bottom: 10px;">
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="input-group">
                                     <input class='form-control'
