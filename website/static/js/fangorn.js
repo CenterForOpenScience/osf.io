@@ -29,10 +29,8 @@
     }
 }(this, function($, Treebeard){
 
-    // TODO: OSF does icons differently. write custom resolve icons. 
+    // Returns custom icons for OSF 
     function _fangornResolveIcon(item){
-        // this = treebeard object;
-        // Item = item acted on
         if (item.kind === "folder") {
             if (item.open) { 
                 return m("i.icon-folder-open-alt", " ");
@@ -45,14 +43,63 @@
         return m("i.icon-file-alt");
     }
 
+    // Returns custom toggle icons for OSF
+    function _resolveToggle(item){
+        var toggleMinus = m("i.icon-minus", " "),
+            togglePlus = m("i.icon-plus", " ");
+        if (item.kind === "folder") {
+            if (item.open) {
+                return toggleMinus;
+            }
+            return togglePlus;
+        }
+        return "";
+    }
+
+    function _showStatus (item, status){
+        $('.action-col').html();
+    }
+
+    function _uploadEvent (event, item, col){
+        // this = treebeard
+        event.stopPropagation();
+        this.dropzone.hiddenFileInput.click();
+        this.dropzoneItemCache = item; 
+        console.log("Upload Event triggered", this, event,  item, col);
+    }
+
+    function _downloadEvent (event, item, col) {
+        event.stopPropagation();
+        console.log("Download Event triggered", this, event, item, col);
+        // this = treebeard
+        window.location = item.data.urls.download;
+    }
+
     // TODO Action buttons; 
-    function _fangornActionColumn (){
-        var buttons = [ 
-                { title: "Download", "css" : 'btn btn-danger'},
-                { title : "View"}
-                ];
-       return buttons.map(function(btn){ 
-                    // return [ m('i', btn.title )]
+    function _fangornActionColumn (item, col){
+        var self = this; 
+        var buttons = [];
+        if (item.kind === "folder") {
+            buttons.push({ 
+                "name" : "",
+                "icon" : "icon-upload-alt",
+                "css" : "fangorn-clickable btn btn-default btn-xs",
+                "onclick" : _uploadEvent
+            });
+        }
+        if (item.kind === "item") {
+            buttons.push({ 
+                "name" : "",
+                "icon" : "icon-download-alt",
+                "css" : "btn btn-info btn-xs",
+                "onclick" : _downloadEvent
+            });
+        }
+        return buttons.map(function(btn){ 
+            return m("span", { "data-col" : item.id }, [ m('i', 
+                { "class" : btn.css, "onclick" : function(){ btn.onclick.call(self, event, item, col); } },
+                [ m('span', { "class" : btn.icon}, btn.name) ])
+            ]);
         }); 
     } 
 
@@ -66,11 +113,28 @@
             columns : [            // Defines columns based on data
                 {
                     title: "Name",
-                    width : "100%",
+                    width : "60%",
                     data : "name",  // Data field name
                     sort : true,
                     sortType : "text",
+                    filter : true,
                     folderIcons : true
+                },
+                {
+                    title : "Actions",
+                    width : "20%",
+                    sort : false,
+                    filter : false,
+                    css : "action-col",
+                    custom : _fangornActionColumn
+                },
+                {
+                    title : "Downloads",
+                    width : "20%",
+                    data  : 'downloads',
+                    sort : false,
+                    filter : false,
+                    css : ""
                 }
             ],
             showFilter : true,     // Gives the option to filter by showing the filter box.
@@ -145,11 +209,14 @@
                 // response = what's returned from the server
                 window.console.log("On add", this, treebeard, item, file, response);
             },
-            onselectrow : function (row, event) {
+            onselectrow : function (item, event) {
                 // this = treebeard object
                 // row = item selected
                 // event = mouse click event object
-                window.console.log("onselectrow", this, row, event);
+                window.console.log("onselectrow", this, item, event);
+                if(item.kind === "item"){
+                    window.location = item.data.urls.view;
+                }
             },
             ontogglefolder : function (item, event) {
                 // this = treebeard object
@@ -159,14 +226,18 @@
             },
             dropzone : {                                           // All dropzone options.
                 url: "/api/v1/project/",  // When users provide single URL for all uploads
-                dragstart : function (treebeard, event) {     // An example dropzone event to override.
-                    // this = dropzone object
-                    // treebeard = treebeard object
-                    // event = event passed in
-                    window.console.log("dragstart", this, treebeard, event);
+                //previewTemplate : '<div class="dz-preview dz-file-preview">     <div class="dz-details">        <div class="dz-size" data-dz-size></div>    </div>      <div class="dz-progress">       <span class="dz-upload" data-dz-uploadprogress></span>  </div>      <div class="dz-error-message">      <span data-dz-errormessage></span>  </div></div>',
+                clickable : '#treeGrid',
+                addRemoveLinks: false,
+                previewTemplate: '<div></div>',
+                
+                uploadprogress : function (file, progress, bytesSent){
+                    console.log("uploadProgress", this, arguments);
+                    _showStatus();
                 }
             },
             resolveIcon : _fangornResolveIcon,
+            resolveToggle : _resolveToggle,
             resolveUploadUrl : function (item) {  // Allows the user to calculate the url of each individual row
                 // this = treebeard object;
                 // Item = item acted on return item.data.ursl.upload
