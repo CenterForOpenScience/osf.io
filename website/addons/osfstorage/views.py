@@ -44,6 +44,15 @@ def osf_storage_request_upload_url(auth, node_addon, **kwargs):
         content_type = request.json['type']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+    if size > (node_addon.config.max_file_size):
+        raise HTTPError(
+            httplib.BAD_REQUEST,
+            data={
+                'message_short': 'File too large.',
+                'message_long': 'The file you are trying to upload exceeds '
+                'the maximum file size limit.',
+            },
+        )
     file_path = os.path.join(path, name)
     return utils.get_upload_url(node, user, size, content_type, file_path)
 

@@ -17,6 +17,8 @@ import markupsafe
 
 from framework.auth import Auth
 
+from website import settings
+
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -350,7 +352,7 @@ class TestUploadFile(OsfTestCase):
         self.project.reload()
         self.user.reload()
 
-    def request_upload_url(self, name, size, content_type, path=None):
+    def request_upload_url(self, name, size, content_type, path=None, **kwargs):
         return self.app.post_json(
             self.project.api_url_for(
                 'osf_storage_request_upload_url',
@@ -362,6 +364,7 @@ class TestUploadFile(OsfTestCase):
                 'type': content_type,
             },
             auth=self.project.creator.auth,
+            **kwargs
         )
 
     @mock.patch('website.addons.osfstorage.utils.get_upload_url')
@@ -397,6 +400,18 @@ class TestUploadFile(OsfTestCase):
             content_type,
             'instruments/' + name,
         )
+
+    @mock.patch('website.addons.osfstorage.utils.get_upload_url')
+    def test_request_upload_url_too_large(self, mock_get_url):
+        mock_get_url.return_value = 'http://brian.queen.com/'
+        name = 'red-special.png'
+        size = settings.ADDONS_AVAILABLE_DICT['osfstorage'].max_file_size + 1
+        content_type = 'image/png'
+        res = self.request_upload_url(
+            name, size, content_type, path='instruments',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 400)
 
     def test_request_upload_url_missing_args(self):
         res = self.app.post_json(
