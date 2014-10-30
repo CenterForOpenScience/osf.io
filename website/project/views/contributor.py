@@ -17,7 +17,7 @@ from framework.auth.signals import user_registered
 from framework.auth.forms import SetEmailAndPasswordForm, PasswordForm
 from framework.sessions import session
 
-from website import mails, language
+from website import mails, language, settings
 from website.project.model import unreg_contributor_added, has_anonymous_link
 from website.models import Node
 from website.profile import utils
@@ -117,15 +117,9 @@ def get_contributors_from_parent(auth, **kwargs):
     return {'contributors': contribs}
 
 
-@must_have_permission(ADMIN)
+@must_be_contributor_or_public
 def get_most_in_common_contributors(auth, **kwargs):
-    MAX_MOST_IN_COMMON_LENGTH = 15
-
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
-
     contrib_counts = Counter()
     node_contrib_ids = node.contributors._to_primary_keys()
 
@@ -135,9 +129,8 @@ def get_most_in_common_contributors(auth, **kwargs):
                 contrib_counts[contrib_id] += 1
 
     most_common_contribs = []
-
     for contrib_id, count in contrib_counts.most_common():
-        if len(most_common_contribs) >= MAX_MOST_IN_COMMON_LENGTH:
+        if len(most_common_contribs) >= settings.MAX_MOST_IN_COMMON_LENGTH:
             break
         contrib = User.load(contrib_id)
         if contrib.is_active():
@@ -147,17 +140,12 @@ def get_most_in_common_contributors(auth, **kwargs):
         utils.add_contributor_json(most_contrib, get_current_user())
         for most_contrib, count in sorted(most_common_contribs, key=lambda t: (-t[1], t[0].fullname))
     ]
-
     return {'contributors': contribs}
 
 
-@must_have_permission(ADMIN)
+@must_be_contributor_or_public
 def get_recently_added_contributors(auth, **kwargs):
-
     node = kwargs['node'] or kwargs['project']
-
-    if not node.can_view(auth):
-        raise HTTPError(http.FORBIDDEN)
 
     contribs = [
         utils.add_contributor_json(contrib, get_current_user())
@@ -165,7 +153,6 @@ def get_recently_added_contributors(auth, **kwargs):
         if contrib.is_active()
         if contrib._id not in node.contributors
     ]
-
     return {'contributors': contribs}
 
 
