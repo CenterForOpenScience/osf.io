@@ -129,6 +129,7 @@
         margin-top: 50px;
     }
 }
+.headOne, /* TODO: cleanup getting started */
 .hpHeadOne {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing: 1px;
@@ -137,6 +138,7 @@
 }
 /* >=sm */
 @media (min-width: 768px) {
+    .headOne, /* TODO: cleanup getting started */
     .hpHeadOne {
        font-size: 50px;
     }
@@ -164,6 +166,13 @@
     color: #4089C7;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
+}
+.subHeadFour, /* TODO: cleanup getting started */
+.hpSubHeadFour {
+    font-family: 'Carrois Gothic', Helvetica;
+    letter-spacing:1px;
+    font-size: 36px;
+    color: black;
 }
 .hpSignUp {
     background: #aad4f7;
