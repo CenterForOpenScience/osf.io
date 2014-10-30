@@ -23,7 +23,7 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
-                                    <!-- ko if: count() > 0 -->
+
                                     <!-- ko if: $parent.category().name() === name() -->
                                             <li class="active">
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
@@ -34,7 +34,7 @@
                                                 <a data-bind="click: $parent.filter.bind($data)">{{ display() }}<span class="badge pull-right">{{count()}}</span></a>
                                             </li>
                                         <!-- /ko -->
-                                    <!-- /ko -->
+
                                 </ul>
                             </div>
                         </div>
@@ -66,7 +66,7 @@
                     <!-- /ko -->
                     <div class="col-md-9">
                         <!-- ko if: searchStarted() && !totalCount() -->
-                        <div class="results hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
+                        <div class="well hidden" data-bind="css: {hidden: totalCount() }">No results found.</div>
                         <!-- /ko -->
                         <!-- ko if: totalCount() -->
                         <div data-bind="foreach: results">
