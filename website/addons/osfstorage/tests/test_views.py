@@ -9,20 +9,36 @@ from tests.factories import ProjectFactory
 
 from website.addons.osfstorage.tests import factories
 
-import hashlib
 import urlparse
+import collections
 
 import furl
 import markupsafe
-from cloudstorm import sign
 
 from framework.auth import Auth
-from framework.analytics import get_basic_counters
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
 from website.addons.osfstorage import settings as osf_storage_settings
+
+
+Delta = collections.namedtuple('Delta', ['getter', 'checker'])
+
+
+class AssertDeltas(object):
+
+    def __init__(self, deltas):
+        self.deltas = deltas
+        self.original = []
+
+    def __enter__(self):
+        self.original = [delta.getter() for delta in self.deltas]
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        for idx, delta in enumerate(self.deltas):
+            final = delta.getter()
+            assert delta.checker(self.original[idx]) == final
 
 
 def create_record_with_version(path, node_settings, **kwargs):
@@ -525,7 +541,18 @@ class TestDownloadFile(OsfTestCase):
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        res = self.download_file(self.path)
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value + 1
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda value: value + 1
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.download_file(self.path)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
         mock_get_url.assert_called_with(
@@ -540,85 +567,89 @@ class TestDownloadFile(OsfTestCase):
         versions = [factories.FileVersionFactory() for _ in range(3)]
         self.record.versions.extend(versions)
         self.record.save()
-        count_record = utils.get_download_count(self.record, self.project)
-        count_version = utils.get_download_count(self.record, self.project, 3)
-        res = self.download_file(path=self.path, version=3)
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value + 1
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda value: value + 1
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.download_file(path=self.path, version=3)
         assert_equal(res.status_code, 302)
         assert_equal(res.location, mock_get_url.return_value)
         mock_get_url.assert_called_with(3, versions[1], self.record)
-        assert_equal(
-            utils.get_download_count(self.record, self.project),
-            count_record + 1,
-        )
-        assert_equal(
-            utils.get_download_count(self.record, self.project, 3),
-            count_version + 1,
-        )
 
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_invalid_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
-        count_record = utils.get_download_count(self.record, self.project)
-        count_version = utils.get_download_count(self.record, self.project, 3)
-        res = self.download_file(
-            path=self.path, version=3,
-            expect_errors=True,
-        )
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, 3),
+                lambda value: value
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.download_file(
+                path=self.path, version=3,
+                expect_errors=True,
+            )
         assert_equal(res.status_code, 404)
         assert_false(mock_get_url.called)
-        assert_equal(
-            utils.get_download_count(self.record, self.project),
-            count_record,
-        )
-        assert_equal(
-            utils.get_download_count(self.record, self.project, 3),
-            count_version,
-        )
 
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_pending_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         self.record.create_pending_version(self.user, '9d989e8')
-        count_record = utils.get_download_count(self.record, self.project)
-        count_version = utils.get_download_count(self.record, self.project, 2)
-        res = self.download_file(
-            path=self.path, version=2,
-            expect_errors=True,
-        )
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, 2),
+                lambda value: value
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.download_file(
+                path=self.path, version=2,
+                expect_errors=True,
+            )
         assert_equal(res.status_code, 404)
         assert_in('File upload in progress', res)
         assert_false(mock_get_url.called)
-        assert_equal(
-            utils.get_download_count(self.record, self.project),
-            count_record,
-        )
-        assert_equal(
-            utils.get_download_count(self.record, self.project, 2),
-            count_version,
-        )
 
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_failed_version(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         self.record.create_pending_version(self.user, '9d989e8')
         self.record.cancel_pending_version('9d989e8')
-        count_record = utils.get_download_count(self.record, self.project)
-        count_version = utils.get_download_count(self.record, self.project, 2)
-        res = self.download_file(
-            path=self.path, version=2,
-            expect_errors=True,
-        )
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, 2),
+                lambda value: value
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.download_file(
+                path=self.path, version=2,
+                expect_errors=True,
+            )
         assert_equal(res.status_code, 404)
         assert_in('File upload failed', res)
         assert_false(mock_get_url.called)
-        assert_equal(
-            utils.get_download_count(self.record, self.project),
-            count_record,
-        )
-        assert_equal(
-            utils.get_download_count(self.record, self.project, 2),
-            count_version,
-        )
 
 
 class TestDeleteFile(OsfTestCase):

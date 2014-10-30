@@ -10,7 +10,7 @@ from flask import request
 
 from framework.flask import redirect
 from framework.exceptions import HTTPError
-from framework.analytics import update_counters
+from framework.analytics import update_counter
 
 from website.models import User
 from website.project.decorators import (
@@ -278,14 +278,23 @@ def osf_storage_view_file(auth, path, node_addon, **kwargs):
     return ret
 
 
+def update_analytics(node, path, version_idx):
+    """
+    :param Node node: Root node to update
+    :param str path: Path to file
+    :param int version_idx: One-based version index
+    """
+    update_counter('download:{0}:{1}'.format(node._id, path))
+    update_counter('download:{0}:{1}:{2}'.format(node._id, path, version_idx))
+
+
 @must_be_contributor_or_public
 @must_have_addon('osfstorage', 'node')
-@update_counters(u'download:{target_id}:{path}:{version}')
-@update_counters(u'download:{target_id}:{path}')
 def osf_storage_download_file(path, node_addon, **kwargs):
-    version = request.args.get('version')
-    version_idx, version, record = get_version(path, node_addon, version)
+    version_query = request.args.get('version')
+    version_idx, version, record = get_version(path, node_addon, version_query)
     url = utils.get_download_url(version_idx, version, record)
+    update_analytics(node_addon.owner, path, version_idx)
     return redirect(url)
 
 
