@@ -24,7 +24,7 @@
     // Custom folder icon indicating private component
     Rubeus.Html.folderIconPrivate = '<img class="hg-icon hg-addon-icon" src="/static/img/hgrid/fatcowicons/folder_delete.png">';
     // Folder icon for pointers/links
-    Rubeus.Html.folderIconPointer = '<i class="icon-hand-right"></i>';
+    Rubeus.Html.folderIconPointer = '<i class="icon-link"></i>';
     // Class for folder name
     Rubeus.Html.folderTextClass = 'hg-folder-text';
 
