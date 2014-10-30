@@ -725,7 +725,8 @@ class TestChildrenViews(OsfTestCase):
         nodes = res.json['nodes']
         assert_equal(len(nodes), 1)
         assert_equal(nodes[0]['title'], pointed.title)
-        assert_equal(nodes[0]['id'], pointed._primary_key)
+        pointer = Pointer.find_one(Q('node', 'eq', pointed))
+        assert_equal(nodes[0]['id'], pointer._primary_key)
 
     def test_get_children_filter_for_permissions(self):
         # self.user has admin access to this project

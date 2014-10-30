@@ -915,7 +915,7 @@ def get_children(auth, **kwargs):
     user = auth.user
     node_to_use = kwargs['node'] or kwargs['project']
     nodes = [
-        node.node if isinstance(node, Pointer) else node
+        node
         for node in node_to_use.nodes
         if not node.is_deleted
     ]
