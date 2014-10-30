@@ -51,9 +51,9 @@
         <!--Length of the stacked bar is normalized over all projects -->
         % if not summary['anonymous']:
             <div class="progress progress-user-activity">
-                <div class="progress-bar progress-bar-success" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
+                <div class="progress-bar progress-bar-success ${'last' if not summary['non_ua'] else ''}" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
                 % if summary['non_ua']:
-                    <div class="progress-bar progress-bar-info" style="width: ${summary['non_ua']}%"></div>
+                    <div class="progress-bar progress-bar-info last" style="width: ${summary['non_ua']}%"></div>
                 % endif
             </div>
             <span class="text-muted">${summary['nlogs']} contributions</span>
