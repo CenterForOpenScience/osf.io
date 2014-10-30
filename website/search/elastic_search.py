@@ -294,7 +294,7 @@ def delete_all():
     for index in INDICES:
         try:
             elastic.delete_index(index)
-        except pyelasticsearch.exceptions.ElasticHttpNotFoundError as e:
+        except pyelasticsearch.exceptions.ElasticHttpNotFoundError:
             logger.warning("Index '{}' does not exist and was unable to be deleted".format(index))
 
 
