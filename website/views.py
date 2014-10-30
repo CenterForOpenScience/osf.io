@@ -17,10 +17,9 @@ from framework.auth import Auth, get_current_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import (RegistrationForm, SignInForm,
                                   ForgotPasswordForm, ResetPasswordForm)
-from framework.sessions import get_session, set_session
 from framework.guid.model import GuidStoredObject
 from website.models import Guid, Node
-from website.util import web_url_for, rubeus
+from website.util import web_url_for, rubeus, permissions
 from website.project import model, new_dashboard
 from website import settings
 
@@ -38,6 +37,7 @@ def _rescale_ratio(nodes):
     """
     if not nodes:
         return 0
+    # TODO: Don't use get_current_user. It is deprecated.
     user = get_current_user()
     counts = [
         len(node.logs)
@@ -49,23 +49,30 @@ def _rescale_ratio(nodes):
     return 0.0
 
 
-def _render_node(node):
+def _render_node(node, user=None):
     """
 
     :param node:
     :return:
 
     """
+    perm = None
+    if user:
+        perm_list = node.get_permissions(user)
+        perm = permissions.reduce_permissions(perm_list)
     return {
         'title': node.title,
         'id': node._primary_key,
         'url': node.url,
         'api_url': node.api_url,
         'primary': node.primary,
+        'date_modified': utils.iso8601format(node.date_modified),
+        'category': node.category,
+        'permissions': perm,  # A string, e.g. 'admin', or None
     }
 
 
-def _render_nodes(nodes):
+def _render_nodes(nodes, user=None):
     """
 
     :param nodes:
@@ -73,7 +80,7 @@ def _render_nodes(nodes):
     """
     ret = {
         'nodes': [
-            _render_node(node)
+            _render_node(node, user=user)
             for node in nodes
         ],
         'rescale_ratio': _rescale_ratio(nodes),
@@ -220,6 +227,15 @@ def get_all_registrations_smart_folder(auth, **kwargs):
 
 @must_be_logged_in
 def get_dashboard_nodes(auth, **kwargs):
+    """Get summary information about the current user's dashboard nodes.
+
+    :param-query no_components: Exclude components from response.
+        NOTE: By default, components will only be shown if the current user
+        is contributor on a comonent but not its parent project. This query
+        parameter forces ALL components to be excluded from the request.
+    :param-query permissions: Filter upon projects for which the current user
+        has the specified permissions. Examples: 'write', 'admin'
+    """
     user = auth.user
 
     contributed = user.node__contributed  # nodes user contributed to
@@ -231,18 +247,33 @@ def get_dashboard_nodes(auth, **kwargs):
         Q('is_folder', 'eq', False)
     )
 
-    comps = contributed.find(
-        # components only
-        Q('category', 'ne', 'project') &
-        # parent is not in the nodes list
-        Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
-        # exclude deleted nodes
-        Q('is_deleted', 'eq', False) &
-        # exclude registrations
-        Q('is_registration', 'eq', False)
-    )
+    # TODO: Store truthy values in a named constant available site-wide
+    if request.args.get('no_components') not in [True, 'true', 'True', '1', 1]:
+        comps = contributed.find(
+            # components only
+            Q('category', 'ne', 'project') &
+            # parent is not in the nodes list
+            Q('__backrefs.parent.node.nodes', 'nin', nodes.get_keys()) &
+            # exclude deleted nodes
+            Q('is_deleted', 'eq', False) &
+            # exclude registrations
+            Q('is_registration', 'eq', False)
+        )
+    else:
+        comps = []
 
-    return _render_nodes(list(nodes) + list(comps))
+    nodes = list(nodes) + list(comps)
+    if request.args.get('permissions'):
+        perm = request.args['permissions'].strip().lower()
+        if perm not in permissions.PERMISSIONS:
+            raise HTTPError(http.BAD_REQUEST, dict(
+                message_short='Invalid query parameter',
+                message_oong='{0} is not in {1}'.format(perm, permissions.PERMISSIONS)
+            ))
+        response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
+    else:
+        response_nodes = nodes
+    return _render_nodes(response_nodes, user=user)
 
 
 @must_be_logged_in
@@ -250,16 +281,8 @@ def dashboard(auth):
     user = auth.user
     dashboard_folder = find_dashboard(user)
     dashboard_id = dashboard_folder._id
-    session = get_session()
-    if 'seen_dashboard' in session.data:
-        seen_dashboard = session.data['seen_dashboard']
-    else:
-        seen_dashboard = False
-    session.data['seen_dashboard'] = True
-    set_session(session)
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': dashboard_id,
-            'seen_dashboard': seen_dashboard,
             }
 
 
