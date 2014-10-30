@@ -23,7 +23,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.project.model import has_anonymous_link, resolve_pointer
+from website.project.model import has_anonymous_link, get_pointer_parent
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -914,7 +914,7 @@ def get_summary(**kwargs):
 def get_children(**kwargs):
     node_to_use = kwargs['node'] or kwargs['project']
     return _render_nodes([
-        node
+        node.node if isinstance(node, Pointer) else node
         for node in node_to_use.nodes
         if not node.is_deleted
     ])
@@ -1256,7 +1256,7 @@ def abbrev_authors(node):
 
 
 def serialize_pointer(pointer, auth):
-    node = resolve_pointer(pointer)
+    node = get_pointer_parent(pointer)
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1279,5 +1279,5 @@ def get_pointed(auth, **kwargs):
     return {'pointed': [
         serialize_pointer(each, auth)
         for each in node.pointed
-        if not resolve_pointer(each).is_folder
+        if not get_pointer_parent(each).is_folder
     ]}
