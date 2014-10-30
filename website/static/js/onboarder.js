@@ -100,7 +100,7 @@
                 register: node.url + 'register/',
                 upload: node.api_url + 'osffiles/',
                 files: node.url + 'files/',
-                children: node.api_url + 'get_children/'
+                children: node.api_url + 'get_children/?permissions=write'
             }
         };
     }

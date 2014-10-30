@@ -125,13 +125,10 @@ class TestProjectViews(OsfTestCase):
     def setUp(self):
         super(TestProjectViews, self).setUp()
         ensure_schemas()
-        self.user1 = UserFactory.build()
-        # Add an API key for quicker authentication
-        api_key = ApiKeyFactory()
-        self.user1.api_keys.append(api_key)
+        self.user1 = AuthUserFactory()
         self.user1.save()
         self.consolidate_auth1 = Auth(user=self.user1, api_key=api_key)
-        self.auth = ('test', api_key._primary_key)
+        self.auth = self.user1.auth
         self.user2 = UserFactory()
         # A project has 2 contributors
         self.project = ProjectFactory(
@@ -699,6 +696,69 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert_in('fork_count', res.json['node'])
         assert_equal(1, res.json['node']['fork_count'])
+
+
+class TestChildrenViews(OsfTestCase):
+
+    def setUp(self):
+        OsfTestCase.setUp(self)
+        self.user = AuthUserFactory()
+
+    def test_get_children(self):
+        project = ProjectFactory(creator=self.user)
+        child = NodeFactory(project=project, creator=self.user)
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], child._primary_key)
+
+    def test_get_children_includes_pointers(self):
+        project = ProjectFactory(creator=self.user)
+        pointed = ProjectFactory()
+        project.add_pointer(pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['title'], pointed.title)
+        assert_equal(nodes[0]['id'], pointed._primary_key)
+
+    def test_get_children_filter_for_permissions(self):
+        # self.user has admin access to this project
+        project = ProjectFactory(creator=self.user)
+
+        # self.user only has read access to this project, which project points
+        # to
+        read_only_pointed =  ProjectFactory()
+        read_only_creator = read_only_pointed.creator
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        read_only_pointed.save()
+
+        # self.user only has read access to this project, which is a subproject
+        # of project
+        read_only = ProjectFactory()
+        read_only_pointed.add_contributor(self.user, auth=Auth(read_only_creator), permissions=['read'])
+        project.nodes.append(read_only)
+
+
+        # self.user adds a pointer to read_only
+        project.add_pointer(read_only_pointed, Auth(self.user))
+        project.save()
+
+        url = project.api_url_for('get_children')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 2)
+
+        url = project.api_url_for('get_children', permissions='write')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
 
 
 class TestUserProfile(OsfTestCase):
