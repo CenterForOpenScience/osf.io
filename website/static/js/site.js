@@ -289,6 +289,7 @@
 
         // Build tooltips on user activity widgets
         $('.progress-user-activity [data-toggle="tooltip"]').tooltip();
+        $('.progress-user-activity').find('.progress-bar:last').addClass('last');
         $('[rel=tooltip]').tooltip({
             placement:'bottom'
         });

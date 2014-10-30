@@ -52,7 +52,9 @@
         % if not summary['anonymous']:
             <div class="progress progress-user-activity">
                 <div class="progress-bar progress-bar-success" style="width: ${summary['ua']}%"  data-toggle="tooltip" title="${user_full_name} made ${summary['ua_count']} contributions"></div>
-                <div class="progress-bar progress-bar-info" style="width: ${summary['non_ua']}%"></div>
+                % if summary['non_ua']:
+                    <div class="progress-bar progress-bar-info" style="width: ${summary['non_ua']}%"></div>
+                % endif
             </div>
             <span class="text-muted">${summary['nlogs']} contributions</span>
         % endif
