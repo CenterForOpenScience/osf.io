@@ -51,7 +51,7 @@
         var iframe = document.createElement('iframe');
         iframe.className += 'youtube-loader-embedded';
         iframe.id = 'ytplayer';
-        iframe.setAttribute('src', 'https://www.youtube.com/embed/' + this.id + '?autoplay=1&autohide=1&border=0&wmode=opaque&enablejsapi=1&hd=1&showinfo=0');
+        iframe.setAttribute('src', '//www.youtube.com/embed/' + this.id + '?autoplay=1&autohide=1&border=0&wmode=opaque&enablejsapi=1&hd=1&showinfo=0');
         iframe.setAttribute('allowfullscreen', '');
         iframe.setAttribute('frameborder', '0');
         iframe.setAttribute('type', 'text/html');
@@ -64,7 +64,7 @@
         var player = players[i];
 
         var img = document.createElement('img');
-        img.setAttribute('src', 'http://i.ytimg.com/vi/' + player.id + '/hqdefault.jpg');
+        img.setAttribute('src', '//i.ytimg.com/vi/' + player.id + '/hqdefault.jpg');
         img.setAttribute('class', 'thumb');
 
         var div = document.createElement('div');

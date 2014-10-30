@@ -482,8 +482,8 @@ class Pointer(StoredObject):
             )
         )
 
-def resolve_pointer(pointer):
-    """Given a `Pointer` object, return the node that it resolves to.
+def get_pointer_parent(pointer):
+    """Given a `Pointer` object, return its parent node.
     """
     # The `parent_node` property of the `Pointer` schema refers to the parents
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
@@ -1201,7 +1201,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_points(self, folders=False, deleted=False, resolve=True):
         ret = []
         for each in self.pointed:
-            pointer_node = resolve_pointer(each)
+            pointer_node = get_pointer_parent(each)
             if not folders and pointer_node.is_folder:
                 continue
             if not deleted and pointer_node.is_deleted:
@@ -1501,6 +1501,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         :data: Form data
 
         """
+        # TODO: Throw error instead of returning?
         if not self.can_edit(auth):
             return
 
@@ -1643,7 +1644,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
             # Default to latest version
-            version = version or len(file_versions) - 1
+            version = version if version is not None else len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:
