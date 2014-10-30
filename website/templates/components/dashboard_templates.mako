@@ -96,7 +96,7 @@
                     data-bind="attr: {value: progress()}"
                         class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
-                    class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
+                    class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
             </div>
 
         </div><!-- end col-md -->
