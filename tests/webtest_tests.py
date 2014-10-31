@@ -10,6 +10,8 @@ from nose.tools import *  # PEP8 asserts
 
 from modularodm import Q
 
+from framework.mongo.utils import to_mongo_key
+
 from framework.auth.core import User, Auth
 from tests.base import OsfTestCase, fake
 from tests.factories import (UserFactory, AuthUserFactory, ProjectFactory,
@@ -286,12 +288,13 @@ class TestAUser(OsfTestCase):
 
     def test_wiki_page_name_non_ascii(self):
         project = ProjectFactory(creator=self.user)
-        non_ascii = 'WöRlÐé'
-        res = self.app.get('/{0}/wiki/{1}/'.format(
+        non_ascii = to_mongo_key('WöRlÐé')
+        self.app.get('/{0}/wiki/{1}/'.format(
             project._primary_key,
             non_ascii
         ), auth=self.auth)
-        assert_in('No wiki content', res)
+        project.update_node_wiki(non_ascii, 'new content', Auth(self.user))
+        assert_in(non_ascii, project.wiki_pages_current)
 
     def test_noncontributor_cannot_see_wiki_if_no_content(self):
         user2 = UserFactory()
@@ -301,6 +304,14 @@ class TestAUser(OsfTestCase):
         res = self.app.get(project.url).maybe_follow()
         # Should not see wiki widget (since non-contributor and no content)
         assert_not_in('No wiki content', res)
+
+    def test_wiki_does_not_exist(self):
+        project = ProjectFactory(creator=self.user)
+        res = self.app.get('/{0}/wiki/{1}/'.format(
+            project._primary_key,
+            'not a real page yet',
+        ), auth=self.auth)
+        assert_in('This wiki page does not currently exist.', res)
 
     def test_sees_own_profile(self):
         res = self.app.get('/profile/', auth=self.auth)
