@@ -11,7 +11,7 @@
             <p>
                 <span id="downloadButtonScope">
                 <a
-                        data-bind="attr: {href: download_url}"
+                        data-bind="attr: {href: downloadURL}"
                         class="btn btn-success btn-md"
                     >Download <i class="icon-download-alt" ></i>
                 </a></span>

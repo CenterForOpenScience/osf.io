@@ -10,29 +10,28 @@
     }
 }(this, function(ko, $) {
     'use strict';
-    ko.punches.enableAll();
     ko.punches.attributeInterpolationMarkup.enable();
 
-    function DownloadFileViewModel(url, download_url) {
+    function DownloadFileViewModel(url, downloadURL) {
         var self = this;
 
-        self.download_url = ko.observable(download_url);
+        self.downloadURL = ko.observable(downloadURL);
 
         $.ajax({
             url: url,
             type: 'GET',
             dataType: 'json'
         }).done(function(response) {
-            if(self.download_url === ''){
-                self.download_url(response.download_url);
+            if(self.downloadURL === ''){
+                self.downloadURL(response.downloadURL);
             }
         }).fail(
             $.osf.handleJSONError
         );
     }
     // Public API
-    function DownloadFile(selector, url, download_url) {
-        this.viewModel = new DownloadFileViewModel(url, download_url);
+    function DownloadFile(selector, url, downloadURL) {
+        this.viewModel = new DownloadFileViewModel(url, downloadURL);
         $.osf.applyBindings(this.viewModel, selector);
     }
 
