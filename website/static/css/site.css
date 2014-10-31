@@ -1166,7 +1166,7 @@ h1.unavailable {
 @media (min-width: 768px) and (max-width: 991px) {
     /* wrap dl in col-sm-* grid layout */
     dl.activity-log dt {
-        float: none;
+        float: inherit;
         width: inherit;
         text-align: inherit;
     }
