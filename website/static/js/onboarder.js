@@ -80,7 +80,6 @@
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
         });
-        $inputElem.data('typeahead').options.minLength = 0;
         var onFetched = ko.unwrap(params.onFetched);
         if (onFetched) {
             onFetched(myProjects);
@@ -542,4 +541,15 @@
         viewModel: OBUploaderViewModel,
         template: {element: 'osf-ob-uploader'}
     });
+
+
+    function OBGoToViewModel(params) {
+        var self = this;
+        self.params = params;
+        self.data = params.data || DEFAULT_FETCH_URL;
+        self.onSubmit = function(selectedProject, selectedComponent) {
+            var node = selectedComponent || selectedProject;
+            window.location = selected.urls.web;
+        };
+    }
 }));

@@ -46,7 +46,9 @@
         <div class="tab-content" >
             <div class="tab-pane active" id="quicktasks">
                 <ul class="ob-widget-list"> <!-- start onboarding -->
-                    ## <%include file="ob_new_project.mako"/>
+                    <div id="obGoToProject">
+                        <osf-ob-goto params="data: nodes"></osf-ob-register>
+                    </div>
                     <div id="projectCreate">
                         <li id="obNewProject" class="ob-list-item list-group-item">
 
