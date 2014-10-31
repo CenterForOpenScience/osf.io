@@ -94,7 +94,7 @@
                 <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
                 <div data-bind="text: filename" class="ob-dropzone-filename"></div>
                 <progress
-                    data-bind="attr: {value: progress()}"
+                    data-bind="attr: {value: progress()}, visible: showProgress()"
                         class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
                     class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
