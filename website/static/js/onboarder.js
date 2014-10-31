@@ -410,9 +410,8 @@
         self.errorMessage = ko.observable('');
         self.enableUpload = ko.observable(true);
         self.filename = ko.observable('');
-        self.iconSrc = ko.observable('//:0');
+        self.iconSrc = ko.observable('');
         self.uploadCount = ko.observable(1);
-        self.disableUpload = ko.observable(false);
         self.disableComponents = ko.observable(false);
         // Flashed messages
         self.message = ko.observable('');
@@ -446,10 +445,19 @@
             self.messageClass('text-info');
         };
         self.clearDropzone = function() {
+            if (self.dropzone.getUploadingFiles().length) {
+                self.changeMessage('Upload canceled.', 'text-info');
+            } else {
+                self.clearMessages();
+            }
             self.enableUpload(true);
-            self.dropzone.removeAllFiles();
+            // Pass true so that pending uploads are canceled
+            self.dropzone.removeAllFiles(true);
+            self.filename('');
+            self.iconSrc('');
+            self.progress = ko.observable(0);
+            self.showProgress(false);
             self.uploadCount(1);
-            self.clearMessages();
         };
         self.onFetchedComponents = function(components) {
             if (!components.length) {
@@ -485,27 +493,22 @@
                 self.progress(progress);
             },
             parallelUploads: 1,
-
+            // Don't use dropzone's default preview
+            previewsContainer: false,
+            // Cusom error messages
+            dictFileTooBig: 'File is too big ({{filesize}} MB). Max filesize: {{maxFilesize}} MB.',
+            // Set up listeners on initialization
             init: function() {
                 var dropzone = this;
 
                 // file add error logic
-                this.on('error', function(file){
-                    var fileName = file.name;
-                    var fileSize = file.size;
+                this.on('error', function(file, message){
                     dropzone.removeFile(file);
                     if (dropzone.files.length === 0){
                         self.enableUpload(true);
-                        dropzone.removeAllFiles();
+                        dropzone.removeAllFiles(true);
                     }
-                    if (fileSize > dropzone.options.maxFilesize){
-                        self.changeMessage(fileName + ' is too big (max = ' +
-                                         dropzone.options.maxFilesize +
-                                         ' MB) and was not added to the upload queue.', 'text-danger');
-                    } else {
-                        self.changeMessage(fileName + ' could not be added to the upload queue', 'text-danger');
-                        Raven.captureMessage('Could not upload: ' + fileName);
-                    }
+                    self.changeMessage(message, 'text-danger');
                 });
                 this.on('drop',function(){ // clear errors on drop or click
                     self.clearMessages();
