@@ -52,6 +52,6 @@
 
         </dd>
     </dl><!-- end foreach logs -->
-    <a class="moreLogs" data-bind="click: moreLogs, visible: enableMoreLogs">more</a>
+    <a class="btn btn-link pull-right"data-bind="click: moreLogs, visible: enableMoreLogs">More...</a>
 </div><!-- end #logScope -->
 <%include file="_log_templates.mako"/>
