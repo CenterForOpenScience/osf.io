@@ -65,7 +65,7 @@
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
-                        submitTest: 'Continue registration...'">
+                        submitText: 'Continue registration...'">
                 </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
@@ -108,7 +108,7 @@
                     onSubmit: startUpload,
                     onClear: clearMessages,
                     onSelected: clearMessages,
-                    submitTest: 'Upload'">
+                    submitText: 'Upload'">
             </osf-project-search>
         </div>
     </div><!-- end row -->
@@ -147,4 +147,18 @@
         </div>
     </div>
 </form>
+</template>
+
+<template id="osf-ob-goto">
+<li class="ob-list-item list-group-item">
+    <div class="row">
+        <div class="col-md-12" >
+            <osf-project-search
+            params="data: data,
+                    onSubmit: onSubmit,
+                    submitText: 'Go to project'">
+            </osf-project-search>
+        </div><!-- end col-md -->
+    </div><!-- end row -->
+</li> <!-- end .ob-list -->
 </template>
