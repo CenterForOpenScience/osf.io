@@ -124,7 +124,7 @@
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+            <input class="form-control" type="text" name="title" maxlength="200" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
@@ -141,7 +141,7 @@
     <br />
     <div class="row">
         <div class="col-md-12">
-            <button class="btn btn-primary pull-right" type="submit" data-bind="enable: title.isValid()" disabled>Create</button>
+            <button class="btn btn-primary pull-right" type="submit">Create</button>
         </div>
     </div>
 </form>
