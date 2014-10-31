@@ -17,6 +17,7 @@ from website import settings
 from website.filters import gravatar
 from website.models import User, Node
 from website.search import exceptions
+from website.search.util import build_query
 
 logger = logging.getLogger(__name__)
 
@@ -320,7 +321,7 @@ def delete_doc(elastic_document_id, node, index='website'):
 
 
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=[], current_user=None):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -335,51 +336,14 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
 
     """
     start = (page * size)
-    query.replace(" ", "_")
-    query = re.sub(r'[\-\+]', '', query)
-    query = re.split(r'\s+', query)
-    bool_filter = {
-        'must': [],
-        'should': [],
-        'must_not': [],
-    }
-    if exclude is not None:
-        for excluded in exclude:
-            bool_filter['must_not'].append({
-                'term': {
-                    'id': excluded._id
-                }
-            })
+    items = re.split(r'\s+', query)
+    query = ''
 
-    if len(query) > 1:
-        for item in query:
-            bool_filter['must'].append({
-                'prefix': {
-                    'user': item.lower()
-                }
-            })
-    else:
-        bool_filter['must'].append({
-            'prefix': {
-                'user': query[0].lower()
-            }
-        })
+    query = " AND user:".join('{}~'.format(item) for item in items) + " NOT user:".join(exclude)
 
-    query = {
-        'query': {
-            'filtered': {
-                'filter': {
-                    'bool': bool_filter
-                }
-            }
-        },
-        'from': start,
-        'size': size,
-    }
-
-    results = elastic.search(query, index='website')
-    docs = [hit['_source'] for hit in results['hits']['hits']]
-    pages = math.ceil(results[u'hits'][u'total'] / size)
+    results = search(build_query(query, start=start, size=size), index='website', search_type='user')
+    docs = results['results']
+    pages = math.ceil(results['counts']['total'] / size)
 
     users = []
     for doc in docs:
@@ -424,7 +388,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
     return \
         {
             'users': users,
-            'total': results[u'hits'][u'total'],
+            'total': results['counts']['total'],
             'pages': pages,
             'page': page,
         }
