@@ -42,7 +42,7 @@ def read_capabilities(filename):
             })
         terms = [
             line[col]
-            for line in lines[row+1:]
+            for line in lines[row + 1:]
             if len(line) > col
         ]
         rv[addon] = {

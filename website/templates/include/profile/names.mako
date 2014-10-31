@@ -10,12 +10,12 @@
         <span class="help-block">
             Your full name, above, is the name that will be displayed in your profile.
             To control the way your name will appear in citations, you can use the
-            "Guess names" button to automatically infer your first name, last
+            "Auto-fill" button to automatically infer your first name, last
             name, etc., or edit the fields directly below.
         </span>
 
         <div style="margin-bottom: 10px;">
-            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Guess names</a>
+            <a class="btn btn-default" data-bind="enabled: hasFirst(), click: impute">Auto-fill</a>
         </div>
 
         <div class="form-group">
@@ -41,22 +41,21 @@
         <hr />
 
         <h4>Citation Preview</h4>
-
         <table class="table">
             <thead>
                 <tr>
                     <th>Style</th>
-                    <th>Citation Format</th>
+                    <th class="overflow-block" width="30%">Citation Format</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td>APA</td>
-                    <td>{{ citeApa }}</td>
+                    <td class="overflow-block" width="30%">{{ citeApa }}</td>
                 </tr>
                 <tr>
                     <td>MLA</td>
-                    <td>{{ citeMla }}</td>
+                    <td class="overflow-block" width="30%">{{ citeMla }}</td>
                 </tr>
             </tbody>
         </table>
@@ -64,15 +63,13 @@
         <div class="padded">
 
             <button
-                    type="submit"
                     class="btn btn-default"
-                    data-bind="visible: viewable, click: cancel"
+                    data-bind="click: cancel"
                 >Cancel</button>
 
             <button
                     type="submit"
                     class="btn btn-primary"
-                    data-bind="enable: enableSubmit"
                 >Submit</button>
 
         </div>

@@ -7,7 +7,7 @@
     } else {
         factory(jQuery, global.LogFeed);
     }
-}(this, function($, LogFeed) {
+}(this, function($, LogFeed) { // Logfeed MUST loaded for logs to render correctly
 
     window.NodeActions = {}; // Namespace for NodeActions
 
@@ -46,15 +46,18 @@
                     bootbox.alert('Sorry, you do not have permission to fork this project');
                 } else {
                     bootbox.alert('Forking failed');
+                    Raven.captureMessage('Error occurred during forking');
                 }
             });
         });
     };
 
     NodeActions.forkPointer = function(pointerId) {
-        bootbox.confirm('Are you sure you want to fork this project?',
-            function(result) {
-                if (result) {
+        bootbox.confirm({
+            title: 'Fork this project?',
+            message: 'Are you sure you want to fork this project?',
+            callback: function(result) {
+                if(result) {
                     // Block page
                     $.osf.block();
 
@@ -70,7 +73,25 @@
                     });
                 }
             }
-        );
+        });
+    };
+
+    NodeActions.beforeTemplate = function(url, done) {
+        $.ajax({
+            url: url,
+            contentType: 'application/json'
+        }).success(function(response) {
+            bootbox.confirm(
+                $.osf.joinPrompts(response.prompts,
+                    ('Are you sure you want to create a new project using this project as a template? ' +
+                     'Any add-ons configured for this project will not be authenticated in the new project.')),
+                function (result) {
+                    if (result) {
+                        done && done();
+                    }
+                }
+            );
+        });
     };
 
     NodeActions.addonFileRedirect = function(item) {
@@ -79,16 +100,18 @@
     };
 
     NodeActions.useAsTemplate = function() {
-        $.osf.block();
+        NodeActions.beforeTemplate('/project/new/' + nodeId + '/beforeTemplate/', function () {
+            $.osf.block();
 
-        $.osf.postJSON(
-            '/api/v1/project/new/' + nodeId + '/',
-            {}
-        ).done(function(response) {
-            window.location = data.url;
-        }).fail(function(response) {
-            $.osf.unblock();
-            $.osf.handleJSONError(response);
+            $.osf.postJSON(
+                '/api/v1/project/new/' + nodeId + '/',
+                {}
+            ).done(function(response) {
+                window.location = response.url;
+            }).fail(function(response) {
+                $.osf.unblock();
+                $.osf.handleJSONError(response);
+            });
         });
     };
 
@@ -96,25 +119,25 @@
 
         $('#newComponent form').on('submit', function(e) {
 
-            $("#add-component-submit")
-                .attr("disabled", "disabled")
-                .text("Adding");
+            $('#add-component-submit')
+                .attr('disabled', 'disabled')
+                .text('Adding');
 
-            if ($.trim($("#title").val()) == '') {
+            if ($.trim($('#title').val()) === '') {
 
-                $("#alert").text("The new component title cannot be empty");
+                $('#alert').text('The new component title cannot be empty');
 
-                $("#add-component-submit")
-                    .removeAttr("disabled", "disabled")
-                    .text("OK");
+                $('#add-component-submit')
+                    .removeAttr('disabled', 'disabled')
+                    .text('OK');
 
                 e.preventDefault();
-            } else if ($(e.target).find("#title").val().length > 200) {
-                $("#alert").text("The new component title cannot be more than 200 characters.");
+            } else if ($(e.target).find('#title').val().length > 200) {
+                $('#alert').text('The new component title cannot be more than 200 characters.');
 
-                $("#add-component-submit")
-                    .removeAttr("disabled", "disabled")
-                    .text("OK");
+                $('#add-component-submit')
+                    .removeAttr('disabled', 'disabled')
+                    .text('OK');
 
                 e.preventDefault();
 
@@ -164,7 +187,7 @@
                 pointerId: pointerId
             }),
             contentType: 'application/json',
-            dataType: 'json',
+            dataType: 'json'
         }).done(function() {
             pointerElm.remove();
         }).fail(
@@ -174,8 +197,8 @@
 
 
     /*
-Display recent logs for for a node on the project view page.
-*/
+    Display recent logs for for a node on the project view page.
+    */
     NodeActions.openCloseNode = function(nodeId) {
         var $logs = $('#logs-' + nodeId);
         if (!$logs.hasClass('active')) {
@@ -229,21 +252,22 @@ Display recent logs for for a node on the project view page.
 
         $('.remove-pointer').on('click', function() {
             var $this = $(this);
-            bootbox.confirm(
-                'Are you sure you want to remove this link? This will not ' +
-                'remove the project this link refers to.',
-                function(result) {
-                    if (result) {
+            bootbox.confirm({
+                title: 'Remove this link?',
+                message: 'Are you sure you want to remove this link? This will not remove the ' +
+                    'project this link refers to.',
+                callback: function(result) {
+                    if(result) {
                         var pointerId = $this.attr('data-id');
                         var pointerElm = $this.closest('.list-group-item');
                         NodeActions.removePointer(pointerId, pointerElm);
                     }
                 }
-            );
+            });
         });
 
         $('body').on('click', '.tagsinput .tag > span', function(e) {
-            window.location = "/search/?q=" + $(e.target).text().toString().trim();
+            window.location = '/search/?q=' + $(e.target).text().toString().trim();
         });
 
         $('.citation-toggle').on('click', function(evt) {

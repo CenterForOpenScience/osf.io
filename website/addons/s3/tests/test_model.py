@@ -1,6 +1,6 @@
-from nose.tools import *
+from nose.tools import *  # noqa
 import mock
-from boto.s3.connection import *
+from boto.s3.connection import *  # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory

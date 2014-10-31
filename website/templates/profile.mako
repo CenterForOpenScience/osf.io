@@ -5,6 +5,7 @@
 
 <script>
     % if user["is_profile"]:
+        $.fn.editable.defaults.mode = 'inline';
         $(function() {
             $('#profile-fullname > span').editable({
                 type:  'text',
@@ -13,7 +14,7 @@
                 url:   '/api/v1/profile/${profile["id"]}/edit/',
                 title: 'Edit Full Name',
                 placement: 'bottom',
-                value: '${profile["fullname"]}',
+                value: '${profile["fullname"] | js_str}',
                 success: function(data) {
                     // Also change the display name in the user info table
                     $(".fullname").text(data['name']);
@@ -39,13 +40,19 @@
 </div>
 % endif
 
+
 <div class="page-header">
     <a href="#changeAvatarModal" data-toggle="modal">
-        <img id='profile-gravatar' src="${profile['gravatar_url']}"
-                 rel="tooltip" title="click to change avatar" />
+        % if user['is_profile']:
+            <img id='profile-gravatar' src="${profile['gravatar_url']}"
+                rel="tooltip" title="click to change avatar"/>
+        % else:
+             <img id='profile-gravatar' src="${profile['gravatar_url']}"/>
+        % endif
     </a>
-    <h1 id="profile-fullname"><span>${profile["fullname"]}</span></h1>
+    <h1 id="profile-fullname"><span class="overflow">${profile["fullname"]}</span></h1>
 </div><!-- end-page-header -->
+
 
 <div class="row">
 
@@ -56,7 +63,7 @@
             <table class="table table-plain">
                 <tr>
                   <td>Name</td>
-                  <td class="fullname">${profile["fullname"]}</td>
+                  <td class="fullname overflow-block" width="300px">${profile["fullname"]}</td>
                 </tr>
                 % if profile.get('date_registered'):
                     <tr>
@@ -176,7 +183,7 @@
     </div>
 </div><!-- end row -->
 
-<%include file="log_templates.mako"/>
+<%include file="_log_templates.mako"/>
 <%include file="include/profile/social.mako" />
 <%include file="include/profile/jobs.mako" />
 <%include file="include/profile/schools.mako" />

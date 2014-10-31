@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 '''Base TestCase class for OSF unittests. Uses a temporary MongoDB database.'''
+import datetime as dt
+import functools
+import logging
 import os
 import shutil
 import unittest
-import logging
-import functools
-import blinker
+
 from webtest_plus import TestApp
+import blinker
 
 from faker import Factory
+from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 
@@ -63,12 +66,13 @@ MODELS = (User, ApiKey, Node, NodeLog, NodeFile, NodeWikiPage,
 def teardown_database(client=None, database=None):
     client = client or client_proxy
     database = database or database_proxy
-    try:
-        commands.rollback(database)
-    except OperationFailure as error:
-        message = utils.get_error_message(error)
-        if messages.NO_TRANSACTION_ERROR not in message:
-            raise
+    if settings.USE_TOKU_MX:
+        try:
+            commands.rollback(database)
+        except OperationFailure as error:
+            message = utils.get_error_message(error)
+            if messages.NO_TRANSACTION_ERROR not in message:
+                raise
     client.drop_database(database)
 
 
@@ -80,8 +84,12 @@ class DbTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super(DbTestCase, cls).setUpClass()
+
         cls._original_db_name = settings.DB_NAME
         settings.DB_NAME = cls.DB_NAME
+        cls._original_piwik_host = settings.PIWIK_HOST
+        settings.PIWIK_HOST = None
+
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
         # this logic
@@ -97,6 +105,7 @@ class DbTestCase(unittest.TestCase):
         super(DbTestCase, cls).tearDownClass()
         teardown_database(database=database_proxy._get_current_object())
         settings.DB_NAME = cls._original_db_name
+        settings.PIWIK_HOST = cls._original_piwik_host
 
 
 class AppTestCase(unittest.TestCase):
@@ -202,3 +211,13 @@ def capture_signals():
 def assert_is_redirect(response, msg="Response is a redirect."):
     assert 300 <= response.status_code < 400, msg
 
+
+def assert_before(lst, item1, item2):
+    """Assert that item1 appears before item2 in lst."""
+    assert_less(lst.index(item1), lst.index(item2),
+        '{0!r} appears before {1!r}'.format(item1, item2))
+
+
+def assert_datetime_equal(dt1, dt2, allowance=500):
+    """Assert that two datetimes are about equal."""
+    assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))

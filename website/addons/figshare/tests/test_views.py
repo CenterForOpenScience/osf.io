@@ -1,4 +1,8 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import mock
+import unittest
 from nose.tools import *
 
 import httplib as http
@@ -50,11 +54,11 @@ class TestViewsConfig(OsfTestCase):
         self.node_settings.save()
 
         self.figshare = create_mock_figshare('test')
-    
+
     def test_import_auth(self):
         """Testing figshare_import_user_auth to ensure that auth gets imported correctly"""
         settings = self.node_settings
-        settings.user_settings = None        
+        settings.user_settings = None
         settings.save()
         url = '/api/v1/project/{0}/figshare/config/import-auth/'.format(self.project._id)
         self.app.put(url, auth=self.user.auth)
@@ -77,7 +81,7 @@ class TestViewsConfig(OsfTestCase):
             and settings.figshare_title is None
             and settings.figshare_type is None
         )
-        assert_true(is_none)    
+        assert_true(is_none)
 
     def test_config_no_change(self):
         nlogs = len(self.project.logs)
@@ -135,7 +139,7 @@ class TestViewsConfig(OsfTestCase):
         self.project.reload()
         assert_equal(res.status_int, http.FORBIDDEN)
         assert_equal(nlogs, len(self.project.logs))
-        
+
     def test_serialize_settings_helper_returns_correct_auth_info(self):
         result = serialize_settings(self.node_settings, self.user, client=figshare_mock)
         assert_equal(result['nodeHasAuth'], self.node_settings.has_auth)
@@ -148,7 +152,7 @@ class TestViewsConfig(OsfTestCase):
         assert_false(result['userIsOwner'])
         assert_false(result['userHasAuth'])
 
-        
+
 class TestUtils(OsfTestCase):
 
     def setUp(self):
@@ -377,12 +381,11 @@ class TestViewsAuth(OsfTestCase):
         self.node_settings.figshare_type = 'project'
         self.node_settings.save()
 
-    #TODO Finish me, would require a lot of mocking it seems.
+    @unittest.skip('finish this')
     def test_oauth_fail(self):
-        url = '/api/v1/project/{0}/figshare/oauth'.format(self.project._id)
-        rv = self.app.get(url, auth=self.user.auth).maybe_follow()
-        pass
+        url = '/api/v1/project/{0}/figshare/oauth/'.format(self.project._id)
+        rv = self.app.get(url, auth=self.user.auth)
 
-    #TODO Finish me
+    @unittest.skip('finish this')
     def test_oauth_bad_token(self):
         pass

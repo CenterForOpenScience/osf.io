@@ -23,7 +23,6 @@ def activity():
             x for x in client.custom_variables if x.label == 'Project ID'
         ][0].values
 
-
         for nid in popular_project_ids:
             node = Node.load(nid.value)
             if node is None:
@@ -68,7 +67,7 @@ def activity():
         recent_query &
         Q('is_registration', 'eq', True)
     ).sort(
-        '-date_created'
+        '-registered_date'
     ).limit(10)
 
     return {

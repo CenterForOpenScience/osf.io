@@ -1,27 +1,30 @@
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
-        <ul class="nav navbar-nav">
+<%page expression_filter="h"/>
 
-            % if is_edit:
-                <li><a href="${node['url']}wiki/${pageName}">View</a></li>
+<nav class="navbar navbar-default">
+    <div class="navbar-collapse">
+        <ul class="superlist nav navbar-nav" style="text-align: center; float: none">
+            <li><a href="${urls['web']['page']}">View</a></li>
+            % if not versions or version == 'NA':
+                <li class="disabled"><a>History</a></li>
             % else:
-                % if user['can_edit']:
-                    <li><a href="${node['url']}wiki/${pageName}/edit">Edit</a></li>
-                % else:
-                    <li><a class="disabled">Edit</a></li>
-                % endif
-            %endif
-            % if version == 'NA':
-                <li><a class="disabled">History</a></li>
-            % else:
-                <li><a href="${node['url']}wiki/${pageName}/compare/1">History</a> </li>
-            % endif
-            % if user['can_edit']:
-                    <li><a href="#" data-toggle="modal" data-target="#newWiki">New Page</a></li>
-                    <%include file="add_wiki_page.mako"/>
-                % else:
-                    <li><a class="disabled">New Page</a></li>
+                <li><a href="${urls['web']['compare']}">History</a></li>
             % endif
         </ul>
-    </div><!-- end container-fluid -->
+    </div>
 </nav>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        // special characters can be encoded differently between server/client.
+        var pathname = decodeURIComponent(window.location.pathname);
+
+        $(".navbar-nav li").each(function () {
+            var $this = $(this);
+            var href = decodeURIComponent($this.find('a').attr('href'));
+
+            if (href === pathname) {
+                $this.addClass('active');
+            }
+        });
+    });
+</script>

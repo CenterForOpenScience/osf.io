@@ -30,9 +30,12 @@
     <script>
         $('.${addon_short_name}-remove-token').on('click', function(event) {
             var nodeId = $(this).attr('node-id');
-            bootbox.confirm('Are you sure you want to remove the ${addon_full_name} authorization from this project?', function(confirm) {
-                if (confirm) {
-                    $.ajax({
+            bootbox.confirm({
+                title: 'Remove addon?',
+                message: 'Are you sure you want to remove the ${addon_full_name} authorization from this project?',
+                callback: function(confirm) {
+                    if(confirm) {
+                        $.ajax({
                         type: 'DELETE',
                         url: '/api/v1/project/' + nodeId + '/${addon_short_name}/config/',
 
@@ -54,6 +57,7 @@
                                 'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
                         }
                     });
+                    }
                 }
             });
         });
@@ -70,4 +74,9 @@
         });
 
     </script>
+% elif has_auth and not nodes:
+    <p class="text-success addon-message">
+    Add-on successfully authorized. To link this add-on to an OSF project, go to the
+    settings page of the project, enable Dropbox, and choose content to connect.
+    </p>
 % endif

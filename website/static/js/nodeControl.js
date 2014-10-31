@@ -126,6 +126,7 @@
             };
 
             // TODO: Remove hardcoded selectors.
+            $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
                 title: 'Edit Title'
@@ -144,12 +145,12 @@
         self.toggleWatch = function() {
             // Send POST request to node's watch API url and update the watch count
             $.osf.postJSON(
-                self.apiUrl = 'toggleWatch/',
+                self.apiUrl + 'togglewatch/',
                 {}
-            ).done(function() {
+            ).done(function(data) {
                 // Update watch count in DOM
-                self.userIsWatching(data['watched']);
-                self.watchedCount(data['watchCount']);
+                self.userIsWatching(data.watched);
+                self.watchedCount(data.watchCount);
             }).fail(
                 $.osf.handleJSONError
             );

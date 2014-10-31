@@ -4,6 +4,7 @@ MODELS = [
     model.AddonGitHubUserSettings,
     model.AddonGitHubNodeSettings,
     model.GithubGuidFile,
+    model.AddonGitHubOauthSettings,
 ]
 USER_SETTINGS_MODEL = model.AddonGitHubUserSettings
 NODE_SETTINGS_MODEL = model.AddonGitHubNodeSettings

@@ -89,19 +89,24 @@
     Rubeus.Col.ActionButtons = $.extend({}, HGrid.Col.ActionButtons);
     Rubeus.Col.ActionButtons.itemView = function(item) {
     var buttonDefs = [];
+    var tooltipMarkup = '';
     if(item.permissions){
         if(item.permissions.download !== false){
+            tooltipMarkup = genTooltipMarkup('Download');
             buttonDefs.push({
-                text: '<i class="icon-download-alt icon-white" title="" data-placement="right" data-toggle="tooltip" data-original-title="Download"></i>',
+                text: '<i class="icon-download-alt icon-white" title=""></i>',
                 action: 'download',
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: tooltipMarkup
             });
         }
         if (item.permissions.edit) {
+            tooltipMarkup = genTooltipMarkup('Remove');
             buttonDefs.push({
-                text: '&nbsp;<i class="icon-remove"title="" data-placement="right" data-toggle="tooltip" data-original-title="Delete"></i>',
+                text: '&nbsp;<i class="icon-remove" title=""></i>',
                 action: 'delete',
-                cssClass: 'btn btn-link btn-mini btn-delete'
+                cssClass: 'btn btn-link btn-mini btn-delete',
+                attributes: tooltipMarkup
             });
         }
     }
@@ -110,7 +115,8 @@
             buttonDefs.push({
                 text: button.text,
                 action: button.action,
-                cssClass: 'btn btn-primary btn-mini'
+                cssClass: 'btn btn-primary btn-mini',
+                attributes: button.attributes
             });
         });
     }
@@ -131,9 +137,10 @@
         if (this.options.uploads && row.urls.upload &&
                 (row.permissions && row.permissions.edit)) {
             buttonDefs.push({
-                text: '<i class="icon-upload" ' + tooltipMarkup +  '></i>',
+                text: '<i class="icon-upload" title=""></i>',
                 action: 'upload',
-                cssClass: 'btn btn-default btn-mini'
+                cssClass: 'btn btn-default btn-mini',
+                attributes: tooltipMarkup
             });
         }
         if (row.buttons) {
@@ -141,7 +148,8 @@
                 buttonDefs.push({
                     text: button.text,
                     action: button.action,
-                    cssClass: 'btn btn-primary btn-mini'
+                    cssClass: 'btn btn-primary btn-mini',
+                    attributes: button.attributes
                 });
             });
         }
@@ -150,6 +158,31 @@
                 '</span><span data-status></span>'].join('');
         }
         return '';
+    };
+
+    Rubeus.Utils = {};
+
+    /**
+     * Check whether newly uploaded item was added or updated. This is
+     * a hack that's necessary for services with indirect uploads (S3,
+     * OSF Storage) that don't tell us whether the file was added or
+     * updated.
+     */
+    Rubeus.Utils.itemUpdated = function(item, parent) {
+        var siblings = parent._node.children;
+        var matchCount = 0;
+        for (var i=0; i<siblings.length; i++) {
+            if (item.name === siblings[i].data.name) {
+                matchCount += 1;
+                // If `item` is being updated, it will appear twice in the grid:
+                // once for the original version, and a second time for the
+                // temporary item added on drop.
+                if (matchCount >= 2) {
+                    return true;
+                }
+            }
+        }
+        return false;
     };
 
     /**
@@ -169,8 +202,9 @@
      }
 
     HGrid.prototype.showButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch(error) {
             return this;
         }
@@ -180,8 +214,9 @@
     };
 
     HGrid.prototype.hideButtons = function(row) {
+        var $rowElem;
         try {
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (error) {
             return this;
         }
@@ -190,17 +225,31 @@
         return this;
     };
 
+    HGrid.prototype.delayRemoveRow = function(row) {
+        var self = this;
+        setTimeout(function() {
+            try {
+                $(self.getRowElement(row)).fadeOut(500, function() {
+                    self.removeItem(row.id);
+                });
+            } catch (error) {
+                self.removeItem(row.id);
+            }
+        }, 2000);
+    };
+
     /**
      * Changes the html in the status column.
      */
     HGrid.prototype.changeStatus = function(row, html, extra, fadeAfter, callback) {
+        var $rowElem, $status;
         try {
             // Raises TypeError if row's HTML is not rendered.
-            var $rowElem = $(this.getRowElement(row.id));
+            $rowElem = $(this.getRowElement(row.id));
         } catch (err) {
             return;
         }
-        var $status = $rowElem.find(Rubeus.statusSelector);
+        $status = $rowElem.find(Rubeus.statusSelector);
         this.hideButtons(row);
         $status.html(getStatusCfg(row.addon, html, extra));
         if (fadeAfter) {
@@ -418,26 +467,10 @@
             var self = this;
             if (data.actionTaken === null) {
                 self.changeStatus(row, statusType.NO_CHANGES);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                          self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else if (data.actionTaken === 'file_updated') {
                 self.changeStatus(row, statusType.UPDATED);
-                setTimeout(function() {
-                    try {
-                        $(self.getRowElement(row)).fadeOut(500, function() {
-                            self.removeItem(row.id);
-                        });
-                    } catch (error) {
-                        self.removeItem(row.id);
-                    }
-                }, 2000);
+                self.delayRemoveRow(row);
             } else{
                 // Update the row with the returned server data
                 // This is necessary for the download and delete button to work.

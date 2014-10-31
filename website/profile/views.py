@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import operator
 import logging
 import httplib as http
 from dateutil.parser import parse as parse_date
 
-from flask import request, redirect
+from flask import request
 from modularodm.exceptions import ValidationError
 
-from framework.auth import get_user
 from framework.auth.decorators import collect_auth, must_be_logged_in
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.forms.utils import sanitize
 from framework.auth import get_current_user
 from framework.auth import utils as auth_utils
 
@@ -19,6 +19,7 @@ from website.views import _render_nodes
 from website import settings
 from website.profile import utils as profile_utils
 from website.util.sanitize import escape_html
+from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,8 @@ def date_or_none(date):
 
 
 def _profile_view(uid=None):
+    # TODO: Fix circular import
+    from website.addons.badges.util import get_sorted_user_badges
 
     user = get_current_user()
     profile = User.load(uid) if uid else user
@@ -63,18 +66,25 @@ def _profile_view(uid=None):
     if not (uid or user):
         return redirect('/login/?next={0}'.format(request.path))
 
+    if 'badges' in settings.ADDONS_REQUESTED:
+        badge_assertions = get_sorted_user_badges(profile),
+        badges = _get_user_created_badges(profile)
+    else:
+        # NOTE: While badges, are unused, 'assertions' and 'badges' can be
+        # empty lists.
+        badge_assertions = []
+        badges = []
+
     if profile:
         profile_user_data = profile_utils.serialize_user(profile, full=True)
-        # TODO: Fix circular import
-        from website.addons.badges.util import get_sorted_user_badges
         return {
             'profile': profile_user_data,
-            'assertions': get_sorted_user_badges(profile),
-            'badges': _get_user_created_badges(profile),
+            'assertions': badge_assertions,
+            'badges': badges,
             'user': {
                 'is_profile': user == profile,
                 'can_edit': None,  # necessary for rendering nodes
-                'permissions': [], # necessary for rendering nodes
+                'permissions': [],  # necessary for rendering nodes
             },
         }
 
@@ -105,7 +115,7 @@ def edit_profile(**kwargs):
 
     response_data = {'response': 'success'}
     if form.get('name') == 'fullname' and form.get('value', '').strip():
-        user.fullname = sanitize(form['value'])
+        user.fullname = strip_html(form['value'])
         user.save()
         response_data['name'] = user.fullname
     return response_data
@@ -132,23 +142,26 @@ def user_addons(auth, **kwargs):
 
     out = {}
 
+    addons = [addon.config for addon in user.get_addons()]
+    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
     addons_enabled = []
     addon_enabled_settings = []
 
-    for addon in user.get_addons():
+    # sort addon_enabled_settings alphabetically by category
+    for category in sorted(settings.ADDON_CATEGORIES):
+        for addon_config in addons:
+            if addon_config.categories[0] == category:
+                addons_enabled.append(addon_config.short_name)
+                if 'user' in addon_config.configs:
+                    addon_enabled_settings.append(addon_config.short_name)
 
-        addons_enabled.append(addon.config.short_name)
-
-        if 'user' in addon.config.configs:
-            addon_enabled_settings.append(addon.config.short_name)
-
-    out['addon_categories'] = settings.ADDON_CATEGORIES
+    out['addon_categories'] = sorted(settings.ADDON_CATEGORIES)
     out['addons_available'] = [
         addon
         for addon in settings.ADDONS_AVAILABLE
-        if 'user' in addon.owners
-            and not addon.short_name in settings.SYSTEM_ADDED_ADDONS['user']
+        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
     ]
+    out['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
     out['addons_enabled'] = addons_enabled
     out['addon_enabled_settings'] = addon_enabled_settings
     return out
@@ -262,7 +275,13 @@ def get_target_user(auth, uid=None):
 
 def fmt_date_or_none(date, fmt='%Y-%m-%d'):
     if date:
-        return date.strftime(fmt)
+        try:
+            return date.strftime(fmt)
+        except ValueError:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long='Year entered must be after 1900')
+            )
     return None
 
 
@@ -295,8 +314,11 @@ def serialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': fmt_date_or_none(job.get('start')),
-        'end': fmt_date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
+        'ongoing': job.get('ongoing', False),
     }
 
 
@@ -305,8 +327,11 @@ def serialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': fmt_date_or_none(school.get('start')),
-        'end': fmt_date_or_none(school.get('end')),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
+        'ongoing': school.get('ongoing', False),
     }
 
 
@@ -368,6 +393,7 @@ def unserialize_social(auth, **kwargs):
     user.social['twitter'] = json_data.get('twitter')
     user.social['github'] = json_data.get('github')
     user.social['scholar'] = json_data.get('scholar')
+    user.social['impactStory'] = json_data.get('impactStory')
     user.social['linkedIn'] = json_data.get('linkedIn')
 
     try:
@@ -381,8 +407,11 @@ def unserialize_job(job):
         'institution': job.get('institution'),
         'department': job.get('department'),
         'title': job.get('title'),
-        'start': date_or_none(job.get('start')),
-        'end': date_or_none(job.get('end')),
+        'startMonth': job.get('startMonth'),
+        'startYear': job.get('startYear'),
+        'endMonth': job.get('endMonth'),
+        'endYear': job.get('endYear'),
+        'ongoing': job.get('ongoing'),
     }
 
 
@@ -391,8 +420,11 @@ def unserialize_school(school):
         'institution': school.get('institution'),
         'department': school.get('department'),
         'degree': school.get('degree'),
-        'start': date_or_none(school.get('start')),
-        'end': date_or_none(school.get('end')),
+        'startMonth': school.get('startMonth'),
+        'startYear': school.get('startYear'),
+        'endMonth': school.get('endMonth'),
+        'endYear': school.get('endYear'),
+        'ongoing': school.get('ongoing'),
     }
 
 

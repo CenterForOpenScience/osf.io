@@ -10,24 +10,24 @@ logger = logging.getLogger(__name__)
 env = Environment(settings.STATIC_FOLDER, settings.STATIC_URL_PATH)
 
 css = Bundle(
-        # Vendorized libraries
-         Bundle(
-            'vendor/jquery-tagit/css/jquery.tagit.css',
-            'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
-            'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
-            'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
-            'vendor/pygments.css',
-            'vendor/bootstrap3-editable/css/bootstrap-editable.css',
-            'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
-            'vendor/bower_components/hgrid/dist/hgrid.css',
-            filters='cssmin'),
-        # Site-specific CSS
-        Bundle(
-            'css/site.css',
-            'css/rubeus.css',
-            'css/commentpane.css',
-            filters="cssmin"),
-        output="public/css/common.css"
+    # Vendorized libraries
+    Bundle(
+        'vendor/jquery-tagit/css/jquery.tagit.css',
+        'vendor/jquery-tagsinput/css/jquery.tagsinput.css',
+        'vendor/jquery-tagit/css/tagit.ui-zendesk.css',
+        'vendor/jquery-fileupload/css/jquery.fileupload-ui.css',
+        'vendor/pygments.css',
+        'vendor/bootstrap3-editable/css/bootstrap-editable.css',
+        'vendor/bower_components/bootstrap/dist/css/bootstrap-theme.css',
+        'vendor/bower_components/hgrid/dist/hgrid.css',
+        filters='cssmin'),
+    # Site-specific CSS
+    Bundle(
+        'css/site.css',
+        'css/rubeus.css',
+        'css/commentpane.css',
+        filters="cssmin"),
+    output="public/css/common.css"
 )
 
 
@@ -75,4 +75,4 @@ env.register('js', js)
 env.register('css', css)
 env.register('js_bottom', js_bottom)
 # Don't bundle in debug mode
-env.debug = settings.DEBUG_MODE
+env.debug = False

@@ -11,10 +11,10 @@ import werkzeug.wrappers
 from werkzeug.exceptions import NotFound
 from mako.template import Template
 from mako.lookup import TemplateLookup
-from flask import request, redirect, make_response
+from flask import request, make_response
 
 from framework import sentry
-from framework.flask import app
+from framework.flask import app, redirect
 from framework.sessions import session
 from framework.exceptions import HTTPError
 
@@ -86,7 +86,10 @@ def wrap_with_renderer(fn, renderer, renderer_kwargs=None, debug_mode=True):
         else:
             session_error_code = None
         if session_error_code:
-            raise HTTPError(session_error_code)
+            return renderer(
+                HTTPError(session_error_code),
+                **renderer_kwargs or {}
+            )
         try:
             if renderer_kwargs:
                 kwargs.update(renderer_kwargs)

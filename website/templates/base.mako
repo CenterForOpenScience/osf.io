@@ -8,6 +8,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="${self.description()}">
 
+    % if sentry_dsn_js:
+    <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
+    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
+    <script>
+        Raven.config('${ sentry_dsn_js }', {}).install();
+    </script>
+    % else:
+    <script>
+        window.Raven = {};
+        Raven.captureMessage = function(msg, context) {
+            console.error('=== Mock Raven.captureMessage called with: ===');
+            console.log('Message: ' + msg);
+            console.log(context);
+        };
+        Raven.captureException = function(err, context) {
+            console.error('=== Mock Raven.captureException called with: ===');
+            console.log('Error: ' + err);
+            console.log(context);
+        };
+    </script>
+    % endif
+
+    <!-- Facebook display -->
+    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:title" content="${self.title()}"/>
+    <meta name="og:ttl" content="3"/>
+    <meta name="og:description" content="${self.og_description()}"/>
+
     ${includes_top()}
     ${self.stylesheets()}
     ${self.javascript()}
@@ -122,6 +150,10 @@
     ### The page description ###
 </%def>
 
+<%def name="og_description()">
+    Hosted on the Open Science Framework
+</%def>
+
 <%def name="stylesheets()">
     ### Extra css for this page. ###
 </%def>
@@ -150,6 +182,8 @@
     ## Don't bundle Bootstrap or else Glyphicons won't work
     <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="/static/vendor/font-awesome/css/font-awesome.min.css">
+    ## select2 stylesheet also needs to be here so that it finds the correct images
+    <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
 
     % for url in css_all:
     <link rel="stylesheet" href="${url}">
@@ -159,7 +193,7 @@
     <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jQuery/dist/jquery.min.js">\x3C/script>')</script>
     <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
     <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
-    <script>window.ko || document.write('<script src="/static/vendor/knockout/knockout-3.0.0.min.js">\x3C/script>')</script>
+    <script src="/static/vendor/bower_components/knockout/dist/knockout.js"><script>
     <script src="/static/vendor/knockout-mapping/knockout.mapping.js"></script>
     <script src="/static/vendor/knockout-punches/knockout.punches.min.js"></script>
     <script src="/static/vendor/knockout-validation/knockout.validation.min.js"></script>
@@ -172,11 +206,14 @@
     <script>
         // Enable knockout punches
         ko.punches.enableAll();
-        // Filebrowser dependencies
+        // Dependencies that can be loaded with scriptjs
         $script(['/static/vendor/bower_components/zeroclipboard/ZeroClipboard.min.js'],
             'zeroclipboard');
-        $script(['/static/vendor/dropzone/dropzone.js'], 'dropzone');
+        $script(['/static/vendor/bower_components/dropzone/downloads/dropzone.js'], 'dropzone');
         $script(['/static/vendor/bower_components/hgrid/dist/hgrid.js'], 'hgrid');
+        $script(['/static/vendor/bower_components/typeahead.js/dist/typeahead.bundle.min.js'],'typeahead');
+        $script(['/static/vendor/bower_components/select2/select2.js'], 'select2');
+        $script(['/static/vendor/bower_components/handlebars/handlebars.min.js'],'handlebars');
         $script(['/static/js/dropzone-patch.js']); // exports 'dropzone-patch'
         $script(['/static/js/rubeus.js']); // exports 'rubeus'
         $script(['/static/js/folderPicker.js']);  // exports 'folderPicker'

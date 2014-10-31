@@ -10,6 +10,8 @@ from website.project.decorators import (
 )
 
 
+# Disabled for now. Should implement pagination, or at least cap the number of
+# nodes serialized, before re-enabling.
 @collect_auth
 def project_tag(tag, auth, **kwargs):
     tag_obj = Tag.load(tag)
@@ -27,7 +29,7 @@ def project_tag(tag, auth, **kwargs):
     }
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def project_addtag(auth, **kwargs):
@@ -43,7 +45,7 @@ def project_addtag(auth, **kwargs):
             return {'status': 'error'}, http.BAD_REQUEST
 
 
-@must_be_valid_project # returns project
+@must_be_valid_project  # injects project
 @must_have_permission('write')
 @must_not_be_registration
 def project_removetag(auth, **kwargs):

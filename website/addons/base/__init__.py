@@ -68,7 +68,7 @@ class AddonConfig(object):
 
         self.has_hgrid_files = has_hgrid_files
         # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
-        self.get_hgrid_data = get_hgrid_data #if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
+        self.get_hgrid_data = get_hgrid_data  # if has_hgrid_files and not get_hgrid_data rubeus.make_dummy()
         self.max_file_size = max_file_size
         self.accept_extensions = accept_extensions
 
@@ -225,9 +225,20 @@ class AddonUserSettingsBase(AddonSettingsBase):
         'abstract': True,
     }
 
+    def __repr__(self):
+        if self.owner:
+            return '<{cls} owned by user {uid}>'.format(cls=self.__class__.__name__, uid=self.owner._id)
+        else:
+            return '<{cls} with no owner>'.format(cls=self.__class__.__name__)
+
     @property
     def public_id(self):
         return None
+
+    @property
+    def has_auth(self):
+        """Whether the user has added credentials for this addon."""
+        return False
 
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
@@ -252,6 +263,7 @@ class AddonUserSettingsBase(AddonSettingsBase):
 
     def to_json(self, user):
         ret = super(AddonUserSettingsBase, self).to_json(user)
+        ret['has_auth'] = self.has_auth
         ret.update({
             'nodes': [
                 {
@@ -426,9 +438,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
 
-# TODO: Move this
-LOG_TEMPLATES = 'website/templates/log_templates.mako'
-
 # TODO: No more magicks
 def init_addon(app, addon_name, routes=True):
     """Load addon module and create configuration object.
@@ -453,7 +462,7 @@ def init_addon(app, addon_name, routes=True):
         addon_path, 'templates', 'log_templates.mako'
     )
     if os.path.exists(log_templates):
-        with open(LOG_TEMPLATES, 'a') as fp:
+        with open(settings.BUILT_TEMPLATES, 'a') as fp:
             fp.write(open(log_templates, 'r').read())
 
     # Add routes

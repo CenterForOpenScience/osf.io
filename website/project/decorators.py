@@ -4,9 +4,10 @@ import httplib as http
 import functools
 
 from furl import furl
-from flask import request, redirect
+from flask import request
 
 from framework import status
+from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
 from framework.auth import Auth, get_current_user, get_api_key
 from website.models import Node
@@ -131,7 +132,7 @@ def _must_be_contributor_factory(include_public):
                     if not check_can_access(node=node, user=user,
                             api_node=api_node, key=key):
                         url = '/login/?next={0}'.format(request.path)
-                        redirect_url = check_key_expired(key=key, node=node, url = url)
+                        redirect_url = check_key_expired(key=key, node=node, url=url)
                         response = redirect(redirect_url)
 
             return response or func(*args, **kwargs)
