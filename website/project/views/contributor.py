@@ -133,7 +133,7 @@ def get_recently_added_contributors(auth, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils.add_contributor_json(contrib, get_current_user())
+        utils.add_contributor_json(contrib, auth.user)
         for contrib in auth.user.recently_added
         if contrib.is_active()
         if contrib._id not in node.contributors
@@ -460,15 +460,17 @@ def verify_claim_token(user, token, pid):
     return True
 
 
+@collect_auth
 @must_be_valid_project
-def claim_user_registered(**kwargs):
+def claim_user_registered(auth, **kwargs):
     """View that prompts user to enter their password in order to claim
     contributorship on a project.
 
     A user must be logged in.
     """
+    current_user = auth.user
     node = kwargs['node'] or kwargs['project']
-    current_user = get_current_user()
+
     sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
     if not current_user:
         response = redirect(sign_out_url)
@@ -536,6 +538,7 @@ def replace_unclaimed_user_with_registered(user):
             'Successfully claimed contributor.', 'success')
 
 
+@collect_auth
 def claim_user_form(**kwargs):
     """View for rendering the set password page for a claimed user.
 
@@ -547,7 +550,7 @@ def claim_user_form(**kwargs):
     token = request.form.get('token') or request.args.get('token')
 
     # If user is logged in, redirect to 're-enter password' page
-    if get_current_user():
+    if kwargs.get('auth'):
         return redirect(web_url_for('claim_user_registered',
             uid=uid, pid=pid, token=token))
 
@@ -639,7 +642,6 @@ def claim_user_post(**kwargs):
         else:
             send_claim_email(email, user, node, notify=True)
     # TODO(sloria): Too many assumptions about the request data. Just use
-    # get_current_user?
     elif 'claimerId' in reqdata:  # User is logged in and confirmed identity
         claimer_id = reqdata['claimerId']
         claimer = User.load(claimer_id)
