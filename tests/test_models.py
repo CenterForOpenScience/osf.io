@@ -752,6 +752,12 @@ class TestUpdateNodeWiki(OsfTestCase):
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
+    def test_update_log_specifics(self):
+        page = self.project.get_wiki_page('home')
+        log = self.project.logs[-1]
+        assert_equal('wiki_updated', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
+
     def test_wiki_versions(self):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
@@ -880,6 +886,21 @@ class TestRenameNodeWiki(OsfTestCase):
         with assert_raises(PageConflictError):
             self.project.rename_node_wiki(new_name, existing_name, self.consolidate_auth)
 
+    def test_rename_log(self):
+        # Rename wiki
+        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        # Rename is logged
+        assert_equal(self.project.logs[-1].action, 'wiki_renamed')
+
+    def test_rename_log_specifics(self):
+        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        page = self.project.get_wiki_page('renamed wiki')
+        log = self.project.logs[-1]
+        assert_equal('wiki_renamed', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
+
 
 class TestDeleteNodeWiki(OsfTestCase):
 
@@ -899,6 +920,13 @@ class TestDeleteNodeWiki(OsfTestCase):
         self.project.delete_node_wiki('home', self.consolidate_auth)
         # Deletion is logged
         assert_equal(self.project.logs[-1].action, 'wiki_deleted')
+
+    def test_delete_log_specifics(self):
+        page = self.project.get_wiki_page('home')
+        self.project.delete_node_wiki('home', self.consolidate_auth)
+        log = self.project.logs[-1]
+        assert_equal('wiki_deleted', log.action)
+        assert_equal(page._primary_key, log.params['page_id'])
 
     def test_wiki_versions(self):
         # Number of versions is correct

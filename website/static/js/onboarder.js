@@ -166,6 +166,9 @@
         self.heading = params.heading;
         // Data passed to the project typehead
         self.data = params.data  || DEFAULT_FETCH_URL;
+        self.submitText = params.submitText || 'Submit';
+        self.projectPlaceholder = params.projectPlaceholder || 'Type to search for a project';
+        self.componentPlaceholder = params.componentPlaceholder || 'Optional: Type to search for a component';
 
         /* Observables */
         // If params.enableComponents is passed in, use that value, otherwise default to true
@@ -174,8 +177,8 @@
         self.showComponents = ko.observable(self.enableComponents);
         self.selectedProject = ko.observable(null);
         self.selectedComponent = ko.observable(null);
-
-
+        // The current user input. we store these so that we can show an error message
+        // if the user clicks "Submit" when their selection isn't complete
         self.projectInput = ko.observable('');
         self.componentInput = ko.observable('');
 
@@ -545,5 +548,35 @@
     ko.components.register('osf-ob-uploader', {
         viewModel: OBUploaderViewModel,
         template: {element: 'osf-ob-uploader'}
+    });
+
+
+    function OBGoToViewModel(params) {
+        var self = this;
+        self.params = params;
+        self.data = params.data || DEFAULT_FETCH_URL;
+        /* Observables */
+        self.isOpen = ko.observable(true);
+        self.hasFocus = ko.observable(true);
+        self.submitText = '<i class="icon-double-angle-right"></i> Go';
+        /* Functions */
+        self.toggle = function() {
+            if (!self.isOpen()) {
+                self.isOpen(true);
+                self.hasFocus = ko.observable(true);
+            } else {
+                self.isOpen(false);
+                self.hasFocus = ko.observable(false);
+            }
+        };
+        self.onSubmit = function(selectedProject, selectedComponent) {
+            var node = selectedComponent || selectedProject;
+            window.location = node.urls.web;
+        };
+    }
+
+    ko.components.register('osf-ob-goto', {
+        viewModel: OBGoToViewModel,
+        template: {element: 'osf-ob-goto'}
     });
 }));

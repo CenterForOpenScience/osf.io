@@ -20,6 +20,8 @@
     /*
      * ViewModel for the project creation form.
      *
+     * Template: osf-project-creat-form in component/dashboard_templates.mako
+     *
      * Params:
      *  - data: Data to populate the template selection input
      */
@@ -30,6 +32,8 @@
         self.title = ko.observable('');
         self.description = ko.observable();
         self.errorMessage = ko.observable('');
+
+        self.hasFocus = params.hasFocus;
 
         self.submitForm = function () {
             if (self.title().trim() === '') {
@@ -167,8 +171,8 @@
         });
     }
 
-    ko.components.register('project-create-form', {
+    ko.components.register('osf-project-create-form', {
         viewModel: ProjectCreatorViewModel,
-        template: {element: 'project-create-form'}
+        template: {element: 'osf-project-create-form'}
     });
 }));
