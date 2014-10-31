@@ -1,25 +1,38 @@
 # -*- coding: utf-8 -*-
 import datetime
 import httplib as http
+
 from flask import request
 
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound, ValidationValueError
+from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationValueError
 
-from framework.sessions import set_previous_url
-from framework import status, exceptions
-from framework import forms
 from framework import auth
+from framework import forms
+from framework import status
+from framework.auth import login
+from framework import exceptions
+from framework.auth import logout
+from framework.auth import get_user
 from framework.flask import redirect  # VOL-aware redirect
 from framework.exceptions import HTTPError
-from framework.auth import login, logout, DuplicateEmailError, get_user, get_current_user
-from framework.auth.forms import (RegistrationForm, SignInForm,
-    ForgotPasswordForm, ResetPasswordForm, MergeAccountForm, ResendConfirmationForm)
+from framework.auth.forms import SignInForm
+from framework.auth import DuplicateEmailError
+from framework.sessions import set_previous_url
+from framework.auth.forms import MergeAccountForm
+from framework.auth.forms import RegistrationForm
+from framework.auth.decorators import collect_auth
+from framework.auth.forms import ResetPasswordForm
+from framework.auth.forms import ForgotPasswordForm
+from framework.auth.forms import ResendConfirmationForm
 
 import website.settings
+from website import mails
+from website import language
+from website import security
 from website.models import User
 from website.util import web_url_for
-from website import security, mails, language
 
 
 def reset_password(**kwargs):
@@ -82,12 +95,13 @@ def forgot_password():
 ###############################################################################
 
 # TODO: Rewrite async
+@collect_auth
 def auth_login(registration_form=None, forgot_password_form=None, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
     """
-    if get_current_user():
+    if kwargs.get('auth'):
         if not request.args.get('logout'):
             return redirect('/dashboard/')
         logout()

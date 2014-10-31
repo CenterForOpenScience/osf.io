@@ -73,25 +73,25 @@ def validate_social(value):
     validate_personal_site(value.get('personal_site'))
 
 
-def get_current_username():
-    return session.data.get('auth_user_username')
+# def get_current_username():
+#     return session.data.get('auth_user_username')
 
 
-def get_current_user_id():
-    return session.data.get('auth_user_id')
+# def get_current_user_id():
+#     return session.data.get('auth_user_id')
 
 
-def get_current_user():
+def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
     return User.load(uid)
 
 
-# TODO(sloria): This belongs in website.project
-def get_current_node():
-    from website.models import Node
-    nid = session.data.get('auth_node_id')
-    if nid:
-        return Node.load(nid)
+# # TODO(sloria): This belongs in website.project
+# def get_current_node():
+#     from website.models import Node
+#     nid = session.data.get('auth_node_id')
+#     if nid:
+#         return Node.load(nid)
 
 
 def get_api_key():
@@ -163,9 +163,9 @@ class Auth(object):
 
     @classmethod
     def from_kwargs(cls, request_args, kwargs):
-        user = request_args.get('user') or kwargs.get('user') or get_current_user()
-        api_key = request_args.get('api_key') or kwargs.get('api_key') or get_api_key()
-        api_node = request_args.get('api_node') or kwargs.get('api_node') or get_current_node()
+        user = request_args.get('user') or kwargs.get('user') or _get_current_user()
+        api_key = request_args.get('api_key') or kwargs.get('api_key')
+        api_node = request_args.get('api_node') or kwargs.get('api_node')
         private_key = request_args.get('view_only')
         return cls(
             user=user,
