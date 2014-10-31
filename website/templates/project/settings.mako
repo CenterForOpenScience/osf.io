@@ -12,7 +12,7 @@
 ##    }'></div>
 
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-sm-3">
         <div class="panel panel-default">
             <ul class="nav nav-stacked nav-pills">
                 % if 'admin' in user['permissions'] and not node['is_registration']:
@@ -31,7 +31,7 @@
         </div><!-- end sidebar -->
     </div>
 
-    <div class="col-md-6">
+    <div class="col-sm-9 col-md-7">
 
         % if 'admin' in user['permissions'] and not node['is_registration']:
 
@@ -179,23 +179,19 @@
     ${tpl}
 </%def>
 
-
 % for name, capabilities in addon_capabilities.iteritems():
     <script id="capabilities-${name}" type="text/html">${capabilities}</script>
 % endfor
 
-
-
 <%def name="javascript_bottom()">
-${parent.javascript_bottom()}
-<script type="text/javascript" src="/static/js/metadata_1.js"></script>
-<script type="text/javascript" src="/static/js/projectSettings.js"></script>
-<script type="text/javascript">
-$(document).ready(function() {
-    $('#deleteNode').on('click', function() {
-        ProjectSettings.getConfirmationCode('${node["node_type"]}');
+    ${parent.javascript_bottom()}
+    <script type="text/javascript" src="/static/js/metadata_1.js"></script>
+    <script type="text/javascript" src="/static/js/projectSettings.js"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        $('#deleteNode').on('click', function() {
+            ProjectSettings.getConfirmationCode('${node["node_type"]}');
+        });
     });
-});
-</script>
-
+    </script>
 </%def>
