@@ -448,9 +448,14 @@ def project_statistics(**kwargs):
 @must_have_permission('admin')
 def project_before_set_public(**kwargs):
     node = kwargs['node'] or kwargs['project']
+    prompt = node.callback('before_make_public')
+    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
+    if anonymous_link_warning:
+        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
+                      'contributors after a project or component is made public.')
 
     return {
-        'prompts': node.callback('before_make_public')
+        'prompts': prompt
     }
 
 
@@ -773,6 +778,7 @@ def _get_children(node, auth, indent=0):
                 'id': child._primary_key,
                 'title': child.title,
                 'indent': indent,
+                'is_public': child.is_public,
             })
             children.extend(_get_children(child, auth, indent + 1))
 
@@ -804,7 +810,7 @@ def get_editable_children(auth, **kwargs):
     children = _get_children(node, auth)
 
     return {
-        'node': {'title': node.title, },
+        'node': {'title': node.title, 'is_public': node.is_public},
         'children': children,
     }
 
@@ -969,9 +975,17 @@ def project_generate_private_link_post(auth, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
+    has_public_node = any(node.is_public for node in nodes)
+
     new_link = new_private_link(
         name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
+
+    if anonymous and has_public_node:
+        status.push_status_message(
+            "Anonymized view-only links <b>DO NOT</b> "
+            "anonymize contributors of public project or component."
+        )
 
     return new_link
 
