@@ -114,126 +114,110 @@
 
 .hideValidation .validationMessage { display: none; }
 
+
+/* Home Page */
 .hpLink:hover{
     text-decoration: none;
     color: red;
 }
-
-#hpContainerOne{
-    height: 520px;
+.hpContainerOne{
+    margin-top: 0;
 }
-#hpContainerTwo {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
+/* >= sm */
+@media (min-width: 768px) {
+    .hpContainerOne {
+        margin-top: 50px;
+    }
 }
-
-#hpContainerTwo  .featureDescriptions  .col-md-4  img {
-    height: 85px;
-    margin-bottom: 25px;
-    padding-top: 5px;
-}
-
-#hpContainerThree {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
-}
-#containerOneHeader {
-    float: left;
-    margin-top: 50px;
-}
-.headOne {
+.headOne, /* TODO: cleanup getting started */
+.hpHeadOne {
     font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing:1px;
-    font-size: 50px;
+    letter-spacing: 1px;
+    font-size: 40px;
     color: black;
 }
-
-.headTwo {
+/* >=sm */
+@media (min-width: 768px) {
+    .headOne, /* TODO: cleanup getting started */
+    .hpHeadOne {
+       font-size: 50px;
+    }
+}
+.hpHeadTwo {
+    padding-top: 70px;
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 40px;
     color: black;
 }
-.subHeadOne {
+.hpSubHeadOne {
+    padding-bottom: 30px;
     font-family: 'Inika', Helvetica;
     font-size: 24px;
     letter-spacing: 1px;
 }
-.subHeadTwo {
+.hpSubHeadTwo {
     font-size: 30px;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadThree {
+.hpSubHeadThree {
     font-size: 28px;
     color: #4089C7;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadFour {
+.subHeadFour, /* TODO: cleanup getting started */
+.hpSubHeadFour {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 36px;
     color: black;
 }
-.sign-up {
-    margin-top: 50px;
+.hpSignUp {
     background: #aad4f7;
-    float: right;
     padding: 30px 30px 30px 30px;
     border: solid #bacfd8 1px;
 }
-.sign-up .form-control {
+.hpSignUp .form-control {
     margin-top: 20px;
     height: 40px;
 }
-.sign-up .btn {
+.hpSignUp .btn {
     font-family: 'Inika', Helvetica;
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
-    float: right;
 }
-.text-center {
-    text-align: center;
-}
-.text-right {
-    text-align: right;
-}
-
-.header {
-    display: block;
+.hpHeader {
     font-family: 'Patua One', cursive;
     font-size: 24px;
-    padding-bottom: 20px;
     padding-top: 70px;
 }
-
-.featureDescriptions {
-    padding-top: 75px;
+.hpFeature {
+    padding-bottom: 20px;
+    padding-top: 70px;
     font-size: 22px;
     font-family: 'Carrois Gothic', sans-serif;
 }
-
-.featureDescriptions .featureInfo {
+.hpFeature img {
+    height: 85px;
+    margin-bottom: 25px;
+}
+.hpFeature .hpFeatureInfo {
     font-family: 'Inika', serif;
     font-size: 16px;
 }
-.steps {
+.hpSteps {
     padding-bottom: 20px;
     padding-top: 20px;
 }
-
-.stepsText {
+.hpStepsText {
     font-family: 'Inika', serif;
     font-size: 16px;
+    padding-top: 40px;
 }
+
 
 .padded {
     padding-top: 20px;
