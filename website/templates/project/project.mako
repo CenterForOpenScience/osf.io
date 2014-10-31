@@ -81,15 +81,13 @@
 
 <%def name="children()">
     % if node['node_type'] == 'project':
-        <div class="page-header">
-            <div class="pull-right btn-group">
-                % if 'write' in user['permissions'] and not node['is_registration']:
-                    <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
-                    <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
-                % endif
-            </div>
-            <h2>Components</h2>
+        <div class="pull-right btn-group">
+            % if 'write' in user['permissions'] and not node['is_registration']:
+                <a class="btn btn-default" data-toggle="modal" data-target="#newComponent">Add Component</a>
+                <a class="btn btn-default" data-toggle="modal" data-target="#addPointer">Add Links</a>
+            % endif
         </div>
+        <h2>Components</h2>
     % endif
     % if node['node_type'] == 'project':
         % if node['children']:
