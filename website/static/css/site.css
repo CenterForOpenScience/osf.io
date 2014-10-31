@@ -866,12 +866,19 @@ h1.node-title, h1.node-parent-title {
     margin-top: 0.9em;
 }
 
+/* Bootstrap Editable */
+
 .editable {
     border-bottom: none;
 }
 
 .editable:hover{
   background-color:#F3F3F3;
+}
+
+.editable-error-block  {
+    font-size: 16px;
+    max-width: 100%;
 }
 
 /* File list tables */
