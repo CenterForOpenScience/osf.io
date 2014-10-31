@@ -4,7 +4,6 @@
 import mock
 from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 import datetime
@@ -14,17 +13,14 @@ import markupsafe
 from cloudstorm import sign
 
 from website.addons.osfstorage.tests import factories
+from website.addons.osfstorage.tests.utils import StorageTestCase
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
 
 
-class TestHGridUtils(OsfTestCase):
-
-    def setUp(self):
-        super(TestHGridUtils, self).setUp()
-        self.project = ProjectFactory()
+class TestHGridUtils(StorageTestCase):
 
     def test_build_urls_folder(self):
         file_tree = model.FileTree(
@@ -160,12 +156,10 @@ def test_make_signed_request(mock_request):
     assert_equal(resp, expected)
 
 
-class TestGetDownloadUrl(OsfTestCase):
+class TestGetDownloadUrl(StorageTestCase):
 
     def setUp(self):
         super(TestGetDownloadUrl, self).setUp()
-        self.project = ProjectFactory()
-        self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'frozen/pizza/reviews.gif'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
         for _ in range(3):
@@ -208,13 +202,10 @@ class TestGetDownloadUrl(OsfTestCase):
         assert_equal(ret, url)
 
 
-class TestSerializeRevision(OsfTestCase):
+class TestSerializeRevision(StorageTestCase):
 
     def setUp(self):
         super(TestSerializeRevision, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'kind/of/magic.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
         self.versions = [

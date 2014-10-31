@@ -4,18 +4,15 @@
 import mock
 from nose.tools import *  # noqa
 
-from tests.base import OsfTestCase
-from tests.factories import ProjectFactory
-
+from website.addons.osfstorage.tests.utils import (
+    StorageTestCase, Delta, AssertDeltas
+)
 from website.addons.osfstorage.tests import factories
 
 import urlparse
-import collections
 
 import furl
 import markupsafe
-
-from framework.auth import Auth
 
 from website import settings
 
@@ -23,24 +20,6 @@ from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
 from website.addons.osfstorage import settings as osf_storage_settings
-
-
-Delta = collections.namedtuple('Delta', ['getter', 'checker'])
-
-
-class AssertDeltas(object):
-
-    def __init__(self, deltas):
-        self.deltas = deltas
-        self.original = []
-
-    def __enter__(self):
-        self.original = [delta.getter() for delta in self.deltas]
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        for idx, delta in enumerate(self.deltas):
-            final = delta.getter()
-            assert delta.checker(self.original[idx]) == final
 
 
 def create_record_with_version(path, node_settings, **kwargs):
@@ -51,12 +30,7 @@ def create_record_with_version(path, node_settings, **kwargs):
     return record
 
 
-class TestHGridViews(OsfTestCase):
-
-    def setUp(self):
-        super(TestHGridViews, self).setUp()
-        self.project = ProjectFactory()
-        self.node_settings = self.project.get_addon('osfstorage')
+class TestHGridViews(StorageTestCase):
 
     def test_hgrid_contents(self):
         path = 'kind/of/magic.mp3'
@@ -109,14 +83,7 @@ class TestHGridViews(OsfTestCase):
         assert_equal(res.status_code, 404)
 
 
-class HookTestCase(OsfTestCase):
-
-    def setUp(self):
-        super(HookTestCase, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.node_settings = self.project.get_addon('osfstorage')
-        self.auth_obj = Auth(user=self.project.creator)
+class HookTestCase(StorageTestCase):
 
     def send_hook(self, view_name, payload, signature, path=None, **kwargs):
         return self.app.put_json(
@@ -341,16 +308,7 @@ class TestFinishHook(HookTestCase):
         assert_equal(res.json['reason'], 'Invalid upload signature')
 
 
-class TestUploadFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestUploadFile, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.node_settings = self.project.get_addon('osfstorage')
-        # Refresh records from database; necessary for comparing dates
-        self.project.reload()
-        self.user.reload()
+class TestUploadFile(StorageTestCase):
 
     def request_upload_url(self, name, size, content_type, path=None, **kwargs):
         return self.app.post_json(
@@ -423,13 +381,10 @@ class TestUploadFile(OsfTestCase):
         assert_equal(res.status_code, 400)
 
 
-class TestViewFile(OsfTestCase):
+class TestViewFile(StorageTestCase):
 
     def setUp(self):
         super(TestViewFile, self).setUp()
-        self.project = ProjectFactory()
-        self.auth_obj = Auth(user=self.project.creator)
-        self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'kind/of/magic.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
@@ -469,13 +424,10 @@ class TestViewFile(OsfTestCase):
         assert markupsafe.escape(record.name) in res
 
 
-class TestGetRevisions(OsfTestCase):
+class TestGetRevisions(StorageTestCase):
 
     def setUp(self):
         super(TestGetRevisions, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'tie/your/mother/down.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
         self.record.versions = [factories.FileVersionFactory() for _ in range(15)]
@@ -529,13 +481,10 @@ class TestGetRevisions(OsfTestCase):
         assert_equal(res.status_code, 404)
 
 
-class TestDownloadFile(OsfTestCase):
+class TestDownloadFile(StorageTestCase):
 
     def setUp(self):
         super(TestDownloadFile, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.node_settings = self.project.get_addon('osfstorage')
         self.path = 'tie/your/mother/down.mp3'
         self.record = model.FileRecord.get_or_create(self.path, self.node_settings)
         self.version = factories.FileVersionFactory()
@@ -690,14 +639,7 @@ class TestDownloadFile(OsfTestCase):
         assert_false(mock_get_url.called)
 
 
-class TestDeleteFile(OsfTestCase):
-
-    def setUp(self):
-        super(TestDeleteFile, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.auth_obj = Auth(user=self.user)
-        self.node_settings = self.project.get_addon('osfstorage')
+class TestDeleteFile(StorageTestCase):
 
     def test_delete_file(self):
         path = 'going/slightly/mad.mp3'
@@ -763,12 +705,10 @@ def assert_urls_equal(url1, url2):
     assert_equal(furl1, furl2)
 
 
-class TestLegacyViews(OsfTestCase):
+class TestLegacyViews(StorageTestCase):
 
     def setUp(self):
         super(TestLegacyViews, self).setUp()
-        self.project = ProjectFactory()
-        self.user = self.project.creator
         self.path = 'mercury.png'
 
     def test_view_file_redirect(self):

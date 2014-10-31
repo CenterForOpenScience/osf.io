@@ -8,6 +8,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.osfstorage.tests import factories
+from website.addons.osfstorage.tests.utils import StorageTestCase
 
 import os
 import datetime
@@ -25,13 +26,7 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import errors
 
 
-class TestNodeSettingsModel(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeSettingsModel, self).setUp()
-        self.node = ProjectFactory()
-        self.user = self.node.creator
-        self.node_settings = self.node.get_addon('osfstorage')
+class TestNodeSettingsModel(StorageTestCase):
 
     def test_fields(self):
         assert_true(self.node_settings._id)
@@ -49,7 +44,7 @@ class TestNodeSettingsModel(OsfTestCase):
         record.versions[-2].status = model.status['FAILED']
         record.versions[-2].save()
         record.save()
-        fork = self.node.fork_node(Auth(user=self.node.creator))
+        fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
         cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
@@ -68,9 +63,9 @@ class TestNodeSettingsModel(OsfTestCase):
         record.versions[-2].status = model.status['FAILED']
         record.versions[-2].save()
         record.save()
-        registration = self.node.register_node(
+        registration = self.project.register_node(
             None,
-            Auth(user=self.node.creator),
+            self.auth_obj,
             '',
             {},
         )
@@ -95,7 +90,7 @@ class TestNodeSettingsModel(OsfTestCase):
         version_failed.save()
         record.versions.extend([version_pending, version_failed])
         record.save()
-        fork = self.node.fork_node(Auth(user=self.node.creator))
+        fork = self.project.fork_node(self.auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         cloned_record = model.FileRecord.find_by_path(path, fork_node_settings)
         assert_is(cloned_record, None)
@@ -117,9 +112,9 @@ class TestNodeSettingsModel(OsfTestCase):
         version_failed.save()
         record.versions.extend([version_pending, version_failed])
         record.save()
-        registration = self.node.register_node(
+        registration = self.project.register_node(
             None,
-            Auth(user=self.node.creator),
+            self.auth_obj,
             '',
             {},
         )
@@ -189,15 +184,11 @@ class TestFileTree(OsfTestCase):
         assert_equal(num_records, model.FileRecord.find().count())
 
 
-class TestFileRecord(OsfTestCase):
+class TestFileRecord(StorageTestCase):
 
     def setUp(self):
         super(TestFileRecord, self).setUp()
         self.path = 'red/special.mp3'
-        self.project = ProjectFactory()
-        self.user = self.project.creator
-        self.auth_obj = Auth(user=self.user)
-        self.node_settings = self.project.get_addon('osfstorage')
         self.record = model.FileRecord(
             path=self.path,
             node_settings=self.node_settings,
