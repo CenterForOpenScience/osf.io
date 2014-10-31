@@ -39,7 +39,7 @@ def query_app(node_addon, **kwargs):
     query = args_to_query(q, size, start)
 
     try:
-        return search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        return search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -59,7 +59,7 @@ def query_app_json(node_addon, **kwargs):
     request_data = request.json
 
     try:
-        return search(request_data, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace], return_raw=return_raw)
+        return search(request_data, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace], return_raw=return_raw)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -74,7 +74,7 @@ def query_app_rss(node_addon, **kwargs):
     query = args_to_query(q, size, start)
 
     try:
-        ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -99,7 +99,7 @@ def query_app_resourcelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -119,7 +119,7 @@ def query_app_changelist(node_addon, **kwargs):
     query = args_to_query(q, start, size)
 
     try:
-        ret = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+        ret = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -209,7 +209,7 @@ def get_project_metadata(node_addon, guid, **kwargs):
         }
     }
 
-    rets = search(query, _type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
+    rets = search(query, search_type=node_addon.namespace, index='metadata', types=['metadata/' + node_addon.namespace])
     ret = {}
 
     for blob in reversed(sorted(rets['results'], key=lambda x: x['_source'].get(sort_on))):

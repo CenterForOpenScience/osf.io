@@ -3,6 +3,7 @@
 """
 from __future__ import unicode_literals
 
+import json
 import logging
 from datetime import datetime, timedelta
 from cStringIO import StringIO
@@ -66,7 +67,7 @@ def elastic_to_rss(name, data, query, url):
             link=doc['id']['url'] if doc.get('id') else doc['links'][0]['url'],
             title=doc.get('title', 'No title provided'),
             author=doc.get('source'),
-            description=doc.get('description', 'No description provided'),
+            description=json.dumps(doc, indent=4, sort_keys=True),
             categories=doc.get('tags', 'No tags provided'),
             pubDate=parse(doc.get('dateUpdated'))
         )
