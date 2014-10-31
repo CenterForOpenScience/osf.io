@@ -1163,6 +1163,18 @@ h1.unavailable {
 
 /* Logs */
 
+@media (min-width: 768px) and (max-width: 991px) {
+    /* wrap dl in col-sm-* grid layout */
+    dl.activity-log dt {
+        float: none;
+        width: inherit;
+        text-align: inherit;
+    }
+    dl.activity-log dd {
+        margin-left: 0;
+    }
+}
+
 .log-file-link {
     cursor: pointer;
 }
