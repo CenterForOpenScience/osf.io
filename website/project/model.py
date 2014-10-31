@@ -1643,7 +1643,7 @@ class Node(GuidStoredObject, AddonModelMixin):
         try:
             file_versions = self.files_versions[path.replace('.', '_')]
             # Default to latest version
-            version = version or len(file_versions) - 1
+            version = version if version is not None else len(file_versions) - 1
         except (AttributeError, KeyError):
             raise ValueError('Invalid path: {}'.format(path))
         if version < 0:
@@ -2520,6 +2520,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': new_page.page_name,
+                'page_id': new_page._primary_key,
                 'version': new_page.version,
             },
             auth=auth,
@@ -2601,6 +2602,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': page.page_name,
+                'page_id': page._primary_key,
             },
             auth=auth,
             save=False,
