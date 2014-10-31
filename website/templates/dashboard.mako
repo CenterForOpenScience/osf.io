@@ -127,6 +127,7 @@
                 return node.category === 'project' && node.permissions === 'admin';
             });
 
+            $.osf.applyBindings({nodes: allNodes}, '#obGoToProject');
             $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
             $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
 

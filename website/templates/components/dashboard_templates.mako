@@ -13,11 +13,12 @@
                             onSelected: onSelectedProject
                         },
                         value: projectInput,
-                        attr: {disabled: hasSelectedProject()}"
+                        attr: {disabled: hasSelectedProject(),
+                            placeholder: projectPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
                 type="text"
-                placeholder="Type to search for a project">
+                placeholder=>
         </div><!-- end .form-group -->
 
         <!-- Component search typeahead -->
@@ -34,15 +35,16 @@
                             clearOn: cleared
                         },
                     value: componentInput,
-                    attr: {disabled: hasSelectedComponent()}"
+                    attr: {disabled: hasSelectedComponent(),
+                            placeholder: componentPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
                 type="text"
-                placeholder="Optional: Type to search for a component">
+                >
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), text: params.submitText || 'Submit'"
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
             class="btn btn-primary pull-right" >
     </button>
 </form>
@@ -151,14 +153,23 @@
 
 <template id="osf-ob-goto">
 <li class="ob-list-item list-group-item">
+    <div data-bind="click: toggle" class="ob-header pointer">
+        <h3 class="ob-heading list-group-item-heading">Go to Project</h3>
+        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
+            class="pointer ob-expand-icon icon-large pull-right">
+        </i>
+    </div><!-- end ob-header -->
     <div class="row">
-        <div class="col-md-12" >
-            <osf-project-search
-            params="data: data,
-                    onSubmit: onSubmit,
-                    submitText: 'Go to project'">
-            </osf-project-search>
-        </div><!-- end col-md -->
+        <div data-bind="visible: isOpen()">
+            <div class="col-md-12" >
+                <osf-project-search
+                params="data: data,
+                        onSubmit: onSubmit,
+                        submitText: submitText,
+                        projectPlaceholder: 'Start typing one of your projects'"
+                </osf-project-search>
+            </div><!-- end col-md -->
+        </div>
     </div><!-- end row -->
 </li> <!-- end .ob-list -->
 </template>
