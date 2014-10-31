@@ -581,8 +581,6 @@ class Node(GuidStoredObject, AddonModelMixin):
 
     title = fields.StringField()
     description = fields.StringField()
-    # TODO: Add validator for this field (must be one of the keys in
-    # CATEGORY_MAP
     category = fields.StringField(validate=validate_category)
 
     # One of 'public', 'private'

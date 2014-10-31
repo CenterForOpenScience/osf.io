@@ -129,7 +129,7 @@
             $.fn.editable.defaults.mode = 'inline';
             $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
                 name:  'title',
-                title: 'Edit Title'
+                title: 'Edit Title',
             }));
             $('#nodeDescriptionEditable').editable($.extend({}, editableOptions, {
                 name:  'description',
