@@ -508,7 +508,10 @@
                         self.enableUpload(true);
                         dropzone.removeAllFiles(true);
                     }
-                    self.changeMessage(message, 'text-danger');
+                    // Use OSF-provided error message if possible
+                    // Otherwise, use dropzone's message
+                    var msg = message.message_long || message;
+                    self.changeMessage(msg, 'text-danger');
                 });
                 this.on('drop',function(){ // clear errors on drop or click
                     self.clearMessages();
