@@ -35,7 +35,7 @@ def get_globals():
     """Context variables that are available for every template rendered by
     OSFWebRenderer.
     """
-    user = get_current_user()
+    user = _get_current_user()
     return {
         'user_name': user.username if user else '',
         'user_full_name': user.fullname if user else '',
