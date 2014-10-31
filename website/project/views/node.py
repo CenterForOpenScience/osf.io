@@ -451,8 +451,8 @@ def project_before_set_public(**kwargs):
     prompt = node.callback('before_make_public')
     anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
     if anonymous_link_warning:
-        prompt.append("Anonymous view-only link <b>DOES NOT</b> anonymize "
-                      "contributor list of public project or component.")
+        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
+                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -976,7 +976,9 @@ def project_generate_private_link_post(auth, **kwargs):
 
     if anonymous and has_public_node:
         status.push_status_message(
-            "Anonymous view-only link <b>DOES NOT</b> anonymize contributor list of public project or component.")
+            "Anonymized view-only links <b>DO NOT</b> "
+            "anonymize contributors of public project or component."
+        )
 
     return new_link
 
