@@ -9,12 +9,6 @@
                         ${authorized_github_user}
                     </a>
                 <a id="githubDelKey" class="text-danger pull-right addon-auth">Delete Access Token</a>
-                % if not nodes:
-                    <p class="text-success addon-message">
-                    Add-on successfully authorized. To link this add-on to an OSF project, go to the
-                    settings page of the project, enable Github, and choose a repo to connect.
-                    </p>
-                % endif
             % else:
                 <a id="githubAddKey" class="text-primary pull-right addon-auth">
                     Create Access Token

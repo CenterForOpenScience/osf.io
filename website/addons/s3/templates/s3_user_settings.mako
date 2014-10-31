@@ -1,5 +1,5 @@
 <form role="form" id="addonSettings${addon_short_name.capitalize()}" data-addon="${addon_short_name}">
-    
+
     <span data-owner="user"></span>
 
     <div>
@@ -10,13 +10,6 @@
                 % if has_auth:
                     authorized
                     <a id="s3RemoveAccess" class="text-danger pull-right addon-auth">Delete Credentials</a>
-                    % if not nodes:
-                        <p class="text-success addon-message">
-                        Add-on successfully authorized. To link this add-on to an OSF project, go to the
-                        settings page of the project, enable Amazon Simple Storage Service,
-                        and create or choose a bucket to connect.
-                        </p>
-                    % endif
                 % endif
             </small>
 
