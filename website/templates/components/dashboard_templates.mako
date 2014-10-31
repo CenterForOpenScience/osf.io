@@ -3,6 +3,7 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
+        ## <pre data-bind="text: ko.toJSON({pIn: projectInput()}, null, 2)"></pre>
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
@@ -12,7 +13,7 @@
                             data: data,
                             onSelected: onSelectedProject
                         },
-                        value: selectedProjectName,
+                        value: projectInput,
                         attr: {disabled: hasSelectedProject()}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
@@ -21,7 +22,7 @@
         </div><!-- end .form-group -->
 
         <!-- Component search typeahead -->
-        <!-- ko if: showComponents && hasSelectedProject() -->
+        <!-- ko if: enableComponents && showComponents && hasSelectedProject() -->
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
             <img
                 data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"
@@ -33,7 +34,7 @@
                             onFetched: onFetchedComponents,
                             clearOn: cleared
                         },
-                    value: selectedComponentName,
+                    value: componentInput,
                     attr: {disabled: hasSelectedComponent()}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
@@ -73,7 +74,6 @@
 </li> <!-- end .ob-list -->
 </template>
 
-## TODO: Remove unnecessary IDs
 <template id="osf-ob-uploader">
 <li class="ob-list-item list-group-item">
     <div class="pointer">
@@ -96,7 +96,7 @@
                     data-bind="attr: {value: progress()}"
                         class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
-                    class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
+                    class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
             </div>
 
         </div><!-- end col-md -->
@@ -107,11 +107,13 @@
             <osf-project-search
             params="data: data,
                     onSubmit: startUpload,
+                    onClear: clearMessages,
+                    onSelected: clearMessages,
                     submitTest: 'Upload'">
             </osf-project-search>
         </div>
     </div><!-- end row -->
-    <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
+    <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
 </li> <!-- end .ob-list -->
 </template>
 
@@ -122,7 +124,7 @@
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+            <input class="form-control" type="text" name="title" maxlength="200" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
@@ -139,7 +141,7 @@
     <br />
     <div class="row">
         <div class="col-md-12">
-            <button class="btn btn-primary pull-right" type="submit" data-bind="enable: title.isValid()" disabled>Create</button>
+            <button class="btn btn-primary pull-right" type="submit">Create</button>
         </div>
     </div>
 </form>
