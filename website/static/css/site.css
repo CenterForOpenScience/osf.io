@@ -114,126 +114,110 @@
 
 .hideValidation .validationMessage { display: none; }
 
+
+/* Home Page */
 .hpLink:hover{
     text-decoration: none;
     color: red;
 }
-
-#hpContainerOne{
-    height: 520px;
+.hpContainerOne{
+    margin-top: 0;
 }
-#hpContainerTwo {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
+/* >= sm */
+@media (min-width: 768px) {
+    .hpContainerOne {
+        margin-top: 50px;
+    }
 }
-
-#hpContainerTwo  .featureDescriptions  .col-md-4  img {
-    height: 85px;
-    margin-bottom: 25px;
-    padding-top: 5px;
-}
-
-#hpContainerThree {
-    margin-top: 25px;
-    margin-bottom: 25px;
-    padding-top: 25px;
-    padding-bottom: 25px;
-    clear: both;
-}
-#containerOneHeader {
-    float: left;
-    margin-top: 50px;
-}
-.headOne {
+.headOne, /* TODO: cleanup getting started */
+.hpHeadOne {
     font-family: 'Carrois Gothic', Helvetica;
-    letter-spacing:1px;
-    font-size: 50px;
+    letter-spacing: 1px;
+    font-size: 40px;
     color: black;
 }
-
-.headTwo {
+/* >=sm */
+@media (min-width: 768px) {
+    .headOne, /* TODO: cleanup getting started */
+    .hpHeadOne {
+       font-size: 50px;
+    }
+}
+.hpHeadTwo {
+    padding-top: 70px;
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 40px;
     color: black;
 }
-.subHeadOne {
+.hpSubHeadOne {
+    padding-bottom: 30px;
     font-family: 'Inika', Helvetica;
     font-size: 24px;
     letter-spacing: 1px;
 }
-.subHeadTwo {
+.hpSubHeadTwo {
     font-size: 30px;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadThree {
+.hpSubHeadThree {
     font-size: 28px;
     color: #4089C7;
     font-family: 'Patua One', Helvetica;
     letter-spacing: 1px;
 }
-.subHeadFour {
+.subHeadFour, /* TODO: cleanup getting started */
+.hpSubHeadFour {
     font-family: 'Carrois Gothic', Helvetica;
     letter-spacing:1px;
     font-size: 36px;
     color: black;
 }
-.sign-up {
-    margin-top: 50px;
+.hpSignUp {
     background: #aad4f7;
-    float: right;
     padding: 30px 30px 30px 30px;
     border: solid #bacfd8 1px;
 }
-.sign-up .form-control {
+.hpSignUp .form-control {
     margin-top: 20px;
     height: 40px;
 }
-.sign-up .btn {
+.hpSignUp .btn {
     font-family: 'Inika', Helvetica;
     font-size: 28px;
     letter-spacing: 1pt;
     margin-top: 40px;
-    float: right;
 }
-.text-center {
-    text-align: center;
-}
-.text-right {
-    text-align: right;
-}
-
-.header {
-    display: block;
+.hpHeader {
     font-family: 'Patua One', cursive;
     font-size: 24px;
-    padding-bottom: 20px;
     padding-top: 70px;
 }
-
-.featureDescriptions {
-    padding-top: 75px;
+.hpFeature {
+    padding-bottom: 20px;
+    padding-top: 70px;
     font-size: 22px;
     font-family: 'Carrois Gothic', sans-serif;
 }
-
-.featureDescriptions .featureInfo {
+.hpFeature img {
+    height: 85px;
+    margin-bottom: 25px;
+}
+.hpFeature .hpFeatureInfo {
     font-family: 'Inika', serif;
     font-size: 16px;
 }
-.steps {
+.hpSteps {
     padding-bottom: 20px;
     padding-top: 20px;
 }
-
-.stepsText {
+.hpStepsText {
     font-family: 'Inika', serif;
     font-size: 16px;
+    padding-top: 40px;
 }
+
 
 .padded {
     padding-top: 20px;
@@ -391,6 +375,10 @@ li.pointer {
     margin-top: 4.8px;
 }
 
+.addon-message {
+    padding-top: 20px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
@@ -470,6 +458,12 @@ h4 {
 @media (max-width: 767px) {
     .navbar-btn {
         margin-left: 15px;
+    }
+
+    /* navbar expand to fill entire display (visible logout button) */
+    .navbar-fixed-top .navbar-collapse,
+    .navbar-fixed-bottom .navbar-collapse {
+        max-height: none;
     }
 }
 
@@ -674,40 +668,24 @@ h4 {
 
 /* Data Vis
 -------------------------------------------------- */
-/* Activity meters (user profile) */
-.ua_meter_legend ul{
-    list-style:none;
+/* Activity progress bar (user profile) */
+.progress-user-activity {
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    border-radius: 0;
+    max-height: 10px;
+    margin-top: 10px;
+    margin-bottom: 5px;
 }
-.ua_meter_legend li{
-    display:inline;
-    float:left;
+.progress-user-activity>.progress-bar:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
-.user-activity-meter{
-    height: 10px;
-    margin: 8px 0px;
+.progress-user-activity>.progress-bar.last {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
-.user-activity-meter ul{
-    height:100%;
-    list-style:none;
-    padding-left: 0px;
-}
-.user-activity-meter ul li{
-    display:inline;
-    float:left;
-    height:100%;
-}
-
-.pa-meter{
-    background:#4572A7;
-}
-.ua-meter{
-    background:#89A54E;
-}
-.pa-meter-label{
-    margin: -4px 0 0 5px;
-    font-size: 11px;
-}
-
 
 /* Footer
 -------------------------------------------------- */
@@ -865,12 +843,19 @@ h1.node-title, h1.node-parent-title {
     margin-top: 0.9em;
 }
 
+/* Bootstrap Editable */
+
 .editable {
     border-bottom: none;
 }
 
 .editable:hover{
   background-color:#F3F3F3;
+}
+
+.editable-error-block  {
+    font-size: 16px;
+    max-width: 100%;
 }
 
 /* File list tables */
@@ -1277,6 +1262,10 @@ h1.unavailable {
     cursor: pointer;
 }
 
+.log-node-title-link {
+    font-weight: bold;
+}
+
 .log-date {
     font-size: 13px;
 }
@@ -1301,9 +1290,6 @@ h1.unavailable {
     width:100%;
 }
 
-div#logScope a.moreLogs{
-    margin-left: 50px;
-}
 
 /* private_link*/
 

@@ -46,7 +46,7 @@
                     <a class="hidden-lg hidden-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}" class="icon-user"></span>
                     </a>
-                    <a class="visible-lg visible-xs"href="/profile/">
+                    <a class="visible-lg visible-xs" href="/profile/">
                         <span rel="tooltip" title="${user_name}">${display_name}</span>
                     </a>
                 </li>

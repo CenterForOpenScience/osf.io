@@ -482,8 +482,8 @@ class Pointer(StoredObject):
             )
         )
 
-def resolve_pointer(pointer):
-    """Given a `Pointer` object, return the node that it resolves to.
+def get_pointer_parent(pointer):
+    """Given a `Pointer` object, return its parent node.
     """
     # The `parent_node` property of the `Pointer` schema refers to the parents
     # of the pointed-at `Node`, not the parents of the `Pointer`; use the
@@ -1201,7 +1201,7 @@ class Node(GuidStoredObject, AddonModelMixin):
     def get_points(self, folders=False, deleted=False, resolve=True):
         ret = []
         for each in self.pointed:
-            pointer_node = resolve_pointer(each)
+            pointer_node = get_pointer_parent(each)
             if not folders and pointer_node.is_folder:
                 continue
             if not deleted and pointer_node.is_deleted:
@@ -2523,6 +2523,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': new_page.page_name,
+                'page_id': new_page._primary_key,
                 'version': new_page.version,
             },
             auth=auth,
@@ -2604,6 +2605,7 @@ class Node(GuidStoredObject, AddonModelMixin):
                 'project': self.parent_id,
                 'node': self._primary_key,
                 'page': page.page_name,
+                'page_id': page._primary_key,
             },
             auth=auth,
             save=False,

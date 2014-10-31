@@ -53,6 +53,8 @@ def get_globals():
         'web_url_for': util.web_url_for,
         'api_url_for': util.api_url_for,
         'sanitize': sanitize,
+        'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"')
+
     }
 
 

@@ -64,9 +64,16 @@ ul.ob-widget-list {
 }
 
 .ob-clear-button{
-	position:absolute;
+	position: relative;
 	z-index: 1;
 	top: -5px;
+	right: -12px;
+}
+
+.ob-clear-uploads-button{
+	position: relative;
+	z-index: 1;
+	top: -140px;
 	right: -12px;
 }
 

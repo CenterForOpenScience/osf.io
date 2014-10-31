@@ -20,6 +20,8 @@
     /*
      * ViewModel for the project creation form.
      *
+     * Template: osf-project-creat-form in component/dashboard_templates.mako
+     *
      * Params:
      *  - data: Data to populate the template selection input
      */
@@ -27,15 +29,14 @@
         var self = this;
         self.params = params || {};
         self.minSearchLength = 2;
-        self.title = ko.observable('').extend({
-            maxLength: 200
-        });
-
+        self.title = ko.observable('');
         self.description = ko.observable();
         self.errorMessage = ko.observable('');
 
+        self.hasFocus = params.hasFocus;
+
         self.submitForm = function () {
-            if (self.title().trim() === ''){
+            if (self.title().trim() === '') {
                 self.errorMessage('This field is required.');
             } else {
                 self.createProject();
@@ -170,8 +171,8 @@
         });
     }
 
-    ko.components.register('project-create-form', {
+    ko.components.register('osf-project-create-form', {
         viewModel: ProjectCreatorViewModel,
-        template: {element: 'project-create-form'}
+        template: {element: 'osf-project-create-form'}
     });
 }));
