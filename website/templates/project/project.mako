@@ -88,6 +88,7 @@
             % endif
         </div>
         <h2>Components</h2>
+        <hr />
     % endif
     % if node['node_type'] == 'project':
         % if node['children']:
