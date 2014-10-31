@@ -117,14 +117,18 @@
 </li> <!-- end .ob-list -->
 </template>
 
-<template id="project-create-form">
+<template id="osf-project-create-form">
 <form id="creationForm" data-bind="submit: submitForm">
     ## Uncomment for debugging
     ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" maxlength="200" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+            <input class="form-control" 
+                type="text" name="title" 
+                maxlength="200" 
+                data-bind="value: title, valueUpdate:'input', hasFocus: focus" 
+                placeholder="Required">
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>

@@ -60,8 +60,9 @@
                                 </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                <project-create-form params="data: nodes">
-                                </project-create-form>
+                                <osf-project-create-form 
+                                    params="data: nodes, hasFocus: focus">
+                                </osf-project-create-form>
                             </div>
                         </li> <!-- end ob-list-item -->
                     </div>
@@ -126,17 +127,23 @@
 
             $.osf.applyBindings({nodes: registrationSelection}, '#obRegisterProject');
             $.osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-            $.osf.applyBindings({
-                isOpen: ko.observable(false),
-                toggle: function() {
+
+            function ProjectCreateViewModel() {
+                var self = this;
+                self.isOpen = ko.observable(false),
+                self.focus = ko.observable(false);
+                self.toggle = function() {
                     if (!this.isOpen()) {
-                        this.isOpen(true);
+                        self.isOpen(true);
+                        self.focus(true);
                     } else {
-                        this.isOpen(false);
+                        self.isOpen(false);
+                        self.focus(false);
                     }
-                },
-                nodes: response.nodes
-            }, '#projectCreate');
+                };
+                self.nodes = response.nodes;
+            }
+            $.osf.applyBindings(ProjectCreateViewModel, '#projectCreate');
         });
         request.fail(function(xhr, textStatus, error) {
             Raven.captureMessage('Could not fetch dashboard nodes.', {
