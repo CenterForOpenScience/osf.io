@@ -267,7 +267,7 @@
         });
 
         $('body').on('click', '.tagsinput .tag > span', function(e) {
-            window.location = '/search/?tags=' + $(e.target).text().toString().trim();
+            window.location = '/search/?q=(tags:' + $(e.target).text().toString().trim()+ ')';
         });
 
         $('.citation-toggle').on('click', function() {

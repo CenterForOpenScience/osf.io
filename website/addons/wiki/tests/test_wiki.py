@@ -12,8 +12,10 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from framework.forms.utils import sanitize
+from website import settings
 from website.addons.wiki.views import _serialize_wiki_toc, _get_wiki_web_urls, _get_wiki_api_urls
-from website.addons.wiki.model import NodeWikiPage
+from website.addons.wiki.model import NodeWikiPage, render_content
 from framework.auth import Auth
 from framework.mongo.utils import to_mongo_key
 
@@ -289,6 +291,12 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    def test_home_is_capitalized_in_web_view(self):
+        url = self.project.web_url_for('project_wiki_home', wid='home', _guid=True)
+        res = self.app.get(url, auth=self.user.auth).follow(auth=self.user.auth)
+        page_name_elem = res.html.find('span', {'id': 'pageName'})
+        assert_in('Home', page_name_elem.text)
+
 
 class TestViewHelpers(OsfTestCase):
 
@@ -523,6 +531,14 @@ class TestWikiLinks(OsfTestCase):
             project.web_url_for('project_wiki_page', wname='wiki2'),
             wiki.html(project),
         )
+
+    # Regression test for https://sentry.osf.io/osf/production/group/310/
+    def test_bad_links(self):
+        content = u'<span></span><iframe src="http://httpbin.org/"></iframe>'
+        node = ProjectFactory()
+        wiki = NodeWikiFactory(content=content, node=node)
+        expected = render_content(content, node)
+        assert_equal(expected, wiki.html(node))
 
 
 class TestWikiCompare(OsfTestCase):

@@ -13,3 +13,6 @@ class MalformedQueryError(SearchException):
 
 class TypeCollisionError(SearchException):
     pass
+
+class SearchUnavailableError(SearchException):
+    pass

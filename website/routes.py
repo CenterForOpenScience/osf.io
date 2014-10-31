@@ -193,9 +193,16 @@ def make_url_map(app):
     ], prefix='/api/v1')
 
     process_rules(app, [
+        # API route for getting summary information for dashboard nodes.
         Rule('/dashboard/get_nodes/', 'get', website_views.get_dashboard_nodes, json_renderer),
         # TODO Fix apps
         # Rule('/dashboard/apps/', 'get', website_views.get_dashboard_apps, json_renderer),
+        # API route for getting serialized HGrid data, e.g. for the project
+        # organizer
+        # TODO: Perhaps this should be namespaced to so that the above route
+        # can use the /dashboard/ URL. e.g.
+        # /dashboard/<nid> -> Return info about dashboard nodes
+        # /dashboard/grid/<nid>/ -> Return hgrid-serialized data for dashboard nodes
         Rule(
             [
                 '/dashboard/<nid>',
@@ -513,26 +520,16 @@ def make_url_map(app):
     # Web
 
     process_rules(app, [
-
-        Rule('/search/', 'get', search_views.search_search, OsfWebRenderer('search.mako')),
-        Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
-
-        Rule(
-            '/api/v1/search/node/',
-            'post',
-            project_views.node.search_node,
-            json_renderer,
-        ),
-
+        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
     ])
 
     # API
 
     process_rules(app, [
-
-        Rule('/search/', ['get', 'post'], search_views.search_search, json_renderer),
+        Rule(['/search/', '/search/<type>/'], ['get', 'post'], search_views.search_search, json_renderer),
         Rule('/search/projects/', 'get', search_views.search_projects_by_title, json_renderer),
-
+        Rule('/user/search/', 'get', search_views.search_contributor, json_renderer),
+        Rule('/search/node/', 'post', project_views.node.search_node, json_renderer),
     ], prefix='/api/v1')
 
     # Project

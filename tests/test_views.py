@@ -21,6 +21,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 
 import website.app
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -2710,7 +2711,7 @@ class TestSearchViews(OsfTestCase):
         assert_equal(pages, 3)
 
     def test_search_projects(self):
-        url = web_url_for('search_search')
+        url = '/search/'
         res = self.app.get(url, {'q': self.project.title})
         assert_equal(res.status_code, 200)
 
@@ -2886,7 +2887,7 @@ class TestDashboardViews(OsfTestCase):
         self.dashboard = DashboardFactory(creator=self.creator)
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
-    def test_components_with__are_accessible_from_dashboard(self):
+    def test_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
@@ -2897,7 +2898,69 @@ class TestDashboardViews(OsfTestCase):
 
         assert_equal(len(res.json), 1)
 
-    def test_registered_components_with__are_accessible_from_dashboard(self):
+    def test_get_dashboard_nodes(self):
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+
+        url = api_url_for('get_dashboard_nodes')
+
+        res = self.app.get(url, auth=self.creator.auth)
+        assert_equal(res.status_code, 200)
+
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 1)
+
+        project_serialized = nodes[0]
+        assert_equal(project_serialized['id'], project._primary_key)
+
+    def test_get_dashboard_nodes_shows_components_if_user_is_not_contrib_on_project(self):
+        # User creates a project with a component
+        project = ProjectFactory(creator=self.creator)
+        component = NodeFactory(creator=self.creator, project=project)
+        # User adds friend as a contributor to the component but not the
+        # project
+        friend = AuthUserFactory()
+        component.add_contributor(friend, auth=Auth(self.creator))
+        component.save()
+
+        # friend requests their dashboard nodes
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        # Response includes component
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], component._primary_key)
+
+        # friend requests dashboard nodes ,filtering against components
+        url = api_url_for('get_dashboard_nodes', no_components=True)
+        res = self.app.get(url, auth=friend.auth)
+        nodes = res.json['nodes']
+        assert_equal(len(nodes), 0)
+
+    def test_get_dashboard_nodes_admin_only(self):
+        friend = AuthUserFactory()
+        project = ProjectFactory(creator=self.creator)
+        # Friend is added as a contributor with read+write (not admin)
+        # permissions
+        perms = permissions.expand_permissions(permissions.WRITE)
+        project.add_contributor(friend, auth=Auth(self.creator), permissions=perms)
+        project.save()
+
+        url = api_url_for('get_dashboard_nodes')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(res.json['nodes'][0]['id'], project._primary_key)
+
+        # Can filter project according to permission
+        url = api_url_for('get_dashboard_nodes', permissions='admin')
+        res = self.app.get(url, auth=friend.auth)
+        assert_equal(len(res.json['nodes']), 0)
+
+    def test_get_dashboard_nodes_invalid_permission(self):
+        url = api_url_for('get_dashboard_nodes', permissions='not-valid')
+        res = self.app.get(url, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, public=False)
         component = NodeFactory(creator=self.creator, project=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
