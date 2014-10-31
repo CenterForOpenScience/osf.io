@@ -1074,6 +1074,11 @@ h1.unavailable {
 }
 
 /* Sidenav */
+.osf-sidenav {
+    /* overflow-wrap css3 */
+    word-wrap: break-word;
+}
+
 .osf-sidenav.affix {
   position: static;
 }
