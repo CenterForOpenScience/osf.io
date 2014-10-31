@@ -4,24 +4,30 @@ import os
 
 from flask import send_from_directory
 
-from framework import sentry, status
+from framework import status
+from framework import sentry
+from framework.routing import Rule
 from framework.flask import redirect
-from framework.auth import get_current_user, get_display_name
+from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
-from framework.routing import (
-    Rule, process_rules, WebRenderer, json_renderer, render_mako_string
-)
+from framework.auth import get_display_name
+from framework.routing import json_renderer
+from framework.routing import process_rules
 from framework.auth import views as auth_views
+from framework.routing import render_mako_string
+from framework.auth.core import _get_current_user
 
-from website import settings, language, util
+from website import util
+from website import settings
+from website import language
+from website.util import sanitize
 from website import views as website_views
-from website.addons.base import views as addon_views
+from website.assets import env as assets_env
 from website.search import views as search_views
-from website.discovery import views as discovery_views
 from website.profile import views as profile_views
 from website.project import views as project_views
-from website.assets import env as assets_env
-from website.util import sanitize
+from website.addons.base import views as addon_views
+from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 
 
