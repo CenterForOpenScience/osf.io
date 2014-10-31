@@ -6,23 +6,30 @@ import httplib as http
 from flask import request
 from modularodm import Q
 
+from framework import utils
+from framework import sentry
 from framework.auth.core import User
 from framework.flask import redirect  # VOL-aware redirect
-from framework import utils
-from framework.forms import utils as form_utils
-from framework import sentry
-from framework.exceptions import HTTPError
 from framework.routing import proxy_url
-from framework.auth import Auth, get_current_user
-from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (RegistrationForm, SignInForm,
-                                  ForgotPasswordForm, ResetPasswordForm)
+from framework.exceptions import HTTPError
+from framework.auth.forms import SignInForm
+from framework.forms import utils as form_utils
 from framework.guid.model import GuidStoredObject
-from website.models import Guid, Node
-from website.util import web_url_for, rubeus, permissions
-from website.project import model, new_dashboard
+from framework.auth.forms import RegistrationForm
+from framework.auth.forms import ResetPasswordForm
+from framework.auth.forms import ForgotPasswordForm
+from framework.auth.decorators import collect_auth
+from framework.auth.decorators import must_be_logged_in
 
-from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
+from website.models import Guid
+from website.models import Node
+from website.util import rubeus
+from website.project import model
+from website.util import web_url_for
+from website.util import permissions
+from website.project import new_dashboard
+from website.settings import ALL_MY_PROJECTS_ID
+from website.settings import ALL_MY_REGISTRATIONS_ID
 
 logger = logging.getLogger(__name__)
 
