@@ -7,19 +7,20 @@
                     Deleting your file…
                 </div>
 
-        % if user['can_edit'] and 'write' in user['permissions']:
+
             <p>
                 <span id="downloadButtonScope">
-                <a
-                        data-bind="attr: {href: downloadURL}"
+                    <a data-bind="attr: {href: downloadURL}"
                         class="btn btn-success btn-md"
-                    >Download <i class="icon-download-alt" ></i>
-                </a></span>
-                <span id="deleteButtonScope" class='scripted'>
-                <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
-                    Delete <i class="icon-trash"></i>
-                </a>
+                        >Download <i class="icon-download-alt" ></i>
+                    </a>
                 </span>
+                % if user['can_edit'] and 'write' in user['permissions']:
+                    <span id="deleteButtonScope" class='scripted'>
+                        <a href="#" data-bind="visible: api_url, click: deleteFile" class="btn btn-danger btn-md" >
+                            Delete <i class="icon-trash"></i>
+                        </a>
+                    </span>
             </p>
         % endif
 
