@@ -375,6 +375,10 @@ li.pointer {
     margin-top: 4.8px;
 }
 
+.addon-message {
+    padding-top: 20px;
+}
+
 /* Make embedded iframes responsive */
 .addon-widget-container iframe {
     max-width: 100%;
