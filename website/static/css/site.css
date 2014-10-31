@@ -456,6 +456,12 @@ h4 {
     .navbar-btn {
         margin-left: 15px;
     }
+
+    /* navbar expand to fill entire display (visible logout button) */
+    .navbar-fixed-top .navbar-collapse,
+    .navbar-fixed-bottom .navbar-collapse {
+        max-height: none;
+    }
 }
 
 .tab-pane {
