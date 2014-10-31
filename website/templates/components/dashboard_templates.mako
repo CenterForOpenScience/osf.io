@@ -12,12 +12,13 @@
                             data: data,
                             onSelected: onSelectedProject
                         },
-                        value: selectedProjectName,
-                        attr: {disabled: hasSelectedProject()}"
+                        value: projectInput,
+                        attr: {disabled: hasSelectedProject(),
+                            placeholder: projectPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="project"
                 type="text"
-                placeholder="Type to search for a project">
+                placeholder=>
         </div><!-- end .form-group -->
 
         <!-- Component search typeahead -->
@@ -33,16 +34,17 @@
                             onFetched: onFetchedComponents,
                             clearOn: cleared
                         },
-                    value: selectedComponentName,
-                    attr: {disabled: hasSelectedComponent()}"
+                    value: componentInput,
+                    attr: {disabled: hasSelectedComponent(),
+                            placeholder: componentPlaceholder}"
                 class="typeahead ob-typeahead-input form-control"
                 name="component"
                 type="text"
-                placeholder="Optional: Type to search for a component">
+                >
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), text: params.submitText || 'Submit'"
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
             class="btn btn-primary pull-right" >
     </button>
 </form>
@@ -65,7 +67,7 @@
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
-                        submitTest: 'Continue registration...'">
+                        submitText: 'Continue registration...'">
                 </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
@@ -73,7 +75,6 @@
 </li> <!-- end .ob-list -->
 </template>
 
-## TODO: Remove unnecessary IDs
 <template id="osf-ob-uploader">
 <li class="ob-list-item list-group-item">
     <div class="pointer">
@@ -93,10 +94,10 @@
                 <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
                 <div data-bind="text: filename" class="ob-dropzone-filename"></div>
                 <progress
-                    data-bind="attr: {value: progress()}"
+                    data-bind="attr: {value: progress()}, visible: showProgress()"
                         class="ob-upload-progress" max="100"></progress>
                 <img data-bind="click: clearDropzone"
-                    class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
+                    class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
             </div>
 
         </div><!-- end col-md -->
@@ -107,22 +108,27 @@
             <osf-project-search
             params="data: data,
                     onSubmit: startUpload,
-                    submitTest: 'Upload'">
+                    onClear: clearMessages,
+                    onSelected: clearMessages,
+                    submitText: 'Upload'">
             </osf-project-search>
         </div>
     </div><!-- end row -->
-    <div data-bind="text: message(), attr: {class: messageClass()}" ></div>
+    <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
 </li> <!-- end .ob-list -->
 </template>
 
-<template id="project-create-form">
+<template id="osf-project-create-form">
 <form id="creationForm" data-bind="submit: submitForm">
     ## Uncomment for debugging
-    ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" type="text" name="title" data-bind="value: title, valueUpdate:'input'" placeholder="Required">
+            <input class="form-control"
+                type="text" name="title"
+                maxlength="200"
+                data-bind="value: title, valueUpdate:'input', hasFocus: focus"
+                placeholder="Required">
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
@@ -139,8 +145,39 @@
     <br />
     <div class="row">
         <div class="col-md-12">
-            <button class="btn btn-primary pull-right" type="submit" data-bind="enable: title.isValid()" disabled>Create</button>
+            <button class="btn btn-primary pull-right" type="submit">Create</button>
         </div>
     </div>
 </form>
+</template>
+
+<template id="osf-ob-goto">
+<li class="ob-list-item list-group-item">
+    <div data-bind="click: toggle" class="ob-header pointer">
+        <h3 class="ob-heading list-group-item-heading">Go to Project</h3>
+        <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
+            class="pointer ob-expand-icon icon-large pull-right">
+        </i>
+    </div><!-- end ob-header -->
+    <div class="row">
+        <div data-bind="visible: isOpen()">
+            <div class="col-md-12" >
+
+                <!-- ko if: data.length -->
+                <osf-project-search
+                params="data: data,
+                        onSubmit: onSubmit,
+                        submitText: submitText,
+                        projectPlaceholder: 'Start typing one of your projects'">
+                </osf-project-search>
+                <!-- /ko -->
+                <!-- ko if: !data.length -->
+                <p class="text-info">
+                    You do not have any projects yet. Click below to create one!
+                </p>
+                <!-- /ko -->
+            </div><!-- end col-md -->
+        </div>
+    </div><!-- end row -->
+</li> <!-- end .ob-list -->
 </template>

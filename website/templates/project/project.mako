@@ -166,7 +166,7 @@ ${parent.javascript_bottom()}
 
 
     var $comments = $('#comments');
-    var userName = '${user_full_name}';
+    var userName = '${user_full_name | js_str}';
     var canComment = ${'true' if user['can_comment'] else 'false'};
     var hasChildren = ${'true' if node['has_children'] else 'false'};
 
