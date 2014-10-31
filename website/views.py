@@ -34,7 +34,7 @@ from website.settings import ALL_MY_REGISTRATIONS_ID
 logger = logging.getLogger(__name__)
 
 
-def _rescale_ratio(nodes):
+def _rescale_ratio(auth, nodes):
     """Get scaling denominator for log lists across a sequence of nodes.
 
     :param nodes: Nodes
@@ -43,19 +43,17 @@ def _rescale_ratio(nodes):
     """
     if not nodes:
         return 0
-    # TODO: Don't use get_current_user. It is deprecated.
-    user = get_current_user()
     counts = [
         len(node.logs)
         for node in nodes
-        if node.can_view(Auth(user=user))
+        if node.can_view(auth)
     ]
     if counts:
         return float(max(counts))
     return 0.0
 
 
-def _render_node(node, user=None):
+def _render_node(node, auth):
     """
 
     :param node:
@@ -63,8 +61,8 @@ def _render_node(node, user=None):
 
     """
     perm = None
-    if user:
-        perm_list = node.get_permissions(user)
+    if auth and auth.user:
+        perm_list = node.get_permissions(auth.user)
         perm = permissions.reduce_permissions(perm_list)
     return {
         'title': node.title,
@@ -78,7 +76,7 @@ def _render_node(node, user=None):
     }
 
 
-def _render_nodes(nodes, user=None):
+def _render_nodes(nodes, auth):
     """
 
     :param nodes:
@@ -86,10 +84,10 @@ def _render_nodes(nodes, user=None):
     """
     ret = {
         'nodes': [
-            _render_node(node, user=user)
+            _render_node(node, auth)
             for node in nodes
         ],
-        'rescale_ratio': _rescale_ratio(nodes),
+        'rescale_ratio': _rescale_ratio(auth, nodes),
     }
     return ret
 
@@ -259,7 +257,7 @@ def get_dashboard_nodes(auth, **kwargs):
         response_nodes = [node for node in nodes if node.has_permission(user, permission=perm)]
     else:
         response_nodes = nodes
-    return _render_nodes(response_nodes, user=user)
+    return _render_nodes(response_nodes, auth)
 
 
 @must_be_logged_in
