@@ -155,6 +155,10 @@
      *
      * Params:
      *  onSubmit: Function to call on submit. Receives the selected item.
+     *  onSelected: Function to call when a typeahead selection is made.
+     *  onFetchedComponents: Function to call when components for the selected project
+     *      are fetched.
+     *  onClear: Function to call when the clear button is clicked.
      */
     function ProjectSearchViewModel(params) {
         var self = this;
@@ -162,6 +166,9 @@
         self.heading = params.heading;
         // Data passed to the project typehead
         self.data = params.data  || DEFAULT_FETCH_URL;
+        self.submitText = params.submitText || 'Submit';
+        self.projectPlaceholder = params.projectPlaceholder || 'Type to search for a project';
+        self.componentPlaceholder = params.componentPlaceholder || 'Optional: Type to search for a component';
 
         /* Observables */
         // If params.enableComponents is passed in, use that value, otherwise default to true
@@ -170,6 +177,11 @@
         self.showComponents = ko.observable(self.enableComponents);
         self.selectedProject = ko.observable(null);
         self.selectedComponent = ko.observable(null);
+        // The current user input. we store these so that we can show an error message
+        // if the user clicks "Submit" when their selection isn't complete
+        self.projectInput = ko.observable('');
+        self.componentInput = ko.observable('');
+
         /* Computeds */
         self.hasSelectedProject = ko.computed(function() {
             return self.selectedProject() !== null;
@@ -194,7 +206,7 @@
         });
         // Component name to display in the text input
         self.selectedComponentName = ko.computed(function() {
-            return self.selectedComponent() ? self.selectedComponent().name : '';
+            return self.selectedComponent() ? self.selectedComponent().name : self.componentInput();
         });
 
         self.componentURL = ko.computed(function() {
@@ -204,14 +216,19 @@
         /* Functions */
         self.onSubmit = function() {
             var func = params.onSubmit || noop;
-            var selected = self.selectedComponent() || self.selectedProject();
-            func(selected);
+            func(self.selectedProject(), self.selectedComponent(), self.projectInput(), self.componentInput());
         };
         self.onSelectedProject = function(selected) {
             self.selectedProject(selected);
+            self.projectInput(selected.name);
+            var func = params.onSelected || noop;
+            func(selected);
         };
         self.onSelectedComponent = function(selected) {
             self.selectedComponent(selected);
+            self.componentInput(selected.name);
+            var func = params.onSelected || noop;
+            func(selected);
         };
         self.onFetchedComponents = function(components) {
             // Show component search only if selected project has components
@@ -221,14 +238,19 @@
         };
         self.clearSearch = function() {
             self.selectedComponent(null);
+            self.componentInput('');
             self.selectedProject(null);
+            self.projectInput('');
             // This must be set after clearing selectedProject
             // to avoid sending extra request in the projectSearch
             // binding handler
             self.showComponents(true);
+            var func = params.onClear || noop;
+            func();
         };
         self.clearComponentSearch = function() {
             self.selectedComponent(null);
+            self.componentInput('');
             self.showComponents(true);
         };
     }
@@ -398,7 +420,12 @@
         // The target node to upload to to
         self.target = ko.observable(null);
         /* Functions */
-        self.startUpload = function(selected) {
+        self.startUpload = function(selectedProject, selectedComponent, projectInput, componentInput) {
+            if (!selectedComponent && componentInput.length) {
+                var msg = 'Not a valid component selection. Clear your search or select a component from the dropdown.';
+                self.changeMessage(msg, 'text-warning');
+                return false;
+            }
             if (self.dropzone.getUploadingFiles().length) {
                 self.changeMessage('Please wait until the pending uploads are finished.');
                 return false;
@@ -407,6 +434,7 @@
                 self.changeMessage('Please select at least one file to upload.', 'text-danger');
                 return false;
             }
+            var selected = selectedComponent || selectedProject;
             self.target(selected);
             self.clearMessages();
             self.showProgress(true);
@@ -473,7 +501,7 @@
                     if (fileSize > dropzone.options.maxFilesize){
                         self.changeMessage(fileName + ' is too big (max = ' +
                                          dropzone.options.maxFilesize +
-                                         ' MiB) and was not added to the upload queue.', 'text-danger');
+                                         ' MB) and was not added to the upload queue.', 'text-danger');
                     } else {
                         self.changeMessage(fileName + ' could not be added to the upload queue', 'text-danger');
                         Raven.captureMessage('Could not upload: ' + fileName);
@@ -515,5 +543,35 @@
     ko.components.register('osf-ob-uploader', {
         viewModel: OBUploaderViewModel,
         template: {element: 'osf-ob-uploader'}
+    });
+
+
+    function OBGoToViewModel(params) {
+        var self = this;
+        self.params = params;
+        self.data = params.data || DEFAULT_FETCH_URL;
+        /* Observables */
+        self.isOpen = ko.observable(true);
+        self.hasFocus = ko.observable(true);
+        self.submitText = '<i class="icon-double-angle-right"></i> Go';
+        /* Functions */
+        self.toggle = function() {
+            if (!self.isOpen()) {
+                self.isOpen(true);
+                self.hasFocus = ko.observable(true);
+            } else {
+                self.isOpen(false);
+                self.hasFocus = ko.observable(false);
+            }
+        };
+        self.onSubmit = function(selectedProject, selectedComponent) {
+            var node = selectedComponent || selectedProject;
+            window.location = node.urls.web;
+        };
+    }
+
+    ko.components.register('osf-ob-goto', {
+        viewModel: OBGoToViewModel,
+        template: {element: 'osf-ob-goto'}
     });
 }));

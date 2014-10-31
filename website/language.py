@@ -78,7 +78,7 @@ LINK_EXPIRED = 'This confirmation link has expired. Please <a href="/login/">log
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your registration, but the projects that they link to will not be '
-    'registered. If you wish to register the linked projects, you must fork'
+    'registered. If you wish to register the linked projects, you must fork '
     'them from the original project before registering.'
 )
 

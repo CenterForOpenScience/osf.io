@@ -14,14 +14,14 @@
         <p>
             <a
                     href="{{latest_download_url}}"
-                    class="btn btn-success btn-lg"
+                    class="btn btn-success btn-md"
                 >Download <i class="icon-download-alt" ></i>
             </a>
             % if user['can_edit'] and 'write' in user['permissions']:
                 <a
                         href="#"
                         data-bind="visible: api_url() && !registered(), click: deleteFile"
-                        class="btn btn-danger btn-lg"
+                        class="btn btn-danger btn-md"
                     >Delete <i class="icon-trash"></i>
                 </a>
             % endif

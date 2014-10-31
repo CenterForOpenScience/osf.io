@@ -70,6 +70,13 @@ ul.ob-widget-list {
 	right: -12px;
 }
 
+.ob-clear-uploads-button{
+	position: relative;
+	z-index: 1;
+	top: -140px;
+	right: -12px;
+}
+
 .ob-unselectable{
 	-webkit-user-select: none; /* Chrome/Safari */
 	-moz-user-select: none; /* Firefox */
