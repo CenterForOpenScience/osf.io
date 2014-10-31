@@ -1163,6 +1163,10 @@ h1.unavailable {
 
 /* Logs */
 
+dl.activity-log dd {
+    margin-bottom: 4px;
+}
+
 @media (min-width: 768px) and (max-width: 991px) {
     /* wrap dl in col-sm-* grid layout */
     dl.activity-log dt {
