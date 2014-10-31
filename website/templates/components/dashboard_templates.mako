@@ -3,7 +3,7 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
-        <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
+        <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group ob-input">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
                 class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
@@ -23,7 +23,7 @@
 
         <!-- Component search typeahead -->
         <!-- ko if: enableComponents && showComponents && hasSelectedProject() -->
-        <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
+        <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group ob-input">
             <img
                 data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"
                 class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
