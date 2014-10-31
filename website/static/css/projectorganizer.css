@@ -95,6 +95,11 @@ span.project-organizer-icon-reg-pointer {
     background-image: url('/static/img/hgrid/reg-pointer.png');
 }
 
+
+span.project-organizer-icon-reg-pointer:hover {
+    background-image: url('/static/img/hgrid/pointer-hover.png');
+}
+
 span.project-organizer-icon-pointer:hover {
     display: inline-block;
     width: 16px;
