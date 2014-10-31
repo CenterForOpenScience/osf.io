@@ -834,11 +834,11 @@ def _get_user_activity(node, auth, rescale_ratio):
 
     # Normalize over all nodes
     try:
-        ua = ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        ua = ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         ua = 0
     try:
-        non_ua = non_ua_count / rescale_ratio * settings.USER_ACTIVITY_MAX_WIDTH
+        non_ua = non_ua_count / rescale_ratio * 100
     except ZeroDivisionError:
         non_ua = 0
 
