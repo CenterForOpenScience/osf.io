@@ -27,7 +27,7 @@
                             "tpl": "../addons/${addon}/templates/${addon}_widget.mako",
                             "uri": "${node['api_url']}${addon}/widget/"
                         }'></div>
-                    %endif
+                    % endif
                 % endif
             % endfor
         % else:
@@ -67,11 +67,11 @@
         % if addons:
             ${children()}
         % endif
-        %if node['tags'] or 'write' in user['permissions']:
+        % if node['tags'] or 'write' in user['permissions']:
             <div class="tags">
                 <input name="node-tags" id="node-tags" value="${','.join([tag for tag in node['tags']]) if node['tags'] else ''}" />
             </div>
-        %endif
+        % endif
         <hr />
         <div class="logs">
             <%include file="log_list.mako"/>
@@ -195,9 +195,9 @@
                 });
             % endif
 
-            %if node['is_registration'] and not node['tags']:
+            % if node['is_registration'] and not node['tags']:
                 $('div.tags').remove();
-            %endif
+            % endif
         });
         $script.ready(['rubeus'], function() {
             // Initialize filebrowser
