@@ -80,6 +80,7 @@
             var onSelected = params.onSelected || viewModel.onSelected;
             onSelected(datum.value);
         });
+        $inputElem.data('typeahead').options.minLength = 0;
         var onFetched = ko.unwrap(params.onFetched);
         if (onFetched) {
             onFetched(myProjects);

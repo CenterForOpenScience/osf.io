@@ -3,7 +3,6 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
-        ## <pre data-bind="text: ko.toJSON({pIn: projectInput()}, null, 2)"></pre>
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
@@ -120,14 +119,13 @@
 <template id="osf-project-create-form">
 <form id="creationForm" data-bind="submit: submitForm">
     ## Uncomment for debugging
-    ## <pre data-bind="text: ko.utils.stringifyJson($data, null, 2)"></pre >
     <div class="row">
         <div class="col-md-12">
             <label for="title">Title</label>
-            <input class="form-control" 
-                type="text" name="title" 
-                maxlength="200" 
-                data-bind="value: title, valueUpdate:'input', hasFocus: focus" 
+            <input class="form-control"
+                type="text" name="title"
+                maxlength="200"
+                data-bind="value: title, valueUpdate:'input', hasFocus: focus"
                 placeholder="Required">
 
             <!-- flashed validation message -->
