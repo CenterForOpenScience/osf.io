@@ -550,6 +550,7 @@
         var self = this;
         self.params = params;
         self.data = params.data || DEFAULT_FETCH_URL;
+        console.log(self.data);
         /* Observables */
         self.isOpen = ko.observable(true);
         self.hasFocus = ko.observable(true);

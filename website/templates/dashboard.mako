@@ -62,7 +62,7 @@
                                 </i>
                             </div><!-- end ob-header -->
                             <div data-bind="visible: isOpen()" id="obRevealNewProject">
-                                <osf-project-create-form 
+                                <osf-project-create-form
                                     params="data: nodes, hasFocus: focus">
                                 </osf-project-create-form>
                             </div>

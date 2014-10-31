@@ -162,12 +162,20 @@
     <div class="row">
         <div data-bind="visible: isOpen()">
             <div class="col-md-12" >
+
+                <!-- ko if: data.length -->
                 <osf-project-search
                 params="data: data,
                         onSubmit: onSubmit,
                         submitText: submitText,
-                        projectPlaceholder: 'Start typing one of your projects'"
+                        projectPlaceholder: 'Start typing one of your projects'">
                 </osf-project-search>
+                <!-- /ko -->
+                <!-- ko if: !data.length -->
+                <p class="text-info">
+                    You do not have any projects yet. Click below to create one!
+                </p>
+                <!-- /ko -->
             </div><!-- end col-md -->
         </div>
     </div><!-- end row -->
