@@ -301,9 +301,11 @@ def update_analytics(node, path, version_idx):
 @must_have_addon('osfstorage', 'node')
 def osf_storage_download_file(path, node_addon, **kwargs):
     version_query = request.args.get('version')
+    mode = request.args.get('mode')
     version_idx, version, record = get_version(path, node_addon, version_query)
     url = utils.get_download_url(version_idx, version, record)
-    update_analytics(node_addon.owner, path, version_idx)
+    if mode != 'render':
+        update_analytics(node_addon.owner, path, version_idx)
     return redirect(url)
 
 

@@ -352,7 +352,7 @@ class StorageFile(GuidFile):
         return os.path.join('osfstorage', 'files', self.path)
 
     def get_download_path(self, version_idx):
-        return '/{0}/download/?version={1}'.format(self._id, version_idx)
+        return '/{0}/download/?version={1}&mode=render'.format(self._id, version_idx)
 
     @classmethod
     def get_or_create(cls, node, path):

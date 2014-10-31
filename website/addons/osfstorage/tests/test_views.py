@@ -577,6 +577,29 @@ class TestDownloadFile(OsfTestCase):
         )
 
     @mock.patch('website.addons.osfstorage.utils.get_download_url')
+    def test_download_render_mode(self, mock_get_url):
+        mock_get_url.return_value = 'http://freddie.queen.com/'
+        deltas = [
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project),
+                lambda value: value
+            ),
+            Delta(
+                lambda: utils.get_download_count(self.record, self.project, len(self.record.versions)),
+                lambda value: value
+            ),
+        ]
+        with AssertDeltas(deltas):
+            res = self.app.get(
+                self.project.web_url_for(
+                    'osf_storage_download_file',
+                    path=self.path,
+                    mode='render',
+                ),
+                auth=self.project.creator.auth,
+            )
+
+    @mock.patch('website.addons.osfstorage.utils.get_download_url')
     def test_download_by_version_latest(self, mock_get_url):
         mock_get_url.return_value = 'http://freddie.queen.com/'
         versions = [factories.FileVersionFactory() for _ in range(3)]
@@ -781,4 +804,3 @@ class TestLegacyViews(OsfTestCase):
             version=3,
         )
         assert_urls_equal(res.location, expected_url)
-
