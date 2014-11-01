@@ -93,7 +93,11 @@
             // Defer sending the xhr until the URL has been resolved.
             // NOTE: This will only work with multipleUploads turned off
             $.when(_this.getUrl(files[0])).done(function(uploadUrl) {
-                    xhr.open(_this.options.method, _this.options.url, true);
+                    xhr.open(
+                        files[0].method || _this.options.method,
+                        files[0].url || _this.options.url,
+                        true
+                    );
                     xhr.withCredentials = !! _this.options.withCredentials;
                     response = null;
                     handleError = function() {
