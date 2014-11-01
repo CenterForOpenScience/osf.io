@@ -405,6 +405,7 @@
         self.selector = self.params.selector || '#obDropzone';
         self.data = params.data || DEFAULT_FETCH_URL;
         /* Observables */
+        self.isOpen = ko.observable(true);
         self.progress = ko.observable(0);
         self.showProgress = ko.observable(false);
         self.errorMessage = ko.observable('');
@@ -419,6 +420,9 @@
         // The target node to upload to to
         self.target = ko.observable(null);
         /* Functions */
+        self.toggle = function() {
+            self.isOpen(!self.isOpen());
+        };
         self.startUpload = function(selectedProject, selectedComponent, projectInput, componentInput) {
             if (!selectedComponent && componentInput.length) {
                 var msg = 'Not a valid component selection. Clear your search or select a component from the dropdown.';
