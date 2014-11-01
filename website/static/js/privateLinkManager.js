@@ -14,6 +14,7 @@
 
         self.url = url;
         self.title = ko.observable('');
+        self.isPublic = ko.observable('');
         self.name = ko.observable(null);
         self.anonymous = ko.observable(false);
         self.pageTitle = 'Generate New Link to Share Project';
@@ -29,6 +30,7 @@
 
         function onFetchSuccess(response) {
             self.title(response.node.title);
+            self.isPublic(response.node.is_public);
             $.each(response['children'], function(idx, child) {
                 child['margin'] = NODE_OFFSET + child['indent'] * NODE_OFFSET + 'px';
             });
@@ -45,7 +47,7 @@
             $.ajax({
                 url: url,
                 type: 'GET',
-                dataType: 'json',
+                dataType: 'json'
             }).done(
                 onFetchSuccess
             ).fail(

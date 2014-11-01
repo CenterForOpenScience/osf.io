@@ -75,4 +75,4 @@ env.register('js', js)
 env.register('css', css)
 env.register('js_bottom', js_bottom)
 # Don't bundle in debug mode
-env.debug = settings.DEBUG_MODE
+env.debug = False
