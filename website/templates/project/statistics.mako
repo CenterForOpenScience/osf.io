@@ -18,7 +18,7 @@
         <img src="/static/img/no_analytics.png">
 % else:
     % if not node.get('is_public'):
-        <div class='alert alert-warning alert-dismissable'>
+        <div class='alert alert-warning'>
             <strong>Note:</strong> Usage statistics are collected only for public resources.
         </div>
     % endif
