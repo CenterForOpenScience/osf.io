@@ -19,7 +19,6 @@
 % else:
     % if not node.get('is_public'):
         <div class='alert alert-warning alert-dismissable'>
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
             <strong>Note:</strong> Usage statistics are collected only for public resources.
         </div>
     % endif
