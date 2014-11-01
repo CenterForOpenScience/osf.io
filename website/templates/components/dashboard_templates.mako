@@ -3,7 +3,7 @@
 <form data-bind="submit: onSubmit">
     <div class="ob-search">
         <!-- Project search typeahead -->
-        <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group">
+        <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group ob-input">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
                 class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
@@ -23,7 +23,7 @@
 
         <!-- Component search typeahead -->
         <!-- ko if: enableComponents && showComponents && hasSelectedProject() -->
-        <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group">
+        <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group ob-input">
             <img
                 data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"
                 class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
@@ -128,16 +128,17 @@
                 type="text" name="title"
                 maxlength="200"
                 data-bind="value: title, valueUpdate:'input', hasFocus: focus"
-                placeholder="Required">
+                >
 
             <!-- flashed validation message -->
             <span class="text-danger" data-bind="text: errorMessage"></span>
             <br />
 
-            <label>Description</label>
-            <textarea class="form-control" name="description" data-bind="value: description"></textarea>
+            <label>Description (Optional)</label>
+            <textarea data-bind="value: description"class="form-control" name="description"
+                ></textarea>
             <br />
-            <label>Template</label>
+            <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
             <input type="hidden" id="templates" class="select2-container" style="width: 100%">
         </div>
@@ -154,7 +155,7 @@
 <template id="osf-ob-goto">
 <li class="ob-list-item list-group-item">
     <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Go to Project</h3>
+        <h3 class="ob-heading list-group-item-heading">Go to my project</h3>
         <i data-bind="css: {'icon-plus': !isOpen(), 'icon-minus': isOpen()}"
             class="pointer ob-expand-icon icon-large pull-right">
         </i>
@@ -168,7 +169,7 @@
                 params="data: data,
                         onSubmit: onSubmit,
                         submitText: submitText,
-                        projectPlaceholder: 'Start typing one of your projects'">
+                        projectPlaceholder: 'Start typing a project name'">
                 </osf-project-search>
                 <!-- /ko -->
                 <!-- ko if: !data.length -->

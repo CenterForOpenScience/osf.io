@@ -45,6 +45,15 @@
             return target;
         };
 
+        /**
+         * Dropzone has no business adding files from directories.
+         *
+         * NOTE: This is a hack to keep directories from uploading
+         */
+        Dropzone.prototype._addFilesFromDirectory = function(directory, path) {
+            directory.status = Dropzone.ERROR;
+            return this.emit("error", directory, "Cannot upload directories, applications, or packages.");
+        };
 
         /**
          * Get the url to use for the upload request.
@@ -62,7 +71,7 @@
                         type: file.type || 'application/octet-stream'
                     }),
                     contentType: 'application/json',
-                    dataType: 'json',
+                    dataType: 'json'
                 }).success(function(url) {
                   //self.options.signedUrlFrom = null;
                     return self.options.url = url;

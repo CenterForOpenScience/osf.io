@@ -64,10 +64,14 @@ ul.ob-widget-list {
 }
 
 .ob-clear-button{
-	position: relative;
+	position: absolute;
 	z-index: 1;
 	top: -5px;
 	right: -12px;
+}
+
+.ob-input {
+    position: relative;
 }
 
 .ob-clear-uploads-button{
