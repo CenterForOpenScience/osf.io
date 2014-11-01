@@ -119,10 +119,16 @@ def dropbox_oauth_finish(**kwargs):
 @must_have_addon('dropbox', 'user')
 def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Dropbox."""
-    client = get_client_from_user_settings(user_addon)
-    user_addon.clear()
-    user_addon.save()
-    client.disable_access_token()
+    try:
+        client = get_client_from_user_settings(user_addon)
+        client.disable_access_token()
+        user_addon.clear()
+        user_addon.save()
+    except ErrorResponse as error:
+        if error.status == 401:
+            user_addon.clear()
+            user_addon.save()
+
     return None
 
 

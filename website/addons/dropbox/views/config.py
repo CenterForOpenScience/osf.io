@@ -95,12 +95,13 @@ def serialize_settings(node_settings, current_user, client=None):
     current_user_settings = current_user.get_addon('dropbox')
     valid_credentials = True
 
-    try:
-        client = get_client_from_user_settings(user_settings)
-        client.account_info()
-    except ErrorResponse as error:
-        if error.status == 401:
-            valid_credentials = False
+    if user_settings:
+        try:
+            client = get_client_from_user_settings(user_settings)
+            client.account_info()
+        except ErrorResponse as error:
+            if error.status == 401:
+                valid_credentials = False
 
     result = {
         'nodeHasAuth': node_settings.has_auth,
